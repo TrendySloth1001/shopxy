@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 enum AppButtonVariant { primary, secondary, danger, ghost }
 
@@ -75,8 +77,8 @@ class AppButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final AppButtonVariant variant;
   final AppButtonSize size;
-  final IconData? icon;
-  final IconData? trailingIcon;
+  final AppIconData? icon;
+  final AppIconData? trailingIcon;
   final bool isLoading;
   final bool fullWidth;
 
@@ -131,7 +133,7 @@ class AppButton extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (icon != null) ...[
-                Icon(icon, size: _iconSize, color: fg),
+                AppIcon(icon, size: _iconSize, color: fg),
                 const SizedBox(width: AppSizes.sm),
               ],
               Flexible(
@@ -143,7 +145,7 @@ class AppButton extends StatelessWidget {
               ),
               if (trailingIcon != null) ...[
                 const SizedBox(width: AppSizes.sm),
-                Icon(trailingIcon, size: _iconSize, color: fg),
+                AppIcon(trailingIcon, size: _iconSize, color: fg),
               ],
             ],
           );
@@ -156,7 +158,10 @@ class AppButton extends StatelessWidget {
         customBorder: AppShapes.squircle(AppSizes.radiusButton, side: border),
         splashColor: fg.withValues(alpha: 0.06),
         highlightColor: fg.withValues(alpha: 0.04),
-        child: Padding(padding: _padding, child: Center(child: child)),
+        child: Padding(
+          padding: _padding,
+          child: Center(child: child),
+        ),
       ),
     );
 

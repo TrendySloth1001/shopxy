@@ -11,6 +11,7 @@ import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/format/app_format.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 class ShopInvoiceDetailPage extends StatefulWidget {
   const ShopInvoiceDetailPage({
@@ -33,9 +34,9 @@ class _ShopInvoiceDetailPageState extends State<ShopInvoiceDetailPage> {
   void initState() {
     super.initState();
     _future = context.read<ShopsProvider>().loadInvoiceDetail(
-          widget.shop,
-          widget.invoiceId,
-        );
+      widget.shop,
+      widget.invoiceId,
+    );
   }
 
   @override
@@ -62,8 +63,11 @@ class _ShopInvoiceDetailPageState extends State<ShopInvoiceDetailPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(AppIcons.errorOutlineRounded,
-                        color: AppColors.error, size: AppSizes.iconXl),
+                    const AppIcon(
+                      AppIcons.errorOutlineRounded,
+                      color: AppColors.error,
+                      size: AppSizes.iconXl,
+                    ),
                     const SizedBox(height: AppSizes.sm),
                     Text(
                       friendlyError(snap.error ?? ''),
@@ -89,7 +93,8 @@ class _ShopInvoiceDetailPageState extends State<ShopInvoiceDetailPage> {
               const SizedBox(height: AppSizes.xl),
               _Eyebrow(
                 text: 'ITEMS',
-                trailing: '${inv.items.length}'
+                trailing:
+                    '${inv.items.length}'
                     ' item${inv.items.length == 1 ? '' : 's'}',
               ),
               const AppDivider.flush(),
@@ -119,9 +124,9 @@ class _SpacedDivider extends StatelessWidget {
   const _SpacedDivider();
   @override
   Widget build(BuildContext context) => const Padding(
-        padding: EdgeInsets.symmetric(vertical: AppSizes.lg),
-        child: AppDivider.flush(),
-      );
+    padding: EdgeInsets.symmetric(vertical: AppSizes.lg),
+    child: AppDivider.flush(),
+  );
 }
 
 class _Header extends StatelessWidget {
@@ -142,10 +147,10 @@ class _Header extends StatelessWidget {
                 child: Text(
                   eyebrow,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: AppColors.brand,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.2,
-                      ),
+                    color: AppColors.brand,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.2,
+                  ),
                 ),
               ),
               _StatusPill(status: invoice.status),
@@ -155,16 +160,16 @@ class _Header extends StatelessWidget {
           Text(
             invoice.invoiceNo,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: AppColors.black,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.5,
-                  height: 1.15,
-                ),
+              color: AppColors.black,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
+              height: 1.15,
+            ),
           ),
           const SizedBox(height: AppSizes.xs),
           Row(
             children: [
-              const Icon(
+              const AppIcon(
                 AppIcons.eventRounded,
                 color: AppColors.muted,
                 size: AppSizes.iconSm,
@@ -173,9 +178,9 @@ class _Header extends StatelessWidget {
               Text(
                 DateFormat('d MMM yyyy').format(invoice.invoiceDate.toLocal()),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.muted,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  color: AppColors.muted,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
@@ -194,21 +199,24 @@ class _StatusPill extends StatelessWidget {
     final normalized = status.toUpperCase();
     final (label, fg, bg) = switch (normalized) {
       'PAID' => ('Paid', AppColors.success, AppColors.successSoft),
-      'UNPAID' || 'DUE' || 'PENDING' =>
-        ('Unpaid', AppColors.warning, AppColors.warningSoft),
-      'PARTIAL' || 'PARTIALLY_PAID' =>
-        ('Partial', AppColors.info, AppColors.infoSoft),
-      'CANCELLED' || 'VOID' =>
-        ('Cancelled', AppColors.muted, AppColors.heroPanel),
+      'UNPAID' ||
+      'DUE' ||
+      'PENDING' => ('Unpaid', AppColors.warning, AppColors.warningSoft),
+      'PARTIAL' ||
+      'PARTIALLY_PAID' => ('Partial', AppColors.info, AppColors.infoSoft),
+      'CANCELLED' ||
+      'VOID' => ('Cancelled', AppColors.muted, AppColors.heroPanel),
       _ => (
-          normalized.isEmpty ? '—' : status,
-          AppColors.muted,
-          AppColors.heroPanel,
-        ),
+        normalized.isEmpty ? '—' : status,
+        AppColors.muted,
+        AppColors.heroPanel,
+      ),
     };
     return Container(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.sm, vertical: AppSizes.xs),
+        horizontal: AppSizes.sm,
+        vertical: AppSizes.xs,
+      ),
       decoration: ShapeDecoration(
         color: bg,
         shape: AppShapes.squircle(AppSizes.radiusFull),
@@ -216,20 +224,17 @@ class _StatusPill extends StatelessWidget {
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: fg,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.5,
-            ),
+          color: fg,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }
 }
 
 class _Counterparty extends StatelessWidget {
-  const _Counterparty({
-    required this.invoice,
-    required this.fallbackName,
-  });
+  const _Counterparty({required this.invoice, required this.fallbackName});
   final ShopInvoiceDetail invoice;
   final String fallbackName;
 
@@ -254,7 +259,11 @@ class _Counterparty extends StatelessWidget {
               shape: AppShapes.squircle(AppSizes.radiusSm),
             ),
             alignment: Alignment.center,
-            child: Icon(iconData, color: AppColors.brand, size: AppSizes.iconMd),
+            child: AppIcon(
+              iconData,
+              color: AppColors.brand,
+              size: AppSizes.iconMd,
+            ),
           ),
           const SizedBox(width: AppSizes.sm),
           Expanded(
@@ -264,38 +273,38 @@ class _Counterparty extends StatelessWidget {
                 Text(
                   eyebrow,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: AppColors.muted,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.9,
-                      ),
+                    color: AppColors.muted,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.9,
+                  ),
                 ),
                 const SizedBox(height: AppSizes.xs),
                 Text(
                   name,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppColors.black,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.1,
-                        height: 1.2,
-                      ),
+                    color: AppColors.black,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.1,
+                    height: 1.2,
+                  ),
                 ),
                 if (invoice.shopPhone != null) ...[
                   const SizedBox(height: AppSizes.xs),
                   Text(
                     invoice.shopPhone!,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.muted,
-                          fontWeight: FontWeight.w500,
-                        ),
+                      color: AppColors.muted,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ],
                 if (invoice.shopGstin != null)
                   Text(
                     'GSTIN ${invoice.shopGstin!}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.muted,
-                          fontWeight: FontWeight.w500,
-                        ),
+                      color: AppColors.muted,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
               ],
             ),
@@ -326,19 +335,19 @@ class _Eyebrow extends StatelessWidget {
             child: Text(
               text,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: AppColors.muted,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.4,
-                  ),
+                color: AppColors.muted,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.4,
+              ),
             ),
           ),
           if (trailing != null)
             Text(
               trailing!,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: AppColors.muted,
-                    fontWeight: FontWeight.w700,
-                  ),
+                color: AppColors.muted,
+                fontWeight: FontWeight.w700,
+              ),
             ),
         ],
       ),
@@ -384,19 +393,19 @@ class _ItemRow extends StatelessWidget {
                 Text(
                   item.productName,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.black,
-                        fontWeight: FontWeight.w700,
-                        height: 1.3,
-                        letterSpacing: -0.1,
-                      ),
+                    color: AppColors.black,
+                    fontWeight: FontWeight.w700,
+                    height: 1.3,
+                    letterSpacing: -0.1,
+                  ),
                 ),
                 const SizedBox(height: AppSizes.xs),
                 Text(
                   _meta(),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.muted,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    color: AppColors.muted,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
@@ -405,10 +414,10 @@ class _ItemRow extends StatelessWidget {
           Text(
             money.format(item.total),
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.black,
-                  fontWeight: FontWeight.w800,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
+              color: AppColors.black,
+              fontWeight: FontWeight.w800,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
           ),
         ],
       ),
@@ -472,23 +481,29 @@ class _TotalsRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: (strong ? theme.textTheme.bodyMedium : theme.textTheme.bodySmall)
-                  ?.copyWith(
-                color: strong ? AppColors.black : AppColors.muted,
-                fontWeight: strong ? FontWeight.w800 : FontWeight.w500,
-                letterSpacing: strong ? -0.1 : 0,
-              ),
+              style:
+                  (strong
+                          ? theme.textTheme.bodyMedium
+                          : theme.textTheme.bodySmall)
+                      ?.copyWith(
+                        color: strong ? AppColors.black : AppColors.muted,
+                        fontWeight: strong ? FontWeight.w800 : FontWeight.w500,
+                        letterSpacing: strong ? -0.1 : 0,
+                      ),
             ),
           ),
           Text(
             value,
-            style: (strong ? theme.textTheme.titleMedium : theme.textTheme.bodySmall)
-                ?.copyWith(
-              color: valueColor ?? AppColors.black,
-              fontWeight: strong ? FontWeight.w800 : FontWeight.w700,
-              fontFeatures: const [FontFeature.tabularFigures()],
-              letterSpacing: strong ? -0.2 : 0,
-            ),
+            style:
+                (strong
+                        ? theme.textTheme.titleMedium
+                        : theme.textTheme.bodySmall)
+                    ?.copyWith(
+                      color: valueColor ?? AppColors.black,
+                      fontWeight: strong ? FontWeight.w800 : FontWeight.w700,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                      letterSpacing: strong ? -0.2 : 0,
+                    ),
           ),
         ],
       ),
@@ -512,7 +527,7 @@ class _Note extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
+          const AppIcon(
             AppIcons.stickyNote2Outlined,
             color: AppColors.muted,
             size: AppSizes.iconSm,
@@ -522,10 +537,10 @@ class _Note extends StatelessWidget {
             child: Text(
               text,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.black,
-                    fontWeight: FontWeight.w500,
-                    height: 1.4,
-                  ),
+                color: AppColors.black,
+                fontWeight: FontWeight.w500,
+                height: 1.4,
+              ),
             ),
           ),
         ],
@@ -598,9 +613,9 @@ class _SkeletonSpacedDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const Padding(
-        padding: EdgeInsets.symmetric(vertical: AppSizes.lg),
-        child: AppDivider.flush(),
-      );
+    padding: EdgeInsets.symmetric(vertical: AppSizes.lg),
+    child: AppDivider.flush(),
+  );
 }
 
 class _SkeletonCounterparty extends StatelessWidget {
@@ -721,7 +736,11 @@ class _SkeletonTotals extends StatelessWidget {
             padding: EdgeInsets.symmetric(vertical: AppSizes.sm),
             child: AppDivider.flush(),
           ),
-          _SkeletonTotalsRow(labelFactor: 0.14, valueFactor: 0.26, strong: true),
+          _SkeletonTotalsRow(
+            labelFactor: 0.14,
+            valueFactor: 0.26,
+            strong: true,
+          ),
         ],
       ),
     );
@@ -746,7 +765,9 @@ class _SkeletonTotalsRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
       child: Row(
         children: [
-          Expanded(child: AppShimmerLine(widthFactor: labelFactor, height: h)),
+          Expanded(
+            child: AppShimmerLine(widthFactor: labelFactor, height: h),
+          ),
           AppShimmerLine(widthFactor: valueFactor, height: h),
         ],
       ),

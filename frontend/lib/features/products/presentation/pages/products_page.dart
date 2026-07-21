@@ -30,6 +30,7 @@ import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Products listing — same chassis as the Parties and Vendors pages
 /// (AppBar `+` action, [AppSearchBar] header, [ListView.separated]
@@ -153,7 +154,8 @@ class _ProductsPageState extends State<ProductsPage> {
   /// row still tells the user what bucket it belongs to.
   List<_ListItem> _buildItems(ProductsProvider provider) {
     final items = <_ListItem>[];
-    final canGroup = provider.categoryFilter == null &&
+    final canGroup =
+        provider.categoryFilter == null &&
         provider.search.isEmpty &&
         !provider.hasMore;
 
@@ -238,17 +240,18 @@ class _ProductsPageState extends State<ProductsPage> {
     final provider = context.watch<ProductsProvider>();
     // select the exact gating slice → rebuilds only when one of these
     // flips, not on unrelated AuthProvider changes.
-    final (canView, canWrite, canStock) =
-        context.select<AuthProvider, (bool, bool, bool)>((a) {
-      final u = a.user;
-      return (
-        u?.canViewProducts ?? false,
-        u?.canWriteProducts ?? false,
-        // Swipe-to-stock is an inventory action (stockists have it too).
-        u?.canWriteStock ?? false,
-      );
-    });
-    final hasFilter = provider.categoryFilter != null ||
+    final (canView, canWrite, canStock) = context
+        .select<AuthProvider, (bool, bool, bool)>((a) {
+          final u = a.user;
+          return (
+            u?.canViewProducts ?? false,
+            u?.canWriteProducts ?? false,
+            // Swipe-to-stock is an inventory action (stockists have it too).
+            u?.canWriteStock ?? false,
+          );
+        });
+    final hasFilter =
+        provider.categoryFilter != null ||
         provider.lowStockOnly ||
         provider.outOfStockOnly;
     final isSearching = provider.search.isNotEmpty;
@@ -256,8 +259,7 @@ class _ProductsPageState extends State<ProductsPage> {
     // Hoisted out of the itemBuilder so we don't re-scan the whole
     // list for every row.
     final hasHeaders = items.any((e) => e.isHeader);
-    final showCategoryOnRow =
-        !hasHeaders && provider.categoryFilter == null;
+    final showCategoryOnRow = !hasHeaders && provider.categoryFilter == null;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -266,7 +268,7 @@ class _ProductsPageState extends State<ProductsPage> {
         actions: [
           IconButton(
             tooltip: _grid ? l10n.productsListView : l10n.productsGridView,
-            icon: Icon(
+            icon: AppIcon(
               _grid ? AppIcons.viewListRounded : AppIcons.gridViewRounded,
             ),
             onPressed: () => setState(() => _grid = !_grid),
@@ -285,207 +287,226 @@ class _ProductsPageState extends State<ProductsPage> {
       body: !canView
           ? NoAccessView(title: l10n.productsHidden)
           : Column(
-        children: [
-          // Drop the fixed search/filter header below the floating app bar.
-          SizedBox(height: FloatingAppBar.contentTopInset(context)),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSizes.lg,
-              AppSizes.md,
-              AppSizes.lg,
-              0,
-            ),
-            child: AppSearchBar(
-              hint: l10n.productsSearchHint,
-              controller: _searchController,
-              onChanged: provider.setSearch,
-              trailing: _ScanAction(onTap: _openScanner),
-            ),
-          ),
-          AppFilterStrip(
-            children: [
-              AppFilterPill(
-                label: l10n.productsFilterAll,
-                selected: !hasFilter,
-                onTap: () {
-                  if (provider.lowStockOnly) {
-                    provider.setLowStockOnly(false);
-                  }
-                  if (provider.outOfStockOnly) {
-                    provider.setOutOfStockOnly(false);
-                  }
-                  if (provider.categoryFilter != null) {
-                    setState(() => _selectedCategoryName = null);
-                    provider.setCategoryFilter(null);
-                  }
-                },
-              ),
-              AppFilterPill(
-                label: l10n.productsLowStock,
-                icon: AppIcons.warningAmberRounded,
-                selected: provider.lowStockOnly,
-                accent: AppColors.warning,
-                onTap: () => provider.setLowStockOnly(!provider.lowStockOnly),
-              ),
-              AppFilterPill(
-                label: l10n.productsOutOfStock,
-                icon: AppIcons.removeCircleOutlineRounded,
-                selected: provider.outOfStockOnly,
-                accent: AppColors.error,
-                onTap: () =>
-                    provider.setOutOfStockOnly(!provider.outOfStockOnly),
-              ),
-              // One picker chip replaces the per-category pill list.
-              // Stays a single fixed-width affordance regardless of
-              // how many categories the shop has — the searchable
-              // bottom sheet handles 10 or 10,000 the same way.
-              AppFilterPill(
-                label: provider.categoryFilter == null
-                    ? l10n.productsCategoryPickerLabel
-                    : (_selectedCategoryName ?? l10n.productsCategoryPickerLabel),
-                icon: AppIcons.folderOutlined,
-                trailingIcon: AppIcons.expandMoreRounded,
-                selected: provider.categoryFilter != null,
-                onTap: () => _openCategoryPicker(provider),
-              ),
-            ],
-          ),
-          Expanded(
-            child: provider.isLoading && provider.products.isEmpty
-                ? (_grid
-                    ? const _ProductGridSkeleton()
-                    : const _ProductListSkeleton())
-                : provider.error != null && provider.products.isEmpty
-                    ? AppErrorView(onRetry: () => provider.loadProducts())
-                    : provider.products.isEmpty
-                        ? () {
-                            // Low-stock or out-of-stock with zero
-                            // results is good news, not "no matches" —
-                            // show a positive confirmation instead of
-                            // the generic empty-search state.
-                            final isAllStockedUp =
-                                (provider.lowStockOnly ||
-                                        provider.outOfStockOnly) &&
-                                    provider.categoryFilter == null &&
-                                    !isSearching;
-                            return EmptyState.line(
-                              kind: LineArt.boxes,
-                              title: isAllStockedUp
-                                  ? l10n.productsAllStockedUpTitle
-                                  : (hasFilter || isSearching)
-                                      ? l10n.productsNoMatches
-                                      : l10n.productsNoProducts,
-                              subtitle: isAllStockedUp
-                                  ? l10n.productsAllStockedUpHint
-                                  : (hasFilter || isSearching)
-                                      ? l10n.productsNoMatchesHint
-                                      : l10n.productsNoProductsHint,
-                              action: (hasFilter || isSearching || !canWrite)
-                                  ? null
-                                  : AppButton.primary(
-                                      label: l10n.productsAddProduct,
-                                      icon: AppIcons.addRounded,
-                                      onPressed: _openAddProduct,
-                                    ),
-                            );
-                          }()
-                        : RefreshIndicator(
-                            onRefresh: () => provider.loadProducts(),
-                            color: AppColors.black,
-                            backgroundColor: AppColors.surface,
-                            child: _grid
-                                ? _buildGrid(provider: provider)
-                                : ListView.separated(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: AppSizes.sm,
-                              ),
-                              itemCount: items.length +
-                                  (provider.hasMore ? 1 : 0),
-                              separatorBuilder: (context, index) {
-                                // No divider before a section header
-                                // (the header carries enough vertical
-                                // space on its own).
-                                if (index + 1 >= items.length) {
-                                  return const AppDivider();
-                                }
-                                final next = items[index + 1];
-                                if (next.isHeader) {
-                                  return const SizedBox.shrink();
-                                }
-                                return const AppDivider();
-                              },
-                              itemBuilder: (context, index) {
-                                if (index >= items.length) {
-                                  _scheduleLoadMore();
-                                  return const Padding(
-                                    padding: EdgeInsets.all(AppSizes.lg),
-                                    child: Center(
-                                      child: CircularProgressIndicator(),
-                                    ),
-                                  );
-                                }
-                                final item = items[index];
-                                return item.map(
-                                  header: (label, iconName) => _CategoryHeader(
-                                    label: label,
-                                    iconName: iconName,
-                                    first: index == 0,
+              children: [
+                // Drop the fixed search/filter header below the floating app bar.
+                SizedBox(height: FloatingAppBar.contentTopInset(context)),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSizes.lg,
+                    AppSizes.md,
+                    AppSizes.lg,
+                    0,
+                  ),
+                  child: AppSearchBar(
+                    hint: l10n.productsSearchHint,
+                    controller: _searchController,
+                    onChanged: provider.setSearch,
+                    trailing: _ScanAction(onTap: _openScanner),
+                  ),
+                ),
+                AppFilterStrip(
+                  children: [
+                    AppFilterPill(
+                      label: l10n.productsFilterAll,
+                      selected: !hasFilter,
+                      onTap: () {
+                        if (provider.lowStockOnly) {
+                          provider.setLowStockOnly(false);
+                        }
+                        if (provider.outOfStockOnly) {
+                          provider.setOutOfStockOnly(false);
+                        }
+                        if (provider.categoryFilter != null) {
+                          setState(() => _selectedCategoryName = null);
+                          provider.setCategoryFilter(null);
+                        }
+                      },
+                    ),
+                    AppFilterPill(
+                      label: l10n.productsLowStock,
+                      icon: AppIcons.warningAmberRounded,
+                      selected: provider.lowStockOnly,
+                      accent: AppColors.warning,
+                      onTap: () =>
+                          provider.setLowStockOnly(!provider.lowStockOnly),
+                    ),
+                    AppFilterPill(
+                      label: l10n.productsOutOfStock,
+                      icon: AppIcons.removeCircleOutlineRounded,
+                      selected: provider.outOfStockOnly,
+                      accent: AppColors.error,
+                      onTap: () =>
+                          provider.setOutOfStockOnly(!provider.outOfStockOnly),
+                    ),
+                    // One picker chip replaces the per-category pill list.
+                    // Stays a single fixed-width affordance regardless of
+                    // how many categories the shop has — the searchable
+                    // bottom sheet handles 10 or 10,000 the same way.
+                    AppFilterPill(
+                      label: provider.categoryFilter == null
+                          ? l10n.productsCategoryPickerLabel
+                          : (_selectedCategoryName ??
+                                l10n.productsCategoryPickerLabel),
+                      icon: AppIcons.folderOutlined,
+                      trailingIcon: AppIcons.expandMoreRounded,
+                      selected: provider.categoryFilter != null,
+                      onTap: () => _openCategoryPicker(provider),
+                    ),
+                  ],
+                ),
+                Expanded(
+                  child: provider.isLoading && provider.products.isEmpty
+                      ? (_grid
+                            ? const _ProductGridSkeleton()
+                            : const _ProductListSkeleton())
+                      : provider.error != null && provider.products.isEmpty
+                      ? AppErrorView(onRetry: () => provider.loadProducts())
+                      : provider.products.isEmpty
+                      ? () {
+                          // Low-stock or out-of-stock with zero
+                          // results is good news, not "no matches" —
+                          // show a positive confirmation instead of
+                          // the generic empty-search state.
+                          final isAllStockedUp =
+                              (provider.lowStockOnly ||
+                                  provider.outOfStockOnly) &&
+                              provider.categoryFilter == null &&
+                              !isSearching;
+                          return EmptyState.line(
+                            kind: LineArt.boxes,
+                            title: isAllStockedUp
+                                ? l10n.productsAllStockedUpTitle
+                                : (hasFilter || isSearching)
+                                ? l10n.productsNoMatches
+                                : l10n.productsNoProducts,
+                            subtitle: isAllStockedUp
+                                ? l10n.productsAllStockedUpHint
+                                : (hasFilter || isSearching)
+                                ? l10n.productsNoMatchesHint
+                                : l10n.productsNoProductsHint,
+                            action: (hasFilter || isSearching || !canWrite)
+                                ? null
+                                : AppButton.primary(
+                                    label: l10n.productsAddProduct,
+                                    icon: AppIcons.addRounded,
+                                    onPressed: _openAddProduct,
                                   ),
-                                  product: (p) => Slidable(
-                                    key: ValueKey('product_${p.id}'),
-                                    // Swipe right (start) → Stock In.
-                                    // Inventory action — hidden for roles
-                                    // without inventory:write (e.g. Cashier).
-                                    startActionPane: canStock
-                                        ? ActionPane(
-                                            motion: const StretchMotion(),
-                                            extentRatio: 0.28,
-                                            children: [
-                                              SlidableAction(
-                                                onPressed: (_) => _openStockSheet(
-                                                    p, 'STOCK_IN'),
-                                                backgroundColor:
-                                                    AppColors.success,
-                                                foregroundColor: AppColors.white,
-                                                icon:
-                                                    AppIcons.arrowDownwardRounded,
-                                                label: l10n.productsStockInAction,
-                                                padding: EdgeInsets.zero,
-                                              ),
-                                            ],
-                                          )
-                                        : null,
-                                    // Swipe left (end) → Stock Out.
-                                    endActionPane: canStock
-                                        ? ActionPane(
-                                            motion: const StretchMotion(),
-                                            extentRatio: 0.28,
-                                            children: [
-                                              SlidableAction(
-                                                onPressed: (_) => _openStockSheet(
-                                                    p, 'STOCK_OUT'),
-                                                backgroundColor: AppColors.error,
-                                                foregroundColor: AppColors.white,
-                                                icon: AppIcons.arrowUpwardRounded,
-                                                label: l10n.productsStockOutAction,
-                                                padding: EdgeInsets.zero,
-                                              ),
-                                            ],
-                                          )
-                                        : null,
-                                    child: ProductListTile(
-                                      product: p,
-                                      showCategory: showCategoryOnRow,
-                                      onTap: () => _openProductDetail(p),
-                                    ),
+                          );
+                        }()
+                      : RefreshIndicator(
+                          onRefresh: () => provider.loadProducts(),
+                          color: AppColors.black,
+                          backgroundColor: AppColors.surface,
+                          child: _grid
+                              ? _buildGrid(provider: provider)
+                              : ListView.separated(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: AppSizes.sm,
                                   ),
-                                );
-                              },
-                            ),
-                          ),
-          ),
-        ],
-      ),
+                                  itemCount:
+                                      items.length + (provider.hasMore ? 1 : 0),
+                                  separatorBuilder: (context, index) {
+                                    // No divider before a section header
+                                    // (the header carries enough vertical
+                                    // space on its own).
+                                    if (index + 1 >= items.length) {
+                                      return const AppDivider();
+                                    }
+                                    final next = items[index + 1];
+                                    if (next.isHeader) {
+                                      return const SizedBox.shrink();
+                                    }
+                                    return const AppDivider();
+                                  },
+                                  itemBuilder: (context, index) {
+                                    if (index >= items.length) {
+                                      _scheduleLoadMore();
+                                      return const Padding(
+                                        padding: EdgeInsets.all(AppSizes.lg),
+                                        child: Center(
+                                          child: CircularProgressIndicator(),
+                                        ),
+                                      );
+                                    }
+                                    final item = items[index];
+                                    return item.map(
+                                      header: (label, iconName) =>
+                                          _CategoryHeader(
+                                            label: label,
+                                            iconName: iconName,
+                                            first: index == 0,
+                                          ),
+                                      product: (p) => Slidable(
+                                        key: ValueKey('product_${p.id}'),
+                                        // Swipe right (start) → Stock In.
+                                        // Inventory action — hidden for roles
+                                        // without inventory:write (e.g. Cashier).
+                                        startActionPane: canStock
+                                            ? ActionPane(
+                                                motion: const StretchMotion(),
+                                                extentRatio: 0.28,
+                                                children: [
+                                                  CustomSlidableAction(
+                                                    onPressed: (_) =>
+                                                        _openStockSheet(
+                                                          p,
+                                                          'STOCK_IN',
+                                                        ),
+                                                    backgroundColor:
+                                                        AppColors.success,
+                                                    foregroundColor:
+                                                        AppColors.white,
+                                                    padding: EdgeInsets.zero,
+                                                    child: _StockActionLabel(
+                                                      icon: AppIcons
+                                                          .arrowDownwardRounded,
+                                                      label: l10n
+                                                          .productsStockInAction,
+                                                    ),
+                                                  ),
+                                                ],
+                                              )
+                                            : null,
+                                        // Swipe left (end) → Stock Out.
+                                        endActionPane: canStock
+                                            ? ActionPane(
+                                                motion: const StretchMotion(),
+                                                extentRatio: 0.28,
+                                                children: [
+                                                  CustomSlidableAction(
+                                                    onPressed: (_) =>
+                                                        _openStockSheet(
+                                                          p,
+                                                          'STOCK_OUT',
+                                                        ),
+                                                    backgroundColor:
+                                                        AppColors.error,
+                                                    foregroundColor:
+                                                        AppColors.white,
+                                                    padding: EdgeInsets.zero,
+                                                    child: _StockActionLabel(
+                                                      icon: AppIcons
+                                                          .arrowUpwardRounded,
+                                                      label: l10n
+                                                          .productsStockOutAction,
+                                                    ),
+                                                  ),
+                                                ],
+                                              )
+                                            : null,
+                                        child: ProductListTile(
+                                          product: p,
+                                          showCategory: showCategoryOnRow,
+                                          onTap: () => _openProductDetail(p),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                        ),
+                ),
+              ],
+            ),
     );
   }
 }
@@ -537,7 +558,7 @@ class _CategoryHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
+          AppIcon(
             resolveCategoryIcon(iconName),
             size: 14,
             color: AppColors.muted,
@@ -635,10 +656,7 @@ class _ProductRowSkeleton extends StatelessWidget {
     final vPad = compact ? AppSizes.sm : AppSizes.lg;
 
     return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppSizes.lg,
-        vertical: vPad,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: AppSizes.lg, vertical: vPad),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -693,21 +711,52 @@ class _ScanAction extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: 1,
-          height: AppSizes.iconLg,
-          color: AppColors.hairline,
-        ),
+        Container(width: 1, height: AppSizes.iconLg, color: AppColors.hairline),
         const SizedBox(width: AppSizes.xs),
         InkWell(
           customBorder: const CircleBorder(),
           onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.all(AppSizes.xs),
-            child: Icon(
+            child: AppIcon(
               AppIcons.qrCodeScannerRounded,
               size: AppSizes.iconMd,
               color: AppColors.black,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Icon-over-label content for a stock [CustomSlidableAction] — replicates the
+/// built-in [SlidableAction] layout, which only accepts a Material `IconData`
+/// (incompatible with the app's SVG [AppIcon]).
+class _StockActionLabel extends StatelessWidget {
+  const _StockActionLabel({required this.icon, required this.label});
+
+  final AppIconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        AppIcon(icon, color: AppColors.white, size: 22),
+        const SizedBox(height: 4),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: AppColors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),

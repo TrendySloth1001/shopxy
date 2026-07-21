@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Curated palette of Material icons available for custom-field
@@ -10,7 +9,7 @@ import 'package:shopxy/core/icons/app_icons.dart';
 /// backend. Add to this map (don't remove) when you want to expose
 /// more icons; existing rows that reference a removed name will fall
 /// back to [kFallbackCustomFieldIcon].
-const Map<String, IconData> kCustomFieldIcons = {
+const Map<String, AppIconData> kCustomFieldIcons = {
   // General
   'inventory_2': AppIcons.inventory2Rounded,
   'tag': AppIcons.tagRounded,
@@ -67,11 +66,11 @@ const Map<String, IconData> kCustomFieldIcons = {
 /// Used when a row references an icon name that's no longer in the
 /// palette. Picked a quiet generic glyph so the cell still looks
 /// intentional.
-const IconData kFallbackCustomFieldIcon = AppIcons.labelOutlineRounded;
+const AppIconData kFallbackCustomFieldIcon = AppIcons.labelOutlineRounded;
 
-/// Resolve a stored icon name to an actual [IconData]. Falls back to
+/// Resolve a stored icon name to an actual [AppIconData]. Falls back to
 /// the generic label if the name is unknown or null.
-IconData resolveCustomFieldIcon(String? name) {
+AppIconData resolveCustomFieldIcon(String? name) {
   if (name == null || name.isEmpty) return kFallbackCustomFieldIcon;
   return kCustomFieldIcons[name] ?? kFallbackCustomFieldIcon;
 }

@@ -13,6 +13,7 @@ import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Merchant returns inbox. Tabs filter by status; each row is tappable
 /// → `MerchantReturnDetailPage`. The inbox doesn't paginate beyond the
@@ -50,6 +51,7 @@ class _MerchantReturnsPageState extends State<MerchantReturnsPage> {
         return l10n.returnsTabAll;
     }
   }
+
   List<MerchantReturn> _rows = const [];
   bool _loading = true;
   String? _error;
@@ -70,16 +72,16 @@ class _MerchantReturnsPageState extends State<MerchantReturnsPage> {
       final res = await ds.list(status: _tabs[_index].status);
       if (mounted) {
         setState(() {
-        _rows = res.data;
-        _loading = false;
-      });
+          _rows = res.data;
+          _loading = false;
+        });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-        _loading = false;
-        _error = friendlyError(e);
-      });
+          _loading = false;
+          _error = friendlyError(e);
+        });
       }
     }
   }
@@ -94,62 +96,68 @@ class _MerchantReturnsPageState extends State<MerchantReturnsPage> {
         context: context,
         removeTop: true,
         child: Column(
-        children: [
-          SizedBox(height: FloatingAppBar.contentTopInset(context)),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSizes.lg, AppSizes.md, AppSizes.lg, AppSizes.sm),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  for (int i = 0; i < _tabs.length; i++)
-                    Padding(
-                      padding: const EdgeInsets.only(right: AppSizes.sm),
-                      child: ChoiceChip(
-                        label: Text(_tabLabel(l10n, i)),
-                        selected: _index == i,
-                        onSelected: (_) {
-                          setState(() => _index = i);
-                          _load();
-                        },
+          children: [
+            SizedBox(height: FloatingAppBar.contentTopInset(context)),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSizes.lg,
+                AppSizes.md,
+                AppSizes.lg,
+                AppSizes.sm,
+              ),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    for (int i = 0; i < _tabs.length; i++)
+                      Padding(
+                        padding: const EdgeInsets.only(right: AppSizes.sm),
+                        child: ChoiceChip(
+                          label: Text(_tabLabel(l10n, i)),
+                          selected: _index == i,
+                          onSelected: (_) {
+                            setState(() => _index = i);
+                            _load();
+                          },
+                        ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-          Expanded(
-            child: _loading
-                ? const _ReturnsSkeleton()
-                : _error != null
-                    ? _ErrorBlock(message: _error!, onRetry: _load)
-                    : _rows.isEmpty
-                        ? const _EmptyBlock()
-                        : RefreshIndicator(
-                            onRefresh: _load,
-                            child: ListView.builder(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppSizes.lg, vertical: AppSizes.sm),
-                              itemCount: _rows.length,
-                              itemBuilder: (_, i) => _ReturnRow(
-                                row: _rows[i],
-                                onTap: () async {
-                                  await Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) => MerchantReturnDetailPage(
-                                        returnId: _rows[i].id,
-                                      ),
-                                    ),
-                                  );
-                                  if (mounted) _load();
-                                },
+            Expanded(
+              child: _loading
+                  ? const _ReturnsSkeleton()
+                  : _error != null
+                  ? _ErrorBlock(message: _error!, onRetry: _load)
+                  : _rows.isEmpty
+                  ? const _EmptyBlock()
+                  : RefreshIndicator(
+                      onRefresh: _load,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSizes.lg,
+                          vertical: AppSizes.sm,
+                        ),
+                        itemCount: _rows.length,
+                        itemBuilder: (_, i) => _ReturnRow(
+                          row: _rows[i],
+                          onTap: () async {
+                            await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => MerchantReturnDetailPage(
+                                  returnId: _rows[i].id,
+                                ),
                               ),
-                            ),
-                          ),
-          ),
-        ],
-      ),
+                            );
+                            if (mounted) _load();
+                          },
+                        ),
+                      ),
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -160,8 +168,11 @@ class _ReturnRow extends StatelessWidget {
   final MerchantReturn row;
   final VoidCallback onTap;
 
-  static final _currency =
-      NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2);
+  static final _currency = NumberFormat.currency(
+    locale: 'en_IN',
+    symbol: '₹',
+    decimalDigits: 2,
+  );
   static final _date = DateFormat('d MMM · h:mm a');
 
   @override
@@ -173,8 +184,10 @@ class _ReturnRow extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: AppSizes.sm),
       child: Material(
         color: AppColors.surface,
-        shape: AppShapes.squircle(AppSizes.radiusLg,
-            side: BorderSide(color: AppColors.hairline)),
+        shape: AppShapes.squircle(
+          AppSizes.radiusLg,
+          side: BorderSide(color: AppColors.hairline),
+        ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           customBorder: AppShapes.squircle(AppSizes.radiusMd),
@@ -278,8 +291,10 @@ class _SkeletonRow extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: AppSizes.sm),
       child: Material(
         color: AppColors.surface,
-        shape: AppShapes.squircle(AppSizes.radiusLg,
-            side: BorderSide(color: AppColors.hairline)),
+        shape: AppShapes.squircle(
+          AppSizes.radiusLg,
+          side: BorderSide(color: AppColors.hairline),
+        ),
         clipBehavior: Clip.antiAlias,
         child: Padding(
           padding: const EdgeInsets.all(AppSizes.md),
@@ -321,7 +336,9 @@ class _ReturnsSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.lg, vertical: AppSizes.sm),
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.sm,
+      ),
       itemCount: 5,
       itemBuilder: (_, _) => const _SkeletonRow(),
     );
@@ -338,15 +355,17 @@ class _EmptyBlock extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(AppIcons.assignmentReturnOutlined,
-                size: AppSizes.iconHuge, color: AppColors.subtle),
+            AppIcon(
+              AppIcons.assignmentReturnOutlined,
+              size: AppSizes.iconHuge,
+              color: AppColors.subtle,
+            ),
             const SizedBox(height: AppSizes.md),
             Text(
               AppLocalizations.of(context).returnsEmpty,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: AppColors.muted),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
             ),
           ],
         ),
@@ -370,8 +389,9 @@ class _ErrorBlock extends StatelessWidget {
             Text(message, textAlign: TextAlign.center),
             const SizedBox(height: AppSizes.md),
             FilledButton(
-                onPressed: onRetry,
-                child: Text(AppLocalizations.of(context).returnsRetry)),
+              onPressed: onRetry,
+              child: Text(AppLocalizations.of(context).returnsRetry),
+            ),
           ],
         ),
       ),

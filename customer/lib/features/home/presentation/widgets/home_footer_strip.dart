@@ -3,6 +3,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 class HomeFooterStrip extends StatelessWidget {
   const HomeFooterStrip({super.key});
@@ -76,7 +77,7 @@ class _FooterCell extends StatelessWidget {
     required this.title,
     required this.subtitle,
   });
-  final IconData icon;
+  final AppIconData icon;
   final String title;
   final String subtitle;
 
@@ -86,7 +87,7 @@ class _FooterCell extends StatelessWidget {
       padding: const EdgeInsets.all(AppSizes.xs),
       child: Column(
         children: [
-          Icon(icon, color: AppColors.brand, size: 24),
+          AppIcon(icon, color: AppColors.brand, size: 24),
           const SizedBox(height: 4),
           Text(
             title,
@@ -101,10 +102,7 @@ class _FooterCell extends StatelessWidget {
           Text(
             subtitle,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: AppColors.muted,
-              fontSize: 10,
-            ),
+            style: const TextStyle(color: AppColors.muted, fontSize: 10),
           ),
         ],
       ),

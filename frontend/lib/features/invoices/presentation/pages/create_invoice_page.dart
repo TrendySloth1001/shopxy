@@ -29,6 +29,7 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Height of the sticky Save-as-draft / Save-&-confirm action buttons. Taller
 /// than a stock button so the two labels stay on one line and the bar reads as
@@ -213,6 +214,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     if (raw <= 0 || _subtotal <= 0) return 0;
     return raw > _subtotal ? _subtotal : raw;
   }
+
   // GST is charged on each line's taxable AFTER its proportional share of
   // the invoice-level discount (CGST Sec 15(3)). The backend apportions the
   // header discount into the lines before computing tax, so the preview
@@ -236,10 +238,12 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     }
     return tax;
   }
+
   // Net taxable after every discount. For inclusive pricing the tax already
   // sits inside the line amount, so taxable = net amount − tax.
-  double get _taxableValue =>
-      _isPriceInclusive ? _subtotal - _headerDiscount - _totalTax : _subtotal - _headerDiscount;
+  double get _taxableValue => _isPriceInclusive
+      ? _subtotal - _headerDiscount - _totalTax
+      : _subtotal - _headerDiscount;
   // Exclusive: total = net taxable + tax. Inclusive: the net amount already
   // includes tax, so total = (subtotal − header discount) directly; written as
   // taxable + tax it reduces to the same number.
@@ -379,9 +383,9 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     final l10n = AppLocalizations.of(context);
     if (!_formKey.currentState!.validate()) return;
     if (_items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.invoicesNeedsItems)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.invoicesNeedsItems)));
       return;
     }
     setState(() => _isSaving = true);
@@ -433,9 +437,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
             );
           } catch (e) {
             if (!mounted) return;
-            messenger.showSnackBar(
-              SnackBar(content: Text(friendlyError(e))),
-            );
+            messenger.showSnackBar(SnackBar(content: Text(friendlyError(e))));
           }
         } else if (mounted) {
           messenger.showSnackBar(
@@ -473,7 +475,9 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
       if (result.confirmed) {
         messenger.showSnackBar(
           SnackBar(
-            content: Text(l10n.invoicesConfirmedNamed(result.invoice.invoiceNo)),
+            content: Text(
+              l10n.invoicesConfirmedNamed(result.invoice.invoiceNo),
+            ),
           ),
         );
         navigator.pop(true);
@@ -484,8 +488,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
       messenger.showSnackBar(
         SnackBar(
           content: Text(
-            result.confirmError ??
-                l10n.invoicesSavedDraftConfirmFailed,
+            result.confirmError ?? l10n.invoicesSavedDraftConfirmFailed,
           ),
         ),
       );
@@ -538,461 +541,490 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
         if (discard && context.mounted) Navigator.pop(context);
       },
       child: Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: FloatingAppBar(
-        title: _isEditing ? l10n.invoicesEditDraftTitle : l10n.invoicesCreateTitle,
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Container(
-          padding: const EdgeInsets.all(AppSizes.lg),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            border: Border(top: BorderSide(color: AppColors.hairline)),
-          ),
-          child: Row(
-            children: [
-              // Draft = secondary. No icon so the label always sits on one
-              // line; the taller height keeps a comfortable tap target.
-              Expanded(
-                flex: 2,
-                child: OutlinedButton(
-                  onPressed: _isSaving ? null : () => _save(confirm: false),
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(_actionBarButtonHeight),
-                    side: BorderSide(color: AppColors.hairline),
-                    textStyle: const TextStyle(
-                      fontWeight: FontWeight.w600,
+        extendBodyBehindAppBar: true,
+        appBar: FloatingAppBar(
+          title: _isEditing
+              ? l10n.invoicesEditDraftTitle
+              : l10n.invoicesCreateTitle,
+        ),
+        bottomNavigationBar: SafeArea(
+          child: Container(
+            padding: const EdgeInsets.all(AppSizes.lg),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              border: Border(top: BorderSide(color: AppColors.hairline)),
+            ),
+            child: Row(
+              children: [
+                // Draft = secondary. No icon so the label always sits on one
+                // line; the taller height keeps a comfortable tap target.
+                Expanded(
+                  flex: 2,
+                  child: OutlinedButton(
+                    onPressed: _isSaving ? null : () => _save(confirm: false),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(
+                        _actionBarButtonHeight,
+                      ),
+                      side: BorderSide(color: AppColors.hairline),
+                      textStyle: const TextStyle(fontWeight: FontWeight.w600),
                     ),
-                  ),
-                  child: Text(
-                    _isEditing
-                        ? l10n.invoicesUpdateDraft
-                        : l10n.invoicesSaveAsDraft,
-                    maxLines: 1,
-                    softWrap: false,
-                    overflow: TextOverflow.fade,
-                  ),
-                ),
-              ),
-              const SizedBox(width: AppSizes.md),
-              Expanded(
-                flex: 3,
-                child: FilledButton.icon(
-                  onPressed: _isSaving ? null : () => _save(confirm: true),
-                  icon: _isSaving
-                      ? SizedBox(
-                          width: AppSizes.iconSm,
-                          height: AppSizes.iconSm,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppColors.onInverse,
-                          ),
-                        )
-                      : const Icon(AppIcons.checkRounded),
-                  label: Text(
-                    _isEditing ? l10n.invoicesUpdateAndConfirm : l10n.invoicesSaveAndConfirm,
-                    maxLines: 1,
-                    softWrap: false,
-                    overflow: TextOverflow.fade,
-                  ),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.brand,
-                    minimumSize: const Size.fromHeight(_actionBarButtonHeight),
-                    textStyle: const TextStyle(
-                      fontWeight: FontWeight.w600,
+                    child: Text(
+                      _isEditing
+                          ? l10n.invoicesUpdateDraft
+                          : l10n.invoicesSaveAsDraft,
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.fade,
                     ),
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(width: AppSizes.md),
+                Expanded(
+                  flex: 3,
+                  child: FilledButton.icon(
+                    onPressed: _isSaving ? null : () => _save(confirm: true),
+                    icon: _isSaving
+                        ? SizedBox(
+                            width: AppSizes.iconSm,
+                            height: AppSizes.iconSm,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.onInverse,
+                            ),
+                          )
+                        : const AppIcon(AppIcons.checkRounded),
+                    label: Text(
+                      _isEditing
+                          ? l10n.invoicesUpdateAndConfirm
+                          : l10n.invoicesSaveAndConfirm,
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.fade,
+                    ),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.brand,
+                      minimumSize: const Size.fromHeight(
+                        _actionBarButtonHeight,
+                      ),
+                      textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-      // Freeze inputs while saving — edits made mid-flight would be
-      // silently dropped from the payload that's already on the wire.
-      body: AbsorbPointer(
-        absorbing: _isSaving,
-        child: Form(
-          key: _formKey,
-          // Single scroll surface: the hero illustration scrolls away with the
-          // form (it used to be pinned above a nested ListView). Content passes
-          // behind the frosted app bar via extendBodyBehindAppBar.
-          child: ListView(
-            padding: EdgeInsets.zero,
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            children: [
-              SizedBox(height: FloatingAppBar.contentTopInset(context)),
-              GlassHero.line(
-                kind: LineArt.receipt,
-                height: AppSizes.heroHeightSm,
-                illustrationSize: AppSizes.productImageSize,
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSizes.lg,
-                  AppSizes.lg,
-                  AppSizes.lg,
-                  AppSizes.md,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-            AppSectionHeader(
-              title: l10n.invoicesInvoiceType.toUpperCase(),
-              padding: const EdgeInsets.only(bottom: AppSizes.sm),
-            ),
-            SegmentedButton<String>(
-              segments: [
-                ButtonSegment(
-                  value: 'SALE',
-                  label: Text(l10n.invoicesSaleInvoice),
-                  icon: const Icon(AppIcons.arrowUpwardRounded),
-                ),
-                ButtonSegment(
-                  value: 'PURCHASE',
-                  label: Text(l10n.invoicesPurchaseInvoice),
-                  icon: const Icon(AppIcons.arrowDownwardRounded),
-                ),
-              ],
-              selected: {_type},
-              // Type is immutable once an invoice exists — switching it
-              // would change the number prefix (INV ↔ PUR) and stock
-              // direction, so backend rejects it. Lock the toggle in
-              // edit mode rather than silently failing on save.
-              onSelectionChanged: _isEditing
-                  ? null
-                  : (v) => setState(() {
-                        _type = v.first;
-                        _selectedVendor = null;
-                        _selectedParty = null;
-                      }),
-            ),
-            const SizedBox(height: AppSizes.xxl),
-
-            AppSectionHeader(
-              title: (_type == 'SALE'
-                      ? l10n.invoicesCustomerInfo
-                      : l10n.invoicesVendorInfo)
-                  .toUpperCase(),
-              padding: const EdgeInsets.only(bottom: AppSizes.sm),
-            ),
-            if (_type == 'PURCHASE') ...[
-              if (_selectedVendor != null)
-                _SelectedVendorCard(
-                  vendor: _selectedVendor!,
-                  onChange: _pickVendor,
-                  onClear: _clearVendor,
-                )
-              else
-                AppButton.secondary(
-                  label: l10n.invoicesSelectVendor,
-                  icon: AppIcons.localShippingOutlined,
-                  onPressed: _pickVendor,
-                  fullWidth: true,
-                ),
-            ] else ...[
-              if (_selectedParty != null)
-                _SelectedPartyCard(
-                  party: _selectedParty!,
-                  onChange: _pickParty,
-                  onClear: _clearParty,
-                )
-              else ...[
-                AppButton.secondary(
-                  label: l10n.invoicesSelectParty,
-                  icon: AppIcons.personSearchRounded,
-                  onPressed: _pickParty,
-                  fullWidth: true,
-                ),
-                const SizedBox(height: AppSizes.md),
-                TextFormField(
-                  controller: _customerName,
-                  decoration: InputDecoration(
-                    labelText: l10n.invoicesCustomerName,
-                  ),
-                  textCapitalization: TextCapitalization.words,
-                ),
-                const SizedBox(height: AppSizes.md),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _customerPhone,
-                        decoration: InputDecoration(
-                          labelText: l10n.invoicesPhone,
-                        ),
-                        keyboardType: TextInputType.phone,
-                      ),
-                    ),
-                    const SizedBox(width: AppSizes.md),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _customerGstin,
-                        decoration: InputDecoration(
-                          labelText: l10n.invoicesGstin,
-                        ),
-                        textCapitalization: TextCapitalization.characters,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSizes.md),
-                // Walk-in place-of-supply picker. Drives the GST split
-                // when no party is attached to the invoice.
-                DropdownButtonFormField<String>(
-                  initialValue: _walkInStateCode,
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    labelText: l10n.invoicesPlaceOfSupply,
-                    helperText: l10n.invoicesPlaceOfSupplyHelper,
-                  ),
-                  items: [
-                    DropdownMenuItem<String>(
-                      value: null,
-                      child: Text(l10n.invoicesSelectDash),
-                    ),
-                    for (final s in IndianStates.all)
-                      DropdownMenuItem<String>(
-                        value: s.code,
-                        child: Text('${s.code} — ${s.name}'),
-                      ),
-                  ],
-                  onChanged: (v) => setState(() => _walkInStateCode = v),
-                ),
-              ],
-            ],
-
-            const SizedBox(height: AppSizes.xxl),
-
-            AppSectionHeader(
-              title: l10n.invoicesInvoiceItems.toUpperCase(),
-              padding: const EdgeInsets.only(bottom: AppSizes.sm),
-            ),
-
-            // Product search + scan
-            Row(
+        // Freeze inputs while saving — edits made mid-flight would be
+        // silently dropped from the payload that's already on the wire.
+        body: AbsorbPointer(
+          absorbing: _isSaving,
+          child: Form(
+            key: _formKey,
+            // Single scroll surface: the hero illustration scrolls away with the
+            // form (it used to be pinned above a nested ListView). Content passes
+            // behind the frosted app bar via extendBodyBehindAppBar.
+            child: ListView(
+              padding: EdgeInsets.zero,
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _productSearch,
-                    decoration: InputDecoration(
-                      labelText: l10n.invoicesSearchToAddProduct,
-                      prefixIcon: _isSearchingProducts
-                          ? const Padding(
-                              padding: EdgeInsets.all(AppSizes.md),
-                              child: SizedBox(
-                                width: AppSizes.iconSm,
-                                height: AppSizes.iconSm,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              ),
-                            )
-                          : const Icon(AppIcons.searchRounded),
-                    ),
-                    onChanged: _onProductSearchChanged,
+                SizedBox(height: FloatingAppBar.contentTopInset(context)),
+                GlassHero.line(
+                  kind: LineArt.receipt,
+                  height: AppSizes.heroHeightSm,
+                  illustrationSize: AppSizes.productImageSize,
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSizes.lg,
+                    AppSizes.lg,
+                    AppSizes.lg,
+                    AppSizes.md,
                   ),
-                ),
-                const SizedBox(width: AppSizes.sm),
-                IconButton.filledTonal(
-                  tooltip: l10n.invoicesScanBarcode,
-                  onPressed: _scanProduct,
-                  icon: const Icon(AppIcons.qrCodeScannerRounded),
-                ),
-              ],
-            ),
-
-            if (_productResults.isNotEmpty) ...[
-              const SizedBox(height: AppSizes.sm),
-              AppCard(
-                padding: EdgeInsets.zero,
-                child: Column(
-                  children: [
-                    for (int i = 0; i < _productResults.length; i++) ...[
-                      if (i > 0) const AppDivider.flush(),
-                      ListTile(
-                        dense: true,
-                        title: Text(_productResults[i].name),
-                        subtitle: Text(_productResults[i].sku),
-                        trailing: Text(
-                          '${AppStrings.currencySymbol}${(_type == 'SALE' ? _productResults[i].sellingPrice : _productResults[i].purchasePrice).toStringAsFixed(2)}',
-                          style: theme.textTheme.bodySmall,
-                        ),
-                        onTap: () => _addItem(_productResults[i]),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      AppSectionHeader(
+                        title: l10n.invoicesInvoiceType.toUpperCase(),
+                        padding: const EdgeInsets.only(bottom: AppSizes.sm),
                       ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-
-            const SizedBox(height: AppSizes.md),
-
-            if (_items.isEmpty)
-              AppCard(
-                padding: const EdgeInsets.all(AppSizes.lg),
-                child: Center(
-                  child: Text(
-                    l10n.invoicesNoItemsYet,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: AppColors.muted,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              )
-            else
-              ...List.generate(
-                _items.length,
-                (i) => _ItemRow(
-                  item: _items[i],
-                  onRemove: () {
-                    _markDirty();
-                    setState(() => _items.removeAt(i));
-                  },
-                  onChanged: () {
-                    _markDirty();
-                    setState(() {});
-                  },
-                ),
-              ),
-
-            const SizedBox(height: AppSizes.xxl),
-
-            if (_items.isNotEmpty) ...[
-              AppSectionHeader(
-                title: l10n.invoicesTotals.toUpperCase(),
-                padding: const EdgeInsets.only(bottom: AppSizes.sm),
-              ),
-              if (_type == 'SALE') ...[
-                // Document-type toggle. Tax Invoice is the default; Bill of
-                // Supply is for composition / nil-rated dealers; Estimate and
-                // Proforma are pre-supply offers (both take the EST- series and
-                // convert into a real tax invoice via the detail page). Credit
-                // and debit notes are NOT here — they are Sec 34 adjustments
-                // raised against an existing invoice from its detail screen.
-                Wrap(
-                  spacing: AppSizes.sm,
-                  runSpacing: AppSizes.sm,
-                  children: [
-                    for (final (value, label) in <(String, String)>[
-                      ('TAX_INVOICE', l10n.invoicesDocTaxInvoice),
-                      ('BILL_OF_SUPPLY', l10n.invoicesDocBillOfSupply),
-                      ('ESTIMATE', l10n.invoicesDocEstimate),
-                      ('PROFORMA', l10n.invoicesDocProforma),
-                    ])
-                      AppFilterPill(
-                        label: label,
-                        selected: _documentType == value,
-                        onTap: () =>
-                            setState(() => _documentType = value),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: AppSizes.md),
-              ],
-              // Money summary grouped on its own surface so the running total
-              // reads as a distinct panel, not more canvas rows. The tax-
-              // convention toggle lives here too — it directly drives the
-              // numbers below it.
-              AppCard(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSizes.lg,
-                  vertical: AppSizes.sm,
-                ),
-                child: Column(
-                  children: [
-                    // GST-5 — tax convention toggle. OFF (default) = unit
-                    // prices are pre-tax and GST is added on top. ON = entered
-                    // prices already include GST and the engine backs it out.
-                    SwitchListTile.adaptive(
-                      contentPadding: EdgeInsets.zero,
-                      dense: true,
-                      value: _isPriceInclusive,
-                      onChanged: (v) =>
-                          setState(() => _isPriceInclusive = v),
-                      title: Text(
-                        l10n.invoicesPricesIncludeGst,
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                      subtitle: Text(
-                        _isPriceInclusive
-                            ? l10n.invoicesPricesInclusiveHint
-                            : l10n.invoicesPricesExclusiveHint,
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: AppColors.muted),
-                      ),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.only(bottom: AppSizes.sm),
-                      child: AppDivider.flush(),
-                    ),
-                    _TotalRow(label: l10n.invoicesSubtotal, value: _subtotal),
-                    // GST split: same formula as the backend — line.taxableValue
-                    // = qty*price − discount, line tax = taxableValue*rate/100.
-                    // Sum across lines: one IGST row (interstate) or a 50/50
-                    // CGST/SGST split (intrastate).
-                    if (_isInterstate)
-                      _TotalRow(label: 'IGST', value: _totalTax)
-                    else ...[
-                      _TotalRow(label: 'CGST', value: _totalTax / 2),
-                      _TotalRow(label: 'SGST', value: _totalTax / 2),
-                    ],
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            l10n.invoicesDiscount,
-                            style: theme.textTheme.bodyMedium,
+                      SegmentedButton<String>(
+                        segments: [
+                          ButtonSegment(
+                            value: 'SALE',
+                            label: Text(l10n.invoicesSaleInvoice),
+                            icon: const AppIcon(AppIcons.arrowUpwardRounded),
                           ),
-                        ),
-                        SizedBox(
-                          width: 120,
-                          child: TextFormField(
-                            controller: _discount,
-                            textAlign: TextAlign.end,
+                          ButtonSegment(
+                            value: 'PURCHASE',
+                            label: Text(l10n.invoicesPurchaseInvoice),
+                            icon: const AppIcon(AppIcons.arrowDownwardRounded),
+                          ),
+                        ],
+                        selected: {_type},
+                        // Type is immutable once an invoice exists — switching it
+                        // would change the number prefix (INV ↔ PUR) and stock
+                        // direction, so backend rejects it. Lock the toggle in
+                        // edit mode rather than silently failing on save.
+                        onSelectionChanged: _isEditing
+                            ? null
+                            : (v) => setState(() {
+                                _type = v.first;
+                                _selectedVendor = null;
+                                _selectedParty = null;
+                              }),
+                      ),
+                      const SizedBox(height: AppSizes.xxl),
+
+                      AppSectionHeader(
+                        title:
+                            (_type == 'SALE'
+                                    ? l10n.invoicesCustomerInfo
+                                    : l10n.invoicesVendorInfo)
+                                .toUpperCase(),
+                        padding: const EdgeInsets.only(bottom: AppSizes.sm),
+                      ),
+                      if (_type == 'PURCHASE') ...[
+                        if (_selectedVendor != null)
+                          _SelectedVendorCard(
+                            vendor: _selectedVendor!,
+                            onChange: _pickVendor,
+                            onClear: _clearVendor,
+                          )
+                        else
+                          AppButton.secondary(
+                            label: l10n.invoicesSelectVendor,
+                            icon: AppIcons.localShippingOutlined,
+                            onPressed: _pickVendor,
+                            fullWidth: true,
+                          ),
+                      ] else ...[
+                        if (_selectedParty != null)
+                          _SelectedPartyCard(
+                            party: _selectedParty!,
+                            onChange: _pickParty,
+                            onClear: _clearParty,
+                          )
+                        else ...[
+                          AppButton.secondary(
+                            label: l10n.invoicesSelectParty,
+                            icon: AppIcons.personSearchRounded,
+                            onPressed: _pickParty,
+                            fullWidth: true,
+                          ),
+                          const SizedBox(height: AppSizes.md),
+                          TextFormField(
+                            controller: _customerName,
                             decoration: InputDecoration(
-                              prefixText: '${AppStrings.currencySymbol} ',
-                              isDense: true,
-                              hintText: '0',
+                              labelText: l10n.invoicesCustomerName,
                             ),
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
+                            textCapitalization: TextCapitalization.words,
+                          ),
+                          const SizedBox(height: AppSizes.md),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _customerPhone,
+                                  decoration: InputDecoration(
+                                    labelText: l10n.invoicesPhone,
+                                  ),
+                                  keyboardType: TextInputType.phone,
+                                ),
+                              ),
+                              const SizedBox(width: AppSizes.md),
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _customerGstin,
+                                  decoration: InputDecoration(
+                                    labelText: l10n.invoicesGstin,
+                                  ),
+                                  textCapitalization:
+                                      TextCapitalization.characters,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: AppSizes.md),
+                          // Walk-in place-of-supply picker. Drives the GST split
+                          // when no party is attached to the invoice.
+                          DropdownButtonFormField<String>(
+                            initialValue: _walkInStateCode,
+                            isExpanded: true,
+                            decoration: InputDecoration(
+                              labelText: l10n.invoicesPlaceOfSupply,
+                              helperText: l10n.invoicesPlaceOfSupplyHelper,
                             ),
-                            onChanged: (_) => setState(() {}),
+                            items: [
+                              DropdownMenuItem<String>(
+                                value: null,
+                                child: Text(l10n.invoicesSelectDash),
+                              ),
+                              for (final s in IndianStates.all)
+                                DropdownMenuItem<String>(
+                                  value: s.code,
+                                  child: Text('${s.code} — ${s.name}'),
+                                ),
+                            ],
+                            onChanged: (v) =>
+                                setState(() => _walkInStateCode = v),
+                          ),
+                        ],
+                      ],
+
+                      const SizedBox(height: AppSizes.xxl),
+
+                      AppSectionHeader(
+                        title: l10n.invoicesInvoiceItems.toUpperCase(),
+                        padding: const EdgeInsets.only(bottom: AppSizes.sm),
+                      ),
+
+                      // Product search + scan
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _productSearch,
+                              decoration: InputDecoration(
+                                labelText: l10n.invoicesSearchToAddProduct,
+                                prefixIcon: _isSearchingProducts
+                                    ? const Padding(
+                                        padding: EdgeInsets.all(AppSizes.md),
+                                        child: SizedBox(
+                                          width: AppSizes.iconSm,
+                                          height: AppSizes.iconSm,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        ),
+                                      )
+                                    : const AppIcon(AppIcons.searchRounded),
+                              ),
+                              onChanged: _onProductSearchChanged,
+                            ),
+                          ),
+                          const SizedBox(width: AppSizes.sm),
+                          IconButton.filledTonal(
+                            tooltip: l10n.invoicesScanBarcode,
+                            onPressed: _scanProduct,
+                            icon: const AppIcon(AppIcons.qrCodeScannerRounded),
+                          ),
+                        ],
+                      ),
+
+                      if (_productResults.isNotEmpty) ...[
+                        const SizedBox(height: AppSizes.sm),
+                        AppCard(
+                          padding: EdgeInsets.zero,
+                          child: Column(
+                            children: [
+                              for (
+                                int i = 0;
+                                i < _productResults.length;
+                                i++
+                              ) ...[
+                                if (i > 0) const AppDivider.flush(),
+                                ListTile(
+                                  dense: true,
+                                  title: Text(_productResults[i].name),
+                                  subtitle: Text(_productResults[i].sku),
+                                  trailing: Text(
+                                    '${AppStrings.currencySymbol}${(_type == 'SALE' ? _productResults[i].sellingPrice : _productResults[i].purchasePrice).toStringAsFixed(2)}',
+                                    style: theme.textTheme.bodySmall,
+                                  ),
+                                  onTap: () => _addItem(_productResults[i]),
+                                ),
+                              ],
+                            ],
                           ),
                         ),
                       ],
-                    ),
-                    if (_roundOff != 0)
-                      _TotalRow(label: l10n.invoicesRoundOff, value: _roundOff),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: AppSizes.sm),
-                      child: AppDivider.flush(),
-                    ),
-                    _TotalRow(
-                      label: l10n.invoicesGrandTotal,
-                      value: _total,
-                      isHighlight: true,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSizes.xxl),
-            ],
 
-            // Note
-            TextFormField(
-              controller: _note,
-              decoration: InputDecoration(labelText: l10n.invoicesNote),
-              maxLines: 2,
-              textCapitalization: TextCapitalization.sentences,
-            ),
-                  ],
+                      const SizedBox(height: AppSizes.md),
+
+                      if (_items.isEmpty)
+                        AppCard(
+                          padding: const EdgeInsets.all(AppSizes.lg),
+                          child: Center(
+                            child: Text(
+                              l10n.invoicesNoItemsYet,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: AppColors.muted,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        )
+                      else
+                        ...List.generate(
+                          _items.length,
+                          (i) => _ItemRow(
+                            item: _items[i],
+                            onRemove: () {
+                              _markDirty();
+                              setState(() => _items.removeAt(i));
+                            },
+                            onChanged: () {
+                              _markDirty();
+                              setState(() {});
+                            },
+                          ),
+                        ),
+
+                      const SizedBox(height: AppSizes.xxl),
+
+                      if (_items.isNotEmpty) ...[
+                        AppSectionHeader(
+                          title: l10n.invoicesTotals.toUpperCase(),
+                          padding: const EdgeInsets.only(bottom: AppSizes.sm),
+                        ),
+                        if (_type == 'SALE') ...[
+                          // Document-type toggle. Tax Invoice is the default; Bill of
+                          // Supply is for composition / nil-rated dealers; Estimate and
+                          // Proforma are pre-supply offers (both take the EST- series and
+                          // convert into a real tax invoice via the detail page). Credit
+                          // and debit notes are NOT here — they are Sec 34 adjustments
+                          // raised against an existing invoice from its detail screen.
+                          Wrap(
+                            spacing: AppSizes.sm,
+                            runSpacing: AppSizes.sm,
+                            children: [
+                              for (final (value, label) in <(String, String)>[
+                                ('TAX_INVOICE', l10n.invoicesDocTaxInvoice),
+                                (
+                                  'BILL_OF_SUPPLY',
+                                  l10n.invoicesDocBillOfSupply,
+                                ),
+                                ('ESTIMATE', l10n.invoicesDocEstimate),
+                                ('PROFORMA', l10n.invoicesDocProforma),
+                              ])
+                                AppFilterPill(
+                                  label: label,
+                                  selected: _documentType == value,
+                                  onTap: () =>
+                                      setState(() => _documentType = value),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: AppSizes.md),
+                        ],
+                        // Money summary grouped on its own surface so the running total
+                        // reads as a distinct panel, not more canvas rows. The tax-
+                        // convention toggle lives here too — it directly drives the
+                        // numbers below it.
+                        AppCard(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSizes.lg,
+                            vertical: AppSizes.sm,
+                          ),
+                          child: Column(
+                            children: [
+                              // GST-5 — tax convention toggle. OFF (default) = unit
+                              // prices are pre-tax and GST is added on top. ON = entered
+                              // prices already include GST and the engine backs it out.
+                              SwitchListTile.adaptive(
+                                contentPadding: EdgeInsets.zero,
+                                dense: true,
+                                value: _isPriceInclusive,
+                                onChanged: (v) =>
+                                    setState(() => _isPriceInclusive = v),
+                                title: Text(
+                                  l10n.invoicesPricesIncludeGst,
+                                  style: theme.textTheme.bodyMedium,
+                                ),
+                                subtitle: Text(
+                                  _isPriceInclusive
+                                      ? l10n.invoicesPricesInclusiveHint
+                                      : l10n.invoicesPricesExclusiveHint,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: AppColors.muted,
+                                  ),
+                                ),
+                              ),
+                              const Padding(
+                                padding: EdgeInsets.only(bottom: AppSizes.sm),
+                                child: AppDivider.flush(),
+                              ),
+                              _TotalRow(
+                                label: l10n.invoicesSubtotal,
+                                value: _subtotal,
+                              ),
+                              // GST split: same formula as the backend — line.taxableValue
+                              // = qty*price − discount, line tax = taxableValue*rate/100.
+                              // Sum across lines: one IGST row (interstate) or a 50/50
+                              // CGST/SGST split (intrastate).
+                              if (_isInterstate)
+                                _TotalRow(label: 'IGST', value: _totalTax)
+                              else ...[
+                                _TotalRow(label: 'CGST', value: _totalTax / 2),
+                                _TotalRow(label: 'SGST', value: _totalTax / 2),
+                              ],
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      l10n.invoicesDiscount,
+                                      style: theme.textTheme.bodyMedium,
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: 120,
+                                    child: TextFormField(
+                                      controller: _discount,
+                                      textAlign: TextAlign.end,
+                                      decoration: InputDecoration(
+                                        prefixText:
+                                            '${AppStrings.currencySymbol} ',
+                                        isDense: true,
+                                        hintText: '0',
+                                      ),
+                                      keyboardType:
+                                          const TextInputType.numberWithOptions(
+                                            decimal: true,
+                                          ),
+                                      onChanged: (_) => setState(() {}),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (_roundOff != 0)
+                                _TotalRow(
+                                  label: l10n.invoicesRoundOff,
+                                  value: _roundOff,
+                                ),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(
+                                  vertical: AppSizes.sm,
+                                ),
+                                child: AppDivider.flush(),
+                              ),
+                              _TotalRow(
+                                label: l10n.invoicesGrandTotal,
+                                value: _total,
+                                isHighlight: true,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: AppSizes.xxl),
+                      ],
+
+                      // Note
+                      TextFormField(
+                        controller: _note,
+                        decoration: InputDecoration(
+                          labelText: l10n.invoicesNote,
+                        ),
+                        maxLines: 2,
+                        textCapitalization: TextCapitalization.sentences,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -1043,7 +1075,7 @@ class _SelectedVendorCard extends StatelessWidget {
           ),
           TextButton(onPressed: onChange, child: Text(l10n.invoicesChange)),
           IconButton(
-            icon: const Icon(AppIcons.closeRounded),
+            icon: const AppIcon(AppIcons.closeRounded),
             onPressed: onClear,
             visualDensity: VisualDensity.compact,
           ),
@@ -1091,7 +1123,7 @@ class _ItemRow extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(
+                  icon: AppIcon(
                     AppIcons.closeRounded,
                     color: AppColors.error,
                     size: AppSizes.iconMd,
@@ -1217,7 +1249,6 @@ class _TotalRow extends StatelessWidget {
   }
 }
 
-
 class _SelectedPartyCard extends StatelessWidget {
   const _SelectedPartyCard({
     required this.party,
@@ -1263,7 +1294,7 @@ class _SelectedPartyCard extends StatelessWidget {
           ),
           TextButton(onPressed: onChange, child: Text(l10n.invoicesChange)),
           IconButton(
-            icon: const Icon(AppIcons.closeRounded),
+            icon: const AppIcon(AppIcons.closeRounded),
             onPressed: onClear,
             visualDensity: VisualDensity.compact,
           ),

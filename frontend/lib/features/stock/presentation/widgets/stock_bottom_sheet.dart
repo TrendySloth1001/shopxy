@@ -18,6 +18,7 @@ import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 // Vendor model scoped to this widget (sourced from /stock/suppliers)
 typedef _SV = SupplierVendor;
@@ -240,11 +241,9 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
         note: _note.text.isNotEmpty ? _note.text : null,
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.stockSheetDraftCreated),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.stockSheetDraftCreated)));
         // Return the draft invoice id so the opener can offer an
         // inline "confirm this draft" affordance without leaving its
         // page. Callers that only need a saved/dismissed signal can
@@ -330,12 +329,12 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
                   ButtonSegment(
                     value: 'STOCK_IN',
                     label: Text(l10n.stockSheetPurchase),
-                    icon: const Icon(AppIcons.addRounded),
+                    icon: const AppIcon(AppIcons.addRounded),
                   ),
                   ButtonSegment(
                     value: 'STOCK_OUT',
                     label: Text(l10n.stockSheetSale),
-                    icon: const Icon(AppIcons.removeRounded),
+                    icon: const AppIcon(AppIcons.removeRounded),
                   ),
                 ],
                 selected: {_type},
@@ -435,10 +434,10 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
                   controller: _partyQuery,
                   decoration: InputDecoration(
                     hintText: l10n.stockSheetSearchParties,
-                    prefixIcon: const Icon(AppIcons.personSearchRounded),
+                    prefixIcon: const AppIcon(AppIcons.personSearchRounded),
                     suffixIcon: _selectedParty != null
                         ? IconButton(
-                            icon: const Icon(AppIcons.closeRounded),
+                            icon: const AppIcon(AppIcons.closeRounded),
                             onPressed: _clearParty,
                             tooltip: l10n.stockSheetClear,
                           )
@@ -462,7 +461,7 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
                     children: _partyResults.take(6).map((p) {
                       return ActionChip(
                         label: Text(p.name),
-                        avatar: Icon(
+                        avatar: AppIcon(
                           p.name == 'Walk-in Customer'
                               ? AppIcons.directionsWalkRounded
                               : AppIcons.personRounded,
@@ -501,7 +500,7 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
                         selected: isSelected,
                         onSelected: (_) =>
                             isSelected ? _clearVendor() : _selectVendor(v),
-                        avatar: Icon(
+                        avatar: AppIcon(
                           AppIcons.businessRounded,
                           size: AppSizes.iconSm,
                           color: isSelected
@@ -547,7 +546,7 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
                                 ? l10n.stockSheetSupplierHint
                                 : l10n.stockSheetSupplierAutocompleteHint,
                             suffixIcon: _freeTextOptions.isNotEmpty
-                                ? const Icon(AppIcons.historyRounded)
+                                ? const AppIcon(AppIcons.historyRounded)
                                 : null,
                           ),
                           textCapitalization: TextCapitalization.words,

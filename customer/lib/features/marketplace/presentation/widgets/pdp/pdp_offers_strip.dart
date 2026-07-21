@@ -4,6 +4,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Horizontal carousel mixing two sources of offer cards:
 ///
@@ -34,8 +35,9 @@ class PdpOffersStrip extends StatelessWidget {
     // Per-product BANK entries are dropped — bank surface is now
     // platform-scope. Legacy products may still have rows with
     // `kind == 'BANK'` until they're re-saved.
-    final productOffers =
-        offers.where((o) => o.kind != 'BANK').toList(growable: false);
+    final productOffers = offers
+        .where((o) => o.kind != 'BANK')
+        .toList(growable: false);
     if (productOffers.isEmpty && bankOffers.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -47,12 +49,14 @@ class PdpOffersStrip extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
-            child: Text('Offers',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 15,
-                      color: AppColors.black,
-                    )),
+            child: Text(
+              'Offers',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                fontSize: 15,
+                color: AppColors.black,
+              ),
+            ),
           ),
           const SizedBox(height: AppSizes.sm),
           SizedBox(
@@ -106,8 +110,11 @@ class _BankOfferCard extends StatelessWidget {
                     shape: AppShapes.squircle(AppSizes.radiusSm),
                   ),
                   alignment: Alignment.center,
-                  child: const Icon(AppIcons.accountBalanceOutlined,
-                      size: AppSizes.iconMd, color: AppColors.info),
+                  child: const AppIcon(
+                    AppIcons.accountBalanceOutlined,
+                    size: AppSizes.iconMd,
+                    color: AppColors.info,
+                  ),
                 ),
           const SizedBox(width: AppSizes.sm),
           Expanded(
@@ -117,11 +124,11 @@ class _BankOfferCard extends StatelessWidget {
                 Text(
                   bank?.shortName ?? 'BANK OFFER',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: bank?.color ?? AppColors.info,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.6,
-                      ),
+                    color: bank?.color ?? AppColors.info,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.6,
+                  ),
                 ),
                 const SizedBox(height: AppSizes.xs),
                 Text(
@@ -129,10 +136,10 @@ class _BankOfferCard extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.black,
-                        fontWeight: FontWeight.w700,
-                        height: 1.25,
-                      ),
+                    color: AppColors.black,
+                    fontWeight: FontWeight.w700,
+                    height: 1.25,
+                  ),
                 ),
                 if (offer.terms != null && offer.terms!.isNotEmpty)
                   Padding(
@@ -142,9 +149,9 @@ class _BankOfferCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: AppColors.muted,
-                            fontSize: 10,
-                          ),
+                        color: AppColors.muted,
+                        fontSize: 10,
+                      ),
                     ),
                   ),
               ],
@@ -160,7 +167,7 @@ class _OfferCard extends StatelessWidget {
   const _OfferCard({required this.offer});
   final ProductOffer offer;
 
-  ({Color bg, Color fg, IconData icon, String label}) _kindMeta() {
+  ({Color bg, Color fg, AppIconData icon, String label}) _kindMeta() {
     switch (offer.kind) {
       case 'EMI':
         return (
@@ -208,7 +215,7 @@ class _OfferCard extends StatelessWidget {
               shape: AppShapes.squircle(AppSizes.radiusSm),
             ),
             alignment: Alignment.center,
-            child: Icon(meta.icon, size: AppSizes.iconMd, color: meta.fg),
+            child: AppIcon(meta.icon, size: AppSizes.iconMd, color: meta.fg),
           ),
           const SizedBox(width: AppSizes.sm),
           Expanded(
@@ -218,11 +225,11 @@ class _OfferCard extends StatelessWidget {
                 Text(
                   meta.label,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: meta.fg,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.6,
-                      ),
+                    color: meta.fg,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.6,
+                  ),
                 ),
                 const SizedBox(height: AppSizes.xs),
                 Text(
@@ -230,10 +237,10 @@ class _OfferCard extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.black,
-                        fontWeight: FontWeight.w700,
-                        height: 1.25,
-                      ),
+                    color: AppColors.black,
+                    fontWeight: FontWeight.w700,
+                    height: 1.25,
+                  ),
                 ),
                 if (offer.detail != null)
                   Padding(
@@ -243,9 +250,9 @@ class _OfferCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: AppColors.muted,
-                            fontSize: 10,
-                          ),
+                        color: AppColors.muted,
+                        fontSize: 10,
+                      ),
                     ),
                   ),
               ],
@@ -306,11 +313,7 @@ const _yes = _Bank(
   monogram: 'Y',
   color: Color(0xFF00518F),
 );
-const _hsbc = _Bank(
-  shortName: 'HSBC',
-  monogram: 'H',
-  color: Color(0xFFD90A1A),
-);
+const _hsbc = _Bank(shortName: 'HSBC', monogram: 'H', color: Color(0xFFD90A1A));
 const _sc = _Bank(
   shortName: 'STANDARD CHARTERED',
   monogram: 'SC',
@@ -383,11 +386,11 @@ class _BankMonogram extends StatelessWidget {
       child: Text(
         bank.monogram,
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: AppColors.white,
-              fontWeight: FontWeight.w900,
-              fontSize: bank.monogram.length > 1 ? 13 : 16,
-              letterSpacing: 0.4,
-            ),
+          color: AppColors.white,
+          fontWeight: FontWeight.w900,
+          fontSize: bank.monogram.length > 1 ? 13 : 16,
+          letterSpacing: 0.4,
+        ),
       ),
     );
   }

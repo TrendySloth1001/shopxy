@@ -23,6 +23,7 @@ import 'package:shopxy/shared/widgets/app_dialog.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 enum SettingsSection { account, appearance, notifications, about }
 
@@ -30,7 +31,10 @@ enum SettingsSection { account, appearance, notifications, about }
 /// open the page focused on a particular cluster (used by the Profile
 /// page's "About" deep-link).
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({super.key, this.initialSection = SettingsSection.account});
+  const SettingsPage({
+    super.key,
+    this.initialSection = SettingsSection.account,
+  });
 
   final SettingsSection initialSection;
 
@@ -62,9 +66,7 @@ class _SettingsPageState extends State<SettingsPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            '${l10n.profileExportFailed} ${friendlyError(e)}',
-          ),
+          content: Text('${l10n.profileExportFailed} ${friendlyError(e)}'),
         ),
       );
     } finally {
@@ -79,9 +81,9 @@ class _SettingsPageState extends State<SettingsPage> {
     try {
       await context.read<AuthProvider>().deleteAccount(password);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.profileAccountDeleted)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.profileAccountDeleted)));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -112,11 +114,17 @@ class _SettingsPageState extends State<SettingsPage> {
     final l10n = AppLocalizations.of(context);
     setState(() => _savingEmailNotifications = true);
     try {
-      await context.read<AuthProvider>().updateProfile(emailNotifications: value);
+      await context.read<AuthProvider>().updateProfile(
+        emailNotifications: value,
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${l10n.profilePreferenceSaveFailed} ${friendlyError(e)}')),
+        SnackBar(
+          content: Text(
+            '${l10n.profilePreferenceSaveFailed} ${friendlyError(e)}',
+          ),
+        ),
       );
     } finally {
       if (mounted) setState(() => _savingEmailNotifications = false);
@@ -144,7 +152,7 @@ class _SettingsPageState extends State<SettingsPage> {
             icon: AppIcons.badgeOutlined,
             title: l10n.profileEditProfile,
             subtitle: user?.name ?? '—',
-            trailing: Icon(
+            trailing: AppIcon(
               AppIcons.chevronRightRounded,
               color: AppColors.subtle,
             ),
@@ -157,7 +165,7 @@ class _SettingsPageState extends State<SettingsPage> {
             icon: AppIcons.lockOutlineRounded,
             title: l10n.profileChangePassword,
             subtitle: l10n.profileChangePasswordSubtitle,
-            trailing: Icon(
+            trailing: AppIcon(
               AppIcons.chevronRightRounded,
               color: AppColors.subtle,
             ),
@@ -186,7 +194,7 @@ class _SettingsPageState extends State<SettingsPage> {
               icon: AppIcons.tuneRounded,
               title: l10n.profileShopOperations,
               subtitle: l10n.profileShopOperationsSubtitle,
-              trailing: Icon(
+              trailing: AppIcon(
                 AppIcons.chevronRightRounded,
                 color: AppColors.subtle,
               ),
@@ -223,7 +231,7 @@ class _SettingsPageState extends State<SettingsPage> {
             icon: AppIcons.tuneRounded,
             title: l10n.profileCustomFields,
             subtitle: l10n.profileCustomFieldsHint,
-            trailing: Icon(
+            trailing: AppIcon(
               AppIcons.chevronRightRounded,
               color: AppColors.subtle,
             ),
@@ -245,7 +253,9 @@ class _SettingsPageState extends State<SettingsPage> {
             title: l10n.profileEmailNotifications,
             subtitle: l10n.profileEmailNotificationsSubtitle,
             value: user?.emailNotifications ?? true,
-            onChanged: _savingEmailNotifications ? null : _toggleEmailNotifications,
+            onChanged: _savingEmailNotifications
+                ? null
+                : _toggleEmailNotifications,
           ),
 
           const _Gap(),
@@ -261,7 +271,7 @@ class _SettingsPageState extends State<SettingsPage> {
           _SettingRow(
             icon: AppIcons.shieldOutlined,
             title: l10n.profilePrivacyPolicy,
-            trailing: Icon(
+            trailing: AppIcon(
               AppIcons.chevronRightRounded,
               color: AppColors.subtle,
             ),
@@ -273,7 +283,7 @@ class _SettingsPageState extends State<SettingsPage> {
           _SettingRow(
             icon: AppIcons.descriptionOutlined,
             title: l10n.profileTermsOfService,
-            trailing: Icon(
+            trailing: AppIcon(
               AppIcons.chevronRightRounded,
               color: AppColors.subtle,
             ),
@@ -300,7 +310,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     height: AppSizes.xl,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : Icon(
+                : AppIcon(
                     AppIcons.chevronRightRounded,
                     color: AppColors.subtle,
                   ),
@@ -310,7 +320,7 @@ class _SettingsPageState extends State<SettingsPage> {
             icon: AppIcons.deleteForeverRounded,
             title: l10n.profileDeleteAccount,
             subtitle: l10n.profileDeleteAccountSubtitle,
-            trailing: Icon(
+            trailing: AppIcon(
               AppIcons.chevronRightRounded,
               color: AppColors.error,
             ),
@@ -338,7 +348,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   child: Row(
                     children: [
-                      Icon(
+                      AppIcon(
                         AppIcons.logoutRounded,
                         color: AppColors.error,
                         size: AppSizes.iconMd,
@@ -347,9 +357,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       Expanded(
                         child: Text(
                           l10n.profileLogout,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyLarge
+                          style: Theme.of(context).textTheme.bodyLarge
                               ?.copyWith(
                                 color: AppColors.error,
                                 fontWeight: FontWeight.w700,
@@ -369,10 +377,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _comingSoonChip(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.sm,
-        vertical: 2,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm, vertical: 2),
       decoration: ShapeDecoration(
         color: AppColors.heroPanel,
         shape: AppShapes.squircle(AppSizes.radiusFull),
@@ -380,10 +385,10 @@ class _SettingsPageState extends State<SettingsPage> {
       child: Text(
         AppLocalizations.of(context).profileComingSoon,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.muted,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.4,
-            ),
+          color: AppColors.muted,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.4,
+        ),
       ),
     );
   }
@@ -404,10 +409,10 @@ class _Eyebrow extends StatelessWidget {
       child: Text(
         text,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.muted,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.6,
-            ),
+          color: AppColors.muted,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.6,
+        ),
       ),
     );
   }
@@ -454,7 +459,7 @@ class _DensityRow extends StatelessWidget {
               shape: AppShapes.squircle(AppSizes.radiusSm),
             ),
             alignment: Alignment.center,
-            child: Icon(
+            child: AppIcon(
               AppIcons.densityMediumRounded,
               size: AppSizes.iconMd,
               color: AppColors.black,
@@ -477,21 +482,27 @@ class _DensityRow extends StatelessWidget {
                   prefs.isCompact
                       ? l10n.profileListDensityCompactDesc
                       : l10n.profileListDensityComfortableDesc,
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: AppColors.muted),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.muted,
+                  ),
                 ),
                 const SizedBox(height: AppSizes.sm),
                 SegmentedButton<ListDensity>(
                   segments: [
                     ButtonSegment(
                       value: ListDensity.comfortable,
-                      icon: const Icon(AppIcons.formatLineSpacingRounded,
-                          size: AppSizes.iconSm),
+                      icon: const AppIcon(
+                        AppIcons.formatLineSpacingRounded,
+                        size: AppSizes.iconSm,
+                      ),
                       label: Text(l10n.profileDensityComfortable),
                     ),
                     ButtonSegment(
                       value: ListDensity.compact,
-                      icon: const Icon(AppIcons.densitySmallRounded, size: AppSizes.iconSm),
+                      icon: const AppIcon(
+                        AppIcons.densitySmallRounded,
+                        size: AppSizes.iconSm,
+                      ),
                       label: Text(l10n.profileDensityCompact),
                     ),
                   ],
@@ -501,8 +512,9 @@ class _DensityRow extends StatelessWidget {
                   style: ButtonStyle(
                     visualDensity: VisualDensity.compact,
                     textStyle: WidgetStatePropertyAll(
-                      theme.textTheme.labelMedium
-                          ?.copyWith(fontWeight: FontWeight.w700),
+                      theme.textTheme.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ),
@@ -543,7 +555,7 @@ class _ThemeRow extends StatelessWidget {
               shape: AppShapes.squircle(AppSizes.radiusSm),
             ),
             alignment: Alignment.center,
-            child: Icon(
+            child: AppIcon(
               AppIcons.paletteOutlined,
               size: AppSizes.iconMd,
               color: AppColors.black,
@@ -573,8 +585,9 @@ class _ThemeRow extends StatelessWidget {
                     AppThemeMode.midnight => l10n.themeMidnightDesc,
                     AppThemeMode.nord => l10n.themeNordDesc,
                   },
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: AppColors.muted),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.muted,
+                  ),
                 ),
                 const SizedBox(height: AppSizes.sm),
                 // A wrapping chip set (not a SegmentedButton) so the eight
@@ -620,15 +633,15 @@ class _ThemeRow extends StatelessWidget {
 
 /// Display label for a theme mode, shown on its picker chip (localized).
 String _themeLabel(AppLocalizations l10n, AppThemeMode mode) => switch (mode) {
-      AppThemeMode.light => l10n.themeLight,
-      AppThemeMode.beige => l10n.themeBeige,
-      AppThemeMode.rose => l10n.themeRose,
-      AppThemeMode.sage => l10n.themeSage,
-      AppThemeMode.dark => l10n.themeDark,
-      AppThemeMode.oled => l10n.themeOled,
-      AppThemeMode.midnight => l10n.themeMidnight,
-      AppThemeMode.nord => l10n.themeNord,
-    };
+  AppThemeMode.light => l10n.themeLight,
+  AppThemeMode.beige => l10n.themeBeige,
+  AppThemeMode.rose => l10n.themeRose,
+  AppThemeMode.sage => l10n.themeSage,
+  AppThemeMode.dark => l10n.themeDark,
+  AppThemeMode.oled => l10n.themeOled,
+  AppThemeMode.midnight => l10n.themeMidnight,
+  AppThemeMode.nord => l10n.themeNord,
+};
 
 /// Picker for the UI language — the multilingual pilot (English + हिन्दी).
 /// Mirrors [_ThemeRow]: writes through [LocalePrefsProvider], which persists the
@@ -659,7 +672,7 @@ class _LanguageRow extends StatelessWidget {
               shape: AppShapes.squircle(AppSizes.radiusSm),
             ),
             alignment: Alignment.center,
-            child: Icon(
+            child: AppIcon(
               AppIcons.languageRounded,
               size: AppSizes.iconMd,
               color: AppColors.black,
@@ -680,8 +693,9 @@ class _LanguageRow extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   l10n.languageSubtitle,
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: AppColors.muted),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.muted,
+                  ),
                 ),
                 const SizedBox(height: AppSizes.sm),
                 Wrap(
@@ -713,9 +727,9 @@ class _LanguageRow extends StatelessWidget {
 
 /// Endonym for a language — its own self-name, shown in its own script.
 String _languageLabel(AppLanguage lang) => switch (lang) {
-      AppLanguage.english => 'English',
-      AppLanguage.hindi => 'हिन्दी',
-    };
+  AppLanguage.english => 'English',
+  AppLanguage.hindi => 'हिन्दी',
+};
 
 class _SettingRow extends StatelessWidget {
   const _SettingRow({
@@ -726,7 +740,7 @@ class _SettingRow extends StatelessWidget {
     this.onTap,
   });
 
-  final IconData icon;
+  final AppIconData icon;
   final String title;
   final String? subtitle;
   final Widget? trailing;
@@ -750,7 +764,7 @@ class _SettingRow extends StatelessWidget {
               shape: AppShapes.squircle(AppSizes.radiusSm),
             ),
             alignment: Alignment.center,
-            child: Icon(icon, size: AppSizes.iconMd, color: AppColors.black),
+            child: AppIcon(icon, size: AppSizes.iconMd, color: AppColors.black),
           ),
           const SizedBox(width: AppSizes.md),
           Expanded(
@@ -797,7 +811,7 @@ class _SettingToggle extends StatelessWidget {
     required this.onChanged,
   });
 
-  final IconData icon;
+  final AppIconData icon;
   final String title;
   final String subtitle;
   final bool value;
@@ -823,7 +837,11 @@ class _SettingToggle extends StatelessWidget {
                 shape: AppShapes.squircle(AppSizes.radiusSm),
               ),
               alignment: Alignment.center,
-              child: Icon(icon, size: AppSizes.iconMd, color: AppColors.black),
+              child: AppIcon(
+                icon,
+                size: AppSizes.iconMd,
+                color: AppColors.black,
+              ),
             ),
             const SizedBox(width: AppSizes.md),
             Expanded(
@@ -904,7 +922,7 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
             decoration: InputDecoration(
               labelText: l10n.profileCurrentPassword,
               suffixIcon: IconButton(
-                icon: Icon(
+                icon: AppIcon(
                   _obscure
                       ? AppIcons.visibilityOutlined
                       : AppIcons.visibilityOffOutlined,

@@ -15,6 +15,7 @@ import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Team & roles — editorial layout (flat rows + hairline dividers, no
 /// boxed cards). Owners (or anyone with team:manage) invite staff,
@@ -110,7 +111,10 @@ class _ShopTeamPageState extends State<ShopTeamPage> {
     if (!mounted) return;
     await _run(
       () => _service.invite(
-          email: email, roleName: access.roleName, permissions: access.permissions),
+        email: email,
+        roleName: access.roleName,
+        permissions: access.permissions,
+      ),
       AppLocalizations.of(context).shopInvitationSentTo(email),
     );
   }
@@ -126,7 +130,9 @@ class _ShopTeamPageState extends State<ShopTeamPage> {
           roles: _roles,
           initialRoleName: m.roleName,
           initialPermissions: m.permissions,
-          subtitle: l10n.shopEditAccessSubtitle(m.name.isEmpty ? m.email : m.name),
+          subtitle: l10n.shopEditAccessSubtitle(
+            m.name.isEmpty ? m.email : m.name,
+          ),
         ),
       ),
     );
@@ -134,7 +140,10 @@ class _ShopTeamPageState extends State<ShopTeamPage> {
     if (!mounted) return;
     await _run(
       () => _service.setPermissions(
-          userId: m.userId, roleName: access.roleName, permissions: access.permissions),
+        userId: m.userId,
+        roleName: access.roleName,
+        permissions: access.permissions,
+      ),
       AppLocalizations.of(context).shopAccessUpdated,
     );
   }
@@ -144,13 +153,18 @@ class _ShopTeamPageState extends State<ShopTeamPage> {
     final ok = await AppConfirmDialog.show(
       context,
       title: l10n.shopRemoveFromTeamTitle,
-      message: l10n.shopRemoveFromTeamMessage(m.name.isEmpty ? m.email : m.name),
+      message: l10n.shopRemoveFromTeamMessage(
+        m.name.isEmpty ? m.email : m.name,
+      ),
       confirmLabel: l10n.shopRemove,
       danger: true,
     );
     if (!ok) return;
     if (!mounted) return;
-    await _run(() => _service.removeMember(m.userId), AppLocalizations.of(context).shopRemovedFromTeam);
+    await _run(
+      () => _service.removeMember(m.userId),
+      AppLocalizations.of(context).shopRemovedFromTeam,
+    );
   }
 
   // ── Role actions ──────────────────────────────────────────────────
@@ -161,7 +175,10 @@ class _ShopTeamPageState extends State<ShopTeamPage> {
     );
     if (r == null) return;
     if (!mounted) return;
-    await _run(() => _service.createRole(r.name, r.permissions), AppLocalizations.of(context).shopRoleCreated);
+    await _run(
+      () => _service.createRole(r.name, r.permissions),
+      AppLocalizations.of(context).shopRoleCreated,
+    );
   }
 
   Future<void> _editRole(TeamRole role) async {
@@ -177,7 +194,10 @@ class _ShopTeamPageState extends State<ShopTeamPage> {
     );
     if (r == null) return;
     if (!mounted) return;
-    await _run(() => _service.updateRole(role.id, r.name, r.permissions), AppLocalizations.of(context).shopRoleSaved);
+    await _run(
+      () => _service.updateRole(role.id, r.name, r.permissions),
+      AppLocalizations.of(context).shopRoleSaved,
+    );
   }
 
   Future<void> _deleteRole(TeamRole role) async {
@@ -191,11 +211,16 @@ class _ShopTeamPageState extends State<ShopTeamPage> {
     );
     if (!ok) return;
     if (!mounted) return;
-    await _run(() => _service.deleteRole(role.id), AppLocalizations.of(context).shopRoleDeleted);
+    await _run(
+      () => _service.deleteRole(role.id),
+      AppLocalizations.of(context).shopRoleDeleted,
+    );
   }
 
-  Future<void> _cancelInvite(TeamInvite i) =>
-      _run(() => _service.cancelInvite(i.id), AppLocalizations.of(context).shopInvitationCancelled);
+  Future<void> _cancelInvite(TeamInvite i) => _run(
+    () => _service.cancelInvite(i.id),
+    AppLocalizations.of(context).shopInvitationCancelled,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -211,15 +236,15 @@ class _ShopTeamPageState extends State<ShopTeamPage> {
             IconButton(
               tooltip: l10n.shopInviteTeammate,
               onPressed: _loading ? null : _invite,
-              icon: const Icon(AppIcons.personAddOutlined),
+              icon: const AppIcon(AppIcons.personAddOutlined),
             ),
         ],
       ),
       body: _loading
           ? const _ShopTeamSkeleton()
           : _error != null
-              ? _ErrorState(message: _error!, onRetry: _load)
-              : RefreshIndicator(onRefresh: _load, child: _content()),
+          ? _ErrorState(message: _error!, onRetry: _load)
+          : RefreshIndicator(onRefresh: _load, child: _content()),
     );
   }
 
@@ -227,16 +252,19 @@ class _ShopTeamPageState extends State<ShopTeamPage> {
     final l10n = AppLocalizations.of(context);
     return ListView(
       padding: EdgeInsets.only(
-          top: AppSizes.md + FloatingAppBar.contentTopInset(context),
-          bottom: AppSizes.huge),
+        top: AppSizes.md + FloatingAppBar.contentTopInset(context),
+        bottom: AppSizes.huge,
+      ),
       children: [
         if (!_canManage)
           Padding(
             padding: const EdgeInsets.fromLTRB(
-                AppSizes.lg, 0, AppSizes.lg, AppSizes.md),
-            child: _InfoBanner(
-              l10n.shopTeamViewOnlyBanner,
+              AppSizes.lg,
+              0,
+              AppSizes.lg,
+              AppSizes.md,
             ),
+            child: _InfoBanner(l10n.shopTeamViewOnlyBanner),
           ),
 
         // ── Team ──
@@ -268,7 +296,11 @@ class _ShopTeamPageState extends State<ShopTeamPage> {
         _SectionHeader(
           l10n.shopRolesHeader(_roles.length),
           action: _canManage
-              ? _HeaderAction(label: l10n.shopNewRole, icon: AppIcons.addRounded, onTap: _createRole)
+              ? _HeaderAction(
+                  label: l10n.shopNewRole,
+                  icon: AppIcons.addRounded,
+                  onTap: _createRole,
+                )
               : null,
         ),
         for (var i = 0; i < _roles.length; i++)
@@ -295,13 +327,18 @@ class _ShopTeamSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       padding: EdgeInsets.only(
-          top: AppSizes.md + FloatingAppBar.contentTopInset(context),
-          bottom: AppSizes.huge),
+        top: AppSizes.md + FloatingAppBar.contentTopInset(context),
+        bottom: AppSizes.huge,
+      ),
       children: [
         // Info banner placeholder
         Padding(
           padding: const EdgeInsets.fromLTRB(
-              AppSizes.lg, 0, AppSizes.lg, AppSizes.md),
+            AppSizes.lg,
+            0,
+            AppSizes.lg,
+            AppSizes.md,
+          ),
           child: AppShimmerBox(
             width: double.infinity,
             height: 52,
@@ -341,7 +378,11 @@ class _SkeletonSectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.sm),
+        AppSizes.lg,
+        AppSizes.sm,
+        AppSizes.lg,
+        AppSizes.sm,
+      ),
       child: Row(
         children: [
           AppShimmerLine(widthFactor: 0.35, height: 11),
@@ -365,7 +406,9 @@ class _SkeletonMemberRow extends StatelessWidget {
       first: first,
       child: Padding(
         padding: const EdgeInsets.symmetric(
-            horizontal: AppSizes.lg, vertical: AppSizes.md),
+          horizontal: AppSizes.lg,
+          vertical: AppSizes.md,
+        ),
         child: Row(
           children: [
             // Avatar circle
@@ -391,8 +434,7 @@ class _SkeletonMemberRow extends StatelessWidget {
             AppShimmerBox(width: 56, height: 22, radius: AppSizes.radiusFull),
             const SizedBox(width: AppSizes.sm),
             // Menu button
-            AppShimmerBox(
-                width: 20, height: 20, radius: AppSizes.radiusFull),
+            AppShimmerBox(width: 20, height: 20, radius: AppSizes.radiusFull),
           ],
         ),
       ),
@@ -410,7 +452,9 @@ class _SkeletonInviteRow extends StatelessWidget {
       first: first,
       child: Padding(
         padding: const EdgeInsets.symmetric(
-            horizontal: AppSizes.lg, vertical: AppSizes.md),
+          horizontal: AppSizes.lg,
+          vertical: AppSizes.md,
+        ),
         child: Row(
           children: [
             // Mail icon placeholder
@@ -429,8 +473,7 @@ class _SkeletonInviteRow extends StatelessWidget {
             ),
             const SizedBox(width: AppSizes.sm),
             // Cancel button
-            AppShimmerBox(
-                width: 60, height: 28, radius: AppSizes.radiusSm),
+            AppShimmerBox(width: 60, height: 28, radius: AppSizes.radiusSm),
           ],
         ),
       ),
@@ -448,7 +491,9 @@ class _SkeletonRoleRow extends StatelessWidget {
       first: first,
       child: Padding(
         padding: const EdgeInsets.symmetric(
-            horizontal: AppSizes.lg, vertical: AppSizes.md),
+          horizontal: AppSizes.lg,
+          vertical: AppSizes.md,
+        ),
         child: Row(
           children: [
             // Badge icon placeholder
@@ -464,7 +509,10 @@ class _SkeletonRoleRow extends StatelessWidget {
                       AppShimmerLine(widthFactor: 0.40, height: 14),
                       const SizedBox(width: AppSizes.sm),
                       AppShimmerBox(
-                          width: 52, height: 18, radius: AppSizes.radiusFull),
+                        width: 52,
+                        height: 18,
+                        radius: AppSizes.radiusFull,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 5),
@@ -474,8 +522,7 @@ class _SkeletonRoleRow extends StatelessWidget {
             ),
             const SizedBox(width: AppSizes.sm),
             // Menu button
-            AppShimmerBox(
-                width: 20, height: 20, radius: AppSizes.radiusFull),
+            AppShimmerBox(width: 20, height: 20, radius: AppSizes.radiusFull),
           ],
         ),
       ),
@@ -508,7 +555,9 @@ class _MemberRow extends StatelessWidget {
     final name = member.name.isEmpty ? member.email : member.name;
     final row = Padding(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.lg, vertical: AppSizes.md),
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
       child: Row(
         children: [
           _Avatar(name: name),
@@ -517,17 +566,23 @@ class _MemberRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name,
-                    style: theme.textTheme.bodyLarge
-                        ?.copyWith(fontWeight: FontWeight.w800),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis),
+                Text(
+                  name,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 const SizedBox(height: 2),
-                Text(member.email,
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: AppColors.muted),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis),
+                Text(
+                  member.email,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.muted,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
           ),
@@ -535,14 +590,20 @@ class _MemberRow extends StatelessWidget {
           _RolePill(label: member.label, owner: member.isOwner),
           if (canManage)
             PopupMenuButton<String>(
-              icon: Icon(AppIcons.moreVert, color: AppColors.subtle),
+              icon: AppIcon(AppIcons.moreVert, color: AppColors.subtle),
               onSelected: (v) => v == 'edit' ? onEdit() : onRemove(),
               itemBuilder: (_) => [
-                PopupMenuItem(value: 'edit', child: Text(l10n.shopEditAccessMenu)),
                 PopupMenuItem(
-                    value: 'remove',
-                    child: Text(l10n.shopRemoveFromTeamMenu,
-                        style: TextStyle(color: AppColors.error))),
+                  value: 'edit',
+                  child: Text(l10n.shopEditAccessMenu),
+                ),
+                PopupMenuItem(
+                  value: 'remove',
+                  child: Text(
+                    l10n.shopRemoveFromTeamMenu,
+                    style: TextStyle(color: AppColors.error),
+                  ),
+                ),
               ],
             )
           else
@@ -550,7 +611,10 @@ class _MemberRow extends StatelessWidget {
         ],
       ),
     );
-    return _Divided(first: first, child: canManage ? InkWell(onTap: onEdit, child: row) : row);
+    return _Divided(
+      first: first,
+      child: canManage ? InkWell(onTap: onEdit, child: row) : row,
+    );
   }
 }
 
@@ -574,24 +638,32 @@ class _InviteRow extends StatelessWidget {
       first: first,
       child: Padding(
         padding: const EdgeInsets.symmetric(
-            horizontal: AppSizes.lg, vertical: AppSizes.md),
+          horizontal: AppSizes.lg,
+          vertical: AppSizes.md,
+        ),
         child: Row(
           children: [
-            Icon(AppIcons.mailOutlineRounded, color: AppColors.muted),
+            AppIcon(AppIcons.mailOutlineRounded, color: AppColors.muted),
             const SizedBox(width: AppSizes.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(invite.email,
-                      style: theme.textTheme.bodyLarge
-                          ?.copyWith(fontWeight: FontWeight.w700),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis),
+                  Text(
+                    invite.email,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   const SizedBox(height: 2),
-                  Text(l10n.shopInvitedAsAwaitingReply(invite.roleName),
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: AppColors.muted)),
+                  Text(
+                    l10n.shopInvitedAsAwaitingReply(invite.roleName),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.muted,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -629,10 +701,12 @@ class _RoleRow extends StatelessWidget {
     final manage = manageableAreaCount(role.permissions);
     final row = Padding(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.lg, vertical: AppSizes.md),
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
       child: Row(
         children: [
-          Icon(AppIcons.badgeOutlined, color: AppColors.subtle),
+          AppIcon(AppIcons.badgeOutlined, color: AppColors.subtle),
           const SizedBox(width: AppSizes.md),
           Expanded(
             child: Column(
@@ -641,11 +715,14 @@ class _RoleRow extends StatelessWidget {
                 Row(
                   children: [
                     Flexible(
-                      child: Text(role.name,
-                          style: theme.textTheme.bodyLarge
-                              ?.copyWith(fontWeight: FontWeight.w800),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis),
+                      child: Text(
+                        role.name,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                     if (role.builtin) ...[
                       const SizedBox(width: AppSizes.sm),
@@ -658,30 +735,40 @@ class _RoleRow extends StatelessWidget {
                   manage == 0
                       ? l10n.shopRoleViewOnly
                       : (manage == 1
-                          ? l10n.shopRoleAreaManageable(manage)
-                          : l10n.shopRoleAreasManageable(manage)),
-                  style:
-                      theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+                            ? l10n.shopRoleAreaManageable(manage)
+                            : l10n.shopRoleAreasManageable(manage)),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.muted,
+                  ),
                 ),
               ],
             ),
           ),
           if (canManage)
             PopupMenuButton<String>(
-              icon: Icon(AppIcons.moreVert, color: AppColors.subtle),
+              icon: AppIcon(AppIcons.moreVert, color: AppColors.subtle),
               onSelected: (v) => v == 'edit' ? onEdit() : onDelete(),
               itemBuilder: (_) => [
-                PopupMenuItem(value: 'edit', child: Text(l10n.shopEditRoleMenu)),
                 PopupMenuItem(
-                    value: 'delete',
-                    child: Text(l10n.shopDeleteRoleMenu,
-                        style: TextStyle(color: AppColors.error))),
+                  value: 'edit',
+                  child: Text(l10n.shopEditRoleMenu),
+                ),
+                PopupMenuItem(
+                  value: 'delete',
+                  child: Text(
+                    l10n.shopDeleteRoleMenu,
+                    style: TextStyle(color: AppColors.error),
+                  ),
+                ),
               ],
             ),
         ],
       ),
     );
-    return _Divided(first: first, child: canManage ? InkWell(onTap: onEdit, child: row) : row);
+    return _Divided(
+      first: first,
+      child: canManage ? InkWell(onTap: onEdit, child: row) : row,
+    );
   }
 }
 
@@ -693,13 +780,13 @@ class _Divided extends StatelessWidget {
   final Widget child;
   @override
   Widget build(BuildContext context) => DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(color: first ? Colors.transparent : AppColors.hairline),
-          ),
-        ),
-        child: child,
-      );
+    decoration: BoxDecoration(
+      border: Border(
+        top: BorderSide(color: first ? Colors.transparent : AppColors.hairline),
+      ),
+    ),
+    child: child,
+  );
 }
 
 class _SectionHeader extends StatelessWidget {
@@ -710,15 +797,22 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.sm),
+        AppSizes.lg,
+        AppSizes.sm,
+        AppSizes.lg,
+        AppSizes.sm,
+      ),
       child: Row(
         children: [
           Expanded(
-            child: Text(text,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: AppColors.muted,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.8)),
+            child: Text(
+              text,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: AppColors.muted,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.8,
+              ),
+            ),
           ),
           ?action,
         ],
@@ -728,9 +822,13 @@ class _SectionHeader extends StatelessWidget {
 }
 
 class _HeaderAction extends StatelessWidget {
-  const _HeaderAction({required this.label, required this.icon, required this.onTap});
+  const _HeaderAction({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
   final String label;
-  final IconData icon;
+  final AppIconData icon;
   final VoidCallback onTap;
   @override
   Widget build(BuildContext context) {
@@ -738,16 +836,22 @@ class _HeaderAction extends StatelessWidget {
       onTap: onTap,
       borderRadius: AppShapes.squircleRadius(AppSizes.radiusFull),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm, vertical: 2),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSizes.sm,
+          vertical: 2,
+        ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: AppSizes.iconSm, color: AppColors.brandStrong),
+            AppIcon(icon, size: AppSizes.iconSm, color: AppColors.brandStrong),
             const SizedBox(width: AppSizes.xs),
-            Text(label,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: AppColors.brandStrong,
-                    fontWeight: FontWeight.w800)),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: AppColors.brandStrong,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
           ],
         ),
       ),
@@ -766,10 +870,16 @@ class _RolePill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm, vertical: 3),
       decoration: ShapeDecoration(
-          color: bg, shape: AppShapes.squircle(AppSizes.radiusFull)),
-      child: Text(label,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: fg, fontWeight: FontWeight.w800)),
+        color: bg,
+        shape: AppShapes.squircle(AppSizes.radiusFull),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: fg,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
     );
   }
 }
@@ -779,14 +889,19 @@ class _MiniTag extends StatelessWidget {
   final String text;
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-        decoration: ShapeDecoration(
-            color: AppColors.heroPanel,
-            shape: AppShapes.squircle(AppSizes.radiusFull)),
-        child: Text(text,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: AppColors.muted, fontWeight: FontWeight.w700)),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+    decoration: ShapeDecoration(
+      color: AppColors.heroPanel,
+      shape: AppShapes.squircle(AppSizes.radiusFull),
+    ),
+    child: Text(
+      text,
+      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+        color: AppColors.muted,
+        fontWeight: FontWeight.w700,
+      ),
+    ),
+  );
 }
 
 class _Avatar extends StatelessWidget {
@@ -794,15 +909,21 @@ class _Avatar extends StatelessWidget {
   final String name;
   @override
   Widget build(BuildContext context) => Container(
-        width: AppSizes.avatarSm,
-        height: AppSizes.avatarSm,
-        decoration: BoxDecoration(
-            color: AppColors.tileBg(AppColors.brandSoft), shape: BoxShape.circle),
-        alignment: Alignment.center,
-        child: Text(name.isNotEmpty ? name[0].toUpperCase() : '?',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: AppColors.brandStrong, fontWeight: FontWeight.w800)),
-      );
+    width: AppSizes.avatarSm,
+    height: AppSizes.avatarSm,
+    decoration: BoxDecoration(
+      color: AppColors.tileBg(AppColors.brandSoft),
+      shape: BoxShape.circle,
+    ),
+    alignment: Alignment.center,
+    child: Text(
+      name.isNotEmpty ? name[0].toUpperCase() : '?',
+      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+        color: AppColors.brandStrong,
+        fontWeight: FontWeight.w800,
+      ),
+    ),
+  );
 }
 
 class _InfoBanner extends StatelessWidget {
@@ -810,26 +931,27 @@ class _InfoBanner extends StatelessWidget {
   final String text;
   @override
   Widget build(BuildContext context) => Material(
-        color: AppColors.infoSoft,
-        shape: AppShapes.squircle(AppSizes.radiusMd),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSizes.md),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(AppIcons.infoOutline, color: AppColors.info, size: 18),
-              const SizedBox(width: AppSizes.sm),
-              Expanded(
-                child: Text(text,
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: AppColors.info)),
-              ),
-            ],
+    color: AppColors.infoSoft,
+    shape: AppShapes.squircle(AppSizes.radiusMd),
+    child: Padding(
+      padding: const EdgeInsets.all(AppSizes.md),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppIcon(AppIcons.infoOutline, color: AppColors.info, size: 18),
+          const SizedBox(width: AppSizes.sm),
+          Expanded(
+            child: Text(
+              text,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppColors.info),
+            ),
           ),
-        ),
-      );
+        ],
+      ),
+    ),
+  );
 }
 
 class _ErrorState extends StatelessWidget {
@@ -838,24 +960,27 @@ class _ErrorState extends StatelessWidget {
   final VoidCallback onRetry;
   @override
   Widget build(BuildContext context) => SafeArea(
-        top: true,
-        bottom: false,
-        child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSizes.xl),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(AppIcons.errorOutline, color: AppColors.muted, size: 40),
-              const SizedBox(height: AppSizes.md),
-              Text(message, textAlign: TextAlign.center),
-              const SizedBox(height: AppSizes.md),
-              FilledButton(onPressed: onRetry, child: Text(AppLocalizations.of(context).shopTryAgain)),
-            ],
-          ),
+    top: true,
+    bottom: false,
+    child: Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSizes.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppIcon(AppIcons.errorOutline, color: AppColors.muted, size: 40),
+            const SizedBox(height: AppSizes.md),
+            Text(message, textAlign: TextAlign.center),
+            const SizedBox(height: AppSizes.md),
+            FilledButton(
+              onPressed: onRetry,
+              child: Text(AppLocalizations.of(context).shopTryAgain),
+            ),
+          ],
         ),
       ),
-      );
+    ),
+  );
 }
 
 // ── Invite email sheet (single field; role chosen next in the editor) ──
@@ -863,7 +988,8 @@ class _ErrorState extends StatelessWidget {
 class _InviteSheet extends StatefulWidget {
   const _InviteSheet();
 
-  static Future<String?> show(BuildContext context) => showModalBottomSheet<String>(
+  static Future<String?> show(BuildContext context) =>
+      showModalBottomSheet<String>(
         context: context,
         isScrollControlled: true,
         backgroundColor: AppColors.surface,
@@ -907,13 +1033,18 @@ class _InviteSheetState extends State<_InviteSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(l10n.shopInviteTeammate,
-                style: theme.textTheme.titleLarge
-                    ?.copyWith(fontWeight: FontWeight.w800)),
+            Text(
+              l10n.shopInviteTeammate,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+            ),
             const SizedBox(height: 4),
             Text(
               l10n.shopInviteSheetSubtitle,
-              style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.muted,
+              ),
             ),
             const SizedBox(height: AppSizes.lg),
             TextFormField(
@@ -938,7 +1069,7 @@ class _InviteSheetState extends State<_InviteSheet> {
               width: double.infinity,
               child: FilledButton.icon(
                 onPressed: _next,
-                icon: const Icon(AppIcons.arrowForwardRounded, size: 18),
+                icon: const AppIcon(AppIcons.arrowForwardRounded, size: 18),
                 label: Text(l10n.shopChooseAccess),
               ),
             ),

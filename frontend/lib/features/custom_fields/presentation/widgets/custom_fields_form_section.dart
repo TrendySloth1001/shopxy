@@ -13,6 +13,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// "More about this product" — drops into Add/Edit Product.
 ///
@@ -87,8 +88,9 @@ class _CustomFieldsFormSectionState extends State<CustomFieldsFormSection> {
                 icon: resolveCustomFieldIcon(section.icon),
                 child: Column(
                   children: [
-                    for (final def
-                        in section.fields.where((d) => d.isActive)) ...[
+                    for (final def in section.fields.where(
+                      (d) => d.isActive,
+                    )) ...[
                       CustomFieldInput(
                         key: ValueKey('cf-${def.id}'),
                         definition: def,
@@ -136,7 +138,7 @@ class _SectionGroup extends StatelessWidget {
   });
 
   final String title;
-  final IconData icon;
+  final AppIconData icon;
   final Widget child;
 
   @override
@@ -161,7 +163,7 @@ class _SectionGroup extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: AppSizes.iconMd, color: AppColors.black),
+              AppIcon(icon, size: AppSizes.iconMd, color: AppColors.black),
               const SizedBox(width: AppSizes.sm),
               Text(
                 title,
@@ -207,9 +209,7 @@ class _EmptyHint extends StatelessWidget {
         children: [
           Text(
             l10n.customFieldsEmptyHint,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: AppColors.muted,
-            ),
+            style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
           ),
           const SizedBox(height: AppSizes.md),
           Wrap(

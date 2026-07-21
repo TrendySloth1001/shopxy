@@ -4,6 +4,7 @@ import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Centered error message with optional retry action.
 class AppErrorView extends StatelessWidget {
@@ -29,7 +30,7 @@ class AppErrorView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
+            AppIcon(
               AppIcons.errorOutlineRounded,
               size: AppSizes.iconXl,
               color: AppColors.error,
@@ -44,7 +45,9 @@ class AppErrorView extends StatelessWidget {
               const SizedBox(height: AppSizes.sm),
               Text(
                 message!,
-                style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppColors.muted,
+                ),
                 textAlign: TextAlign.center,
               ),
             ],

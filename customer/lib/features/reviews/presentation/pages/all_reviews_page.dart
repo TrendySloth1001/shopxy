@@ -10,6 +10,7 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Paginated all-reviews page. Loads page 1 on mount; appends pages as
 /// the user scrolls within ~400px of the bottom. Filter chips switch
@@ -64,10 +65,7 @@ class _AllReviewsPageState extends State<AllReviewsPage> {
     if (_loading) return;
     setState(() => _loading = true);
     try {
-      final page = await _ds.list(
-        widget.productId,
-        cursor: _cursor,
-      );
+      final page = await _ds.list(widget.productId, cursor: _cursor);
       if (!mounted) return;
       setState(() {
         _reviews.addAll(page.data);
@@ -143,7 +141,7 @@ class _AllReviewsPageState extends State<AllReviewsPage> {
         onPressed: _openWriteSheet,
         backgroundColor: AppColors.brand,
         foregroundColor: AppColors.white,
-        icon: const Icon(AppIcons.editOutlined),
+        icon: const AppIcon(AppIcons.editOutlined),
         label: const Text('Rate product'),
       ),
       body: RefreshIndicator(
@@ -151,8 +149,8 @@ class _AllReviewsPageState extends State<AllReviewsPage> {
         child: _initialLoad && _reviews.isEmpty
             ? const _AllReviewsSkeleton()
             : _error != null && _reviews.isEmpty
-                ? _ErrorView(message: _error!, onRetry: _refresh)
-                : _buildList(),
+            ? _ErrorView(message: _error!, onRetry: _refresh)
+            : _buildList(),
       ),
     );
   }
@@ -173,10 +171,9 @@ class _AllReviewsPageState extends State<AllReviewsPage> {
                   const SizedBox(height: AppSizes.sm),
                   Text(
                     'No reviews match this filter.',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(color: AppColors.muted),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
                   ),
                 ],
               ),
@@ -229,17 +226,9 @@ class _ReviewTileSkeleton extends StatelessWidget {
           // Rating chip + verified badge row
           Row(
             children: [
-              AppShimmerBox(
-                width: 52,
-                height: 24,
-                radius: AppSizes.radiusFull,
-              ),
+              AppShimmerBox(width: 52, height: 24, radius: AppSizes.radiusFull),
               const SizedBox(width: AppSizes.sm),
-              AppShimmerBox(
-                width: 72,
-                height: 20,
-                radius: AppSizes.radiusSm,
-              ),
+              AppShimmerBox(width: 72, height: 20, radius: AppSizes.radiusSm),
             ],
           ),
           const SizedBox(height: AppSizes.sm),
@@ -324,9 +313,9 @@ class _FilterChip extends StatelessWidget {
           child: Text(
             label,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: selected ? AppColors.white : AppColors.black,
-                  fontWeight: FontWeight.w800,
-                ),
+              color: selected ? AppColors.white : AppColors.black,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ),
       ),
@@ -347,29 +336,30 @@ class _ErrorView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(AppIcons.cloudOffOutlined,
-                size: AppSizes.iconHuge, color: AppColors.muted),
+            const AppIcon(
+              AppIcons.cloudOffOutlined,
+              size: AppSizes.iconHuge,
+              color: AppColors.muted,
+            ),
             const SizedBox(height: AppSizes.sm),
             Text(
               "Couldn't load reviews",
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w800),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: AppSizes.xs),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: AppColors.muted),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
             ),
             const SizedBox(height: AppSizes.md),
             FilledButton.icon(
               onPressed: onRetry,
-              icon: const Icon(AppIcons.refresh),
+              icon: const AppIcon(AppIcons.refresh),
               label: const Text('Try again'),
             ),
           ],

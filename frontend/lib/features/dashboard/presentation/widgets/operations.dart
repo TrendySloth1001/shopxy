@@ -9,6 +9,7 @@ import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Compact operations strip: open till (if the viewer has one), GST liability
 /// month-to-date, and current inventory value. Mirrors `components/operations.tsx`.
@@ -28,7 +29,8 @@ class Operations extends StatelessWidget {
           label: l10n.dashboardGstThisMonth,
           value: inr.format(operations.gstMtd!.netPayable),
           sub: l10n.dashboardOutputTaxCollected(
-              inr.format(operations.gstMtd!.outputTax)),
+            inr.format(operations.gstMtd!.outputTax),
+          ),
           onTap: () => dashPush(context, const ReportsPage()),
         ),
       _Tile(
@@ -67,7 +69,7 @@ class _Tile extends StatelessWidget {
     required this.onTap,
   });
 
-  final IconData icon;
+  final AppIconData icon;
   final Color iconColor;
   final String label;
   final String value;
@@ -84,23 +86,29 @@ class _Tile extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: AppSizes.iconSm, color: iconColor),
+              AppIcon(icon, size: AppSizes.iconSm, color: iconColor),
               const SizedBox(width: AppSizes.sm),
               Flexible(
-                child: Text(label,
-                    style: DashText.labelMd, overflow: TextOverflow.ellipsis),
+                child: Text(
+                  label,
+                  style: DashText.labelMd,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
           const SizedBox(height: AppSizes.sm),
-          Text(value,
-              style:
-                  DashText.headlineSm.copyWith(fontFeatures: tabularFigures)),
+          Text(
+            value,
+            style: DashText.headlineSm.copyWith(fontFeatures: tabularFigures),
+          ),
           const SizedBox(height: AppSizes.xs),
-          Text(sub,
-              style: DashText.bodySm,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis),
+          Text(
+            sub,
+            style: DashText.bodySm,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ),
     );
@@ -130,19 +138,26 @@ class _TillTile extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(AppIcons.storefrontOutlined,
-                  size: AppSizes.iconSm, color: AppColors.success),
+              AppIcon(
+                AppIcons.storefrontOutlined,
+                size: AppSizes.iconSm,
+                color: AppColors.success,
+              ),
               const SizedBox(width: AppSizes.sm),
               Flexible(
-                child: Text(l10n.dashboardOpenTillSince(since),
-                    style: DashText.labelMd, overflow: TextOverflow.ellipsis),
+                child: Text(
+                  l10n.dashboardOpenTillSince(since),
+                  style: DashText.labelMd,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
           const SizedBox(height: AppSizes.sm),
-          Text(inr.format(till.expectedCash),
-              style:
-                  DashText.headlineSm.copyWith(fontFeatures: tabularFigures)),
+          Text(
+            inr.format(till.expectedCash),
+            style: DashText.headlineSm.copyWith(fontFeatures: tabularFigures),
+          ),
           const SizedBox(height: AppSizes.xs),
           Text(
             topTenders.isEmpty ? salesLabel : '$salesLabel · $topTenders',

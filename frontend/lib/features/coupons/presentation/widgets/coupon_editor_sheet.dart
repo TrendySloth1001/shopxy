@@ -10,6 +10,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Bottom-sheet editor for creating or updating a single coupon.
 /// Returns `true` to the caller iff the save succeeded so the list can
@@ -63,18 +64,22 @@ class _CouponEditorSheetState extends State<_CouponEditorSheet> {
     _code = TextEditingController(text: e?.code ?? '');
     _title = TextEditingController(text: e?.title ?? '');
     _description = TextEditingController(text: e?.description ?? '');
-    _discountValue =
-        TextEditingController(text: e?.discountValue.toStringAsFixed(0) ?? '');
+    _discountValue = TextEditingController(
+      text: e?.discountValue.toStringAsFixed(0) ?? '',
+    );
     _maxDiscount = TextEditingController(
-        text: e?.maxDiscount != null ? e!.maxDiscount!.toStringAsFixed(0) : '');
+      text: e?.maxDiscount != null ? e!.maxDiscount!.toStringAsFixed(0) : '',
+    );
     _minOrder = TextEditingController(
-        text: e?.minOrderAmount.toStringAsFixed(0) ?? '0');
-    _perUserLimit = TextEditingController(text: e?.perUserLimit.toString() ?? '1');
+      text: e?.minOrderAmount.toStringAsFixed(0) ?? '0',
+    );
+    _perUserLimit = TextEditingController(
+      text: e?.perUserLimit.toString() ?? '1',
+    );
     _totalCap = TextEditingController(text: e?.totalCap.toString() ?? '0');
     _discountType = e?.discountType ?? 'PERCENT';
     _validFrom = e?.validFrom ?? DateTime.now();
-    _validUntil =
-        e?.validUntil ?? DateTime.now().add(const Duration(days: 30));
+    _validUntil = e?.validUntil ?? DateTime.now().add(const Duration(days: 30));
     _isActive = e?.isActive ?? true;
     _isPublic = e?.isPublic ?? false;
     _firstOrderOnly = e?.firstOrderOnly ?? false;
@@ -162,9 +167,9 @@ class _CouponEditorSheetState extends State<_CouponEditorSheet> {
     } catch (e) {
       if (mounted) {
         setState(() {
-        _saving = false;
-        _error = friendlyError(e);
-      });
+          _saving = false;
+          _error = friendlyError(e);
+        });
       }
     }
   }
@@ -187,9 +192,9 @@ class _CouponEditorSheetState extends State<_CouponEditorSheet> {
           children: [
             Text(
               isEdit ? l10n.couponsEditCoupon : l10n.couponsNewCoupon,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: AppSizes.md),
             TextField(
@@ -268,7 +273,9 @@ class _CouponEditorSheetState extends State<_CouponEditorSheet> {
               const SizedBox(height: AppSizes.sm),
               TextField(
                 controller: _maxDiscount,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 decoration: InputDecoration(
                   labelText: l10n.couponsFieldMaxDiscount,
                   border: const OutlineInputBorder(),
@@ -278,7 +285,9 @@ class _CouponEditorSheetState extends State<_CouponEditorSheet> {
             const SizedBox(height: AppSizes.sm),
             TextField(
               controller: _minOrder,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               decoration: InputDecoration(
                 labelText: l10n.couponsFieldMinOrder,
                 border: const OutlineInputBorder(),
@@ -290,18 +299,20 @@ class _CouponEditorSheetState extends State<_CouponEditorSheet> {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () => _pickDate(isFrom: true),
-                    icon: const Icon(AppIcons.event),
+                    icon: const AppIcon(AppIcons.event),
                     label: Text(
-                        '${l10n.couponsDateFrom}  ${_date.format(_validFrom)}'),
+                      '${l10n.couponsDateFrom}  ${_date.format(_validFrom)}',
+                    ),
                   ),
                 ),
                 const SizedBox(width: AppSizes.sm),
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () => _pickDate(isFrom: false),
-                    icon: const Icon(AppIcons.eventAvailable),
+                    icon: const AppIcon(AppIcons.eventAvailable),
                     label: Text(
-                        '${l10n.couponsDateUntil} ${_date.format(_validUntil)}'),
+                      '${l10n.couponsDateUntil} ${_date.format(_validUntil)}',
+                    ),
                   ),
                 ),
               ],
@@ -356,8 +367,7 @@ class _CouponEditorSheetState extends State<_CouponEditorSheet> {
               Container(
                 padding: const EdgeInsets.all(AppSizes.sm),
                 color: AppColors.errorSoft,
-                child: Text(_error!,
-                    style: TextStyle(color: AppColors.error)),
+                child: Text(_error!, style: TextStyle(color: AppColors.error)),
               ),
             ],
             const SizedBox(height: AppSizes.md),
@@ -367,8 +377,8 @@ class _CouponEditorSheetState extends State<_CouponEditorSheet> {
                 _saving
                     ? l10n.couponsSaving
                     : isEdit
-                        ? l10n.couponsSaveChanges
-                        : l10n.couponsCreateCoupon,
+                    ? l10n.couponsSaveChanges
+                    : l10n.couponsCreateCoupon,
               ),
             ),
           ],

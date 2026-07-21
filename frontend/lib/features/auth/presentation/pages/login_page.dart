@@ -13,6 +13,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -47,9 +48,9 @@ class _LoginPageState extends State<LoginPage> {
     });
     try {
       await context.read<AuthProvider>().login(
-            _email.text.trim(),
-            _password.text,
-          );
+        _email.text.trim(),
+        _password.text,
+      );
     } catch (e) {
       if (mounted) setState(() => _error = friendlyError(e));
     } finally {
@@ -58,17 +59,15 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _goToRegister() => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const RegisterPage()),
-      );
+    context,
+    MaterialPageRoute(builder: (_) => const RegisterPage()),
+  );
 
   void _googleSoon() {
     final l10n = AppLocalizations.of(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(l10n.authGoogleComingSoon),
-      ),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(l10n.authGoogleComingSoon)));
   }
 
   @override
@@ -149,13 +148,13 @@ class _LegalFooterState extends State<_LegalFooter> {
   void initState() {
     super.initState();
     _terms.onTap = () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const LegalPage.terms()),
-        );
+      context,
+      MaterialPageRoute(builder: (_) => const LegalPage.terms()),
+    );
     _privacy.onTap = () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const LegalPage.privacy()),
-        );
+      context,
+      MaterialPageRoute(builder: (_) => const LegalPage.privacy()),
+    );
   }
 
   @override
@@ -188,12 +187,17 @@ class _LegalFooterState extends State<_LegalFooter> {
             style: muted,
             children: [
               TextSpan(text: l10n.authLegalAgreePrefix),
-              TextSpan(text: l10n.authLegalTerms, style: link, recognizer: _terms),
+              TextSpan(
+                text: l10n.authLegalTerms,
+                style: link,
+                recognizer: _terms,
+              ),
               TextSpan(text: l10n.authLegalAcknowledgeMid),
               TextSpan(
-                  text: l10n.authLegalPrivacyPolicy,
-                  style: link,
-                  recognizer: _privacy),
+                text: l10n.authLegalPrivacyPolicy,
+                style: link,
+                recognizer: _privacy,
+              ),
               TextSpan(text: l10n.authLegalCookieSuffix),
             ],
           ),
@@ -305,8 +309,9 @@ class _RememberedAccountsSectionState
           alignment: Alignment.centerLeft,
           child: Text(
             l10n.authContinueAs,
-            style:
-                theme.textTheme.labelMedium?.copyWith(color: AppColors.muted),
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: AppColors.muted,
+            ),
           ),
         ),
         const SizedBox(height: AppSizes.sm),
@@ -363,9 +368,11 @@ class _AccountCard extends StatelessWidget {
                       radius: 20,
                       backgroundColor: AppColors.tileBg(AppColors.brandSoft),
                       child: Text(
-                        _initials(account.name.isNotEmpty
-                            ? account.name
-                            : account.email),
+                        _initials(
+                          account.name.isNotEmpty
+                              ? account.name
+                              : account.email,
+                        ),
                         style: theme.textTheme.labelMedium?.copyWith(
                           color: AppColors.brandStrong,
                           fontWeight: FontWeight.w600,
@@ -387,8 +394,9 @@ class _AccountCard extends StatelessWidget {
                             account.email,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodySmall
-                                ?.copyWith(color: AppColors.muted),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: AppColors.muted,
+                            ),
                           ),
                         ],
                       ),
@@ -400,8 +408,10 @@ class _AccountCard extends StatelessWidget {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     else
-                      Icon(AppIcons.chevronRightRounded,
-                          color: AppColors.subtle),
+                      AppIcon(
+                        AppIcons.chevronRightRounded,
+                        color: AppColors.subtle,
+                      ),
                   ],
                 ),
               ),
@@ -409,8 +419,11 @@ class _AccountCard extends StatelessWidget {
           ),
           IconButton(
             onPressed: busy ? null : onForget,
-            icon: Icon(AppIcons.closeRounded,
-                size: AppSizes.iconSm, color: AppColors.muted),
+            icon: AppIcon(
+              AppIcons.closeRounded,
+              size: AppSizes.iconSm,
+              color: AppColors.muted,
+            ),
             tooltip: l10n.authRemoveThisAccount,
           ),
         ],

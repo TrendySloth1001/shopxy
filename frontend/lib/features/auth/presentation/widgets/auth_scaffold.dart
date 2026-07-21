@@ -7,6 +7,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Below this width the illustration panel is dropped and the form takes the
 /// full width — mirrors the merchant-web auth shell.
@@ -138,8 +139,9 @@ class AuthScaffold extends StatelessWidget {
                     children: [
                       TextSpan(
                         text: '$footerPrompt ',
-                        style: theme.textTheme.bodyMedium
-                            ?.copyWith(color: AppColors.muted),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: AppColors.muted,
+                        ),
                       ),
                       TextSpan(
                         text: footerCta,
@@ -296,7 +298,7 @@ class _HeaderChip extends StatelessWidget {
     this.filled = false,
   });
 
-  final IconData icon;
+  final AppIconData icon;
   final String label;
   final VoidCallback onTap;
   final bool filled;
@@ -309,9 +311,7 @@ class _HeaderChip extends StatelessWidget {
       color: filled ? AppColors.inverseSurface : Colors.transparent,
       shape: AppShapes.squircle(
         AppSizes.radiusFull,
-        side: filled
-            ? BorderSide.none
-            : BorderSide(color: AppColors.hairline),
+        side: filled ? BorderSide.none : BorderSide(color: AppColors.hairline),
       ),
       child: InkWell(
         customBorder: AppShapes.squircle(AppSizes.radiusFull),
@@ -324,12 +324,14 @@ class _HeaderChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 16, color: fg),
+              AppIcon(icon, size: 16, color: fg),
               const SizedBox(width: AppSizes.xs),
               Text(
                 label,
-                style: theme.textTheme.labelMedium
-                    ?.copyWith(color: fg, fontWeight: FontWeight.w600),
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: fg,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
@@ -511,7 +513,9 @@ class _AuthFieldState extends State<AuthField> {
           padding: const EdgeInsets.only(bottom: AppSizes.xs, left: 2),
           child: Text(
             widget.label,
-            style: theme.textTheme.labelMedium?.copyWith(color: AppColors.muted),
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: AppColors.muted,
+            ),
           ),
         ),
         TextFormField(
@@ -533,15 +537,18 @@ class _AuthFieldState extends State<AuthField> {
                     style: TextButton.styleFrom(
                       foregroundColor: AppColors.muted,
                       minimumSize: Size.zero,
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: AppSizes.md),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSizes.md,
+                      ),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                     child: Text(_revealed ? l10n.authHide : l10n.authShow),
                   )
                 : null,
-            suffixIconConstraints:
-                const BoxConstraints(minHeight: 0, minWidth: 0),
+            suffixIconConstraints: const BoxConstraints(
+              minHeight: 0,
+              minWidth: 0,
+            ),
           ),
         ),
       ],
@@ -617,13 +624,18 @@ class AuthErrorBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(AppIcons.errorOutlineRounded,
-              color: AppColors.error, size: AppSizes.iconSm),
+          AppIcon(
+            AppIcons.errorOutlineRounded,
+            color: AppColors.error,
+            size: AppSizes.iconSm,
+          ),
           const SizedBox(width: AppSizes.sm),
           Expanded(
             child: Text(
               message,
-              style: theme.textTheme.bodySmall?.copyWith(color: AppColors.error),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.error,
+              ),
             ),
           ),
         ],

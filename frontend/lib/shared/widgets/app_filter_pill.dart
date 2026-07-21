@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Single filter pill used by any horizontal filter strip in the app.
 /// Two states only — unselected (quiet `surfaceTint`) and selected
@@ -23,11 +25,11 @@ class AppFilterPill extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
-  final IconData? icon;
+  final AppIconData? icon;
 
   /// Optional trailing affordance — used for picker-style pills that
   /// open a deeper UI on tap (e.g. a dropdown caret).
-  final IconData? trailingIcon;
+  final AppIconData? trailingIcon;
 
   /// Active-state fill colour. Also tints the icon when the pill is
   /// unselected, which subtly signals what tone the pill belongs to
@@ -65,7 +67,7 @@ class AppFilterPill extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (icon != null) ...[
-                  Icon(icon, size: AppSizes.iconSm - 2, color: iconColor),
+                  AppIcon(icon, size: AppSizes.iconSm - 2, color: iconColor),
                   const SizedBox(width: AppSizes.xs),
                 ],
                 Text(
@@ -77,7 +79,7 @@ class AppFilterPill extends StatelessWidget {
                 ),
                 if (trailingIcon != null) ...[
                   const SizedBox(width: AppSizes.xs),
-                  Icon(trailingIcon, size: AppSizes.iconSm - 2, color: fg),
+                  AppIcon(trailingIcon, size: AppSizes.iconSm - 2, color: fg),
                 ],
               ],
             ),

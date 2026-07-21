@@ -20,6 +20,7 @@ import 'package:shopxy_customer/features/home/presentation/widgets/home_trust_st
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -93,9 +94,7 @@ class _HomePageState extends State<HomePage> {
                   HomeSearchBar(shrink: _shrink),
                   Container(
                     height: 0.6,
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: AppSizes.lg,
-                    ),
+                    margin: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
                     color: AppColors.hairline,
                   ),
                 ],
@@ -316,39 +315,35 @@ class _HomeFeedListState extends State<_HomeFeedList> {
     return CustomScrollView(
       controller: widget.scroll,
       slivers: [
-        SliverList(
-          delegate: SliverChildListDelegate(sections),
-        ),
+        SliverList(delegate: SliverChildListDelegate(sections)),
         if (products.isNotEmpty)
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
             sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, row) {
-                  final left = products[row * 2];
-                  final rightIdx = row * 2 + 1;
-                  final right =
-                      rightIdx < products.length ? products[rightIdx] : null;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: AppSizes.md),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: HomeProductTile(product: left, width: null),
-                        ),
-                        const SizedBox(width: AppSizes.md),
-                        Expanded(
-                          child: right == null
-                              ? const SizedBox.shrink()
-                              : HomeProductTile(product: right, width: null),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-                childCount: gridRows,
-              ),
+              delegate: SliverChildBuilderDelegate((context, row) {
+                final left = products[row * 2];
+                final rightIdx = row * 2 + 1;
+                final right = rightIdx < products.length
+                    ? products[rightIdx]
+                    : null;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: AppSizes.md),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: HomeProductTile(product: left, width: null),
+                      ),
+                      const SizedBox(width: AppSizes.md),
+                      Expanded(
+                        child: right == null
+                            ? const SizedBox.shrink()
+                            : HomeProductTile(product: right, width: null),
+                      ),
+                    ],
+                  ),
+                );
+              }, childCount: gridRows),
             ),
           ),
         SliverToBoxAdapter(child: _tail()),
@@ -419,7 +414,10 @@ class _EndlessExhausted extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        AppSizes.lg, AppSizes.xl, AppSizes.lg, AppSizes.huge,
+        AppSizes.lg,
+        AppSizes.xl,
+        AppSizes.lg,
+        AppSizes.huge,
       ),
       child: Column(
         children: [
@@ -446,14 +444,13 @@ class _HomeSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget block({double height = 120, EdgeInsets? margin}) => Container(
-          margin:
-              margin ?? const EdgeInsets.symmetric(horizontal: AppSizes.lg),
-          height: height,
-          decoration: BoxDecoration(
-            color: AppColors.heroPanel,
-            borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-          ),
-        );
+      margin: margin ?? const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      height: height,
+      decoration: BoxDecoration(
+        color: AppColors.heroPanel,
+        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+      ),
+    );
     return ListView(
       padding: const EdgeInsets.only(top: AppSizes.lg, bottom: AppSizes.huge),
       children: [
@@ -475,11 +472,7 @@ class _HomeSkeleton extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 6),
-                Container(
-                  width: 40,
-                  height: 8,
-                  color: AppColors.heroPanel,
-                ),
+                Container(width: 40, height: 8, color: AppColors.heroPanel),
               ],
             ),
           ),
@@ -510,7 +503,7 @@ class _ErrorRetry extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            const AppIcon(
               AppIcons.cloudOffOutlined,
               size: 56,
               color: AppColors.muted,
@@ -533,7 +526,7 @@ class _ErrorRetry extends StatelessWidget {
             const SizedBox(height: AppSizes.lg),
             FilledButton.icon(
               onPressed: onRetry,
-              icon: const Icon(AppIcons.refresh),
+              icon: const AppIcon(AppIcons.refresh),
               label: const Text('Try again'),
             ),
           ],

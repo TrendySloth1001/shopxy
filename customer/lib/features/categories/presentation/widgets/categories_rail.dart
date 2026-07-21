@@ -9,6 +9,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Horizontal "Shop by category" rail rendered just under the home top
 /// bar. Each parent category is a compact pill — a round thumbnail +
@@ -71,12 +72,12 @@ class CategoriesRail extends StatelessWidget {
 /// chip without a heavy border.
 class _CategoryChip extends StatelessWidget {
   const _CategoryChip({required this.category, required this.onTap})
-      : label = null;
+    : label = null;
 
   /// Trailing "All" chip — no category image, an apps glyph instead.
   const _CategoryChip.all({required this.onTap})
-      : category = null,
-        label = 'All';
+    : category = null,
+      label = 'All';
 
   final Category? category;
   final String? label;
@@ -102,8 +103,11 @@ class _CategoryChip extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
-            child: const Icon(AppIcons.appsRounded,
-                color: AppColors.black, size: AppSizes.iconMd),
+            child: const AppIcon(
+              AppIcons.appsRounded,
+              color: AppColors.black,
+              size: AppSizes.iconMd,
+            ),
           );
 
     return Material(
@@ -117,7 +121,11 @@ class _CategoryChip extends StatelessWidget {
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(
-              AppSizes.xs, AppSizes.xs, AppSizes.md, AppSizes.xs),
+            AppSizes.xs,
+            AppSizes.xs,
+            AppSizes.md,
+            AppSizes.xs,
+          ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [

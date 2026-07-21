@@ -16,6 +16,7 @@ import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/shared/format/app_format.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 class ReturnDetailPage extends StatefulWidget {
   const ReturnDetailPage({super.key, required this.returnId});
@@ -99,18 +100,20 @@ class _ReturnDetailPageState extends State<ReturnDetailPage> {
       body: _loading
           ? const _ReturnDetailSkeleton()
           : _error != null
-              ? Center(child: Padding(
-                  padding: const EdgeInsets.all(AppSizes.xxl),
-                  child: Text(_error!),
-                ))
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: _Body(
-                    data: _data!,
-                    cancelling: _cancelling,
-                    onCancel: _cancel,
-                  ),
-                ),
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSizes.xxl),
+                child: Text(_error!),
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: _Body(
+                data: _data!,
+                cancelling: _cancelling,
+                onCancel: _cancel,
+              ),
+            ),
     );
   }
 }
@@ -164,12 +167,17 @@ class _Body extends StatelessWidget {
                         color: AppColors.error,
                       ),
                     )
-                  : const Icon(AppIcons.closeRounded, color: AppColors.error),
-              label: Text('Cancel return',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.error,
-                        fontWeight: FontWeight.w800,
-                      )),
+                  : const AppIcon(
+                      AppIcons.closeRounded,
+                      color: AppColors.error,
+                    ),
+              label: Text(
+                'Cancel return',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.error,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: AppSizes.lg),
                 shape: AppShapes.squircle(AppSizes.radiusMd),
@@ -204,32 +212,32 @@ class _HeroCard extends StatelessWidget {
             Text(
               data.shop.name,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.brand,
-                    fontWeight: FontWeight.w800,
-                  ),
+                color: AppColors.brand,
+                fontWeight: FontWeight.w800,
+              ),
             ),
             const SizedBox(height: AppSizes.xs),
             Text(
               stamp,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.muted,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
             ),
             const SizedBox(height: AppSizes.md),
             Text(
               'REFUND',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: AppColors.muted,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.5,
-                  ),
+                color: AppColors.muted,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.5,
+              ),
             ),
             Text(
               AppFormat.rupees(data.refundAmount),
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: AppColors.black,
-                    fontWeight: FontWeight.w800,
-                  ),
+                color: AppColors.black,
+                fontWeight: FontWeight.w800,
+              ),
             ),
             if (data.isRefunded)
               Padding(
@@ -237,9 +245,9 @@ class _HeroCard extends StatelessWidget {
                 child: Text(
                   'Refunded to your original payment method',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.success,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    color: AppColors.success,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
           ],
@@ -310,18 +318,18 @@ class _ItemRow extends StatelessWidget {
                 Text(
                   item.productName,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.black,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    color: AppColors.black,
+                    fontWeight: FontWeight.w700,
+                  ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: AppSizes.xs),
                 Text(
                   '${item.quantity.toStringAsFixed(item.quantity == item.quantity.roundToDouble() ? 0 : 2)} ${item.unit} · ${reasonLabel(item.reason)}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.muted,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
                 ),
               ],
             ),
@@ -330,9 +338,9 @@ class _ItemRow extends StatelessWidget {
           Text(
             AppFormat.rupees(item.refundAmount),
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.black,
-                  fontWeight: FontWeight.w800,
-                ),
+              color: AppColors.black,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ],
       ),
@@ -351,7 +359,10 @@ class _TimelineCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.md),
       child: Container(
         padding: const EdgeInsets.fromLTRB(
-          AppSizes.md, AppSizes.md, AppSizes.md, AppSizes.sm,
+          AppSizes.md,
+          AppSizes.md,
+          AppSizes.md,
+          AppSizes.sm,
         ),
         decoration: ShapeDecoration(
           color: AppColors.white,
@@ -391,17 +402,17 @@ class _NoteBlock extends StatelessWidget {
             Text(
               label.toUpperCase(),
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: fg.withValues(alpha: 0.7),
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.5,
-                  ),
+                color: fg.withValues(alpha: 0.7),
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.5,
+              ),
             ),
             const SizedBox(height: AppSizes.xs),
             Text(
               text,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: fg,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: fg),
             ),
           ],
         ),
@@ -577,7 +588,10 @@ class _TimelineCardSkeleton extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.md),
       child: Container(
         padding: const EdgeInsets.fromLTRB(
-          AppSizes.md, AppSizes.md, AppSizes.md, AppSizes.sm,
+          AppSizes.md,
+          AppSizes.md,
+          AppSizes.md,
+          AppSizes.sm,
         ),
         decoration: ShapeDecoration(
           color: AppColors.white,

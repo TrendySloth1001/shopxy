@@ -7,6 +7,7 @@ import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Per-category notification preferences. Each row toggles a
 /// `notify*` flag on the user row; the channel rows at the bottom
@@ -37,13 +38,13 @@ class _NotificationPreferencesPageState
     setState(() => _saving = true);
     try {
       await context.read<AuthProvider>().updateNotificationPrefs(
-            notifyOrders: notifyOrders,
-            notifyDeals: notifyDeals,
-            notifyAccount: notifyAccount,
-            notifyMessages: notifyMessages,
-            pushEnabled: pushEnabled,
-            smsEnabled: smsEnabled,
-          );
+        notifyOrders: notifyOrders,
+        notifyDeals: notifyDeals,
+        notifyAccount: notifyAccount,
+        notifyMessages: notifyMessages,
+        pushEnabled: pushEnabled,
+        smsEnabled: smsEnabled,
+      );
     } catch (e) {
       if (!mounted) return;
       showAppSnackbar(
@@ -141,21 +142,21 @@ class _SectionHeader extends StatelessWidget {
   final String label;
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg,
-          AppSizes.lg,
-          AppSizes.lg,
-          AppSizes.xs,
-        ),
-        child: Text(
-          label.toUpperCase(),
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: AppColors.muted,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.8,
-              ),
-        ),
-      );
+    padding: const EdgeInsets.fromLTRB(
+      AppSizes.lg,
+      AppSizes.lg,
+      AppSizes.lg,
+      AppSizes.xs,
+    ),
+    child: Text(
+      label.toUpperCase(),
+      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+        color: AppColors.muted,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.8,
+      ),
+    ),
+  );
 }
 
 class _PrefTile extends StatelessWidget {
@@ -170,7 +171,7 @@ class _PrefTile extends StatelessWidget {
   });
   final String title;
   final String subtitle;
-  final IconData icon;
+  final AppIconData icon;
   final Color tint;
   final Color iconColor;
   final bool value;
@@ -180,7 +181,9 @@ class _PrefTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.lg, vertical: AppSizes.xs),
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.xs,
+      ),
       child: SwitchListTile.adaptive(
         value: value,
         onChanged: onChanged,
@@ -188,26 +191,22 @@ class _PrefTile extends StatelessWidget {
         secondary: Container(
           width: AppSizes.avatarXs,
           height: AppSizes.avatarXs,
-          decoration: BoxDecoration(
-            color: tint,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: tint, shape: BoxShape.circle),
           alignment: Alignment.center,
-          child: Icon(icon, color: iconColor, size: 18),
+          child: AppIcon(icon, color: iconColor, size: 18),
         ),
         title: Text(
           title,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.black,
-                fontWeight: FontWeight.w700,
-              ),
+            color: AppColors.black,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         subtitle: Text(
           subtitle,
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(color: AppColors.muted),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
         ),
       ),
     );

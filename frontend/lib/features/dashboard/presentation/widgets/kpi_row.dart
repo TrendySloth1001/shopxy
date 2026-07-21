@@ -6,6 +6,7 @@ import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Hero KPI row — what you sold, kept, are owed, and owe. 2 columns on
 /// phones, 4 on wide screens. Mirrors `components/kpi-row.tsx`. Each card
@@ -31,8 +32,11 @@ class KpiRow extends StatelessWidget {
               label: l10n.dashboardSales,
               value: inr.format(kpis.sales.value),
               footer: DeltaChip(value: kpis.sales.deltaPct),
-              onTap: () => showKpiDrillSheet(context,
-                  kind: KpiDrillKind.sales, period: period),
+              onTap: () => showKpiDrillSheet(
+                context,
+                kind: KpiDrillKind.sales,
+                period: period,
+              ),
             ),
             _KpiCard(
               icon: AppIcons.trendingUpRounded,
@@ -52,8 +56,11 @@ class KpiRow extends StatelessWidget {
                   ),
                 ],
               ),
-              onTap: () => showKpiDrillSheet(context,
-                  kind: KpiDrillKind.profit, period: period),
+              onTap: () => showKpiDrillSheet(
+                context,
+                kind: KpiDrillKind.profit,
+                period: period,
+              ),
             ),
             _KpiCard(
               icon: AppIcons.southWestRounded,
@@ -67,8 +74,11 @@ class KpiRow extends StatelessWidget {
                 style: DashText.labelMd,
                 overflow: TextOverflow.ellipsis,
               ),
-              onTap: () => showKpiDrillSheet(context,
-                  kind: KpiDrillKind.receivables, period: period),
+              onTap: () => showKpiDrillSheet(
+                context,
+                kind: KpiDrillKind.receivables,
+                period: period,
+              ),
             ),
             _KpiCard(
               icon: AppIcons.northEastRounded,
@@ -82,8 +92,11 @@ class KpiRow extends StatelessWidget {
                 style: DashText.labelMd,
                 overflow: TextOverflow.ellipsis,
               ),
-              onTap: () => showKpiDrillSheet(context,
-                  kind: KpiDrillKind.payables, period: period),
+              onTap: () => showKpiDrillSheet(
+                context,
+                kind: KpiDrillKind.payables,
+                period: period,
+              ),
             ),
           ],
         );
@@ -102,7 +115,7 @@ class _KpiCard extends StatelessWidget {
     required this.onTap,
   });
 
-  final IconData icon;
+  final AppIconData icon;
   final Color iconColor;
   final String label;
   final String value;
@@ -119,11 +132,14 @@ class _KpiCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: AppSizes.iconSm, color: iconColor),
+              AppIcon(icon, size: AppSizes.iconSm, color: iconColor),
               const SizedBox(width: AppSizes.sm),
               Flexible(
-                child: Text(label,
-                    style: DashText.labelMd, overflow: TextOverflow.ellipsis),
+                child: Text(
+                  label,
+                  style: DashText.labelMd,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),

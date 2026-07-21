@@ -9,6 +9,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Bottom-sheet editor for one PlatformBankOffer. Returns `true` to
 /// the caller iff the save succeeded so the list page can refresh.
@@ -101,8 +102,7 @@ class _BodyState extends State<_Body> {
     _cardType = (e?.cardType.isNotEmpty ?? false) ? e!.cardType : 'ANY';
     _discountType = e?.discountType ?? 'PERCENT';
     _validFrom = e?.validFrom ?? DateTime.now();
-    _validUntil = e?.validUntil ??
-        DateTime.now().add(const Duration(days: 30));
+    _validUntil = e?.validUntil ?? DateTime.now().add(const Duration(days: 30));
     _isActive = e?.isActive ?? true;
     // Unknown legacy enum values fall back to the first option so
     // the dropdown doesn't assert.
@@ -182,16 +182,22 @@ class _BodyState extends State<_Body> {
     // render, so the admin sees what they're publishing.
     final discountStr =
         double.tryParse(_discountValue.text.trim())?.toStringAsFixed(0) ?? '0';
-    final capStr = (_discountType == 'PERCENT' &&
+    final capStr =
+        (_discountType == 'PERCENT' &&
             (double.tryParse(_maxDiscount.text.trim()) ?? 0) > 0)
         ? l10n.adminBankOfferPreviewCap(_maxDiscount.text.trim())
         : '';
     final cardLabel = _cardType == 'ANY' ? '' : ' ${_kCardTypes[_cardType]}';
     final preview = _discountType == 'PERCENT'
         ? l10n.adminBankOfferPreviewPercent(
-            discountStr, capStr, '${_kBanks[_bank]}$cardLabel')
+            discountStr,
+            capStr,
+            '${_kBanks[_bank]}$cardLabel',
+          )
         : l10n.adminBankOfferPreviewFlat(
-            discountStr, '${_kBanks[_bank]}$cardLabel');
+            discountStr,
+            '${_kBanks[_bank]}$cardLabel',
+          );
 
     return Padding(
       padding: EdgeInsets.only(
@@ -206,11 +212,12 @@ class _BodyState extends State<_Body> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              isEdit ? l10n.adminBankOfferEditTitle : l10n.adminBankOfferNewTitle,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w800),
+              isEdit
+                  ? l10n.adminBankOfferEditTitle
+                  : l10n.adminBankOfferNewTitle,
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: AppSizes.md),
             DropdownButtonFormField<String>(
@@ -250,11 +257,13 @@ class _BodyState extends State<_Body> {
                     ),
                     items: [
                       DropdownMenuItem(
-                          value: 'PERCENT',
-                          child: Text(l10n.adminBankOfferTypePercent)),
+                        value: 'PERCENT',
+                        child: Text(l10n.adminBankOfferTypePercent),
+                      ),
                       DropdownMenuItem(
-                          value: 'FLAT',
-                          child: Text(l10n.adminBankOfferTypeFlat)),
+                        value: 'FLAT',
+                        child: Text(l10n.adminBankOfferTypeFlat),
+                      ),
                     ],
                     onChanged: (v) =>
                         setState(() => _discountType = v ?? 'PERCENT'),
@@ -282,8 +291,9 @@ class _BodyState extends State<_Body> {
               const SizedBox(height: AppSizes.sm),
               TextField(
                 controller: _maxDiscount,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 onChanged: (_) => setState(() {}),
                 decoration: InputDecoration(
                   labelText: l10n.adminBankOfferMaxDiscountLabel,
@@ -294,8 +304,9 @@ class _BodyState extends State<_Body> {
             const SizedBox(height: AppSizes.sm),
             TextField(
               controller: _minOrder,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               decoration: InputDecoration(
                 labelText: l10n.adminBankOfferMinOrderLabel,
                 border: const OutlineInputBorder(),
@@ -319,18 +330,20 @@ class _BodyState extends State<_Body> {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () => _pickDate(isFrom: true),
-                    icon: const Icon(AppIcons.event),
+                    icon: const AppIcon(AppIcons.event),
                     label: Text(
-                        l10n.adminBankOfferFrom(_date.format(_validFrom))),
+                      l10n.adminBankOfferFrom(_date.format(_validFrom)),
+                    ),
                   ),
                 ),
                 const SizedBox(width: AppSizes.sm),
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () => _pickDate(isFrom: false),
-                    icon: const Icon(AppIcons.eventAvailable),
+                    icon: const AppIcon(AppIcons.eventAvailable),
                     label: Text(
-                        l10n.adminBankOfferUntil(_date.format(_validUntil))),
+                      l10n.adminBankOfferUntil(_date.format(_validUntil)),
+                    ),
                   ),
                 ),
               ],
@@ -355,18 +368,17 @@ class _BodyState extends State<_Body> {
                   Text(
                     l10n.adminBankOfferPdpPreview,
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: AppColors.muted,
-                          letterSpacing: 0.6,
-                          fontWeight: FontWeight.w700,
-                        ),
+                      color: AppColors.muted,
+                      letterSpacing: 0.6,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(height: AppSizes.xs),
                   Text(
                     preview,
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(fontWeight: FontWeight.w700),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ],
               ),
@@ -376,8 +388,7 @@ class _BodyState extends State<_Body> {
               Container(
                 padding: const EdgeInsets.all(AppSizes.sm),
                 color: AppColors.errorSoft,
-                child: Text(_error!,
-                    style: TextStyle(color: AppColors.error)),
+                child: Text(_error!, style: TextStyle(color: AppColors.error)),
               ),
             ],
             const SizedBox(height: AppSizes.md),
@@ -387,8 +398,8 @@ class _BodyState extends State<_Body> {
                 _saving
                     ? l10n.adminSaving
                     : isEdit
-                        ? l10n.adminSaveChanges
-                        : l10n.adminBankOfferCreate,
+                    ? l10n.adminSaveChanges
+                    : l10n.adminBankOfferCreate,
               ),
             ),
           ],

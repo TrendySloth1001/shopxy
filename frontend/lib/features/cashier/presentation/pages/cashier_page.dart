@@ -9,6 +9,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Cashier control center: open/close a till shift, manage the cash drawer,
 /// reconcile (X/Z report), and process returns. Reaches /me/cashier over HTTP.
@@ -101,7 +102,12 @@ class _CashierPageState extends State<CashierPage> {
       backgroundColor: AppColors.canvas,
       appBar: FloatingAppBar(
         title: l10n.cashierTitle,
-        actions: [IconButton(onPressed: _loading ? null : _load, icon: const Icon(AppIcons.refreshRounded))],
+        actions: [
+          IconButton(
+            onPressed: _loading ? null : _load,
+            icon: const AppIcon(AppIcons.refreshRounded),
+          ),
+        ],
       ),
       body: _loading
           ? const SafeArea(
@@ -113,22 +119,31 @@ class _CashierPageState extends State<CashierPage> {
               onRefresh: _load,
               child: ListView(
                 padding: EdgeInsets.fromLTRB(
-                    AppSizes.lg,
-                    AppSizes.lg + FloatingAppBar.contentTopInset(context),
-                    AppSizes.lg,
-                    AppSizes.lg),
+                  AppSizes.lg,
+                  AppSizes.lg + FloatingAppBar.contentTopInset(context),
+                  AppSizes.lg,
+                  AppSizes.lg,
+                ),
                 children: [
                   if (_open) ...[
                     _ShiftOwnerBanner(shift: _shift!),
                     const SizedBox(height: AppSizes.lg),
                     if (_report != null) _ReportCard(report: _report!),
                     const SizedBox(height: AppSizes.lg),
-                    _CashDrawerCard(busy: _busy, onRecord: (t, a, r) => _run(() async {
-                          final rep = await _ds.cashMovement(t, a, r);
-                          if (mounted) setState(() => _report = rep);
-                        })),
+                    _CashDrawerCard(
+                      busy: _busy,
+                      onRecord: (t, a, r) => _run(() async {
+                        final rep = await _ds.cashMovement(t, a, r);
+                        if (mounted) setState(() => _report = rep);
+                      }),
+                    ),
                     const SizedBox(height: AppSizes.lg),
-                    _ReturnsCard(ds: _ds, busy: _busy, onChanged: _load, run: _run),
+                    _ReturnsCard(
+                      ds: _ds,
+                      busy: _busy,
+                      onChanged: _load,
+                      run: _run,
+                    ),
                     const SizedBox(height: AppSizes.lg),
                     _CloseShiftCard(
                       expected: _d(_report?['cash']?['expected']),
@@ -137,15 +152,20 @@ class _CashierPageState extends State<CashierPage> {
                         final rep = await _ds.closeShift(counted, note);
                         if (!mounted) return;
                         final variance = _d(rep['cash']?['variance']);
-                        _toast(l10n.cashierShiftClosedVariance(_money(variance)));
+                        _toast(
+                          l10n.cashierShiftClosedVariance(_money(variance)),
+                        );
                         await _load();
                       }),
                     ),
                   ] else
-                    _OpenShiftForm(busy: _busy, onOpen: (f) => _run(() async {
-                          await _ds.openShift(f);
-                          await _load();
-                        })),
+                    _OpenShiftForm(
+                      busy: _busy,
+                      onOpen: (f) => _run(() async {
+                        await _ds.openShift(f);
+                        await _load();
+                      }),
+                    ),
                   const SizedBox(height: AppSizes.lg),
                   _ShiftHistoryCard(ds: _ds),
                 ],
@@ -180,22 +200,45 @@ class _ShiftOwnerBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(AppIcons.accountCircleOutlined, color: AppColors.brand),
+          AppIcon(AppIcons.accountCircleOutlined, color: AppColors.brand),
           const SizedBox(width: AppSizes.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
-                if (email != null) Text(email, style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted)),
+                Text(
+                  name,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if (email != null)
+                  Text(
+                    email,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.muted,
+                    ),
+                  ),
               ],
             ),
           ),
-          Row(children: [
-            Icon(AppIcons.timerOutlined, size: AppSizes.iconSm, color: AppColors.muted),
-            const SizedBox(width: AppSizes.xs),
-            Text(_elapsed(shift['openedAt']), style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700, fontFeatures: const [])),
-          ]),
+          Row(
+            children: [
+              AppIcon(
+                AppIcons.timerOutlined,
+                size: AppSizes.iconSm,
+                color: AppColors.muted,
+              ),
+              const SizedBox(width: AppSizes.xs),
+              Text(
+                _elapsed(shift['openedAt']),
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  fontFeatures: const [],
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -238,11 +281,19 @@ class _ShiftHistoryCardState extends State<_ShiftHistoryCard> {
         builder: (ctx) => DraggableScrollableSheet(
           expand: false,
           initialChildSize: 0.7,
-          builder: (ctx, ctrl) => ListView(controller: ctrl, padding: const EdgeInsets.all(AppSizes.lg), children: [_ReportCard(report: rep)]),
+          builder: (ctx, ctrl) => ListView(
+            controller: ctrl,
+            padding: const EdgeInsets.all(AppSizes.lg),
+            children: [_ReportCard(report: rep)],
+          ),
         ),
       );
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        );
+      }
     }
   }
 
@@ -254,25 +305,36 @@ class _ShiftHistoryCardState extends State<_ShiftHistoryCard> {
       title: l10n.cashierPastShiftsTitle,
       icon: AppIcons.historyRounded,
       child: _shifts == null
-          ? Padding(padding: const EdgeInsets.symmetric(vertical: AppSizes.md), child: Text(l10n.cashierLoading))
+          ? Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
+              child: Text(l10n.cashierLoading),
+            )
           : _shifts!.isEmpty
-              ? Padding(padding: const EdgeInsets.symmetric(vertical: AppSizes.md), child: Text(l10n.cashierNoShiftsYet))
-              : Column(
-                  children: [
-                    for (final s in _shifts!)
-                      ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text('${s['openedByName'] ?? l10n.cashierRoleCashier} · ${s['status']}', style: theme.textTheme.titleSmall),
-                        subtitle: Text(
-                          '${DateTime.tryParse(s['openedAt']?.toString() ?? '')?.toLocal().toString().split('.').first ?? ''}'
-                          '${s['variance'] != null ? ' · ${l10n.cashierVarianceLabel(_money(_d(s['variance'])))}' : ''}',
-                          style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
-                        ),
-                        trailing: const Icon(AppIcons.chevronRightRounded),
-                        onTap: () => _view(_i(s['id'])),
+          ? Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
+              child: Text(l10n.cashierNoShiftsYet),
+            )
+          : Column(
+              children: [
+                for (final s in _shifts!)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      '${s['openedByName'] ?? l10n.cashierRoleCashier} · ${s['status']}',
+                      style: theme.textTheme.titleSmall,
+                    ),
+                    subtitle: Text(
+                      '${DateTime.tryParse(s['openedAt']?.toString() ?? '')?.toLocal().toString().split('.').first ?? ''}'
+                      '${s['variance'] != null ? ' · ${l10n.cashierVarianceLabel(_money(_d(s['variance'])))}' : ''}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.muted,
                       ),
-                  ],
-                ),
+                    ),
+                    trailing: const AppIcon(AppIcons.chevronRightRounded),
+                    onTap: () => _view(_i(s['id'])),
+                  ),
+              ],
+            ),
     );
   }
 }
@@ -281,7 +343,7 @@ class _Card extends StatelessWidget {
   const _Card({required this.title, required this.child, this.icon});
   final String title;
   final Widget child;
-  final IconData? icon;
+  final AppIconData? icon;
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -295,10 +357,20 @@ class _Card extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            if (icon != null) ...[Icon(icon, size: AppSizes.iconSm, color: AppColors.muted), const SizedBox(width: AppSizes.xs)],
-            Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-          ]),
+          Row(
+            children: [
+              if (icon != null) ...[
+                AppIcon(icon, size: AppSizes.iconSm, color: AppColors.muted),
+                const SizedBox(width: AppSizes.xs),
+              ],
+              Text(
+                title,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: AppSizes.md),
           child,
         ],
@@ -315,13 +387,20 @@ class _KV extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final style = theme.textTheme.bodyMedium?.copyWith(fontWeight: bold ? FontWeight.w700 : FontWeight.w400);
+    final style = theme.textTheme.bodyMedium?.copyWith(
+      fontWeight: bold ? FontWeight.w700 : FontWeight.w400,
+    );
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: theme.textTheme.bodyMedium?.copyWith(color: bold ? AppColors.black : AppColors.muted)),
+          Text(
+            label,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: bold ? AppColors.black : AppColors.muted,
+            ),
+          ),
           Text(value, style: style),
         ],
       ),
@@ -346,8 +425,15 @@ class _ReportCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(l10n.cashierSalesSummary('${_i(sales['count'])}', _money(_d(sales['gross']))),
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.muted)),
+          Text(
+            l10n.cashierSalesSummary(
+              '${_i(sales['count'])}',
+              _money(_d(sales['gross'])),
+            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
+          ),
           Divider(height: AppSizes.lg, color: AppColors.hairline),
           _KV(l10n.cashierOpeningFloat, _money(_d(cash['openingFloat']))),
           _KV(l10n.cashierCashSales, _money(_d(cash['cashSales']))),
@@ -356,7 +442,11 @@ class _ReportCard extends StatelessWidget {
           _KV(l10n.cashierDrops, '− ${_money(_d(cash['drops']))}'),
           _KV(l10n.cashierRefunds, '− ${_money(_d(cash['refunds']))}'),
           Divider(height: AppSizes.lg, color: AppColors.hairline),
-          _KV(l10n.cashierExpectedInDrawer, _money(_d(cash['expected'])), bold: true),
+          _KV(
+            l10n.cashierExpectedInDrawer,
+            _money(_d(cash['expected'])),
+            bold: true,
+          ),
           if (tenders.isNotEmpty) ...[
             Divider(height: AppSizes.lg, color: AppColors.hairline),
             for (final t in tenders.cast<Map>())
@@ -369,7 +459,10 @@ class _ReportCard extends StatelessWidget {
           if (_d(gst['igst']) > 0) _KV('IGST', _money(_d(gst['igst']))),
           if (_i(returns['count']) > 0) ...[
             Divider(height: AppSizes.lg, color: AppColors.hairline),
-            _KV(l10n.cashierReturnsCount('${_i(returns['count'])}'), '− ${_money(_d(returns['amount']))}'),
+            _KV(
+              l10n.cashierReturnsCount('${_i(returns['count'])}'),
+              '− ${_money(_d(returns['amount']))}',
+            ),
           ],
         ],
       ),
@@ -404,18 +497,27 @@ class _OpenShiftFormState extends State<_OpenShiftForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(l10n.cashierOpenShiftHint,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.muted)),
+            Text(
+              l10n.cashierOpenShiftHint,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
+            ),
             const SizedBox(height: AppSizes.md),
             TextField(
               controller: _ctrl,
               keyboardType: TextInputType.number,
-              decoration: InputDecoration(labelText: l10n.cashierOpeningFloatField, border: const OutlineInputBorder()),
+              decoration: InputDecoration(
+                labelText: l10n.cashierOpeningFloatField,
+                border: const OutlineInputBorder(),
+              ),
             ),
             const SizedBox(height: AppSizes.md),
             FilledButton.icon(
-              onPressed: widget.busy ? null : () => widget.onOpen(_parseAmount(_ctrl.text) ?? 0),
-              icon: const Icon(AppIcons.lockOpenRounded),
+              onPressed: widget.busy
+                  ? null
+                  : () => widget.onOpen(_parseAmount(_ctrl.text) ?? 0),
+              icon: const AppIcon(AppIcons.lockOpenRounded),
               label: Text(l10n.cashierOpenShiftButton),
             ),
           ],
@@ -453,14 +555,38 @@ class _CashDrawerCardState extends State<_CashDrawerCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Wrap(spacing: AppSizes.sm, children: [
-            for (final t in [('PAY_IN', l10n.cashierPayIn), ('PAY_OUT', l10n.cashierPayOut), ('DROP', l10n.cashierDrop)])
-              ChoiceChip(label: Text(t.$2), selected: _type == t.$1, onSelected: (_) => setState(() => _type = t.$1)),
-          ]),
+          Wrap(
+            spacing: AppSizes.sm,
+            children: [
+              for (final t in [
+                ('PAY_IN', l10n.cashierPayIn),
+                ('PAY_OUT', l10n.cashierPayOut),
+                ('DROP', l10n.cashierDrop),
+              ])
+                ChoiceChip(
+                  label: Text(t.$2),
+                  selected: _type == t.$1,
+                  onSelected: (_) => setState(() => _type = t.$1),
+                ),
+            ],
+          ),
           const SizedBox(height: AppSizes.sm),
-          TextField(controller: _amount, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: l10n.cashierAmountField, border: const OutlineInputBorder())),
+          TextField(
+            controller: _amount,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              labelText: l10n.cashierAmountField,
+              border: const OutlineInputBorder(),
+            ),
+          ),
           const SizedBox(height: AppSizes.sm),
-          TextField(controller: _reason, decoration: InputDecoration(labelText: l10n.cashierReasonField, border: const OutlineInputBorder())),
+          TextField(
+            controller: _reason,
+            decoration: InputDecoration(
+              labelText: l10n.cashierReasonField,
+              border: const OutlineInputBorder(),
+            ),
+          ),
           const SizedBox(height: AppSizes.sm),
           FilledButton(
             onPressed: widget.busy
@@ -481,7 +607,11 @@ class _CashDrawerCardState extends State<_CashDrawerCard> {
 }
 
 class _CloseShiftCard extends StatefulWidget {
-  const _CloseShiftCard({required this.expected, required this.busy, required this.onClose});
+  const _CloseShiftCard({
+    required this.expected,
+    required this.busy,
+    required this.onClose,
+  });
   final double expected;
   final bool busy;
   final void Function(double counted, String? note) onClose;
@@ -510,14 +640,21 @@ class _CloseShiftCardState extends State<_CloseShiftCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(l10n.cashierExpectedInDrawerValue(_money(widget.expected)),
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.muted)),
+          Text(
+            l10n.cashierExpectedInDrawerValue(_money(widget.expected)),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
+          ),
           const SizedBox(height: AppSizes.sm),
           TextField(
             controller: _counted,
             keyboardType: TextInputType.number,
             onChanged: (_) => setState(() {}),
-            decoration: InputDecoration(labelText: l10n.cashierCountedCashField, border: const OutlineInputBorder()),
+            decoration: InputDecoration(
+              labelText: l10n.cashierCountedCashField,
+              border: const OutlineInputBorder(),
+            ),
           ),
           if (variance != null)
             Padding(
@@ -525,17 +662,31 @@ class _CloseShiftCardState extends State<_CloseShiftCard> {
               child: Text(
                 l10n.cashierVarianceValue(
                   '${variance >= 0 ? '+' : ''}${_money(variance)}',
-                  variance == 0 ? l10n.cashierVarianceBalanced : variance > 0 ? l10n.cashierVarianceOver : l10n.cashierVarianceShort,
+                  variance == 0
+                      ? l10n.cashierVarianceBalanced
+                      : variance > 0
+                      ? l10n.cashierVarianceOver
+                      : l10n.cashierVarianceShort,
                 ),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: variance == 0 ? AppColors.success : AppColors.warning),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: variance == 0 ? AppColors.success : AppColors.warning,
+                ),
               ),
             ),
           const SizedBox(height: AppSizes.sm),
-          TextField(controller: _note, decoration: InputDecoration(labelText: l10n.cashierNoteField, border: const OutlineInputBorder())),
+          TextField(
+            controller: _note,
+            decoration: InputDecoration(
+              labelText: l10n.cashierNoteField,
+              border: const OutlineInputBorder(),
+            ),
+          ),
           const SizedBox(height: AppSizes.sm),
           FilledButton.icon(
-            onPressed: widget.busy || counted == null ? null : () => widget.onClose(counted, _note.text.trim()),
-            icon: const Icon(AppIcons.lockOutlineRounded),
+            onPressed: widget.busy || counted == null
+                ? null
+                : () => widget.onClose(counted, _note.text.trim()),
+            icon: const AppIcon(AppIcons.lockOutlineRounded),
             label: Text(l10n.cashierCloseZReportButton),
           ),
         ],
@@ -545,7 +696,12 @@ class _CloseShiftCardState extends State<_CloseShiftCard> {
 }
 
 class _ReturnsCard extends StatefulWidget {
-  const _ReturnsCard({required this.ds, required this.busy, required this.onChanged, required this.run});
+  const _ReturnsCard({
+    required this.ds,
+    required this.busy,
+    required this.onChanged,
+    required this.run,
+  });
   final CashierRemoteDataSource ds;
   final bool busy;
   final Future<void> Function() onChanged;
@@ -579,19 +735,23 @@ class _ReturnsCardState extends State<_ReturnsCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            Expanded(
-              child: TextField(
-                controller: _invoiceId,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(labelText: l10n.cashierOriginalInvoiceIdField, border: const OutlineInputBorder()),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _invoiceId,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: l10n.cashierOriginalInvoiceIdField,
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(width: AppSizes.sm),
-            OutlinedButton(
-              onPressed: widget.busy
-                  ? null
-                  : () => widget.run(() async {
+              const SizedBox(width: AppSizes.sm),
+              OutlinedButton(
+                onPressed: widget.busy
+                    ? null
+                    : () => widget.run(() async {
                         final id = int.tryParse(_invoiceId.text.trim());
                         if (id == null) return;
                         final r = await widget.ds.returnable(id);
@@ -601,63 +761,105 @@ class _ReturnsCardState extends State<_ReturnsCard> {
                           _qty.clear();
                         });
                       }),
-              child: Text(l10n.cashierLookUpButton),
-            ),
-          ]),
+                child: Text(l10n.cashierLookUpButton),
+              ),
+            ],
+          ),
           if (_returnable != null) ...[
             const SizedBox(height: AppSizes.sm),
             for (final l in lines)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
-                child: Row(children: [
-                  Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('${l['name']}', maxLines: 1, overflow: TextOverflow.ellipsis),
-                      Text(l10n.cashierReturnableLine('${_i(l['returnableQty'])}', _money(_d(l['unitPrice']))),
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.muted)),
-                    ]),
-                  ),
-                  SizedBox(
-                    width: 64,
-                    child: TextField(
-                      controller: _qty.putIfAbsent(_i(l['productId']), () => TextEditingController()),
-                      keyboardType: TextInputType.number,
-                      textAlign: TextAlign.center,
-                      enabled: _i(l['returnableQty']) > 0,
-                      decoration: const InputDecoration(hintText: '0', border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(vertical: 8)),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${l['name']}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            l10n.cashierReturnableLine(
+                              '${_i(l['returnableQty'])}',
+                              _money(_d(l['unitPrice'])),
+                            ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: AppColors.muted),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ]),
+                    SizedBox(
+                      width: 64,
+                      child: TextField(
+                        controller: _qty.putIfAbsent(
+                          _i(l['productId']),
+                          () => TextEditingController(),
+                        ),
+                        keyboardType: TextInputType.number,
+                        textAlign: TextAlign.center,
+                        enabled: _i(l['returnableQty']) > 0,
+                        decoration: const InputDecoration(
+                          hintText: '0',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(vertical: 8),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             const SizedBox(height: AppSizes.sm),
-            Wrap(spacing: AppSizes.sm, children: [
-              for (final m in const ['CASH', 'UPI', 'CARD', 'OTHER'])
-                ChoiceChip(label: Text(m), selected: _refundMode == m, onSelected: (_) => setState(() => _refundMode = m)),
-            ]),
+            Wrap(
+              spacing: AppSizes.sm,
+              children: [
+                for (final m in const ['CASH', 'UPI', 'CARD', 'OTHER'])
+                  ChoiceChip(
+                    label: Text(m),
+                    selected: _refundMode == m,
+                    onSelected: (_) => setState(() => _refundMode = m),
+                  ),
+              ],
+            ),
             const SizedBox(height: AppSizes.sm),
             FilledButton.icon(
               onPressed: widget.busy
                   ? null
                   : () => widget.run(() async {
-                        final reqLines = <Map<String, dynamic>>[];
-                        _qty.forEach((productId, ctrl) {
-                          final q = double.tryParse(ctrl.text.trim()) ?? 0;
-                          if (q > 0) reqLines.add({'productId': productId, 'quantity': q});
-                        });
-                        if (reqLines.isEmpty) throw Exception(l10n.cashierEnterQuantityError);
-                        final messenger = ScaffoldMessenger.of(context);
-                        final res = await widget.ds.processReturn(
-                          originalInvoiceId: _i(_returnable!['invoiceId']),
-                          refundMode: _refundMode,
-                          lines: reqLines,
-                        );
-                        if (!mounted) return;
-                        messenger.showSnackBar(SnackBar(
-                            content: Text(l10n.cashierCreditNoteCreated('${res['creditNoteNo']}', _money(_d(res['refundAmount']))))));
-                        setState(() => _returnable = null);
-                        await widget.onChanged();
-                      }),
-              icon: const Icon(AppIcons.assignmentReturnOutlined),
+                      final reqLines = <Map<String, dynamic>>[];
+                      _qty.forEach((productId, ctrl) {
+                        final q = double.tryParse(ctrl.text.trim()) ?? 0;
+                        if (q > 0) {
+                          reqLines.add({'productId': productId, 'quantity': q});
+                        }
+                      });
+                      if (reqLines.isEmpty) {
+                        throw Exception(l10n.cashierEnterQuantityError);
+                      }
+                      final messenger = ScaffoldMessenger.of(context);
+                      final res = await widget.ds.processReturn(
+                        originalInvoiceId: _i(_returnable!['invoiceId']),
+                        refundMode: _refundMode,
+                        lines: reqLines,
+                      );
+                      if (!mounted) return;
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            l10n.cashierCreditNoteCreated(
+                              '${res['creditNoteNo']}',
+                              _money(_d(res['refundAmount'])),
+                            ),
+                          ),
+                        ),
+                      );
+                      setState(() => _returnable = null);
+                      await widget.onChanged();
+                    }),
+              icon: const AppIcon(AppIcons.assignmentReturnOutlined),
               label: Text(l10n.cashierProcessReturnButton),
             ),
           ],

@@ -3,12 +3,17 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/domain/entities/category.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Shared network-image renderer for category artwork. Falls back to a
 /// tinted box (with an optional Material icon) when the URL is null or
 /// the fetch errors. Used by the grid, the rail, and the chip.
 class CategoryImage extends StatelessWidget {
-  const CategoryImage({super.key, required this.category, this.fit = BoxFit.cover});
+  const CategoryImage({
+    super.key,
+    required this.category,
+    this.fit = BoxFit.cover,
+  });
   final Category category;
   final BoxFit fit;
 
@@ -18,8 +23,11 @@ class CategoryImage extends StatelessWidget {
     final fallback = Container(
       color: AppColors.surfaceTint,
       alignment: Alignment.center,
-      child: const Icon(AppIcons.categoryOutlined,
-          color: AppColors.muted, size: AppSizes.iconXl),
+      child: const AppIcon(
+        AppIcons.categoryOutlined,
+        color: AppColors.muted,
+        size: AppSizes.iconXl,
+      ),
     );
     if (url == null || url.isEmpty) return fallback;
     return Image.network(

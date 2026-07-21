@@ -14,6 +14,7 @@ import 'package:shopxy/shared/theme/app_shadows.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Profile tab — polished snapshot of the merchant identity plus the
 /// shortcuts that don't deserve a top-level nav slot. One canonical
@@ -35,7 +36,7 @@ class ProfilePage extends StatelessWidget {
         actions: [
           IconButton(
             tooltip: l10n.profileSettings,
-            icon: const Icon(AppIcons.settingsOutlined),
+            icon: const AppIcon(AppIcons.settingsOutlined),
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const SettingsPage()),
@@ -93,9 +94,9 @@ class ProfilePage extends StatelessWidget {
           Center(
             child: Text(
               '${AppStrings.appName} · ${l10n.profileAppTagline}',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: AppColors.muted,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.labelSmall?.copyWith(color: AppColors.muted),
             ),
           ),
           const SizedBox(height: AppSizes.lg),
@@ -283,7 +284,7 @@ class ProfilePage extends StatelessWidget {
                   shape: AppShapes.squircle(AppSizes.radiusMd),
                 ),
                 alignment: Alignment.center,
-                child: Icon(
+                child: AppIcon(
                   AppIcons.logoutRounded,
                   color: AppColors.error,
                   size: AppSizes.iconLg,
@@ -309,16 +310,19 @@ class ProfilePage extends StatelessWidget {
                 width: double.infinity,
                 child: FilledButton.icon(
                   onPressed: () => Navigator.of(sheetContext).pop(true),
-                  icon: const Icon(AppIcons.logoutRounded, size: AppSizes.iconSm),
+                  icon: const AppIcon(
+                    AppIcons.logoutRounded,
+                    size: AppSizes.iconSm,
+                  ),
                   label: Text(l10n.profileLogout),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.error,
                     foregroundColor: AppColors.white,
-                    padding:
-                        const EdgeInsets.symmetric(vertical: AppSizes.md),
+                    padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
                     shape: AppShapes.squircle(AppSizes.radiusButton),
-                    textStyle: theme.textTheme.labelLarge
-                        ?.copyWith(fontWeight: FontWeight.w700),
+                    textStyle: theme.textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),
@@ -329,8 +333,7 @@ class ProfilePage extends StatelessWidget {
                   onPressed: () => Navigator.of(sheetContext).pop(false),
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.muted,
-                    padding:
-                        const EdgeInsets.symmetric(vertical: AppSizes.md),
+                    padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
                   ),
                   child: Text(l10n.profileCancel),
                 ),
@@ -383,10 +386,7 @@ class _ProfileHero extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            AppColors.brandSoft,
-            AppColors.heroPanel,
-          ],
+          colors: [AppColors.brandSoft, AppColors.heroPanel],
         ),
         shadows: AppShadows.floating,
       ),
@@ -475,7 +475,7 @@ class _ProfileHero extends StatelessWidget {
                 context,
                 MaterialPageRoute(builder: (_) => const EditProfilePage()),
               ),
-              icon: const Icon(AppIcons.editOutlined, size: AppSizes.iconSm),
+              icon: const AppIcon(AppIcons.editOutlined, size: AppSizes.iconSm),
               label: Text(l10n.profileEditProfile),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.brandStrong,
@@ -528,7 +528,7 @@ class _ShopSetupCallout extends StatelessWidget {
                   shape: AppShapes.squircle(AppSizes.radiusSm),
                 ),
                 alignment: Alignment.center,
-                child: Icon(
+                child: AppIcon(
                   AppIcons.storefrontRounded,
                   size: AppSizes.iconMd,
                   color: AppColors.accentAmber,
@@ -556,7 +556,7 @@ class _ShopSetupCallout extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(
+              AppIcon(
                 AppIcons.chevronRightRounded,
                 color: AppColors.accentAmber,
               ),
@@ -583,21 +583,71 @@ class _ProfileCompletion extends StatelessWidget {
   /// both apps show the same percentage. [label] is a localized display
   /// string resolved from [l10n] at build time.
   static List<({String label, bool filled, ProfileField target})> _fields(
-      AuthUser u, AppLocalizations l10n) {
+    AuthUser u,
+    AppLocalizations l10n,
+  ) {
     bool ok(String? v) => v != null && v.trim().isNotEmpty;
     return [
-      (label: l10n.profileFieldName, filled: ok(u.name), target: ProfileField.name),
-      (label: l10n.profileFieldPhoto, filled: ok(u.avatarUrl), target: ProfileField.photo),
-      (label: l10n.profileFieldPhone, filled: ok(u.phoneNumber), target: ProfileField.phone),
-      (label: l10n.profileFieldShopName, filled: ok(u.shopName), target: ProfileField.shopName),
-      (label: l10n.profileFieldAddress, filled: ok(u.shopAddress), target: ProfileField.shopAddress),
-      (label: l10n.profileFieldCity, filled: ok(u.shopCity), target: ProfileField.shopCity),
-      (label: l10n.profileFieldState, filled: ok(u.shopState), target: ProfileField.shopState),
-      (label: l10n.profileFieldStateCode, filled: ok(u.shopStateCode), target: ProfileField.shopState),
-      (label: l10n.profileFieldPinCode, filled: ok(u.shopPinCode), target: ProfileField.shopPinCode),
-      (label: l10n.profileFieldGstin, filled: ok(u.shopGstin), target: ProfileField.shopGstin),
-      (label: l10n.profileFieldPan, filled: ok(u.shopPan), target: ProfileField.shopPan),
-      (label: l10n.profileFieldUpiId, filled: ok(u.upiVpa), target: ProfileField.upiVpa),
+      (
+        label: l10n.profileFieldName,
+        filled: ok(u.name),
+        target: ProfileField.name,
+      ),
+      (
+        label: l10n.profileFieldPhoto,
+        filled: ok(u.avatarUrl),
+        target: ProfileField.photo,
+      ),
+      (
+        label: l10n.profileFieldPhone,
+        filled: ok(u.phoneNumber),
+        target: ProfileField.phone,
+      ),
+      (
+        label: l10n.profileFieldShopName,
+        filled: ok(u.shopName),
+        target: ProfileField.shopName,
+      ),
+      (
+        label: l10n.profileFieldAddress,
+        filled: ok(u.shopAddress),
+        target: ProfileField.shopAddress,
+      ),
+      (
+        label: l10n.profileFieldCity,
+        filled: ok(u.shopCity),
+        target: ProfileField.shopCity,
+      ),
+      (
+        label: l10n.profileFieldState,
+        filled: ok(u.shopState),
+        target: ProfileField.shopState,
+      ),
+      (
+        label: l10n.profileFieldStateCode,
+        filled: ok(u.shopStateCode),
+        target: ProfileField.shopState,
+      ),
+      (
+        label: l10n.profileFieldPinCode,
+        filled: ok(u.shopPinCode),
+        target: ProfileField.shopPinCode,
+      ),
+      (
+        label: l10n.profileFieldGstin,
+        filled: ok(u.shopGstin),
+        target: ProfileField.shopGstin,
+      ),
+      (
+        label: l10n.profileFieldPan,
+        filled: ok(u.shopPan),
+        target: ProfileField.shopPan,
+      ),
+      (
+        label: l10n.profileFieldUpiId,
+        filled: ok(u.upiVpa),
+        target: ProfileField.upiVpa,
+      ),
     ];
   }
 
@@ -636,14 +686,16 @@ class _ProfileCompletion extends StatelessWidget {
                   children: [
                     Text(
                       '${l10n.profileCompletionTitle} $percent%',
-                      style: theme.textTheme.titleSmall
-                          ?.copyWith(fontWeight: FontWeight.w700),
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       '$filled / $total ${l10n.profileCompletionDetailsAdded}',
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: AppColors.muted),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.muted,
+                      ),
                     ),
                   ],
                 ),
@@ -665,8 +717,7 @@ class _ProfileCompletion extends StatelessWidget {
               value: percent / 100,
               minHeight: 8,
               backgroundColor: AppColors.surfaceTint,
-              valueColor:
-                  AlwaysStoppedAnimation<Color>(AppColors.brand),
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.brand),
             ),
           ),
           if (missing.isNotEmpty) ...[
@@ -695,8 +746,7 @@ class _ProfileCompletion extends StatelessWidget {
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) =>
-                              EditProfilePage(focusField: m.target),
+                          builder: (_) => EditProfilePage(focusField: m.target),
                         ),
                       ),
                       customBorder: AppShapes.squircle(AppSizes.radiusFull),
@@ -708,7 +758,7 @@ class _ProfileCompletion extends StatelessWidget {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(
+                            AppIcon(
                               AppIcons.addRounded,
                               size: AppSizes.iconSm,
                               color: AppColors.brandStrong,
@@ -741,8 +791,7 @@ class _ProfileCompletion extends StatelessWidget {
 
 /// The left inset a divider needs so it starts under the row's text, not
 /// under its leading icon: horizontal padding + icon width + icon gap.
-const double _kDetailRowIndent =
-    AppSizes.lg + _kDetailIconSize + AppSizes.md;
+const double _kDetailRowIndent = AppSizes.lg + _kDetailIconSize + AppSizes.md;
 const double _kDetailIconSize = 36;
 
 /// A titled, read-only group of profile fields. A section header (small
@@ -755,7 +804,7 @@ class _DetailSection extends StatelessWidget {
     required this.title,
     required this.rows,
   });
-  final IconData icon;
+  final AppIconData icon;
   final String title;
   final List<Widget> rows;
 
@@ -782,14 +831,14 @@ class _DetailSection extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: AppSizes.xl),
           child: Row(
             children: [
-              Icon(icon, size: AppSizes.iconSm, color: AppColors.muted),
+              AppIcon(icon, size: AppSizes.iconSm, color: AppColors.muted),
               const SizedBox(width: AppSizes.sm),
               Text(
                 title,
                 style: theme.textTheme.titleSmall?.copyWith(
-                      color: AppColors.muted,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  color: AppColors.muted,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
@@ -827,7 +876,7 @@ class _DetailRow extends StatelessWidget {
     this.copyable = false,
   });
 
-  final IconData icon;
+  final AppIconData icon;
   final String label;
   final String? value;
   final Color accent;
@@ -857,7 +906,7 @@ class _DetailRow extends StatelessWidget {
               shape: AppShapes.squircle(AppSizes.radiusSm),
             ),
             alignment: Alignment.center,
-            child: Icon(
+            child: AppIcon(
               icon,
               size: AppSizes.iconMd,
               color: hasValue ? accent : AppColors.subtle,
@@ -889,7 +938,7 @@ class _DetailRow extends StatelessWidget {
           ),
           if (canCopy) ...[
             const SizedBox(width: AppSizes.sm),
-            Icon(
+            AppIcon(
               AppIcons.copyRounded,
               size: AppSizes.iconSm,
               color: AppColors.subtle,
@@ -946,7 +995,7 @@ class _LogoutTile extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
+                AppIcon(
                   AppIcons.logoutRounded,
                   color: AppColors.error,
                   size: AppSizes.iconMd,
@@ -1000,10 +1049,7 @@ class _RoleChip extends StatelessWidget {
     final bg = isOwner ? AppColors.brandSoft : AppColors.accentIndigoSoft;
     final fg = isOwner ? AppColors.brandStrong : AppColors.accentIndigo;
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.sm,
-        vertical: 3,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm, vertical: 3),
       decoration: ShapeDecoration(
         color: bg,
         shape: AppShapes.squircle(AppSizes.radiusFull),
@@ -1021,17 +1067,14 @@ class _RoleChip extends StatelessWidget {
 
 class _MetaChip extends StatelessWidget {
   const _MetaChip({required this.icon, required this.label});
-  final IconData icon;
+  final AppIconData icon;
   final String label;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.sm,
-        vertical: 3,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm, vertical: 3),
       decoration: ShapeDecoration(
         color: AppColors.surface,
         shape: AppShapes.squircle(AppSizes.radiusFull),
@@ -1039,7 +1082,7 @@ class _MetaChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: AppSizes.iconSm, color: AppColors.muted),
+          AppIcon(icon, size: AppSizes.iconSm, color: AppColors.muted),
           const SizedBox(width: AppSizes.xs),
           Text(
             label,
@@ -1087,10 +1130,7 @@ class ProfileAvatar extends StatelessWidget {
         shape: BoxShape.circle,
         border: Border.all(color: AppColors.hairline, width: 1),
         image: resolved != null
-            ? DecorationImage(
-                image: NetworkImage(resolved),
-                fit: BoxFit.cover,
-              )
+            ? DecorationImage(image: NetworkImage(resolved), fit: BoxFit.cover)
             : null,
       ),
       alignment: Alignment.center,

@@ -9,6 +9,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Recent stock movements feed, each row linking to its source document.
 /// Mirrors `components/recent-activity.tsx`.
@@ -26,13 +27,17 @@ class RecentActivity extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: AppSizes.lg),
               child: Row(
                 children: [
-                  Icon(AppIcons.timerOutlined,
-                      size: AppSizes.iconMd, color: AppColors.subtle),
+                  AppIcon(
+                    AppIcons.timerOutlined,
+                    size: AppSizes.iconMd,
+                    color: AppColors.subtle,
+                  ),
                   const SizedBox(width: AppSizes.md),
                   Expanded(
-                    child: Text(l10n.dashboardNoRecentMovements,
-                        style:
-                            DashText.bodyMd.copyWith(color: AppColors.muted)),
+                    child: Text(
+                      l10n.dashboardNoRecentMovements,
+                      style: DashText.bodyMd.copyWith(color: AppColors.muted),
+                    ),
                   ),
                 ],
               ),
@@ -67,18 +72,18 @@ class _ActivityRow extends StatelessWidget {
     final accent = isIn
         ? AppColors.success
         : isOut
-            ? AppColors.error
-            : AppColors.accentIndigo;
+        ? AppColors.error
+        : AppColors.accentIndigo;
     final accentSoft = isIn
         ? AppColors.successSoft
         : isOut
-            ? AppColors.errorSoft
-            : AppColors.accentIndigoSoft;
+        ? AppColors.errorSoft
+        : AppColors.accentIndigoSoft;
     final icon = isIn
         ? AppIcons.southWestRounded
         : isOut
-            ? AppIcons.northEastRounded
-            : AppIcons.swapHorizRounded;
+        ? AppIcons.northEastRounded
+        : AppIcons.swapHorizRounded;
     final sign = isIn ? '+' : (isOut ? '−' : '');
     final time = DateFormat('d MMM · hh:mm a').format(tx.createdAt.toLocal());
     final actionable = tx.hasSourceDocument;
@@ -96,10 +101,11 @@ class _ActivityRow extends StatelessWidget {
               width: AppSizes.avatarXs,
               height: AppSizes.avatarXs,
               decoration: ShapeDecoration(
-                  color: accentSoft,
-                  shape: AppShapes.squircle(AppSizes.radiusMd)),
+                color: accentSoft,
+                shape: AppShapes.squircle(AppSizes.radiusMd),
+              ),
               alignment: Alignment.center,
-              child: Icon(icon, size: 18, color: accent),
+              child: AppIcon(icon, size: 18, color: accent),
             ),
             const SizedBox(width: AppSizes.md),
             Expanded(

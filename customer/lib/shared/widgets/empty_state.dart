@@ -3,6 +3,8 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Glassdoor-style empty state: hand-drawn illustration sitting on a soft
 /// gray panel, with a bold headline + calm secondary copy + optional CTA.
@@ -19,9 +21,9 @@ class EmptyState extends StatelessWidget {
     this.subtitle,
     this.action,
   }) : assert(
-          icon != null || illustration != null,
-          'Pass either icon or illustration',
-        );
+         icon != null || illustration != null,
+         'Pass either icon or illustration',
+       );
 
   /// Use a [LineArt] hero — the recommended path for new screens.
   EmptyState.line({
@@ -31,12 +33,12 @@ class EmptyState extends StatelessWidget {
     String? subtitle,
     Widget? action,
   }) : this(
-          key: key,
-          illustration: LineIllustration(kind: kind, size: 140),
-          title: title,
-          subtitle: subtitle,
-          action: action,
-        );
+         key: key,
+         illustration: LineIllustration(kind: kind, size: 140),
+         title: title,
+         subtitle: subtitle,
+         action: action,
+       );
 
   /// Use a raster (PNG) hero illustration — drop the file under
   /// `assets/` and pass its path, e.g. `'assets/empty_products.png'`.
@@ -48,18 +50,18 @@ class EmptyState extends StatelessWidget {
     Widget? action,
     double size = 140,
   }) : this(
-          key: key,
-          illustration: SizedBox(
-            width: size,
-            height: size,
-            child: Image.asset(asset, fit: BoxFit.contain),
-          ),
-          title: title,
-          subtitle: subtitle,
-          action: action,
-        );
+         key: key,
+         illustration: SizedBox(
+           width: size,
+           height: size,
+           child: Image.asset(asset, fit: BoxFit.contain),
+         ),
+         title: title,
+         subtitle: subtitle,
+         action: action,
+       );
 
-  final IconData? icon;
+  final AppIconData? icon;
   final Widget? illustration;
   final String title;
   final String? subtitle;
@@ -83,8 +85,13 @@ class EmptyState extends StatelessWidget {
                 color: AppColors.heroPanel,
                 shape: AppShapes.squircle(AppSizes.radiusLg),
               ),
-              child: illustration ??
-                  Icon(icon, size: AppSizes.iconHuge, color: AppColors.muted),
+              child:
+                  illustration ??
+                  AppIcon(
+                    icon,
+                    size: AppSizes.iconHuge,
+                    color: AppColors.muted,
+                  ),
             ),
             const SizedBox(height: AppSizes.xl),
             Text(

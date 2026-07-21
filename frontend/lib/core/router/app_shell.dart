@@ -12,6 +12,7 @@ import 'package:shopxy/features/products/presentation/pages/products_page.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -35,8 +36,8 @@ class _Destination {
   /// localizations. A resolver (not a plain String) because the destination
   /// list is declared statically, outside any BuildContext.
   final String Function(AppLocalizations l10n) label;
-  final IconData icon;
-  final IconData selectedIcon;
+  final AppIconData icon;
+  final AppIconData selectedIcon;
 
   /// Builds a FRESH page widget on each call. Fresh instances (not a cached
   /// const) are what let the IndexedStack children rebuild when the shell
@@ -131,16 +132,15 @@ class AppShellState extends State<AppShell> {
     context.watch<ThemePrefsProvider>();
     final l10n = AppLocalizations.of(context);
     // Fresh page instances each build (see [_Destination.pageBuilder]).
-    final pages =
-        _destinations.map((d) => d.pageBuilder()).toList(growable: false);
+    final pages = _destinations
+        .map((d) => d.pageBuilder())
+        .toList(growable: false);
 
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: pages),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(color: AppColors.hairline, width: 1),
-          ),
+          border: Border(top: BorderSide(color: AppColors.hairline, width: 1)),
         ),
         child: NavigationBar(
           selectedIndex: _currentIndex,
@@ -155,10 +155,10 @@ class AppShellState extends State<AppShell> {
                 // shell, which would rebuild every page in the IndexedStack.
                 icon: d.id == _kOrdersDestinationId
                     ? _OrdersBadgeIcon(icon: d.icon)
-                    : Icon(d.icon),
+                    : AppIcon(d.icon),
                 selectedIcon: d.id == _kOrdersDestinationId
                     ? _OrdersBadgeIcon(icon: d.selectedIcon)
-                    : Icon(d.selectedIcon),
+                    : AppIcon(d.selectedIcon),
                 label: d.label(l10n),
               ),
           ],
@@ -172,7 +172,7 @@ class AppShellState extends State<AppShell> {
 /// order arriving repaints this icon alone rather than the whole shell.
 class _OrdersBadgeIcon extends StatelessWidget {
   const _OrdersBadgeIcon({required this.icon});
-  final IconData icon;
+  final AppIconData icon;
 
   @override
   Widget build(BuildContext context) {
@@ -187,18 +187,18 @@ class _OrdersBadgeIcon extends StatelessWidget {
 /// so the indicator stays visible in both states. Hidden when count == 0.
 class _DestinationIcon extends StatelessWidget {
   const _DestinationIcon({required this.icon, required this.badge});
-  final IconData icon;
+  final AppIconData icon;
   final int badge;
 
   @override
   Widget build(BuildContext context) {
-    if (badge <= 0) return Icon(icon);
+    if (badge <= 0) return AppIcon(icon);
     final label = badge > 99 ? '99+' : '$badge';
     return Badge(
       label: Text(label),
       backgroundColor: AppColors.warning,
       textColor: AppColors.white,
-      child: Icon(icon),
+      child: AppIcon(icon),
     );
   }
 }

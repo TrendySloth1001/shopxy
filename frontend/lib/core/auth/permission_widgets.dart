@@ -5,6 +5,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Hybrid-gating UX primitives.
 ///
@@ -28,8 +29,11 @@ void showLockedHint(BuildContext context, [String? what]) {
         behavior: SnackBarBehavior.floating,
         content: Row(
           children: [
-            Icon(AppIcons.lockOutlineRounded,
-                size: 18, color: AppColors.white),
+            AppIcon(
+              AppIcons.lockOutlineRounded,
+              size: 18,
+              color: AppColors.white,
+            ),
             const SizedBox(width: AppSizes.sm),
             Expanded(child: Text(msg)),
           ],
@@ -64,10 +68,7 @@ class MaybeLocked extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Opacity(
-            opacity: 0.45,
-            child: IgnorePointer(child: child),
-          ),
+          Opacity(opacity: 0.45, child: IgnorePointer(child: child)),
           if (badge)
             Positioned(
               right: -2,
@@ -78,8 +79,11 @@ class MaybeLocked extends StatelessWidget {
                   color: AppColors.muted,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(AppIcons.lockRounded,
-                    size: 10, color: AppColors.white),
+                child: AppIcon(
+                  AppIcons.lockRounded,
+                  size: 10,
+                  color: AppColors.white,
+                ),
               ),
             ),
         ],
@@ -97,7 +101,11 @@ class MaybeLocked extends StatelessWidget {
 /// it can't be used to spam the server; a tap during cooldown just
 /// surfaces a "try again in Ns" hint instead of hitting the network.
 class AccessReloadButton extends StatefulWidget {
-  const AccessReloadButton({super.key, this.onReload, this.tooltip = 'Refresh'});
+  const AccessReloadButton({
+    super.key,
+    this.onReload,
+    this.tooltip = 'Refresh',
+  });
 
   /// Optional page-data reloader (e.g. `() => provider.load()`), run
   /// after the permission re-check.
@@ -118,10 +126,14 @@ class _AccessReloadButtonState extends State<AccessReloadButton> {
     if (cooling > Duration.zero) {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(
-          behavior: SnackBarBehavior.floating,
-          content: Text('Just refreshed — try again in ${cooling.inSeconds + 1}s'),
-        ));
+        ..showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text(
+              'Just refreshed — try again in ${cooling.inSeconds + 1}s',
+            ),
+          ),
+        );
       return;
     }
     setState(() => _busy = true);
@@ -146,7 +158,7 @@ class _AccessReloadButtonState extends State<AccessReloadButton> {
               height: 18,
               child: CircularProgressIndicator(strokeWidth: 2),
             )
-          : const Icon(AppIcons.refreshRounded),
+          : const AppIcon(AppIcons.refreshRounded),
     );
   }
 }
@@ -164,7 +176,7 @@ class LockedIconButton extends StatelessWidget {
   });
 
   final bool allowed;
-  final IconData icon;
+  final AppIconData icon;
   final VoidCallback onPressed;
   final String? tooltip;
   final String? what;
@@ -172,7 +184,11 @@ class LockedIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (allowed) {
-      return IconButton(icon: Icon(icon), tooltip: tooltip, onPressed: onPressed);
+      return IconButton(
+        icon: AppIcon(icon),
+        tooltip: tooltip,
+        onPressed: onPressed,
+      );
     }
     return IconButton(
       tooltip: 'Locked — ask an owner',
@@ -180,7 +196,7 @@ class LockedIconButton extends StatelessWidget {
       icon: Stack(
         clipBehavior: Clip.none,
         children: [
-          Icon(icon, color: AppColors.subtle),
+          AppIcon(icon, color: AppColors.subtle),
           Positioned(
             right: -3,
             bottom: -3,
@@ -190,8 +206,11 @@ class LockedIconButton extends StatelessWidget {
                 color: AppColors.muted,
                 shape: BoxShape.circle,
               ),
-              child: Icon(AppIcons.lockRounded,
-                  size: 9, color: AppColors.white),
+              child: AppIcon(
+                AppIcons.lockRounded,
+                size: 9,
+                color: AppColors.white,
+              ),
             ),
           ),
         ],
@@ -226,19 +245,28 @@ class NoAccessView extends StatelessWidget {
                 shape: AppShapes.squircle(AppSizes.radiusLg),
               ),
               alignment: Alignment.center,
-              child: Icon(AppIcons.lockOutlineRounded,
-                  size: 30, color: AppColors.muted),
+              child: AppIcon(
+                AppIcons.lockOutlineRounded,
+                size: 30,
+                color: AppColors.muted,
+              ),
             ),
             const SizedBox(height: AppSizes.lg),
-            Text(title,
-                style: theme.textTheme.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w800)),
+            Text(
+              title,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+            ),
             const SizedBox(height: AppSizes.xs),
             Text(
-              message ?? 'You don\'t have access to this section. Ask an '
-                  'owner to grant it from Team & roles.',
+              message ??
+                  'You don\'t have access to this section. Ask an '
+                      'owner to grant it from Team & roles.',
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.muted,
+              ),
             ),
           ],
         ),

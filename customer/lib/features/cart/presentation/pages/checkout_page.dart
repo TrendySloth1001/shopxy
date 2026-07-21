@@ -27,6 +27,7 @@ import 'package:shopxy_customer/shared/widgets/app_price_text.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/shared/widgets/shop_chip.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Checkout page — full Amazon/Flipkart-style rebuild (May 2026,
 /// build3). Built on a Column { Header, Expanded(Body), Footer }
@@ -53,6 +54,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   /// entered. The preview lives in state so the price card can show
   /// "− ₹X coupon" before the actual place-order RPC fires.
   CouponPreview? _appliedCoupon;
+
   /// false = Cash on Delivery (default); true = pay now via Razorpay.
   bool _payOnline = false;
 
@@ -77,9 +79,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
     if (cart.isEmpty) return;
     try {
       final preview = await context.read<CouponsRemoteDataSource>().autoApply(
-            subtotal: cart.itemsTotal,
-            shopIds: cart.shopIds,
-          );
+        subtotal: cart.itemsTotal,
+        shopIds: cart.shopIds,
+      );
       if (!mounted) return;
       if (preview.ok) {
         setState(() => _appliedCoupon = preview);
@@ -113,7 +115,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
               const _Grabber(),
               Padding(
                 padding: const EdgeInsets.fromLTRB(
-                    AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.md),
+                  AppSizes.lg,
+                  AppSizes.sm,
+                  AppSizes.lg,
+                  AppSizes.md,
+                ),
                 child: Row(
                   children: [
                     Expanded(
@@ -138,23 +144,28 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       ),
                     const Divider(height: 1, color: AppColors.hairline),
                     ListTile(
-                      leading: const Icon(AppIcons.addLocationAltOutlined,
-                          color: AppColors.brandStrong),
-                      title: const Text('Add a new address',
-                          style: TextStyle(fontWeight: FontWeight.w700)),
+                      leading: const AppIcon(
+                        AppIcons.addLocationAltOutlined,
+                        color: AppColors.brandStrong,
+                      ),
+                      title: const Text(
+                        'Add a new address',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
                       onTap: () {
                         Navigator.of(sheetCtx).pop();
                         _addAddress();
                       },
                     ),
                     ListTile(
-                      leading: const Icon(AppIcons.settingsOutlined),
+                      leading: const AppIcon(AppIcons.settingsOutlined),
                       title: const Text('Manage addresses'),
                       onTap: () {
                         Navigator.of(sheetCtx).pop();
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                              builder: (_) => const AddressesPage()),
+                            builder: (_) => const AddressesPage(),
+                          ),
                         );
                       },
                     ),
@@ -173,9 +184,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   Future<void> _addAddress() async {
-    final created = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (_) => const EditAddressPage()),
-    );
+    final created = await Navigator.of(
+      context,
+    ).push<bool>(MaterialPageRoute(builder: (_) => const EditAddressPage()));
     if (created != true || !mounted) return;
     await context.read<AddressesProvider>().load();
     if (!mounted) return;
@@ -211,7 +222,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
       if (!mounted) return;
       showAppSnackbar(
         context,
-        message: friendlyError(e, fallback: 'Could not check that code. Please try again.'),
+        message: friendlyError(
+          e,
+          fallback: 'Could not check that code. Please try again.',
+        ),
         tone: AppSnackbarTone.error,
       );
     }
@@ -308,21 +322,21 @@ class _CheckoutPageState extends State<CheckoutPage> {
       // confirmation isn't either.
       final (message, tone) = switch (outcome) {
         _PayAttemptOutcome.paid => (
-            'Payment successful',
-            AppSnackbarTone.success,
-          ),
+          'Payment successful',
+          AppSnackbarTone.success,
+        ),
         _PayAttemptOutcome.pendingConfirmation => (
-            'Payment received — being confirmed. This can take a minute.',
-            AppSnackbarTone.info,
-          ),
+          'Payment received — being confirmed. This can take a minute.',
+          AppSnackbarTone.info,
+        ),
         _PayAttemptOutcome.dismissed => (
-            'Payment not completed — your order is placed. Use "Pay Now" below whenever you\'re ready.',
-            AppSnackbarTone.info,
-          ),
+          'Payment not completed — your order is placed. Use "Pay Now" below whenever you\'re ready.',
+          AppSnackbarTone.info,
+        ),
         _PayAttemptOutcome.failed => (
-            'Payment didn\'t go through — your order is placed. You can retry with "Pay Now" below.',
-            AppSnackbarTone.error,
-          ),
+          'Payment didn\'t go through — your order is placed. You can retry with "Pay Now" below.',
+          AppSnackbarTone.error,
+        ),
       };
       showAppSnackbar(context, message: message, tone: tone);
       return;
@@ -335,8 +349,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     if (result.shopOrderCount > 1) {
       showAppSnackbar(
         context,
-        message:
-            'Order placed — ${result.shopOrderCount} shops will fulfil it',
+        message: 'Order placed — ${result.shopOrderCount} shops will fulfil it',
         tone: AppSnackbarTone.success,
       );
     }
@@ -429,7 +442,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         ),
         child: Row(
           children: [
-            Icon(
+            AppIcon(
               selected
                   ? AppIcons.radioButtonCheckedRounded
                   : AppIcons.radioButtonUncheckedRounded,
@@ -443,14 +456,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 children: [
                   Text(
                     title,
-                    style: Theme.of(context).textTheme.bodyMedium
-                        ?.copyWith(fontWeight: FontWeight.w800),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: Theme.of(context).textTheme.labelMedium
-                        ?.copyWith(color: AppColors.muted),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.labelMedium?.copyWith(color: AppColors.muted),
                   ),
                 ],
               ),
@@ -502,14 +517,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
     final addresses = addressesProvider.items;
     _ensureDefault(addresses);
     final selected = addresses.cast<UserAddress?>().firstWhere(
-          (a) => a?.id == _selectedAddressId,
-          orElse: () => null,
-        );
+      (a) => a?.id == _selectedAddressId,
+      orElse: () => null,
+    );
 
     final subtotal = cart.totalPrice;
     final mrpTotal = cart.mrpTotal;
-    final productSavings =
-        (mrpTotal - subtotal).clamp(0, double.infinity).toDouble();
+    final productSavings = (mrpTotal - subtotal)
+        .clamp(0, double.infinity)
+        .toDouble();
     // Coupon discount preview — drives the price card row + the bottom
     // bar total. If the user has typed a code but it's no longer
     // applicable (subtotal dropped below min, etc) we drop it from the
@@ -517,8 +533,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
     final couponDiscount = _appliedCoupon?.ok == true
         ? (_appliedCoupon!.discount ?? 0).clamp(0, subtotal).toDouble()
         : 0.0;
-    final afterCoupon =
-        (subtotal + _deliveryStandard - couponDiscount).clamp(0, double.infinity).toDouble();
+    final afterCoupon = (subtotal + _deliveryStandard - couponDiscount)
+        .clamp(0, double.infinity)
+        .toDouble();
     // Savings reflect only real reductions — product (MRP − selling) and
     // coupon. Delivery is genuinely free, so there is no waived fee to strike:
     // do NOT fabricate a ₹49 reference price. (CP E-Commerce Rules r.4 / CCPA
@@ -555,7 +572,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
                             style: TextButton.styleFrom(
                               visualDensity: VisualDensity.compact,
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: AppSizes.sm),
+                                horizontal: AppSizes.sm,
+                              ),
                             ),
                             child: Text(
                               'Change',
@@ -569,11 +587,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   ),
                   if (addressesProvider.isLoading && addresses.isEmpty)
                     const _LoadingCard()
-                  else if (addressesProvider.error != null &&
-                      addresses.isEmpty)
-                    _AddressErrorCard(
-                      onRetry: () => addressesProvider.load(),
-                    )
+                  else if (addressesProvider.error != null && addresses.isEmpty)
+                    _AddressErrorCard(onRetry: () => addressesProvider.load())
                   else if (selected == null)
                     _AddAddressCard(onTap: _pickAddress)
                   else
@@ -645,17 +660,18 @@ class _Header extends StatelessWidget {
       width: double.infinity,
       decoration: const BoxDecoration(
         color: AppColors.canvas,
-        border: Border(
-          bottom: BorderSide(color: AppColors.hairline, width: 1),
-        ),
+        border: Border(bottom: BorderSide(color: AppColors.hairline, width: 1)),
       ),
       padding: const EdgeInsets.fromLTRB(
-        AppSizes.sm, AppSizes.sm, AppSizes.lg, AppSizes.md,
+        AppSizes.sm,
+        AppSizes.sm,
+        AppSizes.lg,
+        AppSizes.md,
       ),
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(AppIcons.arrowBackRounded),
+            icon: const AppIcon(AppIcons.arrowBackRounded),
             onPressed: () => Navigator.of(context).maybePop(),
             tooltip: 'Back',
           ),
@@ -669,9 +685,9 @@ class _Header extends StatelessWidget {
                     Text(
                       'Checkout',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.4,
-                          ),
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.4,
+                      ),
                     ),
                     const SizedBox(width: AppSizes.sm),
                   ],
@@ -679,8 +695,9 @@ class _Header extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   'Review your order and place it',
-                  style: Theme.of(context).textTheme.labelMedium
-                      ?.copyWith(color: AppColors.muted),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelMedium?.copyWith(color: AppColors.muted),
                 ),
               ],
             ),
@@ -698,7 +715,10 @@ class _StepStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        AppSizes.lg, AppSizes.md, AppSizes.lg, 0,
+        AppSizes.lg,
+        AppSizes.md,
+        AppSizes.lg,
+        0,
       ),
       child: Row(
         children: [
@@ -712,13 +732,18 @@ class _StepStrip extends StatelessWidget {
     );
   }
 
-  Widget _dot(BuildContext context, int n, String label,
-      {required bool active}) {
+  Widget _dot(
+    BuildContext context,
+    int n,
+    String label, {
+    required bool active,
+  }) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: AppSizes.xxl, height: AppSizes.xxl,
+          width: AppSizes.xxl,
+          height: AppSizes.xxl,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: active ? AppColors.brandStrong : AppColors.heroPanel,
@@ -727,30 +752,30 @@ class _StepStrip extends StatelessWidget {
           child: Text(
             '$n',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: active ? AppColors.white : AppColors.muted,
-                  fontWeight: FontWeight.w800,
-                ),
+              color: active ? AppColors.white : AppColors.muted,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ),
         const SizedBox(height: AppSizes.xs),
         Text(
           label,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: active ? AppColors.brandStrong : AppColors.subtle,
-                fontWeight: FontWeight.w700,
-              ),
+            color: active ? AppColors.brandStrong : AppColors.subtle,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ],
     );
   }
 
   Widget _bar(bool active) => Expanded(
-        child: Container(
-          margin: const EdgeInsets.only(bottom: AppSizes.xl),
-          height: 2,
-          color: active ? AppColors.brandStrong : AppColors.hairline,
-        ),
-      );
+    child: Container(
+      margin: const EdgeInsets.only(bottom: AppSizes.xl),
+      height: 2,
+      color: active ? AppColors.brandStrong : AppColors.hairline,
+    ),
+  );
 }
 
 // ─── Section primitives ─────────────────────────────────────────────
@@ -763,7 +788,10 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        AppSizes.lg, AppSizes.lg, AppSizes.lg, AppSizes.sm,
+        AppSizes.lg,
+        AppSizes.lg,
+        AppSizes.lg,
+        AppSizes.sm,
       ),
       child: Row(
         children: [
@@ -771,10 +799,10 @@ class _SectionLabel extends StatelessWidget {
             child: Text(
               label,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: AppColors.muted,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.6,
-                  ),
+                color: AppColors.muted,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.6,
+              ),
             ),
           ),
           ?trailing,
@@ -788,21 +816,22 @@ class _LoadingCard extends StatelessWidget {
   const _LoadingCard();
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
-        child: Container(
-          padding: const EdgeInsets.all(AppSizes.lg),
-          decoration: ShapeDecoration(
-            color: AppColors.white,
-            shape: AppShapes.squircle(AppSizes.radiusMd),
-          ),
-          child: const Center(
-            child: SizedBox(
-              width: AppSizes.iconLg, height: AppSizes.iconLg,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-          ),
+    padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+    child: Container(
+      padding: const EdgeInsets.all(AppSizes.lg),
+      decoration: ShapeDecoration(
+        color: AppColors.white,
+        shape: AppShapes.squircle(AppSizes.radiusMd),
+      ),
+      child: const Center(
+        child: SizedBox(
+          width: AppSizes.iconLg,
+          height: AppSizes.iconLg,
+          child: CircularProgressIndicator(strokeWidth: 2),
         ),
-      );
+      ),
+    ),
+  );
 }
 
 // ─── Address ────────────────────────────────────────────────────────
@@ -823,14 +852,18 @@ class _SelectedAddressCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: AppSizes.xxxl, height: AppSizes.xxxl,
+            width: AppSizes.xxxl,
+            height: AppSizes.xxxl,
             decoration: ShapeDecoration(
               color: AppColors.brandSoft,
               shape: AppShapes.squircle(AppSizes.radiusSm),
             ),
             alignment: Alignment.center,
-            child: const Icon(AppIcons.locationOnRounded,
-                color: AppColors.brandStrong, size: AppSizes.iconMd),
+            child: const AppIcon(
+              AppIcons.locationOnRounded,
+              color: AppColors.brandStrong,
+              size: AppSizes.iconMd,
+            ),
           ),
           const SizedBox(width: AppSizes.md),
           Expanded(
@@ -844,8 +877,9 @@ class _SelectedAddressCard extends StatelessWidget {
                   children: [
                     Text(
                       address.fullName,
-                      style: Theme.of(context).textTheme.bodyMedium
-                          ?.copyWith(fontWeight: FontWeight.w800),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                     if (address.label != null)
                       _LabelPill(text: address.label!, tone: _Tone.neutral),
@@ -857,15 +891,20 @@ class _SelectedAddressCard extends StatelessWidget {
                 Text(
                   address.oneLine,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.black, height: 1.4),
+                    color: AppColors.black,
+                    height: 1.4,
+                  ),
                 ),
                 if (address.phone.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: AppSizes.xs),
                     child: Row(
                       children: [
-                        const Icon(AppIcons.phoneRounded,
-                            size: AppSizes.iconSm, color: AppColors.muted),
+                        const AppIcon(
+                          AppIcons.phoneRounded,
+                          size: AppSizes.iconSm,
+                          color: AppColors.muted,
+                        ),
                         const SizedBox(width: AppSizes.xs),
                         Text(
                           address.phone,
@@ -905,10 +944,10 @@ class _LabelPill extends StatelessWidget {
       child: Text(
         text.toUpperCase(),
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: fg,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.4,
-            ),
+          color: fg,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.4,
+        ),
       ),
     );
   }
@@ -934,16 +973,21 @@ class _AddAddressCard extends StatelessWidget {
             padding: const EdgeInsets.all(AppSizes.md),
             child: Row(
               children: [
-                const Icon(AppIcons.addLocationAltOutlined,
-                    color: AppColors.brandStrong),
+                const AppIcon(
+                  AppIcons.addLocationAltOutlined,
+                  color: AppColors.brandStrong,
+                ),
                 const SizedBox(width: AppSizes.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Add a delivery address',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(fontWeight: FontWeight.w800)),
+                      Text(
+                        'Add a delivery address',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                       const SizedBox(height: 2),
                       Text(
                         'We need somewhere to send your order.',
@@ -953,7 +997,10 @@ class _AddAddressCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                const Icon(AppIcons.chevronRightRounded, color: AppColors.subtle),
+                const AppIcon(
+                  AppIcons.chevronRightRounded,
+                  color: AppColors.subtle,
+                ),
               ],
             ),
           ),
@@ -983,15 +1030,15 @@ class _AddressErrorCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(AppIcons.cloudOffRounded, color: AppColors.muted),
+          const AppIcon(AppIcons.cloudOffRounded, color: AppColors.muted),
           const SizedBox(width: AppSizes.md),
           Expanded(
             child: Text(
               "Couldn't load your addresses. Check your connection and retry.",
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: AppColors.muted, height: 1.3),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppColors.muted,
+                height: 1.3,
+              ),
             ),
           ),
           const SizedBox(width: AppSizes.sm),
@@ -1021,13 +1068,15 @@ class _AddressPickerRow extends StatelessWidget {
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(
-            horizontal: AppSizes.lg, vertical: AppSizes.md),
+          horizontal: AppSizes.lg,
+          vertical: AppSizes.md,
+        ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
               padding: const EdgeInsets.only(top: 2),
-              child: Icon(
+              child: AppIcon(
                 selected
                     ? AppIcons.radioButtonCheckedRounded
                     : AppIcons.radioButtonUncheckedRounded,
@@ -1041,14 +1090,16 @@ class _AddressPickerRow extends StatelessWidget {
                 children: [
                   Text(
                     address.fullName,
-                    style: Theme.of(context).textTheme.bodyMedium
-                        ?.copyWith(fontWeight: FontWeight.w800),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     address.oneLine,
-                    style: Theme.of(context).textTheme.bodySmall
-                        ?.copyWith(color: AppColors.muted),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1080,14 +1131,18 @@ class _DeliveryEstimateCard extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: AppSizes.xxxl, height: AppSizes.xxxl,
+            width: AppSizes.xxxl,
+            height: AppSizes.xxxl,
             decoration: ShapeDecoration(
               color: AppColors.successSoft,
               shape: AppShapes.squircle(AppSizes.radiusSm),
             ),
             alignment: Alignment.center,
-            child: const Icon(AppIcons.localShippingOutlined,
-                color: AppColors.success, size: AppSizes.iconMd),
+            child: const AppIcon(
+              AppIcons.localShippingOutlined,
+              color: AppColors.success,
+              size: AppSizes.iconMd,
+            ),
           ),
           const SizedBox(width: AppSizes.md),
           Expanded(
@@ -1097,15 +1152,16 @@ class _DeliveryEstimateCard extends StatelessWidget {
                 Text(
                   'Arriving by $etaLabel',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.black,
-                        fontWeight: FontWeight.w800,
-                      ),
+                    color: AppColors.black,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   'Standard delivery · merchant confirms a final date',
-                  style: Theme.of(context).textTheme.labelMedium
-                      ?.copyWith(color: AppColors.muted),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelMedium?.copyWith(color: AppColors.muted),
                 ),
               ],
             ),
@@ -1180,7 +1236,10 @@ class _ShopGroupCard extends StatelessWidget {
           if (showHeader)
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSizes.md, AppSizes.md, AppSizes.md, 0,
+                AppSizes.md,
+                AppSizes.md,
+                AppSizes.md,
+                0,
               ),
               child: Row(
                 children: [
@@ -1189,10 +1248,10 @@ class _ShopGroupCard extends StatelessWidget {
                   Text(
                     'Order $orderIndex of $orderCount',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: AppColors.muted,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.4,
-                        ),
+                      color: AppColors.muted,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.4,
+                    ),
                   ),
                 ],
               ),
@@ -1204,20 +1263,26 @@ class _ShopGroupCard extends StatelessWidget {
           if (showHeader && shopName != null)
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSizes.md, AppSizes.xs, AppSizes.md, 0,
+                AppSizes.md,
+                AppSizes.xs,
+                AppSizes.md,
+                0,
               ),
               child: Row(
                 children: [
-                  const Icon(AppIcons.storefrontOutlined,
-                      size: 14, color: AppColors.brand),
+                  const AppIcon(
+                    AppIcons.storefrontOutlined,
+                    size: 14,
+                    color: AppColors.brand,
+                  ),
                   const SizedBox(width: AppSizes.xs),
                   Expanded(
                     child: Text(
                       'Sold by $shopName · seller details & GSTIN on the shop page',
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: AppColors.muted,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        color: AppColors.muted,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
@@ -1226,7 +1291,8 @@ class _ShopGroupCard extends StatelessWidget {
           if (showHeader)
             const Padding(
               padding: EdgeInsets.symmetric(
-                horizontal: AppSizes.md, vertical: AppSizes.sm,
+                horizontal: AppSizes.md,
+                vertical: AppSizes.sm,
               ),
               child: Divider(height: 1, color: AppColors.hairline),
             ),
@@ -1238,7 +1304,8 @@ class _ShopGroupCard extends StatelessWidget {
             const Divider(height: 1, color: AppColors.hairline),
             Padding(
               padding: const EdgeInsets.symmetric(
-                horizontal: AppSizes.md, vertical: AppSizes.sm,
+                horizontal: AppSizes.md,
+                vertical: AppSizes.sm,
               ),
               child: Row(
                 children: [
@@ -1246,9 +1313,9 @@ class _ShopGroupCard extends StatelessWidget {
                     child: Text(
                       'Shop subtotal',
                       style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            color: AppColors.muted,
-                            fontWeight: FontWeight.w700,
-                          ),
+                        color: AppColors.muted,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                   AppPriceText.precise(
@@ -1273,10 +1340,14 @@ class _MultiShopBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.fromLTRB(
-        AppSizes.lg, 0, AppSizes.lg, AppSizes.md,
+        AppSizes.lg,
+        0,
+        AppSizes.lg,
+        AppSizes.md,
       ),
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.md, vertical: AppSizes.sm,
+        horizontal: AppSizes.md,
+        vertical: AppSizes.sm,
       ),
       decoration: ShapeDecoration(
         color: AppColors.infoSoft,
@@ -1284,18 +1355,21 @@ class _MultiShopBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(AppIcons.storefrontOutlined,
-              size: AppSizes.iconMd, color: AppColors.info),
+          const AppIcon(
+            AppIcons.storefrontOutlined,
+            size: AppSizes.iconMd,
+            color: AppColors.info,
+          ),
           const SizedBox(width: AppSizes.sm),
           Expanded(
             child: Text(
               'Your cart has items from $shopCount shops — '
               "we'll create $shopCount separate orders, one per shop.",
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: AppColors.info,
-                    fontWeight: FontWeight.w700,
-                    height: 1.3,
-                  ),
+                color: AppColors.info,
+                fontWeight: FontWeight.w700,
+                height: 1.3,
+              ),
             ),
           ),
         ],
@@ -1325,8 +1399,11 @@ class _ItemRow extends StatelessWidget {
               height: AppSizes.productThumbSize,
               color: AppColors.heroPanel,
               child: p.imageUrl == null
-                  ? const Icon(AppIcons.imageOutlined,
-                      color: AppColors.muted, size: AppSizes.iconMd)
+                  ? const AppIcon(
+                      AppIcons.imageOutlined,
+                      color: AppColors.muted,
+                      size: AppSizes.iconMd,
+                    )
                   : NetworkImageBox(url: resolveImageUrl(p.imageUrl!)),
             ),
           ),
@@ -1340,9 +1417,9 @@ class _ItemRow extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        height: 1.3,
-                      ),
+                    fontWeight: FontWeight.w700,
+                    height: 1.3,
+                  ),
                 ),
                 if (p.shopName != null) ...[
                   const SizedBox(height: AppSizes.xs),
@@ -1358,7 +1435,9 @@ class _ItemRow extends StatelessWidget {
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: AppSizes.sm, vertical: 2),
+                        horizontal: AppSizes.sm,
+                        vertical: 2,
+                      ),
                       decoration: ShapeDecoration(
                         color: AppColors.heroPanel,
                         shape: AppShapes.squircle(AppSizes.radiusFull),
@@ -1366,17 +1445,17 @@ class _ItemRow extends StatelessWidget {
                       child: Text(
                         'Qty $qtyStr',
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: AppColors.black,
-                              fontWeight: FontWeight.w700,
-                            ),
+                          color: AppColors.black,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                     Text(
                       p.unit,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: AppColors.muted,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        color: AppColors.muted,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
@@ -1504,9 +1583,9 @@ class _PriceCard extends StatelessWidget {
             child: Text(
               'Estimated — the shop confirms the final amount when your order is placed.',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: AppColors.muted,
-                    fontWeight: FontWeight.w600,
-                  ),
+                color: AppColors.muted,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
           // Statutory GST breakup — prices are inclusive of tax, so this is the
@@ -1529,9 +1608,9 @@ class _PriceCard extends StatelessWidget {
               child: Text(
                 'Prices are inclusive of all taxes.',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: AppColors.muted,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  color: AppColors.muted,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],
@@ -1601,7 +1680,7 @@ class _CouponCardState extends State<_CouponCard> {
       ),
       child: Row(
         children: [
-          Icon(
+          AppIcon(
             AppIcons.localOfferOutlined,
             color: applied ? AppColors.brand : AppColors.muted,
             size: AppSizes.iconMd,
@@ -1631,7 +1710,9 @@ class _CouponCardState extends State<_CouponCard> {
                             Container(
                               margin: const EdgeInsets.only(left: AppSizes.sm),
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: AppSizes.sm, vertical: 1),
+                                horizontal: AppSizes.sm,
+                                vertical: 1,
+                              ),
                               decoration: ShapeDecoration(
                                 color: AppColors.brand,
                                 shape: AppShapes.squircle(AppSizes.radiusSm),
@@ -1668,10 +1749,10 @@ class _CouponCardState extends State<_CouponCard> {
                       isCollapsed: true,
                     ),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.black,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.4,
-                        ),
+                      color: AppColors.black,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.4,
+                    ),
                   ),
           ),
           applied
@@ -1689,7 +1770,8 @@ class _CouponCardState extends State<_CouponCard> {
                     backgroundColor: AppColors.black,
                     shape: AppShapes.squircle(AppSizes.radiusFull),
                     padding: const EdgeInsets.symmetric(
-                      horizontal: AppSizes.lg, vertical: AppSizes.md,
+                      horizontal: AppSizes.lg,
+                      vertical: AppSizes.md,
                     ),
                   ),
                   child: _applying
@@ -1701,9 +1783,11 @@ class _CouponCardState extends State<_CouponCard> {
                             color: AppColors.white,
                           ),
                         )
-                      : Text('Apply',
+                      : Text(
+                          'Apply',
                           style: Theme.of(context).textTheme.labelLarge
-                              ?.copyWith(fontWeight: FontWeight.w800)),
+                              ?.copyWith(fontWeight: FontWeight.w800),
+                        ),
                 ),
         ],
       ),
@@ -1744,11 +1828,13 @@ class _PriceRow extends StatelessWidget {
       val = Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('− ',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: AppColors.success,
-                fontWeight: FontWeight.w800,
-              )),
+          Text(
+            '− ',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: AppColors.success,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
           AppPriceText.precise(
             negative!,
             color: col,
@@ -1773,11 +1859,14 @@ class _PriceRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: (bold ? theme.textTheme.bodyMedium : theme.textTheme.bodySmall)
-                  ?.copyWith(
-                color: bold ? AppColors.black : AppColors.muted,
-                fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
-              ),
+              style:
+                  (bold
+                          ? theme.textTheme.bodyMedium
+                          : theme.textTheme.bodySmall)
+                      ?.copyWith(
+                        color: bold ? AppColors.black : AppColors.muted,
+                        fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
+                      ),
             ),
           ),
           val,
@@ -1797,15 +1886,20 @@ class _SavingsBanner extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.md, vertical: AppSizes.sm),
+        horizontal: AppSizes.md,
+        vertical: AppSizes.sm,
+      ),
       decoration: ShapeDecoration(
         color: AppColors.successSoft,
         shape: AppShapes.squircle(AppSizes.radiusMd),
       ),
       child: Row(
         children: [
-          const Icon(AppIcons.savingsOutlined,
-              color: AppColors.success, size: AppSizes.iconMd),
+          const AppIcon(
+            AppIcons.savingsOutlined,
+            color: AppColors.success,
+            size: AppSizes.iconMd,
+          ),
           const SizedBox(width: AppSizes.sm),
           Expanded(
             child: Wrap(
@@ -1813,9 +1907,9 @@ class _SavingsBanner extends StatelessWidget {
                 Text(
                   "You'll save ",
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.success,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    color: AppColors.success,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 AppPriceText.precise(
                   amount,
@@ -1826,9 +1920,9 @@ class _SavingsBanner extends StatelessWidget {
                 Text(
                   ' on this order',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.success,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    color: AppColors.success,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ],
             ),
@@ -1845,7 +1939,9 @@ class _TrustFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.lg, vertical: AppSizes.sm),
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.sm,
+      ),
       child: Column(
         children: [
           // Qualified trust strip — cancellation depends on each shop's
@@ -1854,19 +1950,25 @@ class _TrustFooter extends StatelessWidget {
           Row(
             children: const [
               Expanded(
-                  child: _TrustPill(
-                      icon: AppIcons.lockOutlineRounded,
-                      label: 'Secure checkout')),
+                child: _TrustPill(
+                  icon: AppIcons.lockOutlineRounded,
+                  label: 'Secure checkout',
+                ),
+              ),
               SizedBox(width: AppSizes.sm),
               Expanded(
-                  child: _TrustPill(
-                      icon: AppIcons.replayRounded,
-                      label: 'Cancel per shop policy')),
+                child: _TrustPill(
+                  icon: AppIcons.replayRounded,
+                  label: 'Cancel per shop policy',
+                ),
+              ),
               SizedBox(width: AppSizes.sm),
               Expanded(
-                  child: _TrustPill(
-                      icon: AppIcons.supportAgentRounded,
-                      label: 'In-app support')),
+                child: _TrustPill(
+                  icon: AppIcons.supportAgentRounded,
+                  label: 'In-app support',
+                ),
+              ),
             ],
           ),
           const SizedBox(height: AppSizes.sm),
@@ -1875,8 +1977,10 @@ class _TrustFooter extends StatelessWidget {
             child: Text(
               'By placing your order, you agree to our terms. Pricing and availability may be re-confirmed by the shop.',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.labelSmall
-                  ?.copyWith(color: AppColors.muted, height: 1.4),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: AppColors.muted,
+                height: 1.4,
+              ),
             ),
           ),
         ],
@@ -1887,28 +1991,30 @@ class _TrustFooter extends StatelessWidget {
 
 class _TrustPill extends StatelessWidget {
   const _TrustPill({required this.icon, required this.label});
-  final IconData icon;
+  final AppIconData icon;
   final String label;
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.sm, vertical: AppSizes.sm),
+        horizontal: AppSizes.sm,
+        vertical: AppSizes.sm,
+      ),
       decoration: ShapeDecoration(
         color: AppColors.white,
         shape: AppShapes.squircle(AppSizes.radiusSm),
       ),
       child: Column(
         children: [
-          Icon(icon, size: AppSizes.iconMd, color: AppColors.brandStrong),
+          AppIcon(icon, size: AppSizes.iconMd, color: AppColors.brandStrong),
           const SizedBox(height: AppSizes.xs),
           Text(
             label,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppColors.black,
-                  fontWeight: FontWeight.w700,
-                ),
+              color: AppColors.black,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),
@@ -1920,15 +2026,16 @@ class _Grabber extends StatelessWidget {
   const _Grabber();
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(top: AppSizes.sm),
-        child: Container(
-          width: AppSizes.handleWidth, height: AppSizes.handleHeight,
-          decoration: BoxDecoration(
-            color: AppColors.hairline,
-            borderRadius: AppShapes.squircleRadius(AppSizes.radiusXs),
-          ),
-        ),
-      );
+    padding: const EdgeInsets.only(top: AppSizes.sm),
+    child: Container(
+      width: AppSizes.handleWidth,
+      height: AppSizes.handleHeight,
+      decoration: BoxDecoration(
+        color: AppColors.hairline,
+        borderRadius: AppShapes.squircleRadius(AppSizes.radiusXs),
+      ),
+    ),
+  );
 }
 
 // ─── Footer (replaces Scaffold bottomNavigationBar) ─────────────────
@@ -1956,7 +2063,10 @@ class _Footer extends StatelessWidget {
       shadowColor: AppColors.black.withValues(alpha: 0.15),
       child: Container(
         padding: EdgeInsets.fromLTRB(
-          AppSizes.md, AppSizes.sm, AppSizes.md, AppSizes.sm + bottomPad,
+          AppSizes.md,
+          AppSizes.sm,
+          AppSizes.md,
+          AppSizes.sm + bottomPad,
         ),
         decoration: const BoxDecoration(
           border: Border(top: BorderSide(color: AppColors.hairline)),
@@ -1973,9 +2083,12 @@ class _Footer extends StatelessWidget {
                   // "Estimate" — the coupon is re-validated server-side at
                   // place-order; the order confirmation shows the final charged
                   // amount (CP E-Commerce Rules r.4(3)).
-                  Text('Total payable (est.)',
-                      style: Theme.of(context).textTheme.labelSmall
-                          ?.copyWith(color: AppColors.muted)),
+                  Text(
+                    'Total payable (est.)',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.labelSmall?.copyWith(color: AppColors.muted),
+                  ),
                   AppPriceText.precise(
                     total,
                     fontWeight: FontWeight.w800,

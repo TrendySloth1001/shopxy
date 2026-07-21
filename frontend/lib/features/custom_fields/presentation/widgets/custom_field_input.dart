@@ -8,6 +8,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Renders the right input for a [CustomFieldDefinition]'s type:
 ///   TEXT       → single-line TextField
@@ -37,14 +38,14 @@ class CustomFieldInput extends StatefulWidget {
 }
 
 class _CustomFieldInputState extends State<CustomFieldInput> {
-  late final TextEditingController _controller =
-      TextEditingController(text: widget.value);
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.value,
+  );
 
   @override
   void didUpdateWidget(covariant CustomFieldInput oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.value != _controller.text &&
-        widget.value != oldWidget.value) {
+    if (widget.value != _controller.text && widget.value != oldWidget.value) {
       _controller.text = widget.value;
     }
   }
@@ -121,13 +122,13 @@ class _CustomFieldInputState extends State<CustomFieldInput> {
             decoration: InputDecoration(
               labelText: widget.definition.name,
               border: const OutlineInputBorder(),
-              suffixIcon: const Icon(AppIcons.calendarTodayRounded),
+              suffixIcon: const AppIcon(AppIcons.calendarTodayRounded),
             ),
             child: Text(
               display.isEmpty ? l10n.customFieldsPickDate : display,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: display.isEmpty ? AppColors.muted : AppColors.black,
-                  ),
+                color: display.isEmpty ? AppColors.muted : AppColors.black,
+              ),
             ),
           ),
         );
@@ -153,14 +154,15 @@ class _CustomFieldInputState extends State<CustomFieldInput> {
         final options = widget.definition.options ?? const <String>[];
         final isValid = widget.value.isEmpty || options.contains(widget.value);
         return DropdownButtonFormField<String>(
-          initialValue: isValid && widget.value.isNotEmpty ? widget.value : null,
+          initialValue: isValid && widget.value.isNotEmpty
+              ? widget.value
+              : null,
           decoration: InputDecoration(
             labelText: widget.definition.name,
             border: const OutlineInputBorder(),
           ),
           items: [
-            for (final o in options)
-              DropdownMenuItem(value: o, child: Text(o)),
+            for (final o in options) DropdownMenuItem(value: o, child: Text(o)),
           ],
           onChanged: (v) => widget.onChanged(v ?? ''),
         );

@@ -6,6 +6,7 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 const _supportEmail = 'support@shopxy.app';
 
@@ -19,12 +20,15 @@ class HelpAndFaqPage extends StatelessWidget {
       appBar: const AppAppBar(title: 'Help & FAQ'),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
-            AppSizes.lg, AppSizes.lg, AppSizes.lg, AppSizes.huge),
+          AppSizes.lg,
+          AppSizes.lg,
+          AppSizes.lg,
+          AppSizes.huge,
+        ),
         children: [
           _ContactCard(
             onCopy: () async {
-              await Clipboard.setData(
-                  const ClipboardData(text: _supportEmail));
+              await Clipboard.setData(const ClipboardData(text: _supportEmail));
               if (context.mounted) {
                 showAppSnackbar(
                   context,
@@ -153,8 +157,10 @@ class _ContactCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(AppIcons.supportAgentRounded,
-                    color: AppColors.brandStrong),
+                const AppIcon(
+                  AppIcons.supportAgentRounded,
+                  color: AppColors.brandStrong,
+                ),
                 const SizedBox(width: AppSizes.sm),
                 Text(
                   'Talk to us',
@@ -169,7 +175,9 @@ class _ContactCard extends StatelessWidget {
             Text(
               'Email us with your order number and we\'ll get back to '
               'you within one business day.',
-              style: theme.textTheme.bodySmall?.copyWith(color: AppColors.black),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.black,
+              ),
             ),
             const SizedBox(height: AppSizes.md),
             Material(
@@ -180,11 +188,16 @@ class _ContactCard extends StatelessWidget {
                 onTap: onCopy,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: AppSizes.md, vertical: AppSizes.sm),
+                    horizontal: AppSizes.md,
+                    vertical: AppSizes.sm,
+                  ),
                   child: Row(
                     children: [
-                      const Icon(AppIcons.emailOutlined,
-                          size: AppSizes.iconSm, color: AppColors.brandStrong),
+                      const AppIcon(
+                        AppIcons.emailOutlined,
+                        size: AppSizes.iconSm,
+                        color: AppColors.brandStrong,
+                      ),
                       const SizedBox(width: AppSizes.sm),
                       Expanded(
                         child: Text(
@@ -195,8 +208,11 @@ class _ContactCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const Icon(AppIcons.copyRounded,
-                          size: AppSizes.iconSm, color: AppColors.brandStrong),
+                      const AppIcon(
+                        AppIcons.copyRounded,
+                        size: AppSizes.iconSm,
+                        color: AppColors.brandStrong,
+                      ),
                     ],
                   ),
                 ),
@@ -214,16 +230,16 @@ class _SectionTitle extends StatelessWidget {
   final String label;
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: AppSizes.sm),
-        child: Text(
-          label.toUpperCase(),
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: AppColors.muted,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.8,
-              ),
-        ),
-      );
+    padding: const EdgeInsets.only(bottom: AppSizes.sm),
+    child: Text(
+      label.toUpperCase(),
+      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+        color: AppColors.muted,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.8,
+      ),
+    ),
+  );
 }
 
 class _FaqTile extends StatelessWidget {
@@ -247,17 +263,23 @@ class _FaqTile extends StatelessWidget {
           data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
           child: ExpansionTile(
             tilePadding: const EdgeInsets.symmetric(
-                horizontal: AppSizes.md, vertical: 2),
+              horizontal: AppSizes.md,
+              vertical: 2,
+            ),
             childrenPadding: const EdgeInsets.fromLTRB(
-                AppSizes.md, 0, AppSizes.md, AppSizes.md),
+              AppSizes.md,
+              0,
+              AppSizes.md,
+              AppSizes.md,
+            ),
             iconColor: AppColors.muted,
             collapsedIconColor: AppColors.muted,
             title: Text(
               question,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.black,
-                    fontWeight: FontWeight.w700,
-                  ),
+                color: AppColors.black,
+                fontWeight: FontWeight.w700,
+              ),
             ),
             children: [
               Align(
@@ -265,9 +287,9 @@ class _FaqTile extends StatelessWidget {
                 child: Text(
                   answer,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.black,
-                        height: 1.45,
-                      ),
+                    color: AppColors.black,
+                    height: 1.45,
+                  ),
                 ),
               ),
             ],

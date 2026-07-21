@@ -7,6 +7,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 class HomeSearchBar extends StatefulWidget {
   const HomeSearchBar({super.key, this.shrink = 0.0});
@@ -49,10 +50,7 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
       child: Align(
         alignment: Alignment.topCenter,
         heightFactor: visible,
-        child: Opacity(
-          opacity: visible,
-          child: _buildPill(context),
-        ),
+        child: Opacity(opacity: visible, child: _buildPill(context)),
       ),
     );
   }
@@ -67,9 +65,9 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
       ),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const SearchPage()),
-        ),
+        onTap: () => Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const SearchPage())),
         child: Container(
           height: 56,
           decoration: ShapeDecoration(
@@ -95,7 +93,7 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
                   shape: AppShapes.squircle(AppSizes.radiusSm),
                 ),
                 alignment: Alignment.center,
-                child: const Icon(
+                child: const AppIcon(
                   AppIcons.searchRounded,
                   color: AppColors.white,
                   size: 18,
@@ -145,16 +143,9 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
                 ),
               ),
               const SizedBox(width: AppSizes.xs),
-              Container(
-                width: 1,
-                height: 24,
-                color: AppColors.hairline,
-              ),
+              Container(width: 1, height: 24, color: AppColors.hairline),
               const SizedBox(width: AppSizes.xs),
-              const _SearchAction(
-                icon: AppIcons.micNoneRounded,
-                filled: false,
-              ),
+              const _SearchAction(icon: AppIcons.micNoneRounded, filled: false),
               const SizedBox(width: 2),
               const _SearchAction(
                 icon: AppIcons.qrCodeScannerRounded,
@@ -170,7 +161,7 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
 
 class _SearchAction extends StatelessWidget {
   const _SearchAction({required this.icon, required this.filled});
-  final IconData icon;
+  final AppIconData icon;
 
   /// Filled = brand-soft fill (primary secondary action — scan).
   /// Outlined = transparent (tertiary action — voice).
@@ -186,7 +177,7 @@ class _SearchAction extends StatelessWidget {
         shape: BoxShape.circle,
       ),
       alignment: Alignment.center,
-      child: Icon(icon, color: AppColors.brand, size: 18),
+      child: AppIcon(icon, color: AppColors.brand, size: 18),
     );
   }
 }

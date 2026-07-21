@@ -13,6 +13,7 @@ import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Tabs available in the customer-app shell. Orders was added in the
 /// May 2026 nav redesign so it's reachable in one tap instead of
@@ -149,12 +150,10 @@ class _CustomerShellState extends State<CustomerShell> {
               child: Stack(
                 children: [
                   MediaQuery(
-                    data: MediaQuery.of(context)
-                        .copyWith(padding: extendedPadding),
-                    child: IndexedStack(
-                      index: _currentIndex,
-                      children: pages,
-                    ),
+                    data: MediaQuery.of(
+                      context,
+                    ).copyWith(padding: extendedPadding),
+                    child: IndexedStack(index: _currentIndex, children: pages),
                   ),
                   Positioned(
                     left: 0,
@@ -316,16 +315,14 @@ class _NavPill extends StatelessWidget {
             final totalShare =
                 selectedShare + unselectedShare * (items.length - 1);
             final selectedWidth = c.maxWidth * selectedShare / totalShare;
-            final unselectedWidth =
-                c.maxWidth * unselectedShare / totalShare;
+            final unselectedWidth = c.maxWidth * unselectedShare / totalShare;
             return Row(
               children: [
                 for (var i = 0; i < items.length; i++)
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 240),
                     curve: Curves.easeOutCubic,
-                    width:
-                        i == currentIndex ? selectedWidth : unselectedWidth,
+                    width: i == currentIndex ? selectedWidth : unselectedWidth,
                     height: 44,
                     decoration: ShapeDecoration(
                       color: i == currentIndex
@@ -362,8 +359,8 @@ class _NavItem {
     required this.label,
     this.isCart = false,
   });
-  final IconData icon;
-  final IconData selectedIcon;
+  final AppIconData icon;
+  final AppIconData selectedIcon;
   final String label;
   final bool isCart;
 }
@@ -384,7 +381,7 @@ class _NavCell extends StatelessWidget {
               count: count,
             ),
           )
-        : Icon(
+        : AppIcon(
             selected ? item.selectedIcon : item.icon,
             color: selected ? AppColors.brandStrong : AppColors.muted,
             size: 22,
@@ -430,7 +427,7 @@ class _BadgedIcon extends StatelessWidget {
     required this.color,
     required this.count,
   });
-  final IconData icon;
+  final AppIconData icon;
   final Color color;
   final int count;
 
@@ -443,14 +440,13 @@ class _BadgedIcon extends StatelessWidget {
         clipBehavior: Clip.none,
         alignment: Alignment.center,
         children: [
-          Icon(icon, size: 22, color: color),
+          AppIcon(icon, size: 22, color: color),
           if (count > 0)
             Positioned(
               right: -6,
               top: -4,
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                 constraints: const BoxConstraints(minWidth: 16),
                 decoration: BoxDecoration(
                   color: AppColors.brand,

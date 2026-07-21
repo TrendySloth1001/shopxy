@@ -12,6 +12,7 @@ import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// "My coupons" — read-only list of redeemable promo codes. Customers
 /// copy a code here and paste it into the checkout sheet. Exhausted
@@ -108,11 +109,7 @@ class _CouponCardSkeleton extends StatelessWidget {
                 child: AppShimmerLine(widthFactor: 0.55, height: 14),
               ),
               const SizedBox(width: AppSizes.sm),
-              AppShimmerBox(
-                width: 72,
-                height: 20,
-                radius: AppSizes.radiusFull,
-              ),
+              AppShimmerBox(width: 72, height: 20, radius: AppSizes.radiusFull),
             ],
           ),
           const SizedBox(height: AppSizes.xs),
@@ -130,11 +127,7 @@ class _CouponCardSkeleton extends StatelessWidget {
           // Bottom row: code badge + expiry date
           Row(
             children: [
-              AppShimmerBox(
-                width: 90,
-                height: 28,
-                radius: AppSizes.radiusSm,
-              ),
+              AppShimmerBox(width: 90, height: 28, radius: AppSizes.radiusSm),
               const Spacer(),
               const AppShimmerLine(widthFactor: 0.22, height: 11),
             ],
@@ -233,7 +226,8 @@ class _CouponCard extends StatelessWidget {
                 ),
               ),
             ],
-            if (coupon.description != null && coupon.description!.isNotEmpty) ...[
+            if (coupon.description != null &&
+                coupon.description!.isNotEmpty) ...[
               const SizedBox(height: AppSizes.sm),
               Text(
                 coupon.description!,
@@ -267,7 +261,10 @@ class _CouponCard extends StatelessWidget {
                 const SizedBox(width: AppSizes.sm),
                 TextButton.icon(
                   onPressed: exhausted ? null : () => _copy(context),
-                  icon: const Icon(AppIcons.copyRounded, size: AppSizes.iconSm),
+                  icon: const AppIcon(
+                    AppIcons.copyRounded,
+                    size: AppSizes.iconSm,
+                  ),
                   label: const Text('Copy'),
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.brand,
@@ -292,11 +289,7 @@ class _CouponCard extends StatelessWidget {
 }
 
 class _CouponPill extends StatelessWidget {
-  const _CouponPill({
-    required this.label,
-    required this.bg,
-    required this.fg,
-  });
+  const _CouponPill({required this.label, required this.bg, required this.fg});
   final String label;
   final Color bg;
   final Color fg;
@@ -315,10 +308,10 @@ class _CouponPill extends StatelessWidget {
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: fg,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.4,
-            ),
+          color: fg,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.4,
+        ),
       ),
     );
   }
@@ -336,8 +329,11 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(AppIcons.localOfferOutlined,
-                size: AppSizes.iconHuge, color: AppColors.muted),
+            const AppIcon(
+              AppIcons.localOfferOutlined,
+              size: AppSizes.iconHuge,
+              color: AppColors.muted,
+            ),
             const SizedBox(height: AppSizes.md),
             Text(
               'No coupons yet',
@@ -348,7 +344,9 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: AppSizes.xs),
             Text(
               'Promo codes you earn will appear here.',
-              style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: AppColors.muted,
+              ),
             ),
           ],
         ),

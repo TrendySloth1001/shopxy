@@ -16,6 +16,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Single-page editor for an editorial collection. Two states:
 ///   * new      — title/slug/etc, can't manage items until saved once
@@ -59,8 +60,9 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
 
   Future<void> _loadExisting() async {
     setState(() => _loading = true);
-    final loaded =
-        await context.read<AdminCollectionsProvider>().getOne(widget.existingId!);
+    final loaded = await context.read<AdminCollectionsProvider>().getOne(
+      widget.existingId!,
+    );
     if (!mounted) return;
     setState(() {
       _existing = loaded;
@@ -118,7 +120,11 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
     setState(() => _saving = false);
     if (url == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(shop.error ?? AppLocalizations.of(context).adminImageUploadFailed)),
+        SnackBar(
+          content: Text(
+            shop.error ?? AppLocalizations.of(context).adminImageUploadFailed,
+          ),
+        ),
       );
       return;
     }
@@ -132,8 +138,9 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
       'eyebrow': _eyebrow.text.trim().isEmpty ? null : _eyebrow.text.trim(),
       'subtitle': _subtitle.text.trim().isEmpty ? null : _subtitle.text.trim(),
       'ctaText': _ctaText.text.trim().isEmpty ? null : _ctaText.text.trim(),
-      'ctaTarget':
-          _ctaTarget.text.trim().isEmpty ? null : _ctaTarget.text.trim(),
+      'ctaTarget': _ctaTarget.text.trim().isEmpty
+          ? null
+          : _ctaTarget.text.trim(),
       'coverImageUrl': _coverImageUrl,
       'bgColor': _bgColor.text.trim().isEmpty ? null : _bgColor.text.trim(),
       'isPublished': _isPublished,
@@ -143,7 +150,11 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
   Future<void> _save() async {
     if (_title.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).adminCollectionTitleRequired)),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).adminCollectionTitleRequired,
+          ),
+        ),
       );
       return;
     }
@@ -160,7 +171,11 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
       if (!mounted) return;
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(provider.error ?? AppLocalizations.of(context).adminSaveFailed)),
+        SnackBar(
+          content: Text(
+            provider.error ?? AppLocalizations.of(context).adminSaveFailed,
+          ),
+        ),
       );
       return;
     }
@@ -198,7 +213,11 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
     // De-dupe by product id.
     if (_items.any((it) => it.product.id == picked.id)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).adminCollectionAlreadyAdded)),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).adminCollectionAlreadyAdded,
+          ),
+        ),
       );
       return;
     }
@@ -225,12 +244,14 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
       extendBodyBehindAppBar: true,
       backgroundColor: AppColors.canvas,
       appBar: FloatingAppBar(
-        title: isEdit ? l10n.adminCollectionEditTitle : l10n.adminCollectionNewTitle,
+        title: isEdit
+            ? l10n.adminCollectionEditTitle
+            : l10n.adminCollectionNewTitle,
         actions: [
           if (isEdit)
             IconButton(
               tooltip: l10n.adminCollectionAddProduct,
-              icon: const Icon(AppIcons.add),
+              icon: const AppIcon(AppIcons.add),
               onPressed: _addProduct,
             ),
         ],
@@ -256,7 +277,9 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
           const SizedBox(height: AppSizes.md),
           TextField(
             controller: _title,
-            decoration: InputDecoration(labelText: l10n.adminCollectionTitleLabel),
+            decoration: InputDecoration(
+              labelText: l10n.adminCollectionTitleLabel,
+            ),
           ),
           const SizedBox(height: AppSizes.md),
           TextField(
@@ -277,7 +300,9 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
           const SizedBox(height: AppSizes.md),
           TextField(
             controller: _subtitle,
-            decoration: InputDecoration(labelText: l10n.adminCollectionSubtitleLabel),
+            decoration: InputDecoration(
+              labelText: l10n.adminCollectionSubtitleLabel,
+            ),
           ),
           const SizedBox(height: AppSizes.md),
           Row(
@@ -285,7 +310,9 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
               Expanded(
                 child: TextField(
                   controller: _ctaText,
-                  decoration: InputDecoration(labelText: l10n.adminCollectionCtaTextLabel),
+                  decoration: InputDecoration(
+                    labelText: l10n.adminCollectionCtaTextLabel,
+                  ),
                 ),
               ),
               const SizedBox(width: AppSizes.md),
@@ -323,13 +350,9 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
           ),
           const SizedBox(height: AppSizes.sm),
           if (!isEdit)
-            _Hint(
-              text: l10n.adminCollectionItemsHintNew,
-            )
+            _Hint(text: l10n.adminCollectionItemsHintNew)
           else if (_items.isEmpty)
-            _Hint(
-              text: l10n.adminCollectionItemsHintEmpty,
-            )
+            _Hint(text: l10n.adminCollectionItemsHintEmpty)
           else
             ReorderableListView.builder(
               shrinkWrap: true,
@@ -368,21 +391,23 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
           ),
           clipBehavior: Clip.antiAlias,
           child: _coverImageUrl == null
-              ? Icon(AppIcons.imageOutlined, color: AppColors.muted)
+              ? AppIcon(AppIcons.imageOutlined, color: AppColors.muted)
               : Image.network(
                   resolveImageUrl(_coverImageUrl!),
                   fit: BoxFit.cover,
                   errorBuilder: (_, _, _) =>
-                      const Icon(AppIcons.brokenImageOutlined),
+                      const AppIcon(AppIcons.brokenImageOutlined),
                 ),
         ),
         const SizedBox(width: AppSizes.md),
         Expanded(
           child: OutlinedButton.icon(
-            icon: const Icon(AppIcons.uploadOutlined),
-            label: Text(_coverImageUrl == null
-                ? AppLocalizations.of(context).adminCollectionCoverImage
-                : AppLocalizations.of(context).adminCollectionReplaceCover),
+            icon: const AppIcon(AppIcons.uploadOutlined),
+            label: Text(
+              _coverImageUrl == null
+                  ? AppLocalizations.of(context).adminCollectionCoverImage
+                  : AppLocalizations.of(context).adminCollectionReplaceCover,
+            ),
             onPressed: _saving ? null : _pickCover,
           ),
         ),
@@ -426,7 +451,7 @@ class _ItemRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(AppIcons.dragHandle, color: AppColors.muted),
+          AppIcon(AppIcons.dragHandle, color: AppColors.muted),
           const SizedBox(width: AppSizes.sm),
           Container(
             width: AppSizes.avatarSm,
@@ -437,12 +462,12 @@ class _ItemRow extends StatelessWidget {
               shape: AppShapes.squircle(AppSizes.radiusSm),
             ),
             child: item.product.imageUrl == null
-                ? Icon(AppIcons.imageOutlined, color: AppColors.muted)
+                ? AppIcon(AppIcons.imageOutlined, color: AppColors.muted)
                 : Image.network(
                     resolveImageUrl(item.product.imageUrl!),
                     fit: BoxFit.cover,
                     errorBuilder: (_, _, _) =>
-                        const Icon(AppIcons.brokenImageOutlined),
+                        const AppIcon(AppIcons.brokenImageOutlined),
                   ),
           ),
           const SizedBox(width: AppSizes.sm),
@@ -450,19 +475,22 @@ class _ItemRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(item.product.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(
+                  item.product.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 Text(
                   '${item.product.sku}${item.product.shopName != null ? '  ·  ${item.product.shopName!}' : ''}',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: AppColors.muted),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
                 ),
               ],
             ),
           ),
           IconButton(
-            icon: const Icon(AppIcons.close, size: AppSizes.iconMd),
+            icon: const AppIcon(AppIcons.close, size: AppSizes.iconMd),
             onPressed: onRemove,
           ),
         ],
@@ -488,11 +516,7 @@ class _CollectionEditorSkeleton extends StatelessWidget {
         // Cover row: 90×60 squircle + button placeholder
         Row(
           children: [
-            AppShimmerBox(
-              width: 90,
-              height: 60,
-              radius: AppSizes.radiusMd,
-            ),
+            AppShimmerBox(width: 90, height: 60, radius: AppSizes.radiusMd),
             const SizedBox(width: AppSizes.md),
             const Expanded(
               child: AppShimmerBox(height: 40, radius: AppSizes.radiusMd),
@@ -600,7 +624,9 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
     _debounce = Timer(AppDurations.searchDebounce, () async {
       if (!mounted) return;
       setState(() => _searching = true);
-      final hits = await context.read<AdminCollectionsProvider>().searchProducts(value);
+      final hits = await context
+          .read<AdminCollectionsProvider>()
+          .searchProducts(value);
       if (!mounted) return;
       setState(() {
         _searching = false;
@@ -631,7 +657,7 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
             autofocus: true,
             decoration: InputDecoration(
               labelText: l10n.adminCollectionProductSearchLabel,
-              prefixIcon: const Icon(AppIcons.search),
+              prefixIcon: const AppIcon(AppIcons.search),
             ),
             onChanged: _onChanged,
           ),
@@ -654,7 +680,8 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                     AppSizes.huge,
                   ),
                   itemCount: _results.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: AppSizes.sm),
+                  separatorBuilder: (_, _) =>
+                      const SizedBox(height: AppSizes.sm),
                   itemBuilder: (_, i) {
                     final p = _results[i];
                     return InkWell(
@@ -677,13 +704,16 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                                 shape: AppShapes.squircle(AppSizes.radiusSm),
                               ),
                               child: p.imageUrl == null
-                                  ? Icon(AppIcons.imageOutlined,
-                                      color: AppColors.muted)
+                                  ? AppIcon(
+                                      AppIcons.imageOutlined,
+                                      color: AppColors.muted,
+                                    )
                                   : Image.network(
                                       resolveImageUrl(p.imageUrl!),
                                       fit: BoxFit.cover,
-                                      errorBuilder: (_, _, _) =>
-                                          const Icon(AppIcons.brokenImageOutlined),
+                                      errorBuilder: (_, _, _) => const AppIcon(
+                                        AppIcons.brokenImageOutlined,
+                                      ),
                                     ),
                             ),
                             const SizedBox(width: AppSizes.sm),
@@ -691,13 +721,14 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(p.name,
-                                      maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  Text(
+                                    p.name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                   Text(
                                     '${p.sku}${p.shopName != null ? '  ·  ${p.shopName!}' : ''}',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall
+                                    style: Theme.of(context).textTheme.bodySmall
                                         ?.copyWith(color: AppColors.muted),
                                   ),
                                 ],

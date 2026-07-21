@@ -12,6 +12,7 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Customer-side directory of merchants the user has an active Party
 /// or Vendor link with. Each card opens the marketplace `ShopProfilePage`
@@ -48,20 +49,19 @@ class _LinkedMerchantsPageState extends State<LinkedMerchantsPage> {
         child: p.isLoading && p.items.isEmpty
             ? const _MerchantListSkeleton()
             : p.error != null && p.items.isEmpty
-                ? _ErrorState(message: p.error!, onRetry: p.load)
-                : p.items.isEmpty
-                    ? const _EmptyState()
-                    : ListView.separated(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSizes.lg,
-                          vertical: AppSizes.md,
-                        ),
-                        itemCount: p.items.length,
-                        separatorBuilder: (_, _) =>
-                            const SizedBox(height: AppSizes.md),
-                        itemBuilder: (_, i) => _MerchantCard(merchant: p.items[i]),
-                      ),
+            ? _ErrorState(message: p.error!, onRetry: p.load)
+            : p.items.isEmpty
+            ? const _EmptyState()
+            : ListView.separated(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSizes.lg,
+                  vertical: AppSizes.md,
+                ),
+                itemCount: p.items.length,
+                separatorBuilder: (_, _) => const SizedBox(height: AppSizes.md),
+                itemBuilder: (_, i) => _MerchantCard(merchant: p.items[i]),
+              ),
       ),
     );
   }
@@ -109,8 +109,10 @@ class _MerchantCard extends StatelessWidget {
                       height: AppSizes.huge,
                       color: AppColors.heroPanel,
                       child: merchant.logoUrl == null
-                          ? const Icon(AppIcons.storefrontOutlined,
-                              color: AppColors.muted)
+                          ? const AppIcon(
+                              AppIcons.storefrontOutlined,
+                              color: AppColors.muted,
+                            )
                           : NetworkImageBox(
                               url: resolveImageUrl(merchant.logoUrl!),
                             ),
@@ -123,21 +125,18 @@ class _MerchantCard extends StatelessWidget {
                       children: [
                         Text(
                           merchant.name,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
+                          style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(fontWeight: FontWeight.w800),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        if (merchant.tagline != null && merchant.tagline!.isNotEmpty)
+                        if (merchant.tagline != null &&
+                            merchant.tagline!.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(top: AppSizes.xs),
                             child: Text(
                               merchant.tagline!,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
+                              style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(color: AppColors.muted),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -153,16 +152,21 @@ class _MerchantCard extends StatelessWidget {
                               if (merchant.linkedAsParty)
                                 _Pill(label: 'CUSTOMER', tone: _PillTone.brand),
                               if (merchant.linkedAsVendor)
-                                _Pill(label: 'SUPPLIER', tone: _PillTone.accent),
+                                _Pill(
+                                  label: 'SUPPLIER',
+                                  tone: _PillTone.accent,
+                                ),
                               if (!merchant.isPublished)
                                 _Pill(label: 'PRIVATE', tone: _PillTone.muted),
                               if (merchant.rating != null)
                                 Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(AppIcons.starRounded,
-                                        size: AppSizes.iconSm,
-                                        color: AppColors.warning),
+                                    const AppIcon(
+                                      AppIcons.starRounded,
+                                      size: AppSizes.iconSm,
+                                      color: AppColors.warning,
+                                    ),
                                     Text(
                                       ' ${merchant.rating!.toStringAsFixed(1)} (${merchant.ratingCount})',
                                       style: Theme.of(context)
@@ -181,8 +185,11 @@ class _MerchantCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const Icon(AppIcons.arrowForwardIosRounded,
-                      size: AppSizes.iconSm, color: AppColors.subtle),
+                  const AppIcon(
+                    AppIcons.arrowForwardIosRounded,
+                    size: AppSizes.iconSm,
+                    color: AppColors.subtle,
+                  ),
                 ],
               ),
             ),
@@ -208,7 +215,9 @@ class _Pill extends StatelessWidget {
     };
     return Container(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.sm, vertical: AppSizes.xs),
+        horizontal: AppSizes.sm,
+        vertical: AppSizes.xs,
+      ),
       decoration: ShapeDecoration(
         color: bg,
         shape: AppShapes.squircle(AppSizes.radiusFull),
@@ -216,10 +225,10 @@ class _Pill extends StatelessWidget {
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: fg,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.5,
-            ),
+          color: fg,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }
@@ -301,9 +310,17 @@ class _MerchantCardSkeleton extends StatelessWidget {
                       // Pill row (two pill-shaped blobs)
                       Row(
                         children: [
-                          AppShimmerBox(width: 62, height: 20, radius: AppSizes.radiusFull),
+                          AppShimmerBox(
+                            width: 62,
+                            height: 20,
+                            radius: AppSizes.radiusFull,
+                          ),
                           const SizedBox(width: AppSizes.sm),
-                          AppShimmerBox(width: 52, height: 20, radius: AppSizes.radiusFull),
+                          AppShimmerBox(
+                            width: 52,
+                            height: 20,
+                            radius: AppSizes.radiusFull,
+                          ),
                         ],
                       ),
                     ],
@@ -338,7 +355,7 @@ class _EmptyState extends StatelessWidget {
               shape: AppShapes.squircle(AppSizes.radiusLg),
             ),
             alignment: Alignment.center,
-            child: const Icon(
+            child: const AppIcon(
               AppIcons.storefrontOutlined,
               size: AppSizes.iconHuge,
               color: AppColors.muted,
@@ -349,19 +366,17 @@ class _EmptyState extends StatelessWidget {
         Text(
           'No linked merchants yet',
           textAlign: TextAlign.center,
-          style: Theme.of(context)
-              .textTheme
-              .titleMedium
-              ?.copyWith(fontWeight: FontWeight.w800),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: AppSizes.xs),
         Text(
           "When a shop invites you and you accept, they'll appear here for you to browse.",
           textAlign: TextAlign.center,
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(color: AppColors.muted),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
         ),
       ],
     );
@@ -379,31 +394,32 @@ class _ErrorState extends StatelessWidget {
       padding: const EdgeInsets.all(AppSizes.xl),
       children: [
         const SizedBox(height: AppSizes.huge),
-        const Icon(AppIcons.cloudOffRounded,
-            size: AppSizes.iconHuge, color: AppColors.muted),
+        const AppIcon(
+          AppIcons.cloudOffRounded,
+          size: AppSizes.iconHuge,
+          color: AppColors.muted,
+        ),
         const SizedBox(height: AppSizes.md),
         Text(
           'Could not load',
           textAlign: TextAlign.center,
-          style: Theme.of(context)
-              .textTheme
-              .titleMedium
-              ?.copyWith(fontWeight: FontWeight.w800),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: AppSizes.xs),
         Text(
           message,
           textAlign: TextAlign.center,
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(color: AppColors.muted),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
         ),
         const SizedBox(height: AppSizes.lg),
         Center(
           child: FilledButton.icon(
             onPressed: onRetry,
-            icon: const Icon(AppIcons.refresh),
+            icon: const AppIcon(AppIcons.refresh),
             label: const Text('Retry'),
           ),
         ),

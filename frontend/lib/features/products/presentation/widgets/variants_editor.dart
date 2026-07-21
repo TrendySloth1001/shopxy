@@ -7,6 +7,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Phase E — merchant variant editor. Lets the merchant declare one or
 /// more axes (Colour, Size, …) and edit the per-variant grid. Stores
@@ -36,6 +37,7 @@ class VariantsEditor extends StatefulWidget {
   final double defaultPurchasePrice;
   final String defaultSku;
   final VoidCallback onChange;
+
   /// Asynchronously upload an image and return its stored URL — the
   /// page injects its existing upload helper (camera/gallery picker +
   /// backend POST) so the variant card can reuse the same compressed
@@ -72,8 +74,9 @@ class _VariantsEditorState extends State<VariantsEditor> {
 
   void _addAxisValue(int i) {
     setState(() {
-      widget.axes[i] = widget.axes[i]
-          .copyWith(values: [...widget.axes[i].values, '']);
+      widget.axes[i] = widget.axes[i].copyWith(
+        values: [...widget.axes[i].values, ''],
+      );
     });
     widget.onChange();
   }
@@ -94,13 +97,15 @@ class _VariantsEditorState extends State<VariantsEditor> {
   void _addVariant() {
     if (widget.variants.length >= _maxVariantsPerProduct) return;
     setState(() {
-      widget.variants.add(ProductVariant(
-        sku: '${widget.defaultSku}-${widget.variants.length + 1}',
-        attributes: {for (final a in widget.axes) a.name: ''},
-        mrp: widget.defaultMrp,
-        sellingPrice: widget.defaultSellingPrice,
-        purchasePrice: widget.defaultPurchasePrice,
-      ));
+      widget.variants.add(
+        ProductVariant(
+          sku: '${widget.defaultSku}-${widget.variants.length + 1}',
+          attributes: {for (final a in widget.axes) a.name: ''},
+          mrp: widget.defaultMrp,
+          sellingPrice: widget.defaultSellingPrice,
+          purchasePrice: widget.defaultPurchasePrice,
+        ),
+      );
     });
     widget.onChange();
   }
@@ -125,7 +130,9 @@ class _VariantsEditorState extends State<VariantsEditor> {
         Text(
           l10n.productsAxes,
           style: theme.textTheme.labelMedium?.copyWith(
-              fontWeight: FontWeight.w800, color: AppColors.muted),
+            fontWeight: FontWeight.w800,
+            color: AppColors.muted,
+          ),
         ),
         const SizedBox(height: AppSizes.sm),
         for (var i = 0; i < widget.axes.length; i++)
@@ -141,7 +148,7 @@ class _VariantsEditorState extends State<VariantsEditor> {
           Align(
             alignment: Alignment.centerLeft,
             child: OutlinedButton.icon(
-              icon: const Icon(AppIcons.add, size: 16),
+              icon: const AppIcon(AppIcons.add, size: 16),
               label: Text(l10n.productsAddAxis),
               onPressed: _addAxis,
             ),
@@ -150,7 +157,9 @@ class _VariantsEditorState extends State<VariantsEditor> {
         Text(
           l10n.productsVariantsLabel,
           style: theme.textTheme.labelMedium?.copyWith(
-              fontWeight: FontWeight.w800, color: AppColors.muted),
+            fontWeight: FontWeight.w800,
+            color: AppColors.muted,
+          ),
         ),
         const SizedBox(height: AppSizes.sm),
         for (var i = 0; i < widget.variants.length; i++)
@@ -165,7 +174,7 @@ class _VariantsEditorState extends State<VariantsEditor> {
           Align(
             alignment: Alignment.centerLeft,
             child: OutlinedButton.icon(
-              icon: const Icon(AppIcons.add, size: 16),
+              icon: const AppIcon(AppIcons.add, size: 16),
               label: Text(l10n.productsAddVariant),
               onPressed: _addVariant,
             ),
@@ -221,7 +230,7 @@ class _AxisCard extends StatelessWidget {
               ),
               IconButton(
                 onPressed: onRemove,
-                icon: const Icon(AppIcons.deleteOutline),
+                icon: const AppIcon(AppIcons.deleteOutline),
               ),
             ],
           ),
@@ -244,7 +253,7 @@ class _AxisCard extends StatelessWidget {
                   ),
                   IconButton(
                     onPressed: () => onRemoveValue(i),
-                    icon: const Icon(AppIcons.close, size: 18),
+                    icon: const AppIcon(AppIcons.close, size: 18),
                   ),
                 ],
               ),
@@ -252,7 +261,7 @@ class _AxisCard extends StatelessWidget {
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
-              icon: const Icon(AppIcons.add, size: 16),
+              icon: const AppIcon(AppIcons.add, size: 16),
               label: Text(l10n.productsAddValue),
               onPressed: onAddValue,
             ),
@@ -277,8 +286,10 @@ class _VariantCard extends StatelessWidget {
   final VoidCallback onRemove;
   final Future<String?> Function(ImageSource source) onUploadImage;
 
-  Map<String, String> _patchAttr(String key, String value) =>
-      {...variant.attributes, key: value};
+  Map<String, String> _patchAttr(String key, String value) => {
+    ...variant.attributes,
+    key: value,
+  };
 
   Future<void> _pickAndAdd(BuildContext context, ImageSource source) async {
     final url = await onUploadImage(source);
@@ -311,7 +322,9 @@ class _VariantCard extends StatelessWidget {
               if (variant.isDefault)
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: AppSizes.sm, vertical: 2),
+                    horizontal: AppSizes.sm,
+                    vertical: 2,
+                  ),
                   decoration: ShapeDecoration(
                     color: AppColors.heroPanel,
                     shape: AppShapes.squircle(AppSizes.radiusSm),
@@ -319,14 +332,16 @@ class _VariantCard extends StatelessWidget {
                   child: Text(
                     l10n.productsDefaultBadge,
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        fontWeight: FontWeight.w800, letterSpacing: 0.6),
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.6,
+                    ),
                   ),
                 ),
               const Spacer(),
               if (!variant.isDefault)
                 IconButton(
                   onPressed: onRemove,
-                  icon: const Icon(AppIcons.deleteOutline),
+                  icon: const AppIcon(AppIcons.deleteOutline),
                 ),
             ],
           ),
@@ -343,11 +358,12 @@ class _VariantCard extends StatelessWidget {
                 ],
                 onChanged: (v) {
                   if (v == null) return;
-                  onChange(
-                      variant.copyWith(attributes: _patchAttr(a.name, v)));
+                  onChange(variant.copyWith(attributes: _patchAttr(a.name, v)));
                 },
                 decoration: InputDecoration(
-                  labelText: a.name.isEmpty ? l10n.productsAxisFallback : a.name,
+                  labelText: a.name.isEmpty
+                      ? l10n.productsAxisFallback
+                      : a.name,
                   border: const OutlineInputBorder(),
                   isDense: true,
                 ),
@@ -368,9 +384,12 @@ class _VariantCard extends StatelessWidget {
               Expanded(
                 child: TextFormField(
                   initialValue: variant.mrp.toStringAsFixed(2),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  onChanged: (v) => onChange(variant.copyWith(
-                      mrp: double.tryParse(v) ?? variant.mrp)),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  onChanged: (v) => onChange(
+                    variant.copyWith(mrp: double.tryParse(v) ?? variant.mrp),
+                  ),
                   decoration: InputDecoration(
                     labelText: l10n.productsMrp,
                     border: const OutlineInputBorder(),
@@ -382,10 +401,14 @@ class _VariantCard extends StatelessWidget {
               Expanded(
                 child: TextFormField(
                   initialValue: variant.sellingPrice.toStringAsFixed(2),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  onChanged: (v) => onChange(variant.copyWith(
-                      sellingPrice:
-                          double.tryParse(v) ?? variant.sellingPrice)),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  onChanged: (v) => onChange(
+                    variant.copyWith(
+                      sellingPrice: double.tryParse(v) ?? variant.sellingPrice,
+                    ),
+                  ),
                   decoration: InputDecoration(
                     labelText: l10n.productsSellingShort,
                     border: const OutlineInputBorder(),
@@ -397,10 +420,15 @@ class _VariantCard extends StatelessWidget {
               Expanded(
                 child: TextFormField(
                   initialValue: variant.stockQuantity.toStringAsFixed(0),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  onChanged: (v) => onChange(variant.copyWith(
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  onChanged: (v) => onChange(
+                    variant.copyWith(
                       stockQuantity:
-                          double.tryParse(v) ?? variant.stockQuantity)),
+                          double.tryParse(v) ?? variant.stockQuantity,
+                    ),
+                  ),
                   decoration: InputDecoration(
                     labelText: l10n.productsStockShort,
                     border: const OutlineInputBorder(),
@@ -413,18 +441,16 @@ class _VariantCard extends StatelessWidget {
           const SizedBox(height: 10),
           _VariantImagesRow(
             urls: variant.imageUrls,
-            onPickGallery: () =>
-                _pickAndAdd(context, ImageSource.gallery),
+            onPickGallery: () => _pickAndAdd(context, ImageSource.gallery),
             onPickCamera: () => _pickAndAdd(context, ImageSource.camera),
             onRemove: _removeImage,
           ),
           const SizedBox(height: AppSizes.xs),
           Text(
             l10n.productsVariantImagesHint,
-            style: Theme.of(context)
-                .textTheme
-                .labelSmall
-                ?.copyWith(color: AppColors.muted),
+            style: Theme.of(
+              context,
+            ).textTheme.labelSmall?.copyWith(color: AppColors.muted),
           ),
         ],
       ),
@@ -474,7 +500,7 @@ class _VariantImagesRow extends StatelessWidget {
                           color: AppColors.heroPanel,
                           shape: AppShapes.squircle(AppSizes.radiusSm),
                         ),
-                        child: Icon(
+                        child: AppIcon(
                           AppIcons.brokenImageOutlined,
                           color: AppColors.muted,
                         ),
@@ -492,7 +518,7 @@ class _VariantImagesRow extends StatelessWidget {
                           color: AppColors.inverseSurface,
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(
+                        child: AppIcon(
                           AppIcons.closeRounded,
                           size: 12,
                           color: AppColors.onInverse,
@@ -514,10 +540,7 @@ class _VariantImagesRow extends StatelessWidget {
 }
 
 class _AddVariantImageTile extends StatelessWidget {
-  const _AddVariantImageTile({
-    required this.onGallery,
-    required this.onCamera,
-  });
+  const _AddVariantImageTile({required this.onGallery, required this.onCamera});
   final VoidCallback onGallery;
   final VoidCallback onCamera;
 
@@ -526,14 +549,13 @@ class _AddVariantImageTile extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     return PopupMenuButton<ImageSource>(
       tooltip: l10n.productsAddVariantImage,
-      onSelected: (s) =>
-          s == ImageSource.camera ? onCamera() : onGallery(),
+      onSelected: (s) => s == ImageSource.camera ? onCamera() : onGallery(),
       itemBuilder: (_) => [
         PopupMenuItem(
           value: ImageSource.gallery,
           child: Row(
             children: [
-              const Icon(AppIcons.photoLibraryOutlined, size: 18),
+              const AppIcon(AppIcons.photoLibraryOutlined, size: 18),
               const SizedBox(width: 8),
               Text(l10n.productsFromGallery),
             ],
@@ -543,7 +565,7 @@ class _AddVariantImageTile extends StatelessWidget {
           value: ImageSource.camera,
           child: Row(
             children: [
-              const Icon(AppIcons.photoCameraOutlined, size: 18),
+              const AppIcon(AppIcons.photoCameraOutlined, size: 18),
               const SizedBox(width: 8),
               Text(l10n.productsTakePhotoMenu),
             ],
@@ -563,14 +585,14 @@ class _AddVariantImageTile extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(AppIcons.addAPhotoOutlined, color: AppColors.muted),
+            AppIcon(AppIcons.addAPhotoOutlined, color: AppColors.muted),
             const SizedBox(height: 2),
             Text(
               l10n.productsAddShort,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: AppColors.muted,
-                    fontWeight: FontWeight.w700,
-                  ),
+                color: AppColors.muted,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ],
         ),

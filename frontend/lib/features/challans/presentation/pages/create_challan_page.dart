@@ -21,6 +21,7 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 class CreateChallanPage extends StatefulWidget {
   const CreateChallanPage({super.key});
@@ -99,14 +100,16 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
     if (existing >= 0) {
       setState(() => _items[existing].quantity += 1);
     } else {
-      setState(() => _items.add(
-            ChallanItemDraft(
-              productId: p.id,
-              productName: p.name,
-              productSku: p.sku,
-              unit: p.unit,
-            ),
-          ));
+      setState(
+        () => _items.add(
+          ChallanItemDraft(
+            productId: p.id,
+            productName: p.name,
+            productSku: p.sku,
+            unit: p.unit,
+          ),
+        ),
+      );
     }
     _searchCtrl.clear();
     setState(() => _searchResults = []);
@@ -135,7 +138,9 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
     if (!_formKey.currentState!.validate()) return;
     if (_items.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).challansAddAtLeastOne)),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).challansAddAtLeastOne),
+        ),
       );
       return;
     }
@@ -145,10 +150,9 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
       await provider.createChallan(
         partyId: _selectedParty?.id,
         partyName: _selectedParty == null ? _partyName.text.trim() : null,
-        partyPhone:
-            _selectedParty == null && _partyPhone.text.trim().isNotEmpty
-                ? _partyPhone.text.trim()
-                : null,
+        partyPhone: _selectedParty == null && _partyPhone.text.trim().isNotEmpty
+            ? _partyPhone.text.trim()
+            : null,
         note: _note.text.trim().isNotEmpty ? _note.text.trim() : null,
         items: _items,
       );
@@ -156,8 +160,9 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(friendlyError(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(friendlyError(e))));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -199,178 +204,195 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
         if (discard && context.mounted) Navigator.pop(context);
       },
       child: Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: FloatingAppBar(
-        title: l10n.challansCreate,
-        actions: [
-          TextButton(
-            onPressed: _isSaving ? null : _save,
-            child: _isSaving
-                ? const SizedBox(
-                    width: AppSizes.iconMd,
-                    height: AppSizes.iconMd,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(l10n.challansSubmit),
-          ),
-        ],
-      ),
-      body: Form(
-        key: _formKey,
-        child: MediaQuery.removePadding(
-          context: context,
-          removeTop: true,
-          child: Column(
-          children: [
-            SizedBox(height: FloatingAppBar.contentTopInset(context)),
-            GlassHero.line(
-              kind: LineArt.deliveryNote,
-              height: AppSizes.heroHeightSm,
-              illustrationSize: AppSizes.productImageSize,
+        extendBodyBehindAppBar: true,
+        appBar: FloatingAppBar(
+          title: l10n.challansCreate,
+          actions: [
+            TextButton(
+              onPressed: _isSaving ? null : _save,
+              child: _isSaving
+                  ? const SizedBox(
+                      width: AppSizes.iconMd,
+                      height: AppSizes.iconMd,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(l10n.challansSubmit),
             ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.all(AppSizes.lg),
-                children: [
-            AppSectionHeader(
-              title: l10n.challansPartyInfo.toUpperCase(),
-              padding: const EdgeInsets.only(bottom: AppSizes.sm),
-            ),
-            if (_selectedParty != null)
-              _SelectedPartyCard(
-                party: _selectedParty!,
-                onChange: _pickParty,
-                onClear: _clearParty,
-              )
-            else ...[
-              AppButton.secondary(
-                label: l10n.challansSelectParty,
-                icon: AppIcons.personSearchRounded,
-                onPressed: _pickParty,
-                fullWidth: true,
-              ),
-              const SizedBox(height: AppSizes.md),
-              TextFormField(
-                controller: _partyName,
-                decoration: InputDecoration(
-                  labelText: l10n.challansPartyName,
-                ),
-                validator: (v) =>
-                    _selectedParty == null && (v == null || v.trim().isEmpty)
-                        ? l10n.challansFieldRequired
-                        : null,
-                textCapitalization: TextCapitalization.words,
-              ),
-              const SizedBox(height: AppSizes.md),
-              TextFormField(
-                controller: _partyPhone,
-                decoration: InputDecoration(labelText: l10n.challansPhone),
-                keyboardType: TextInputType.phone,
-              ),
-            ],
-            const SizedBox(height: AppSizes.md),
-            TextFormField(
-              controller: _note,
-              decoration: InputDecoration(labelText: l10n.challansNote),
-              maxLines: 2,
-            ),
-            const SizedBox(height: AppSizes.xxl),
-            AppSectionHeader(
-              title: l10n.challansAddProducts.toUpperCase(),
-              padding: const EdgeInsets.only(bottom: AppSizes.sm),
-            ),
-            Text(
-              l10n.challansNoPricesHint,
-              style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
-            ),
-            const SizedBox(height: AppSizes.md),
-            TextFormField(
-              controller: _searchCtrl,
-              decoration: InputDecoration(
-                labelText: l10n.challansSearchProducts,
-                prefixIcon: const Icon(AppIcons.searchRounded),
-                suffixIcon: _isSearching
-                    ? const Padding(
-                        padding: EdgeInsets.all(AppSizes.md),
-                        child: SizedBox(
-                          width: AppSizes.iconSm,
-                          height: AppSizes.iconSm,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      )
-                    : null,
-              ),
-              onChanged: _onProductSearchChanged,
-            ),
-            if (_searchResults.isNotEmpty) ...[
-              const SizedBox(height: AppSizes.xs),
-              AppCard(
-                padding: EdgeInsets.zero,
-                child: Column(
-                  children: [
-                    for (int i = 0; i < _searchResults.length; i++) ...[
-                      if (i > 0) const AppDivider.flush(),
-                      ListTile(
-                        dense: true,
-                        title: Text(_searchResults[i].name),
-                        subtitle: Text(_searchResults[i].sku),
-                        trailing:
-                            const Icon(AppIcons.addCircleOutlineRounded),
-                        onTap: () => _addProduct(_searchResults[i]),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-            const SizedBox(height: AppSizes.xl),
-            Row(
+          ],
+        ),
+        body: Form(
+          key: _formKey,
+          child: MediaQuery.removePadding(
+            context: context,
+            removeTop: true,
+            child: Column(
               children: [
-                Expanded(
-                  child: AppSectionHeader(
-                    title: l10n.challansItemsHeader.toUpperCase(),
-                    padding: const EdgeInsets.only(bottom: AppSizes.sm),
-                  ),
+                SizedBox(height: FloatingAppBar.contentTopInset(context)),
+                GlassHero.line(
+                  kind: LineArt.deliveryNote,
+                  height: AppSizes.heroHeightSm,
+                  illustrationSize: AppSizes.productImageSize,
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: AppSizes.sm),
-                  child: Text(
-                    '${_items.length} ${l10n.challansItemsLabel}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: AppColors.muted,
-                    ),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.all(AppSizes.lg),
+                    children: [
+                      AppSectionHeader(
+                        title: l10n.challansPartyInfo.toUpperCase(),
+                        padding: const EdgeInsets.only(bottom: AppSizes.sm),
+                      ),
+                      if (_selectedParty != null)
+                        _SelectedPartyCard(
+                          party: _selectedParty!,
+                          onChange: _pickParty,
+                          onClear: _clearParty,
+                        )
+                      else ...[
+                        AppButton.secondary(
+                          label: l10n.challansSelectParty,
+                          icon: AppIcons.personSearchRounded,
+                          onPressed: _pickParty,
+                          fullWidth: true,
+                        ),
+                        const SizedBox(height: AppSizes.md),
+                        TextFormField(
+                          controller: _partyName,
+                          decoration: InputDecoration(
+                            labelText: l10n.challansPartyName,
+                          ),
+                          validator: (v) =>
+                              _selectedParty == null &&
+                                  (v == null || v.trim().isEmpty)
+                              ? l10n.challansFieldRequired
+                              : null,
+                          textCapitalization: TextCapitalization.words,
+                        ),
+                        const SizedBox(height: AppSizes.md),
+                        TextFormField(
+                          controller: _partyPhone,
+                          decoration: InputDecoration(
+                            labelText: l10n.challansPhone,
+                          ),
+                          keyboardType: TextInputType.phone,
+                        ),
+                      ],
+                      const SizedBox(height: AppSizes.md),
+                      TextFormField(
+                        controller: _note,
+                        decoration: InputDecoration(
+                          labelText: l10n.challansNote,
+                        ),
+                        maxLines: 2,
+                      ),
+                      const SizedBox(height: AppSizes.xxl),
+                      AppSectionHeader(
+                        title: l10n.challansAddProducts.toUpperCase(),
+                        padding: const EdgeInsets.only(bottom: AppSizes.sm),
+                      ),
+                      Text(
+                        l10n.challansNoPricesHint,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.muted,
+                        ),
+                      ),
+                      const SizedBox(height: AppSizes.md),
+                      TextFormField(
+                        controller: _searchCtrl,
+                        decoration: InputDecoration(
+                          labelText: l10n.challansSearchProducts,
+                          prefixIcon: const AppIcon(AppIcons.searchRounded),
+                          suffixIcon: _isSearching
+                              ? const Padding(
+                                  padding: EdgeInsets.all(AppSizes.md),
+                                  child: SizedBox(
+                                    width: AppSizes.iconSm,
+                                    height: AppSizes.iconSm,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                )
+                              : null,
+                        ),
+                        onChanged: _onProductSearchChanged,
+                      ),
+                      if (_searchResults.isNotEmpty) ...[
+                        const SizedBox(height: AppSizes.xs),
+                        AppCard(
+                          padding: EdgeInsets.zero,
+                          child: Column(
+                            children: [
+                              for (
+                                int i = 0;
+                                i < _searchResults.length;
+                                i++
+                              ) ...[
+                                if (i > 0) const AppDivider.flush(),
+                                ListTile(
+                                  dense: true,
+                                  title: Text(_searchResults[i].name),
+                                  subtitle: Text(_searchResults[i].sku),
+                                  trailing: const AppIcon(
+                                    AppIcons.addCircleOutlineRounded,
+                                  ),
+                                  onTap: () => _addProduct(_searchResults[i]),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: AppSizes.xl),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: AppSectionHeader(
+                              title: l10n.challansItemsHeader.toUpperCase(),
+                              padding: const EdgeInsets.only(
+                                bottom: AppSizes.sm,
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: AppSizes.sm),
+                            child: Text(
+                              '${_items.length} ${l10n.challansItemsLabel}',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: AppColors.muted,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_items.isEmpty)
+                        Container(
+                          padding: const EdgeInsets.all(AppSizes.xl),
+                          alignment: Alignment.center,
+                          child: Text(
+                            l10n.challansEmptyItems,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: AppColors.muted,
+                            ),
+                          ),
+                        )
+                      else
+                        ...List.generate(
+                          _items.length,
+                          (i) => _ItemRow(
+                            item: _items[i],
+                            onQtyChanged: (q) =>
+                                setState(() => _items[i].quantity = q),
+                            onDelete: () => setState(() => _items.removeAt(i)),
+                          ),
+                        ),
+                      const SizedBox(height: AppSizes.huge),
+                    ],
                   ),
                 ),
               ],
             ),
-            if (_items.isEmpty)
-              Container(
-                padding: const EdgeInsets.all(AppSizes.xl),
-                alignment: Alignment.center,
-                child: Text(
-                  l10n.challansEmptyItems,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.muted,
-                  ),
-                ),
-              )
-            else
-              ...List.generate(
-                _items.length,
-                (i) => _ItemRow(
-                  item: _items[i],
-                  onQtyChanged: (q) => setState(() => _items[i].quantity = q),
-                  onDelete: () => setState(() => _items.removeAt(i)),
-                ),
-              ),
-            const SizedBox(height: AppSizes.huge),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
-        ),
-      ),
       ),
     );
   }
@@ -438,8 +460,9 @@ class _ItemRow extends StatelessWidget {
                     vertical: AppSizes.xs,
                   ),
                 ),
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 onChanged: (v) {
                   final parsed = double.tryParse(v);
                   if (parsed != null && parsed > 0) onQtyChanged(parsed);
@@ -447,7 +470,7 @@ class _ItemRow extends StatelessWidget {
               ),
             ),
             IconButton(
-              icon: Icon(
+              icon: AppIcon(
                 AppIcons.deleteOutlineRounded,
                 color: AppColors.error,
               ),
@@ -506,7 +529,7 @@ class _SelectedPartyCard extends StatelessWidget {
           ),
           TextButton(onPressed: onChange, child: Text(l10n.challansChange)),
           IconButton(
-            icon: const Icon(AppIcons.closeRounded),
+            icon: const AppIcon(AppIcons.closeRounded),
             onPressed: onClear,
             visualDensity: VisualDensity.compact,
           ),

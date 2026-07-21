@@ -14,6 +14,7 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/format/app_format.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Customer-side "Merchants" tab (index 1 once the user is linked).
 /// Single screen, three layers stacked vertically:
@@ -57,7 +58,8 @@ class _MyShopsPageState extends State<MyShopsPage> {
 
     // Most-active first so users land on their live relationships.
     // Shops without invoices fall to the bottom (sorted by name).
-    final sorted = [...p.shops]..sort((a, b) {
+    final sorted = [...p.shops]
+      ..sort((a, b) {
         final aT = a.lastInvoiceAt;
         final bT = b.lastInvoiceAt;
         if (aT == null && bT == null) return a.name.compareTo(b.name);
@@ -147,9 +149,9 @@ class _MyShopsPageState extends State<MyShopsPage> {
                             ? 'No customer links yet.'
                             : 'No supplier links yet.',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.muted,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          color: AppColors.muted,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
@@ -198,32 +200,32 @@ class _HeroHeader extends StatelessWidget {
           Text(
             'YOUR MERCHANTS',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppColors.brand,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.4,
-                ),
+              color: AppColors.brand,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.4,
+            ),
           ),
           const SizedBox(height: AppSizes.xs),
           Text(
             'Merchants',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: AppColors.black,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.6,
-                  height: 1.1,
-                ),
+              color: AppColors.black,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.6,
+              height: 1.1,
+            ),
           ),
           const SizedBox(height: AppSizes.xs),
           Text(
             isLoading
                 ? 'Loading your linked merchants…'
                 : count == 0
-                    ? 'Shops that have linked you appear here.'
-                    : '$count linked ${count == 1 ? 'merchant' : 'merchants'}',
+                ? 'Shops that have linked you appear here.'
+                : '$count linked ${count == 1 ? 'merchant' : 'merchants'}',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.muted,
-                  fontWeight: FontWeight.w500,
-                ),
+              color: AppColors.muted,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),
@@ -269,7 +271,7 @@ class _InvitesBanner extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
-              child: const Icon(
+              child: const AppIcon(
                 AppIcons.markEmailUnreadRounded,
                 color: AppColors.white,
                 size: AppSizes.iconSm,
@@ -282,13 +284,13 @@ class _InvitesBanner extends StatelessWidget {
                     ? '1 pending invitation'
                     : '$count pending invitations',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.brandStrong,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.1,
-                    ),
+                  color: AppColors.brandStrong,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.1,
+                ),
               ),
             ),
-            const Icon(
+            const AppIcon(
               AppIcons.chevronRightRounded,
               color: AppColors.brandStrong,
               size: AppSizes.iconMd,
@@ -373,10 +375,10 @@ class _Chip extends StatelessWidget {
         child: Text(
           label,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: selected ? AppColors.white : AppColors.muted,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.1,
-              ),
+            color: selected ? AppColors.white : AppColors.muted,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.1,
+          ),
         ),
       ),
     );
@@ -444,9 +446,7 @@ class _ShopCard extends StatelessWidget {
                                   displayName,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
+                                  style: Theme.of(context).textTheme.titleMedium
                                       ?.copyWith(
                                         color: AppColors.black,
                                         fontWeight: FontWeight.w800,
@@ -500,10 +500,7 @@ class _ShopCard extends StatelessWidget {
                   // block.
                   Transform.translate(
                     offset: const Offset(0, -16),
-                    child: _ActivityRow(
-                      shop: shop,
-                      money: money,
-                    ),
+                    child: _ActivityRow(shop: shop, money: money),
                   ),
                 ],
               ),
@@ -561,7 +558,7 @@ class _CardBanner extends StatelessWidget {
               ),
               alignment: Alignment.centerRight,
               padding: const EdgeInsets.only(right: AppSizes.lg),
-              child: const Icon(
+              child: const AppIcon(
                 AppIcons.storefrontRounded,
                 color: AppColors.brand,
                 size: AppSizes.iconXl,
@@ -600,9 +597,9 @@ class _ShopLogo extends StatelessWidget {
                 child: Text(
                   fallbackInitial,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: AppColors.brand,
-                        fontWeight: FontWeight.w900,
-                      ),
+                    color: AppColors.brand,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ),
       ),
@@ -618,7 +615,9 @@ class _RolePill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.sm, vertical: AppSizes.xs),
+        horizontal: AppSizes.sm,
+        vertical: AppSizes.xs,
+      ),
       decoration: ShapeDecoration(
         color: AppColors.brandSoft,
         shape: AppShapes.squircle(AppSizes.radiusFull),
@@ -626,10 +625,10 @@ class _RolePill extends StatelessWidget {
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.brand,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.4,
-            ),
+          color: AppColors.brand,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.4,
+        ),
       ),
     );
   }
@@ -649,7 +648,7 @@ class _ActivityRow extends StatelessWidget {
         Expanded(
           child: Row(
             children: [
-              Icon(
+              AppIcon(
                 hasActivity
                     ? AppIcons.receiptLongRounded
                     : AppIcons.accessTimeRounded,
@@ -661,14 +660,14 @@ class _ActivityRow extends StatelessWidget {
                 child: Text(
                   hasActivity
                       ? 'Last invoice · ${_formatDate(lastAt)}'
-                          '${shop.lastInvoiceTotal != null ? ' · ${money.format(shop.lastInvoiceTotal)}' : ''}'
+                            '${shop.lastInvoiceTotal != null ? ' · ${money.format(shop.lastInvoiceTotal)}' : ''}'
                       : 'No activity yet',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.muted,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    color: AppColors.muted,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
@@ -682,7 +681,7 @@ class _ActivityRow extends StatelessWidget {
             shape: BoxShape.circle,
           ),
           alignment: Alignment.center,
-          child: const Icon(
+          child: const AppIcon(
             AppIcons.arrowForwardRounded,
             color: AppColors.black,
             size: AppSizes.iconSm,
@@ -728,10 +727,7 @@ class _SkeletonList extends StatelessWidget {
                 color: AppColors.white,
                 shape: AppShapes.squircle(
                   AppSizes.radiusLg,
-                  side: const BorderSide(
-                    color: AppColors.hairline,
-                    width: 0.8,
-                  ),
+                  side: const BorderSide(color: AppColors.hairline, width: 0.8),
                 ),
               ),
               child: Column(
@@ -751,8 +747,9 @@ class _SkeletonList extends StatelessWidget {
                       height: 12,
                       decoration: BoxDecoration(
                         color: AppColors.heroPanel,
-                        borderRadius:
-                            AppShapes.squircleRadius(AppSizes.radiusSm),
+                        borderRadius: AppShapes.squircleRadius(
+                          AppSizes.radiusSm,
+                        ),
                       ),
                     ),
                   ),
@@ -766,8 +763,9 @@ class _SkeletonList extends StatelessWidget {
                       height: 10,
                       decoration: BoxDecoration(
                         color: AppColors.heroPanel,
-                        borderRadius:
-                            AppShapes.squircleRadius(AppSizes.radiusSm),
+                        borderRadius: AppShapes.squircleRadius(
+                          AppSizes.radiusSm,
+                        ),
                       ),
                     ),
                   ),
@@ -805,7 +803,7 @@ class _EmptyShops extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
-            child: const Icon(
+            child: const AppIcon(
               AppIcons.storefrontOutlined,
               size: AppSizes.iconXl,
               color: AppColors.brand,
@@ -816,10 +814,10 @@ class _EmptyShops extends StatelessWidget {
             'No linked merchants yet',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppColors.black,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.2,
-                ),
+              color: AppColors.black,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.2,
+            ),
           ),
           const SizedBox(height: AppSizes.xs),
           Text(
@@ -827,17 +825,17 @@ class _EmptyShops extends StatelessWidget {
             'with all their invoices.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.muted,
-                  fontWeight: FontWeight.w500,
-                ),
+              color: AppColors.muted,
+              fontWeight: FontWeight.w500,
+            ),
           ),
           const SizedBox(height: AppSizes.lg),
           _PrimaryCta(
             label: 'View invitations',
             icon: AppIcons.markEmailUnreadRounded,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const InvitationsPage()),
-            ),
+            onTap: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const InvitationsPage())),
           ),
         ],
       ),
@@ -852,7 +850,7 @@ class _PrimaryCta extends StatelessWidget {
     required this.onTap,
   });
   final String label;
-  final IconData icon;
+  final AppIconData icon;
   final VoidCallback onTap;
 
   @override
@@ -871,15 +869,15 @@ class _PrimaryCta extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: AppColors.white, size: AppSizes.iconSm),
+              AppIcon(icon, color: AppColors.white, size: AppSizes.iconSm),
               const SizedBox(width: AppSizes.sm),
               Text(
                 label,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.white,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.2,
-                    ),
+                  color: AppColors.white,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.2,
+                ),
               ),
             ],
           ),
@@ -915,7 +913,7 @@ class _ErrorBlock extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
-            child: const Icon(
+            child: const AppIcon(
               AppIcons.cloudOffOutlined,
               color: AppColors.error,
               size: AppSizes.iconXl,
@@ -926,18 +924,18 @@ class _ErrorBlock extends StatelessWidget {
             "Couldn't load your merchants",
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppColors.black,
-                  fontWeight: FontWeight.w800,
-                ),
+              color: AppColors.black,
+              fontWeight: FontWeight.w800,
+            ),
           ),
           const SizedBox(height: AppSizes.xs),
           Text(
             error,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.muted,
-                  fontWeight: FontWeight.w500,
-                ),
+              color: AppColors.muted,
+              fontWeight: FontWeight.w500,
+            ),
           ),
           const SizedBox(height: AppSizes.lg),
           _PrimaryCta(

@@ -14,11 +14,11 @@ import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/shared/format/app_format.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Indian-grouped rupee formatter — "₹3,84,580.00". Shared by this
 /// page and the home top-bar badge so the two read identically.
-final _rupee =
-    AppFormat.inrPrecise;
+final _rupee = AppFormat.inrPrecise;
 
 String formatPendingAmount(double v) => _rupee.format(v);
 
@@ -65,21 +65,27 @@ class _PendingPaymentsPageState extends State<PendingPaymentsPage> {
       if (!mounted) return;
       if (result.isSuccess) {
         final confirmed = syncedStatus == 'PAID';
-        showAppSnackbar(context,
-            message: confirmed
-                ? 'Payment successful'
-                : 'Payment received — being confirmed. This can take a minute.',
-            tone: confirmed ? AppSnackbarTone.success : AppSnackbarTone.info);
+        showAppSnackbar(
+          context,
+          message: confirmed
+              ? 'Payment successful'
+              : 'Payment received — being confirmed. This can take a minute.',
+          tone: confirmed ? AppSnackbarTone.success : AppSnackbarTone.info,
+        );
       } else if (result.outcome == RazorpayOutcome.dismissed) {
-        showAppSnackbar(context,
-            message:
-                'Payment not completed — nothing was charged. Pay whenever you\'re ready.',
-            tone: AppSnackbarTone.info);
+        showAppSnackbar(
+          context,
+          message:
+              'Payment not completed — nothing was charged. Pay whenever you\'re ready.',
+          tone: AppSnackbarTone.info,
+        );
       } else {
-        showAppSnackbar(context,
-            message:
-                '${result.message ?? 'Payment failed'} — you can retry from here.',
-            tone: AppSnackbarTone.error);
+        showAppSnackbar(
+          context,
+          message:
+              '${result.message ?? 'Payment failed'} — you can retry from here.',
+          tone: AppSnackbarTone.error,
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -108,8 +114,7 @@ class _PendingPaymentsPageState extends State<PendingPaymentsPage> {
         .orders
         .where((o) => o.needsOnlinePayment)
         .toList();
-    final total =
-        pending.fold<double>(0, (sum, o) => sum + o.payableRemainder);
+    final total = pending.fold<double>(0, (sum, o) => sum + o.payableRemainder);
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -149,26 +154,30 @@ class _TotalDueHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg, AppSizes.lg, AppSizes.lg, AppSizes.lg),
+        AppSizes.lg,
+        AppSizes.lg,
+        AppSizes.lg,
+        AppSizes.lg,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'TOTAL DUE',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppColors.muted,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.8,
-                ),
+              color: AppColors.muted,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.8,
+            ),
           ),
           const SizedBox(height: AppSizes.xs),
           Text(
             formatPendingAmount(total),
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: AppColors.black,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.5,
-                ),
+              color: AppColors.black,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
+            ),
           ),
         ],
       ),
@@ -193,13 +202,13 @@ class _PendingOrderRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => OrderDetailPage(orderId: order.id),
-        ),
+        MaterialPageRoute(builder: (_) => OrderDetailPage(orderId: order.id)),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(
-            horizontal: AppSizes.lg, vertical: AppSizes.lg),
+          horizontal: AppSizes.lg,
+          vertical: AppSizes.lg,
+        ),
         child: Row(
           children: [
             Expanded(
@@ -209,18 +218,18 @@ class _PendingOrderRow extends StatelessWidget {
                   Text(
                     'Order #${order.id}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.muted,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      color: AppColors.muted,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 3),
                   Text(
                     formatPendingAmount(order.payableRemainder),
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppColors.black,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.3,
-                        ),
+                      color: AppColors.black,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.3,
+                    ),
                   ),
                 ],
               ),
@@ -252,24 +261,26 @@ class _AllSettled extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(AppIcons.verifiedOutlined,
-                size: 56, color: AppColors.success),
+            const AppIcon(
+              AppIcons.verifiedOutlined,
+              size: 56,
+              color: AppColors.success,
+            ),
             const SizedBox(height: AppSizes.md),
             Text(
               "You're all paid up",
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppColors.black,
-                    fontWeight: FontWeight.w800,
-                  ),
+                color: AppColors.black,
+                fontWeight: FontWeight.w800,
+              ),
             ),
             const SizedBox(height: AppSizes.xs),
             Text(
               'No orders are waiting on a payment right now.',
               textAlign: TextAlign.center,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: AppColors.muted),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
             ),
           ],
         ),

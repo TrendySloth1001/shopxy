@@ -10,6 +10,7 @@ import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Product row used by the merchant listing screen.
 ///
@@ -76,14 +77,26 @@ class ProductListTile extends StatelessWidget {
     return '$qty $unit ${l10n.productsInStockSuffix}';
   }
 
-  ({Color fg, Color bg, IconData icon}) _stockPalette() {
+  ({Color fg, Color bg, AppIconData icon}) _stockPalette() {
     if (product.isOutOfStock) {
-      return (fg: AppColors.error, bg: AppColors.errorSoft, icon: AppIcons.errorOutlineRounded);
+      return (
+        fg: AppColors.error,
+        bg: AppColors.errorSoft,
+        icon: AppIcons.errorOutlineRounded,
+      );
     }
     if (product.isLowStock) {
-      return (fg: AppColors.warning, bg: AppColors.warningSoft, icon: AppIcons.warningAmberRounded);
+      return (
+        fg: AppColors.warning,
+        bg: AppColors.warningSoft,
+        icon: AppIcons.warningAmberRounded,
+      );
     }
-    return (fg: AppColors.success, bg: AppColors.successSoft, icon: AppIcons.checkCircleOutlineRounded);
+    return (
+      fg: AppColors.success,
+      bg: AppColors.successSoft,
+      icon: AppIcons.checkCircleOutlineRounded,
+    );
   }
 
   @override
@@ -163,7 +176,9 @@ class ProductListTile extends StatelessWidget {
                       cost: product.purchasePrice,
                       mrp: product.mrp,
                       marginPct: margin,
-                      marginPalette: margin == null ? null : _marginPalette(margin),
+                      marginPalette: margin == null
+                          ? null
+                          : _marginPalette(margin),
                       isAboveMrp: _isAboveMrp,
                       priceStyle: priceStyle,
                     ),
@@ -181,7 +196,7 @@ class ProductListTile extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(stock.icon, size: 12, color: stock.fg),
+                          AppIcon(stock.icon, size: 12, color: stock.fg),
                           const SizedBox(width: 4),
                           Text(
                             _stockLabel(l10n),
@@ -247,17 +262,19 @@ class ProductListTile extends StatelessWidget {
     final spans = <InlineSpan>[TextSpan(text: leading.toString())];
     if (showCategory && product.category != null) {
       spans.add(const TextSpan(text: ' · '));
-      spans.add(WidgetSpan(
-        alignment: PlaceholderAlignment.middle,
-        child: Padding(
-          padding: const EdgeInsets.only(right: 3),
-          child: Icon(
-            resolveCategoryIcon(product.category!.iconName),
-            size: 12,
-            color: AppColors.muted,
+      spans.add(
+        WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: Padding(
+            padding: const EdgeInsets.only(right: 3),
+            child: AppIcon(
+              resolveCategoryIcon(product.category!.iconName),
+              size: 12,
+              color: AppColors.muted,
+            ),
           ),
         ),
-      ));
+      );
       spans.add(TextSpan(text: product.category!.name));
     }
 
@@ -282,8 +299,9 @@ class ProductListTile extends StatelessWidget {
   ///     wins. STOCK_OUT framed as "Sold Xago", STOCK_IN as "Stocked in Xago"
   ///     (within 7d) or "Last in: Xago" when older.
   ///   • Nothing if there's no ledger movement at all.
-  ({IconData icon, String label, Color fg, Color bg})? _activityHint(
-      AppLocalizations l10n) {
+  ({AppIconData icon, String label, Color fg, Color bg})? _activityHint(
+    AppLocalizations l10n,
+  ) {
     final lastIn = product.lastStockInAt;
     final lastOut = product.lastStockOutAt;
 
@@ -347,7 +365,7 @@ class _MetaChip extends StatelessWidget {
     required this.bg,
   });
 
-  final IconData icon;
+  final AppIconData icon;
   final String label;
   final Color fg;
   final Color bg;
@@ -364,7 +382,7 @@ class _MetaChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 11, color: fg),
+          AppIcon(icon, size: 11, color: fg),
           const SizedBox(width: 3),
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 160),
@@ -465,7 +483,7 @@ class _MerchantPriceLine extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
+                AppIcon(
                   AppIcons.errorOutlineRounded,
                   size: 11,
                   color: AppColors.warning,

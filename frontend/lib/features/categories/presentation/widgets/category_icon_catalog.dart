@@ -1,10 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Curated set of icons offered when creating or editing a category.
 ///
 /// The DB stores the kebab-case key; the merchant app resolves it back
-/// to an [IconData] via [resolveCategoryIcon]. Keeping the mapping in a
+/// to an [AppIconData] via [resolveCategoryIcon]. Keeping the mapping in a
 /// single place means adding a new option only requires touching this
 /// file — the picker and tile pick it up automatically.
 class CategoryIconOption {
@@ -15,7 +14,7 @@ class CategoryIconOption {
   });
 
   final String name;
-  final IconData icon;
+  final AppIconData icon;
   final String label;
 }
 
@@ -100,11 +99,7 @@ const List<CategoryIconOption> kCategoryIconOptions = [
     icon: AppIcons.diamondRounded,
     label: 'Jewellery',
   ),
-  CategoryIconOption(
-    name: 'home',
-    icon: AppIcons.chairRounded,
-    label: 'Home',
-  ),
+  CategoryIconOption(name: 'home', icon: AppIcons.chairRounded, label: 'Home'),
   CategoryIconOption(
     name: 'kitchen',
     icon: AppIcons.restaurantRounded,
@@ -125,11 +120,7 @@ const List<CategoryIconOption> kCategoryIconOptions = [
     icon: AppIcons.menuBookRounded,
     label: 'Books',
   ),
-  CategoryIconOption(
-    name: 'toys',
-    icon: AppIcons.toysRounded,
-    label: 'Toys',
-  ),
+  CategoryIconOption(name: 'toys', icon: AppIcons.toysRounded, label: 'Toys'),
   CategoryIconOption(
     name: 'sports',
     icon: AppIcons.sportsCricketRounded,
@@ -160,11 +151,7 @@ const List<CategoryIconOption> kCategoryIconOptions = [
     icon: AppIcons.cardGiftcardRounded,
     label: 'Gift',
   ),
-  CategoryIconOption(
-    name: 'pet',
-    icon: AppIcons.petsRounded,
-    label: 'Pet',
-  ),
+  CategoryIconOption(name: 'pet', icon: AppIcons.petsRounded, label: 'Pet'),
   CategoryIconOption(
     name: 'service',
     icon: AppIcons.miscellaneousServicesRounded,
@@ -172,10 +159,10 @@ const List<CategoryIconOption> kCategoryIconOptions = [
   ),
 ];
 
-/// Resolves a stored icon name to an [IconData]. Falls back to a
+/// Resolves a stored icon name to an [AppIconData]. Falls back to a
 /// neutral category glyph when the name is null or unknown — keeps
 /// legacy rows rendering without a crash.
-IconData resolveCategoryIcon(String? name) {
+AppIconData resolveCategoryIcon(String? name) {
   if (name == null) return AppIcons.categoryRounded;
   for (final opt in kCategoryIconOptions) {
     if (opt.name == name) return opt.icon;

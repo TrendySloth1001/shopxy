@@ -12,6 +12,7 @@ import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Opens a modal search sheet to pick an existing Party or create a new one.
 /// Returns the selected [Party], or null if cancelled.
@@ -132,7 +133,7 @@ class _PartyPickerSheetState extends State<_PartyPickerSheet> {
                 autofocus: true,
                 decoration: InputDecoration(
                   hintText: l10n.partiesSearchParties,
-                  prefixIcon: const Icon(AppIcons.searchRounded),
+                  prefixIcon: const AppIcon(AppIcons.searchRounded),
                 ),
                 onChanged: _load,
               ),
@@ -142,47 +143,47 @@ class _PartyPickerSheetState extends State<_PartyPickerSheet> {
               child: _loading && _parties.isEmpty
                   ? const Center(child: CircularProgressIndicator())
                   : _error != null
-                      ? Center(child: Text(_error!))
-                      : _parties.isEmpty
-                          ? Center(
-                              child: Padding(
-                                padding: const EdgeInsets.all(AppSizes.xl),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      AppIcons.groupsOutlined,
-                                      size: AppSizes.iconXl,
-                                      color: AppColors.muted,
-                                    ),
-                                    const SizedBox(height: AppSizes.md),
-                                    Text(
-                                      l10n.partiesNoParties,
-                                      style: theme.textTheme.bodyMedium,
-                                    ),
-                                    const SizedBox(height: AppSizes.md),
-                                    AppButton.primary(
-                                      label: l10n.partiesAddParty,
-                                      icon: AppIcons.addRounded,
-                                      onPressed: _addNew,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            )
-                          : ListView.separated(
-                              itemCount: _parties.length,
-                              separatorBuilder: (_, _) => const AppDivider(),
-                              itemBuilder: (context, i) {
-                                final p = _parties[i];
-                                return ListTile(
-                                  leading: AppMonogramAvatar(label: p.name),
-                                  title: Text(p.name),
-                                  subtitle: Text(p.phone ?? p.contactName ?? '—'),
-                                  onTap: () => Navigator.pop(context, p),
-                                );
-                              },
+                  ? Center(child: Text(_error!))
+                  : _parties.isEmpty
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSizes.xl),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            AppIcon(
+                              AppIcons.groupsOutlined,
+                              size: AppSizes.iconXl,
+                              color: AppColors.muted,
                             ),
+                            const SizedBox(height: AppSizes.md),
+                            Text(
+                              l10n.partiesNoParties,
+                              style: theme.textTheme.bodyMedium,
+                            ),
+                            const SizedBox(height: AppSizes.md),
+                            AppButton.primary(
+                              label: l10n.partiesAddParty,
+                              icon: AppIcons.addRounded,
+                              onPressed: _addNew,
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : ListView.separated(
+                      itemCount: _parties.length,
+                      separatorBuilder: (_, _) => const AppDivider(),
+                      itemBuilder: (context, i) {
+                        final p = _parties[i];
+                        return ListTile(
+                          leading: AppMonogramAvatar(label: p.name),
+                          title: Text(p.name),
+                          subtitle: Text(p.phone ?? p.contactName ?? '—'),
+                          onTap: () => Navigator.pop(context, p),
+                        );
+                      },
+                    ),
             ),
           ],
         ),

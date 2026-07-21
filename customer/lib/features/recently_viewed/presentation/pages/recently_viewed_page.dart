@@ -8,9 +8,11 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_bar.dart';
-import 'package:shopxy_customer/shared/widgets/app_shimmer.dart' show AppShimmerLine;
+import 'package:shopxy_customer/shared/widgets/app_shimmer.dart'
+    show AppShimmerLine;
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Per-user "recently viewed" page. Pulls the capped (≤20) list from
 /// `GET /me/recently-viewed` and renders it as a 2-col grid so the
@@ -67,7 +69,10 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
             backgroundColor: AppColors.white,
             child: GridView.builder(
               padding: const EdgeInsets.fromLTRB(
-                AppSizes.md, AppSizes.md, AppSizes.md, AppSizes.huge,
+                AppSizes.md,
+                AppSizes.md,
+                AppSizes.md,
+                AppSizes.huge,
               ),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
@@ -159,7 +164,8 @@ class _ProductTile extends StatelessWidget {
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: AppSizes.xs, vertical: 1,
+                    horizontal: AppSizes.xs,
+                    vertical: 1,
                   ),
                   decoration: BoxDecoration(
                     color: AppColors.success,
@@ -176,8 +182,11 @@ class _ProductTile extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: AppSizes.xs),
-                      const Icon(AppIcons.starRounded,
-                          color: AppColors.white, size: 9),
+                      const AppIcon(
+                        AppIcons.starRounded,
+                        color: AppColors.white,
+                        size: 9,
+                      ),
                     ],
                   ),
                 ),
@@ -235,7 +244,7 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            const AppIcon(
               AppIcons.historyRounded,
               size: AppSizes.iconHuge,
               color: AppColors.muted,
@@ -311,8 +320,11 @@ class _ErrorBlock extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(AppIcons.errorOutlineRounded,
-                size: 40, color: AppColors.error),
+            const AppIcon(
+              AppIcons.errorOutlineRounded,
+              size: 40,
+              color: AppColors.error,
+            ),
             const SizedBox(height: AppSizes.md),
             Text(
               message,
@@ -320,10 +332,7 @@ class _ErrorBlock extends StatelessWidget {
               style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: AppSizes.md),
-            FilledButton(
-              onPressed: onRetry,
-              child: const Text('Try again'),
-            ),
+            FilledButton(onPressed: onRetry, child: const Text('Try again')),
           ],
         ),
       ),

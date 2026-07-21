@@ -18,6 +18,7 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Internal mutable bucket line.
 class _Line {
@@ -34,10 +35,12 @@ class _Line {
   final int productId;
   final String name;
   final String? sku;
+
   /// The quoted unit price — editable by the merchant in the builder.
   double unitPrice;
   final double taxPercent;
   final String? imageUrl;
+
   /// Backs the inline price field so the merchant can set their own quote
   /// price (the whole point of a quotation), seeded from the catalogue price.
   late final TextEditingController priceCtrl;
@@ -69,7 +72,11 @@ class CreateQuotationPage extends StatefulWidget {
 }
 
 class _CreateQuotationPageState extends State<CreateQuotationPage> {
-  final _currency = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2);
+  final _currency = NumberFormat.currency(
+    locale: 'en_IN',
+    symbol: '₹',
+    decimalDigits: 2,
+  );
   final _searchCtrl = TextEditingController();
   Timer? _searchDebounce;
   final _noteCtrl = TextEditingController();
@@ -88,14 +95,16 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
     final req = widget.respondTo;
     if (req != null) {
       for (final l in req.items) {
-        _lines.add(_Line(
-          productId: l.productId,
-          name: l.name,
-          sku: l.sku,
-          unitPrice: l.unitPrice,
-          taxPercent: l.taxPercent,
-          imageUrl: l.imageUrl,
-        )..qty = l.quantity <= 0 ? 1 : l.quantity.round());
+        _lines.add(
+          _Line(
+            productId: l.productId,
+            name: l.name,
+            sku: l.sku,
+            unitPrice: l.unitPrice,
+            taxPercent: l.taxPercent,
+            imageUrl: l.imageUrl,
+          )..qty = l.quantity <= 0 ? 1 : l.quantity.round(),
+        );
       }
       _noteCtrl.text = req.note ?? '';
     }
@@ -113,7 +122,8 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
   }
 
   double get _subtotal => _lines.fold(0, (s, l) => s + l.taxable);
-  double get _tax => _lines.fold(0, (s, l) => s + l.taxable * l.taxPercent / 100);
+  double get _tax =>
+      _lines.fold(0, (s, l) => s + l.taxable * l.taxPercent / 100);
   double get _total => _subtotal + _tax;
 
   void _onProductSearchChanged(String value) {
@@ -153,14 +163,16 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
       if (existing.isNotEmpty) {
         existing.first.qty += 1;
       } else {
-        _lines.add(_Line(
-          productId: p.id,
-          name: p.name,
-          sku: p.sku,
-          unitPrice: p.sellingPrice,
-          taxPercent: p.taxPercent,
-          imageUrl: p.primaryImageUrl,
-        ));
+        _lines.add(
+          _Line(
+            productId: p.id,
+            name: p.name,
+            sku: p.sku,
+            unitPrice: p.sellingPrice,
+            taxPercent: p.taxPercent,
+            imageUrl: p.primaryImageUrl,
+          ),
+        );
       }
       _searchCtrl.clear();
       _results = const [];
@@ -203,13 +215,13 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
               items: items,
             );
       messenger.showSnackBar(
-        SnackBar(content: Text('Quotation ${q.quotationNo} sent to ${q.partyName}')),
+        SnackBar(
+          content: Text('Quotation ${q.quotationNo} sent to ${q.partyName}'),
+        ),
       );
       navigator.pop(true);
     } catch (e) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(friendlyError(e))),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(friendlyError(e))));
     }
   }
 
@@ -220,7 +232,8 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: FloatingAppBar(
-          title: _isRespond ? 'Price & send quote' : 'New quotation'),
+        title: _isRespond ? 'Price & send quote' : 'New quotation',
+      ),
       body: ListView(
         padding: EdgeInsets.fromLTRB(
           AppSizes.lg,
@@ -237,19 +250,25 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
               padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
               child: Row(
                 children: [
-                  Icon(AppIcons.personOutlineRounded,
-                      color: AppColors.muted),
+                  AppIcon(
+                    AppIcons.personOutlineRounded,
+                    color: AppColors.muted,
+                  ),
                   const SizedBox(width: AppSizes.md),
                   Expanded(
                     child: Text(
                       widget.respondTo!.partyName,
-                      style: theme.textTheme.bodyLarge
-                          ?.copyWith(fontWeight: FontWeight.w700),
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
-                  Text('requested',
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: AppColors.muted)),
+                  Text(
+                    'requested',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.muted,
+                    ),
+                  ),
                 ],
               ),
             )
@@ -260,8 +279,10 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
                 padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
                 child: Row(
                   children: [
-                    Icon(AppIcons.personOutlineRounded,
-                        color: AppColors.muted),
+                    AppIcon(
+                      AppIcons.personOutlineRounded,
+                      color: AppColors.muted,
+                    ),
                     const SizedBox(width: AppSizes.md),
                     Expanded(
                       child: Text(
@@ -272,8 +293,10 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
                         ),
                       ),
                     ),
-                    Icon(AppIcons.chevronRightRounded,
-                        color: AppColors.muted),
+                    AppIcon(
+                      AppIcons.chevronRightRounded,
+                      color: AppColors.muted,
+                    ),
                   ],
                 ),
               ),
@@ -289,7 +312,7 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
             onChanged: _onProductSearchChanged,
             decoration: InputDecoration(
               hintText: 'Search your catalogue',
-              prefixIcon: const Icon(AppIcons.searchRounded),
+              prefixIcon: const AppIcon(AppIcons.searchRounded),
               suffixIcon: _searching
                   ? const Padding(
                       padding: EdgeInsets.all(AppSizes.md),
@@ -314,13 +337,18 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
                   ListTile(
                     dense: true,
                     contentPadding: EdgeInsets.zero,
-                    title: Text(_results[i].name,
-                        maxLines: 1, overflow: TextOverflow.ellipsis),
+                    title: Text(
+                      _results[i].name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     subtitle: Text(
                       '${_currency.format(_results[i].sellingPrice)} · ${_results[i].taxPercent.toStringAsFixed(0)}% GST · stock ${_results[i].stockQuantity.toStringAsFixed(0)}',
                     ),
-                    trailing: Icon(AppIcons.addCircleOutlineRounded,
-                        color: AppColors.brand),
+                    trailing: AppIcon(
+                      AppIcons.addCircleOutlineRounded,
+                      color: AppColors.brand,
+                    ),
                     onTap: () => _addProduct(_results[i]),
                   ),
                 ],
@@ -337,7 +365,9 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
               padding: const EdgeInsets.symmetric(vertical: AppSizes.lg),
               child: Text(
                 'Search above and tap a product to add it.',
-                style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppColors.muted,
+                ),
               ),
             )
           else ...[
@@ -389,11 +419,13 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
                         height: AppSizes.iconMd,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : Text(canSend
-                        ? 'Send quotation · ${_currency.format(_total)}'
-                        : _isRespond
+                    : Text(
+                        canSend
+                            ? 'Send quotation · ${_currency.format(_total)}'
+                            : _isRespond
                             ? 'Add items to send'
-                            : 'Add a customer and items'),
+                            : 'Add a customer and items',
+                      ),
               ),
             ),
           ),
@@ -414,11 +446,14 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(line.name,
-                    style: theme.textTheme.bodyLarge
-                        ?.copyWith(fontWeight: FontWeight.w700),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis),
+                Text(
+                  line.name,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 const SizedBox(height: AppSizes.xs),
                 // Editable quote price — the merchant sets what they're
                 // quoting, seeded from the catalogue price.
@@ -429,23 +464,29 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
                       child: TextField(
                         controller: line.priceCtrl,
                         keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true),
+                          decimal: true,
+                        ),
                         inputFormatters: [
                           FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
                         ],
                         onChanged: (v) => setState(
-                            () => line.unitPrice = double.tryParse(v) ?? 0),
-                        style: theme.textTheme.bodyMedium
-                            ?.copyWith(fontWeight: FontWeight.w700),
+                          () => line.unitPrice = double.tryParse(v) ?? 0,
+                        ),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                         decoration: InputDecoration(
                           prefixText: '₹ ',
                           labelText: 'Rate',
                           isDense: true,
                           contentPadding: const EdgeInsets.symmetric(
-                              horizontal: AppSizes.md, vertical: AppSizes.md),
+                            horizontal: AppSizes.md,
+                            vertical: AppSizes.md,
+                          ),
                           border: OutlineInputBorder(
-                            borderRadius:
-                                AppShapes.squircleRadius(AppSizes.radiusSm),
+                            borderRadius: AppShapes.squircleRadius(
+                              AppSizes.radiusSm,
+                            ),
                           ),
                         ),
                       ),
@@ -456,8 +497,9 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
                         line.taxPercent > 0
                             ? '+${line.taxPercent.toStringAsFixed(0)}% GST'
                             : 'No GST',
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: AppColors.muted),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.muted,
+                        ),
                       ),
                     ),
                   ],
@@ -473,7 +515,7 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
-                    icon: const Icon(AppIcons.removeCircleOutlineRounded),
+                    icon: const AppIcon(AppIcons.removeCircleOutlineRounded),
                     visualDensity: VisualDensity.compact,
                     onPressed: () => setState(() {
                       if (line.qty > 1) {
@@ -484,11 +526,14 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
                       }
                     }),
                   ),
-                  Text('${line.qty}',
-                      style: theme.textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.w800)),
+                  Text(
+                    '${line.qty}',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                   IconButton(
-                    icon: const Icon(AppIcons.addCircleOutlineRounded),
+                    icon: const AppIcon(AppIcons.addCircleOutlineRounded),
                     color: AppColors.brand,
                     visualDensity: VisualDensity.compact,
                     onPressed: () => setState(() => line.qty += 1),
@@ -497,8 +542,9 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
               ),
               Text(
                 _currency.format(line.lineTotal),
-                style: theme.textTheme.bodyLarge
-                    ?.copyWith(fontWeight: FontWeight.w800),
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ],
           ),
@@ -507,21 +553,30 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
     );
   }
 
-  Widget _totalRow(String label, double value, ThemeData theme, {bool bold = false}) {
+  Widget _totalRow(
+    String label,
+    double value,
+    ThemeData theme, {
+    bool bold = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: bold ? FontWeight.w800 : null,
-                color: bold ? null : AppColors.muted,
-              )),
-          Text(_currency.format(value),
-              style: theme.textTheme.bodyLarge?.copyWith(
-                fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
-              )),
+          Text(
+            label,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: bold ? FontWeight.w800 : null,
+              color: bold ? null : AppColors.muted,
+            ),
+          ),
+          Text(
+            _currency.format(value),
+            style: theme.textTheme.bodyLarge?.copyWith(
+              fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
@@ -533,11 +588,11 @@ class _SectionLabel extends StatelessWidget {
   final String label;
   @override
   Widget build(BuildContext context) => Text(
-        label.toUpperCase(),
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.muted,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.6,
-            ),
-      );
+    label.toUpperCase(),
+    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+      color: AppColors.muted,
+      fontWeight: FontWeight.w800,
+      letterSpacing: 0.6,
+    ),
+  );
 }

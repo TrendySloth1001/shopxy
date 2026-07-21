@@ -11,6 +11,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Ratings & reviews block on the product detail page. Loads its own
 /// summary in initState so the surrounding PDP build never blocks on
@@ -117,8 +118,9 @@ class _ProductReviewsSectionState extends State<ProductReviewsSection> {
                 Expanded(
                   child: Text(
                     'Ratings & Reviews',
-                    style: theme.textTheme.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w800),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
                 TextButton(
@@ -132,12 +134,16 @@ class _ProductReviewsSectionState extends State<ProductReviewsSection> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(AppIcons.editOutlined, size: AppSizes.iconSm),
+                      const AppIcon(
+                        AppIcons.editOutlined,
+                        size: AppSizes.iconSm,
+                      ),
                       const SizedBox(width: AppSizes.xs),
                       Text(
                         'Rate product',
-                        style: theme.textTheme.labelMedium
-                            ?.copyWith(fontWeight: FontWeight.w800),
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ],
                   ),
@@ -178,7 +184,7 @@ class _ProductReviewsSectionState extends State<ProductReviewsSection> {
                       ),
                     ),
                     const SizedBox(width: AppSizes.xs),
-                    const Icon(
+                    const AppIcon(
                       AppIcons.chevronRightRounded,
                       color: AppColors.brandStrong,
                       size: AppSizes.iconMd,
@@ -308,7 +314,7 @@ class _HistogramRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSizes.xs),
-          const Icon(
+          const AppIcon(
             AppIcons.starRounded,
             size: AppSizes.iconSm,
             color: AppColors.subtle,
@@ -369,7 +375,7 @@ class _EmptyState extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(
+            const AppIcon(
               AppIcons.reviewsOutlined,
               color: AppColors.muted,
               size: AppSizes.iconXl,
@@ -382,18 +388,17 @@ class _EmptyState extends StatelessWidget {
                 children: [
                   Text(
                     'No reviews yet',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w800),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   const SizedBox(height: AppSizes.xs),
                   Text(
                     'Be the first to rate this product after your purchase is delivered.',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.muted,
-                          height: 1.35,
-                        ),
+                      color: AppColors.muted,
+                      height: 1.35,
+                    ),
                   ),
                 ],
               ),
@@ -413,15 +418,14 @@ class _SectionSkeleton extends StatelessWidget {
       double w = double.infinity,
       double h = AppSizes.md,
       double r = AppSizes.radiusSm,
-    }) =>
-        Container(
-          width: w,
-          height: h,
-          decoration: ShapeDecoration(
-            color: AppColors.heroPanel,
-            shape: AppShapes.squircle(r),
-          ),
-        );
+    }) => Container(
+      width: w,
+      height: h,
+      decoration: ShapeDecoration(
+        color: AppColors.heroPanel,
+        shape: AppShapes.squircle(r),
+      ),
+    );
     return Container(
       margin: const EdgeInsets.only(top: AppSizes.md),
       color: AppColors.white,

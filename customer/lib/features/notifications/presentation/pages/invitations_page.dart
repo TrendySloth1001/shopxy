@@ -9,6 +9,7 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Dedicated screen for invitations addressed to the current user. Two
 /// tabs — Pending (actionable) and History — both read from
@@ -67,8 +68,7 @@ class _InvitationsPageState extends State<InvitationsPage>
           controller: _tabs,
           tabs: [
             Tab(
-              text:
-                  pending.isEmpty ? 'Pending' : 'Pending (${pending.length})',
+              text: pending.isEmpty ? 'Pending' : 'Pending (${pending.length})',
             ),
             const Tab(text: 'History'),
           ],
@@ -139,7 +139,7 @@ class _InvitationList extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: AppSizes.xl),
               child: Column(
                 children: [
-                  const Icon(
+                  const AppIcon(
                     AppIcons.markEmailUnreadOutlined,
                     size: AppSizes.iconHuge,
                     color: AppColors.muted,
@@ -148,17 +148,17 @@ class _InvitationList extends StatelessWidget {
                   Text(
                     emptyTitle,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppColors.black,
-                          fontWeight: FontWeight.w800,
-                        ),
+                      color: AppColors.black,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   const SizedBox(height: AppSizes.xs),
                   Text(
                     emptyHint,
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.muted,
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
                   ),
                 ],
               ),
@@ -174,10 +174,8 @@ class _InvitationList extends StatelessWidget {
       ),
       itemCount: items.length,
       separatorBuilder: (_, _) => const SizedBox(height: AppSizes.md),
-      itemBuilder: (_, i) => _ActionableInviteRow(
-        invite: items[i],
-        actionable: isActionable,
-      ),
+      itemBuilder: (_, i) =>
+          _ActionableInviteRow(invite: items[i], actionable: isActionable),
     );
   }
 }
@@ -231,8 +229,7 @@ class _InviteCardSkeleton extends StatelessWidget {
                       const SizedBox(width: AppSizes.md),
                       Expanded(
                         child: Padding(
-                          padding:
-                              const EdgeInsets.only(top: AppSizes.xxl),
+                          padding: const EdgeInsets.only(top: AppSizes.xxl),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -244,16 +241,10 @@ class _InviteCardSkeleton extends StatelessWidget {
                               ),
                               const SizedBox(height: AppSizes.sm),
                               // Title line
-                              AppShimmerLine(
-                                widthFactor: 0.85,
-                                height: 14,
-                              ),
+                              AppShimmerLine(widthFactor: 0.85, height: 14),
                               const SizedBox(height: AppSizes.xs),
                               // Subtitle line
-                              AppShimmerLine(
-                                widthFactor: 0.55,
-                                height: 12,
-                              ),
+                              AppShimmerLine(widthFactor: 0.55, height: 12),
                             ],
                           ),
                         ),
@@ -267,8 +258,7 @@ class _InviteCardSkeleton extends StatelessWidget {
                   width: double.infinity,
                   height: 44,
                   decoration: BoxDecoration(
-                    borderRadius:
-                        BorderRadius.circular(AppSizes.radiusSm),
+                    borderRadius: BorderRadius.circular(AppSizes.radiusSm),
                   ),
                   clipBehavior: Clip.antiAlias,
                   child: const AppShimmerBox(
@@ -313,10 +303,7 @@ class _InviteCardSkeleton extends StatelessWidget {
 // ── End skeleton ──────────────────────────────────────────────────────────────
 
 class _ActionableInviteRow extends StatefulWidget {
-  const _ActionableInviteRow({
-    required this.invite,
-    required this.actionable,
-  });
+  const _ActionableInviteRow({required this.invite, required this.actionable});
   final Invitation invite;
   final bool actionable;
 
@@ -345,9 +332,11 @@ class _ActionableInviteRowState extends State<_ActionableInviteRow> {
       if (!mounted) return;
       messenger.showSnackBar(
         SnackBar(
-          content: Text(accept
-              ? 'Invitation accepted — you can now view this ledger.'
-              : 'Invitation declined.'),
+          content: Text(
+            accept
+                ? 'Invitation accepted — you can now view this ledger.'
+                : 'Invitation declined.',
+          ),
           behavior: SnackBarBehavior.floating,
         ),
       );

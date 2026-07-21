@@ -14,6 +14,7 @@ import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/shared/format/app_format.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Full quotation detail for the customer: line items, totals, status timeline
 /// and Accept / Decline. Accepting turns it into a confirmed invoice.
@@ -52,9 +53,10 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
     setState(() => _busy = true);
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await context
-          .read<ShopsProvider>()
-          .acceptQuotation(widget.shop, widget.quotation.id);
+      await context.read<ShopsProvider>().acceptQuotation(
+        widget.shop,
+        widget.quotation.id,
+      );
       if (!mounted) return;
       setState(() => _busy = false);
       showAppSnackbar(
@@ -65,9 +67,7 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _busy = false);
-      messenger.showSnackBar(
-        SnackBar(content: Text(friendlyError(e))),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(friendlyError(e))));
     }
   }
 
@@ -90,8 +90,9 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Back')),
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Back'),
+          ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(ctrl.text.trim()),
             style: FilledButton.styleFrom(backgroundColor: AppColors.error),
@@ -103,17 +104,20 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
     if (note == null) return;
     setState(() => _busy = true);
     try {
-      await provider.declineQuotation(widget.shop, widget.quotation.id,
-          declineNote: note.isEmpty ? null : note);
-      if (!mounted) return;
-      setState(() => _busy = false);
-      messenger.showSnackBar(const SnackBar(content: Text('Quotation declined')));
-    } catch (e) {
+      await provider.declineQuotation(
+        widget.shop,
+        widget.quotation.id,
+        declineNote: note.isEmpty ? null : note,
+      );
       if (!mounted) return;
       setState(() => _busy = false);
       messenger.showSnackBar(
-        SnackBar(content: Text(friendlyError(e))),
+        const SnackBar(content: Text('Quotation declined')),
       );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _busy = false);
+      messenger.showSnackBar(SnackBar(content: Text(friendlyError(e))));
     }
   }
 
@@ -122,8 +126,10 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
     final messenger = ScaffoldMessenger.of(context);
     setState(() => _sharing = true);
     try {
-      final bytes =
-          await provider.downloadQuotationPdf(widget.shop, widget.quotation.id);
+      final bytes = await provider.downloadQuotationPdf(
+        widget.shop,
+        widget.quotation.id,
+      );
       if (!mounted) return;
       await shareQuotationPdf(
         context: context,
@@ -131,9 +137,7 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
         bytes: bytes,
       );
     } catch (e) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(friendlyError(e))),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(friendlyError(e))));
     } finally {
       if (mounted) setState(() => _sharing = false);
     }
@@ -146,12 +150,12 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Withdraw request?'),
-        content: const Text(
-            'The shop will no longer see this quote request.'),
+        content: const Text('The shop will no longer see this quote request.'),
         actions: [
           TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Back')),
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Back'),
+          ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             style: FilledButton.styleFrom(backgroundColor: AppColors.error),
@@ -167,13 +171,12 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
       if (!mounted) return;
       setState(() => _busy = false);
       messenger.showSnackBar(
-          const SnackBar(content: Text('Quote request withdrawn')));
+        const SnackBar(content: Text('Quote request withdrawn')),
+      );
     } catch (e) {
       if (!mounted) return;
       setState(() => _busy = false);
-      messenger.showSnackBar(
-        SnackBar(content: Text(friendlyError(e))),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(friendlyError(e))));
     }
   }
 
@@ -182,7 +185,11 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
       case 'REQUESTED':
         return (AppColors.brand, AppColors.brandSoft, 'Awaiting shop pricing');
       case 'PENDING':
-        return (AppColors.warning, AppColors.warningSoft, 'Awaiting your response');
+        return (
+          AppColors.warning,
+          AppColors.warningSoft,
+          'Awaiting your response',
+        );
       case 'ACCEPTED':
         return (AppColors.success, AppColors.successSoft, 'Accepted');
       case 'DECLINED':
@@ -218,12 +225,20 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
                   ? const SizedBox(
                       width: AppSizes.iconSm,
                       height: AppSizes.iconSm,
-                      child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Icon(AppIcons.shareRounded,
-                      size: AppSizes.iconSm, color: AppColors.brand),
-              label: Text('Share',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: AppColors.brand, fontWeight: FontWeight.w700)),
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const AppIcon(
+                      AppIcons.shareRounded,
+                      size: AppSizes.iconSm,
+                      color: AppColors.brand,
+                    ),
+              label: Text(
+                'Share',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: AppColors.brand,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
           ),
         ],
@@ -235,30 +250,45 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(statusLabel,
-                  style: theme.textTheme.titleMedium
-                      ?.copyWith(color: fg, fontWeight: FontWeight.w800)),
+              Text(
+                statusLabel,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: fg,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
               const SizedBox(height: 2),
               Text(
-                  '${q.isRequested ? 'Requested' : 'Sent'} ${_dateFmt.format(q.createdAt.toLocal())}',
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: AppColors.muted)),
+                '${q.isRequested ? 'Requested' : 'Sent'} ${_dateFmt.format(q.createdAt.toLocal())}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.muted,
+                ),
+              ),
               if (q.respondedAt != null)
-                Text('Responded ${_dateFmt.format(q.respondedAt!.toLocal())}',
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: AppColors.muted)),
+                Text(
+                  'Responded ${_dateFmt.format(q.respondedAt!.toLocal())}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.muted,
+                  ),
+                ),
               if (q.invoiceNo != null) ...[
                 const SizedBox(height: AppSizes.xs),
-                Text('Invoice ${q.invoiceNo} added to your ledger',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColors.success,
-                        fontWeight: FontWeight.w700)),
+                Text(
+                  'Invoice ${q.invoiceNo} added to your ledger',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.success,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ],
               if (q.status == 'DECLINED' && q.declineNote != null) ...[
                 const SizedBox(height: AppSizes.xs),
-                Text('Reason: ${q.declineNote}',
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: AppColors.muted)),
+                Text(
+                  'Reason: ${q.declineNote}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.muted,
+                  ),
+                ),
               ],
             ],
           ),
@@ -305,16 +335,22 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
                     onPressed: _busy ? null : _cancel,
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.error,
-                      padding: const EdgeInsets.symmetric(vertical: AppSizes.lg),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSizes.lg,
+                      ),
                     ),
                     child: _busy
                         ? const SizedBox(
                             width: AppSizes.iconMd,
                             height: AppSizes.iconMd,
-                            child: CircularProgressIndicator(strokeWidth: 2))
-                        : Text('Withdraw request',
-                            style: theme.textTheme.bodyMedium
-                                ?.copyWith(fontWeight: FontWeight.w800)),
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(
+                            'Withdraw request',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
                   ),
                 ),
               ),
@@ -330,8 +366,9 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
                         onPressed: _busy ? null : _decline,
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.error,
-                          padding:
-                              const EdgeInsets.symmetric(vertical: AppSizes.lg),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: AppSizes.lg,
+                          ),
                         ),
                         child: const Text('Decline'),
                       ),
@@ -343,18 +380,25 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
                         onPressed: _busy ? null : _accept,
                         style: FilledButton.styleFrom(
                           backgroundColor: AppColors.brand,
-                          padding:
-                              const EdgeInsets.symmetric(vertical: AppSizes.lg),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: AppSizes.lg,
+                          ),
                         ),
                         child: _busy
                             ? const SizedBox(
                                 width: AppSizes.iconMd,
                                 height: AppSizes.iconMd,
                                 child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: AppColors.white))
-                            : Text('Accept · ${_currency.format(q.total)}',
-                                style: theme.textTheme.bodyMedium
-                                    ?.copyWith(fontWeight: FontWeight.w800)),
+                                  strokeWidth: 2,
+                                  color: AppColors.white,
+                                ),
+                              )
+                            : Text(
+                                'Accept · ${_currency.format(q.total)}',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
                       ),
                     ),
                   ],
@@ -365,20 +409,30 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
     );
   }
 
-  Widget _totalRow(String label, String value, ThemeData theme,
-      {bool bold = false}) {
+  Widget _totalRow(
+    String label,
+    String value,
+    ThemeData theme, {
+    bool bold = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                  color: bold ? null : AppColors.muted,
-                  fontWeight: bold ? FontWeight.w800 : null)),
-          Text(value,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                  fontWeight: bold ? FontWeight.w800 : FontWeight.w600)),
+          Text(
+            label,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: bold ? null : AppColors.muted,
+              fontWeight: bold ? FontWeight.w800 : null,
+            ),
+          ),
+          Text(
+            value,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
@@ -410,13 +464,17 @@ class _ItemRow extends StatelessWidget {
                 shape: AppShapes.squircle(AppSizes.radiusSm),
               ),
               alignment: Alignment.center,
-              child: const Icon(AppIcons.inventory2Outlined,
-                  size: AppSizes.iconMd, color: AppColors.brand),
+              child: const AppIcon(
+                AppIcons.inventory2Outlined,
+                size: AppSizes.iconMd,
+                color: AppColors.brand,
+              ),
             )
           else
             ClipPath(
-              clipper:
-                  ShapeBorderClipper(shape: AppShapes.squircle(AppSizes.radiusSm)),
+              clipper: ShapeBorderClipper(
+                shape: AppShapes.squircle(AppSizes.radiusSm),
+              ),
               child: NetworkImageBox(
                 url: resolveImageUrl(raw),
                 width: AppSizes.avatarSm,
@@ -429,24 +487,31 @@ class _ItemRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(line.name,
-                    style: theme.textTheme.bodyLarge
-                        ?.copyWith(fontWeight: FontWeight.w700),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis),
+                Text(
+                  line.name,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 const SizedBox(height: 2),
                 Text(
                   '$qtyStr × ${currency.format(line.unitPrice)}'
                   '${line.taxPercent > 0 ? ' · ${line.taxPercent.toStringAsFixed(0)}% GST' : ''}',
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: AppColors.muted),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.muted,
+                  ),
                 ),
               ],
             ),
           ),
-          Text(currency.format(line.lineTotal),
-              style: theme.textTheme.bodyLarge
-                  ?.copyWith(fontWeight: FontWeight.w700)),
+          Text(
+            currency.format(line.lineTotal),
+            style: theme.textTheme.bodyLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ],
       ),
     );
@@ -458,10 +523,11 @@ class _Label extends StatelessWidget {
   final String label;
   @override
   Widget build(BuildContext context) => Text(
-        label.toUpperCase(),
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: AppColors.muted,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.6),
-      );
+    label.toUpperCase(),
+    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+      color: AppColors.muted,
+      fontWeight: FontWeight.w800,
+      letterSpacing: 0.6,
+    ),
+  );
 }

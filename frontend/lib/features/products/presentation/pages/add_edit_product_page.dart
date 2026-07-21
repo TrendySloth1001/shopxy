@@ -28,6 +28,7 @@ import 'package:shopxy/shared/widgets/app_section_header.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 class AddEditProductPage extends StatefulWidget {
   const AddEditProductPage({super.key, this.product, this.draft});
@@ -171,6 +172,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         _dirty = true;
       }
     }
+
     _name.addListener(markDirty);
     _description.addListener(markDirty);
     _sellingPrice.addListener(markDirty);
@@ -258,22 +260,31 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     final d = b.data;
     switch (b.kind) {
       case 'HERO':
-        return (d['imageUrl'] is String) && (d['imageUrl'] as String).isNotEmpty
-            && (d['headline'] is String) && (d['headline'] as String).isNotEmpty;
+        return (d['imageUrl'] is String) &&
+            (d['imageUrl'] as String).isNotEmpty &&
+            (d['headline'] is String) &&
+            (d['headline'] as String).isNotEmpty;
       case 'FEATURE':
-        return (d['imageUrl'] is String) && (d['imageUrl'] as String).isNotEmpty
-            && (d['title'] is String) && (d['title'] as String).isNotEmpty
-            && (d['body'] is String) && (d['body'] as String).isNotEmpty
-            && (d['side'] == 'LEFT' || d['side'] == 'RIGHT');
+        return (d['imageUrl'] is String) &&
+            (d['imageUrl'] as String).isNotEmpty &&
+            (d['title'] is String) &&
+            (d['title'] as String).isNotEmpty &&
+            (d['body'] is String) &&
+            (d['body'] as String).isNotEmpty &&
+            (d['side'] == 'LEFT' || d['side'] == 'RIGHT');
       case 'COMPARISON':
         final cols = d['columns'];
         final rows = d['rows'];
-        return cols is List && cols.length >= 2 && rows is List && rows.isNotEmpty;
+        return cols is List &&
+            cols.length >= 2 &&
+            rows is List &&
+            rows.isNotEmpty;
       case 'GALLERY':
         final imgs = d['images'];
         return imgs is List && imgs.isNotEmpty;
       case 'TEXT':
-        return (d['markdown'] is String) && (d['markdown'] as String).isNotEmpty;
+        return (d['markdown'] is String) &&
+            (d['markdown'] as String).isNotEmpty;
     }
     return false;
   }
@@ -300,15 +311,14 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         final existing = await ds.lookupByCode(code);
         if (existing != null && existing.id != currentId) {
           messenger.showSnackBar(
-            SnackBar(
-              content: Text(l10n.productsDuplicateWarning(label)),
-            ),
+            SnackBar(content: Text(l10n.productsDuplicateWarning(label))),
           );
         }
       } catch (_) {
         // Lookup failures are non-critical; never block the save on them.
       }
     }
+
     await warnIfDuplicate(skuText, 'SKU');
     await warnIfDuplicate(barcodeText, l10n.productsBarcodeLower);
     if (!mounted) return;
@@ -316,7 +326,9 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     // Backend Zod will 400 on a malformed block even if the merchant
     // never touched it this session — e.g. a legacy COMPARISON block
     // saved before columns/rows became required.
-    final droppedBlocks = _contentBlocks.length - _contentBlocks.where(_isContentBlockShippable).length;
+    final droppedBlocks =
+        _contentBlocks.length -
+        _contentBlocks.where(_isContentBlockShippable).length;
     if (droppedBlocks > 0) {
       _contentBlocks.retainWhere(_isContentBlockShippable);
       messenger.showSnackBar(
@@ -425,13 +437,17 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
 
   String? _requiredValidator(String? value) {
     final l10n = AppLocalizations.of(context);
-    if (value == null || value.trim().isEmpty) return l10n.productsFieldRequired;
+    if (value == null || value.trim().isEmpty) {
+      return l10n.productsFieldRequired;
+    }
     return null;
   }
 
   String? _priceValidator(String? value) {
     final l10n = AppLocalizations.of(context);
-    if (value == null || value.trim().isEmpty) return l10n.productsFieldRequired;
+    if (value == null || value.trim().isEmpty) {
+      return l10n.productsFieldRequired;
+    }
     final n = double.tryParse(value);
     if (n == null) return l10n.productsInvalidNumber;
     if (n < 0) return l10n.productsPriceMustBePositive;
@@ -455,19 +471,23 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       if (!mounted) return;
       if (draft.hasAnyValue) {
         _applyDraft(draft, onlyEmpty: true);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).productsOcrApplied)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context).productsOcrApplied),
+          ),
+        );
       } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).productsOcrNoDetails)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context).productsOcrNoDetails),
+          ),
+        );
       }
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).productsOcrFailed)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context).productsOcrFailed)),
+      );
     } finally {
       await recognizer.close();
       if (mounted) setState(() => _isScanning = false);
@@ -554,8 +574,9 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       return await ds.uploadImage(file);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(friendlyError(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(friendlyError(e))));
       }
       return null;
     } finally {
@@ -570,7 +591,11 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   Future<void> _pickAndUploadImage(ImageSource source) async {
     if (_isUploading) return;
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: source, maxWidth: 1200, imageQuality: 85);
+    final picked = await picker.pickImage(
+      source: source,
+      maxWidth: 1200,
+      imageQuality: 85,
+    );
     if (picked == null || !mounted) return;
     await _uploadOne(File(picked.path));
   }
@@ -661,10 +686,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   /// `_isUploading` flag itself (it wraps the whole batch in one busy
   /// window); the single-shot callers leave it false and we toggle
   /// inline.
-  Future<bool> _uploadOne(
-    File file, {
-    bool externallyManaged = false,
-  }) async {
+  Future<bool> _uploadOne(File file, {bool externallyManaged = false}) async {
     const maxBytes = 5 * 1024 * 1024;
     if (file.lengthSync() > maxBytes) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -691,8 +713,9 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       return true;
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(friendlyError(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(friendlyError(e))));
       }
       return false;
     } finally {
@@ -706,9 +729,11 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     final url = _imageUrlController.text.trim();
     if (url.isEmpty) return;
     if (Uri.tryParse(url)?.hasScheme != true) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).productsInvalidUrl)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context).productsInvalidUrl),
+        ),
+      );
       return;
     }
     setState(() {
@@ -754,11 +779,8 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   }) async {
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => _EditorScaffold(
-          title: title,
-          intro: intro,
-          builder: builder,
-        ),
+        builder: (_) =>
+            _EditorScaffold(title: title, intro: intro, builder: builder),
       ),
     );
     if (mounted) setState(() {}); // refresh the hub tile summaries
@@ -784,7 +806,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
             if (isEditing)
               IconButton(
                 tooltip: l10n.productsReviews,
-                icon: const Icon(AppIcons.reviewsOutlined),
+                icon: const AppIcon(AppIcons.reviewsOutlined),
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => ProductReviewsPage(
@@ -805,7 +827,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                       height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Icon(AppIcons.documentScannerOutlined),
+                  : const AppIcon(AppIcons.documentScannerOutlined),
             ),
             TextButton(
               onPressed: _isSaving ? null : _save,
@@ -889,7 +911,9 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                         prefixText: '${AppStrings.currencySymbol} ',
                         helperText: l10n.productsSellingPriceHelper,
                       ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       validator: _priceValidator,
                     ),
                   ),
@@ -902,7 +926,9 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                         prefixText: '${AppStrings.currencySymbol} ',
                         helperText: l10n.productsMrpHelper,
                       ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       validator: _priceValidator,
                     ),
                   ),
@@ -919,7 +945,9 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                         prefixText: '${AppStrings.currencySymbol} ',
                         helperText: l10n.productsCostPriceHelper,
                       ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       validator: _priceValidator,
                     ),
                   ),
@@ -932,7 +960,9 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                         suffixText: '%',
                         helperText: l10n.productsOptional,
                       ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                     ),
                   ),
                 ],
@@ -962,7 +992,9 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                         decoration: InputDecoration(
                           labelText: l10n.productsOpeningStock,
                         ),
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
                       ),
                     ),
                     const SizedBox(width: AppSizes.md),
@@ -985,10 +1017,9 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                 padding: const EdgeInsets.only(bottom: AppSizes.md),
                 child: Text(
                   l10n.productsMoreDetailsIntro,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: AppColors.muted),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
                 ),
               ),
               ..._detailTiles(),
@@ -1035,9 +1066,9 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     final selected = _selectedCategoryId == null
         ? null
         : categories
-            .where((c) => c.id == _selectedCategoryId)
-            .cast<dynamic>()
-            .firstOrNull;
+              .where((c) => c.id == _selectedCategoryId)
+              .cast<dynamic>()
+              .firstOrNull;
     final label = selected?.name ?? l10n.productsNone;
     final iconData = resolveCategoryIcon(selected?.iconName as String?);
     return InkWell(
@@ -1058,11 +1089,14 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         decoration: InputDecoration(labelText: l10n.productsCategory),
         child: Row(
           children: [
-            Icon(iconData, size: 18, color: AppColors.muted),
+            AppIcon(iconData, size: 18, color: AppColors.muted),
             const SizedBox(width: AppSizes.sm),
             Expanded(child: Text(label, overflow: TextOverflow.ellipsis)),
-            Icon(AppIcons.unfoldMoreRounded,
-                size: 18, color: AppColors.muted),
+            AppIcon(
+              AppIcons.unfoldMoreRounded,
+              size: 18,
+              color: AppColors.muted,
+            ),
           ],
         ),
       ),
@@ -1102,7 +1136,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                           side: BorderSide(color: AppColors.hairline, width: 1),
                         ),
                       ),
-                      child: Icon(
+                      child: AppIcon(
                         AppIcons.brokenImageRounded,
                         color: AppColors.muted,
                       ),
@@ -1126,7 +1160,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                         color: AppColors.inverseSurface,
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(
+                      child: AppIcon(
                         AppIcons.closeRounded,
                         size: 14,
                         color: AppColors.onInverse,
@@ -1148,7 +1182,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
           Expanded(
             child: OutlinedButton.icon(
               onPressed: _isUploading ? null : _pickAndUploadMultiple,
-              icon: const Icon(AppIcons.photoLibraryRounded, size: 18),
+              icon: const AppIcon(AppIcons.photoLibraryRounded, size: 18),
               label: Text(l10n.productsPickFromGallery),
             ),
           ),
@@ -1158,7 +1192,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
               onPressed: _isUploading
                   ? null
                   : () => _pickAndUploadImage(ImageSource.camera),
-              icon: const Icon(AppIcons.cameraAltRounded, size: 18),
+              icon: const AppIcon(AppIcons.cameraAltRounded, size: 18),
               label: Text(l10n.productsTakePhoto),
             ),
           ),
@@ -1169,11 +1203,13 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         child: Text(
           _imageUrls.isEmpty
               ? l10n.productsGalleryEmptyHint('$_maxGalleryImages')
-              : l10n.productsGalleryCountHint('${_imageUrls.length}', '$_maxGalleryImages'),
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(color: AppColors.muted),
+              : l10n.productsGalleryCountHint(
+                  '${_imageUrls.length}',
+                  '$_maxGalleryImages',
+                ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
         ),
       ),
       if (_isUploading) ...[
@@ -1188,11 +1224,12 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         child: ExpansionTile(
           tilePadding: EdgeInsets.zero,
           childrenPadding: const EdgeInsets.only(bottom: AppSizes.sm),
-          title: Text(l10n.productsAddByImageLink,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: AppColors.muted)),
+          title: Text(
+            l10n.productsAddByImageLink,
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
+          ),
           children: [
             Row(
               children: [
@@ -1210,7 +1247,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                 const SizedBox(width: AppSizes.sm),
                 IconButton.filled(
                   onPressed: _addImageUrl,
-                  icon: const Icon(AppIcons.linkRounded),
+                  icon: const AppIcon(AppIcons.linkRounded),
                   tooltip: l10n.productsAddImage,
                 ),
               ],
@@ -1226,8 +1263,9 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   List<Widget> _detailTiles() {
     final l10n = AppLocalizations.of(context);
     final specRows = _specs.fold<int>(0, (n, g) => n + g.rows.length);
-    final customSet =
-        _customFieldValues.values.where((v) => v.trim().isNotEmpty).length;
+    final customSet = _customFieldValues.values
+        .where((v) => v.trim().isNotEmpty)
+        .length;
     final codesSet = [
       _barcode.text.trim().isNotEmpty,
       _hsnCode.text.trim().isNotEmpty,
@@ -1372,10 +1410,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     ];
 
     return [
-      for (final t in tiles) ...[
-        t,
-        const SizedBox(height: AppSizes.sm),
-      ],
+      for (final t in tiles) ...[t, const SizedBox(height: AppSizes.sm)],
     ];
   }
 }
@@ -1391,7 +1426,7 @@ class _DetailTile extends StatelessWidget {
     required this.onTap,
     this.count = 0,
   });
-  final IconData icon;
+  final AppIconData icon;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
@@ -1422,7 +1457,11 @@ class _DetailTile extends StatelessWidget {
                 shape: AppShapes.squircle(AppSizes.radiusSm),
               ),
               alignment: Alignment.center,
-              child: Icon(icon, size: AppSizes.iconMd, color: AppColors.black),
+              child: AppIcon(
+                icon,
+                size: AppSizes.iconMd,
+                color: AppColors.black,
+              ),
             ),
             const SizedBox(width: AppSizes.md),
             Expanded(
@@ -1431,35 +1470,39 @@ class _DetailTile extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(fontWeight: FontWeight.w700),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   Text(
                     subtitle,
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: AppColors.muted),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.muted,
+                    ),
                   ),
                 ],
               ),
             ),
             if (count > 0) ...[
               Container(
-                padding:
-                    const EdgeInsets.symmetric(
-                        horizontal: AppSizes.sm, vertical: 3),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSizes.sm,
+                  vertical: 3,
+                ),
                 decoration: ShapeDecoration(
                   color: AppColors.heroPanel,
                   shape: AppShapes.squircle(AppSizes.radiusFull),
                 ),
                 child: Text(
                   '$count',
-                  style: theme.textTheme.labelSmall
-                      ?.copyWith(fontWeight: FontWeight.w800),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
               const SizedBox(width: AppSizes.sm),
             ],
-            Icon(AppIcons.chevronRightRounded, color: AppColors.muted),
+            AppIcon(AppIcons.chevronRightRounded, color: AppColors.muted),
           ],
         ),
       ),
@@ -1513,10 +1556,9 @@ class _EditorScaffoldState extends State<_EditorScaffold> {
             if (widget.intro != null) ...[
               Text(
                 widget.intro!,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.copyWith(color: AppColors.muted),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
               ),
               const SizedBox(height: AppSizes.lg),
             ],
@@ -1621,7 +1663,7 @@ class _TagsEditor extends StatelessWidget {
             labelText: l10n.productsAddTag,
             helperText: l10n.productsTagsIntro,
             suffixIcon: IconButton(
-              icon: const Icon(AppIcons.addRounded),
+              icon: const AppIcon(AppIcons.addRounded),
               onPressed: onAdd,
             ),
           ),
@@ -1632,7 +1674,6 @@ class _TagsEditor extends StatelessWidget {
     );
   }
 }
-
 
 /// Bulleted list editor for the V2 PDP highlights — drop a sentence
 /// in, hit + to add. Capped at 8 because the customer surface only
@@ -1661,14 +1702,15 @@ class _HighlightsEditor extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: AppSizes.sm),
             child: Row(
               children: [
-                Text('• ',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(fontWeight: FontWeight.w800)),
+                Text(
+                  '• ',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w800),
+                ),
                 Expanded(child: Text(items[i])),
                 IconButton(
-                  icon: const Icon(AppIcons.closeRounded, size: 18),
+                  icon: const AppIcon(AppIcons.closeRounded, size: 18),
                   onPressed: () => onRemove(i),
                   tooltip: l10n.productsRemove,
                 ),
@@ -1694,7 +1736,7 @@ class _HighlightsEditor extends StatelessWidget {
               const SizedBox(width: AppSizes.sm),
               IconButton.filled(
                 onPressed: onAdd,
-                icon: const Icon(AppIcons.add),
+                icon: const AppIcon(AppIcons.add),
               ),
             ],
           ),
@@ -1718,7 +1760,12 @@ class _SpecsEditor extends StatefulWidget {
 class _SpecsEditorState extends State<_SpecsEditor> {
   void _addGroup() {
     setState(() {
-      widget.groups.add(const SpecGroup(title: '', rows: [SpecRow(label: '', value: '')]));
+      widget.groups.add(
+        const SpecGroup(
+          title: '',
+          rows: [SpecRow(label: '', value: '')],
+        ),
+      );
     });
     widget.onChange();
   }
@@ -1733,13 +1780,17 @@ class _SpecsEditorState extends State<_SpecsEditor> {
           _GroupCard(
             group: widget.groups[gi],
             onChangeTitle: (t) {
-              setState(() => widget.groups[gi] = widget.groups[gi].copyWith(title: t));
+              setState(
+                () => widget.groups[gi] = widget.groups[gi].copyWith(title: t),
+              );
               widget.onChange();
             },
             onChangeTab: (t) {
-              setState(() => widget.groups[gi] = widget.groups[gi].copyWith(
-                    tab: t.trim().isEmpty ? null : t.trim(),
-                  ));
+              setState(
+                () => widget.groups[gi] = widget.groups[gi].copyWith(
+                  tab: t.trim().isEmpty ? null : t.trim(),
+                ),
+              );
               widget.onChange();
             },
             onChangeRow: (ri, row) {
@@ -1760,7 +1811,8 @@ class _SpecsEditorState extends State<_SpecsEditor> {
             },
             onRemoveRow: (ri) {
               setState(() {
-                final next = List<SpecRow>.from(widget.groups[gi].rows)..removeAt(ri);
+                final next = List<SpecRow>.from(widget.groups[gi].rows)
+                  ..removeAt(ri);
                 if (next.isEmpty) {
                   widget.groups.removeAt(gi);
                 } else {
@@ -1776,7 +1828,7 @@ class _SpecsEditorState extends State<_SpecsEditor> {
           ),
         OutlinedButton.icon(
           onPressed: widget.groups.length >= 10 ? null : _addGroup,
-          icon: const Icon(AppIcons.add),
+          icon: const AppIcon(AppIcons.add),
           label: Text(l10n.productsAddSpecGroup),
         ),
       ],
@@ -1829,7 +1881,7 @@ class _GroupCard extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: const Icon(AppIcons.deleteOutline),
+                icon: const AppIcon(AppIcons.deleteOutline),
                 onPressed: onRemoveGroup,
                 tooltip: l10n.productsRemoveGroup,
               ),
@@ -1857,7 +1909,11 @@ class _GroupCard extends StatelessWidget {
             Container(
               margin: const EdgeInsets.only(bottom: AppSizes.sm),
               padding: const EdgeInsets.fromLTRB(
-                  AppSizes.md, AppSizes.xs, AppSizes.xs, AppSizes.md),
+                AppSizes.md,
+                AppSizes.xs,
+                AppSizes.xs,
+                AppSizes.md,
+              ),
               decoration: BoxDecoration(
                 color: AppColors.surfaceTint,
                 borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
@@ -1880,7 +1936,7 @@ class _GroupCard extends StatelessWidget {
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(AppIcons.closeRounded, size: 18),
+                        icon: const AppIcon(AppIcons.closeRounded, size: 18),
                         tooltip: l10n.productsRemoveRow,
                         onPressed: () => onRemoveRow(i),
                       ),
@@ -1908,7 +1964,7 @@ class _GroupCard extends StatelessWidget {
             ),
           TextButton.icon(
             onPressed: group.rows.length >= 20 ? null : onAddRow,
-            icon: const Icon(AppIcons.add, size: 18),
+            icon: const AppIcon(AppIcons.add, size: 18),
             label: Text(l10n.productsAddRow),
           ),
         ],
@@ -1937,7 +1993,9 @@ class _OffersEditorState extends State<_OffersEditor> {
   static const _kinds = <String>['COUPON', 'EMI', 'EXCHANGE'];
 
   void _addOffer() {
-    setState(() => widget.offers.add(const ProductOffer(kind: 'COUPON', headline: '')));
+    setState(
+      () => widget.offers.add(const ProductOffer(kind: 'COUPON', headline: '')),
+    );
     widget.onChange();
   }
 
@@ -1959,16 +2017,18 @@ class _OffersEditorState extends State<_OffersEditor> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(AppIcons.accountBalanceOutlined,
-                  size: AppSizes.iconSm, color: AppColors.info),
+              AppIcon(
+                AppIcons.accountBalanceOutlined,
+                size: AppSizes.iconSm,
+                color: AppColors.info,
+              ),
               const SizedBox(width: AppSizes.sm),
               Expanded(
                 child: Text(
                   l10n.productsBankOffersNote,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: AppColors.info),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: AppColors.info),
                 ),
               ),
             ],
@@ -1990,7 +2050,7 @@ class _OffersEditorState extends State<_OffersEditor> {
           ),
         OutlinedButton.icon(
           onPressed: widget.offers.length >= 6 ? null : _addOffer,
-          icon: const Icon(AppIcons.add),
+          icon: const AppIcon(AppIcons.add),
           label: Text(l10n.productsAddOffer),
         ),
       ],
@@ -2082,7 +2142,7 @@ class _OfferRowState extends State<_OfferRow> {
               ),
               const Spacer(),
               IconButton(
-                icon: const Icon(AppIcons.deleteOutline),
+                icon: const AppIcon(AppIcons.deleteOutline),
                 onPressed: widget.onRemove,
               ),
             ],

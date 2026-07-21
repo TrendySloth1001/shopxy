@@ -4,6 +4,7 @@ import 'package:shopxy_customer/features/orders/domain/entities/customer_order.d
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Vertical milestone strip for a single per-shop slice's tracking
 /// timeline. Renders the canonical lifecycle from CREATED through
@@ -41,7 +42,11 @@ class OrderTimeline extends StatelessWidget {
     final returned = byType.containsKey('RETURNED');
 
     final stops = <_Stop>[
-      _Stop(label: 'Order placed', icon: AppIcons.receiptLongRounded, event: byType['CREATED']),
+      _Stop(
+        label: 'Order placed',
+        icon: AppIcons.receiptLongRounded,
+        event: byType['CREATED'],
+      ),
       if (terminated)
         _Stop(
           label: status == 'REJECTED' ? 'Declined by seller' : 'Cancelled',
@@ -50,11 +55,31 @@ class OrderTimeline extends StatelessWidget {
           tone: _Tone.danger,
         )
       else ...[
-        _Stop(label: 'Confirmed', icon: AppIcons.checkCircleOutline, event: byType['CONFIRMED']),
-        _Stop(label: 'Packed', icon: AppIcons.inventory2Outlined, event: byType['PACKED']),
-        _Stop(label: 'Shipped', icon: AppIcons.localShippingOutlined, event: byType['SHIPPED']),
-        _Stop(label: 'Out for delivery', icon: AppIcons.directionsRunRounded, event: byType['OUT_FOR_DELIVERY']),
-        _Stop(label: 'Delivered', icon: AppIcons.taskAltRounded, event: byType['DELIVERED']),
+        _Stop(
+          label: 'Confirmed',
+          icon: AppIcons.checkCircleOutline,
+          event: byType['CONFIRMED'],
+        ),
+        _Stop(
+          label: 'Packed',
+          icon: AppIcons.inventory2Outlined,
+          event: byType['PACKED'],
+        ),
+        _Stop(
+          label: 'Shipped',
+          icon: AppIcons.localShippingOutlined,
+          event: byType['SHIPPED'],
+        ),
+        _Stop(
+          label: 'Out for delivery',
+          icon: AppIcons.directionsRunRounded,
+          event: byType['OUT_FOR_DELIVERY'],
+        ),
+        _Stop(
+          label: 'Delivered',
+          icon: AppIcons.taskAltRounded,
+          event: byType['DELIVERED'],
+        ),
       ],
       if (returned)
         _Stop(
@@ -67,7 +92,10 @@ class OrderTimeline extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        AppSizes.md, AppSizes.md, AppSizes.md, AppSizes.sm,
+        AppSizes.md,
+        AppSizes.md,
+        AppSizes.md,
+        AppSizes.sm,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -104,7 +132,7 @@ class _Stop {
   });
 
   final String label;
-  final IconData icon;
+  final AppIconData icon;
   final OrderEvent? event;
   final _Tone tone;
 
@@ -112,7 +140,11 @@ class _Stop {
 }
 
 class _StopRow extends StatelessWidget {
-  const _StopRow({required this.stop, required this.isFirst, required this.isLast});
+  const _StopRow({
+    required this.stop,
+    required this.isFirst,
+    required this.isLast,
+  });
   final _Stop stop;
   final bool isFirst;
   final bool isLast;
@@ -163,7 +195,7 @@ class _StopRow extends StatelessWidget {
                       width: 2,
                     ),
                   ),
-                  child: Icon(
+                  child: AppIcon(
                     stop.icon,
                     size: 12,
                     color: reached ? AppColors.white : AppColors.muted,

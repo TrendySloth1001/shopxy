@@ -33,6 +33,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// One menu row — a feature the user can open. Pushes [builder] on tap.
 /// [requires] gates it by shop capability (null = visible to any team member).
@@ -48,7 +49,7 @@ class _MenuItem {
   });
   final String Function(AppLocalizations l10n) label;
   final String Function(AppLocalizations l10n) description;
-  final IconData icon;
+  final AppIconData icon;
   final Color accent;
   final Color accentSoft;
   final WidgetBuilder builder;
@@ -59,217 +60,217 @@ class _MenuItem {
 }
 
 List<_MenuItem> get _manageItems => [
-      _MenuItem(
-        label: (l) => l.navMyShop,
-        description: (l) => l.menuDescMyShop,
-        icon: AppIcons.storefrontOutlined,
-        accent: AppColors.brand,
-        accentSoft: AppColors.brandSoft,
-        builder: (_) => const ShopProfilePage(),
-        requires: (u) => u.canView('shop'),
-      ),
-      _MenuItem(
-        label: (l) => l.navTeamRoles,
-        description: (l) => l.menuDescTeam,
-        icon: AppIcons.groups2Outlined,
-        accent: AppColors.accentIndigo,
-        accentSoft: AppColors.accentIndigoSoft,
-        builder: (_) => const ShopTeamPage(),
-        requires: (u) => u.canView('team'),
-      ),
-      _MenuItem(
-        label: (l) => l.navCategories,
-        description: (l) => l.menuDescCategories,
-        icon: AppIcons.categoryOutlined,
-        accent: AppColors.accentTeal,
-        accentSoft: AppColors.accentTealSoft,
-        builder: (_) => const CategoriesPage(),
-        requires: (u) => u.canView('products'),
-      ),
-      _MenuItem(
-        label: (l) => l.navVendors,
-        description: (l) => l.menuDescVendors,
-        icon: AppIcons.storefrontOutlined,
-        accent: AppColors.accentIndigo,
-        accentSoft: AppColors.accentIndigoSoft,
-        builder: (_) => const VendorsPage(),
-        requires: (u) => u.canView('vendors'),
-      ),
-      _MenuItem(
-        label: (l) => l.navParties,
-        description: (l) => l.menuDescParties,
-        icon: AppIcons.groupsOutlined,
-        accent: AppColors.accentRose,
-        accentSoft: AppColors.accentRoseSoft,
-        builder: (_) => const PartiesPage(),
-        requires: (u) => u.canView('parties'),
-      ),
-      _MenuItem(
-        label: (l) => l.navBanners,
-        description: (l) => l.menuDescBanners,
-        icon: AppIcons.imageOutlined,
-        accent: AppColors.accentIndigo,
-        accentSoft: AppColors.accentIndigoSoft,
-        builder: (_) => const MerchantBannersPage(),
-        requires: (u) => u.canView('marketing'),
-      ),
-      _MenuItem(
-        label: (l) => l.navCoupons,
-        description: (l) => l.menuDescCoupons,
-        icon: AppIcons.localOfferOutlined,
-        accent: AppColors.accentAmber,
-        accentSoft: AppColors.accentAmberSoft,
-        builder: (_) => const MerchantCouponsPage(),
-        requires: (u) => u.canView('marketing'),
-      ),
-    ];
+  _MenuItem(
+    label: (l) => l.navMyShop,
+    description: (l) => l.menuDescMyShop,
+    icon: AppIcons.storefrontOutlined,
+    accent: AppColors.brand,
+    accentSoft: AppColors.brandSoft,
+    builder: (_) => const ShopProfilePage(),
+    requires: (u) => u.canView('shop'),
+  ),
+  _MenuItem(
+    label: (l) => l.navTeamRoles,
+    description: (l) => l.menuDescTeam,
+    icon: AppIcons.groups2Outlined,
+    accent: AppColors.accentIndigo,
+    accentSoft: AppColors.accentIndigoSoft,
+    builder: (_) => const ShopTeamPage(),
+    requires: (u) => u.canView('team'),
+  ),
+  _MenuItem(
+    label: (l) => l.navCategories,
+    description: (l) => l.menuDescCategories,
+    icon: AppIcons.categoryOutlined,
+    accent: AppColors.accentTeal,
+    accentSoft: AppColors.accentTealSoft,
+    builder: (_) => const CategoriesPage(),
+    requires: (u) => u.canView('products'),
+  ),
+  _MenuItem(
+    label: (l) => l.navVendors,
+    description: (l) => l.menuDescVendors,
+    icon: AppIcons.storefrontOutlined,
+    accent: AppColors.accentIndigo,
+    accentSoft: AppColors.accentIndigoSoft,
+    builder: (_) => const VendorsPage(),
+    requires: (u) => u.canView('vendors'),
+  ),
+  _MenuItem(
+    label: (l) => l.navParties,
+    description: (l) => l.menuDescParties,
+    icon: AppIcons.groupsOutlined,
+    accent: AppColors.accentRose,
+    accentSoft: AppColors.accentRoseSoft,
+    builder: (_) => const PartiesPage(),
+    requires: (u) => u.canView('parties'),
+  ),
+  _MenuItem(
+    label: (l) => l.navBanners,
+    description: (l) => l.menuDescBanners,
+    icon: AppIcons.imageOutlined,
+    accent: AppColors.accentIndigo,
+    accentSoft: AppColors.accentIndigoSoft,
+    builder: (_) => const MerchantBannersPage(),
+    requires: (u) => u.canView('marketing'),
+  ),
+  _MenuItem(
+    label: (l) => l.navCoupons,
+    description: (l) => l.menuDescCoupons,
+    icon: AppIcons.localOfferOutlined,
+    accent: AppColors.accentAmber,
+    accentSoft: AppColors.accentAmberSoft,
+    builder: (_) => const MerchantCouponsPage(),
+    requires: (u) => u.canView('marketing'),
+  ),
+];
 
 // Invoices is intentionally omitted here — it's a primary bottom-nav tab now.
 List<_MenuItem> get _operationItems => [
-      _MenuItem(
-        label: (l) => l.navPointOfSale,
-        description: (l) => l.menuDescPos,
-        icon: AppIcons.pointOfSaleRounded,
-        accent: AppColors.brand,
-        accentSoft: AppColors.brandSoft,
-        builder: (_) => const PosPage(),
-        requires: (u) => u.canView('invoices'),
-      ),
-      _MenuItem(
-        label: (l) => l.navCashier,
-        description: (l) => l.menuDescCashier,
-        icon: AppIcons.calculateOutlined,
-        accent: AppColors.accentIndigo,
-        accentSoft: AppColors.accentIndigoSoft,
-        builder: (_) => const CashierPage(),
-        requires: (u) => u.canView('invoices'),
-      ),
-      _MenuItem(
-        label: (l) => l.navScanToConsole,
-        description: (l) => l.menuDescScan,
-        icon: AppIcons.qrCodeScannerRounded,
-        accent: AppColors.accentTeal,
-        accentSoft: AppColors.accentTealSoft,
-        builder: (_) => const ScanConsolePage(),
-        requires: (u) => u.canView('products'),
-      ),
-      _MenuItem(
-        label: (l) => l.navQuotations,
-        description: (l) => l.menuDescQuotations,
-        icon: AppIcons.requestQuoteOutlined,
-        accent: AppColors.accentIndigo,
-        accentSoft: AppColors.accentIndigoSoft,
-        builder: (_) => const QuotationsPage(),
-        requires: (u) => u.canView('quotations'),
-      ),
-      _MenuItem(
-        label: (l) => l.navChallans,
-        description: (l) => l.menuDescChallans,
-        icon: AppIcons.assignmentOutlined,
-        accent: AppColors.accentAmber,
-        accentSoft: AppColors.accentAmberSoft,
-        builder: (_) => const ChallansPage(),
-        requires: (u) => u.canView('challans'),
-      ),
-      _MenuItem(
-        label: (l) => l.navStockAdjustments,
-        description: (l) => l.menuDescStockAdj,
-        icon: AppIcons.tuneRounded,
-        accent: AppColors.brand,
-        accentSoft: AppColors.brandSoft,
-        builder: (_) => const StockAdjustmentsPage(),
-        requires: (u) => u.canView('stock'),
-      ),
-      _MenuItem(
-        label: (l) => l.navReturns,
-        description: (l) => l.menuDescReturns,
-        icon: AppIcons.assignmentReturnOutlined,
-        accent: AppColors.accentRose,
-        accentSoft: AppColors.accentRoseSoft,
-        builder: (_) => const MerchantReturnsPage(),
-        requires: (u) => u.canView('orders'),
-      ),
-      _MenuItem(
-        label: (l) => l.navReports,
-        description: (l) => l.menuDescReports,
-        icon: AppIcons.summarizeOutlined,
-        accent: AppColors.brandStrong,
-        accentSoft: AppColors.brandSoft,
-        builder: (_) => const ReportsPage(),
-        requires: (u) => u.canView('reports'),
-      ),
-      _MenuItem(
-        label: (l) => l.navAnalytics,
-        description: (l) => l.menuDescAnalytics,
-        icon: AppIcons.barChartOutlined,
-        accent: AppColors.accentIndigo,
-        accentSoft: AppColors.accentIndigoSoft,
-        builder: (_) => const MerchantAnalyticsPage(),
-        requires: (u) => u.canView('reports'),
-      ),
-    ];
+  _MenuItem(
+    label: (l) => l.navPointOfSale,
+    description: (l) => l.menuDescPos,
+    icon: AppIcons.pointOfSaleRounded,
+    accent: AppColors.brand,
+    accentSoft: AppColors.brandSoft,
+    builder: (_) => const PosPage(),
+    requires: (u) => u.canView('invoices'),
+  ),
+  _MenuItem(
+    label: (l) => l.navCashier,
+    description: (l) => l.menuDescCashier,
+    icon: AppIcons.calculateOutlined,
+    accent: AppColors.accentIndigo,
+    accentSoft: AppColors.accentIndigoSoft,
+    builder: (_) => const CashierPage(),
+    requires: (u) => u.canView('invoices'),
+  ),
+  _MenuItem(
+    label: (l) => l.navScanToConsole,
+    description: (l) => l.menuDescScan,
+    icon: AppIcons.qrCodeScannerRounded,
+    accent: AppColors.accentTeal,
+    accentSoft: AppColors.accentTealSoft,
+    builder: (_) => const ScanConsolePage(),
+    requires: (u) => u.canView('products'),
+  ),
+  _MenuItem(
+    label: (l) => l.navQuotations,
+    description: (l) => l.menuDescQuotations,
+    icon: AppIcons.requestQuoteOutlined,
+    accent: AppColors.accentIndigo,
+    accentSoft: AppColors.accentIndigoSoft,
+    builder: (_) => const QuotationsPage(),
+    requires: (u) => u.canView('quotations'),
+  ),
+  _MenuItem(
+    label: (l) => l.navChallans,
+    description: (l) => l.menuDescChallans,
+    icon: AppIcons.assignmentOutlined,
+    accent: AppColors.accentAmber,
+    accentSoft: AppColors.accentAmberSoft,
+    builder: (_) => const ChallansPage(),
+    requires: (u) => u.canView('challans'),
+  ),
+  _MenuItem(
+    label: (l) => l.navStockAdjustments,
+    description: (l) => l.menuDescStockAdj,
+    icon: AppIcons.tuneRounded,
+    accent: AppColors.brand,
+    accentSoft: AppColors.brandSoft,
+    builder: (_) => const StockAdjustmentsPage(),
+    requires: (u) => u.canView('stock'),
+  ),
+  _MenuItem(
+    label: (l) => l.navReturns,
+    description: (l) => l.menuDescReturns,
+    icon: AppIcons.assignmentReturnOutlined,
+    accent: AppColors.accentRose,
+    accentSoft: AppColors.accentRoseSoft,
+    builder: (_) => const MerchantReturnsPage(),
+    requires: (u) => u.canView('orders'),
+  ),
+  _MenuItem(
+    label: (l) => l.navReports,
+    description: (l) => l.menuDescReports,
+    icon: AppIcons.summarizeOutlined,
+    accent: AppColors.brandStrong,
+    accentSoft: AppColors.brandSoft,
+    builder: (_) => const ReportsPage(),
+    requires: (u) => u.canView('reports'),
+  ),
+  _MenuItem(
+    label: (l) => l.navAnalytics,
+    description: (l) => l.menuDescAnalytics,
+    icon: AppIcons.barChartOutlined,
+    accent: AppColors.accentIndigo,
+    accentSoft: AppColors.accentIndigoSoft,
+    builder: (_) => const MerchantAnalyticsPage(),
+    requires: (u) => u.canView('reports'),
+  ),
+];
 
 List<_MenuItem> get _adminItems => [
-      _MenuItem(
-        label: (l) => l.navBannerManager,
-        description: (l) => l.menuDescBannerManager,
-        icon: AppIcons.viewCarouselOutlined,
-        accent: AppColors.accentIndigo,
-        accentSoft: AppColors.accentIndigoSoft,
-        builder: (_) => const AdminBannersPage(),
-      ),
-      _MenuItem(
-        label: (l) => l.navCategoryTaxonomy,
-        description: (l) => l.menuDescCategoryTaxonomy,
-        icon: AppIcons.accountTreeOutlined,
-        accent: AppColors.accentTeal,
-        accentSoft: AppColors.accentTealSoft,
-        builder: (_) => const AdminCategoryTaxonomyPage(),
-      ),
-      _MenuItem(
-        label: (l) => l.navCollections,
-        description: (l) => l.menuDescCollections,
-        icon: AppIcons.collectionsBookmarkOutlined,
-        accent: AppColors.accentRose,
-        accentSoft: AppColors.accentRoseSoft,
-        builder: (_) => const AdminCollectionsPage(),
-      ),
-      _MenuItem(
-        label: (l) => l.navBankOffers,
-        description: (l) => l.menuDescBankOffers,
-        icon: AppIcons.accountBalanceOutlined,
-        accent: AppColors.info,
-        accentSoft: AppColors.infoSoft,
-        builder: (_) => const AdminBankOffersPage(),
-      ),
-      _MenuItem(
-        label: (l) => l.navShopVerification,
-        description: (l) => l.menuDescShopVerification,
-        icon: AppIcons.verifiedUserOutlined,
-        accent: AppColors.brandStrong,
-        accentSoft: AppColors.brandSoft,
-        builder: (_) => const AdminShopsPage(),
-      ),
-    ];
+  _MenuItem(
+    label: (l) => l.navBannerManager,
+    description: (l) => l.menuDescBannerManager,
+    icon: AppIcons.viewCarouselOutlined,
+    accent: AppColors.accentIndigo,
+    accentSoft: AppColors.accentIndigoSoft,
+    builder: (_) => const AdminBannersPage(),
+  ),
+  _MenuItem(
+    label: (l) => l.navCategoryTaxonomy,
+    description: (l) => l.menuDescCategoryTaxonomy,
+    icon: AppIcons.accountTreeOutlined,
+    accent: AppColors.accentTeal,
+    accentSoft: AppColors.accentTealSoft,
+    builder: (_) => const AdminCategoryTaxonomyPage(),
+  ),
+  _MenuItem(
+    label: (l) => l.navCollections,
+    description: (l) => l.menuDescCollections,
+    icon: AppIcons.collectionsBookmarkOutlined,
+    accent: AppColors.accentRose,
+    accentSoft: AppColors.accentRoseSoft,
+    builder: (_) => const AdminCollectionsPage(),
+  ),
+  _MenuItem(
+    label: (l) => l.navBankOffers,
+    description: (l) => l.menuDescBankOffers,
+    icon: AppIcons.accountBalanceOutlined,
+    accent: AppColors.info,
+    accentSoft: AppColors.infoSoft,
+    builder: (_) => const AdminBankOffersPage(),
+  ),
+  _MenuItem(
+    label: (l) => l.navShopVerification,
+    description: (l) => l.menuDescShopVerification,
+    icon: AppIcons.verifiedUserOutlined,
+    accent: AppColors.brandStrong,
+    accentSoft: AppColors.brandSoft,
+    builder: (_) => const AdminShopsPage(),
+  ),
+];
 
 List<_MenuItem> get _accountItems => [
-      _MenuItem(
-        label: (l) => l.navProfile,
-        description: (l) => l.menuDescProfile,
-        icon: AppIcons.personOutlineRounded,
-        accent: AppColors.brand,
-        accentSoft: AppColors.brandSoft,
-        builder: (_) => const ProfilePage(),
-      ),
-      _MenuItem(
-        label: (l) => l.profileSettings,
-        description: (l) => l.menuDescSettings,
-        icon: AppIcons.settingsOutlined,
-        accent: AppColors.accentIndigo,
-        accentSoft: AppColors.accentIndigoSoft,
-        builder: (_) => const SettingsPage(),
-      ),
-    ];
+  _MenuItem(
+    label: (l) => l.navProfile,
+    description: (l) => l.menuDescProfile,
+    icon: AppIcons.personOutlineRounded,
+    accent: AppColors.brand,
+    accentSoft: AppColors.brandSoft,
+    builder: (_) => const ProfilePage(),
+  ),
+  _MenuItem(
+    label: (l) => l.profileSettings,
+    description: (l) => l.menuDescSettings,
+    icon: AppIcons.settingsOutlined,
+    accent: AppColors.accentIndigo,
+    accentSoft: AppColors.accentIndigoSoft,
+    builder: (_) => const SettingsPage(),
+  ),
+];
 
 /// The "Menu" bottom-nav tab — every secondary feature grouped into
 /// iOS-Settings-style rounded sections (replaces the old slide-out drawer).
@@ -307,8 +308,9 @@ class MenuPage extends StatelessWidget {
       ),
       body: ListView(
         padding: EdgeInsets.only(
-            top: AppSizes.sm + FloatingAppBar.contentTopInset(context),
-            bottom: AppSizes.huge),
+          top: AppSizes.sm + FloatingAppBar.contentTopInset(context),
+          bottom: AppSizes.huge,
+        ),
         children: [
           if (manage.isNotEmpty)
             _MenuGroup(
@@ -348,7 +350,7 @@ class _MenuGroup extends StatelessWidget {
     required this.items,
   });
   final String title;
-  final IconData sectionIcon;
+  final AppIconData sectionIcon;
   final List<_MenuItem> items;
 
   @override
@@ -358,16 +360,22 @@ class _MenuGroup extends StatelessWidget {
     for (var i = 0; i < items.length; i++) {
       if (i > 0) {
         // Divider inset past the icon square, aligned under the label.
-        rows.add(const Padding(
-          padding: EdgeInsets.only(left: AppSizes.md + 40 + AppSizes.md),
-          child: Divider(height: 1),
-        ));
+        rows.add(
+          const Padding(
+            padding: EdgeInsets.only(left: AppSizes.md + 40 + AppSizes.md),
+            child: Divider(height: 1),
+          ),
+        );
       }
       rows.add(_MenuRow(item: items[i]));
     }
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg, AppSizes.md, AppSizes.lg, 0),
+        AppSizes.lg,
+        AppSizes.md,
+        AppSizes.lg,
+        0,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -375,8 +383,11 @@ class _MenuGroup extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(AppSizes.md, 0, 0, AppSizes.sm),
             child: Row(
               children: [
-                Icon(sectionIcon,
-                    size: AppSizes.iconSm, color: AppColors.muted),
+                AppIcon(
+                  sectionIcon,
+                  size: AppSizes.iconSm,
+                  color: AppColors.muted,
+                ),
                 const SizedBox(width: AppSizes.sm),
                 Text(
                   title.toUpperCase(),
@@ -415,13 +426,13 @@ class _MenuRow extends StatelessWidget {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
     return InkWell(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: item.builder),
-      ),
+      onTap: () =>
+          Navigator.push(context, MaterialPageRoute(builder: item.builder)),
       child: Padding(
         padding: const EdgeInsets.symmetric(
-            horizontal: AppSizes.md, vertical: AppSizes.md),
+          horizontal: AppSizes.md,
+          vertical: AppSizes.md,
+        ),
         child: Row(
           children: [
             Container(
@@ -432,7 +443,7 @@ class _MenuRow extends StatelessWidget {
                 shape: AppShapes.squircle(10),
               ),
               alignment: Alignment.center,
-              child: Icon(item.icon, size: 22, color: item.accent),
+              child: AppIcon(item.icon, size: 22, color: item.accent),
             ),
             const SizedBox(width: AppSizes.md),
             Expanded(
@@ -450,15 +461,19 @@ class _MenuRow extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     item.description(l10n),
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: AppColors.muted),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.muted,
+                    ),
                   ),
                 ],
               ),
             ),
             const SizedBox(width: AppSizes.sm),
-            Icon(AppIcons.chevronRightRounded,
-                size: 20, color: AppColors.subtle),
+            AppIcon(
+              AppIcons.chevronRightRounded,
+              size: 20,
+              color: AppColors.subtle,
+            ),
           ],
         ),
       ),

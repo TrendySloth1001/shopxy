@@ -6,6 +6,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Bottom-sheet rating editor. Tap-stars 1..5, optional title, optional
 /// body. Server enforces the "only buyers who purchased" rule and
@@ -91,11 +92,11 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
     });
     try {
       await context.read<ReviewsRemoteDataSource>().upsert(
-            widget.productId,
-            rating: _rating,
-            title: _title.text.trim().isEmpty ? null : _title.text.trim(),
-            body: _body.text.trim().isEmpty ? null : _body.text.trim(),
-          );
+        widget.productId,
+        rating: _rating,
+        title: _title.text.trim().isEmpty ? null : _title.text.trim(),
+        body: _body.text.trim().isEmpty ? null : _body.text.trim(),
+      );
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } on ReviewWriteException catch (e) {
@@ -142,14 +143,13 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
                 Expanded(
                   child: Text(
                     'Rate this product',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleLarge
-                        ?.copyWith(fontWeight: FontWeight.w800),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(AppIcons.close),
+                  icon: const AppIcon(AppIcons.close),
                   onPressed: () => Navigator.of(context).pop(false),
                 ),
               ],
@@ -169,9 +169,9 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.muted,
-                      ),
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.muted,
+                  ),
                 ),
                 const SizedBox(height: AppSizes.lg),
                 _TapStars(
@@ -183,13 +183,13 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
                   child: Text(
                     _ratingLabels[_rating]!,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: _rating <= 2
-                              ? AppColors.error
-                              : _rating == 3
-                                  ? AppColors.warning
-                                  : AppColors.success,
-                          fontWeight: FontWeight.w800,
-                        ),
+                      color: _rating <= 2
+                          ? AppColors.error
+                          : _rating == 3
+                          ? AppColors.warning
+                          : AppColors.success,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
                 const SizedBox(height: AppSizes.xl),
@@ -202,7 +202,7 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(
+                        const AppIcon(
                           AppIcons.infoOutlineRounded,
                           color: AppColors.warning,
                         ),
@@ -210,9 +210,7 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
                         Expanded(
                           child: Text(
                             'Only buyers who purchased this product on Shopxy can leave a review. Your order needs to be confirmed first.',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
+                            style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(
                                   color: AppColors.warning,
                                   fontWeight: FontWeight.w700,
@@ -250,9 +248,9 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
                   Text(
                     _serverError!,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.error,
-                          fontWeight: FontWeight.w700,
-                        ),
+                      color: AppColors.error,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ],
                 const SizedBox(height: AppSizes.lg),
@@ -291,7 +289,7 @@ class _TapStars extends StatelessWidget {
           behavior: HitTestBehavior.opaque,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm),
-            child: Icon(
+            child: AppIcon(
               filled ? AppIcons.starRounded : AppIcons.starOutlineRounded,
               size: AppSizes.iconHuge,
               color: filled ? AppColors.success : AppColors.subtle,

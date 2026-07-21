@@ -19,6 +19,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Pricing & profit calculator — a multi-product quote builder. Add products,
 /// set quantities and per-product GST + discount, plus an overall discount,
@@ -43,10 +44,10 @@ class _CalcLine {
     required String qty,
     required String rate,
     required String disc,
-  })  : priceCtrl = TextEditingController(text: price),
-        qtyCtrl = TextEditingController(text: qty),
-        rateCtrl = TextEditingController(text: rate),
-        discCtrl = TextEditingController(text: disc);
+  }) : priceCtrl = TextEditingController(text: price),
+       qtyCtrl = TextEditingController(text: qty),
+       rateCtrl = TextEditingController(text: rate),
+       discCtrl = TextEditingController(text: disc);
 
   final Product product;
   final TextEditingController priceCtrl;
@@ -62,12 +63,12 @@ class _CalcLine {
   }
 
   factory _CalcLine.from(Product p) => _CalcLine(
-        product: p,
-        price: p.sellingPrice > 0 ? _plain(p.sellingPrice) : '',
-        qty: '1',
-        rate: _plain(p.taxPercent),
-        disc: '',
-      );
+    product: p,
+    price: p.sellingPrice > 0 ? _plain(p.sellingPrice) : '',
+    qty: '1',
+    rate: _plain(p.taxPercent),
+    disc: '',
+  );
 }
 
 double _num(String s) => double.tryParse(s) ?? 0;
@@ -76,7 +77,9 @@ double _round2(double n) => (n * 100).round() / 100;
 /// A discount value (% of a base, or a flat ₹ capped at the base).
 double _discountOf(double base, String value, _Unit unit) {
   final v = _num(value) < 0 ? 0.0 : _num(value);
-  return unit == _Unit.pct ? (base * (v > 100 ? 100 : v)) / 100 : (v > base ? base : v);
+  return unit == _Unit.pct
+      ? (base * (v > 100 ? 100 : v)) / 100
+      : (v > base ? base : v);
 }
 
 /// Split a tax-inclusive price into its taxable value and GST components.
@@ -91,7 +94,11 @@ String _plain(double v) =>
     v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(2);
 
 class _CalculatorViewState extends State<CalculatorView> {
-  final _money = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2);
+  final _money = NumberFormat.currency(
+    locale: 'en_IN',
+    symbol: '₹',
+    decimalDigits: 2,
+  );
   final _searchCtrl = TextEditingController();
   final _noteCtrl = TextEditingController();
   Timer? _searchDebounce;
@@ -147,7 +154,9 @@ class _CalculatorViewState extends State<CalculatorView> {
     setState(() => _listLoading = true);
     try {
       final res = await _productsDs.getProducts(
-          search: q.trim().isEmpty ? null : q.trim(), limit: 40);
+        search: q.trim().isEmpty ? null : q.trim(),
+        limit: 40,
+      );
       if (!mounted) return;
       setState(() {
         _products = res.products;
@@ -172,7 +181,9 @@ class _CalculatorViewState extends State<CalculatorView> {
       final full = await _productsDs.getProduct(_products.first.id);
       if (!mounted || _lines.isNotEmpty) return;
       setState(() => _lines.add(_CalcLine.from(full)));
-    } catch (_) {/* ignore */}
+    } catch (_) {
+      /* ignore */
+    }
   }
 
   bool _has(int id) => _lines.any((l) => l.product.id == id);
@@ -189,7 +200,9 @@ class _CalculatorViewState extends State<CalculatorView> {
       final full = await _productsDs.getProduct(p.id);
       if (!mounted || _has(full.id)) return;
       setState(() => _lines.add(_CalcLine.from(full)));
-    } catch (_) {/* ignore */}
+    } catch (_) {
+      /* ignore */
+    }
   }
 
   // ── quotation round-trip ───────────────────────────────────────────────
@@ -201,14 +214,18 @@ class _CalculatorViewState extends State<CalculatorView> {
       try {
         final full = await _productsDs.getProduct(it.productId);
         final incl = 1 + (it.taxPercent) / 100;
-        built.add(_CalcLine(
-          product: full,
-          price: _plain(_round2(it.unitPrice * incl)),
-          qty: _plain(it.quantity <= 0 ? 1 : it.quantity),
-          rate: _plain(it.taxPercent),
-          disc: it.discount > 0 ? _plain(_round2(it.discount * incl)) : '',
-        ));
-      } catch (_) {/* skip lines whose product is gone */}
+        built.add(
+          _CalcLine(
+            product: full,
+            price: _plain(_round2(it.unitPrice * incl)),
+            qty: _plain(it.quantity <= 0 ? 1 : it.quantity),
+            rate: _plain(it.taxPercent),
+            disc: it.discount > 0 ? _plain(_round2(it.discount * incl)) : '',
+          ),
+        );
+      } catch (_) {
+        /* skip lines whose product is gone */
+      }
     }
     if (!mounted) return;
     setState(() {
@@ -256,7 +273,11 @@ class _CalculatorViewState extends State<CalculatorView> {
       final qty = _num(l.qtyCtrl.text).clamp(0, double.infinity).toDouble();
       final rate = _num(l.rateCtrl.text).clamp(0, 100).toDouble();
       final grossInclLine = price * qty;
-      final lineDiscIncl = _discountOf(grossInclLine, l.discCtrl.text, _discUnit);
+      final lineDiscIncl = _discountOf(
+        grossInclLine,
+        l.discCtrl.text,
+        _discUnit,
+      );
       return (
         line: l,
         price: price,
@@ -341,8 +362,12 @@ class _CalculatorViewState extends State<CalculatorView> {
     final l10n = AppLocalizations.of(context);
     final saved = await _persistQuote();
     if (saved != null && mounted) {
-      setState(() => _okMsg =
-          l10n.reportsCalcQuoteSent(saved.quotationNo, saved.partyName));
+      setState(
+        () => _okMsg = l10n.reportsCalcQuoteSent(
+          saved.quotationNo,
+          saved.partyName,
+        ),
+      );
     }
   }
 
@@ -353,7 +378,10 @@ class _CalculatorViewState extends State<CalculatorView> {
       final res = await _quotesDs.downloadPdf(saved.id);
       if (res.statusCode != 200) throw Exception('Failed to generate PDF');
       final dir = await getTemporaryDirectory();
-      final safe = saved.quotationNo.replaceAll(RegExp(r'[^A-Za-z0-9_.-]'), '_');
+      final safe = saved.quotationNo.replaceAll(
+        RegExp(r'[^A-Za-z0-9_.-]'),
+        '_',
+      );
       final file = File('${dir.path}/quotation-$safe.pdf');
       await file.writeAsBytes(res.bodyBytes);
       await SharePlus.instance.share(
@@ -388,7 +416,10 @@ class _CalculatorViewState extends State<CalculatorView> {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
 
-    double grossIncl = 0, lineDiscTotal = 0, taxAfterLines = 0, gstAfterLines = 0;
+    double grossIncl = 0,
+        lineDiscTotal = 0,
+        taxAfterLines = 0,
+        gstAfterLines = 0;
     double totalCost = 0, totalQty = 0;
     for (final l in _lines) {
       final price = _num(l.priceCtrl.text).clamp(0, double.infinity).toDouble();
@@ -421,15 +452,23 @@ class _CalculatorViewState extends State<CalculatorView> {
     final profitTone = totalProfit < 0
         ? AppColors.error
         : totalProfit > 0
-            ? AppColors.success
-            : AppColors.black;
+        ? AppColors.success
+        : AppColors.black;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg, AppSizes.md, AppSizes.lg, AppSizes.huge),
+        AppSizes.lg,
+        AppSizes.md,
+        AppSizes.lg,
+        AppSizes.huge,
+      ),
       children: [
-        Text(l10n.reportsCalcTitle,
-            style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+        Text(
+          l10n.reportsCalcTitle,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         const SizedBox(height: AppSizes.xs),
         Text(
           l10n.reportsCalcIntro,
@@ -451,7 +490,9 @@ class _CalculatorViewState extends State<CalculatorView> {
             child: Text(
               l10n.reportsCalcNoProductsYet,
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.muted,
+              ),
             ),
           )
         else
@@ -486,17 +527,21 @@ class _CalculatorViewState extends State<CalculatorView> {
               label: l10n.reportsCalcDiscountIn,
               value: _discUnit == _Unit.pct ? 'pct' : 'amt',
               options: const [('pct', '%'), ('amt', '₹')],
-              onChanged: (v) =>
-                  setState(() => _discUnit = v == 'pct' ? _Unit.pct : _Unit.amt),
+              onChanged: (v) => setState(
+                () => _discUnit = v == 'pct' ? _Unit.pct : _Unit.amt,
+              ),
             ),
             SizedBox(
               width: 128,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(l10n.reportsCalcOverallDiscount,
-                      style: theme.textTheme.labelMedium
-                          ?.copyWith(color: AppColors.muted)),
+                  Text(
+                    l10n.reportsCalcOverallDiscount,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: AppColors.muted,
+                    ),
+                  ),
                   const SizedBox(height: AppSizes.xs),
                   _NumField(
                     controller: _overallCtrl,
@@ -522,34 +567,43 @@ class _CalculatorViewState extends State<CalculatorView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(l10n.reportsCalcGrandTotalInclGst,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: AppColors.subtle,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.4,
-                      )),
+                  Text(
+                    l10n.reportsCalcGrandTotalInclGst,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: AppColors.subtle,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.4,
+                    ),
+                  ),
                   const SizedBox(height: AppSizes.xs),
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
-                    child: Text(_money.format(grandTotal),
-                        style: theme.textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.5,
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                        )),
+                    child: Text(
+                      _money.format(grandTotal),
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.5,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
                   ),
                   const SizedBox(height: AppSizes.xs),
                   Text(
                     (_lines.length == 1
-                            ? l10n.reportsCalcProductCountOne('${_lines.length}')
-                            : l10n.reportsCalcProductCountOther('${_lines.length}')) +
+                            ? l10n.reportsCalcProductCountOne(
+                                '${_lines.length}',
+                              )
+                            : l10n.reportsCalcProductCountOther(
+                                '${_lines.length}',
+                              )) +
                         l10n.reportsCalcQtySummary(_plain(totalQty)) +
                         (totalDisc > 0
                             ? l10n.reportsCalcDiscOff(_money.format(totalDisc))
                             : ""),
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: AppColors.subtle),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.subtle,
+                    ),
                   ),
                 ],
               ),
@@ -561,46 +615,92 @@ class _CalculatorViewState extends State<CalculatorView> {
           spacing: AppSizes.xl,
           runSpacing: AppSizes.md,
           children: [
-            _Kpi(label: l10n.reportsCalcProfit, value: _money.format(totalProfit), tone: profitTone),
-            _Kpi(label: l10n.reportsCalcMargin, value: _fmtPct(margin), tone: profitTone),
+            _Kpi(
+              label: l10n.reportsCalcProfit,
+              value: _money.format(totalProfit),
+              tone: profitTone,
+            ),
+            _Kpi(
+              label: l10n.reportsCalcMargin,
+              value: _fmtPct(margin),
+              tone: profitTone,
+            ),
             _Kpi(label: 'GST', value: _money.format(finalGst)),
           ],
         ),
         const SizedBox(height: AppSizes.xl),
 
-        _Block(label: l10n.reportsCalcBlockTotal, rows: [
-          _R(l10n.reportsCalcGrossSubtotal, _money.format(grossIncl), hint: l10n.reportsCalcHintInclGst),
-          if (lineDiscTotal > 0)
-            _R(l10n.reportsCalcLineDiscounts, '− ${_money.format(lineDiscTotal)}',
-                tone: AppColors.success),
-          if (overallDisc > 0)
-            _R(l10n.reportsCalcOverallDiscount, '− ${_money.format(overallDisc)}',
-                tone: AppColors.success),
-          _R.total(l10n.reportsCalcGrandTotalRow, _money.format(grandTotal)),
-        ]),
+        _Block(
+          label: l10n.reportsCalcBlockTotal,
+          rows: [
+            _R(
+              l10n.reportsCalcGrossSubtotal,
+              _money.format(grossIncl),
+              hint: l10n.reportsCalcHintInclGst,
+            ),
+            if (lineDiscTotal > 0)
+              _R(
+                l10n.reportsCalcLineDiscounts,
+                '− ${_money.format(lineDiscTotal)}',
+                tone: AppColors.success,
+              ),
+            if (overallDisc > 0)
+              _R(
+                l10n.reportsCalcOverallDiscount,
+                '− ${_money.format(overallDisc)}',
+                tone: AppColors.success,
+              ),
+            _R.total(l10n.reportsCalcGrandTotalRow, _money.format(grandTotal)),
+          ],
+        ),
         const SizedBox(height: AppSizes.xl),
         _Block(
-            label: _interState
-                ? l10n.reportsCalcBlockGstInterState
-                : l10n.reportsCalcBlockGstWithinState,
-            rows: [
-              _R(l10n.reportsCalcSubtotal, _money.format(finalTaxable), hint: l10n.reportsCalcHintTaxableExGst),
-              if (_interState)
-                _R('IGST', _money.format(igst))
-              else ...[
-                _R('CGST', _money.format(cgst)),
-                _R('SGST', _money.format(cgst)),
-              ],
-              _R.total(l10n.reportsCalcGstTotal, _money.format(finalGst)),
-            ]),
+          label: _interState
+              ? l10n.reportsCalcBlockGstInterState
+              : l10n.reportsCalcBlockGstWithinState,
+          rows: [
+            _R(
+              l10n.reportsCalcSubtotal,
+              _money.format(finalTaxable),
+              hint: l10n.reportsCalcHintTaxableExGst,
+            ),
+            if (_interState)
+              _R('IGST', _money.format(igst))
+            else ...[
+              _R('CGST', _money.format(cgst)),
+              _R('SGST', _money.format(cgst)),
+            ],
+            _R.total(l10n.reportsCalcGstTotal, _money.format(finalGst)),
+          ],
+        ),
         const SizedBox(height: AppSizes.xl),
-        _Block(label: l10n.reportsCalcBlockProfit, rows: [
-          _R(l10n.reportsCalcCostOfGoods, _money.format(totalCost)),
-          _R(l10n.reportsCalcRevenue, _money.format(grandTotal), hint: l10n.reportsCalcHintInclGst),
-          _R(l10n.reportsCalcProfit, _money.format(totalProfit), strong: true, tone: profitTone),
-          _R(l10n.reportsCalcMarkup, _fmtPct(markup), hint: l10n.reportsCalcHintReturnOnCost),
-          _R.total(l10n.reportsCalcProfitMargin, _fmtPct(margin), tone: profitTone),
-        ]),
+        _Block(
+          label: l10n.reportsCalcBlockProfit,
+          rows: [
+            _R(l10n.reportsCalcCostOfGoods, _money.format(totalCost)),
+            _R(
+              l10n.reportsCalcRevenue,
+              _money.format(grandTotal),
+              hint: l10n.reportsCalcHintInclGst,
+            ),
+            _R(
+              l10n.reportsCalcProfit,
+              _money.format(totalProfit),
+              strong: true,
+              tone: profitTone,
+            ),
+            _R(
+              l10n.reportsCalcMarkup,
+              _fmtPct(markup),
+              hint: l10n.reportsCalcHintReturnOnCost,
+            ),
+            _R.total(
+              l10n.reportsCalcProfitMargin,
+              _fmtPct(margin),
+              tone: profitTone,
+            ),
+          ],
+        ),
 
         // ── Quotation round-trip ─────────────────────────────────────────
         const SizedBox(height: AppSizes.xxl),
@@ -610,20 +710,23 @@ class _CalculatorViewState extends State<CalculatorView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: Text(l10n.reportsCalcQuotation,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: AppColors.subtle,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.4,
-                  )),
+              child: Text(
+                l10n.reportsCalcQuotation,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: AppColors.subtle,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.4,
+                ),
+              ),
             ),
             if (_quote != null)
               Flexible(
                 child: Text(
                   '${_quote!.quotationNo} · ${_statusLabel(context, _quote!.status)}',
                   textAlign: TextAlign.right,
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: AppColors.muted),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.muted,
+                  ),
                 ),
               ),
           ],
@@ -636,19 +739,27 @@ class _CalculatorViewState extends State<CalculatorView> {
           children: [
             OutlinedButton.icon(
               onPressed: _sending ? null : _pickQuotation,
-              icon: const Icon(AppIcons.descriptionOutlined, size: AppSizes.iconSm),
+              icon: const AppIcon(
+                AppIcons.descriptionOutlined,
+                size: AppSizes.iconSm,
+              ),
               label: Text(l10n.reportsCalcLoadQuotation),
             ),
             if (_quote?.status != 'REQUESTED')
               OutlinedButton.icon(
                 onPressed: _sending ? null : _pickParty,
-                icon: const Icon(AppIcons.personAddAlt1Outlined,
-                    size: AppSizes.iconSm),
+                icon: const AppIcon(
+                  AppIcons.personAddAlt1Outlined,
+                  size: AppSizes.iconSm,
+                ),
                 label: Text(_party?.name ?? l10n.reportsCalcChooseCustomer),
               ),
             OutlinedButton.icon(
               onPressed: (_sending || _lines.isEmpty) ? null : _download,
-              icon: const Icon(AppIcons.downloadRounded, size: AppSizes.iconSm),
+              icon: const AppIcon(
+                AppIcons.downloadRounded,
+                size: AppSizes.iconSm,
+              ),
               label: Text(l10n.reportsCalcDownload),
             ),
             FilledButton.icon(
@@ -659,15 +770,20 @@ class _CalculatorViewState extends State<CalculatorView> {
                       height: AppSizes.iconSm,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Icon(AppIcons.sendRounded, size: AppSizes.iconSm),
-              label: Text(_sending
-                  ? l10n.reportsCalcSending
-                  : _quote?.status == 'REQUESTED'
-                      ? l10n.reportsCalcPriceAndSend
-                      : l10n.reportsCalcSendQuotation),
+                  : const AppIcon(AppIcons.sendRounded, size: AppSizes.iconSm),
+              label: Text(
+                _sending
+                    ? l10n.reportsCalcSending
+                    : _quote?.status == 'REQUESTED'
+                    ? l10n.reportsCalcPriceAndSend
+                    : l10n.reportsCalcSendQuotation,
+              ),
             ),
             if (_quote != null)
-              TextButton(onPressed: _sending ? null : _resetQuote, child: Text(l10n.reportsCalcNew)),
+              TextButton(
+                onPressed: _sending ? null : _resetQuote,
+                child: Text(l10n.reportsCalcNew),
+              ),
           ],
         ),
         const SizedBox(height: AppSizes.md),
@@ -704,17 +820,22 @@ class _CalculatorViewState extends State<CalculatorView> {
         Row(
           children: [
             Expanded(
-              child: Text(l10n.reportsCalcYourProducts,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: AppColors.subtle,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.4,
-                  )),
+              child: Text(
+                l10n.reportsCalcYourProducts,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: AppColors.subtle,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.4,
+                ),
+              ),
             ),
             if (_lines.isNotEmpty)
-              Text(l10n.reportsCalcAddedCount('${_lines.length}'),
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: AppColors.subtle)),
+              Text(
+                l10n.reportsCalcAddedCount('${_lines.length}'),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.subtle,
+                ),
+              ),
           ],
         ),
         const SizedBox(height: AppSizes.sm),
@@ -723,7 +844,10 @@ class _CalculatorViewState extends State<CalculatorView> {
           onChanged: _onSearchChanged,
           decoration: InputDecoration(
             hintText: l10n.reportsCalcSearchByNameOrSku,
-            prefixIcon: const Icon(AppIcons.searchRounded, size: AppSizes.iconMd),
+            prefixIcon: const AppIcon(
+              AppIcons.searchRounded,
+              size: AppSizes.iconMd,
+            ),
             isDense: true,
             border: OutlineInputBorder(
               borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
@@ -735,18 +859,24 @@ class _CalculatorViewState extends State<CalculatorView> {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: AppSizes.lg),
             child: Center(
-              child: Text(l10n.reportsCalcLoadingProducts,
-                  style:
-                      theme.textTheme.bodySmall?.copyWith(color: AppColors.subtle)),
+              child: Text(
+                l10n.reportsCalcLoadingProducts,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.subtle,
+                ),
+              ),
             ),
           )
         else if (_products.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: AppSizes.lg),
             child: Center(
-              child: Text(l10n.reportsCalcNoProductsFound,
-                  style:
-                      theme.textTheme.bodySmall?.copyWith(color: AppColors.muted)),
+              child: Text(
+                l10n.reportsCalcNoProductsFound,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.muted,
+                ),
+              ),
             ),
           )
         else
@@ -783,7 +913,9 @@ class _LineRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final price = _num(line.priceCtrl.text).clamp(0, double.infinity).toDouble();
+    final price = _num(
+      line.priceCtrl.text,
+    ).clamp(0, double.infinity).toDouble();
     final qty = _num(line.qtyCtrl.text).clamp(0, double.infinity).toDouble();
     final gross = price * qty;
     final net = gross - _discountOf(gross, line.discCtrl.text, unit);
@@ -803,10 +935,12 @@ class _LineRow extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(line.product.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodyMedium),
+                    Text(
+                      line.product.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyMedium,
+                    ),
                     const SizedBox(height: AppSizes.xs),
                     Row(
                       children: [
@@ -820,16 +954,22 @@ class _LineRow extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: AppSizes.sm),
-                        Text(l10n.reportsCalcEach,
-                            style: theme.textTheme.bodySmall
-                                ?.copyWith(color: AppColors.subtle)),
+                        Text(
+                          l10n.reportsCalcEach,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppColors.subtle,
+                          ),
+                        ),
                       ],
                     ),
                   ],
                 ),
               ),
               IconButton(
-                icon: const Icon(AppIcons.closeRounded, size: AppSizes.iconMd),
+                icon: const AppIcon(
+                  AppIcons.closeRounded,
+                  size: AppSizes.iconMd,
+                ),
                 color: AppColors.subtle,
                 visualDensity: VisualDensity.compact,
                 onPressed: onRemove,
@@ -871,11 +1011,13 @@ class _LineRow extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              Text(money.format(net),
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  )),
+              Text(
+                money.format(net),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
             ],
           ),
         ],
@@ -893,12 +1035,14 @@ class _MiniField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label.toUpperCase(),
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppColors.subtle,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.6,
-                )),
+        Text(
+          label.toUpperCase(),
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: AppColors.subtle,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.6,
+          ),
+        ),
         const SizedBox(height: AppSizes.xs),
         SizedBox(width: 64, child: child),
       ],
@@ -931,17 +1075,18 @@ class _NumField extends StatelessWidget {
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
       textAlign: TextAlign.center,
-      style: Theme.of(context)
-          .textTheme
-          .bodyMedium
-          ?.copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
+      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+        fontFeatures: const [FontFeature.tabularFigures()],
+      ),
       decoration: InputDecoration(
         prefixText: prefix,
         suffixText: suffix,
         hintText: hint,
         isDense: true,
         contentPadding: EdgeInsets.symmetric(
-            horizontal: AppSizes.sm, vertical: dense ? AppSizes.sm : AppSizes.md),
+          horizontal: AppSizes.sm,
+          vertical: dense ? AppSizes.sm : AppSizes.md,
+        ),
         border: OutlineInputBorder(
           borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
         ),
@@ -969,8 +1114,10 @@ class _ChoiceField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: theme.textTheme.labelMedium?.copyWith(color: AppColors.muted)),
+        Text(
+          label,
+          style: theme.textTheme.labelMedium?.copyWith(color: AppColors.muted),
+        ),
         const SizedBox(height: AppSizes.xs),
         Wrap(
           spacing: AppSizes.xs,
@@ -989,7 +1136,11 @@ class _ChoiceField extends StatelessWidget {
 }
 
 class _Pill extends StatelessWidget {
-  const _Pill({required this.label, required this.selected, required this.onTap});
+  const _Pill({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -1000,19 +1151,24 @@ class _Pill extends StatelessWidget {
       shape: AppShapes.squircle(
         AppSizes.radiusButton,
         side: BorderSide(
-            color: selected ? AppColors.inverseSurface : AppColors.hairline),
+          color: selected ? AppColors.inverseSurface : AppColors.hairline,
+        ),
       ),
       child: InkWell(
         customBorder: AppShapes.squircle(AppSizes.radiusButton),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(
-              horizontal: AppSizes.md, vertical: AppSizes.sm),
-          child: Text(label,
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: selected ? AppColors.onInverse : AppColors.black,
-                    fontWeight: FontWeight.w600,
-                  )),
+            horizontal: AppSizes.md,
+            vertical: AppSizes.sm,
+          ),
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: selected ? AppColors.onInverse : AppColors.black,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
       ),
     );
@@ -1030,19 +1186,23 @@ class _Kpi extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label.toUpperCase(),
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: AppColors.subtle,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.2,
-            )),
+        Text(
+          label.toUpperCase(),
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: AppColors.subtle,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.2,
+          ),
+        ),
         const SizedBox(height: AppSizes.xs),
-        Text(value,
-            style: theme.textTheme.titleLarge?.copyWith(
-              color: tone ?? AppColors.black,
-              fontWeight: FontWeight.w700,
-              fontFeatures: const [FontFeature.tabularFigures()],
-            )),
+        Text(
+          value,
+          style: theme.textTheme.titleLarge?.copyWith(
+            color: tone ?? AppColors.black,
+            fontWeight: FontWeight.w700,
+            fontFeatures: const [FontFeature.tabularFigures()],
+          ),
+        ),
       ],
     );
   }
@@ -1058,12 +1218,14 @@ class _Block extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppColors.subtle,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.2,
-                )),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: AppColors.subtle,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.2,
+          ),
+        ),
         const SizedBox(height: AppSizes.sm),
         for (final r in rows) r,
       ],
@@ -1073,11 +1235,11 @@ class _Block extends StatelessWidget {
 
 class _R extends StatelessWidget {
   const _R(this.label, this.value, {this.hint, this.strong = false, this.tone})
-      : isTotal = false;
+    : isTotal = false;
   const _R.total(this.label, this.value, {this.tone})
-      : hint = null,
-        strong = true,
-        isTotal = true;
+    : hint = null,
+      strong = true,
+      isTotal = true;
   final String label;
   final String value;
   final String? hint;
@@ -1096,29 +1258,41 @@ class _R extends StatelessWidget {
           Expanded(
             child: RichText(
               text: TextSpan(
-                style: (isTotal ? theme.textTheme.bodyLarge : theme.textTheme.bodySmall)
-                    ?.copyWith(color: strong ? AppColors.black : AppColors.muted),
+                style:
+                    (isTotal
+                            ? theme.textTheme.bodyLarge
+                            : theme.textTheme.bodySmall)
+                        ?.copyWith(
+                          color: strong ? AppColors.black : AppColors.muted,
+                        ),
                 children: [
                   TextSpan(text: label),
                   if (hint != null)
                     TextSpan(
                       text: ' · $hint',
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: AppColors.subtle),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.subtle,
+                      ),
                     ),
                 ],
               ),
             ),
           ),
           const SizedBox(width: AppSizes.md),
-          Text(value,
-              style: (isTotal ? theme.textTheme.titleMedium : theme.textTheme.bodyMedium)
-                  ?.copyWith(
-                color: tone ?? AppColors.black,
-                fontWeight:
-                    (isTotal || strong) ? FontWeight.w700 : FontWeight.w500,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              )),
+          Text(
+            value,
+            style:
+                (isTotal
+                        ? theme.textTheme.titleMedium
+                        : theme.textTheme.bodyMedium)
+                    ?.copyWith(
+                      color: tone ?? AppColors.black,
+                      fontWeight: (isTotal || strong)
+                          ? FontWeight.w700
+                          : FontWeight.w500,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+          ),
         ],
       ),
     );
@@ -1156,7 +1330,9 @@ class _ProductTile extends StatelessWidget {
         color: added ? AppColors.brandSoft : AppColors.surface,
         shape: AppShapes.squircle(
           AppSizes.radiusMd,
-          side: BorderSide(color: added ? AppColors.brandSoft : AppColors.hairline),
+          side: BorderSide(
+            color: added ? AppColors.brandSoft : AppColors.hairline,
+          ),
         ),
         child: InkWell(
           customBorder: AppShapes.squircle(AppSizes.radiusMd),
@@ -1171,15 +1347,20 @@ class _ProductTile extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(product.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodyMedium),
-                      Text(product.sku,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodySmall
-                              ?.copyWith(color: AppColors.subtle)),
+                      Text(
+                        product.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                      Text(
+                        product.sku,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.subtle,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -1187,15 +1368,19 @@ class _ProductTile extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(money.format(product.sellingPrice),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                        )),
-                    Text('${_plain(product.stockQuantity)} ${product.unit}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: low ? AppColors.warning : AppColors.subtle,
-                        )),
+                    Text(
+                      money.format(product.sellingPrice),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                    Text(
+                      '${_plain(product.stockQuantity)} ${product.unit}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: low ? AppColors.warning : AppColors.subtle,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(width: AppSizes.sm),
@@ -1208,12 +1393,15 @@ class _ProductTile extends StatelessWidget {
                     shape: AppShapes.squircle(
                       AppSizes.radiusFull,
                       side: BorderSide(
-                          color: added ? AppColors.brand : AppColors.hairline),
+                        color: added ? AppColors.brand : AppColors.hairline,
+                      ),
                     ),
                   ),
-                  child: Icon(added ? AppIcons.checkRounded : AppIcons.addRounded,
-                      size: AppSizes.iconSm,
-                      color: added ? AppColors.white : AppColors.subtle),
+                  child: AppIcon(
+                    added ? AppIcons.checkRounded : AppIcons.addRounded,
+                    size: AppSizes.iconSm,
+                    color: added ? AppColors.white : AppColors.subtle,
+                  ),
                 ),
               ],
             ),
@@ -1232,7 +1420,11 @@ class _QuotationPickerSheet extends StatefulWidget {
 }
 
 class _QuotationPickerSheetState extends State<_QuotationPickerSheet> {
-  final _money = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2);
+  final _money = NumberFormat.currency(
+    locale: 'en_IN',
+    symbol: '₹',
+    decimalDigits: 2,
+  );
   final _searchCtrl = TextEditingController();
   List<Quotation> _all = const [];
   String _query = '';
@@ -1276,14 +1468,18 @@ class _QuotationPickerSheetState extends State<_QuotationPickerSheet> {
     final filtered = q.isEmpty
         ? _all
         : _all
-            .where((x) =>
-                x.quotationNo.toLowerCase().contains(q) ||
-                x.partyName.toLowerCase().contains(q))
-            .toList();
+              .where(
+                (x) =>
+                    x.quotationNo.toLowerCase().contains(q) ||
+                    x.partyName.toLowerCase().contains(q),
+              )
+              .toList();
     return SizedBox(
       height: MediaQuery.of(context).size.height * 0.8,
       child: Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
         child: Column(
           children: [
             const SizedBox(height: AppSizes.md),
@@ -1299,9 +1495,12 @@ class _QuotationPickerSheetState extends State<_QuotationPickerSheet> {
               padding: const EdgeInsets.all(AppSizes.lg),
               child: Row(
                 children: [
-                  Text(l10n.reportsCalcLoadQuotation,
-                      style: theme.textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.w700)),
+                  Text(
+                    l10n.reportsCalcLoadQuotation,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -1312,7 +1511,7 @@ class _QuotationPickerSheetState extends State<_QuotationPickerSheet> {
                 onChanged: (v) => setState(() => _query = v),
                 decoration: InputDecoration(
                   hintText: l10n.reportsCalcSearchByNumberOrCustomer,
-                  prefixIcon: const Icon(AppIcons.searchRounded),
+                  prefixIcon: const AppIcon(AppIcons.searchRounded),
                 ),
               ),
             ),
@@ -1321,29 +1520,37 @@ class _QuotationPickerSheetState extends State<_QuotationPickerSheet> {
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
                   : _error != null
-                      ? Center(child: Text(_error!))
-                      : filtered.isEmpty
-                          ? Center(
-                              child: Text(l10n.reportsCalcNoQuotationsYet,
-                                  style: theme.textTheme.bodyMedium
-                                      ?.copyWith(color: AppColors.muted)))
-                          : ListView.separated(
-                              itemCount: filtered.length,
-                              separatorBuilder: (_, _) =>
-                                  Divider(height: 1, color: AppColors.hairline),
-                              itemBuilder: (context, i) {
-                                final x = filtered[i];
-                                return ListTile(
-                                  title: Text(x.quotationNo),
-                                  subtitle: Text(
-                                      '${_statusLabel(context, x.status)} · ${x.partyName}'),
-                                  trailing: Text(_money.format(x.total),
-                                      style: theme.textTheme.bodyMedium?.copyWith(
-                                          fontWeight: FontWeight.w700)),
-                                  onTap: () => Navigator.pop(context, x),
-                                );
-                              },
+                  ? Center(child: Text(_error!))
+                  : filtered.isEmpty
+                  ? Center(
+                      child: Text(
+                        l10n.reportsCalcNoQuotationsYet,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: AppColors.muted,
+                        ),
+                      ),
+                    )
+                  : ListView.separated(
+                      itemCount: filtered.length,
+                      separatorBuilder: (_, _) =>
+                          Divider(height: 1, color: AppColors.hairline),
+                      itemBuilder: (context, i) {
+                        final x = filtered[i];
+                        return ListTile(
+                          title: Text(x.quotationNo),
+                          subtitle: Text(
+                            '${_statusLabel(context, x.status)} · ${x.partyName}',
+                          ),
+                          trailing: Text(
+                            _money.format(x.total),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
                             ),
+                          ),
+                          onTap: () => Navigator.pop(context, x),
+                        );
+                      },
+                    ),
             ),
           ],
         ),

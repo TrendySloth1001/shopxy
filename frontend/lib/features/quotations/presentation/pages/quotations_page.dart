@@ -11,6 +11,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Merchant list of quotations sent to customers. Clean divided rows; tap opens
 /// the detail page. FAB opens the catalogue → bucket → send flow.
@@ -22,7 +23,11 @@ class QuotationsPage extends StatefulWidget {
 }
 
 class _QuotationsPageState extends State<QuotationsPage> {
-  final _currency = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2);
+  final _currency = NumberFormat.currency(
+    locale: 'en_IN',
+    symbol: '₹',
+    decimalDigits: 2,
+  );
   final _dateFmt = DateFormat('d MMM y');
 
   @override
@@ -50,74 +55,80 @@ class _QuotationsPageState extends State<QuotationsPage> {
       appBar: FloatingAppBar(title: 'Quotations'),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _create,
-        icon: const Icon(AppIcons.addRounded),
+        icon: const AppIcon(AppIcons.addRounded),
         label: const Text('New quotation'),
       ),
       body: SafeArea(
         top: true,
         bottom: false,
         child: p.isLoading && p.items.isEmpty
-          ? const _QuotationsSkeleton()
-          : p.error != null && p.items.isEmpty
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSizes.xl),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(p.error!, textAlign: TextAlign.center),
-                        const SizedBox(height: AppSizes.md),
-                        FilledButton(
-                            onPressed: () => p.load(),
-                            child: const Text('Retry')),
-                      ],
-                    ),
+            ? const _QuotationsSkeleton()
+            : p.error != null && p.items.isEmpty
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSizes.xl),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(p.error!, textAlign: TextAlign.center),
+                      const SizedBox(height: AppSizes.md),
+                      FilledButton(
+                        onPressed: () => p.load(),
+                        child: const Text('Retry'),
+                      ),
+                    ],
                   ),
-                )
-              : RefreshIndicator(
-                  onRefresh: () => p.load(),
-                  child: p.items.isEmpty
-                      ? ListView(
-                          children: [
-                            const SizedBox(height: AppSizes.productImageSize),
-                            Icon(AppIcons.requestQuoteOutlined,
-                                size: AppSizes.iconHuge, color: AppColors.muted),
-                            const SizedBox(height: AppSizes.md),
-                            Center(
-                              child: Text(
-                                'No quotations yet.\nTap “New quotation” to build one.',
-                                textAlign: TextAlign.center,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(color: AppColors.muted),
-                              ),
-                            ),
-                          ],
-                        )
-                      : ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(
-                              AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.sm),
-                          itemCount: p.items.length,
-                          separatorBuilder: (_, _) =>
-                              const SizedBox(height: AppSizes.sm),
-                          itemBuilder: (_, i) => _QuotationRow(
-                            q: p.items[i],
-                            currency: _currency,
-                            dateFmt: _dateFmt,
-                            onTap: () {
-                              final prov = context.read<QuotationsProvider>();
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => QuotationDetailPage(
-                                      quotation: p.items[i]),
-                                ),
-                              ).then((_) => prov.load());
-                            },
-                          ),
-                        ),
                 ),
+              )
+            : RefreshIndicator(
+                onRefresh: () => p.load(),
+                child: p.items.isEmpty
+                    ? ListView(
+                        children: [
+                          const SizedBox(height: AppSizes.productImageSize),
+                          AppIcon(
+                            AppIcons.requestQuoteOutlined,
+                            size: AppSizes.iconHuge,
+                            color: AppColors.muted,
+                          ),
+                          const SizedBox(height: AppSizes.md),
+                          Center(
+                            child: Text(
+                              'No quotations yet.\nTap “New quotation” to build one.',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(color: AppColors.muted),
+                            ),
+                          ),
+                        ],
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSizes.lg,
+                          AppSizes.sm,
+                          AppSizes.lg,
+                          AppSizes.sm,
+                        ),
+                        itemCount: p.items.length,
+                        separatorBuilder: (_, _) =>
+                            const SizedBox(height: AppSizes.sm),
+                        itemBuilder: (_, i) => _QuotationRow(
+                          q: p.items[i],
+                          currency: _currency,
+                          dateFmt: _dateFmt,
+                          onTap: () {
+                            final prov = context.read<QuotationsProvider>();
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    QuotationDetailPage(quotation: p.items[i]),
+                              ),
+                            ).then((_) => prov.load());
+                          },
+                        ),
+                      ),
+              ),
       ),
     );
   }
@@ -134,7 +145,11 @@ class _QuotationsSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.sm),
+        AppSizes.lg,
+        AppSizes.sm,
+        AppSizes.lg,
+        AppSizes.sm,
+      ),
       itemCount: 6,
       separatorBuilder: (_, _) => const SizedBox(height: AppSizes.sm),
       itemBuilder: (_, _) => const _QuotationRowSkeleton(),
@@ -150,11 +165,15 @@ class _QuotationRowSkeleton extends StatelessWidget {
     return Container(
       decoration: ShapeDecoration(
         color: AppColors.surface,
-        shape: AppShapes.squircle(AppSizes.radiusLg,
-            side: BorderSide(color: AppColors.hairline)),
+        shape: AppShapes.squircle(
+          AppSizes.radiusLg,
+          side: BorderSide(color: AppColors.hairline),
+        ),
       ),
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.lg, vertical: AppSizes.md),
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
       child: Row(
         children: [
           // Expanded left column — mirrors _QuotationRow's Column
@@ -167,7 +186,11 @@ class _QuotationRowSkeleton extends StatelessWidget {
                   children: [
                     AppShimmerLine(widthFactor: 0.35, height: 16),
                     const SizedBox(width: AppSizes.sm),
-                    AppShimmerBox(width: 72, height: 20, radius: AppSizes.radiusXl),
+                    AppShimmerBox(
+                      width: 72,
+                      height: 20,
+                      radius: AppSizes.radiusXl,
+                    ),
                   ],
                 ),
                 const SizedBox(height: AppSizes.xs),
@@ -222,54 +245,72 @@ class _QuotationRow extends StatelessWidget {
     final (fg, bg, label) = _style();
     return Material(
       color: AppColors.surface,
-      shape: AppShapes.squircle(AppSizes.radiusLg,
-          side: BorderSide(color: AppColors.hairline)),
+      shape: AppShapes.squircle(
+        AppSizes.radiusLg,
+        side: BorderSide(color: AppColors.hairline),
+      ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(
-              horizontal: AppSizes.lg, vertical: AppSizes.md),
+            horizontal: AppSizes.lg,
+            vertical: AppSizes.md,
+          ),
           child: Row(
             children: [
               Expanded(
                 child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(q.quotationNo,
-                          style: theme.textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w700)),
-                      const SizedBox(width: AppSizes.sm),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: AppSizes.sm, vertical: AppSizes.xs),
-                        decoration: ShapeDecoration(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          q.quotationNo,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(width: AppSizes.sm),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSizes.sm,
+                            vertical: AppSizes.xs,
+                          ),
+                          decoration: ShapeDecoration(
                             color: bg,
-                            shape: AppShapes.squircle(AppSizes.radiusXl)),
-                        child: Text(label,
+                            shape: AppShapes.squircle(AppSizes.radiusXl),
+                          ),
+                          child: Text(
+                            label,
                             style: theme.textTheme.labelSmall?.copyWith(
-                                color: fg, fontWeight: FontWeight.w800)),
+                              color: fg,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSizes.xs),
+                    Text(
+                      '${q.partyName} · ${dateFmt.format(q.createdAt)} · ${q.items.length} item${q.items.length == 1 ? '' : 's'}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.muted,
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSizes.xs),
-                  Text(
-                    '${q.partyName} · ${dateFmt.format(q.createdAt)} · ${q.items.length} item${q.items.length == 1 ? '' : 's'}',
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: AppColors.muted),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
-            ),
-              Text(currency.format(q.total),
-                  style: theme.textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w800)),
+              Text(
+                currency.format(q.total),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
               const SizedBox(width: AppSizes.xs),
-              Icon(AppIcons.chevronRightRounded, color: AppColors.muted),
+              AppIcon(AppIcons.chevronRightRounded, color: AppColors.muted),
             ],
           ),
         ),

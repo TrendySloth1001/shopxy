@@ -21,6 +21,7 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Drill-down view from CategoriesPage. Loads the products for a single
 /// category directly (own state — not coupled to the global
@@ -148,81 +149,80 @@ class _CategoryProductsPageState extends State<CategoryProductsPage> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       backgroundColor: AppColors.canvas,
-      appBar: FloatingAppBar(
-        title: widget.category.name,
-      ),
+      appBar: FloatingAppBar(title: widget.category.name),
       body: _isLoading && _products.isEmpty
           ? const _CategoryProductsSkeleton()
           : _error != null && _products.isEmpty
-              ? AppErrorView(onRetry: _load)
-              : RefreshIndicator(
-                  onRefresh: () => _load(),
-                  color: AppColors.black,
-                  backgroundColor: AppColors.surface,
-                  child: CustomScrollView(
-                    controller: _scrollCtrl,
-                    slivers: [
-                      SliverToBoxAdapter(
-                        child: SizedBox(
-                          height: FloatingAppBar.contentTopInset(context),
-                        ),
-                      ),
-                      SliverToBoxAdapter(
-                        child: _Header(
-                          category: widget.category,
-                          totalProducts: _total,
-                        ),
-                      ),
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(
-                            AppSizes.lg,
-                            0,
-                            AppSizes.lg,
-                            AppSizes.md,
-                          ),
-                          child: _SearchField(
-                            controller: _searchCtrl,
-                            onChanged: _onSearchChanged,
-                          ),
-                        ),
-                      ),
-                      if (_products.isEmpty)
-                        SliverFillRemaining(
-                          hasScrollBody: false,
-                          child: EmptyState.line(
-                            kind: LineArt.productTag,
-                            title: _search.isEmpty
-                                ? l10n.categoriesProductsEmptyTitle
-                                : l10n.categoriesProductsNoMatchTitle(_search),
-                            subtitle: _search.isEmpty
-                                ? l10n.categoriesProductsEmptySubtitle(
-                                    widget.category.name)
-                                : l10n.categoriesProductsNoMatchSubtitle,
-                          ),
-                        )
-                      else
-                        SliverList.separated(
-                          itemCount: _products.length,
-                          separatorBuilder: (_, _) => const AppDivider.flush(),
-                          itemBuilder: (_, i) => ProductListTile(
-                            product: _products[i],
-                            onTap: () => _openProduct(_products[i]),
-                          ),
-                        ),
-                      if (_loadingMore)
-                        const SliverToBoxAdapter(
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(vertical: AppSizes.lg),
-                            child: Center(child: CircularProgressIndicator()),
-                          ),
-                        ),
-                      const SliverToBoxAdapter(
-                        child: SizedBox(height: AppSizes.huge),
-                      ),
-                    ],
+          ? AppErrorView(onRetry: _load)
+          : RefreshIndicator(
+              onRefresh: () => _load(),
+              color: AppColors.black,
+              backgroundColor: AppColors.surface,
+              child: CustomScrollView(
+                controller: _scrollCtrl,
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: FloatingAppBar.contentTopInset(context),
+                    ),
                   ),
-                ),
+                  SliverToBoxAdapter(
+                    child: _Header(
+                      category: widget.category,
+                      totalProducts: _total,
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSizes.lg,
+                        0,
+                        AppSizes.lg,
+                        AppSizes.md,
+                      ),
+                      child: _SearchField(
+                        controller: _searchCtrl,
+                        onChanged: _onSearchChanged,
+                      ),
+                    ),
+                  ),
+                  if (_products.isEmpty)
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: EmptyState.line(
+                        kind: LineArt.productTag,
+                        title: _search.isEmpty
+                            ? l10n.categoriesProductsEmptyTitle
+                            : l10n.categoriesProductsNoMatchTitle(_search),
+                        subtitle: _search.isEmpty
+                            ? l10n.categoriesProductsEmptySubtitle(
+                                widget.category.name,
+                              )
+                            : l10n.categoriesProductsNoMatchSubtitle,
+                      ),
+                    )
+                  else
+                    SliverList.separated(
+                      itemCount: _products.length,
+                      separatorBuilder: (_, _) => const AppDivider.flush(),
+                      itemBuilder: (_, i) => ProductListTile(
+                        product: _products[i],
+                        onTap: () => _openProduct(_products[i]),
+                      ),
+                    ),
+                  if (_loadingMore)
+                    const SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: AppSizes.lg),
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    ),
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: AppSizes.huge),
+                  ),
+                ],
+              ),
+            ),
     );
   }
 }
@@ -263,7 +263,7 @@ class _Header extends StatelessWidget {
               shape: AppShapes.squircle(AppSizes.radiusMd),
             ),
             alignment: Alignment.center,
-            child: Icon(
+            child: AppIcon(
               resolveCategoryIcon(category.iconName),
               color: AppColors.onInverse,
               size: AppSizes.iconLg,
@@ -298,7 +298,7 @@ class _Header extends StatelessWidget {
                 const SizedBox(height: AppSizes.sm),
                 Row(
                   children: [
-                    Icon(
+                    AppIcon(
                       AppIcons.inventory2Outlined,
                       size: AppSizes.iconSm,
                       color: AppColors.muted,
@@ -432,11 +432,7 @@ class _ProductTileSkeleton extends StatelessWidget {
       child: Row(
         children: [
           // Product thumbnail
-          AppShimmerBox(
-            width: 56,
-            height: 56,
-            radius: AppSizes.radiusSm,
-          ),
+          AppShimmerBox(width: 56, height: 56, radius: AppSizes.radiusSm),
           const SizedBox(width: AppSizes.md),
           Expanded(
             child: Column(
@@ -486,14 +482,11 @@ class _SearchField extends StatelessWidget {
         onChanged: onChanged,
         decoration: InputDecoration(
           hintText: l10n.categoriesSearchProductsHint,
-          prefixIcon: Icon(AppIcons.searchRounded, color: AppColors.subtle),
+          prefixIcon: AppIcon(AppIcons.searchRounded, color: AppColors.subtle),
           suffixIcon: controller.text.isEmpty
               ? null
               : IconButton(
-                  icon: Icon(
-                    AppIcons.closeRounded,
-                    color: AppColors.subtle,
-                  ),
+                  icon: AppIcon(AppIcons.closeRounded, color: AppColors.subtle),
                   onPressed: () {
                     controller.clear();
                     onChanged('');

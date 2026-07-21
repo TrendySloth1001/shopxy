@@ -17,6 +17,7 @@ import 'package:shopxy_customer/shared/widgets/app_quantity_stepper.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/shared/widgets/shop_chip.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Cart page. Rewritten from zero (May 2026, build3) because earlier
 /// iterations collapsed on certain devices — the AppBar disappeared and
@@ -39,7 +40,8 @@ class CartPage extends StatelessWidget {
     // auth listener) so the items they just built up survive.
     final signedIn = await requireAuth(
       context,
-      reason: 'Sign in to place your order and ship it to a saved address. '
+      reason:
+          'Sign in to place your order and ship it to a saved address. '
           'Your cart will be kept.',
     );
     if (!signedIn || !context.mounted) return;
@@ -119,7 +121,7 @@ class _Header extends StatelessWidget {
         children: [
           if (showBack)
             IconButton(
-              icon: const Icon(AppIcons.arrowBackRounded),
+              icon: const AppIcon(AppIcons.arrowBackRounded),
               onPressed: () => Navigator.of(context).maybePop(),
               tooltip: 'Back',
             )
@@ -135,9 +137,9 @@ class _Header extends StatelessWidget {
                     Text(
                       'My Cart',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.4,
-                          ),
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.4,
+                      ),
                     ),
                     const SizedBox(width: AppSizes.sm),
                   ],
@@ -147,8 +149,9 @@ class _Header extends StatelessWidget {
                   itemCount == 0
                       ? 'Empty for now'
                       : '$itemCount ${itemCount == 1 ? 'item' : 'items'} in your bag',
-                  style: Theme.of(context).textTheme.labelMedium
-                      ?.copyWith(color: AppColors.muted),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelMedium?.copyWith(color: AppColors.muted),
                 ),
               ],
             ),
@@ -226,7 +229,7 @@ class _SavingsBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(
+          const AppIcon(
             AppIcons.savingsOutlined,
             color: AppColors.success,
             size: AppSizes.iconMd,
@@ -238,9 +241,9 @@ class _SavingsBanner extends StatelessWidget {
                 Text(
                   'You are saving ',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.success,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    color: AppColors.success,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 AppPriceText.precise(
                   amount,
@@ -251,9 +254,9 @@ class _SavingsBanner extends StatelessWidget {
                 Text(
                   ' on this order',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.success,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    color: AppColors.success,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ],
             ),
@@ -278,10 +281,10 @@ class _Section extends StatelessWidget {
     child: Text(
       label,
       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: AppColors.muted,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.6,
-          ),
+        color: AppColors.muted,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 0.6,
+      ),
     ),
   );
 }
@@ -317,7 +320,7 @@ class _CartLineRow extends StatelessWidget {
                 height: 80,
                 color: AppColors.heroPanel,
                 child: product.imageUrl == null
-                    ? const Icon(
+                    ? const AppIcon(
                         AppIcons.imageOutlined,
                         color: AppColors.muted,
                         size: AppSizes.iconMd,
@@ -336,10 +339,10 @@ class _CartLineRow extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.black,
-                        fontWeight: FontWeight.w700,
-                        height: 1.3,
-                      ),
+                    color: AppColors.black,
+                    fontWeight: FontWeight.w700,
+                    height: 1.3,
+                  ),
                 ),
                 if (product.shopName != null) ...[
                   const SizedBox(height: AppSizes.sm),
@@ -398,9 +401,10 @@ class _CartLineRow extends StatelessWidget {
                           ? product.stockQuantity.floor()
                           : null,
                       onChanged: (v) {
-                        final result = context
-                            .read<CartProvider>()
-                            .setQuantity(product.id, v.toDouble());
+                        final result = context.read<CartProvider>().setQuantity(
+                          product.id,
+                          v.toDouble(),
+                        );
                         if (result == AddToCartResult.capped) {
                           showAppSnackbar(
                             context,
@@ -564,11 +568,14 @@ class _BillRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: (bold ? theme.textTheme.bodyMedium : theme.textTheme.bodySmall)
-                  ?.copyWith(
-                color: bold ? AppColors.black : AppColors.muted,
-                fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
-              ),
+              style:
+                  (bold
+                          ? theme.textTheme.bodyMedium
+                          : theme.textTheme.bodySmall)
+                      ?.copyWith(
+                        color: bold ? AppColors.black : AppColors.muted,
+                        fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
+                      ),
             ),
           ),
           val,
@@ -599,7 +606,7 @@ class _ReassuranceCard extends StatelessWidget {
               shape: AppShapes.squircle(AppSizes.radiusSm),
             ),
             alignment: Alignment.center,
-            child: const Icon(
+            child: const AppIcon(
               AppIcons.verifiedUserOutlined,
               color: AppColors.brandStrong,
               size: AppSizes.iconMd,
@@ -612,14 +619,16 @@ class _ReassuranceCard extends StatelessWidget {
               children: [
                 Text(
                   'Safe and secure',
-                  style: Theme.of(context).textTheme.bodySmall
-                      ?.copyWith(fontWeight: FontWeight.w800),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   'Cancel any time before the shop confirms.',
-                  style: Theme.of(context).textTheme.labelMedium
-                      ?.copyWith(color: AppColors.muted),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelMedium?.copyWith(color: AppColors.muted),
                 ),
               ],
             ),
@@ -650,7 +659,7 @@ class _EmptyCart extends StatelessWidget {
                 shape: AppShapes.squircle(AppSizes.radiusLg),
               ),
               alignment: Alignment.center,
-              child: const Icon(
+              child: const AppIcon(
                 AppIcons.shoppingCartOutlined,
                 size: AppSizes.iconHuge,
                 color: AppColors.muted,
@@ -659,15 +668,17 @@ class _EmptyCart extends StatelessWidget {
             const SizedBox(height: AppSizes.lg),
             Text(
               'Your cart is empty',
-              style: Theme.of(context).textTheme.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w800),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: AppSizes.xs),
             Text(
               'Browse the marketplace and add items to start checkout.',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall
-                  ?.copyWith(color: AppColors.muted),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
             ),
             const SizedBox(height: AppSizes.lg),
             AppButton.primary(
@@ -748,11 +759,10 @@ class _Footer extends StatelessWidget {
                   else
                     Text(
                       'Total payable',
-                      style: Theme.of(context).textTheme.labelSmall
-                          ?.copyWith(
-                            color: AppColors.muted,
-                            fontWeight: FontWeight.w600,
-                          ),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: AppColors.muted,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                 ],
               ),

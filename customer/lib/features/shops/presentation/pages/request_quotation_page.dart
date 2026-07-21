@@ -18,6 +18,7 @@ import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/shared/format/app_format.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Browse a *single linked shop's* catalogue, build a basket of what the
 /// customer wants, and send it as a QUOTE REQUEST. The shop prices it and
@@ -58,7 +59,9 @@ class _RequestQuotationPageState extends State<RequestQuotationPage> {
       byId[c.id] = (cat: c, count: (cur?.count ?? 0) + 1);
     }
     final list = byId.values.toList()
-      ..sort((a, b) => a.cat.name.toLowerCase().compareTo(b.cat.name.toLowerCase()));
+      ..sort(
+        (a, b) => a.cat.name.toLowerCase().compareTo(b.cat.name.toLowerCase()),
+      );
     return list;
   }
 
@@ -112,8 +115,10 @@ class _RequestQuotationPageState extends State<RequestQuotationPage> {
     }
   }
 
-  double get _basketValue => _basket.values
-      .fold(0.0, (sum, e) => sum + e.product.sellingPrice * e.qty);
+  double get _basketValue => _basket.values.fold(
+    0.0,
+    (sum, e) => sum + e.product.sellingPrice * e.qty,
+  );
 
   int get _itemCount => _basket.values.fold(0, (sum, e) => sum + e.qty);
 
@@ -128,15 +133,17 @@ class _RequestQuotationPageState extends State<RequestQuotationPage> {
   }
 
   List<Map<String, dynamic>> _itemsPayload() => _basket.values
-      .map((e) => <String, dynamic>{
-            'productId': e.product.id,
-            'name': e.product.name,
-            'sku': e.product.sku,
-            'quantity': e.qty,
-            'unitPrice': e.product.sellingPrice,
-            'taxPercent': e.product.taxPercent,
-            'imageUrl': _firstImage(e.product),
-          })
+      .map(
+        (e) => <String, dynamic>{
+          'productId': e.product.id,
+          'name': e.product.name,
+          'sku': e.product.sku,
+          'quantity': e.qty,
+          'unitPrice': e.product.sellingPrice,
+          'taxPercent': e.product.taxPercent,
+          'imageUrl': _firstImage(e.product),
+        },
+      )
       .toList();
 
   /// Open a read-rich preview of [p] (full gallery + details fetched on
@@ -173,9 +180,7 @@ class _RequestQuotationPageState extends State<RequestQuotationPage> {
       );
       Navigator.of(context).pop(true);
     } catch (e) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(friendlyError(e))),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(friendlyError(e))));
     }
   }
 
@@ -186,8 +191,12 @@ class _RequestQuotationPageState extends State<RequestQuotationPage> {
       context,
       title: 'Send quote request',
       builder: (ctx) => Padding(
-        padding:
-            const EdgeInsets.fromLTRB(AppSizes.lg, 0, AppSizes.lg, AppSizes.lg),
+        padding: const EdgeInsets.fromLTRB(
+          AppSizes.lg,
+          0,
+          AppSizes.lg,
+          AppSizes.lg,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,10 +204,10 @@ class _RequestQuotationPageState extends State<RequestQuotationPage> {
             Text(
               '$_itemCount item(s) · ${AppFormat.rupees(_basketValue)} (indicative). '
               'The shop will price it and send back a quotation you can accept.',
-              style: Theme.of(ctx)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: AppColors.muted, height: 1.35),
+              style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
+                color: AppColors.muted,
+                height: 1.35,
+              ),
             ),
             const SizedBox(height: AppSizes.lg),
             TextField(
@@ -246,28 +255,28 @@ class _RequestQuotationPageState extends State<RequestQuotationPage> {
       body: _loading
           ? const _CatalogueSkeleton()
           : _error != null
-              ? _ErrorView(err: _error!, onRetry: _load)
-              : _products.isEmpty
-                  ? const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(AppSizes.xxl),
-                        child: Text(
-                          'This shop has no products to browse yet.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: AppColors.muted),
-                        ),
-                      ),
-                    )
-                  : _CatalogueBody(
-                      categories: _categories,
-                      categoryId: _categoryId,
-                      visible: _visible,
-                      basket: _basket,
-                      onQuery: (v) => setState(() => _query = v),
-                      onCategory: (id) => setState(() => _categoryId = id),
-                      onQty: _setQty,
-                      onView: _showProductPreview,
-                    ),
+          ? _ErrorView(err: _error!, onRetry: _load)
+          : _products.isEmpty
+          ? const Center(
+              child: Padding(
+                padding: EdgeInsets.all(AppSizes.xxl),
+                child: Text(
+                  'This shop has no products to browse yet.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.muted),
+                ),
+              ),
+            )
+          : _CatalogueBody(
+              categories: _categories,
+              categoryId: _categoryId,
+              visible: _visible,
+              basket: _basket,
+              onQuery: (v) => setState(() => _query = v),
+              onCategory: (id) => setState(() => _categoryId = id),
+              onQty: _setQty,
+              onView: _showProductPreview,
+            ),
       bottomNavigationBar: _BottomBar(
         itemCount: _itemCount,
         basketValue: _basketValue,
@@ -293,7 +302,11 @@ class _CatalogueSkeleton extends StatelessWidget {
         // Fake search bar
         Padding(
           padding: const EdgeInsets.fromLTRB(
-              AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.xs),
+            AppSizes.lg,
+            AppSizes.sm,
+            AppSizes.lg,
+            AppSizes.xs,
+          ),
           child: AppShimmerBox(
             width: double.infinity,
             height: 44,
@@ -306,7 +319,9 @@ class _CatalogueSkeleton extends StatelessWidget {
           child: ListView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(
-                horizontal: AppSizes.lg, vertical: AppSizes.sm),
+              horizontal: AppSizes.lg,
+              vertical: AppSizes.sm,
+            ),
             children: [
               AppShimmerBox(width: 56, height: 30, radius: AppSizes.radiusFull),
               const SizedBox(width: AppSizes.sm),
@@ -371,11 +386,7 @@ class _SkeletonProductRow extends StatelessWidget {
           ),
           const SizedBox(width: AppSizes.sm),
           // Add-button placeholder
-          AppShimmerBox(
-            width: 58,
-            height: 32,
-            radius: AppSizes.radiusFull,
-          ),
+          AppShimmerBox(width: 58, height: 32, radius: AppSizes.radiusFull),
         ],
       ),
     );
@@ -431,8 +442,7 @@ class _CatalogueBody extends StatelessWidget {
                   ),
                 )
               : ListView.separated(
-                  padding:
-                      const EdgeInsets.fromLTRB(0, AppSizes.sm, 0, 140),
+                  padding: const EdgeInsets.fromLTRB(0, AppSizes.sm, 0, 140),
                   itemCount: visible.length,
                   separatorBuilder: (_, _) => const AppDivider.flush(),
                   itemBuilder: (_, i) {
@@ -470,7 +480,9 @@ class _CategoryChips extends StatelessWidget {
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(
-            horizontal: AppSizes.lg, vertical: AppSizes.sm),
+          horizontal: AppSizes.lg,
+          vertical: AppSizes.sm,
+        ),
         children: [
           _Chip(
             label: 'All',
@@ -521,24 +533,28 @@ class _Chip extends StatelessWidget {
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(
-              horizontal: AppSizes.md, vertical: AppSizes.sm),
+            horizontal: AppSizes.md,
+            vertical: AppSizes.sm,
+          ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 label,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: fg, fontWeight: FontWeight.w700),
+                  color: fg,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(width: AppSizes.sm),
               Text(
                 '$count',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: selected
-                          ? AppColors.white.withValues(alpha: 0.7)
-                          : AppColors.muted,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  color: selected
+                      ? AppColors.white.withValues(alpha: 0.7)
+                      : AppColors.muted,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
@@ -568,7 +584,9 @@ class _ProductRow extends StatelessWidget {
     // Whole row taps through to the preview; the Add/stepper controls
     // sit on top and capture their own taps.
     return Material(
-      color: selected ? AppColors.brand.withValues(alpha: 0.05) : AppColors.canvas,
+      color: selected
+          ? AppColors.brand.withValues(alpha: 0.05)
+          : AppColors.canvas,
       child: InkWell(
         onTap: onView,
         child: Padding(
@@ -579,67 +597,72 @@ class _ProductRow extends StatelessWidget {
           child: Row(
             children: [
               _Thumb(imageUrl: img),
-          const SizedBox(width: AppSizes.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  product.name,
-                  style: theme.textTheme.bodyLarge
-                      ?.copyWith(fontWeight: FontWeight.w700),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: AppSizes.xs),
-                Row(
+              const SizedBox(width: AppSizes.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      AppFormat.rupees(product.sellingPrice),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColors.black,
-                        fontWeight: FontWeight.w800,
+                      product.name,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    Text(
-                      ' / ${product.unit}',
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: AppColors.muted),
-                    ),
-                    if (product.isDiscounted) ...[
-                      const SizedBox(width: AppSizes.sm),
-                      Text(
-                        AppFormat.rupees(product.mrp),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: AppColors.subtle,
-                          decoration: TextDecoration.lineThrough,
+                    const SizedBox(height: AppSizes.xs),
+                    Row(
+                      children: [
+                        Text(
+                          AppFormat.rupees(product.sellingPrice),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppColors.black,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
-                      ),
-                    ],
+                        Text(
+                          ' / ${product.unit}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppColors.muted,
+                          ),
+                        ),
+                        if (product.isDiscounted) ...[
+                          const SizedBox(width: AppSizes.sm),
+                          Text(
+                            AppFormat.rupees(product.mrp),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: AppColors.subtle,
+                              decoration: TextDecoration.lineThrough,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ],
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(width: AppSizes.sm),
-          if (!selected)
-            OutlinedButton(
-              onPressed: () => onChanged(1),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.brand,
-                side: const BorderSide(color: AppColors.brand),
-                shape: AppShapes.squircle(AppSizes.radiusFull),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSizes.md,
-                  vertical: AppSizes.xs,
-                ),
               ),
-              child: Text('Add',
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.w700)),
-            )
-          else
-            _Stepper(qty: qty, onChanged: onChanged),
+              const SizedBox(width: AppSizes.sm),
+              if (!selected)
+                OutlinedButton(
+                  onPressed: () => onChanged(1),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.brand,
+                    side: const BorderSide(color: AppColors.brand),
+                    shape: AppShapes.squircle(AppSizes.radiusFull),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSizes.md,
+                      vertical: AppSizes.xs,
+                    ),
+                  ),
+                  child: Text(
+                    'Add',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                )
+              else
+                _Stepper(qty: qty, onChanged: onChanged),
             ],
           ),
         ),
@@ -663,7 +686,7 @@ class _Stepper extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           IconButton(
-            icon: const Icon(AppIcons.removeRounded),
+            icon: const AppIcon(AppIcons.removeRounded),
             color: AppColors.brandStrong,
             iconSize: AppSizes.iconMd,
             visualDensity: VisualDensity.compact,
@@ -672,10 +695,12 @@ class _Stepper extends StatelessWidget {
           Text(
             '$qty',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800, color: AppColors.brandStrong),
+              fontWeight: FontWeight.w800,
+              color: AppColors.brandStrong,
+            ),
           ),
           IconButton(
-            icon: const Icon(AppIcons.addRounded),
+            icon: const AppIcon(AppIcons.addRounded),
             color: AppColors.brandStrong,
             iconSize: AppSizes.iconMd,
             visualDensity: VisualDensity.compact,
@@ -705,14 +730,15 @@ class _Thumb extends StatelessWidget {
           shape: AppShapes.squircle(AppSizes.radiusSm),
         ),
         alignment: Alignment.center,
-        child: const Icon(AppIcons.inventory2Outlined,
-            size: AppSizes.iconLg, color: AppColors.brand),
+        child: const AppIcon(
+          AppIcons.inventory2Outlined,
+          size: AppSizes.iconLg,
+          color: AppColors.brand,
+        ),
       );
     }
     return ClipPath(
-      clipper: ShapeBorderClipper(
-        shape: AppShapes.squircle(AppSizes.radiusSm),
-      ),
+      clipper: ShapeBorderClipper(shape: AppShapes.squircle(AppSizes.radiusSm)),
       child: NetworkImageBox(
         url: resolveImageUrl(raw),
         width: size,
@@ -731,13 +757,20 @@ class _SearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.xs),
+        AppSizes.lg,
+        AppSizes.sm,
+        AppSizes.lg,
+        AppSizes.xs,
+      ),
       child: TextField(
         onChanged: onChanged,
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
           hintText: 'Search this shop’s catalogue',
-          prefixIcon: const Icon(AppIcons.searchRounded, size: AppSizes.iconMd),
+          prefixIcon: const AppIcon(
+            AppIcons.searchRounded,
+            size: AppSizes.iconMd,
+          ),
           isDense: true,
           filled: true,
           fillColor: AppColors.white,
@@ -788,14 +821,16 @@ class _BottomBar extends StatelessWidget {
                     Expanded(
                       child: Text(
                         '$itemCount item(s) selected',
-                        style: theme.textTheme.bodyMedium
-                            ?.copyWith(fontWeight: FontWeight.w700),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                     Text(
                       '${AppFormat.rupees(basketValue)} indicative',
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: AppColors.muted),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.muted,
+                      ),
                     ),
                   ],
                 ),
@@ -813,7 +848,8 @@ class _BottomBar extends StatelessWidget {
                   textStyle: const TextStyle(fontWeight: FontWeight.w800),
                 ),
                 child: Text(
-                    hasItems ? 'Request quote' : 'Add items to request a quote'),
+                  hasItems ? 'Request quote' : 'Add items to request a quote',
+                ),
               ),
             ),
           ],
@@ -829,22 +865,24 @@ class _ErrorView extends StatelessWidget {
   final VoidCallback onRetry;
   @override
   Widget build(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSizes.xxl),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(AppIcons.errorOutlineRounded,
-                  color: AppColors.error, size: AppSizes.iconXl),
-              const SizedBox(height: AppSizes.sm),
-              Text(err, textAlign: TextAlign.center),
-              const SizedBox(height: AppSizes.md),
-              FilledButton(
-                  onPressed: onRetry, child: const Text(AppStrings.retry)),
-            ],
+    child: Padding(
+      padding: const EdgeInsets.all(AppSizes.xxl),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const AppIcon(
+            AppIcons.errorOutlineRounded,
+            color: AppColors.error,
+            size: AppSizes.iconXl,
           ),
-        ),
-      );
+          const SizedBox(height: AppSizes.sm),
+          Text(err, textAlign: TextAlign.center),
+          const SizedBox(height: AppSizes.md),
+          FilledButton(onPressed: onRetry, child: const Text(AppStrings.retry)),
+        ],
+      ),
+    ),
+  );
 }
 
 /// In-context product preview opened from a catalogue row. Shows an
@@ -880,9 +918,9 @@ class _ProductPreviewSheetState extends State<_ProductPreviewSheet> {
 
   Future<void> _load() async {
     try {
-      final d = await context
-          .read<MarketplaceRemoteDataSource>()
-          .product(widget.base.id);
+      final d = await context.read<MarketplaceRemoteDataSource>().product(
+        widget.base.id,
+      );
       if (mounted) {
         setState(() {
           _detail = d;
@@ -910,7 +948,11 @@ class _ProductPreviewSheetState extends State<_ProductPreviewSheet> {
           _Gallery(images: p.images),
           Padding(
             padding: const EdgeInsets.fromLTRB(
-                AppSizes.lg, AppSizes.md, AppSizes.lg, 0),
+              AppSizes.lg,
+              AppSizes.md,
+              AppSizes.lg,
+              0,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -928,8 +970,10 @@ class _ProductPreviewSheetState extends State<_ProductPreviewSheet> {
                   ),
                 Text(
                   p.name,
-                  style: theme.textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w800, height: 1.25),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    height: 1.25,
+                  ),
                 ),
                 const SizedBox(height: AppSizes.sm),
                 Row(
@@ -937,15 +981,19 @@ class _ProductPreviewSheetState extends State<_ProductPreviewSheet> {
                   children: [
                     Text(
                       AppFormat.rupees(p.sellingPrice),
-                      style: theme.textTheme.titleLarge
-                          ?.copyWith(fontWeight: FontWeight.w800),
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                     const SizedBox(width: AppSizes.sm),
                     Padding(
                       padding: const EdgeInsets.only(bottom: AppSizes.xs),
-                      child: Text('/ ${p.unit}',
-                          style: theme.textTheme.bodySmall
-                              ?.copyWith(color: AppColors.muted)),
+                      child: Text(
+                        '/ ${p.unit}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.muted,
+                        ),
+                      ),
                     ),
                     if (p.isDiscounted) ...[
                       const SizedBox(width: AppSizes.sm),
@@ -965,8 +1013,9 @@ class _ProductPreviewSheetState extends State<_ProductPreviewSheet> {
                         child: Text(
                           '${p.discountPct}% off',
                           style: theme.textTheme.bodySmall?.copyWith(
-                              color: AppColors.brandStrong,
-                              fontWeight: FontWeight.w800),
+                            color: AppColors.brandStrong,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ),
                     ],
@@ -975,16 +1024,22 @@ class _ProductPreviewSheetState extends State<_ProductPreviewSheet> {
                 if (_loading)
                   Padding(
                     padding: const EdgeInsets.only(top: AppSizes.md),
-                    child: Row(children: [
-                      const SizedBox(
+                    child: Row(
+                      children: [
+                        const SizedBox(
                           width: AppSizes.iconSm,
                           height: AppSizes.iconSm,
-                          child: CircularProgressIndicator(strokeWidth: 2)),
-                      const SizedBox(width: AppSizes.sm),
-                      Text('Loading details…',
-                          style: theme.textTheme.bodySmall
-                              ?.copyWith(color: AppColors.muted)),
-                    ]),
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        const SizedBox(width: AppSizes.sm),
+                        Text(
+                          'Loading details…',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppColors.muted,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 if (p.highlights.isNotEmpty) ...[
                   const SizedBox(height: AppSizes.md),
@@ -996,14 +1051,22 @@ class _ProductPreviewSheetState extends State<_ProductPreviewSheet> {
                         children: [
                           const Padding(
                             padding: EdgeInsets.only(
-                                top: AppSizes.xs, right: AppSizes.sm),
-                            child: Icon(AppIcons.checkCircleRounded,
-                                size: AppSizes.iconSm, color: AppColors.brand),
+                              top: AppSizes.xs,
+                              right: AppSizes.sm,
+                            ),
+                            child: AppIcon(
+                              AppIcons.checkCircleRounded,
+                              size: AppSizes.iconSm,
+                              color: AppColors.brand,
+                            ),
                           ),
                           Expanded(
-                            child: Text(h,
-                                style: theme.textTheme.bodySmall
-                                    ?.copyWith(height: 1.35)),
+                            child: Text(
+                              h,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                height: 1.35,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -1014,8 +1077,10 @@ class _ProductPreviewSheetState extends State<_ProductPreviewSheet> {
                   const SizedBox(height: AppSizes.md),
                   Text(
                     p.description!.trim(),
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: AppColors.muted, height: 1.5),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.muted,
+                      height: 1.5,
+                    ),
                   ),
                 ],
               ],
@@ -1031,7 +1096,9 @@ class _ProductPreviewSheetState extends State<_ProductPreviewSheet> {
                       style: FilledButton.styleFrom(
                         backgroundColor: AppColors.brand,
                         foregroundColor: AppColors.white,
-                        padding: const EdgeInsets.symmetric(vertical: AppSizes.lg),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: AppSizes.lg,
+                        ),
                         shape: AppShapes.squircle(AppSizes.radiusMd),
                         textStyle: const TextStyle(fontWeight: FontWeight.w800),
                       ),
@@ -1045,7 +1112,9 @@ class _ProductPreviewSheetState extends State<_ProductPreviewSheet> {
                       Text(
                         '$_qty in your request',
                         style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w700, color: AppColors.muted),
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.muted,
+                        ),
                       ),
                     ],
                   ),
@@ -1084,8 +1153,11 @@ class _GalleryState extends State<_Gallery> {
         height: 200,
         color: AppColors.heroPanel,
         alignment: Alignment.center,
-        child: const Icon(AppIcons.inventory2Outlined,
-            size: AppSizes.iconHuge, color: AppColors.brand),
+        child: const AppIcon(
+          AppIcons.inventory2Outlined,
+          size: AppSizes.iconHuge,
+          color: AppColors.brand,
+        ),
       );
     }
     return Column(

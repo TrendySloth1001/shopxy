@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 enum AppStatusTone { neutral, success, warning, error, info }
 
@@ -31,7 +33,7 @@ class AppStatusBadge extends StatelessWidget {
   final String label;
   final AppStatusTone tone;
   final AppStatusWeight weight;
-  final IconData? icon;
+  final AppIconData? icon;
   final bool dense;
 
   Color get _color {
@@ -100,7 +102,7 @@ class AppStatusBadge extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: AppSizes.iconSm - 2, color: fg),
+            AppIcon(icon, size: AppSizes.iconSm - 2, color: fg),
             const SizedBox(width: AppSizes.xs),
           ],
           Text(

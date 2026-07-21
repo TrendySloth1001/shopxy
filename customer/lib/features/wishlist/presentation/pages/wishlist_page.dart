@@ -14,6 +14,7 @@ import 'package:shopxy_customer/shared/widgets/app_button.dart';
 import 'package:shopxy_customer/shared/widgets/app_price_text.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Saved-for-later list. Pushed from the Home page's "Saved" tile and
 /// from the profile page's "Wishlist" entry. Empty state guides the
@@ -63,8 +64,7 @@ class _Body extends StatelessWidget {
           vertical: AppSizes.md,
         ),
         itemCount: 5,
-        separatorBuilder: (_, index) =>
-            const SizedBox(height: AppSizes.md),
+        separatorBuilder: (_, index) => const SizedBox(height: AppSizes.md),
         itemBuilder: (_, index) => const _SkeletonRow(),
       );
     }
@@ -104,9 +104,7 @@ class _Row extends StatelessWidget {
       child: InkWell(
         onTap: () => Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (_) => ProductDetailPage(productId: p.id),
-          ),
+          MaterialPageRoute(builder: (_) => ProductDetailPage(productId: p.id)),
         ),
         customBorder: shape,
         child: Padding(
@@ -208,7 +206,7 @@ class _EmptyState extends StatelessWidget {
             color: AppColors.accentRoseSoft,
             shape: AppShapes.squircle(AppSizes.radiusLg),
           ),
-          child: const Icon(
+          child: const AppIcon(
             AppIcons.favoriteRounded,
             size: AppSizes.iconXl,
             color: AppColors.accentRose,
@@ -236,8 +234,9 @@ class _EmptyState extends StatelessWidget {
             label: 'Browse products',
             icon: AppIcons.gridViewRounded,
             onPressed: () {
-              CustomerShellScope.of(context)
-                  ?.select(CustomerShellTab.home.index);
+              CustomerShellScope.of(
+                context,
+              )?.select(CustomerShellTab.home.index);
               Navigator.maybePop(context);
             },
           ),
@@ -261,7 +260,7 @@ class _ErrorBlock extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            const AppIcon(
               AppIcons.errorOutlineRounded,
               size: AppSizes.iconHuge,
               color: AppColors.error,

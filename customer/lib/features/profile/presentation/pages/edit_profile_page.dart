@@ -17,6 +17,7 @@ import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/shared/widgets/app_text_field.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Lets the user change their display name and reach the change-password
 /// flow. Email stays read-only — backend doesn't expose an email-change
@@ -65,21 +66,25 @@ class _EditProfilePageState extends State<EditProfilePage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(AppIcons.cameraAltOutlined),
+              leading: const AppIcon(AppIcons.cameraAltOutlined),
               title: const Text('Take a photo'),
               onTap: () => Navigator.of(ctx).pop(ImageSource.camera),
             ),
             ListTile(
-              leading: const Icon(AppIcons.photoLibraryOutlined),
+              leading: const AppIcon(AppIcons.photoLibraryOutlined),
               title: const Text('Pick from gallery'),
               onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
             ),
             if (context.read<AuthProvider>().user?.avatarUrl != null)
               ListTile(
-                leading: const Icon(AppIcons.deleteOutline,
-                    color: AppColors.error),
-                title: const Text('Remove photo',
-                    style: TextStyle(color: AppColors.error)),
+                leading: const AppIcon(
+                  AppIcons.deleteOutline,
+                  color: AppColors.error,
+                ),
+                title: const Text(
+                  'Remove photo',
+                  style: TextStyle(color: AppColors.error),
+                ),
                 onTap: () => Navigator.of(ctx).pop(null),
               ),
           ],
@@ -108,9 +113,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
       _error = null;
     });
     try {
-      final url = await context
-          .read<AvatarRemoteDataSource>()
-          .upload(File(picked.path));
+      final url = await context.read<AvatarRemoteDataSource>().upload(
+        File(picked.path),
+      );
       if (!mounted) return;
       await context.read<AuthProvider>().updateAvatar(url);
       if (!mounted) return;
@@ -152,8 +157,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
     // Loose-validate the phone: empty (clear) or +country & digits is OK.
     if (trimmedPhone.isNotEmpty &&
         !RegExp(r'^\+?[0-9\s\-]{7,20}$').hasMatch(trimmedPhone)) {
-      setState(() => _error =
-          'Phone number should be 7–15 digits with an optional + prefix.');
+      setState(
+        () => _error =
+            'Phone number should be 7–15 digits with an optional + prefix.',
+      );
       return;
     }
     setState(() {
@@ -195,98 +202,93 @@ class _EditProfilePageState extends State<EditProfilePage> {
       appBar: const AppAppBar(title: 'Edit profile'),
       body: SafeArea(
         child: ListView(
-            padding: const EdgeInsets.all(AppSizes.lg),
-            children: [
-              Center(
-                child: Stack(
-                  children: [
-                    ProfileAvatar(
-                      name: user?.name ?? '',
-                      avatarUrl: user?.avatarUrl,
-                      size: 96,
-                      borderColor: AppColors.canvas,
-                    ),
-                    Positioned(
-                      right: 0,
-                      bottom: 0,
-                      child: Material(
-                        color: AppColors.brand,
-                        shape: const CircleBorder(),
-                        elevation: 1,
-                        child: InkWell(
-                          customBorder: const CircleBorder(),
-                          onTap: _uploadingAvatar ? null : _changePhoto,
-                          child: Padding(
-                            padding: const EdgeInsets.all(AppSizes.sm),
-                            child: _uploadingAvatar
-                                ? const SizedBox(
-                                    width: AppSizes.iconSm,
-                                    height: AppSizes.iconSm,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: AppColors.white,
-                                    ),
-                                  )
-                                : const Icon(
-                                    AppIcons.cameraAltOutlined,
+          padding: const EdgeInsets.all(AppSizes.lg),
+          children: [
+            Center(
+              child: Stack(
+                children: [
+                  ProfileAvatar(
+                    name: user?.name ?? '',
+                    avatarUrl: user?.avatarUrl,
+                    size: 96,
+                    borderColor: AppColors.canvas,
+                  ),
+                  Positioned(
+                    right: 0,
+                    bottom: 0,
+                    child: Material(
+                      color: AppColors.brand,
+                      shape: const CircleBorder(),
+                      elevation: 1,
+                      child: InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: _uploadingAvatar ? null : _changePhoto,
+                        child: Padding(
+                          padding: const EdgeInsets.all(AppSizes.sm),
+                          child: _uploadingAvatar
+                              ? const SizedBox(
+                                  width: AppSizes.iconSm,
+                                  height: AppSizes.iconSm,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
                                     color: AppColors.white,
-                                    size: AppSizes.iconSm,
                                   ),
-                          ),
+                                )
+                              : const AppIcon(
+                                  AppIcons.cameraAltOutlined,
+                                  color: AppColors.white,
+                                  size: AppSizes.iconSm,
+                                ),
                         ),
                       ),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSizes.xl),
-              AppTextField(
-                controller: _name,
-                label: AppStrings.fullName,
-                textCapitalization: TextCapitalization.words,
-              ),
-              const SizedBox(height: AppSizes.lg),
-              AppTextField(
-                controller: _email,
-                label: AppStrings.email,
-                enabled: false,
-                helper: 'Contact support to change your email.',
-              ),
-              const SizedBox(height: AppSizes.lg),
-              AppTextField(
-                controller: _phone,
-                label: 'Phone number',
-                helper:
-                    'Used for delivery updates. Include country code, '
-                    'e.g. +91 98765 43210.',
-                keyboardType: TextInputType.phone,
-              ),
-              if (_error != null) ...[
-                const SizedBox(height: AppSizes.md),
-                Text(
-                  _error!,
-                  style: const TextStyle(color: AppColors.error),
-                ),
-              ],
-              const SizedBox(height: AppSizes.xl),
-              AppButton.primary(
-                label: 'Save',
-                onPressed: _saving ? null : _save,
-                isLoading: _saving,
-              ),
-              const SizedBox(height: AppSizes.lg),
-              const Divider(color: AppColors.hairline),
-              const SizedBox(height: AppSizes.md),
-              AppButton.secondary(
-                label: AppStrings.changePassword,
-                icon: AppIcons.lockOutlineRounded,
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const ChangePasswordPage(),
                   ),
-                ),
+                ],
               ),
+            ),
+            const SizedBox(height: AppSizes.xl),
+            AppTextField(
+              controller: _name,
+              label: AppStrings.fullName,
+              textCapitalization: TextCapitalization.words,
+            ),
+            const SizedBox(height: AppSizes.lg),
+            AppTextField(
+              controller: _email,
+              label: AppStrings.email,
+              enabled: false,
+              helper: 'Contact support to change your email.',
+            ),
+            const SizedBox(height: AppSizes.lg),
+            AppTextField(
+              controller: _phone,
+              label: 'Phone number',
+              helper:
+                  'Used for delivery updates. Include country code, '
+                  'e.g. +91 98765 43210.',
+              keyboardType: TextInputType.phone,
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: AppSizes.md),
+              Text(_error!, style: const TextStyle(color: AppColors.error)),
             ],
+            const SizedBox(height: AppSizes.xl),
+            AppButton.primary(
+              label: 'Save',
+              onPressed: _saving ? null : _save,
+              isLoading: _saving,
+            ),
+            const SizedBox(height: AppSizes.lg),
+            const Divider(color: AppColors.hairline),
+            const SizedBox(height: AppSizes.md),
+            AppButton.secondary(
+              label: AppStrings.changePassword,
+              icon: AppIcons.lockOutlineRounded,
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ChangePasswordPage()),
+              ),
+            ),
+          ],
         ),
       ),
     );

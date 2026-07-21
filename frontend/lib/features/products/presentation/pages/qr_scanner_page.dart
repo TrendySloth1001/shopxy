@@ -12,6 +12,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 enum _MissingProductAction { add, retry }
 
@@ -110,7 +111,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
                 ),
               ),
               const SizedBox(height: AppSizes.xl),
-              Icon(
+              AppIcon(
                 AppIcons.qrCodeRounded,
                 size: AppSizes.iconHuge,
                 color: AppColors.black,
@@ -127,7 +128,9 @@ class _QrScannerPageState extends State<QrScannerPage> {
               Text(
                 l10n.productsNotFoundHint,
                 textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppColors.muted,
+                ),
               ),
               const SizedBox(height: AppSizes.md),
               Center(
@@ -180,55 +183,55 @@ class _QrScannerPageState extends State<QrScannerPage> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       backgroundColor: Colors.black,
-      appBar: FloatingAppBar(
-        title: l10n.productsScanQr,
-      ),
+      appBar: FloatingAppBar(title: l10n.productsScanQr),
       body: SafeArea(
         top: true,
         bottom: false,
         child: Stack(
-        children: [
-          MobileScanner(controller: _controller, onDetect: _onDetect),
-          Center(
-            child: Container(
-              width: 250,
-              height: 250,
-              decoration: ShapeDecoration(
-                shape: AppShapes.squircle(
-                  AppSizes.radiusLg,
-                  side: BorderSide(color: Colors.white, width: 3),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: AppSizes.huge,
-            left: 0,
-            right: 0,
-            child: Center(
+          children: [
+            MobileScanner(controller: _controller, onDetect: _onDetect),
+            Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSizes.xl,
-                  vertical: AppSizes.md,
-                ),
+                width: 250,
+                height: 250,
                 decoration: ShapeDecoration(
-                  color: Colors.black,
                   shape: AppShapes.squircle(
-                    AppSizes.radiusFull,
-                    side: BorderSide(color: Colors.white, width: 1),
-                  ),
-                ),
-                child: Text(
-                  _isProcessing ? l10n.productsLoading : l10n.productsScanHint,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: Colors.white,
+                    AppSizes.radiusLg,
+                    side: BorderSide(color: Colors.white, width: 3),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
-      ),
+            Positioned(
+              bottom: AppSizes.huge,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSizes.xl,
+                    vertical: AppSizes.md,
+                  ),
+                  decoration: ShapeDecoration(
+                    color: Colors.black,
+                    shape: AppShapes.squircle(
+                      AppSizes.radiusFull,
+                      side: BorderSide(color: Colors.white, width: 1),
+                    ),
+                  ),
+                  child: Text(
+                    _isProcessing
+                        ? l10n.productsLoading
+                        : l10n.productsScanHint,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

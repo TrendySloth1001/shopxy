@@ -8,6 +8,7 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/widgets/app_bottom_sheet.dart';
 import 'package:shopxy_customer/shared/widgets/app_button.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Single sign-in gate used by every guest-blocked action. The contract:
 ///
@@ -86,10 +87,9 @@ class SkipToGuestButton extends StatelessWidget {
           horizontal: AppSizes.md,
           vertical: AppSizes.xs,
         ),
-        textStyle: Theme.of(context)
-            .textTheme
-            .bodyMedium
-            ?.copyWith(fontWeight: FontWeight.w700),
+        textStyle: Theme.of(
+          context,
+        ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
       ),
       child: const Text('Skip'),
     );
@@ -167,7 +167,7 @@ Future<bool?> _showSkipSheet(BuildContext context) {
 
 class _SkipBullet extends StatelessWidget {
   const _SkipBullet({required this.icon, required this.text});
-  final IconData icon;
+  final AppIconData icon;
   final String text;
 
   @override
@@ -177,15 +177,15 @@ class _SkipBullet extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: AppSizes.iconMd, color: AppColors.muted),
+          AppIcon(icon, size: AppSizes.iconMd, color: AppColors.muted),
           const SizedBox(width: AppSizes.sm),
           Expanded(
             child: Text(
               text,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.black,
-                    height: 1.35,
-                  ),
+                color: AppColors.black,
+                height: 1.35,
+              ),
             ),
           ),
         ],
@@ -228,15 +228,13 @@ Future<_SignInChoice?> _showSignInSheet(
               label: 'Sign in',
               icon: AppIcons.loginRounded,
               fullWidth: true,
-              onPressed: () =>
-                  Navigator.of(ctx).pop(_SignInChoice.login),
+              onPressed: () => Navigator.of(ctx).pop(_SignInChoice.login),
             ),
             const SizedBox(height: AppSizes.sm),
             AppButton.secondary(
               label: 'Create account',
               fullWidth: true,
-              onPressed: () =>
-                  Navigator.of(ctx).pop(_SignInChoice.register),
+              onPressed: () => Navigator.of(ctx).pop(_SignInChoice.register),
             ),
           ],
         ),

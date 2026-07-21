@@ -11,6 +11,7 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Merchant-facing read-only listing of reviews for one of their
 /// products. Reply / moderation deferred to a later phase.
@@ -58,7 +59,10 @@ class _ProductReviewsPageState extends State<ProductReviewsPage> {
       }
     });
     try {
-      final page = await _ds.list(widget.productId, cursor: more ? _nextCursor : null);
+      final page = await _ds.list(
+        widget.productId,
+        cursor: more ? _nextCursor : null,
+      );
       if (!mounted) return;
       setState(() {
         if (!more) _reviews.clear();
@@ -87,62 +91,63 @@ class _ProductReviewsPageState extends State<ProductReviewsPage> {
       body: _loading && _reviews.isEmpty
           ? const _ReviewsPageSkeleton()
           : _error != null && _reviews.isEmpty
-              ? SafeArea(
-                  top: true,
-                  bottom: false,
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppSizes.xl),
-                      child: Text(_error!, textAlign: TextAlign.center),
-                    ),
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: ListView.separated(
-                    padding: EdgeInsets.only(
-                        top: FloatingAppBar.contentTopInset(context),
-                        bottom: AppSizes.huge),
-                    itemCount: _reviews.length + 2,
-                    separatorBuilder: (_, _) => const Divider(height: 0),
-                    itemBuilder: (context, i) {
-                      if (i == 0) {
-                        return _Summary(
-                          avg: widget.ratingAvg,
-                          count: widget.ratingCount,
-                        );
-                      }
-                      if (i == _reviews.length + 1) {
-                        if (_nextCursor != null) {
-                          return Padding(
-                            padding: const EdgeInsets.all(AppSizes.lg),
-                            child: Center(
-                              child: _loadingMore
-                                  ? const CircularProgressIndicator()
-                                  : TextButton(
-                                      onPressed: () => _load(more: true),
-                                      child: Text(l10n.reviewsLoadMore),
-                                    ),
-                            ),
-                          );
-                        }
-                        if (_reviews.isEmpty) {
-                          return Padding(
-                            padding: const EdgeInsets.all(AppSizes.xl),
-                            child: Center(
-                              child: Text(
-                                l10n.reviewsEmpty,
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          );
-                        }
-                        return const SizedBox(height: AppSizes.lg);
-                      }
-                      return _ReviewTile(review: _reviews[i - 1]);
-                    },
-                  ),
+          ? SafeArea(
+              top: true,
+              bottom: false,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSizes.xl),
+                  child: Text(_error!, textAlign: TextAlign.center),
                 ),
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: ListView.separated(
+                padding: EdgeInsets.only(
+                  top: FloatingAppBar.contentTopInset(context),
+                  bottom: AppSizes.huge,
+                ),
+                itemCount: _reviews.length + 2,
+                separatorBuilder: (_, _) => const Divider(height: 0),
+                itemBuilder: (context, i) {
+                  if (i == 0) {
+                    return _Summary(
+                      avg: widget.ratingAvg,
+                      count: widget.ratingCount,
+                    );
+                  }
+                  if (i == _reviews.length + 1) {
+                    if (_nextCursor != null) {
+                      return Padding(
+                        padding: const EdgeInsets.all(AppSizes.lg),
+                        child: Center(
+                          child: _loadingMore
+                              ? const CircularProgressIndicator()
+                              : TextButton(
+                                  onPressed: () => _load(more: true),
+                                  child: Text(l10n.reviewsLoadMore),
+                                ),
+                        ),
+                      );
+                    }
+                    if (_reviews.isEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.all(AppSizes.xl),
+                        child: Center(
+                          child: Text(
+                            l10n.reviewsEmpty,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      );
+                    }
+                    return const SizedBox(height: AppSizes.lg);
+                  }
+                  return _ReviewTile(review: _reviews[i - 1]);
+                },
+              ),
+            ),
     );
   }
 }
@@ -175,12 +180,12 @@ class _Summary extends StatelessWidget {
                 Text(
                   avg == null ? '—' : avg!.toStringAsFixed(1),
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: AppColors.brandStrong,
-                        fontWeight: FontWeight.w800,
-                      ),
+                    color: AppColors.brandStrong,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const SizedBox(width: AppSizes.xs),
-                Icon(AppIcons.starRounded, color: AppColors.brandStrong),
+                AppIcon(AppIcons.starRounded, color: AppColors.brandStrong),
               ],
             ),
           ),
@@ -190,8 +195,8 @@ class _Summary extends StatelessWidget {
               count == 0
                   ? l10n.reviewsNoneYet
                   : count == 1
-                      ? l10n.reviewsCountSingular
-                      : l10n.reviewsCountPlural('$count'),
+                  ? l10n.reviewsCountSingular
+                  : l10n.reviewsCountPlural('$count'),
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
@@ -218,10 +223,14 @@ class _ReviewTile extends StatelessWidget {
             children: [
               Row(
                 children: List.generate(5, (i) {
-                  return Icon(
-                    i < review.rating ? AppIcons.starRounded : AppIcons.starOutlineRounded,
+                  return AppIcon(
+                    i < review.rating
+                        ? AppIcons.starRounded
+                        : AppIcons.starOutlineRounded,
                     size: AppSizes.iconSm,
-                    color: i < review.rating ? AppColors.brand : AppColors.disabled,
+                    color: i < review.rating
+                        ? AppColors.brand
+                        : AppColors.disabled,
                   );
                 }),
               ),
@@ -234,25 +243,19 @@ class _ReviewTile extends StatelessWidget {
               ),
               Text(
                 df.format(review.createdAt),
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: AppColors.muted,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.labelSmall?.copyWith(color: AppColors.muted),
               ),
             ],
           ),
           if (review.title != null && review.title!.isNotEmpty) ...[
             const SizedBox(height: AppSizes.xs),
-            Text(
-              review.title!,
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
+            Text(review.title!, style: Theme.of(context).textTheme.titleSmall),
           ],
           if (review.body != null && review.body!.isNotEmpty) ...[
             const SizedBox(height: AppSizes.xs),
-            Text(
-              review.body!,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
+            Text(review.body!, style: Theme.of(context).textTheme.bodyMedium),
           ],
         ],
       ),
@@ -298,16 +301,10 @@ class _SummarySkeleton extends StatelessWidget {
       child: Row(
         children: [
           // Rating badge placeholder — matches the squircle container in _Summary.
-          AppShimmerBox(
-            width: 64,
-            height: 40,
-            radius: AppSizes.radiusSm,
-          ),
+          AppShimmerBox(width: 64, height: 40, radius: AppSizes.radiusSm),
           const SizedBox(width: AppSizes.md),
           // Review-count text line.
-          const Expanded(
-            child: AppShimmerLine(widthFactor: 0.45, height: 14),
-          ),
+          const Expanded(child: AppShimmerLine(widthFactor: 0.45, height: 14)),
         ],
       ),
     );

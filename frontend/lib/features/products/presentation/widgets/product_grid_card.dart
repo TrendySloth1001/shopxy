@@ -9,6 +9,7 @@ import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Product card for the masonry grid on the products screen. Carries the
 /// same signals as the list row — image, name, SKU·HSN·category, optional
@@ -46,25 +47,25 @@ class ProductGridCard extends StatelessWidget {
   bool get _isAboveMrp =>
       product.mrp > 0 && product.sellingPrice > product.mrp + 0.005;
 
-  ({Color fg, Color bg, IconData icon}) _stockPalette() {
+  ({Color fg, Color bg, AppIconData icon}) _stockPalette() {
     if (product.isOutOfStock) {
       return (
         fg: AppColors.error,
         bg: AppColors.errorSoft,
-        icon: AppIcons.errorOutlineRounded
+        icon: AppIcons.errorOutlineRounded,
       );
     }
     if (product.isLowStock) {
       return (
         fg: AppColors.warning,
         bg: AppColors.warningSoft,
-        icon: AppIcons.warningAmberRounded
+        icon: AppIcons.warningAmberRounded,
       );
     }
     return (
       fg: AppColors.success,
       bg: AppColors.successSoft,
-      icon: AppIcons.checkCircleOutlineRounded
+      icon: AppIcons.checkCircleOutlineRounded,
     );
   }
 
@@ -78,8 +79,9 @@ class ProductGridCard extends StatelessWidget {
     return '$qty ${product.unit} ${l10n.productsInStockSuffix}';
   }
 
-  ({IconData icon, String label, Color fg, Color bg})? _activityHint(
-      AppLocalizations l10n) {
+  ({AppIconData icon, String label, Color fg, Color bg})? _activityHint(
+    AppLocalizations l10n,
+  ) {
     final lastIn = product.lastStockInAt;
     final lastOut = product.lastStockOutAt;
     if (product.isOutOfStock && lastOut != null) {
@@ -288,17 +290,19 @@ class ProductGridCard extends StatelessWidget {
     final spans = <InlineSpan>[TextSpan(text: leading.toString())];
     if (showCategory && product.category != null) {
       spans.add(const TextSpan(text: ' · '));
-      spans.add(WidgetSpan(
-        alignment: PlaceholderAlignment.middle,
-        child: Padding(
-          padding: const EdgeInsets.only(right: 3),
-          child: Icon(
-            resolveCategoryIcon(product.category!.iconName),
-            size: 12,
-            color: AppColors.muted,
+      spans.add(
+        WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: Padding(
+            padding: const EdgeInsets.only(right: 3),
+            child: AppIcon(
+              resolveCategoryIcon(product.category!.iconName),
+              size: 12,
+              color: AppColors.muted,
+            ),
           ),
         ),
-      ));
+      );
       spans.add(TextSpan(text: product.category!.name));
     }
     return RichText(
@@ -330,33 +334,33 @@ class _ProductImage extends StatelessWidget {
   final Product product;
 
   static List<(Color, Color)> get _accents => [
-        (AppColors.brandSoft, AppColors.brandStrong),
-        (AppColors.accentTealSoft, AppColors.accentTeal),
-        (AppColors.accentIndigoSoft, AppColors.accentIndigo),
-        (AppColors.accentAmberSoft, AppColors.accentAmber),
-        (AppColors.accentRoseSoft, AppColors.accentRose),
-        (AppColors.successSoft, AppColors.success),
-      ];
+    (AppColors.brandSoft, AppColors.brandStrong),
+    (AppColors.accentTealSoft, AppColors.accentTeal),
+    (AppColors.accentIndigoSoft, AppColors.accentIndigo),
+    (AppColors.accentAmberSoft, AppColors.accentAmber),
+    (AppColors.accentRoseSoft, AppColors.accentRose),
+    (AppColors.successSoft, AppColors.success),
+  ];
 
   @override
   Widget build(BuildContext context) {
     final raw = product.primaryImageUrl ?? '';
     final (bg, fg) = _accents[product.id % _accents.length];
     Widget monogram() => Container(
-          color: AppColors.tileBg(bg),
-          alignment: Alignment.center,
-          child: Text(
-            product.name.trim().isEmpty
-                ? '?'
-                : product.name.trim()[0].toUpperCase(),
-            style: TextStyle(
-              color: fg,
-              fontWeight: FontWeight.w800,
-              fontSize: 40,
-              letterSpacing: -0.5,
-            ),
-          ),
-        );
+      color: AppColors.tileBg(bg),
+      alignment: Alignment.center,
+      child: Text(
+        product.name.trim().isEmpty
+            ? '?'
+            : product.name.trim()[0].toUpperCase(),
+        style: TextStyle(
+          color: fg,
+          fontWeight: FontWeight.w800,
+          fontSize: 40,
+          letterSpacing: -0.5,
+        ),
+      ),
+    );
     if (raw.isEmpty) return monogram();
     return CachedNetworkImage(
       imageUrl: resolveImageUrl(raw),
@@ -379,7 +383,7 @@ class _Pill extends StatelessWidget {
   final String label;
   final Color fg;
   final Color bg;
-  final IconData? icon;
+  final AppIconData? icon;
   final bool bold;
 
   @override
@@ -395,7 +399,7 @@ class _Pill extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 12, color: fg),
+            AppIcon(icon, size: 12, color: fg),
             const SizedBox(width: 3),
           ],
           Flexible(

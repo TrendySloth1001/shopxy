@@ -45,6 +45,7 @@ import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 class ProductDetailPage extends StatefulWidget {
   const ProductDetailPage({super.key, required this.productId});
@@ -190,8 +191,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     };
 
     final Map<int?, List<ProductCustomFieldValue>> bySection = {};
-    for (final v in _customFieldValues
-        .where((v) => v.value.trim().isNotEmpty)) {
+    for (final v in _customFieldValues.where(
+      (v) => v.value.trim().isNotEmpty,
+    )) {
       bySection.putIfAbsent(v.definition.sectionId, () => []).add(v);
     }
     if (bySection.isEmpty) return const [];
@@ -206,24 +208,25 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     // then-name) so the detail page matches the form's grouping.
     final orderedSectionIds = [
       for (final s in cf.sections) s.id,
-      ...bySection.keys.where((id) => id != null && !sectionNames.containsKey(id)),
+      ...bySection.keys.where(
+        (id) => id != null && !sectionNames.containsKey(id),
+      ),
     ];
     for (final sectionId in orderedSectionIds) {
       final values = bySection[sectionId];
       if (values == null || values.isEmpty) continue;
-      widgets.add(_buildSection(
-        sectionNames[sectionId] ?? l10n.productsSpecifications,
-        values,
-      ));
+      widgets.add(
+        _buildSection(
+          sectionNames[sectionId] ?? l10n.productsSpecifications,
+          values,
+        ),
+      );
       widgets.add(const SizedBox(height: AppSizes.lg));
     }
     return widgets;
   }
 
-  Widget _buildSection(
-    String title,
-    List<ProductCustomFieldValue> values,
-  ) {
+  Widget _buildSection(String title, List<ProductCustomFieldValue> values) {
     return _DetailSection(
       title: title.toUpperCase(),
       rows: values
@@ -236,7 +239,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               // rule for any TEXT/DROPDOWN value that's long enough
               // to need wrapping — a single short word like "DC" can
               // stay inline on the right.
-              stack: v.definition.type == CustomFieldType.LONG_TEXT ||
+              stack:
+                  v.definition.type == CustomFieldType.LONG_TEXT ||
                   v.value.length > 40 ||
                   v.value.contains('\n'),
             ),
@@ -416,7 +420,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               const SizedBox(height: AppSizes.xs),
               Text(
                 _product!.name,
-                style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.muted,
+                ),
               ),
             ],
           ),
@@ -464,7 +470,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${l10n.productsCouldntUpdateVisibility}: ${friendlyError(e)}')),
+        SnackBar(
+          content: Text(
+            '${l10n.productsCouldntUpdateVisibility}: ${friendlyError(e)}',
+          ),
+        ),
       );
     } finally {
       if (mounted) setState(() => _isTogglingPublish = false);
@@ -484,9 +494,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     if (confirmed && mounted) {
       await context.read<ProductsProvider>().deleteProduct(widget.productId);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.productsDeleted)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.productsDeleted)));
         Navigator.pop(context);
       }
     }
@@ -521,11 +531,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     }
 
     final p = _product!;
-    final (canWriteProducts, canStock) =
-        context.select<AuthProvider, (bool, bool)>((a) {
-      final u = a.user;
-      return (u?.canWriteProducts ?? false, u?.canWriteStock ?? false);
-    });
+    final (canWriteProducts, canStock) = context
+        .select<AuthProvider, (bool, bool)>((a) {
+          final u = a.user;
+          return (u?.canWriteProducts ?? false, u?.canWriteStock ?? false);
+        });
 
     return Scaffold(
       appBar: FloatingAppBar(
@@ -533,12 +543,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         actions: [
           IconButton(
             onPressed: _shareProduct,
-            icon: const Icon(AppIcons.iosShareRounded),
+            icon: const AppIcon(AppIcons.iosShareRounded),
             tooltip: l10n.productsShare,
           ),
           IconButton(
             onPressed: _showQrDialog,
-            icon: const Icon(AppIcons.qrCodeRounded),
+            icon: const AppIcon(AppIcons.qrCodeRounded),
             tooltip: l10n.productsGenerateQr,
           ),
           // Edit is a product write — shown locked (greyed + padlock) for
@@ -552,7 +562,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           ),
           if (canWriteProducts)
             PopupMenuButton<String>(
-              icon: const Icon(AppIcons.moreVertRounded),
+              icon: const AppIcon(AppIcons.moreVertRounded),
               itemBuilder: (_) => [
                 PopupMenuItem(
                   value: 'delete',
@@ -633,7 +643,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     onTap: _openLedger,
                     child: Row(
                       children: [
-                        Icon(
+                        AppIcon(
                           AppIcons.receiptLongRounded,
                           color: AppColors.black,
                           size: AppSizes.iconMd,
@@ -645,20 +655,18 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                             children: [
                               Text(
                                 l10n.productsStockLedger,
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(fontWeight: FontWeight.w600),
                               ),
                               Text(
                                 l10n.productsStockLedgerHint,
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: AppColors.muted,
-                                    ),
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(color: AppColors.muted),
                               ),
                             ],
                           ),
                         ),
-                        Icon(
+                        AppIcon(
                           AppIcons.arrowForwardIosRounded,
                           color: AppColors.muted,
                           size: AppSizes.iconSm,
@@ -670,7 +678,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   _DetailSection(
                     title: l10n.productsPricingSection,
                     rows: [
-                      _DetailRow(l10n.productsMrp, currencyFormat.format(p.mrp)),
+                      _DetailRow(
+                        l10n.productsMrp,
+                        currencyFormat.format(p.mrp),
+                      ),
                       _DetailRow(
                         l10n.productsSellingPrice,
                         currencyFormat.format(p.sellingPrice),
@@ -685,7 +696,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                             ? '${_formatRate(p.taxPercent)}% · ${currencyFormat.format(gstFromInclusive(p.sellingPrice, p.taxPercent).gst)}'
                             : l10n.productsNone,
                       ),
-                      _DetailRow(l10n.productsProfitMargin, '${p.margin.toStringAsFixed(1)}%'),
+                      _DetailRow(
+                        l10n.productsProfitMargin,
+                        '${p.margin.toStringAsFixed(1)}%',
+                      ),
                     ],
                   ),
                   if (p.taxPercent > 0) ...[
@@ -749,15 +763,21 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         _DetailRow(l10n.productsCategory, p.category!.name),
                       _DetailRow(
                         l10n.productsCreated,
-                        DateFormat('dd MMM yyyy, hh:mm a').format(p.createdAt.toLocal()),
+                        DateFormat(
+                          'dd MMM yyyy, hh:mm a',
+                        ).format(p.createdAt.toLocal()),
                       ),
                       _DetailRow(
                         l10n.productsLastUpdated,
-                        DateFormat('dd MMM yyyy, hh:mm a').format(p.updatedAt.toLocal()),
+                        DateFormat(
+                          'dd MMM yyyy, hh:mm a',
+                        ).format(p.updatedAt.toLocal()),
                       ),
                       _DetailRow(
                         l10n.productsStatus,
-                        p.isActive ? l10n.productsActive : l10n.productsInactive,
+                        p.isActive
+                            ? l10n.productsActive
+                            : l10n.productsInactive,
                       ),
                     ],
                   ),
@@ -797,11 +817,7 @@ class _ProductDetailSkeleton extends StatelessWidget {
       padding: EdgeInsets.zero,
       children: [
         // ── Carousel placeholder ────────────────────────────────────
-        AppShimmerBox(
-          width: double.infinity,
-          height: 260,
-          radius: 0,
-        ),
+        AppShimmerBox(width: double.infinity, height: 260, radius: 0),
         Padding(
           padding: const EdgeInsets.fromLTRB(
             AppSizes.lg,
@@ -834,11 +850,15 @@ class _ProductDetailSkeleton extends StatelessWidget {
                             children: [
                               // Brand line
                               const AppShimmerLine(
-                                  widthFactor: 0.35, height: 10),
+                                widthFactor: 0.35,
+                                height: 10,
+                              ),
                               const SizedBox(height: 6),
                               // Product name
                               const AppShimmerLine(
-                                  widthFactor: 0.8, height: 16),
+                                widthFactor: 0.8,
+                                height: 16,
+                              ),
                               const SizedBox(height: 6),
                               // Category badge
                               AppShimmerBox(
@@ -856,10 +876,16 @@ class _ProductDetailSkeleton extends StatelessWidget {
                     Row(
                       children: [
                         AppShimmerBox(
-                            width: 70, height: 22, radius: AppSizes.radiusSm),
+                          width: 70,
+                          height: 22,
+                          radius: AppSizes.radiusSm,
+                        ),
                         const SizedBox(width: AppSizes.sm),
                         AppShimmerBox(
-                            width: 100, height: 22, radius: AppSizes.radiusSm),
+                          width: 100,
+                          height: 22,
+                          radius: AppSizes.radiusSm,
+                        ),
                       ],
                     ),
                     const SizedBox(height: AppSizes.md),
@@ -867,10 +893,16 @@ class _ProductDetailSkeleton extends StatelessWidget {
                     Row(
                       children: [
                         AppShimmerBox(
-                            width: 80, height: 24, radius: AppSizes.lg),
+                          width: 80,
+                          height: 24,
+                          radius: AppSizes.lg,
+                        ),
                         const SizedBox(width: AppSizes.sm),
                         AppShimmerBox(
-                            width: 100, height: 24, radius: AppSizes.lg),
+                          width: 100,
+                          height: 24,
+                          radius: AppSizes.lg,
+                        ),
                       ],
                     ),
                   ],
@@ -907,11 +939,7 @@ class _ProductDetailSkeleton extends StatelessWidget {
                     ),
                     const SizedBox(width: AppSizes.md),
                     // Toggle placeholder
-                    AppShimmerBox(
-                      width: 44,
-                      height: 26,
-                      radius: AppSizes.lg,
-                    ),
+                    AppShimmerBox(width: 44, height: 26, radius: AppSizes.lg),
                   ],
                 ),
               ),
@@ -955,8 +983,9 @@ class _ProductDetailSkeleton extends StatelessWidget {
                     for (int i = 0; i < 5; i++) ...[
                       if (i > 0) const AppDivider.flush(),
                       Padding(
-                        padding:
-                            const EdgeInsets.symmetric(vertical: AppSizes.sm),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: AppSizes.sm,
+                        ),
                         child: Row(
                           children: [
                             AppShimmerBox(
@@ -1051,7 +1080,9 @@ class _ProductHeaderCard extends StatelessWidget {
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               AppStatusBadge(
-                label: product.isActive ? l10n.productsActive : l10n.productsInactive,
+                label: product.isActive
+                    ? l10n.productsActive
+                    : l10n.productsInactive,
                 tone: product.isActive
                     ? AppStatusTone.success
                     : AppStatusTone.neutral,
@@ -1081,16 +1112,15 @@ class _ProductHeaderCard extends StatelessWidget {
           // Identifier ribbon — SKU + barcode as tap-to-copy chips so
           // they're one tap away during inventory work (printing
           // labels, looking up a row in invoices, etc).
-          _IdentifierRibbon(
-            sku: product.sku,
-            barcode: product.barcode,
-          ),
+          _IdentifierRibbon(sku: product.sku, barcode: product.barcode),
           if (product.description != null &&
               product.description!.isNotEmpty) ...[
             const SizedBox(height: AppSizes.md),
             Text(
               product.description!,
-              style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: AppColors.muted,
+              ),
             ),
           ],
         ],
@@ -1108,20 +1138,20 @@ class _SystemTagsRow extends StatelessWidget {
   final List<String> tags;
 
   String _label(AppLocalizations l10n, String tag) => switch (tag) {
-        'BESTSELLER' => l10n.productsTagBestseller,
-        'EDITORS_PICK' => l10n.productsTagEditorsPick,
-        'NEW_ARRIVAL' => l10n.productsTagNewArrival,
-        'TRENDING' => l10n.productsTagTrending,
-        _ => tag,
-      };
+    'BESTSELLER' => l10n.productsTagBestseller,
+    'EDITORS_PICK' => l10n.productsTagEditorsPick,
+    'NEW_ARRIVAL' => l10n.productsTagNewArrival,
+    'TRENDING' => l10n.productsTagTrending,
+    _ => tag,
+  };
 
   ({Color bg, Color fg}) _palette(String tag) => switch (tag) {
-        'BESTSELLER' => (bg: AppColors.black, fg: AppColors.white),
-        'EDITORS_PICK' => (bg: AppColors.info, fg: AppColors.white),
-        'NEW_ARRIVAL' => (bg: AppColors.success, fg: AppColors.white),
-        'TRENDING' => (bg: AppColors.accentAmber, fg: AppColors.white),
-        _ => (bg: AppColors.black, fg: AppColors.white),
-      };
+    'BESTSELLER' => (bg: AppColors.black, fg: AppColors.white),
+    'EDITORS_PICK' => (bg: AppColors.info, fg: AppColors.white),
+    'NEW_ARRIVAL' => (bg: AppColors.success, fg: AppColors.white),
+    'TRENDING' => (bg: AppColors.accentAmber, fg: AppColors.white),
+    _ => (bg: AppColors.black, fg: AppColors.white),
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -1134,7 +1164,9 @@ class _SystemTagsRow extends StatelessWidget {
         for (final t in tags)
           Container(
             padding: const EdgeInsets.symmetric(
-                horizontal: AppSizes.sm, vertical: 3),
+              horizontal: AppSizes.sm,
+              vertical: 3,
+            ),
             decoration: ShapeDecoration(
               color: _palette(t).bg,
               shape: AppShapes.squircle(AppSizes.radiusSm),
@@ -1185,12 +1217,10 @@ class _MarketplaceCard extends StatelessWidget {
             width: AppSizes.avatarXs,
             height: AppSizes.avatarXs,
             decoration: ShapeDecoration(
-              color: published
-                  ? AppColors.brandSoft
-                  : AppColors.surfaceTint,
+              color: published ? AppColors.brandSoft : AppColors.surfaceTint,
               shape: AppShapes.squircle(AppSizes.radiusSm),
             ),
-            child: Icon(
+            child: AppIcon(
               published
                   ? AppIcons.storefrontRounded
                   : AppIcons.visibilityOffOutlined,
@@ -1204,16 +1234,20 @@ class _MarketplaceCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  published ? l10n.productsListedTitle : l10n.productsNotListedTitle,
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.w700),
+                  published
+                      ? l10n.productsListedTitle
+                      : l10n.productsNotListedTitle,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 Text(
                   published
                       ? l10n.productsListedHint
                       : l10n.productsNotListedHint,
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: AppColors.muted),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.muted,
+                  ),
                 ),
               ],
             ),
@@ -1302,7 +1336,7 @@ class _PerformanceMetric extends StatelessWidget {
     required this.label,
     required this.value,
   });
-  final IconData icon;
+  final AppIconData icon;
   final String label;
   final String value;
 
@@ -1312,7 +1346,7 @@ class _PerformanceMetric extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 18, color: AppColors.muted),
+        AppIcon(icon, size: 18, color: AppColors.muted),
         const SizedBox(height: 4),
         Text(
           value,
@@ -1393,7 +1427,7 @@ class _LastActivityRow extends StatelessWidget {
     required this.ago,
     this.subtitle,
   });
-  final IconData icon;
+  final AppIconData icon;
   final Color tone;
   final String label;
   final String ago;
@@ -1404,7 +1438,7 @@ class _LastActivityRow extends StatelessWidget {
     final theme = Theme.of(context);
     return Row(
       children: [
-        Icon(icon, size: 18, color: tone),
+        AppIcon(icon, size: 18, color: tone),
         const SizedBox(width: AppSizes.md),
         Expanded(
           child: Column(
@@ -1412,22 +1446,26 @@ class _LastActivityRow extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(fontWeight: FontWeight.w600),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               if (subtitle != null && subtitle!.isNotEmpty)
                 Text(
                   subtitle!,
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: AppColors.muted),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.muted,
+                  ),
                 ),
             ],
           ),
         ),
         Text(
           ago,
-          style: theme.textTheme.bodySmall
-              ?.copyWith(color: AppColors.muted, fontWeight: FontWeight.w600),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: AppColors.muted,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ],
     );
@@ -1467,7 +1505,8 @@ class _VariantsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
-    final active = [...variants]..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    final active = [...variants]
+      ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1482,7 +1521,11 @@ class _VariantsSection extends StatelessWidget {
               if (axes.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(
-                      AppSizes.lg, AppSizes.md, AppSizes.lg, 0),
+                    AppSizes.lg,
+                    AppSizes.md,
+                    AppSizes.lg,
+                    0,
+                  ),
                   child: Wrap(
                     spacing: 6,
                     runSpacing: 4,
@@ -1490,11 +1533,14 @@ class _VariantsSection extends StatelessWidget {
                       for (final a in axes)
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.tileBg(AppColors.brandSoft),
                             borderRadius: AppShapes.squircleRadius(
-                                AppSizes.radiusFull),
+                              AppSizes.radiusFull,
+                            ),
                           ),
                           child: Text(
                             '${a.name}: ${a.values.join(' / ')}',
@@ -1525,56 +1571,64 @@ class _VariantsSection extends StatelessWidget {
                               children: [
                                 if (active[i].isDefault)
                                   Padding(
-                                    padding:
-                                        const EdgeInsets.only(right: AppSizes.sm),
+                                    padding: const EdgeInsets.only(
+                                      right: AppSizes.sm,
+                                    ),
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: AppSizes.xs, vertical: 1),
+                                        horizontal: AppSizes.xs,
+                                        vertical: 1,
+                                      ),
                                       decoration: ShapeDecoration(
                                         color: AppColors.brand,
                                         shape: AppShapes.squircle(
-                                            AppSizes.radiusSm),
+                                          AppSizes.radiusSm,
+                                        ),
                                       ),
                                       child: Text(
                                         l10n.productsDefaultBadge,
                                         style: theme.textTheme.labelSmall
                                             ?.copyWith(
-                                          color: AppColors.white,
-                                          fontWeight: FontWeight.w800,
-                                          letterSpacing: 0.6,
-                                        ),
+                                              color: AppColors.white,
+                                              fontWeight: FontWeight.w800,
+                                              letterSpacing: 0.6,
+                                            ),
                                       ),
                                     ),
                                   ),
                                 if (!active[i].isActive)
                                   Padding(
-                                    padding:
-                                        const EdgeInsets.only(right: AppSizes.sm),
+                                    padding: const EdgeInsets.only(
+                                      right: AppSizes.sm,
+                                    ),
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: AppSizes.xs, vertical: 1),
+                                        horizontal: AppSizes.xs,
+                                        vertical: 1,
+                                      ),
                                       decoration: ShapeDecoration(
                                         color: AppColors.muted,
                                         shape: AppShapes.squircle(
-                                            AppSizes.radiusSm),
+                                          AppSizes.radiusSm,
+                                        ),
                                       ),
                                       child: Text(
                                         l10n.productsInactiveBadge,
                                         style: theme.textTheme.labelSmall
                                             ?.copyWith(
-                                          color: AppColors.white,
-                                          fontWeight: FontWeight.w800,
-                                          letterSpacing: 0.6,
-                                        ),
+                                              color: AppColors.white,
+                                              fontWeight: FontWeight.w800,
+                                              letterSpacing: 0.6,
+                                            ),
                                       ),
                                     ),
                                   ),
                                 Flexible(
                                   child: Text(
                                     _attrs(l10n, active[i].attributes),
-                                    style: theme.textTheme.bodyMedium
-                                        ?.copyWith(
-                                            fontWeight: FontWeight.w700),
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -1595,8 +1649,9 @@ class _VariantsSection extends StatelessWidget {
                         children: [
                           Text(
                             currencyFormat.format(active[i].sellingPrice),
-                            style: theme.textTheme.bodyMedium
-                                ?.copyWith(fontWeight: FontWeight.w700),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                           if (active[i].mrp > active[i].sellingPrice)
                             Text(
@@ -1661,7 +1716,10 @@ class _HighlightsSection extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.only(top: 8, right: AppSizes.sm),
+                        padding: const EdgeInsets.only(
+                          top: 8,
+                          right: AppSizes.sm,
+                        ),
                         child: SizedBox(
                           width: 4,
                           height: 4,
@@ -1676,8 +1734,9 @@ class _HighlightsSection extends StatelessWidget {
                       Expanded(
                         child: Text(
                           h,
-                          style: theme.textTheme.bodyMedium
-                              ?.copyWith(height: 1.4),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            height: 1.4,
+                          ),
                         ),
                       ),
                     ],
@@ -1738,11 +1797,14 @@ class _ProductSpecsSection extends StatelessWidget {
                           if (groups[gi].tab != null)
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 2),
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
                                 color: AppColors.surfaceTint,
                                 borderRadius: AppShapes.squircleRadius(
-                                    AppSizes.radiusFull),
+                                  AppSizes.radiusFull,
+                                ),
                               ),
                               child: Text(
                                 groups[gi].tab!,
@@ -1800,21 +1862,21 @@ class _OffersSection extends StatelessWidget {
   const _OffersSection({required this.offers});
   final List<ProductOffer> offers;
 
-  IconData _icon(String kind) => switch (kind) {
-        'BANK' => AppIcons.accountBalanceRounded,
-        'COUPON' => AppIcons.localOfferRounded,
-        'EMI' => AppIcons.paymentsRounded,
-        'EXCHANGE' => AppIcons.swapHorizRounded,
-        _ => AppIcons.localOfferOutlined,
-      };
+  AppIconData _icon(String kind) => switch (kind) {
+    'BANK' => AppIcons.accountBalanceRounded,
+    'COUPON' => AppIcons.localOfferRounded,
+    'EMI' => AppIcons.paymentsRounded,
+    'EXCHANGE' => AppIcons.swapHorizRounded,
+    _ => AppIcons.localOfferOutlined,
+  };
 
   Color _tint(String kind) => switch (kind) {
-        'BANK' => AppColors.accentIndigo,
-        'COUPON' => AppColors.brand,
-        'EMI' => AppColors.accentTeal,
-        'EXCHANGE' => AppColors.accentAmber,
-        _ => AppColors.muted,
-      };
+    'BANK' => AppColors.accentIndigo,
+    'COUPON' => AppColors.brand,
+    'EMI' => AppColors.accentTeal,
+    'EXCHANGE' => AppColors.accentAmber,
+    _ => AppColors.muted,
+  };
 
   void _copy(BuildContext context, String code) {
     final l10n = AppLocalizations.of(context);
@@ -1852,8 +1914,11 @@ class _OffersSection extends StatelessWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(_icon(offers[i].kind),
-                          size: 20, color: _tint(offers[i].kind)),
+                      AppIcon(
+                        _icon(offers[i].kind),
+                        size: 20,
+                        color: _tint(offers[i].kind),
+                      ),
                       const SizedBox(width: AppSizes.md),
                       Expanded(
                         child: Column(
@@ -1871,8 +1936,7 @@ class _OffersSection extends StatelessWidget {
                                 padding: const EdgeInsets.only(top: 2),
                                 child: Text(
                                   offers[i].detail!,
-                                  style:
-                                      theme.textTheme.bodySmall?.copyWith(
+                                  style: theme.textTheme.bodySmall?.copyWith(
                                     color: AppColors.muted,
                                     height: 1.35,
                                   ),
@@ -1883,15 +1947,17 @@ class _OffersSection extends StatelessWidget {
                               Padding(
                                 padding: const EdgeInsets.only(top: 6),
                                 child: GestureDetector(
-                                  onTap: () =>
-                                      _copy(context, offers[i].code!),
+                                  onTap: () => _copy(context, offers[i].code!),
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 3),
+                                      horizontal: 8,
+                                      vertical: 3,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: AppColors.surfaceTint,
                                       borderRadius: AppShapes.squircleRadius(
-                                          AppSizes.radiusSm),
+                                        AppSizes.radiusSm,
+                                      ),
                                       border: Border.all(
                                         color: AppColors.hairline,
                                         style: BorderStyle.solid,
@@ -1904,14 +1970,14 @@ class _OffersSection extends StatelessWidget {
                                           offers[i].code!,
                                           style: theme.textTheme.labelMedium
                                               ?.copyWith(
-                                            fontWeight: FontWeight.w800,
-                                            fontFeatures: const [
-                                              FontFeature.tabularFigures()
-                                            ],
-                                          ),
+                                                fontWeight: FontWeight.w800,
+                                                fontFeatures: const [
+                                                  FontFeature.tabularFigures(),
+                                                ],
+                                              ),
                                         ),
                                         const SizedBox(width: 4),
-                                        Icon(
+                                        AppIcon(
                                           AppIcons.copyRounded,
                                           size: 12,
                                           color: AppColors.muted,
@@ -1943,41 +2009,40 @@ class _ContentBlocksSection extends StatelessWidget {
   const _ContentBlocksSection({required this.blocks});
   final List<ContentBlock> blocks;
 
-  ({IconData icon, String label, String preview}) _summary(
-      AppLocalizations l10n, ContentBlock b) {
+  ({AppIconData icon, String label, String preview}) _summary(
+    AppLocalizations l10n,
+    ContentBlock b,
+  ) {
     final d = b.data;
     return switch (b.kind) {
       'HERO' => (
-          icon: AppIcons.imageRounded,
-          label: l10n.productsBlockHero,
-          preview: (d['headline'] as String?) ?? '',
-        ),
+        icon: AppIcons.imageRounded,
+        label: l10n.productsBlockHero,
+        preview: (d['headline'] as String?) ?? '',
+      ),
       'FEATURE' => (
-          icon: AppIcons.featuredPlayListRounded,
-          label: '${l10n.productsBlockFeature} · ${d['side'] ?? 'LEFT'}',
-          preview: (d['title'] as String?) ?? '',
-        ),
+        icon: AppIcons.featuredPlayListRounded,
+        label: '${l10n.productsBlockFeature} · ${d['side'] ?? 'LEFT'}',
+        preview: (d['title'] as String?) ?? '',
+      ),
       'COMPARISON' => (
-          icon: AppIcons.compareArrowsRounded,
-          label: l10n.productsBlockComparison,
-          preview:
-              '${(d['columns'] as List?)?.length ?? 0} ${l10n.productsColumnsUnit} · ${(d['rows'] as List?)?.length ?? 0} ${l10n.productsRowsUnit}',
-        ),
+        icon: AppIcons.compareArrowsRounded,
+        label: l10n.productsBlockComparison,
+        preview:
+            '${(d['columns'] as List?)?.length ?? 0} ${l10n.productsColumnsUnit} · ${(d['rows'] as List?)?.length ?? 0} ${l10n.productsRowsUnit}',
+      ),
       'GALLERY' => (
-          icon: AppIcons.collectionsRounded,
-          label: l10n.productsBlockGallery,
-          preview: '${(d['images'] as List?)?.length ?? 0} ${l10n.productsImagesUnit}',
-        ),
+        icon: AppIcons.collectionsRounded,
+        label: l10n.productsBlockGallery,
+        preview:
+            '${(d['images'] as List?)?.length ?? 0} ${l10n.productsImagesUnit}',
+      ),
       'TEXT' => (
-          icon: AppIcons.textSnippetRounded,
-          label: l10n.productsBlockText,
-          preview: ((d['markdown'] as String?) ?? '').split('\n').first,
-        ),
-      _ => (
-          icon: AppIcons.widgetsRounded,
-          label: b.kind,
-          preview: '',
-        ),
+        icon: AppIcons.textSnippetRounded,
+        label: l10n.productsBlockText,
+        preview: ((d['markdown'] as String?) ?? '').split('\n').first,
+      ),
+      _ => (icon: AppIcons.widgetsRounded, label: b.kind, preview: ''),
     };
   }
 
@@ -1998,58 +2063,60 @@ class _ContentBlocksSection extends StatelessWidget {
             children: [
               for (int i = 0; i < blocks.length; i++) ...[
                 if (i > 0) const AppDivider.flush(),
-                Builder(builder: (_) {
-                  final s = _summary(l10n, blocks[i]);
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSizes.lg,
-                      vertical: AppSizes.md,
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: 28,
-                          alignment: Alignment.topCenter,
-                          child: Text(
-                            '${i + 1}',
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: AppColors.muted,
-                              fontWeight: FontWeight.w800,
+                Builder(
+                  builder: (_) {
+                    final s = _summary(l10n, blocks[i]);
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSizes.lg,
+                        vertical: AppSizes.md,
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 28,
+                            alignment: Alignment.topCenter,
+                            child: Text(
+                              '${i + 1}',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: AppColors.muted,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
                           ),
-                        ),
-                        Icon(s.icon, size: 18, color: AppColors.muted),
-                        const SizedBox(width: AppSizes.md),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                s.label,
-                                style: theme.textTheme.labelMedium?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                  color: AppColors.muted,
-                                  letterSpacing: 0.6,
-                                ),
-                              ),
-                              if (s.preview.isNotEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 2),
-                                  child: Text(
-                                    s.preview,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: theme.textTheme.bodyMedium,
+                          AppIcon(s.icon, size: 18, color: AppColors.muted),
+                          const SizedBox(width: AppSizes.md),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  s.label,
+                                  style: theme.textTheme.labelMedium?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.muted,
+                                    letterSpacing: 0.6,
                                   ),
                                 ),
-                            ],
+                                if (s.preview.isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 2),
+                                    child: Text(
+                                      s.preview,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: theme.textTheme.bodyMedium,
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ],
             ],
           ),
@@ -2084,8 +2151,10 @@ class _TagsSection extends StatelessWidget {
             children: [
               for (final t in tags)
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.tileBg(AppColors.brandSoft),
                     borderRadius: AppShapes.squircleRadius(AppSizes.radiusFull),
@@ -2117,7 +2186,7 @@ class _StockStatusCard extends StatelessWidget {
     return AppStatusTone.success;
   }
 
-  IconData get _icon {
+  AppIconData get _icon {
     if (product.isOutOfStock) return AppIcons.errorOutlineRounded;
     if (product.isLowStock) return AppIcons.warningAmberRounded;
     return AppIcons.checkCircleOutlineRounded;
@@ -2156,7 +2225,9 @@ class _StockStatusCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   '${l10n.productsLowStockAlertAt} ${_formatQty(product.lowStockThreshold)}',
-                  style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.muted,
+                  ),
                 ),
               ],
             ),
@@ -2304,7 +2375,9 @@ class _SupplierHistoryTile extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                supplierName.isEmpty ? l10n.productsUnknownSupplier : supplierName,
+                supplierName.isEmpty
+                    ? l10n.productsUnknownSupplier
+                    : supplierName,
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -2325,8 +2398,9 @@ class _SupplierHistoryTile extends StatelessWidget {
         ),
         _SupplierMetricRow(
           label: l10n.productsAveragePrice,
-          value:
-              averagePrice == null ? '-' : currencyFormat.format(averagePrice),
+          value: averagePrice == null
+              ? '-'
+              : currencyFormat.format(averagePrice),
         ),
         _SupplierMetricRow(
           label: l10n.productsTotalQuantityBought,
@@ -2335,7 +2409,9 @@ class _SupplierHistoryTile extends StatelessWidget {
         ),
         _SupplierMetricRow(
           label: l10n.productsLastStockIn,
-          value: DateFormat('dd MMM yyyy, hh:mm a').format(lastStockIn.toLocal()),
+          value: DateFormat(
+            'dd MMM yyyy, hh:mm a',
+          ).format(lastStockIn.toLocal()),
         ),
         _SupplierMetricRow(label: l10n.productsPolicy, value: lastPolicy),
         const SizedBox(height: AppSizes.sm),
@@ -2349,8 +2425,9 @@ class _SupplierHistoryTile extends StatelessWidget {
           final qty = tx.quantity % 1 == 0
               ? tx.quantity.toInt().toString()
               : tx.quantity.toStringAsFixed(2);
-          final price =
-              tx.unitPrice == null ? '-' : currencyFormat.format(tx.unitPrice);
+          final price = tx.unitPrice == null
+              ? '-'
+              : currencyFormat.format(tx.unitPrice);
           return Padding(
             padding: const EdgeInsets.only(bottom: 3),
             child: Row(
@@ -2518,10 +2595,7 @@ class _DetailRow {
 /// custom fields, so the previous in-flow buttons were getting
 /// pushed far down off-screen.
 class _StockActionBar extends StatelessWidget {
-  const _StockActionBar({
-    required this.onStockIn,
-    required this.onStockOut,
-  });
+  const _StockActionBar({required this.onStockIn, required this.onStockOut});
 
   final VoidCallback onStockIn;
   final VoidCallback onStockOut;
@@ -2627,7 +2701,7 @@ class _IdentifierChip extends StatelessWidget {
     required this.onTap,
   });
 
-  final IconData icon;
+  final AppIconData icon;
   final String label;
   final String value;
   final VoidCallback onTap;
@@ -2649,7 +2723,7 @@ class _IdentifierChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: AppSizes.iconSm - 2, color: AppColors.muted),
+              AppIcon(icon, size: AppSizes.iconSm - 2, color: AppColors.muted),
               const SizedBox(width: AppSizes.xs),
               Text(
                 value,
@@ -2660,11 +2734,7 @@ class _IdentifierChip extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSizes.xs),
-              Icon(
-                AppIcons.copyRounded,
-                size: 12,
-                color: AppColors.muted,
-              ),
+              AppIcon(AppIcons.copyRounded, size: 12, color: AppColors.muted),
             ],
           ),
         ),
@@ -2715,7 +2785,7 @@ class _PendingDraftsCard extends StatelessWidget {
                     color: AppColors.warning.withValues(alpha: 0.12),
                     shape: AppShapes.squircle(AppSizes.radiusSm),
                   ),
-                  child: Icon(
+                  child: AppIcon(
                     AppIcons.hourglassTopRounded,
                     size: 18,
                     color: AppColors.warning,
@@ -2784,8 +2854,8 @@ class _PendingDraftRow extends StatelessWidget {
         : qty.toStringAsFixed(2);
     final counterparty = isSale
         ? ((invoice.customerName?.isNotEmpty ?? false)
-            ? invoice.customerName!
-            : l10n.productsCustomer)
+              ? invoice.customerName!
+              : l10n.productsCustomer)
         : (invoice.vendorName ?? l10n.productsVendor);
 
     return InkWell(
@@ -2797,10 +2867,8 @@ class _PendingDraftRow extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(
-              isSale
-                  ? AppIcons.northEastRounded
-                  : AppIcons.southWestRounded,
+            AppIcon(
+              isSale ? AppIcons.northEastRounded : AppIcons.southWestRounded,
               size: 18,
               color: isSale ? AppColors.error : AppColors.success,
             ),
@@ -2833,7 +2901,7 @@ class _PendingDraftRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSizes.xs),
-            Icon(
+            AppIcon(
               AppIcons.chevronRightRounded,
               size: 18,
               color: AppColors.muted,
@@ -2930,7 +2998,9 @@ class _GstBreakdownSection extends StatelessWidget {
               const SizedBox(height: AppSizes.sm),
               Text(
                 l10n.productsGstExplainer,
-                style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.muted,
+                ),
               ),
             ],
           ),
@@ -2973,8 +3043,9 @@ class _GstRow extends StatelessWidget {
                     : [
                         TextSpan(
                           text: '  ·  $hint',
-                          style: theme.textTheme.bodySmall
-                              ?.copyWith(color: AppColors.muted),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppColors.muted,
+                          ),
                         ),
                       ],
               ),
@@ -3031,12 +3102,13 @@ class _ReviewsSummarySection extends StatelessWidget {
                   ),
                 )
               : (s == null || count == 0)
-                  ? Text(
-                      l10n.productsNoReviewsBody,
-                      style: theme.textTheme.bodyMedium
-                          ?.copyWith(color: AppColors.muted),
-                    )
-                  : _content(context, s, count),
+              ? Text(
+                  l10n.productsNoReviewsBody,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.muted,
+                  ),
+                )
+              : _content(context, s, count),
         ),
       ],
     );
@@ -3058,27 +3130,33 @@ class _ReviewsSummarySection extends StatelessWidget {
               children: [
                 Text(
                   avg.toStringAsFixed(1),
-                  style: theme.textTheme.headlineMedium
-                      ?.copyWith(fontWeight: FontWeight.w800),
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 _StarRow(rating: avg, size: 16),
                 const SizedBox(height: 2),
                 Text(
                   '$count ${count == 1 ? l10n.productsRatingSingular : l10n.productsRatingPlural}',
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: AppColors.muted),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.muted,
+                  ),
                 ),
                 if (s.verifiedCount > 0)
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(AppIcons.verifiedRounded,
-                          size: 13, color: AppColors.success),
+                      AppIcon(
+                        AppIcons.verifiedRounded,
+                        size: 13,
+                        color: AppColors.success,
+                      ),
                       const SizedBox(width: 3),
                       Text(
                         '${s.verifiedCount} ${l10n.productsVerified}',
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: AppColors.success),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.success,
+                        ),
                       ),
                     ],
                   ),
@@ -3135,12 +3213,12 @@ class _StarRow extends StatelessWidget {
       children: List.generate(5, (i) {
         final filled = rating >= i + 1;
         final half = !filled && rating >= i + 0.5;
-        return Icon(
+        return AppIcon(
           filled
               ? AppIcons.starRounded
               : half
-                  ? AppIcons.starHalfRounded
-                  : AppIcons.starOutlineRounded,
+              ? AppIcons.starHalfRounded
+              : AppIcons.starOutlineRounded,
           size: size,
           color: filled || half ? AppColors.accentAmber : AppColors.disabled,
         );
@@ -3171,7 +3249,9 @@ class _HistogramBar extends StatelessWidget {
             width: 24,
             child: Text(
               '$star★',
-              style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.muted,
+              ),
             ),
           ),
           Expanded(
@@ -3191,7 +3271,9 @@ class _HistogramBar extends StatelessWidget {
             child: Text(
               '$count',
               textAlign: TextAlign.right,
-              style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.muted,
+              ),
             ),
           ),
         ],
@@ -3220,8 +3302,9 @@ class _RecentReviewTile extends StatelessWidget {
                 child: Text(
                   review.title!,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.w700),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
@@ -3240,4 +3323,3 @@ class _RecentReviewTile extends StatelessWidget {
     );
   }
 }
-

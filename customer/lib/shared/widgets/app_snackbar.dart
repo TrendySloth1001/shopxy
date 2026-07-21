@@ -4,6 +4,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Snackbar variants. Maps to the four status colors in [AppColors] so
 /// the visual treatment matches the message intent.
@@ -35,7 +36,8 @@ void showAppSnackbar(
 
   messenger.showSnackBar(
     SnackBar(
-      duration: duration ??
+      duration:
+          duration ??
           (hasAction ? AppDurations.snackbarLong : AppDurations.snackbar),
       behavior: SnackBarBehavior.floating,
       margin: const EdgeInsets.fromLTRB(
@@ -61,15 +63,15 @@ void showAppSnackbar(
         ),
         child: Row(
           children: [
-            Icon(icon, size: AppSizes.iconMd, color: fg),
+            AppIcon(icon, size: AppSizes.iconMd, color: fg),
             const SizedBox(width: AppSizes.md),
             Expanded(
               child: Text(
                 message,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.black,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  color: AppColors.black,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
             if (hasAction) ...[
@@ -88,10 +90,10 @@ void showAppSnackbar(
                   child: Text(
                     actionLabel,
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: fg,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.3,
-                        ),
+                      color: fg,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.3,
+                    ),
                   ),
                 ),
               ),
@@ -103,7 +105,7 @@ void showAppSnackbar(
   );
 }
 
-(IconData, Color, Color) _styleFor(AppSnackbarTone tone) {
+(AppIconData, Color, Color) _styleFor(AppSnackbarTone tone) {
   switch (tone) {
     case AppSnackbarTone.success:
       return (
@@ -118,11 +120,7 @@ void showAppSnackbar(
         AppColors.errorSoft,
       );
     case AppSnackbarTone.info:
-      return (
-        AppIcons.infoOutlineRounded,
-        AppColors.info,
-        AppColors.infoSoft,
-      );
+      return (AppIcons.infoOutlineRounded, AppColors.info, AppColors.infoSoft);
     case AppSnackbarTone.neutral:
       return (
         AppIcons.notificationsNoneRounded,

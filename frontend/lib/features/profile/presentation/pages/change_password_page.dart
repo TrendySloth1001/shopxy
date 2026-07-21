@@ -7,6 +7,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 class ChangePasswordPage extends StatefulWidget {
   const ChangePasswordPage({super.key});
@@ -35,7 +36,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   String? _validateNext(AppLocalizations l10n, String? v) {
     final t = v ?? '';
     if (t.length < 8) return l10n.profilePasswordMinLength;
-    if (!RegExp(r'[A-Za-z]').hasMatch(t)) return l10n.profilePasswordNeedsLetter;
+    if (!RegExp(r'[A-Za-z]').hasMatch(t)) {
+      return l10n.profilePasswordNeedsLetter;
+    }
     if (!RegExp(r'[0-9]').hasMatch(t)) return l10n.profilePasswordNeedsNumber;
     return null;
   }
@@ -44,25 +47,28 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     final l10n = AppLocalizations.of(context);
     if (!_formKey.currentState!.validate()) return;
     if (_next.text != _confirm.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.profilePasswordsDoNotMatch)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.profilePasswordsDoNotMatch)));
       return;
     }
     setState(() => _busy = true);
     try {
-      await context.read<AuthProvider>().changePassword(_current.text, _next.text);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.profilePasswordChanged)),
+      await context.read<AuthProvider>().changePassword(
+        _current.text,
+        _next.text,
       );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.profilePasswordChanged)));
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
       setState(() => _busy = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(friendlyError(e))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(friendlyError(e))));
     }
   }
 
@@ -88,9 +94,11 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               decoration: InputDecoration(
                 labelText: l10n.profileCurrentPassword,
                 suffixIcon: IconButton(
-                  icon: Icon(_showCurrent
-                      ? AppIcons.visibilityOffOutlined
-                      : AppIcons.visibilityOutlined),
+                  icon: AppIcon(
+                    _showCurrent
+                        ? AppIcons.visibilityOffOutlined
+                        : AppIcons.visibilityOutlined,
+                  ),
                   onPressed: () => setState(() => _showCurrent = !_showCurrent),
                 ),
               ),
@@ -104,9 +112,11 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                 labelText: l10n.profileNewPassword,
                 helperText: l10n.profilePasswordHelper,
                 suffixIcon: IconButton(
-                  icon: Icon(_showNext
-                      ? AppIcons.visibilityOffOutlined
-                      : AppIcons.visibilityOutlined),
+                  icon: AppIcon(
+                    _showNext
+                        ? AppIcons.visibilityOffOutlined
+                        : AppIcons.visibilityOutlined,
+                  ),
                   onPressed: () => setState(() => _showNext = !_showNext),
                 ),
               ),
@@ -117,7 +127,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               controller: _confirm,
               obscureText: !_showNext,
               decoration: InputDecoration(
-                  labelText: l10n.profileConfirmNewPassword),
+                labelText: l10n.profileConfirmNewPassword,
+              ),
               validator: (v) => (v ?? '').isEmpty ? l10n.profileRequired : null,
             ),
             const SizedBox(height: AppSizes.xl),

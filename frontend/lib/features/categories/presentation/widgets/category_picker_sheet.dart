@@ -9,6 +9,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Two-level tree picker over the canonical taxonomy. Replaces the
 /// flat searchable list — categories are fixed and curated now, so the
@@ -66,7 +67,9 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
         // Auto-expand any parent whose subtree contains the current
         // selection so the user can confirm what's picked at a glance.
         for (final p in tree) {
-          if (p.children.any((c) => c.category.id == widget.currentSelectionId)) {
+          if (p.children.any(
+            (c) => c.category.id == widget.currentSelectionId,
+          )) {
             _expanded.add(p.category.id);
           }
         }
@@ -125,7 +128,7 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
                     ),
                     IconButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(AppIcons.closeRounded),
+                      icon: const AppIcon(AppIcons.closeRounded),
                       tooltip: l10n.categoriesCancel,
                     ),
                   ],
@@ -137,7 +140,10 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
                 Divider(color: AppColors.hairline, height: 1),
                 TextButton.icon(
                   onPressed: () => _pick(null),
-                  icon: const Icon(AppIcons.closeRounded, size: AppSizes.iconSm),
+                  icon: const AppIcon(
+                    AppIcons.closeRounded,
+                    size: AppSizes.iconSm,
+                  ),
                   label: Text(l10n.categoriesClearSelection),
                   style: TextButton.styleFrom(foregroundColor: AppColors.error),
                 ),
@@ -221,6 +227,7 @@ class _ParentRow extends StatelessWidget {
   final int? currentSelectionId;
   final VoidCallback onToggle;
   final ValueChanged<Category?> onPickChild;
+
   /// When the parent has no children, tapping the row picks it directly
   /// instead of toggling (otherwise the parent is unpickable).
   final ValueChanged<Category?>? onPickParent;
@@ -251,8 +258,9 @@ class _ParentRow extends StatelessWidget {
                       Text(
                         parent.category.name,
                         style: theme.textTheme.bodyLarge?.copyWith(
-                          fontWeight:
-                              isSelected ? FontWeight.w700 : FontWeight.w600,
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w600,
                         ),
                       ),
                       if (parent.children.isNotEmpty)
@@ -266,14 +274,14 @@ class _ParentRow extends StatelessWidget {
                   ),
                 ),
                 if (parent.children.isEmpty)
-                  Icon(
+                  AppIcon(
                     isSelected
                         ? AppIcons.checkCircleRounded
                         : AppIcons.chevronRightRounded,
                     color: isSelected ? AppColors.brand : AppColors.muted,
                   )
                 else
-                  Icon(
+                  AppIcon(
                     expanded
                         ? AppIcons.keyboardArrowUpRounded
                         : AppIcons.keyboardArrowDownRounded,
@@ -338,7 +346,11 @@ class _ChildChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _CategoryThumb(category: category, size: AppSizes.xl, rounded: true),
+            _CategoryThumb(
+              category: category,
+              size: AppSizes.xl,
+              rounded: true,
+            ),
             const SizedBox(width: AppSizes.xs),
             Text(
               category.name,
@@ -349,7 +361,7 @@ class _ChildChip extends StatelessWidget {
             ),
             if (isSelected) ...[
               const SizedBox(width: AppSizes.xs),
-              Icon(
+              AppIcon(
                 AppIcons.checkRounded,
                 size: AppSizes.iconSm,
                 color: AppColors.onInverse,
@@ -383,11 +395,12 @@ class _CategoryThumb extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         color: AppColors.heroPanel,
-        borderRadius:
-            BorderRadius.circular(rounded ? size / 2 : AppSizes.radiusSm),
+        borderRadius: BorderRadius.circular(
+          rounded ? size / 2 : AppSizes.radiusSm,
+        ),
       ),
       alignment: Alignment.center,
-      child: Icon(
+      child: AppIcon(
         resolveCategoryIcon(category.iconName),
         color: AppColors.black,
         size: size * 0.55,
@@ -395,7 +408,9 @@ class _CategoryThumb extends StatelessWidget {
     );
     if (url == null || url.isEmpty) return fallback;
     return ClipRRect(
-      borderRadius: BorderRadius.circular(rounded ? size / 2 : AppSizes.radiusSm),
+      borderRadius: BorderRadius.circular(
+        rounded ? size / 2 : AppSizes.radiusSm,
+      ),
       child: Image.network(
         url,
         width: size,

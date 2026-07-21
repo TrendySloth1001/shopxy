@@ -3,16 +3,13 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Small "Sold by {shop}" chip used on cart, checkout, and order
 /// detail rows so multi-shop bags read unambiguously. Renders nothing
 /// when the shop name is null/empty — callers don't need to guard.
 class ShopChip extends StatelessWidget {
-  const ShopChip({
-    super.key,
-    required this.shopName,
-    this.dense = false,
-  });
+  const ShopChip({super.key, required this.shopName, this.dense = false});
 
   final String? shopName;
   final bool dense;
@@ -35,7 +32,7 @@ class ShopChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
+          AppIcon(
             AppIcons.storefrontOutlined,
             size: iconSize,
             color: AppColors.brandStrong,
@@ -47,11 +44,11 @@ class ShopChip extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: AppColors.brandStrong,
-                    fontSize: fontSize,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.1,
-                  ),
+                color: AppColors.brandStrong,
+                fontSize: fontSize,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.1,
+              ),
             ),
           ),
         ],

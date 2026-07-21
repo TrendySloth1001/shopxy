@@ -11,6 +11,7 @@ import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Banner-detail page: the banner image at the top, followed by a
 /// responsive grid of the products pinned to it (with banner-discounted
@@ -66,8 +67,8 @@ class _BannerDetailPageState extends State<BannerDetailPage> {
       body: _loading && _detail == null
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? _ErrorState(message: _error!, onRetry: _load)
-              : _Body(detail: _detail!),
+          ? _ErrorState(message: _error!, onRetry: _load)
+          : _Body(detail: _detail!),
     );
   }
 }
@@ -83,10 +84,7 @@ class _Body extends StatelessWidget {
       slivers: [
         SliverToBoxAdapter(child: _BannerHeaderImage(banner: detail.banner)),
         if (products.isEmpty)
-          const SliverFillRemaining(
-            hasScrollBody: false,
-            child: _EmptyState(),
-          )
+          const SliverFillRemaining(hasScrollBody: false, child: _EmptyState())
         else
           SliverPadding(
             padding: const EdgeInsets.all(AppSizes.lg),
@@ -309,8 +307,9 @@ class _RatingChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final count = product.ratingCount;
-    final prettyCount =
-        count > 999 ? '${(count / 1000).toStringAsFixed(1)}k' : '$count';
+    final prettyCount = count > 999
+        ? '${(count / 1000).toStringAsFixed(1)}k'
+        : '$count';
     return Row(
       children: [
         Container(
@@ -332,7 +331,7 @@ class _RatingChip extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 2),
-              const Icon(AppIcons.star, color: AppColors.white, size: 10),
+              const AppIcon(AppIcons.star, color: AppColors.white, size: 10),
             ],
           ),
         ),
@@ -382,8 +381,11 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(AppIcons.errorOutline,
-                color: AppColors.muted, size: AppSizes.iconXl),
+            const AppIcon(
+              AppIcons.errorOutline,
+              color: AppColors.muted,
+              size: AppSizes.iconXl,
+            ),
             const SizedBox(height: AppSizes.md),
             Text(
               message,

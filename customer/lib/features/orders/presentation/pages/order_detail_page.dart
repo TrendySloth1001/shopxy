@@ -31,6 +31,7 @@ import 'package:shopxy_customer/shared/widgets/app_price_text.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Customer-facing order detail. One parent CustomerOrder = one
 /// checkout submission; per-vendor slices live as sections inside.
@@ -458,10 +459,10 @@ class _SectionLabel extends StatelessWidget {
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.muted,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.6,
-            ),
+          color: AppColors.muted,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.6,
+        ),
       ),
     );
   }
@@ -491,7 +492,7 @@ class _CapsuleAction extends StatelessWidget {
     this.loading = false,
   });
 
-  final IconData icon;
+  final AppIconData icon;
   final String label;
   final Color color;
   final Color background;
@@ -524,14 +525,14 @@ class _CapsuleAction extends StatelessWidget {
                   ),
                 )
               else
-                Icon(icon, size: AppSizes.iconSm, color: color),
+                AppIcon(icon, size: AppSizes.iconSm, color: color),
               const SizedBox(width: AppSizes.sm),
               Text(
                 label,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: color,
-                      fontWeight: FontWeight.w800,
-                    ),
+                  color: color,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ],
           ),
@@ -545,9 +546,8 @@ class _CapsuleAction extends StatelessWidget {
 
 /// Picks the (color, icon, headline) for the aggregate status row in
 /// the Order Summary section.
-({Color color, IconData icon, String headline, String? subtext}) _statusVisuals(
-  CustomerOrder o,
-) {
+({Color color, AppIconData icon, String headline, String? subtext})
+_statusVisuals(CustomerOrder o) {
   final children = o.shopOrders;
   if (children.isEmpty) {
     return (
@@ -655,7 +655,7 @@ class _DeliverySnapshotCardState extends State<_DeliverySnapshotCard> {
           children: [
             const Padding(
               padding: EdgeInsets.only(top: 2),
-              child: Icon(
+              child: AppIcon(
                 AppIcons.locationOnOutlined,
                 color: AppColors.muted,
                 size: AppSizes.iconMd,
@@ -674,18 +674,14 @@ class _DeliverySnapshotCardState extends State<_DeliverySnapshotCard> {
                             o.customerName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
+                            style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(fontWeight: FontWeight.w800),
                           ),
                         ),
                         const SizedBox(width: AppSizes.sm),
                         Text(
                           '·',
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium
+                          style: Theme.of(context).textTheme.bodyMedium
                               ?.copyWith(color: AppColors.muted),
                         ),
                         const SizedBox(width: AppSizes.sm),
@@ -695,9 +691,7 @@ class _DeliverySnapshotCardState extends State<_DeliverySnapshotCard> {
                           glimpse,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium
+                          style: Theme.of(context).textTheme.bodyMedium
                               ?.copyWith(color: AppColors.muted),
                         ),
                       ),
@@ -723,11 +717,12 @@ class _DeliverySnapshotCardState extends State<_DeliverySnapshotCard> {
                                   ),
                                 if (phone.isNotEmpty)
                                   Padding(
-                                    padding:
-                                        const EdgeInsets.only(top: AppSizes.xs),
+                                    padding: const EdgeInsets.only(
+                                      top: AppSizes.xs,
+                                    ),
                                     child: Row(
                                       children: [
-                                        const Icon(
+                                        const AppIcon(
                                           AppIcons.phoneRounded,
                                           size: AppSizes.iconSm,
                                           color: AppColors.muted,
@@ -738,7 +733,9 @@ class _DeliverySnapshotCardState extends State<_DeliverySnapshotCard> {
                                           style: Theme.of(context)
                                               .textTheme
                                               .bodySmall
-                                              ?.copyWith(color: AppColors.muted),
+                                              ?.copyWith(
+                                                color: AppColors.muted,
+                                              ),
                                         ),
                                       ],
                                     ),
@@ -755,7 +752,7 @@ class _DeliverySnapshotCardState extends State<_DeliverySnapshotCard> {
             AnimatedRotation(
               turns: _expanded ? 0.5 : 0,
               duration: AppDurations.short,
-              child: const Icon(
+              child: const AppIcon(
                 AppIcons.expandMoreRounded,
                 color: AppColors.subtle,
               ),
@@ -788,7 +785,7 @@ class _BuyAgainCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(
+          const AppIcon(
             AppIcons.replayCircleFilledRounded,
             color: AppColors.brand,
             size: AppSizes.iconXl,
@@ -801,17 +798,17 @@ class _BuyAgainCard extends StatelessWidget {
                 Text(
                   'Buy again',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.black,
-                        fontWeight: FontWeight.w800,
-                      ),
+                    color: AppColors.black,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   'Adds the items from this order back to your cart',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.muted,
-                        height: 1.3,
-                      ),
+                    color: AppColors.muted,
+                    height: 1.3,
+                  ),
                 ),
               ],
             ),
@@ -838,10 +835,9 @@ class _BuyAgainCard extends StatelessWidget {
                   )
                 : Text(
                     'Add to cart',
-                    style: Theme.of(context)
-                        .textTheme
-                        .labelLarge
-                        ?.copyWith(fontWeight: FontWeight.w800),
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
           ),
         ],
@@ -955,11 +951,11 @@ class _ShopOrderCard extends StatelessWidget {
                       child: Text(
                         'PACKAGE $packageIndex OF $packageCount',
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: AppColors.muted,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.6,
-                            ),
+                          color: AppColors.muted,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.6,
+                        ),
                       ),
                     )
                   else
@@ -973,7 +969,7 @@ class _ShopOrderCard extends StatelessWidget {
                 children: [
                   const Padding(
                     padding: EdgeInsets.only(top: 2),
-                    child: Icon(
+                    child: AppIcon(
                       AppIcons.storefrontOutlined,
                       size: AppSizes.iconSm,
                       color: AppColors.muted,
@@ -984,16 +980,14 @@ class _ShopOrderCard extends StatelessWidget {
                     child: RichText(
                       text: TextSpan(
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.muted,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          color: AppColors.muted,
+                          fontWeight: FontWeight.w600,
+                        ),
                         children: [
                           const TextSpan(text: 'Sold by '),
                           TextSpan(
                             text: vendorName,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
+                            style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(
                                   color: AppColors.black,
                                   fontWeight: FontWeight.w800,
@@ -1070,7 +1064,7 @@ class _ShopOrderCard extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
+                  const AppIcon(
                     AppIcons.infoOutlineRounded,
                     size: AppSizes.iconSm,
                     color: AppColors.error,
@@ -1079,10 +1073,9 @@ class _ShopOrderCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       child.decisionNote!,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(color: AppColors.error),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: AppColors.error),
                     ),
                   ),
                 ],
@@ -1172,7 +1165,7 @@ class _ActionUnavailableNote extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
+          const AppIcon(
             AppIcons.infoOutlineRounded,
             size: AppSizes.iconSm,
             color: AppColors.muted,
@@ -1181,10 +1174,10 @@ class _ActionUnavailableNote extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              style: Theme.of(context)
-                  .textTheme
-                  .labelMedium
-                  ?.copyWith(color: AppColors.muted, height: 1.3),
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: AppColors.muted,
+                height: 1.3,
+              ),
             ),
           ),
         ],
@@ -1228,7 +1221,7 @@ class _InvoiceFooter extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
+          AppIcon(
             invoice.isPaid
                 ? AppIcons.verifiedRounded
                 : AppIcons.receiptLongOutlined,
@@ -1240,9 +1233,9 @@ class _InvoiceFooter extends StatelessWidget {
             child: Text(
               label,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.w700,
-                  ),
+                color: color,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
           IconButton(
@@ -1252,18 +1245,23 @@ class _InvoiceFooter extends StatelessWidget {
             visualDensity: VisualDensity.compact,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(
-                minWidth: AppSizes.iconXl, minHeight: AppSizes.iconXl),
+              minWidth: AppSizes.iconXl,
+              minHeight: AppSizes.iconXl,
+            ),
             icon: downloading
                 ? const SizedBox(
                     width: AppSizes.iconSm,
                     height: AppSizes.iconSm,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : Icon(AppIcons.downloadRounded, color: color),
+                : AppIcon(AppIcons.downloadRounded, color: color),
           ),
           if (canOpen)
-            Icon(AppIcons.chevronRightRounded,
-                size: AppSizes.iconMd, color: color),
+            AppIcon(
+              AppIcons.chevronRightRounded,
+              size: AppSizes.iconMd,
+              color: color,
+            ),
         ],
       ),
     );
@@ -1324,11 +1322,11 @@ class _StatusPill extends StatelessWidget {
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: color,
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.5,
-            ),
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }
@@ -1379,7 +1377,7 @@ class _ItemRow extends StatelessWidget {
                 height: AppSizes.avatarMd,
                 color: AppColors.heroPanel,
                 child: item.imageUrl == null
-                    ? const Icon(
+                    ? const AppIcon(
                         AppIcons.imageOutlined,
                         color: AppColors.muted,
                         size: AppSizes.iconMd,
@@ -1397,9 +1395,9 @@ class _ItemRow extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          height: 1.3,
-                        ),
+                      fontWeight: FontWeight.w800,
+                      height: 1.3,
+                    ),
                   ),
                   const SizedBox(height: AppSizes.xs),
                   Wrap(
@@ -1418,7 +1416,8 @@ class _ItemRow extends StatelessWidget {
                         ),
                         child: Text(
                           'Qty ${_qty(item.quantity)}',
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
                                 color: AppColors.black,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
@@ -1428,17 +1427,17 @@ class _ItemRow extends StatelessWidget {
                       Text(
                         item.unit,
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: AppColors.muted,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          color: AppColors.muted,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       Text(
                         '${AppFormat.rupeesSmart(item.unitPrice)} each',
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: AppColors.muted,
-                              fontSize: 11,
-                            ),
+                          color: AppColors.muted,
+                          fontSize: 11,
+                        ),
                       ),
                     ],
                   ),
@@ -1496,7 +1495,11 @@ class _OrderSummaryCard extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: AppSizes.sm),
             child: Row(
               children: [
-                Icon(status.icon, color: status.color, size: AppSizes.iconSm),
+                AppIcon(
+                  status.icon,
+                  color: status.color,
+                  size: AppSizes.iconSm,
+                ),
                 const SizedBox(width: AppSizes.sm),
                 Expanded(
                   child: Text(
@@ -1504,18 +1507,18 @@ class _OrderSummaryCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: status.color,
-                          fontWeight: FontWeight.w800,
-                        ),
+                      color: status.color,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
                 if (status.subtext != null)
                   Text(
                     status.subtext!,
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: status.color.withValues(alpha: 0.8),
-                          fontWeight: FontWeight.w700,
-                        ),
+                      color: status.color.withValues(alpha: 0.8),
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
               ],
             ),
@@ -1540,10 +1543,9 @@ class _OrderSummaryCard extends StatelessWidget {
             usedInvoices
                 ? 'Confirmed totals from the shops\' invoices.'
                 : 'The shops will confirm the final amount when they accept your order.',
-            style: Theme.of(context)
-                .textTheme
-                .labelSmall
-                ?.copyWith(color: AppColors.muted),
+            style: Theme.of(
+              context,
+            ).textTheme.labelSmall?.copyWith(color: AppColors.muted),
           ),
         ],
       ),
@@ -1574,10 +1576,7 @@ class _BillRow extends StatelessWidget {
       val = Text(
         valueLabel!,
         style: (bold ? theme.textTheme.bodyLarge : theme.textTheme.bodyMedium)
-            ?.copyWith(
-          color: col,
-          fontWeight: FontWeight.w800,
-        ),
+            ?.copyWith(color: col, fontWeight: FontWeight.w800),
       );
     } else {
       val = AppPriceText.precise(
@@ -1623,10 +1622,9 @@ class _NoteCard extends StatelessWidget {
       ),
       child: Text(
         note,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.black,
-              height: 1.5,
-            ),
+        style: Theme.of(
+          context,
+        ).textTheme.bodyMedium?.copyWith(color: AppColors.black, height: 1.5),
       ),
     );
   }
@@ -1927,7 +1925,7 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            const AppIcon(
               AppIcons.cloudOffRounded,
               size: AppSizes.iconHuge,
               color: AppColors.muted,
@@ -1935,18 +1933,16 @@ class _ErrorState extends StatelessWidget {
             const SizedBox(height: AppSizes.md),
             Text(
               AppStrings.somethingWentWrong,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w800),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: AppSizes.xs),
             Text(
               message,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: AppColors.muted),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSizes.lg),
@@ -2005,17 +2001,17 @@ class _PayNowBar extends StatelessWidget {
                     Text(
                       'Payment pending',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.muted,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        color: AppColors.muted,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       AppFormat.rupeesPrecise(amount),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: AppColors.black,
-                            fontWeight: FontWeight.w800,
-                          ),
+                        color: AppColors.black,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ],
                 ),

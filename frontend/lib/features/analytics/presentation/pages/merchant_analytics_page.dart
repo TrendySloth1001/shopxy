@@ -10,6 +10,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Merchant-facing analytics dashboard. One scroll: date range, KPI
 /// strip, per-product table. All sorting + range manipulation lives in
@@ -58,7 +59,7 @@ class _MerchantAnalyticsPageState extends State<MerchantAnalyticsPage> {
         actions: [
           IconButton(
             tooltip: l10n.analyticsRefresh,
-            icon: const Icon(AppIcons.refresh),
+            icon: const AppIcon(AppIcons.refresh),
             onPressed: provider.isLoading ? null : provider.load,
           ),
         ],
@@ -127,10 +128,13 @@ class _RangeBar extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(AppIcons.calendarTodayOutlined, size: AppSizes.iconMd),
+            const AppIcon(
+              AppIcons.calendarTodayOutlined,
+              size: AppSizes.iconMd,
+            ),
             const SizedBox(width: AppSizes.sm),
             Expanded(child: Text(label)),
-            const Icon(AppIcons.tune, size: AppSizes.iconMd),
+            const AppIcon(AppIcons.tune, size: AppSizes.iconMd),
           ],
         ),
       ),
@@ -151,7 +155,10 @@ class _KpiStrip extends StatelessWidget {
       spacing: AppSizes.sm,
       runSpacing: AppSizes.sm,
       children: [
-        _Kpi(label: l10n.analyticsKpiImpressions, value: '${totals.impressions}'),
+        _Kpi(
+          label: l10n.analyticsKpiImpressions,
+          value: '${totals.impressions}',
+        ),
         _Kpi(label: l10n.analyticsKpiTaps, value: '${totals.taps}'),
         _Kpi(label: l10n.analyticsKpiViews, value: '${totals.views}'),
         _Kpi(label: l10n.analyticsKpiAddToCart, value: '${totals.addToCart}'),
@@ -182,16 +189,12 @@ class _Kpi extends StatelessWidget {
         children: [
           Text(
             label,
-            style: Theme.of(context)
-                .textTheme
-                .labelMedium
-                ?.copyWith(color: AppColors.muted),
+            style: Theme.of(
+              context,
+            ).textTheme.labelMedium?.copyWith(color: AppColors.muted),
           ),
           const SizedBox(height: AppSizes.xs),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
+          Text(value, style: Theme.of(context).textTheme.titleLarge),
         ],
       ),
     );
@@ -211,10 +214,9 @@ class _Empty extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: Theme.of(context)
-            .textTheme
-            .bodyMedium
-            ?.copyWith(color: AppColors.muted),
+        style: Theme.of(
+          context,
+        ).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
       ),
     );
   }
@@ -276,7 +278,11 @@ class _KpiStripSkeleton extends StatelessWidget {
       runSpacing: AppSizes.sm,
       children: List.generate(
         8,
-        (_) => const AppShimmerBox(width: 150, height: 120, radius: AppSizes.radiusMd),
+        (_) => const AppShimmerBox(
+          width: 150,
+          height: 120,
+          radius: AppSizes.radiusMd,
+        ),
       ),
     );
   }

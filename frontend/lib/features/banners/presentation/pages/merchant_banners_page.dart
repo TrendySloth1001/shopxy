@@ -12,6 +12,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 class MerchantBannersPage extends StatefulWidget {
   const MerchantBannersPage({super.key});
@@ -31,8 +32,10 @@ class _MerchantBannersPageState extends State<MerchantBannersPage> {
   }
 
   Future<void> _openEditor({AdminBanner? existing}) async {
-    final changed =
-        await MerchantBannerEditorSheet.show(context, existing: existing);
+    final changed = await MerchantBannerEditorSheet.show(
+      context,
+      existing: existing,
+    );
     if (changed == true && mounted) {
       await context.read<MerchantBannersProvider>().load();
     }
@@ -52,76 +55,77 @@ class _MerchantBannersPageState extends State<MerchantBannersPage> {
         actions: [
           IconButton(
             tooltip: l10n.bannersRefresh,
-            icon: const Icon(AppIcons.refresh),
+            icon: const AppIcon(AppIcons.refresh),
             onPressed: provider.isLoading ? null : () => provider.load(),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openEditor(),
-        icon: const Icon(AppIcons.add),
+        icon: const AppIcon(AppIcons.add),
         label: Text(l10n.bannersNewBanner),
       ),
       body: provider.isLoading && provider.banners.isEmpty
           ? const _BannersSkeleton()
           : provider.error != null && provider.banners.isEmpty
-              ? SafeArea(
-                  top: true,
-                  bottom: false,
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppSizes.xl),
-                      child: Text(provider.error!, textAlign: TextAlign.center),
-                    ),
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: provider.load,
-                  child: ListView(
-                    padding: EdgeInsets.only(
-                        top: FloatingAppBar.contentTopInset(context),
-                        bottom: AppSizes.huge),
-                    children: [
-                      for (final entry in grouped.entries)
-                        _PlacementSection(
-                          placement: entry.key,
-                          banners: entry.value,
-                          onTapBanner: (b) => _openEditor(existing: b),
-                          onAdd: () => _openEditor(),
-                          onDelete: (b) async {
-                            final confirm = await showDialog<bool>(
-                              context: context,
-                              builder: (ctx) => AlertDialog(
-                                title: Text(l10n.bannersDeleteTitle),
-                                content: Text(
-                                  l10n.bannersDeleteMessage(b.placement.label),
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(ctx, false),
-                                    child: Text(l10n.bannersCancel),
-                                  ),
-                                  FilledButton.tonal(
-                                    style: FilledButton.styleFrom(
-                                      backgroundColor: AppColors.errorSoft,
-                                      foregroundColor: AppColors.error,
-                                    ),
-                                    onPressed: () => Navigator.pop(ctx, true),
-                                    child: Text(l10n.bannersDelete),
-                                  ),
-                                ],
-                              ),
-                            );
-                            if (confirm == true && context.mounted) {
-                              await context
-                                  .read<MerchantBannersProvider>()
-                                  .delete(b.id);
-                            }
-                          },
-                        ),
-                    ],
-                  ),
+          ? SafeArea(
+              top: true,
+              bottom: false,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSizes.xl),
+                  child: Text(provider.error!, textAlign: TextAlign.center),
                 ),
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: provider.load,
+              child: ListView(
+                padding: EdgeInsets.only(
+                  top: FloatingAppBar.contentTopInset(context),
+                  bottom: AppSizes.huge,
+                ),
+                children: [
+                  for (final entry in grouped.entries)
+                    _PlacementSection(
+                      placement: entry.key,
+                      banners: entry.value,
+                      onTapBanner: (b) => _openEditor(existing: b),
+                      onAdd: () => _openEditor(),
+                      onDelete: (b) async {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: Text(l10n.bannersDeleteTitle),
+                            content: Text(
+                              l10n.bannersDeleteMessage(b.placement.label),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: Text(l10n.bannersCancel),
+                              ),
+                              FilledButton.tonal(
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: AppColors.errorSoft,
+                                  foregroundColor: AppColors.error,
+                                ),
+                                onPressed: () => Navigator.pop(ctx, true),
+                                child: Text(l10n.bannersDelete),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirm == true && context.mounted) {
+                          await context.read<MerchantBannersProvider>().delete(
+                            b.id,
+                          );
+                        }
+                      },
+                    ),
+                ],
+              ),
+            ),
     );
   }
 }
@@ -156,9 +160,9 @@ class _PlacementSection extends StatelessWidget {
             children: [
               Text(
                 placement.label,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(width: AppSizes.sm),
               Container(
@@ -217,7 +221,7 @@ class _EmptyTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(AppIcons.addPhotoAlternateOutlined, color: AppColors.muted),
+            AppIcon(AppIcons.addPhotoAlternateOutlined, color: AppColors.muted),
             const SizedBox(width: AppSizes.md),
             Expanded(
               child: Text(
@@ -247,7 +251,9 @@ class _BannerTile extends StatelessWidget {
   String get _status {
     final now = DateTime.now();
     if (!banner.isActive) return 'Off';
-    if (banner.startAt != null && banner.startAt!.isAfter(now)) return 'Scheduled';
+    if (banner.startAt != null && banner.startAt!.isAfter(now)) {
+      return 'Scheduled';
+    }
     if (banner.endAt != null && banner.endAt!.isBefore(now)) return 'Expired';
     return 'Live';
   }
@@ -307,7 +313,7 @@ class _BannerTile extends StatelessWidget {
                   child: Image.network(
                     resolveImageUrl(banner.imageUrl),
                     fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => Icon(
+                    errorBuilder: (_, _, _) => AppIcon(
                       AppIcons.brokenImageOutlined,
                       color: AppColors.muted,
                     ),
@@ -340,9 +346,7 @@ class _BannerTile extends StatelessWidget {
                             ),
                             child: Text(
                               _statusLabel(l10n),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall
+                              style: Theme.of(context).textTheme.labelSmall
                                   ?.copyWith(
                                     color: _statusColor,
                                     fontWeight: FontWeight.w700,
@@ -352,16 +356,15 @@ class _BannerTile extends StatelessWidget {
                           const SizedBox(width: AppSizes.sm),
                           Text(
                             l10n.bannersSortOrder('${banner.sortOrder}'),
-                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                  color: AppColors.muted,
-                                ),
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(color: AppColors.muted),
                           ),
                           if (banner.productCount > 0) ...[
                             const SizedBox(width: AppSizes.sm),
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(
+                                AppIcon(
                                   AppIcons.inventory2Outlined,
                                   size: AppSizes.iconSm,
                                   color: AppColors.muted,
@@ -370,24 +373,24 @@ class _BannerTile extends StatelessWidget {
                                 Text(
                                   banner.productCount == 1
                                       ? l10n.bannersProductCountOne(
-                                          '${banner.productCount}')
+                                          '${banner.productCount}',
+                                        )
                                       : l10n.bannersProductCountOther(
-                                          '${banner.productCount}'),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelSmall
+                                          '${banner.productCount}',
+                                        ),
+                                  style: Theme.of(context).textTheme.labelSmall
                                       ?.copyWith(color: AppColors.muted),
                                 ),
                               ],
                             ),
                           ],
-                          if (banner.startAt != null || banner.endAt != null) ...[
+                          if (banner.startAt != null ||
+                              banner.endAt != null) ...[
                             const SizedBox(width: AppSizes.sm),
                             Text(
                               _windowLabel(l10n, banner),
-                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                    color: AppColors.muted,
-                                  ),
+                              style: Theme.of(context).textTheme.labelSmall
+                                  ?.copyWith(color: AppColors.muted),
                             ),
                           ],
                         ],
@@ -397,7 +400,7 @@ class _BannerTile extends StatelessWidget {
                 ),
                 IconButton(
                   tooltip: l10n.bannersDelete,
-                  icon: const Icon(AppIcons.deleteOutline),
+                  icon: const AppIcon(AppIcons.deleteOutline),
                   onPressed: onDelete,
                 ),
               ],
@@ -430,7 +433,9 @@ class _BannersSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       padding: EdgeInsets.only(
-          top: FloatingAppBar.contentTopInset(context), bottom: AppSizes.huge),
+        top: FloatingAppBar.contentTopInset(context),
+        bottom: AppSizes.huge,
+      ),
       children: const [
         _PlacementSectionSkeleton(tileCount: 3),
         _PlacementSectionSkeleton(tileCount: 2),
@@ -490,11 +495,7 @@ class _BannerTileSkeleton extends StatelessWidget {
           child: Row(
             children: [
               // Image placeholder
-              AppShimmerBox(
-                width: 72,
-                height: 56,
-                radius: AppSizes.radiusSm,
-              ),
+              AppShimmerBox(width: 72, height: 56, radius: AppSizes.radiusSm),
               const SizedBox(width: AppSizes.md),
               // Text lines
               Expanded(
@@ -508,7 +509,11 @@ class _BannerTileSkeleton extends StatelessWidget {
                 ),
               ),
               // Delete icon placeholder
-              const AppShimmerBox(width: 32, height: 32, radius: AppSizes.radiusFull),
+              const AppShimmerBox(
+                width: 32,
+                height: 32,
+                radius: AppSizes.radiusFull,
+              ),
             ],
           ),
         ),

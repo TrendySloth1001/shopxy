@@ -4,6 +4,7 @@ import 'package:shopxy_customer/features/returns/domain/entities/return_request.
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Vertical milestone strip for a return request. Short-circuits to
 /// REJECTED / CANCELLED when terminated early.
@@ -27,17 +28,24 @@ class ReturnTimeline extends StatelessWidget {
     final stops = <_Stop>[
       _Stop('Requested', AppIcons.receiptRounded, byType['REQUESTED']),
       if (rejected)
-        _Stop('Rejected', AppIcons.cancelOutlined, byType['REJECTED'],
-            tone: _Tone.danger)
+        _Stop(
+          'Rejected',
+          AppIcons.cancelOutlined,
+          byType['REJECTED'],
+          tone: _Tone.danger,
+        )
       else if (cancelled)
-        _Stop('Cancelled', AppIcons.cancelOutlined, byType['CANCELLED'],
-            tone: _Tone.warn)
+        _Stop(
+          'Cancelled',
+          AppIcons.cancelOutlined,
+          byType['CANCELLED'],
+          tone: _Tone.warn,
+        )
       else ...[
         _Stop('Approved', AppIcons.checkCircleOutline, byType['APPROVED']),
         _Stop('Picked up', AppIcons.localShippingOutlined, byType['PICKED_UP']),
         _Stop('Received', AppIcons.inventory2Outlined, byType['RECEIVED']),
-        _Stop('Refunded', AppIcons.paymentsOutlined,
-            byType['REFUNDED']),
+        _Stop('Refunded', AppIcons.paymentsOutlined, byType['REFUNDED']),
       ],
     ];
 
@@ -47,10 +55,10 @@ class ReturnTimeline extends StatelessWidget {
         Text(
           'TIMELINE',
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: AppColors.muted,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.5,
-              ),
+            color: AppColors.muted,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.5,
+          ),
         ),
         const SizedBox(height: AppSizes.sm),
         for (var i = 0; i < stops.length; i++)
@@ -69,7 +77,7 @@ enum _Tone { normal, danger, warn }
 class _Stop {
   const _Stop(this.label, this.icon, this.event, {this.tone = _Tone.normal});
   final String label;
-  final IconData icon;
+  final AppIconData icon;
   final ReturnEvent? event;
   final _Tone tone;
   bool get reached => event != null;
@@ -129,7 +137,7 @@ class _StopRow extends StatelessWidget {
                       width: 2,
                     ),
                   ),
-                  child: Icon(
+                  child: AppIcon(
                     stop.icon,
                     size: 12,
                     color: reached ? AppColors.white : AppColors.muted,
@@ -156,18 +164,19 @@ class _StopRow extends StatelessWidget {
                   Text(
                     stop.label,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: reached ? AppColors.black : AppColors.muted,
-                          fontWeight:
-                              reached ? FontWeight.w800 : FontWeight.w600,
-                        ),
+                      color: reached ? AppColors.black : AppColors.muted,
+                      fontWeight: reached ? FontWeight.w800 : FontWeight.w600,
+                    ),
                   ),
                   if (e != null) ...[
                     const SizedBox(height: AppSizes.xs),
                     Text(
-                      DateFormat('EEE d MMM · h:mm a').format(e.occurredAt.toLocal()),
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: AppColors.muted,
-                          ),
+                      DateFormat(
+                        'EEE d MMM · h:mm a',
+                      ).format(e.occurredAt.toLocal()),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.labelSmall?.copyWith(color: AppColors.muted),
                     ),
                   ],
                   const SizedBox(height: AppSizes.xs),
