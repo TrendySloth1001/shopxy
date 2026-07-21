@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/auth/shop_capabilities.dart';
+import 'package:shopxy/core/router/app_shell.dart';
 import 'package:shopxy/features/admin/presentation/pages/admin_bank_offers_page.dart';
 import 'package:shopxy/features/admin/presentation/pages/admin_banners_page.dart';
 import 'package:shopxy/features/admin/presentation/pages/admin_category_taxonomy_page.dart';
@@ -309,7 +310,7 @@ class MenuPage extends StatelessWidget {
       body: ListView(
         padding: EdgeInsets.only(
           top: AppSizes.sm + FloatingAppBar.contentTopInset(context),
-          bottom: AppSizes.huge,
+          bottom: FloatingBottomNav.contentBottomInset(context) + AppSizes.sm,
         ),
         children: [
           if (manage.isNotEmpty)

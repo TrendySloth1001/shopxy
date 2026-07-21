@@ -24,6 +24,7 @@ import 'package:shopxy/features/shop/presentation/providers/linked_account_provi
 import 'package:shopxy/features/shop/presentation/widgets/payout_setup_sheet.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
+import 'package:shopxy/core/router/app_shell.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
@@ -154,7 +155,12 @@ class _DashboardScroll extends StatelessWidget {
         // app bar's inset (status bar + island band) to the top padding.
         final topInset = FloatingAppBar.contentTopInset(context) + AppSizes.xxl;
         return ListView(
-          padding: EdgeInsets.fromLTRB(pad, topInset, pad, AppSizes.huge),
+          padding: EdgeInsets.fromLTRB(
+            pad,
+            topInset,
+            pad,
+            FloatingBottomNav.contentBottomInset(context) + AppSizes.sm,
+          ),
           children: [
             _Header(provider: provider, width: c.maxWidth),
             const _PendingInviteCallout(),

@@ -144,6 +144,11 @@ class AppShellState extends State<AppShell> {
         .toList(growable: false);
 
     return Scaffold(
+      // Let the page scroll BEHIND the floating nav so its frosted islands
+      // actually blur live content (mirrors the top FloatingAppBar). Scaffold
+      // folds the nav's height into the body's bottom MediaQuery padding, so
+      // scrollables that honour it still clear the bar.
+      extendBody: true,
       body: IndexedStack(index: _currentIndex, children: pages),
       bottomNavigationBar: _FloatingBottomNav(
         destinations: _destinations,
@@ -170,6 +175,26 @@ class AppShellState extends State<AppShell> {
 /// - **Trailing Home chip** — a distinct island on the right that is *always*
 ///   expanded (icon + "Home"); it never collapses to an icon, it only switches
 ///   between selected and unselected styling.
+/// Public entry point for the floating bottom nav's layout metrics. The widget
+/// itself is private (only [AppShell] builds it), but tab pages need its
+/// [contentBottomInset] to pad their scroll content clear of the floating bar.
+abstract final class FloatingBottomNav {
+  FloatingBottomNav._();
+
+  /// Vertical breathing room above and below the island band.
+  static const double vMargin = AppSizes.sm;
+
+  /// The bottom inset a tab page's scroll content needs so its last item clears
+  /// (and can scroll *behind*) the floating bar: the device's bottom safe area
+  /// + the island band + its margins. Read from the raw view so it's correct at
+  /// any nested body context — the symmetric partner of
+  /// [FloatingAppBar.contentTopInset].
+  static double contentBottomInset(BuildContext context) {
+    final safeBottom = MediaQueryData.fromView(View.of(context)).padding.bottom;
+    return safeBottom + _NavIsland.height + vMargin * 2;
+  }
+}
+
 class _FloatingBottomNav extends StatelessWidget {
   const _FloatingBottomNav({
     required this.destinations,
@@ -196,7 +221,7 @@ class _FloatingBottomNav extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSizes.lg,
-          vertical: AppSizes.sm,
+          vertical: FloatingBottomNav.vMargin,
         ),
         child: Row(
           children: [

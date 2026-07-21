@@ -17,6 +17,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
+import 'package:shopxy/core/router/app_shell.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
@@ -228,12 +229,14 @@ class _OrdersInboxPageState extends State<OrdersInboxPage> {
                         : ListView.separated(
                             // Header already clears the bar; stop the list
                             // from auto-applying the MediaQuery top inset
-                            // (extendBodyBehindAppBar) a second time.
-                            padding: const EdgeInsets.fromLTRB(
+                            // (extendBodyBehindAppBar) a second time. Bottom
+                            // padding clears the floating nav.
+                            padding: EdgeInsets.fromLTRB(
                               AppSizes.lg,
                               0,
                               AppSizes.lg,
-                              0,
+                              FloatingBottomNav.contentBottomInset(context) +
+                                  AppSizes.sm,
                             ),
                             physics: const AlwaysScrollableScrollPhysics(),
                             itemCount: p.orders.length,

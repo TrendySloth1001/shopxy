@@ -28,6 +28,7 @@ import 'package:shopxy/shared/widgets/app_filter_pill.dart';
 import 'package:shopxy/shared/widgets/app_search_bar.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
+import 'package:shopxy/core/router/app_shell.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
@@ -229,7 +230,12 @@ class _ProductsPageState extends State<ProductsPage> {
               },
             ),
           ),
-        const SliverToBoxAdapter(child: SizedBox(height: AppSizes.huge)),
+        // Clear the floating bottom nav so the last row isn't hidden behind it.
+        SliverToBoxAdapter(
+          child: SizedBox(
+            height: FloatingBottomNav.contentBottomInset(context) + AppSizes.sm,
+          ),
+        ),
       ],
     );
   }
@@ -400,8 +406,13 @@ class _ProductsPageState extends State<ProductsPage> {
                           child: _grid
                               ? _buildGrid(provider: provider)
                               : ListView.separated(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: AppSizes.sm,
+                                  padding: EdgeInsets.only(
+                                    top: AppSizes.sm,
+                                    bottom:
+                                        FloatingBottomNav.contentBottomInset(
+                                          context,
+                                        ) +
+                                        AppSizes.sm,
                                   ),
                                   itemCount:
                                       items.length + (provider.hasMore ? 1 : 0),

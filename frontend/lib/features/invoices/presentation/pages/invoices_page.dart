@@ -26,6 +26,7 @@ import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
+import 'package:shopxy/core/router/app_shell.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
@@ -242,11 +243,12 @@ class _InvoicesPageState extends State<InvoicesPage> {
                       backgroundColor: AppColors.surface,
                       child: ListView.separated(
                         controller: _scrollCtrl,
-                        padding: const EdgeInsets.fromLTRB(
+                        padding: EdgeInsets.fromLTRB(
                           AppSizes.lg,
                           AppSizes.sm,
                           AppSizes.lg,
-                          100,
+                          FloatingBottomNav.contentBottomInset(context) +
+                              AppSizes.sm,
                         ),
                         itemCount:
                             provider.invoices.length +
