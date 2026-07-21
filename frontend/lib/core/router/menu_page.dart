@@ -458,7 +458,7 @@ class _MenuRow extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSizes.xxs),
                   Text(
                     item.description(l10n),
                     style: theme.textTheme.bodySmall?.copyWith(

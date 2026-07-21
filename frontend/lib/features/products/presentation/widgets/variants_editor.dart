@@ -556,7 +556,7 @@ class _AddVariantImageTile extends StatelessWidget {
           child: Row(
             children: [
               const AppIcon(AppIcons.photoLibraryOutlined, size: 18),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSizes.sm),
               Text(l10n.productsFromGallery),
             ],
           ),
@@ -566,7 +566,7 @@ class _AddVariantImageTile extends StatelessWidget {
           child: Row(
             children: [
               const AppIcon(AppIcons.photoCameraOutlined, size: 18),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSizes.sm),
               Text(l10n.productsTakePhotoMenu),
             ],
           ),
@@ -586,7 +586,7 @@ class _AddVariantImageTile extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             AppIcon(AppIcons.addAPhotoOutlined, color: AppColors.muted),
-            const SizedBox(height: 2),
+            const SizedBox(height: AppSizes.xxs),
             Text(
               l10n.productsAddShort,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(

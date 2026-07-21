@@ -383,7 +383,7 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
                         shop.name,
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: AppSizes.xxs),
                       Row(
                         children: [
                           AppIcon(
@@ -809,7 +809,7 @@ class _SectionHeader extends StatelessWidget {
           ),
         ),
         if (subtitle != null) ...[
-          const SizedBox(height: 2),
+          const SizedBox(height: AppSizes.xxs),
           Text(
             subtitle!,
             style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
@@ -1080,7 +1080,7 @@ class _PublishCard extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSizes.xxs),
                   Text(
                     shop.isPublished
                         ? l10n.shopPublishCardLiveDesc

@@ -337,7 +337,7 @@ class _GuestProfileBody extends StatelessWidget {
                             'Welcome to ShopXY',
                             style: theme.textTheme.titleMedium?.extraBold,
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: AppSizes.xxs),
                           Text(
                             'Sign in to track orders, save items and get '
                             'invitations from your shops.',

@@ -419,7 +419,7 @@ class _ProfileHero extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     if (shopName != null && shopName.trim().isNotEmpty) ...[
-                      const SizedBox(height: 2),
+                      const SizedBox(height: AppSizes.xxs),
                       Text(
                         shopName,
                         style: theme.textTheme.titleSmall?.copyWith(
@@ -430,7 +430,7 @@ class _ProfileHero extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppSizes.xs),
                     Text(
                       email,
                       style: theme.textTheme.bodySmall?.copyWith(
@@ -539,7 +539,7 @@ class _ShopSetupCallout extends StatelessWidget {
                         color: AppColors.black,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSizes.xxs),
                     Text(
                       l10n.profileFinishShopSetupBody,
                       style: theme.textTheme.bodySmall?.copyWith(
@@ -681,7 +681,7 @@ class _ProfileCompletion extends StatelessWidget {
                       '${l10n.profileCompletionTitle} $percent%',
                       style: theme.textTheme.titleSmall?.bold,
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSizes.xxs),
                     Text(
                       '$filled / $total ${l10n.profileCompletionDetailsAdded}',
                       style: theme.textTheme.bodySmall?.copyWith(
@@ -754,7 +754,7 @@ class _ProfileCompletion extends StatelessWidget {
                               size: AppSizes.iconSm,
                               color: AppColors.brandStrong,
                             ),
-                            const SizedBox(width: 2),
+                            const SizedBox(width: AppSizes.xxs),
                             Text(
                               m.label,
                               style: theme.textTheme.labelSmall?.copyWith(
@@ -915,7 +915,7 @@ class _DetailRow extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.xxs),
                 Text(
                   hasValue ? text : l10n.profileNotAdded,
                   style: theme.textTheme.bodyMedium?.copyWith(

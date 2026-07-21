@@ -166,7 +166,7 @@ class _ChangeRow extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.xxs),
                 Text(
                   '${_displayValue(entry.oldValue)}  →  ${_displayValue(entry.newValue)}',
                   style: theme.textTheme.bodySmall?.copyWith(

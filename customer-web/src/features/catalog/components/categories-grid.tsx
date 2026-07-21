@@ -99,7 +99,7 @@ function CategoryTile({ node, index }: { node: CategoryNode; index: number }) {
     >
       {/* Thumbnail — capped at 160px to reduce dead air */}
       <div
-        className="w-full overflow-hidden rounded-lg border border-hairline transition-all duration-200 group-hover:shadow-floating group-hover:-translate-y-[2px] group-focus-visible:ring-2 group-focus-visible:ring-brand-soft"
+        className="w-full overflow-hidden rounded-lg border border-hairline transition-all duration-200 group-hover:shadow-floating group-hover:-translate-y-xxs group-focus-visible:ring-2 group-focus-visible:ring-brand-soft"
         style={{ height: "clamp(80px, 14vw, 160px)" }}
       >
         {imageUrl ? (

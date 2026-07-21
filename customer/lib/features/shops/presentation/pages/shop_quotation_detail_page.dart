@@ -258,7 +258,7 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: AppSizes.xxs),
               Text(
                 '${q.isRequested ? 'Requested' : 'Sent'} ${_dateFmt.format(q.createdAt.toLocal())}',
                 style: theme.textTheme.bodySmall?.copyWith(
@@ -490,7 +490,7 @@ class _ItemRow extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.xxs),
                 Text(
                   '$qtyStr × ${currency.format(line.unitPrice)}'
                   '${line.taxPercent > 0 ? ' · ${line.taxPercent.toStringAsFixed(0)}% GST' : ''}',

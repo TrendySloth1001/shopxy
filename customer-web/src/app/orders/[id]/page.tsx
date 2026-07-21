@@ -285,7 +285,7 @@ function OrderDetailContent({
         <>
           <SectionLabel text="DELIVERING TO" />
           <div className="flex items-start gap-sm px-lg py-xs pb-md">
-            <MapPin size={16} className="text-muted mt-[2px] flex-shrink-0" />
+            <MapPin size={16} className="text-muted mt-xxs flex-shrink-0" />
             <div>
               <p className="text-body-md font-extrabold text-ink">{order.customerName}</p>
               <p className="text-body-sm text-muted whitespace-pre-line">{order.customerAddress}</p>
@@ -541,9 +541,9 @@ function ShippingProgressRow({ events }: { events: { type: string }[] }) {
     <div className="px-lg pb-md pt-sm">
       <div className="relative flex items-start justify-between">
         {/* Track line behind dots */}
-        <div className="absolute top-[9px] left-0 right-0 h-[2px] bg-hairline" />
+        <div className="absolute top-[9px] left-0 right-0 h-xxs bg-hairline" />
         <div
-          className="absolute top-[9px] left-0 h-[2px] bg-brand transition-all duration-500"
+          className="absolute top-[9px] left-0 h-xxs bg-brand transition-all duration-500"
           style={{ width: `${(currentIdx / (SHIPPING_STEPS.length - 1)) * 100}%` }}
         />
         {SHIPPING_STEPS.map((step, i) => {
@@ -638,7 +638,7 @@ function ShopSection({
           <ShopOrderStatusChip status={child.status} />
         </div>
         <div className="flex items-start gap-sm">
-          <Store size={14} className="text-muted mt-[2px] flex-shrink-0" />
+          <Store size={14} className="text-muted mt-xxs flex-shrink-0" />
           <p className="text-body-sm text-muted font-semibold">
             Sold by{" "}
             <span className="text-body-md font-extrabold text-ink">{vendorName}</span>
@@ -682,7 +682,7 @@ function ShopSection({
               <div className="flex-1 min-w-0">
                 <p className="text-body-sm font-extrabold text-ink line-clamp-2">{item.productName}</p>
                 <div className="mt-xs flex flex-wrap gap-sm items-center">
-                  <span className="rounded-full bg-brand-soft px-sm py-[2px] text-caption font-bold text-brand-strong">
+                  <span className="rounded-full bg-brand-soft px-sm py-xxs text-caption font-bold text-brand-strong">
                     Qty {formatQty(item.quantity)}
                   </span>
                   <span className="text-caption text-muted">{item.unit}</span>
@@ -791,13 +791,13 @@ function ShopSection({
       {/* Unavailability notes */}
       {cancelNote && (
         <div className="mx-lg mb-md mt-xs flex items-start gap-sm">
-          <Info size={13} className="text-muted flex-shrink-0 mt-[2px]" />
+          <Info size={13} className="text-muted flex-shrink-0 mt-xxs" />
           <p className="text-label-md text-muted leading-[1.3]">{cancelNote}</p>
         </div>
       )}
       {returnNote && (
         <div className="mx-lg mb-md mt-xs flex items-start gap-sm">
-          <Info size={13} className="text-muted flex-shrink-0 mt-[2px]" />
+          <Info size={13} className="text-muted flex-shrink-0 mt-xxs" />
           <p className="text-label-md text-muted leading-[1.3]">{returnNote}</p>
         </div>
       )}

@@ -1076,7 +1076,7 @@ class _ResumeBanner extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: AppSizes.xxs),
           Padding(
             padding: const EdgeInsets.only(left: AppSizes.xl),
             child: Text(

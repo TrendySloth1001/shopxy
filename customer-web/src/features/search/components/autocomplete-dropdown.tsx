@@ -28,7 +28,7 @@ export function AutocompleteDropdown({ suggestions, activeIndex, onSelect }: Pro
     <div
       role="listbox"
       aria-label="Search suggestions"
-      className="absolute left-0 right-0 top-full z-50 mt-[2px] overflow-hidden rounded-md border border-hairline bg-white shadow-menu"
+      className="absolute left-0 right-0 top-full z-50 mt-xxs overflow-hidden rounded-md border border-hairline bg-white shadow-menu"
     >
       {products.length > 0 ? (
         <section>
@@ -122,7 +122,7 @@ export function RecentDropdown({
     <div
       role="listbox"
       aria-label="Recent searches"
-      className="absolute left-0 right-0 top-full z-50 mt-[2px] overflow-hidden rounded-md border border-hairline bg-white shadow-menu"
+      className="absolute left-0 right-0 top-full z-50 mt-xxs overflow-hidden rounded-md border border-hairline bg-white shadow-menu"
     >
       <div className="flex items-center justify-between border-b border-hairline px-md py-[5px]">
         <p className="text-nano font-extrabold uppercase tracking-[0.8px] text-muted">

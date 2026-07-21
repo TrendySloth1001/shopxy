@@ -214,7 +214,7 @@ function ShopHeader({ shop, total }: { shop: ShopProfile; total: number }) {
             ) : null}
             <div className="mt-sm flex flex-wrap items-center gap-sm">
               {shop.rating != null ? (
-                <span className="inline-flex items-center gap-[3px] rounded-sm bg-success px-[6px] py-[2px] text-caption font-bold text-white">
+                <span className="inline-flex items-center gap-[3px] rounded-sm bg-success px-[6px] py-xxs text-caption font-bold text-white">
                   {shop.rating.toFixed(1)}
                   <Star size={9} className="fill-white text-white" aria-hidden />
                   <span className="font-normal text-white/80">({shop.ratingCount})</span>

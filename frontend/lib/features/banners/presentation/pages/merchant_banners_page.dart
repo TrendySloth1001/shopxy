@@ -331,7 +331,7 @@ class _BannerTile extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: AppSizes.xxs),
                       Row(
                         children: [
                           Container(
@@ -368,7 +368,7 @@ class _BannerTile extends StatelessWidget {
                                   size: AppSizes.iconSm,
                                   color: AppColors.muted,
                                 ),
-                                const SizedBox(width: 2),
+                                const SizedBox(width: AppSizes.xxs),
                                 Text(
                                   banner.productCount == 1
                                       ? l10n.bannersProductCountOne(

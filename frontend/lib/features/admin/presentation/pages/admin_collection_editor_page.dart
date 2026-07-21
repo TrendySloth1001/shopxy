@@ -593,7 +593,7 @@ class _SkeletonField extends StatelessWidget {
         AppShimmerLine(widthFactor: widthFactor * 0.5, height: 11),
         const SizedBox(height: 6),
         AppShimmerLine(widthFactor: widthFactor, height: 18),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppSizes.xs),
         const AppShimmerLine(widthFactor: 1.0, height: 1),
       ],
     );

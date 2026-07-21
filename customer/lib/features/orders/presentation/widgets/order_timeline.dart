@@ -227,7 +227,7 @@ class _StopRow extends StatelessWidget {
                     ),
                   ),
                   if (e != null) ...[
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSizes.xxs),
                     Text(
                       _formatStamp(e.occurredAt),
                       style: theme.textTheme.bodySmall?.copyWith(
@@ -236,7 +236,7 @@ class _StopRow extends StatelessWidget {
                       ),
                     ),
                     if (e.courier != null || e.awb != null) ...[
-                      const SizedBox(height: 2),
+                      const SizedBox(height: AppSizes.xxs),
                       Text(
                         [
                           if (e.courier != null) e.courier!,
@@ -250,7 +250,7 @@ class _StopRow extends StatelessWidget {
                       ),
                     ],
                     if (e.eta != null) ...[
-                      const SizedBox(height: 2),
+                      const SizedBox(height: AppSizes.xxs),
                       Text(
                         'ETA ${_formatEta(e.eta!)}',
                         style: theme.textTheme.labelSmall?.copyWith(
@@ -261,7 +261,7 @@ class _StopRow extends StatelessWidget {
                       ),
                     ],
                     if (e.note != null && e.note!.isNotEmpty) ...[
-                      const SizedBox(height: 2),
+                      const SizedBox(height: AppSizes.xxs),
                       Text(
                         e.note!,
                         style: theme.textTheme.bodySmall?.copyWith(

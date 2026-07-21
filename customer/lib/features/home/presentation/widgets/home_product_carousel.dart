@@ -178,10 +178,10 @@ class HomeProductTile extends StatelessWidget {
                           height: 1.2,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: AppSizes.xs),
                       _PriceRow(product: product, hasDiscount: hasDiscount),
                       if (hasDiscount) ...[
-                        const SizedBox(height: 2),
+                        const SizedBox(height: AppSizes.xxs),
                         // Same line carries both signals so the tile
                         // keeps a 3-row body regardless of whether the
                         // product is discounted or full-price.
@@ -225,7 +225,7 @@ class HomeProductTile extends StatelessWidget {
                           ],
                         ),
                       ] else if (product.freeDelivery || product.isAssured) ...[
-                        const SizedBox(height: 2),
+                        const SizedBox(height: AppSizes.xxs),
                         Row(
                           children: [
                             if (product.freeDelivery) ...[
@@ -479,13 +479,13 @@ class _RatingPill extends StatelessWidget {
               fontSize: 11,
             ),
           ),
-          const SizedBox(width: 2),
+          const SizedBox(width: AppSizes.xxs),
           const AppIcon(
             AppIcons.starRounded,
             color: AppColors.success,
             size: 12,
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppSizes.xs),
           Text(
             '($count)',
             style: const TextStyle(
@@ -532,7 +532,7 @@ class _PriceRow extends StatelessWidget {
             ),
           ),
           if (product.originalPrice.isNotEmpty) ...[
-            const SizedBox(width: 4),
+            const SizedBox(width: AppSizes.xs),
             Padding(
               padding: const EdgeInsets.only(bottom: 1),
               child: Text(

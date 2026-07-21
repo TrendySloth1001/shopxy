@@ -328,7 +328,7 @@ class _BrandWordmark extends StatelessWidget {
                         height: 1,
                       ),
                     ),
-                    SizedBox(width: 2),
+                    SizedBox(width: AppSizes.xxs),
                     Text(
                       '.',
                       style: TextStyle(
@@ -436,7 +436,7 @@ class _LocationPill extends StatelessWidget {
                   ),
                 ),
               ),
-            const SizedBox(width: 2),
+            const SizedBox(width: AppSizes.xxs),
             const AppIcon(
               AppIcons.keyboardArrowDownRounded,
               color: AppColors.muted,
@@ -679,7 +679,7 @@ class _AddressRow extends StatelessWidget {
                       ],
                     ],
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSizes.xxs),
                   Text(
                     address.oneLine,
                     maxLines: 2,

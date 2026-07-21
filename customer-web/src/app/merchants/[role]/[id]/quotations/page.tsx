@@ -40,7 +40,7 @@ function QuotationRow({ q, href }: { q: Quotation; href: string }) {
   return (
     <Link href={href} className="group flex items-center gap-md px-lg py-md hover:bg-surface-tint transition-colors">
       <div className="flex-1 min-w-0">
-        <div className="flex flex-wrap items-center gap-xs mb-[2px]">
+        <div className="flex flex-wrap items-center gap-xs mb-xxs">
           <span className="text-body-md font-extrabold text-ink">{q.quotationNo}</span>
           <QuotationStatusBadge status={q.status} />
         </div>

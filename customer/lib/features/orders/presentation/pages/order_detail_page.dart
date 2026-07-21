@@ -804,7 +804,7 @@ class _BuyAgainCard extends StatelessWidget {
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.xxs),
                 Text(
                   'Adds the items from this order back to your cart',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -2003,7 +2003,7 @@ class _PayNowBar extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSizes.xxs),
                     Text(
                       AppFormat.rupeesPrecise(amount),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(

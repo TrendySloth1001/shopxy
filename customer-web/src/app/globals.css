@@ -65,6 +65,7 @@
   --color-spotlight: #f4f757;
 
   /* ── Named spacing (numeric p-4 etc. still works: same 4px rhythm) ────── */
+  --spacing-xxs: 2px;
   --spacing-xs: 4px;
   --spacing-sm: 8px;
   --spacing-md: 12px;

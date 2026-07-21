@@ -151,14 +151,14 @@ class ProductListTile extends StatelessWidget {
                       maxLines: nameMaxLines,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSizes.xxs),
                     // Identifiers — SKU · HSN · Category (when shown).
                     // Category renders with its picked icon so the row
                     // matches the bucket header / picker visually.
                     _buildIdentifierRow(theme),
                     // Description — comfortable-only, gives the card real body
                     if (showDescription) ...[
-                      const SizedBox(height: 4),
+                      const SizedBox(height: AppSizes.xs),
                       Text(
                         product.description!.trim(),
                         style: theme.textTheme.bodySmall?.copyWith(
@@ -197,7 +197,7 @@ class ProductListTile extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           AppIcon(stock.icon, size: 12, color: stock.fg),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: AppSizes.xs),
                           Text(
                             _stockLabel(l10n),
                             style: theme.textTheme.labelSmall?.copyWith(

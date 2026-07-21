@@ -28,9 +28,9 @@ export function PdpOffersStrip({ offers, bankOffers }: Props) {
         {allOffers.slice(0, 4).map((offer, i) => (
           <div key={i} className="flex items-start gap-sm">
             {offer.kind === "BANK" ? (
-              <CreditCard size={14} className="mt-[2px] shrink-0 text-info" aria-hidden />
+              <CreditCard size={14} className="mt-xxs shrink-0 text-info" aria-hidden />
             ) : (
-              <Tag size={14} className="mt-[2px] shrink-0 text-success" aria-hidden />
+              <Tag size={14} className="mt-xxs shrink-0 text-success" aria-hidden />
             )}
             <div className="flex-1">
               <span className="text-body-md font-semibold text-ink">{offer.headline}</span>
@@ -40,7 +40,7 @@ export function PdpOffersStrip({ offers, bankOffers }: Props) {
                 </span>
               ) : null}
               {offer.description ? (
-                <p className="mt-[2px] text-body-sm text-muted">{offer.description}</p>
+                <p className="mt-xxs text-body-sm text-muted">{offer.description}</p>
               ) : null}
             </div>
           </div>

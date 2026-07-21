@@ -175,10 +175,10 @@ class ProductGridCard extends StatelessWidget {
                       height: 1.2,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSizes.xxs),
                   _identifiers(theme),
                   if (hasDescription) ...[
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppSizes.xs),
                     Text(
                       product.description!.trim(),
                       maxLines: 2,
@@ -223,7 +223,7 @@ class ProductGridCard extends StatelessWidget {
                     ],
                   ),
                   if (product.purchasePrice > 0) ...[
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSizes.xxs),
                     Text(
                       '${l10n.productsCostPrefix} ${AppStrings.currencySymbol}${_fmt(product.purchasePrice)}',
                       style: theme.textTheme.bodySmall?.copyWith(

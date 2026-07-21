@@ -83,7 +83,7 @@ function StopRow({
           {stop.label}
         </p>
         {e && (
-          <div className="mt-[2px] space-y-[2px]">
+          <div className="mt-xxs space-y-xxs">
             <p className="text-caption text-muted">{formatDateTime(e.occurredAt)}</p>
             {(e.courier ?? e.awb) && (
               <p className="text-caption font-bold text-brand-strong">

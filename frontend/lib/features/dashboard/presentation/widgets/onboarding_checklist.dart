@@ -164,7 +164,7 @@ class _StepRow extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(width: 2),
+                  const SizedBox(width: AppSizes.xxs),
                   const AppIcon(AppIcons.arrowForwardRounded, size: 14),
                 ],
               ),

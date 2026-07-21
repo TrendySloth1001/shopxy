@@ -26,7 +26,7 @@ function HistogramRow({ star, count, total }: { star: number; count: number; tot
   return (
     <div className="flex items-center gap-sm">
       {/* Star label — fixed width so bars align */}
-      <span className="flex w-[32px] shrink-0 items-center justify-end gap-[2px]">
+      <span className="flex w-[32px] shrink-0 items-center justify-end gap-xxs">
         <span className="text-label-md font-semibold text-ink">{star}</span>
         <span className="text-nano text-muted">★</span>
       </span>

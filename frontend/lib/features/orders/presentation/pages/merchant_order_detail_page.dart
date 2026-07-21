@@ -879,7 +879,7 @@ class _SummaryStat extends StatelessWidget {
               fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: AppSizes.xxs),
           Text(
             label.toUpperCase(),
             style: theme.textTheme.labelSmall?.copyWith(
@@ -963,7 +963,7 @@ class _ShortfallBanner extends StatelessWidget {
                           fontWeight: FontWeight.w800,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: AppSizes.xxs),
                       Text(
                         l10n.ordersShortfallBody,
                         style: theme.textTheme.bodySmall?.copyWith(
@@ -1372,7 +1372,7 @@ class _ItemRow extends StatelessWidget {
                   color: AppColors.muted,
                 ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: AppSizes.xxs),
               SizedBox(
                 width: 80,
                 child: Text(
@@ -2433,7 +2433,7 @@ class _StatBoxSkeleton extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: const [
           AppShimmerLine(widthFactor: 0.55, height: AppSizes.xxl),
-          SizedBox(height: 4),
+          SizedBox(height: AppSizes.xs),
           AppShimmerLine(widthFactor: 0.7, height: AppSizes.sm),
         ],
       ),
@@ -2801,7 +2801,7 @@ class _StockDraftCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: AppSizes.xxs),
             Text(
               l10n.ordersStockDraftHint,
               style: theme.textTheme.bodySmall?.copyWith(

@@ -354,7 +354,7 @@ class _OrderCard extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: AppSizes.xxs),
               Text(
                 '${itemCount == 1 ? "1 item" : "$itemCount items"} · '
                 '${_date.format(order.createdAt)}',

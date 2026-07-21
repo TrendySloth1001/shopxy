@@ -347,7 +347,7 @@ class _ItemPickerRow extends StatelessWidget {
                       ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
                     ),
                     if (selected) ...[
-                      const SizedBox(height: 2),
+                      const SizedBox(height: AppSizes.xxs),
                       // Refund math made explicit: "2 × ₹250 = ₹500".
                       Text(
                         'Refund: ${picked!.toStringAsFixed(picked! == picked!.roundToDouble() ? 0 : 2)} × ${AppFormat.rupeesSmart(item.unitPrice)} = ${AppFormat.rupeesSmart(picked! * item.unitPrice)}',

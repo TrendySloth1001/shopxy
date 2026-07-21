@@ -41,7 +41,7 @@ export function OrderCard({ order }: { order: CustomerOrder }) {
       <p className="mt-xs text-body-sm font-semibold text-muted truncate">
         {sellerLine(order)}
       </p>
-      <p className="mt-[2px] text-body-sm text-muted">
+      <p className="mt-xxs text-body-sm text-muted">
         {count > 0 ? `${count} ${count === 1 ? "item" : "items"} · ` : ""}
         {formatDateTime(order.createdAt)}
       </p>

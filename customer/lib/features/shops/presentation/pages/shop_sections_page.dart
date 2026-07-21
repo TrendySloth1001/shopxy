@@ -147,7 +147,7 @@ class _SectionRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title, style: theme.textTheme.titleMedium?.extraBold),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSizes.xxs),
                   Text(
                     subtitle,
                     style: theme.textTheme.bodySmall?.copyWith(

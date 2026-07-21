@@ -460,7 +460,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     title,
                     style: Theme.of(context).textTheme.bodyMedium?.extraBold,
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSizes.xxs),
                   Text(
                     subtitle,
                     style: Theme.of(
@@ -692,7 +692,7 @@ class _Header extends StatelessWidget {
                     const SizedBox(width: AppSizes.sm),
                   ],
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.xxs),
                 Text(
                   'Review your order and place it',
                   style: Theme.of(
@@ -986,7 +986,7 @@ class _AddAddressCard extends StatelessWidget {
                           context,
                         ).textTheme.bodyMedium?.extraBold,
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: AppSizes.xxs),
                       Text(
                         'We need somewhere to send your order.',
                         style: Theme.of(context).textTheme.labelMedium
@@ -1090,7 +1090,7 @@ class _AddressPickerRow extends StatelessWidget {
                     address.fullName,
                     style: Theme.of(context).textTheme.bodyMedium?.extraBold,
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSizes.xxs),
                   Text(
                     address.oneLine,
                     style: Theme.of(
@@ -1152,7 +1152,7 @@ class _DeliveryEstimateCard extends StatelessWidget {
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.xxs),
                 Text(
                   'Standard delivery · merchant confirms a final date',
                   style: Theme.of(

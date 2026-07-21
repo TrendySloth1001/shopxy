@@ -108,7 +108,7 @@ class _RecentTile extends StatelessWidget {
                     height: 1.2,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSizes.xs),
                 Text(
                   product.price,
                   style: const TextStyle(
@@ -117,7 +117,7 @@ class _RecentTile extends StatelessWidget {
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.xxs),
                 Text(
                   product.originalPrice,
                   style: const TextStyle(

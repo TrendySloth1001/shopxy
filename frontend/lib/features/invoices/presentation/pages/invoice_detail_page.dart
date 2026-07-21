@@ -963,7 +963,7 @@ class _ActionTile extends StatelessWidget {
                   children: [
                     Text(title, style: theme.textTheme.bodyMedium?.semibold),
                     if (subtitle != null) ...[
-                      const SizedBox(height: 2),
+                      const SizedBox(height: AppSizes.xxs),
                       Text(
                         subtitle!,
                         style: theme.textTheme.bodySmall?.copyWith(
@@ -1057,7 +1057,7 @@ class _PaymentTimeline extends StatelessWidget {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: AppSizes.xxs),
                         Text(
                           dateFmt.format(payments[i].paymentDate.toLocal()),
                           style: theme.textTheme.bodySmall?.copyWith(

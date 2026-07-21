@@ -45,7 +45,7 @@ export function CatalogProductCard({ product }: CatalogProductCardProps) {
       {/* Info */}
       <div className="px-md py-sm">
         {product.category && (
-          <p className="mb-[2px] text-label-md font-bold text-brand line-clamp-1">
+          <p className="mb-xxs text-label-md font-bold text-brand line-clamp-1">
             {product.category.name}
           </p>
         )}
@@ -53,7 +53,7 @@ export function CatalogProductCard({ product }: CatalogProductCardProps) {
           {product.name}
         </p>
         {product.sku && (
-          <p className="mt-[2px] text-body-sm text-muted">
+          <p className="mt-xxs text-body-sm text-muted">
             SKU: {product.sku}
           </p>
         )}
@@ -73,7 +73,7 @@ export function CatalogProductCard({ product }: CatalogProductCardProps) {
           )}
         </div>
         {product.taxPercent != null && product.taxPercent > 0 && (
-          <p className="mt-[2px] text-body-sm text-muted">
+          <p className="mt-xxs text-body-sm text-muted">
             +{product.taxPercent}% GST
           </p>
         )}

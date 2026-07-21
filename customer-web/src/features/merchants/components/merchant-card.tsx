@@ -155,10 +155,10 @@ export function MerchantCard({ item, role }: MerchantCardProps) {
                 {shopName}
               </p>
             </Link>
-            <div className="mt-[2px] flex flex-wrap items-center gap-xs">
+            <div className="mt-xxs flex flex-wrap items-center gap-xs">
               {/* Role pill */}
               <span
-                className={`inline-block rounded-full px-sm py-[2px] text-caption font-extrabold ${roleColorOf(role)}`}
+                className={`inline-block rounded-full px-sm py-xxs text-caption font-extrabold ${roleColorOf(role)}`}
               >
                 {roleLabelOf(role)}
               </span>

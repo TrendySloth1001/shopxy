@@ -233,7 +233,7 @@ class _Row extends StatelessWidget {
                         ],
                       ],
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSizes.xxs),
                     Text(
                       '/${row.slug}'
                       '${row.isPublished ? "" : " · ${l10n.adminShopDraft}"}',
@@ -309,7 +309,7 @@ class _ShopRowSkeleton extends StatelessWidget {
                     const SizedBox(height: 6),
                     // Slug / status line (~50 % width).
                     AppShimmerLine(widthFactor: 0.5, height: 11),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppSizes.xs),
                     // Optional location line (~40 % width).
                     AppShimmerLine(widthFactor: 0.4, height: 11),
                   ],

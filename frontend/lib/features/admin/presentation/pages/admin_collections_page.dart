@@ -191,7 +191,7 @@ class _CollectionRow extends StatelessWidget {
                     collection.title,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSizes.xxs),
                   Text(
                     '/${collection.slug}  ·  '
                     '${collection.itemCount == 1 ? l10n.adminCollectionItemCountOne('${collection.itemCount}') : l10n.adminCollectionItemCountOther('${collection.itemCount}')}',

@@ -150,7 +150,7 @@ class _KycRow extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.xxs),
                 Text(
                   doc.subtitle,
                   style: theme.textTheme.bodySmall?.copyWith(

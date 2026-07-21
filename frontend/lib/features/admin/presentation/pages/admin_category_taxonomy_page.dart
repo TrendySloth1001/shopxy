@@ -286,7 +286,7 @@ class _CategoryTileSkeleton extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     AppShimmerLine(widthFactor: 0.60, height: 13),
-                    SizedBox(height: 4),
+                    SizedBox(height: AppSizes.xs),
                     AppShimmerLine(widthFactor: 0.40, height: 10),
                   ],
                 ),
@@ -425,7 +425,7 @@ class _CategoryTreeTile extends StatelessWidget {
                                       : AppColors.muted,
                                 ),
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: AppSizes.xxs),
                           Text(
                             '${c.slug ?? '-'}'
                             '${c.productCount != null ? '  ·  ${AppLocalizations.of(context).adminCategoryProductCount('${c.productCount}')}' : ''}',
