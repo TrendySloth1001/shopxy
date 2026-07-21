@@ -573,7 +573,7 @@ class _MemberRow extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.xxs),
                 Text(
                   member.email,
                   style: theme.textTheme.bodySmall?.copyWith(
@@ -654,7 +654,7 @@ class _InviteRow extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSizes.xxs),
                   Text(
                     l10n.shopInvitedAsAwaitingReply(invite.roleName),
                     style: theme.textTheme.bodySmall?.copyWith(
@@ -725,7 +725,7 @@ class _RoleRow extends StatelessWidget {
                     ],
                   ],
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.xxs),
                 Text(
                   manage == 0
                       ? l10n.shopRoleViewOnly
@@ -1032,7 +1032,7 @@ class _InviteSheetState extends State<_InviteSheet> {
               l10n.shopInviteTeammate,
               style: theme.textTheme.titleLarge?.extraBold,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSizes.xs),
             Text(
               l10n.shopInviteSheetSubtitle,
               style: theme.textTheme.bodySmall?.copyWith(

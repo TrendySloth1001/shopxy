@@ -18,7 +18,7 @@ export function productHref(id: number): string {
  * bank-price / free-delivery line.
  *
  * Follows the shared PRODUCT CARD SPEC:
- *   container  rounded-lg border-hairline bg-white hover:shadow-floating hover:-translate-y-[2px]
+ *   container  rounded-lg border-hairline bg-white hover:shadow-floating hover:-translate-y-xxs
  *   image      group-hover:scale-[1.04] object-cover
  *   badge      bg-brand text-white text-caption font-extrabold rounded-sm
  *   rating     bg-success text-white rounded-sm chip
@@ -34,7 +34,7 @@ export function ProductTile({ product, source = "home" }: { product: ProductCard
     <Link
       href={productHref(p.productId)}
       onClick={() => recordTap(p.productId, source)}
-      className="group flex w-full flex-col overflow-hidden rounded-lg border border-hairline bg-white transition-all duration-200 hover:-translate-y-[2px] hover:shadow-floating focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+      className="group flex w-full flex-col overflow-hidden rounded-lg border border-hairline bg-white transition-all duration-200 hover:-translate-y-xxs hover:shadow-floating focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
     >
       {/* ── Image area ────────────────────────────────────────────────────── */}
       <span className="relative block aspect-square w-full overflow-hidden bg-canvas">
@@ -51,7 +51,7 @@ export function ProductTile({ product, source = "home" }: { product: ProductCard
 
         {/* Discount badge — top-left, the strongest sell signal */}
         {discounted ? (
-          <span className="absolute left-[8px] top-[8px] rounded-sm bg-brand px-sm py-[2px] text-caption font-extrabold tracking-[0.3px] text-white shadow-floating">
+          <span className="absolute left-[8px] top-[8px] rounded-sm bg-brand px-sm py-xxs text-caption font-extrabold tracking-[0.3px] text-white shadow-floating">
             {p.discountPct}% OFF
           </span>
         ) : null}
@@ -67,7 +67,7 @@ export function ProductTile({ product, source = "home" }: { product: ProductCard
 
         {/* Tag ribbon (Bestseller / New …) — bottom-left over the image */}
         {p.tag ? (
-          <span className="absolute bottom-[8px] left-[8px] rounded-xs bg-ink/85 px-[6px] py-[2px] text-nano font-extrabold uppercase tracking-[0.4px] text-white backdrop-blur-sm">
+          <span className="absolute bottom-[8px] left-[8px] rounded-xs bg-ink/85 px-[6px] py-xxs text-nano font-extrabold uppercase tracking-[0.4px] text-white backdrop-blur-sm">
             {p.tag}
           </span>
         ) : null}
@@ -86,7 +86,7 @@ export function ProductTile({ product, source = "home" }: { product: ProductCard
 
         {/* Seller line — "by <shop>" */}
         {p.shopName ? (
-          <span className="mt-[2px] truncate text-caption text-muted">
+          <span className="mt-xxs truncate text-caption text-muted">
             by <span className="font-semibold text-ink/75">{p.shopName}</span>
           </span>
         ) : null}
@@ -94,7 +94,7 @@ export function ProductTile({ product, source = "home" }: { product: ProductCard
         {/* Rating — moved into the body so it shows even without a photo */}
         {p.ratingCountRaw > 0 ? (
           <span className="mt-[5px] flex items-center gap-[5px]">
-            <span className="inline-flex items-center gap-[3px] rounded-sm bg-success px-[6px] py-[2px] text-caption font-bold text-white">
+            <span className="inline-flex items-center gap-[3px] rounded-sm bg-success px-[6px] py-xxs text-caption font-bold text-white">
               {p.rating.toFixed(1)}
               <Star size={9} className="fill-white text-white" aria-hidden />
             </span>
@@ -129,7 +129,7 @@ export function ProductTile({ product, source = "home" }: { product: ProductCard
               </span>
             ) : null}
             {isAssured(p) ? (
-              <span className="inline-flex items-center gap-[2px] rounded-xs bg-info/10 px-[4px] py-[1px] text-nano font-extrabold tracking-[0.3px] text-info">
+              <span className="inline-flex items-center gap-xxs rounded-xs bg-info/10 px-[4px] py-[1px] text-nano font-extrabold tracking-[0.3px] text-info">
                 <ShieldCheck size={9} aria-hidden /> ASSURED
               </span>
             ) : null}

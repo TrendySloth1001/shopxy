@@ -142,7 +142,7 @@ function ProductRow({
       {/* Info */}
       <div className="flex-1 min-w-0">
         <p className="text-body-md font-bold text-ink leading-snug truncate">{product.name}</p>
-        <div className="flex items-baseline gap-xs mt-[2px]">
+        <div className="flex items-baseline gap-xs mt-xxs">
           <span className="text-body-sm font-extrabold text-ink">
             {formatINR(product.sellingPrice)}
           </span>

@@ -115,7 +115,7 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
                         height: 1.1,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSizes.xxs),
                     AnimatedSwitcher(
                       duration: const Duration(milliseconds: 300),
                       transitionBuilder: (child, anim) => SlideTransition(
@@ -146,7 +146,7 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
               Container(width: 1, height: 24, color: AppColors.hairline),
               const SizedBox(width: AppSizes.xs),
               const _SearchAction(icon: AppIcons.micNoneRounded, filled: false),
-              const SizedBox(width: 2),
+              const SizedBox(width: AppSizes.xxs),
               const _SearchAction(
                 icon: AppIcons.qrCodeScannerRounded,
                 filled: true,

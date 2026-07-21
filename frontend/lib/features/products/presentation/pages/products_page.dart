@@ -674,7 +674,7 @@ class _ProductRowSkeleton extends StatelessWidget {
                 // Name — 1 line compact, 2 lines card
                 AppShimmerLine(widthFactor: 0.75),
                 if (!compact) ...[
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSizes.xs),
                   AppShimmerLine(widthFactor: 0.55),
                 ],
                 const SizedBox(height: AppSizes.xs),
@@ -745,7 +745,7 @@ class _StockActionLabel extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         AppIcon(icon, color: AppColors.white, size: 22),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppSizes.xs),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Text(

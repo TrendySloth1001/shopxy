@@ -151,7 +151,7 @@ export function RequestReturnDialog({ parentOrderId, shopOrder, onClose, onSubmi
                           {formatINR(item.unitPrice, { decimals: 2 })} each
                         </p>
                         {selected && (
-                          <p className="mt-[2px] text-caption font-bold text-success">
+                          <p className="mt-xxs text-caption font-bold text-success">
                             Returning {formatQty(pick!.quantity)} ×{" "}
                             {formatINR(item.unitPrice, { decimals: 2 })}
                           </p>

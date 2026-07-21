@@ -358,7 +358,7 @@ class _NotificationTile extends StatelessWidget {
                     ],
                   ),
                   if (item.body != null) ...[
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSizes.xxs),
                     Text(
                       item.body!,
                       style: Theme.of(

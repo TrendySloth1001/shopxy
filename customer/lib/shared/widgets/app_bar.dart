@@ -31,10 +31,10 @@ class AppAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.subtitle,
     this.actions,
     this.bottom,
-  })  : leading = null,
-        centerTitle = false,
-        backgroundColor = null,
-        automaticallyImplyLeading = true;
+  }) : leading = null,
+       centerTitle = false,
+       backgroundColor = null,
+       automaticallyImplyLeading = true;
 
   final String title;
   final String? subtitle;
@@ -43,14 +43,15 @@ class AppAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool centerTitle;
   final Color? backgroundColor;
   final PreferredSizeWidget? bottom;
+
   /// Forwarded to [AppBar]. Set false for embedded shell pages (e.g.
   /// the Cart tab) where there's no route to pop back to.
   final bool automaticallyImplyLeading;
 
   @override
   Size get preferredSize => Size.fromHeight(
-        AppSizes.appBarHeight + (bottom?.preferredSize.height ?? 0),
-      );
+    AppSizes.appBarHeight + (bottom?.preferredSize.height ?? 0),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -67,8 +68,9 @@ class AppAppBar extends StatelessWidget implements PreferredSizeWidget {
       centerTitle: centerTitle,
       titleSpacing: leading == null ? AppSizes.lg : 0,
       title: Column(
-        crossAxisAlignment:
-            centerTitle ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+        crossAxisAlignment: centerTitle
+            ? CrossAxisAlignment.center
+            : CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
@@ -80,16 +82,19 @@ class AppAppBar extends StatelessWidget implements PreferredSizeWidget {
             ),
           ),
           if (hasSubtitle) ...[
-            const SizedBox(height: 2),
+            const SizedBox(height: AppSizes.xxs),
             Text(
               subtitle!,
-              style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.muted,
+              ),
             ),
           ],
         ],
       ),
       actions: actions,
-      bottom: bottom ??
+      bottom:
+          bottom ??
           const PreferredSize(
             preferredSize: Size.fromHeight(1),
             child: Divider(height: 1, color: AppColors.hairline),

@@ -439,7 +439,7 @@ class _OrderRow extends StatelessWidget {
                       ],
                     ),
                     if (preview != null) ...[
-                      const SizedBox(height: 2),
+                      const SizedBox(height: AppSizes.xxs),
                       Text(
                         preview,
                         style: theme.textTheme.bodySmall,
@@ -447,7 +447,7 @@ class _OrderRow extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSizes.xxs),
                     Text(
                       '${_date.format(order.createdAt.toLocal())} · ${order.itemCount} ${order.itemCount == 1 ? l10n.ordersItemUnit : l10n.ordersItemsUnit}',
                       style: theme.textTheme.bodySmall?.copyWith(

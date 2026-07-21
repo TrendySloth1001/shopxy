@@ -146,7 +146,7 @@ export function InviteCard({
             {/* Status chip */}
             {!actionable && (
               <span
-                className={`mb-xs inline-block rounded-full px-sm py-[2px] text-label-md font-extrabold ${statusCls}`}
+                className={`mb-xs inline-block rounded-full px-sm py-xxs text-label-md font-extrabold ${statusCls}`}
               >
                 {statusLabel}
               </span>
@@ -154,7 +154,7 @@ export function InviteCard({
             <p className="text-title-sm font-extrabold leading-snug text-ink line-clamp-2">
               {title}
             </p>
-            <p className="mt-[2px] text-body-sm text-muted">{subtitle}</p>
+            <p className="mt-xxs text-body-sm text-muted">{subtitle}</p>
           </div>
         </div>
 

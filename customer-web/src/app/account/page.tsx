@@ -202,7 +202,7 @@ function AccountIdentity() {
             <p className="truncate text-body-md text-muted">{user.email}</p>
           ) : null}
           <div className="mt-xs flex flex-wrap items-center gap-x-sm gap-y-xs text-body-sm text-subtle">
-            <span className="inline-flex items-center gap-xs rounded-full bg-brand-soft px-sm py-[2px] text-label-md text-brand-strong">
+            <span className="inline-flex items-center gap-xs rounded-full bg-brand-soft px-sm py-xxs text-label-md text-brand-strong">
               Customer
             </span>
             {memberSince ? <span>Member since {memberSince}</span> : null}
@@ -267,7 +267,7 @@ function AccountHub() {
                     <ChevronRight
                       size={16}
                       aria-hidden
-                      className="shrink-0 text-disabled transition-transform group-hover:translate-x-[2px] group-hover:text-muted"
+                      className="shrink-0 text-disabled transition-transform group-hover:translate-x-xxs group-hover:text-muted"
                     />
                   </Link>
                 </li>

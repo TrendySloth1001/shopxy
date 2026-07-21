@@ -145,7 +145,7 @@ class _Header extends StatelessWidget {
                     const SizedBox(width: AppSizes.sm),
                   ],
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.xxs),
                 Text(
                   itemCount == 0
                       ? 'Empty for now'
@@ -622,7 +622,7 @@ class _ReassuranceCard extends StatelessWidget {
                   'Safe and secure',
                   style: Theme.of(context).textTheme.bodySmall?.extraBold,
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.xxs),
                 Text(
                   'Cancel any time before the shop confirms.',
                   style: Theme.of(

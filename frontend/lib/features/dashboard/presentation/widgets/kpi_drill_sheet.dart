@@ -340,7 +340,7 @@ class _SoldRow extends StatelessWidget {
                   style: DashText.bodyMd,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.xxs),
                 Text(
                   l10n.kpiDrawerQtySold(
                         fmtQty(product.totalQuantity),

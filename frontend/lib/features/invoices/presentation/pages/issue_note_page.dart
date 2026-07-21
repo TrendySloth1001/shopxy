@@ -292,7 +292,7 @@ class _IssueNotePageState extends State<IssueNotePage> {
                             item.productName,
                             style: theme.textTheme.bodyMedium?.semibold,
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: AppSizes.xxs),
                           Text(
                             '${l10n.invoicesNoteSoldQty(_NoteLineDraft._trimQty(item.quantity))}'
                             ' · ${AppStrings.currencySymbol}${item.unitPrice.toStringAsFixed(2)}'

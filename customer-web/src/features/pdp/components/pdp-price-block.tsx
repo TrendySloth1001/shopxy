@@ -76,10 +76,10 @@ export function PdpPriceBlock({ product, selectedVariant }: Props) {
         </span>
         {isDiscounted ? (
           <>
-            <span className="mb-[2px] text-body-md text-muted line-through">
+            <span className="mb-xxs text-body-md text-muted line-through">
               M.R.P. {formatINR(baseMrp)}
             </span>
-            <span className="mb-[2px] rounded-xs bg-success-soft px-sm py-xs text-label-md font-extrabold text-success">
+            <span className="mb-xxs rounded-xs bg-success-soft px-sm py-xs text-label-md font-extrabold text-success">
               {pct}% off
             </span>
           </>

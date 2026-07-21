@@ -53,7 +53,7 @@ function InvoiceRow({
           <ArrowUpRight size={18} className="text-success" />
         )}
       </span>
-      <div className="flex flex-1 flex-col gap-[2px] min-w-0">
+      <div className="flex flex-1 flex-col gap-xxs min-w-0">
         <span className="text-body-md font-extrabold text-ink truncate">{invoice.invoiceNo}</span>
         <span className="text-body-sm text-muted">
           {formatDate(invoice.invoiceDate)} · {invoice._count?.items ?? 0} items

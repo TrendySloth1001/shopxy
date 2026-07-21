@@ -25,7 +25,7 @@ export function CatalogProductCard({ product }: { product: CatalogProduct }) {
   return (
     <Link
       href={`/p/${p.id}`}
-      className="group rounded-lg border border-hairline bg-white overflow-hidden transition-all duration-200 hover:shadow-floating hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft flex flex-col"
+      className="group rounded-lg border border-hairline bg-white overflow-hidden transition-all duration-200 hover:shadow-floating hover:-translate-y-xxs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft flex flex-col"
     >
       {/* Image */}
       <span className="relative block aspect-square w-full overflow-hidden bg-canvas">
@@ -37,7 +37,7 @@ export function CatalogProductCard({ product }: { product: CatalogProduct }) {
           <ProductImageFallback name={p.name} />
         )}
         {discountPct > 0 ? (
-          <span className="absolute left-[6px] top-[6px] bg-brand text-white text-caption font-extrabold rounded-sm px-sm py-[2px]">
+          <span className="absolute left-[6px] top-[6px] bg-brand text-white text-caption font-extrabold rounded-sm px-sm py-xxs">
             {discountPct}% OFF
           </span>
         ) : null}
@@ -49,10 +49,10 @@ export function CatalogProductCard({ product }: { product: CatalogProduct }) {
           {p.name}
         </span>
 
-        <span className="mt-auto flex flex-col gap-[2px]">
+        <span className="mt-auto flex flex-col gap-xxs">
           {p.ratingAvg != null && p.ratingCount > 0 ? (
-            <span className="mb-[2px] inline-flex items-center gap-[3px]">
-              <span className="inline-flex items-center gap-[3px] rounded-sm bg-success px-[6px] py-[2px] text-caption font-bold text-white">
+            <span className="mb-xxs inline-flex items-center gap-[3px]">
+              <span className="inline-flex items-center gap-[3px] rounded-sm bg-success px-[6px] py-xxs text-caption font-bold text-white">
                 {p.ratingAvg.toFixed(1)}
                 <StarSolidIcon size={9} className="shrink-0" />
               </span>

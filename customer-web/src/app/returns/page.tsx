@@ -34,7 +34,7 @@ function ReturnRow({ item }: { item: ReturnRequest }) {
       <p className="mt-xs text-body-sm text-muted">
         {itemCount} {itemCount === 1 ? "item" : "items"} · {formatINR(item.refundAmount, { decimals: 2 })}
       </p>
-      <p className="mt-[2px] text-label-sm text-muted">{formatDateTime(item.createdAt)}</p>
+      <p className="mt-xxs text-label-sm text-muted">{formatDateTime(item.createdAt)}</p>
     </Link>
   );
 }

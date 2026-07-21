@@ -56,6 +56,19 @@ grep -rniE 'E3E8F4' customer-web/src 2>/dev/null \
   | grep -v 'category-tints\.ts' \
   | report "customer-web: category tint hex — import CATEGORY_TINTS"
 
+# ── Phase 3: Spacing ─────────────────────────────────────────────────────────
+# Flutter: a single-dimension SizedBox gap whose value is on the scale must use
+# the AppSizes token (off-scale one-offs like 3/5/6/10 are allowed for now).
+for app in frontend customer; do
+  grep -rnE 'SizedBox\((height|width): (2|4|8|12|16|20|24|32|48|64)\)' \
+    "$app/lib" --include='*.dart' 2>/dev/null \
+    | report "$app: SizedBox gap with a scale value — use AppSizes.xxs/xs/sm/…"
+done
+# Web: 2px spacing nudges must use the -xxs token, not an arbitrary value.
+grep -rnE '(^|[" `({>-])(m[trblxy]?|p[trblxy]?|gap(-[xy])?|space-[xy]|inset(-[xy])?|translate-[xy]|top|bottom|left|right)-\[2px\]' \
+  customer-web/src merchant-web/src 2>/dev/null \
+  | report "web: 2px spacing nudge — use the -xxs token"
+
 if [ "$fail" -eq 0 ]; then
   echo "✓ design tokens: no leaks"
 fi

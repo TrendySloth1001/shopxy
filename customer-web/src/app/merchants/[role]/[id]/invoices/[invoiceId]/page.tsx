@@ -187,7 +187,7 @@ function InvoiceDetailContent({
               >
                 <div className="flex-1 min-w-0">
                   <p className="text-body-md font-bold text-ink leading-snug">{item.productName}</p>
-                  <p className="text-body-sm text-muted mt-[2px]">{meta}</p>
+                  <p className="text-body-sm text-muted mt-xxs">{meta}</p>
                 </div>
                 <p className="text-body-md font-extrabold text-ink tabular-nums shrink-0">
                   {formatINR(item.total, { decimals: 2 })}
@@ -224,7 +224,7 @@ function InvoiceDetailContent({
               NOTE
             </p>
             <div className="border-t border-hairline pt-md flex gap-sm">
-              <StickyNote size={14} className="text-muted mt-[2px] shrink-0" />
+              <StickyNote size={14} className="text-muted mt-xxs shrink-0" />
               <p className="text-body-sm text-ink leading-relaxed">{invoice.note}</p>
             </div>
           </div>

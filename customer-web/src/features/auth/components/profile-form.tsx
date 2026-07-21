@@ -85,7 +85,7 @@ export function ProfileForm() {
             setEmailNotifications(e.target.checked);
             setSaved(false);
           }}
-          className="mt-[2px] size-4 shrink-0 accent-brand"
+          className="mt-xxs size-4 shrink-0 accent-brand"
         />
         <span className="flex flex-col">
           <span className="text-body-md text-ink">Email notifications</span>

@@ -90,6 +90,7 @@ export const color = {
 
 /** Spacing scale (px). 4px base rhythm — matches Tailwind's numeric scale. */
 export const space = {
+  xxs: 2,
   xs: 4,
   sm: 8,
   md: 12,

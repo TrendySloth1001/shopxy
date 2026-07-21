@@ -1050,7 +1050,7 @@ class _ProductHeaderCard extends StatelessWidget {
                       ),
                     Text(product.name, style: theme.textTheme.titleMedium),
                     if (product.category != null) ...[
-                      const SizedBox(height: 4),
+                      const SizedBox(height: AppSizes.xs),
                       AppStatusBadge(
                         label: product.category!.name,
                         icon: resolveCategoryIcon(product.category!.iconName),
@@ -1342,7 +1342,7 @@ class _PerformanceMetric extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AppIcon(icon, size: 18, color: AppColors.muted),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppSizes.xs),
         Text(value, style: theme.textTheme.titleMedium?.extraBold),
         Text(
           label,
@@ -1616,7 +1616,7 @@ class _VariantsSection extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 2),
+                            const SizedBox(height: AppSizes.xxs),
                             Text(
                               'SKU ${active[i].sku}${active[i].barcode != null ? ' · ${active[i].barcode}' : ''}',
                               style: theme.textTheme.bodySmall?.copyWith(
@@ -1951,7 +1951,7 @@ class _OffersSection extends StatelessWidget {
                                                 ],
                                               ),
                                         ),
-                                        const SizedBox(width: 4),
+                                        const SizedBox(width: AppSizes.xs),
                                         AppIcon(
                                           AppIcons.copyRounded,
                                           size: 12,
@@ -2195,7 +2195,7 @@ class _StockStatusCard extends StatelessWidget {
                   '${_formatQty(product.stockQuantity)} ${AppUnits.label(product.unit)}',
                   style: theme.textTheme.headlineSmall?.bold,
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.xxs),
                 Text(
                   '${l10n.productsLowStockAlertAt} ${_formatQty(product.lowStockThreshold)}',
                   style: theme.textTheme.bodySmall?.copyWith(
@@ -2494,7 +2494,7 @@ class _DetailSection extends StatelessWidget {
                                 color: AppColors.muted,
                               ),
                             ),
-                            const SizedBox(height: 2),
+                            const SizedBox(height: AppSizes.xxs),
                             Text(
                               rows[i].value,
                               style: theme.textTheme.bodyMedium?.semibold,
@@ -3084,7 +3084,7 @@ class _ReviewsSummarySection extends StatelessWidget {
                   style: theme.textTheme.headlineMedium?.extraBold,
                 ),
                 _StarRow(rating: avg, size: 16),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.xxs),
                 Text(
                   '$count ${count == 1 ? l10n.productsRatingSingular : l10n.productsRatingPlural}',
                   style: theme.textTheme.bodySmall?.copyWith(
@@ -3258,10 +3258,10 @@ class _RecentReviewTile extends StatelessWidget {
           ],
         ),
         if (review.body != null && review.body!.isNotEmpty) ...[
-          const SizedBox(height: 2),
+          const SizedBox(height: AppSizes.xxs),
           Text(review.body!, style: theme.textTheme.bodySmall),
         ],
-        const SizedBox(height: 2),
+        const SizedBox(height: AppSizes.xxs),
         Text(
           review.userName ?? l10n.productsCustomer,
           style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),

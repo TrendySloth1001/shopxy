@@ -264,7 +264,7 @@ class _ShopHoursSkeleton extends StatelessWidget {
                           AppShimmerLine(widthFactor: 0.45, height: 16),
                           SizedBox(height: AppSizes.xs),
                           AppShimmerLine(widthFactor: 0.75, height: 12),
-                          SizedBox(height: 4),
+                          SizedBox(height: AppSizes.xs),
                           AppShimmerLine(widthFactor: 0.6, height: 12),
                         ],
                       ),

@@ -57,9 +57,9 @@ export function SearchBar({ collapsed }: { collapsed: boolean }) {
           <span className="text-nano font-extrabold uppercase leading-none tracking-[0.9px] text-brand">
             Search ShopXY
           </span>
-          <span className="mt-[2px] line-clamp-1 text-[13px] font-semibold text-ink">{SEARCH_HINTS[hint]}</span>
+          <span className="mt-xxs line-clamp-1 text-[13px] font-semibold text-ink">{SEARCH_HINTS[hint]}</span>
         </span>
-        <span className="mx-[2px] h-6 w-px bg-hairline" aria-hidden />
+        <span className="mx-xxs h-6 w-px bg-hairline" aria-hidden />
         <span className="flex size-9 items-center justify-center rounded-full transition-colors duration-200 hover:bg-surface-tint motion-safe:transition-colors">
           <Mic size={18} className="text-brand" aria-hidden />
         </span>

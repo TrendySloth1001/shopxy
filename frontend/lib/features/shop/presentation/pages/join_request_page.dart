@@ -137,7 +137,7 @@ class _JoinRequestPageState extends State<JoinRequestPage> {
                 color: AppColors.muted,
               ),
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: AppSizes.xxs),
             Text(shop, style: theme.textTheme.headlineSmall?.extraBold),
             const SizedBox(height: AppSizes.md),
             Row(

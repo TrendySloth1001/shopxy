@@ -366,7 +366,7 @@ class _BlockForm extends StatelessWidget {
               onChanged: (v) => onUpdate(_patch({'headline': v})),
               maxLength: 120,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSizes.sm),
             _TextLine(
               label: l10n.productsSubtext,
               value: block.data['subtext'] as String? ?? '',
@@ -389,7 +389,7 @@ class _BlockForm extends StatelessWidget {
             Row(
               children: [
                 Text(l10n.productsImageOnThe),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSizes.sm),
                 DropdownButton<String>(
                   value: (block.data['side'] as String?) ?? 'LEFT',
                   items: [
@@ -407,14 +407,14 @@ class _BlockForm extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSizes.sm),
             _TextLine(
               label: l10n.productsFieldTitle,
               value: block.data['title'] as String? ?? '',
               onChanged: (v) => onUpdate(_patch({'title': v})),
               maxLength: 120,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSizes.sm),
             _TextArea(
               label: l10n.productsDescription,
               value: block.data['body'] as String? ?? '',
@@ -454,7 +454,7 @@ class _BlockForm extends StatelessWidget {
                 },
                 maxLength: 140,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSizes.md),
             ],
             if (imgs.length < 6)
               OutlinedButton.icon(

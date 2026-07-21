@@ -478,7 +478,7 @@ class _DensityRow extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.xxs),
                 Text(
                   prefs.isCompact
                       ? l10n.profileListDensityCompactDesc
@@ -572,7 +572,7 @@ class _ThemeRow extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.xxs),
                 Text(
                   switch (prefs.mode) {
                     AppThemeMode.light => l10n.themeLightDesc,
@@ -689,7 +689,7 @@ class _LanguageRow extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.xxs),
                 Text(
                   l10n.languageSubtitle,
                   style: theme.textTheme.bodySmall?.copyWith(
@@ -778,7 +778,7 @@ class _SettingRow extends StatelessWidget {
                   ),
                 ),
                 if (subtitle != null) ...[
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSizes.xxs),
                   Text(
                     subtitle!,
                     style: theme.textTheme.bodySmall?.copyWith(
@@ -854,7 +854,7 @@ class _SettingToggle extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSizes.xxs),
                   Text(
                     subtitle,
                     style: theme.textTheme.bodySmall?.copyWith(

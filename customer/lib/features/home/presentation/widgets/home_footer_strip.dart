@@ -88,7 +88,7 @@ class _FooterCell extends StatelessWidget {
       child: Column(
         children: [
           AppIcon(icon, color: AppColors.brand, size: 24),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSizes.xs),
           Text(
             title,
             textAlign: TextAlign.center,
@@ -98,7 +98,7 @@ class _FooterCell extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: AppSizes.xxs),
           Text(
             subtitle,
             textAlign: TextAlign.center,

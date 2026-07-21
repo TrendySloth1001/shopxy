@@ -52,7 +52,7 @@ export function SectionHeader({
         ) : (
           <Link
             href={seeAllHref}
-            className="flex shrink-0 items-center gap-[2px] rounded-full border border-hairline bg-white px-[10px] py-[6px] text-body-sm font-bold text-ink transition-all duration-200 hover:border-brand hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+            className="flex shrink-0 items-center gap-xxs rounded-full border border-hairline bg-white px-[10px] py-[6px] text-body-sm font-bold text-ink transition-all duration-200 hover:border-brand hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
           >
             See all <ChevronRight size={11} aria-hidden />
           </Link>

@@ -101,7 +101,7 @@ function ProductTile({ item }: { item: RecentlyViewedItem }) {
           <div className="size-full bg-hero-panel" />
         )}
         {discountPct > 0 && (
-          <span className="absolute left-xs top-xs rounded-xs bg-brand px-xs py-[2px] text-label-md text-white">
+          <span className="absolute left-xs top-xs rounded-xs bg-brand px-xs py-xxs text-label-md text-white">
             {discountPct}% off
           </span>
         )}
@@ -114,7 +114,7 @@ function ProductTile({ item }: { item: RecentlyViewedItem }) {
         {/* Rating badge */}
         {p.ratingCount > 0 && p.ratingAvg != null && (
           <div className="mt-xs flex items-center gap-xs">
-            <span className="inline-flex items-center gap-[2px] rounded-xs bg-success px-xs py-[2px] text-label-md text-white">
+            <span className="inline-flex items-center gap-xxs rounded-xs bg-success px-xs py-xxs text-label-md text-white">
               {p.ratingAvg.toFixed(1)} <Star size={9} className="fill-white" />
             </span>
             <span className="text-label-md text-muted">({p.ratingCount})</span>

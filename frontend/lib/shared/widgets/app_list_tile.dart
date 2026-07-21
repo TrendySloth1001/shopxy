@@ -36,10 +36,7 @@ class AppListTile extends StatelessWidget {
     final body = Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        if (leading != null) ...[
-          leading!,
-          const SizedBox(width: AppSizes.md),
-        ],
+        if (leading != null) ...[leading!, const SizedBox(width: AppSizes.md)],
         Expanded(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -47,19 +44,24 @@ class AppListTile extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: (dense ? theme.textTheme.bodyMedium : theme.textTheme.bodyLarge)
-                    ?.copyWith(
-                  color: AppColors.black,
-                  fontWeight: FontWeight.w500,
-                ),
+                style:
+                    (dense
+                            ? theme.textTheme.bodyMedium
+                            : theme.textTheme.bodyLarge)
+                        ?.copyWith(
+                          color: AppColors.black,
+                          fontWeight: FontWeight.w500,
+                        ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
               if (subtitle != null) ...[
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.xxs),
                 Text(
                   subtitle!,
-                  style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.muted,
+                  ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),

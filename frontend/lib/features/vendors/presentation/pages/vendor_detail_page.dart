@@ -355,9 +355,9 @@ class _StatBlock extends StatelessWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: AppSizes.xxs),
         Text(value, style: theme.textTheme.titleLarge?.bold),
-        const SizedBox(height: 2),
+        const SizedBox(height: AppSizes.xxs),
         Text(
           hint,
           style: theme.textTheme.bodySmall?.copyWith(color: AppColors.subtle),
@@ -424,7 +424,7 @@ class _InvoiceRow extends StatelessWidget {
                     currency.format(invoice.total),
                     style: theme.textTheme.titleSmall?.bold,
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSizes.xxs),
                   AppStatusBadge(
                     label: invoice.status,
                     dense: true,
@@ -555,7 +555,7 @@ class _BalanceTile extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSizes.xxs),
                   Text(
                     label,
                     style: theme.textTheme.bodyMedium?.copyWith(
@@ -837,7 +837,7 @@ class _LedgerRow extends StatelessWidget {
                   color: isInvoice ? AppColors.error : AppColors.success,
                 ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: AppSizes.xxs),
               Text(
                 '${l10n.vendorsBalShort} ${currency.format(entry.runningBalance)}',
                 style: theme.textTheme.bodySmall?.copyWith(
