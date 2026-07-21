@@ -12,6 +12,7 @@ import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_section_header.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Audit trail of edits to a Party's or Vendor's contact details.
 /// Fetches `<endpoint>/changes` and renders a timeline of
@@ -138,7 +139,7 @@ class _ChangeRow extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
-            child: Icon(
+            child: AppIcon(
               _iconFor(entry.field),
               size: 14,
               color: AppColors.muted,
@@ -159,7 +160,9 @@ class _ChangeRow extends StatelessWidget {
                         text: _labelFor(l10n, entry.field),
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
-                      TextSpan(text: ' ${l10n.sharedContactChangesChangedSuffix}'),
+                      TextSpan(
+                        text: ' ${l10n.sharedContactChangesChangedSuffix}',
+                      ),
                     ],
                   ),
                 ),
@@ -224,7 +227,7 @@ class _ChangeRow extends StatelessWidget {
     }
   }
 
-  static IconData _iconFor(String field) {
+  static AppIconData _iconFor(String field) {
     switch (field) {
       case 'phone':
         return AppIcons.phoneRounded;

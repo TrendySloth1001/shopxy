@@ -12,6 +12,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/widgets/app_filter_pill.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Bottom-sheet form for recording a payment.
 ///
@@ -33,12 +34,12 @@ class RecordPaymentSheet extends StatefulWidget {
     this.initialAmount,
     this.lockedInvoiceId,
     this.lockedInvoiceLabel,
-  })  : assert(type == 'RECEIPT' || type == 'PAYMENT'),
-        assert(
-          (type == 'RECEIPT' && partyId != null) ||
-              (type == 'PAYMENT' && vendorId != null),
-          'RECEIPT requires partyId, PAYMENT requires vendorId',
-        );
+  }) : assert(type == 'RECEIPT' || type == 'PAYMENT'),
+       assert(
+         (type == 'RECEIPT' && partyId != null) ||
+             (type == 'PAYMENT' && vendorId != null),
+         'RECEIPT requires partyId, PAYMENT requires vendorId',
+       );
 
   final String type;
   final int? partyId;
@@ -161,8 +162,9 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
       } catch (e) {
         if (mounted) {
           setState(() => _loadingInvoices = false);
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(friendlyError(e))));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(friendlyError(e))));
         }
       }
     }
@@ -234,12 +236,13 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
                         _isReceipt
                             ? l10n.paymentsRecordReceiptTitle
                             : l10n.paymentsRecordPaymentTitle,
-                        style: theme.textTheme.titleLarge
-                            ?.copyWith(fontWeight: FontWeight.w700),
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(AppIcons.closeRounded),
+                      icon: const AppIcon(AppIcons.closeRounded),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ],
@@ -248,8 +251,9 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
                   _isReceipt
                       ? l10n.paymentsFromCounterparty(counterpartyLabel)
                       : l10n.paymentsToCounterparty(counterpartyLabel),
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(color: AppColors.muted),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.muted,
+                  ),
                 ),
                 const SizedBox(height: AppSizes.lg),
                 TextFormField(
@@ -297,8 +301,8 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
                       labelText: _mode == 'UPI'
                           ? l10n.paymentsUpiTransactionIdLabel
                           : _mode == 'CHEQUE'
-                              ? l10n.paymentsChequeNumberLabel
-                              : l10n.paymentsReferenceLabel,
+                          ? l10n.paymentsChequeNumberLabel
+                          : l10n.paymentsReferenceLabel,
                     ),
                   ),
                 ],
@@ -309,7 +313,7 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
                   child: InputDecorator(
                     decoration: InputDecoration(
                       labelText: l10n.paymentsDateLabel,
-                      suffixIcon: const Icon(AppIcons.calendarTodayOutlined),
+                      suffixIcon: const AppIcon(AppIcons.calendarTodayOutlined),
                     ),
                     child: Text(_dateFmt.format(_date)),
                   ),
@@ -321,15 +325,14 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
                       labelText: l10n.paymentsAllocatedToLabel,
                     ),
                     child: Text(
-                        widget.lockedInvoiceLabel ?? l10n.paymentsInvoiceLabel),
+                      widget.lockedInvoiceLabel ?? l10n.paymentsInvoiceLabel,
+                    ),
                   ),
                 ] else ...[
                   SwitchListTile.adaptive(
                     contentPadding: EdgeInsets.zero,
                     title: Text(l10n.paymentsAllocateToInvoiceTitle),
-                    subtitle: Text(
-                      l10n.paymentsAllocateToInvoiceSubtitle,
-                    ),
+                    subtitle: Text(l10n.paymentsAllocateToInvoiceSubtitle),
                     value: _allocate,
                     onChanged: _toggleAllocate,
                   ),
@@ -342,8 +345,9 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
                     else if (_openInvoices.isEmpty)
                       Text(
                         l10n.paymentsNoInvoicesFound(counterpartyLabel),
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: AppColors.muted),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.muted,
+                        ),
                       )
                     else
                       DropdownButtonFormField<int>(
@@ -391,7 +395,7 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
+                        AppIcon(
                           AppIcons.errorOutlineRounded,
                           color: AppColors.error,
                           size: AppSizes.iconSm,
@@ -400,8 +404,9 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
                         Expanded(
                           child: Text(
                             _error!,
-                            style: theme.textTheme.bodySmall
-                                ?.copyWith(color: AppColors.error),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: AppColors.error,
+                            ),
                           ),
                         ),
                       ],
@@ -440,9 +445,11 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
                                       strokeWidth: 2,
                                     ),
                                   )
-                                : Text(_isReceipt
-                                    ? l10n.paymentsSaveReceipt
-                                    : l10n.paymentsSavePayment),
+                                : Text(
+                                    _isReceipt
+                                        ? l10n.paymentsSaveReceipt
+                                        : l10n.paymentsSavePayment,
+                                  ),
                           );
                         },
                       ),

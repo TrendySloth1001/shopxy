@@ -11,6 +11,7 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/format/app_format.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Paginated product feed for a single canonical category. Backend
 /// rolls children up under the parent slug, so picking "Electronics"
@@ -104,7 +105,7 @@ class _CategoryProductsPageState extends State<CategoryProductsPage> {
         actions: [
           PopupMenuButton<String>(
             tooltip: 'Sort',
-            icon: const Icon(AppIcons.sortRounded),
+            icon: const AppIcon(AppIcons.sortRounded),
             onSelected: (v) {
               setState(() => _sort = v);
               _load(reset: true);
@@ -112,8 +113,14 @@ class _CategoryProductsPageState extends State<CategoryProductsPage> {
             itemBuilder: (_) => const [
               PopupMenuItem(value: 'popular', child: Text('Popular')),
               PopupMenuItem(value: 'newest', child: Text('Newest')),
-              PopupMenuItem(value: 'price_asc', child: Text('Price: low to high')),
-              PopupMenuItem(value: 'price_desc', child: Text('Price: high to low')),
+              PopupMenuItem(
+                value: 'price_asc',
+                child: Text('Price: low to high'),
+              ),
+              PopupMenuItem(
+                value: 'price_desc',
+                child: Text('Price: high to low'),
+              ),
             ],
           ),
         ],
@@ -121,57 +128,50 @@ class _CategoryProductsPageState extends State<CategoryProductsPage> {
       body: _isLoading && _products.isEmpty
           ? const _CategoryProductsSkeleton()
           : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSizes.xxl),
-                    child: Text(_error!, style: theme.textTheme.bodyMedium),
-                  ),
-                )
-              : _products.isEmpty
-                  ? const Center(
-                      child: Text('No products in this category yet'),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: () => _load(reset: true),
-                      color: AppColors.black,
-                      backgroundColor: AppColors.white,
-                      child: GridView.builder(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.all(AppSizes.md),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: AppSizes.lg,
-                          crossAxisSpacing: AppSizes.md,
-                          childAspectRatio: 0.66,
-                        ),
-                        itemCount:
-                            _products.length + (_isLoadingMore ? 1 : 0),
-                        itemBuilder: (context, index) {
-                          if (index >= _products.length) {
-                            return const Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(AppSizes.lg),
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              ),
-                            );
-                          }
-                          return _ProductTile(
-                            product: _products[index],
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ProductDetailPage(
-                                  productId: _products[index].id,
-                                ),
-                              ),
-                            ),
-                          );
-                        },
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSizes.xxl),
+                child: Text(_error!, style: theme.textTheme.bodyMedium),
+              ),
+            )
+          : _products.isEmpty
+          ? const Center(child: Text('No products in this category yet'))
+          : RefreshIndicator(
+              onRefresh: () => _load(reset: true),
+              color: AppColors.black,
+              backgroundColor: AppColors.white,
+              child: GridView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.all(AppSizes.md),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: AppSizes.lg,
+                  crossAxisSpacing: AppSizes.md,
+                  childAspectRatio: 0.66,
+                ),
+                itemCount: _products.length + (_isLoadingMore ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index >= _products.length) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(AppSizes.lg),
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    );
+                  }
+                  return _ProductTile(
+                    product: _products[index],
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            ProductDetailPage(productId: _products[index].id),
                       ),
                     ),
+                  );
+                },
+              ),
+            ),
     );
   }
 }

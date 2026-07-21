@@ -12,6 +12,7 @@ import 'package:shopxy_customer/shared/widgets/app_divider.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/format/app_format.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 class ShopInvoicesPage extends StatefulWidget {
   const ShopInvoicesPage({super.key, required this.shop});
@@ -46,17 +47,15 @@ class _ShopInvoicesPageState extends State<ShopInvoicesPage> {
         child: loading && invoices.isEmpty
             ? const _InvoiceListSkeleton()
             : err != null && invoices.isEmpty
-                ? _Error(err: err, onRetry: () => p.loadInvoices(widget.shop))
-                : invoices.isEmpty
-                    ? const _EmptyInvoices()
-                    : ListView.separated(
-                        itemCount: invoices.length,
-                        separatorBuilder: (_, _) => const AppDivider.flush(),
-                        itemBuilder: (_, i) => _InvoiceTile(
-                          invoice: invoices[i],
-                          shop: widget.shop,
-                        ),
-                      ),
+            ? _Error(err: err, onRetry: () => p.loadInvoices(widget.shop))
+            : invoices.isEmpty
+            ? const _EmptyInvoices()
+            : ListView.separated(
+                itemCount: invoices.length,
+                separatorBuilder: (_, _) => const AppDivider.flush(),
+                itemBuilder: (_, i) =>
+                    _InvoiceTile(invoice: invoices[i], shop: widget.shop),
+              ),
       ),
     );
   }
@@ -71,15 +70,15 @@ class _InvoiceTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final accent = invoice.isSale ? AppColors.success : AppColors.accentIndigo;
-    final accentSoft = invoice.isSale ? AppColors.successSoft : AppColors.accentIndigoSoft;
+    final accentSoft = invoice.isSale
+        ? AppColors.successSoft
+        : AppColors.accentIndigoSoft;
     return InkWell(
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => ShopInvoiceDetailPage(
-            shop: shop,
-            invoiceId: invoice.id,
-          ),
+          builder: (_) =>
+              ShopInvoiceDetailPage(shop: shop, invoiceId: invoice.id),
         ),
       ),
       child: Padding(
@@ -97,8 +96,10 @@ class _InvoiceTile extends StatelessWidget {
                 shape: AppShapes.squircle(AppSizes.radiusSm),
               ),
               alignment: Alignment.center,
-              child: Icon(
-                invoice.isSale ? AppIcons.southWestRounded : AppIcons.northEastRounded,
+              child: AppIcon(
+                invoice.isSale
+                    ? AppIcons.southWestRounded
+                    : AppIcons.northEastRounded,
                 color: accent,
                 size: AppSizes.iconMd,
               ),
@@ -132,7 +133,10 @@ class _InvoiceTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSizes.xs),
-            const Icon(AppIcons.chevronRightRounded, color: AppColors.subtle),
+            const AppIcon(
+              AppIcons.chevronRightRounded,
+              color: AppColors.subtle,
+            ),
           ],
         ),
       ),
@@ -210,18 +214,24 @@ class _EmptyInvoices extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(AppIcons.receiptLongOutlined,
-                color: AppColors.muted, size: AppSizes.iconHuge),
+            const AppIcon(
+              AppIcons.receiptLongOutlined,
+              color: AppColors.muted,
+              size: AppSizes.iconHuge,
+            ),
             const SizedBox(height: AppSizes.lg),
             Text(
               AppStrings.noInvoicesTitle,
-              style:
-                  theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
             ),
             const SizedBox(height: AppSizes.xs),
             Text(
               AppStrings.noInvoicesHint,
-              style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: AppColors.muted,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -243,12 +253,18 @@ class _Error extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(AppIcons.errorOutlineRounded,
-                color: AppColors.error, size: AppSizes.iconXl),
+            const AppIcon(
+              AppIcons.errorOutlineRounded,
+              color: AppColors.error,
+              size: AppSizes.iconXl,
+            ),
             const SizedBox(height: AppSizes.sm),
             Text(err, textAlign: TextAlign.center),
             const SizedBox(height: AppSizes.md),
-            FilledButton(onPressed: onRetry, child: const Text(AppStrings.retry)),
+            FilledButton(
+              onPressed: onRetry,
+              child: const Text(AppStrings.retry),
+            ),
           ],
         ),
       ),

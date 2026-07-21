@@ -5,6 +5,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// ─────────────────────────────────────────────────────────────────────
 /// GlassPage — Glassdoor-style page scaffold.
@@ -102,10 +103,7 @@ class GlassPage extends StatelessWidget {
                     height: 1.5,
                   ),
                 ),
-              if (body != null) ...[
-                const SizedBox(height: AppSizes.xl),
-                body!,
-              ],
+              if (body != null) ...[const SizedBox(height: AppSizes.xl), body!],
             ],
           ),
         ),
@@ -166,15 +164,15 @@ class GlassHero extends StatelessWidget {
     Color? accent,
     Color? backgroundColor,
   }) : this(
-          key: key,
-          illustration: LineIllustration(
-            kind: kind,
-            size: illustrationSize,
-            accent: accent ?? AppColors.brand,
-          ),
-          height: height,
-          backgroundColor: backgroundColor,
-        );
+         key: key,
+         illustration: LineIllustration(
+           kind: kind,
+           size: illustrationSize,
+           accent: accent ?? AppColors.brand,
+         ),
+         height: height,
+         backgroundColor: backgroundColor,
+       );
 
   /// Convenience constructor for raster (PNG) illustrations sitting on
   /// the soft hero panel. The image is contained inside vertical
@@ -186,14 +184,14 @@ class GlassHero extends StatelessWidget {
     double verticalPadding = AppSizes.xl,
     Color? backgroundColor,
   }) : this(
-          key: key,
-          illustration: Padding(
-            padding: EdgeInsets.symmetric(vertical: verticalPadding),
-            child: Image.asset(asset, fit: BoxFit.contain),
-          ),
-          height: height,
-          backgroundColor: backgroundColor,
-        );
+         key: key,
+         illustration: Padding(
+           padding: EdgeInsets.symmetric(vertical: verticalPadding),
+           child: Image.asset(asset, fit: BoxFit.contain),
+         ),
+         height: height,
+         backgroundColor: backgroundColor,
+       );
 
   final Widget illustration;
   final double height;
@@ -220,11 +218,7 @@ class GlassHero extends StatelessWidget {
 /// hairline strip. Used in onboarding / multi-step flows.
 /// ─────────────────────────────────────────────────────────────────────
 class GlassProgressBar extends StatelessWidget {
-  const GlassProgressBar({
-    super.key,
-    required this.value,
-    this.steps = 0,
-  });
+  const GlassProgressBar({super.key, required this.value, this.steps = 0});
 
   /// Progress in [0, 1].
   final double value;
@@ -242,7 +236,9 @@ class GlassProgressBar extends StatelessWidget {
             final filled = (i + 1) / steps <= value + 1e-6;
             return Expanded(
               child: Padding(
-                padding: EdgeInsets.only(right: i == steps - 1 ? 0 : AppSizes.xs),
+                padding: EdgeInsets.only(
+                  right: i == steps - 1 ? 0 : AppSizes.xs,
+                ),
                 child: Container(
                   height: AppSizes.xs,
                   color: filled ? AppColors.brand : AppColors.hairline,
@@ -310,8 +306,11 @@ class GlassNavButton extends StatelessWidget {
         child: SizedBox(
           width: size,
           height: size,
-          child: Icon(icon,
-              color: foreground ?? AppColors.onInverse, size: size * 0.45),
+          child: AppIcon(
+            icon,
+            color: foreground ?? AppColors.onInverse,
+            size: size * 0.45,
+          ),
         ),
       ),
     );
@@ -339,7 +338,7 @@ class GlassActionPanel extends StatelessWidget {
 
   final String primaryLabel;
   final VoidCallback? onPrimary;
-  final IconData? primaryIcon;
+  final AppIconData? primaryIcon;
   final bool primaryLoading;
   final String? secondaryLabel;
   final VoidCallback? onSecondary;
@@ -413,7 +412,7 @@ class _PillButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
   final Color color;
-  final IconData? icon;
+  final AppIconData? icon;
   final bool loading;
 
   @override
@@ -442,8 +441,11 @@ class _PillButton extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     if (icon != null) ...[
-                      Icon(icon,
-                          color: AppColors.onInverse, size: AppSizes.iconMd),
+                      AppIcon(
+                        icon,
+                        color: AppColors.onInverse,
+                        size: AppSizes.iconMd,
+                      ),
                       const SizedBox(width: AppSizes.sm),
                     ],
                     Text(

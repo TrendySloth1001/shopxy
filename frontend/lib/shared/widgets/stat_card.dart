@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_card.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 class StatCard extends StatelessWidget {
   const StatCard({
@@ -15,7 +17,7 @@ class StatCard extends StatelessWidget {
 
   final String title;
   final String value;
-  final IconData icon;
+  final AppIconData icon;
   final VoidCallback? onTap;
 
   /// When true, renders inverted: black background with white content.
@@ -25,13 +27,15 @@ class StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final fg = emphasis ? AppColors.white : AppColors.black;
-    final mutedFg = emphasis ? AppColors.white.withValues(alpha: 0.7) : AppColors.muted;
+    final mutedFg = emphasis
+        ? AppColors.white.withValues(alpha: 0.7)
+        : AppColors.muted;
 
     final content = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Icon(icon, size: AppSizes.iconMd, color: fg),
+        AppIcon(icon, size: AppSizes.iconMd, color: fg),
         const SizedBox(height: AppSizes.md),
         Text(
           value,
@@ -41,10 +45,7 @@ class StatCard extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSizes.xs),
-        Text(
-          title,
-          style: theme.textTheme.bodySmall?.copyWith(color: mutedFg),
-        ),
+        Text(title, style: theme.textTheme.bodySmall?.copyWith(color: mutedFg)),
       ],
     );
 

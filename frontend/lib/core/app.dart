@@ -18,6 +18,7 @@ import 'package:shopxy/shared/theme/app_palette.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/theme/app_theme.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 class ShopxyApp extends StatelessWidget {
   const ShopxyApp({super.key});
@@ -145,18 +146,25 @@ class _NoShopScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(AppIcons.storefrontOutlined,
-                    size: 48, color: AppColors.muted),
+                AppIcon(
+                  AppIcons.storefrontOutlined,
+                  size: 48,
+                  color: AppColors.muted,
+                ),
                 const SizedBox(height: AppSizes.lg),
-                Text(l10n.noShopTitle,
-                    style: theme.textTheme.titleLarge
-                        ?.copyWith(fontWeight: FontWeight.w800)),
+                Text(
+                  l10n.noShopTitle,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
                 const SizedBox(height: AppSizes.sm),
                 Text(
                   l10n.noShopBody,
                   textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(color: AppColors.muted),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.muted,
+                  ),
                 ),
                 const SizedBox(height: AppSizes.xl),
                 FilledButton(
@@ -190,7 +198,7 @@ class _SplashScreen extends StatelessWidget {
                 color: AppColors.inverseSurface,
                 shape: AppShapes.squircle(AppSizes.radiusXl),
               ),
-              child: Icon(
+              child: AppIcon(
                 AppIcons.inventory2Rounded,
                 size: AppSizes.iconXl,
                 color: AppColors.onInverse,

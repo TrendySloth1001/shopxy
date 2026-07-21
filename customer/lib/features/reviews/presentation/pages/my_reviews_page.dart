@@ -14,6 +14,7 @@ import 'package:shopxy_customer/shared/widgets/app_button.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// "My reviews" — every review the caller has written, newest first.
 /// Tap a row → PDP. Cursor-paginated; loads next page when the user
@@ -54,8 +55,7 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
 
   void _maybeLoadMore() {
     if (_loading || _cursor == null) return;
-    if (_scroll.position.pixels >
-        _scroll.position.maxScrollExtent - 400) {
+    if (_scroll.position.pixels > _scroll.position.maxScrollExtent - 400) {
       _load();
     }
   }
@@ -197,11 +197,7 @@ class _ReviewCardSkeleton extends StatelessWidget {
                 ),
                 const SizedBox(width: AppSizes.sm),
                 // Date chip placeholder
-                AppShimmerBox(
-                  width: 64,
-                  height: 12,
-                  radius: AppSizes.radiusXs,
-                ),
+                AppShimmerBox(width: 64, height: 12, radius: AppSizes.radiusXs),
               ],
             ),
             const SizedBox(height: AppSizes.sm),
@@ -320,12 +316,9 @@ class _ProductThumb extends StatelessWidget {
       return Container(
         width: AppSizes.avatarMd,
         height: AppSizes.avatarMd,
-        decoration: ShapeDecoration(
-          color: AppColors.heroPanel,
-          shape: shape,
-        ),
+        decoration: ShapeDecoration(color: AppColors.heroPanel, shape: shape),
         alignment: Alignment.center,
-        child: const Icon(AppIcons.imageOutlined, color: AppColors.subtle),
+        child: const AppIcon(AppIcons.imageOutlined, color: AppColors.subtle),
       );
     }
     return ClipPath(
@@ -340,7 +333,7 @@ class _ProductThumb extends StatelessWidget {
           height: AppSizes.avatarMd,
           color: AppColors.heroPanel,
           alignment: Alignment.center,
-          child: const Icon(AppIcons.imageOutlined, color: AppColors.subtle),
+          child: const AppIcon(AppIcons.imageOutlined, color: AppColors.subtle),
         ),
       ),
     );
@@ -364,7 +357,7 @@ class _EmptyState extends StatelessWidget {
             color: AppColors.warningSoft,
             shape: AppShapes.squircle(AppSizes.radiusLg),
           ),
-          child: const Icon(
+          child: const AppIcon(
             AppIcons.rateReviewOutlined,
             size: AppSizes.iconXl,
             color: AppColors.warning,
@@ -404,8 +397,11 @@ class _ErrorBlock extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(AppIcons.errorOutlineRounded,
-                size: AppSizes.iconHuge, color: AppColors.error),
+            const AppIcon(
+              AppIcons.errorOutlineRounded,
+              size: AppSizes.iconHuge,
+              color: AppColors.error,
+            ),
             const SizedBox(height: AppSizes.md),
             Text(message, textAlign: TextAlign.center),
             const SizedBox(height: AppSizes.md),

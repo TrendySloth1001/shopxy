@@ -3,6 +3,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Quantity control for cart rows and detail pages. Two states:
 ///   * `quantity == 0` → renders a single "Add" button.
@@ -131,7 +132,7 @@ class _StepperButton extends StatelessWidget {
     required this.iconSize,
     required this.hPad,
   });
-  final IconData icon;
+  final AppIconData icon;
   final bool enabled;
   final VoidCallback onTap;
   final double iconSize;
@@ -144,7 +145,7 @@ class _StepperButton extends StatelessWidget {
       customBorder: AppShapes.squircle(AppSizes.radiusButton),
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: hPad),
-        child: Icon(
+        child: AppIcon(
           icon,
           size: iconSize,
           color: enabled ? AppColors.black : AppColors.disabled,

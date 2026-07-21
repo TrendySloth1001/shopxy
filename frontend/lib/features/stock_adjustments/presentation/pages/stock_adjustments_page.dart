@@ -19,6 +19,7 @@ import 'package:shopxy/shared/widgets/empty_state.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 class StockAdjustmentsPage extends StatefulWidget {
   const StockAdjustmentsPage({super.key});
@@ -78,7 +79,7 @@ class _StockAdjustmentsPageState extends State<StockAdjustmentsPage> {
       floatingActionButton: FloatingActionButton(
         heroTag: 'stock_adjustments_fab',
         onPressed: _openCreate,
-        child: const Icon(AppIcons.addRounded),
+        child: const AppIcon(AppIcons.addRounded),
       ),
     );
   }
@@ -112,8 +113,9 @@ class _StockAdjustmentsPageState extends State<StockAdjustmentsPage> {
       backgroundColor: AppColors.surface,
       child: ListView.separated(
         padding: EdgeInsets.only(
-            top: AppSizes.sm + FloatingAppBar.contentTopInset(context),
-            bottom: AppSizes.sm),
+          top: AppSizes.sm + FloatingAppBar.contentTopInset(context),
+          bottom: AppSizes.sm,
+        ),
         itemCount: _items.length,
         separatorBuilder: (_, _) => const AppDivider(),
         itemBuilder: (_, i) => _AdjustmentTile(adjustment: _items[i]),
@@ -134,8 +136,9 @@ class _StockAdjustmentsSkeleton extends StatelessWidget {
     return ListView.separated(
       physics: const NeverScrollableScrollPhysics(),
       padding: EdgeInsets.only(
-          top: AppSizes.sm + FloatingAppBar.contentTopInset(context),
-          bottom: AppSizes.sm),
+        top: AppSizes.sm + FloatingAppBar.contentTopInset(context),
+        bottom: AppSizes.sm,
+      ),
       itemCount: 6,
       separatorBuilder: (_, _) => const AppDivider(),
       itemBuilder: (_, _) => const _AdjustmentTileSkeleton(),
@@ -216,10 +219,13 @@ class _AdjustmentTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
-    final dateStr =
-        DateFormat('d MMM yyyy · hh:mm a').format(adjustment.createdAt.toLocal());
+    final dateStr = DateFormat(
+      'd MMM yyyy · hh:mm a',
+    ).format(adjustment.createdAt.toLocal());
     final count = adjustment.itemCount ?? adjustment.items.length;
-    final itemsLabel = count == 1 ? l10n.stockAdjItemSingular : l10n.stockAdjItemPlural;
+    final itemsLabel = count == 1
+        ? l10n.stockAdjItemSingular
+        : l10n.stockAdjItemPlural;
 
     return InkWell(
       onTap: null,

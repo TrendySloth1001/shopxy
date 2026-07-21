@@ -16,6 +16,7 @@ import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Merchant-side quotation detail: who it went to, status, line items, totals,
 /// the invoice it spawned (if accepted), and a Cancel action while pending.
@@ -28,7 +29,11 @@ class QuotationDetailPage extends StatefulWidget {
 }
 
 class _QuotationDetailPageState extends State<QuotationDetailPage> {
-  final _currency = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2);
+  final _currency = NumberFormat.currency(
+    locale: 'en_IN',
+    symbol: '₹',
+    decimalDigits: 2,
+  );
   final _dateFmt = DateFormat('d MMM y');
   late Quotation _q = widget.quotation;
   bool _busy = false;
@@ -38,7 +43,8 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
     setState(() => _downloading = true);
     final messenger = ScaffoldMessenger.of(context);
     final ds = context.read<QuotationsRemoteDataSource>();
-    final filename = 'quotation-${_q.quotationNo.replaceAll(RegExp(r'[^A-Za-z0-9_.-]'), '_')}.pdf';
+    final filename =
+        'quotation-${_q.quotationNo.replaceAll(RegExp(r'[^A-Za-z0-9_.-]'), '_')}.pdf';
     try {
       final response = await ds.downloadPdf(_q.id);
       if (response.statusCode != 200) throw Exception('Failed to generate PDF');
@@ -52,9 +58,7 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
         ),
       );
     } catch (e) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(friendlyError(e))),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(friendlyError(e))));
     } finally {
       if (mounted) setState(() => _downloading = false);
     }
@@ -91,9 +95,7 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _busy = false);
-      messenger.showSnackBar(
-        SnackBar(content: Text(friendlyError(e))),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(friendlyError(e))));
     }
   }
 
@@ -126,8 +128,9 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Back')),
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Back'),
+          ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(ctrl.text.trim()),
             style: FilledButton.styleFrom(backgroundColor: AppColors.error),
@@ -139,8 +142,10 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
     if (note == null) return;
     setState(() => _busy = true);
     try {
-      await provider.declineRequest(_q.id,
-          declineNote: note.isEmpty ? null : note);
+      await provider.declineRequest(
+        _q.id,
+        declineNote: note.isEmpty ? null : note,
+      );
       if (!mounted) return;
       setState(() {
         _busy = false;
@@ -164,9 +169,7 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _busy = false);
-      messenger.showSnackBar(
-        SnackBar(content: Text(friendlyError(e))),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(friendlyError(e))));
     }
   }
 
@@ -209,12 +212,20 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
                   ? const SizedBox(
                       width: AppSizes.iconSm,
                       height: AppSizes.iconSm,
-                      child: CircularProgressIndicator(strokeWidth: 2))
-                  : Icon(AppIcons.shareRounded,
-                      size: AppSizes.iconSm, color: AppColors.brand),
-              label: Text('Share',
-                  style: theme.textTheme.labelLarge?.copyWith(
-                      color: AppColors.brand, fontWeight: FontWeight.w700)),
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : AppIcon(
+                      AppIcons.shareRounded,
+                      size: AppSizes.iconSm,
+                      color: AppColors.brand,
+                    ),
+              label: Text(
+                'Share',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: AppColors.brand,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
           ),
         ],
@@ -231,28 +242,40 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label,
-                  style: theme.textTheme.titleMedium
-                      ?.copyWith(color: fg, fontWeight: FontWeight.w800)),
+              Text(
+                label,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: fg,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
               const SizedBox(height: AppSizes.xs),
               Text(
-                  _q.isRequested
-                      ? 'From ${_q.partyName} · requested ${_dateFmt.format(_q.createdAt)}'
-                      : 'To ${_q.partyName} · sent ${_dateFmt.format(_q.createdAt)}',
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: AppColors.muted)),
+                _q.isRequested
+                    ? 'From ${_q.partyName} · requested ${_dateFmt.format(_q.createdAt)}'
+                    : 'To ${_q.partyName} · sent ${_dateFmt.format(_q.createdAt)}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.muted,
+                ),
+              ),
               if (_q.status == 'ACCEPTED' && _q.invoiceNo != null) ...[
                 const SizedBox(height: AppSizes.xs),
-                Text('Invoice ${_q.invoiceNo} created',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColors.success,
-                        fontWeight: FontWeight.w700)),
+                Text(
+                  'Invoice ${_q.invoiceNo} created',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.success,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ],
               if (_q.status == 'DECLINED' && _q.declineNote != null) ...[
                 const SizedBox(height: AppSizes.xs),
-                Text('Reason: ${_q.declineNote}',
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: AppColors.muted)),
+                Text(
+                  'Reason: ${_q.declineNote}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.muted,
+                  ),
+                ),
               ],
             ],
           ),
@@ -296,8 +319,9 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.error,
                           side: BorderSide(color: AppColors.error),
-                          padding:
-                              const EdgeInsets.symmetric(vertical: AppSizes.lg),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: AppSizes.lg,
+                          ),
                         ),
                         child: const Text('Decline'),
                       ),
@@ -309,12 +333,16 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
                         onPressed: _busy ? null : _priceAndSend,
                         style: FilledButton.styleFrom(
                           backgroundColor: AppColors.brand,
-                          padding:
-                              const EdgeInsets.symmetric(vertical: AppSizes.lg),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: AppSizes.lg,
+                          ),
                         ),
-                        child: Text('Price & send',
-                            style: theme.textTheme.labelLarge
-                                ?.copyWith(fontWeight: FontWeight.w800)),
+                        child: Text(
+                          'Price & send',
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -333,14 +361,19 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
                         ? const SizedBox(
                             width: AppSizes.iconSm,
                             height: AppSizes.iconSm,
-                            child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Icon(AppIcons.closeRounded, size: AppSizes.iconMd),
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const AppIcon(
+                            AppIcons.closeRounded,
+                            size: AppSizes.iconMd,
+                          ),
                     label: const Text('Cancel quotation'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.error,
                       side: BorderSide(color: AppColors.error),
-                      padding:
-                          const EdgeInsets.symmetric(vertical: AppSizes.lg),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSizes.lg,
+                      ),
                     ),
                   ),
                 ),
@@ -350,20 +383,30 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
     );
   }
 
-  Widget _totalRow(String label, String value, ThemeData theme,
-      {bool bold = false}) {
+  Widget _totalRow(
+    String label,
+    String value,
+    ThemeData theme, {
+    bool bold = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                  color: bold ? null : AppColors.muted,
-                  fontWeight: bold ? FontWeight.w800 : null)),
-          Text(value,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                  fontWeight: bold ? FontWeight.w800 : FontWeight.w600)),
+          Text(
+            label,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: bold ? null : AppColors.muted,
+              fontWeight: bold ? FontWeight.w800 : null,
+            ),
+          ),
+          Text(
+            value,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
@@ -391,24 +434,31 @@ class _ItemRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(line.name,
-                    style: theme.textTheme.bodyLarge
-                        ?.copyWith(fontWeight: FontWeight.w700),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis),
+                Text(
+                  line.name,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 const SizedBox(height: AppSizes.xs),
                 Text(
                   '$qtyStr × ${currency.format(line.unitPrice)}'
                   '${line.taxPercent > 0 ? ' · ${line.taxPercent.toStringAsFixed(0)}% GST' : ''}',
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: AppColors.muted),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.muted,
+                  ),
                 ),
               ],
             ),
           ),
-          Text(currency.format(line.lineTotal),
-              style: theme.textTheme.bodyLarge
-                  ?.copyWith(fontWeight: FontWeight.w700)),
+          Text(
+            currency.format(line.lineTotal),
+            style: theme.textTheme.bodyLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ],
       ),
     );
@@ -420,11 +470,11 @@ class _Label extends StatelessWidget {
   final String label;
   @override
   Widget build(BuildContext context) => Text(
-        label.toUpperCase(),
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.muted,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.6,
-            ),
-      );
+    label.toUpperCase(),
+    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+      color: AppColors.muted,
+      fontWeight: FontWeight.w800,
+      letterSpacing: 0.6,
+    ),
+  );
 }

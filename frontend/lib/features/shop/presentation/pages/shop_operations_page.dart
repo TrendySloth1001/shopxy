@@ -16,6 +16,7 @@ import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// "Shop operations" hub — entry tiles for Hours/Vacation, Payouts,
 /// KYC, and Team. Hours and Payouts are fully wired (Payouts shows a
@@ -55,15 +56,15 @@ class _ShopOperationsPageState extends State<ShopOperationsPage> {
     final shopProvider = context.watch<ShopProvider>();
     final shop = shopProvider.shop;
     final payouts = context.watch<LinkedAccountProvider>();
-    final (canShop, canBilling, canTeam) =
-        context.select<AuthProvider, (bool, bool, bool)>((a) {
-      final u = a.user;
-      return (
-        u?.canView('shop') ?? false,
-        u?.canView('payouts') ?? false,
-        u?.canView('team') ?? false,
-      );
-    });
+    final (canShop, canBilling, canTeam) = context
+        .select<AuthProvider, (bool, bool, bool)>((a) {
+          final u = a.user;
+          return (
+            u?.canView('shop') ?? false,
+            u?.canView('payouts') ?? false,
+            u?.canView('team') ?? false,
+          );
+        });
 
     final isLoading = shopProvider.isLoading || payouts.isLoading;
 
@@ -73,80 +74,85 @@ class _ShopOperationsPageState extends State<ShopOperationsPage> {
       appBar: FloatingAppBar(
         title: l10n.shopOperationsTitle,
         actions: [
-          AccessReloadButton(onReload: () => context.read<ShopProvider>().load()),
+          AccessReloadButton(
+            onReload: () => context.read<ShopProvider>().load(),
+          ),
         ],
       ),
       // Show layout-mirroring skeleton while either provider is still loading.
       body: isLoading && shop == null
           ? const _OperationsSkeleton()
           : ListView(
-        padding: EdgeInsets.only(
-            top: AppSizes.sm + FloatingAppBar.contentTopInset(context),
-            bottom: AppSizes.huge),
-        children: [
-          if (canShop)
-            _OpsTile(
-            icon: AppIcons.scheduleRounded,
-            iconBg: AppColors.brandSoft,
-            iconColor: AppColors.brandStrong,
-            title: l10n.shopHoursTitle,
-            subtitle: shop?.vacationMode == true
-                ? l10n.shopOpsHoursOnVacation
-                : l10n.shopOpsHoursSubtitle,
-            trailing: shop?.vacationMode == true
-                ? AppStatusBadge(
-                    label: l10n.shopOnVacationBadge,
-                    tone: AppStatusTone.warning,
-                    weight: AppStatusWeight.soft,
-                    dense: true,
-                  )
-                : null,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ShopHoursPage()),
-            ),
-          ),
-          if (canBilling)
-            _OpsTile(
-            icon: AppIcons.accountBalanceOutlined,
-            iconBg: AppColors.infoSoft,
-            iconColor: AppColors.info,
-            title: l10n.shopPayoutsTitle,
-            subtitle: _payoutsSubtitle(l10n, payouts),
-            trailing: _payoutsBadge(l10n, payouts),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ShopPayoutsPage()),
-            ),
-          ),
-          if (canBilling)
-            _OpsTile(
-            icon: AppIcons.verifiedUserOutlined,
-            iconBg: AppColors.accentIndigoSoft,
-            iconColor: AppColors.accentIndigo,
-            title: l10n.shopKycTitle,
-            subtitle: l10n.shopOpsKycSubtitle,
-            trailing: AppStatusBadge(
-              label: l10n.shopComingSoonBadge,
-              tone: AppStatusTone.info,
-              weight: AppStatusWeight.soft,
-              dense: true,
-            ),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ShopKycPage()),
-            ),
-          ),
-          if (canTeam)
-            _OpsTile(
-              icon: AppIcons.groupOutlined,
-              iconBg: AppColors.accentRoseSoft,
-              iconColor: AppColors.accentRose,
-              title: l10n.shopTeamTitle,
-              subtitle: l10n.shopOpsTeamSubtitle,
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const ShopTeamPage()),
+              padding: EdgeInsets.only(
+                top: AppSizes.sm + FloatingAppBar.contentTopInset(context),
+                bottom: AppSizes.huge,
               ),
+              children: [
+                if (canShop)
+                  _OpsTile(
+                    icon: AppIcons.scheduleRounded,
+                    iconBg: AppColors.brandSoft,
+                    iconColor: AppColors.brandStrong,
+                    title: l10n.shopHoursTitle,
+                    subtitle: shop?.vacationMode == true
+                        ? l10n.shopOpsHoursOnVacation
+                        : l10n.shopOpsHoursSubtitle,
+                    trailing: shop?.vacationMode == true
+                        ? AppStatusBadge(
+                            label: l10n.shopOnVacationBadge,
+                            tone: AppStatusTone.warning,
+                            weight: AppStatusWeight.soft,
+                            dense: true,
+                          )
+                        : null,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const ShopHoursPage()),
+                    ),
+                  ),
+                if (canBilling)
+                  _OpsTile(
+                    icon: AppIcons.accountBalanceOutlined,
+                    iconBg: AppColors.infoSoft,
+                    iconColor: AppColors.info,
+                    title: l10n.shopPayoutsTitle,
+                    subtitle: _payoutsSubtitle(l10n, payouts),
+                    trailing: _payoutsBadge(l10n, payouts),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const ShopPayoutsPage(),
+                      ),
+                    ),
+                  ),
+                if (canBilling)
+                  _OpsTile(
+                    icon: AppIcons.verifiedUserOutlined,
+                    iconBg: AppColors.accentIndigoSoft,
+                    iconColor: AppColors.accentIndigo,
+                    title: l10n.shopKycTitle,
+                    subtitle: l10n.shopOpsKycSubtitle,
+                    trailing: AppStatusBadge(
+                      label: l10n.shopComingSoonBadge,
+                      tone: AppStatusTone.info,
+                      weight: AppStatusWeight.soft,
+                      dense: true,
+                    ),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const ShopKycPage()),
+                    ),
+                  ),
+                if (canTeam)
+                  _OpsTile(
+                    icon: AppIcons.groupOutlined,
+                    iconBg: AppColors.accentRoseSoft,
+                    iconColor: AppColors.accentRose,
+                    title: l10n.shopTeamTitle,
+                    subtitle: l10n.shopOpsTeamSubtitle,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const ShopTeamPage()),
+                    ),
+                  ),
+              ],
             ),
-        ],
-      ),
     );
   }
 }
@@ -214,8 +220,9 @@ class _OperationsSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       padding: EdgeInsets.only(
-          top: AppSizes.sm + FloatingAppBar.contentTopInset(context),
-          bottom: AppSizes.huge),
+        top: AppSizes.sm + FloatingAppBar.contentTopInset(context),
+        bottom: AppSizes.huge,
+      ),
       physics: const NeverScrollableScrollPhysics(),
       children: const [
         _OpsTileSkeleton(),
@@ -285,7 +292,7 @@ class _OpsTile extends StatelessWidget {
     required this.onTap,
     this.trailing,
   });
-  final IconData icon;
+  final AppIconData icon;
   final Color iconBg;
   final Color iconColor;
   final String title;
@@ -311,12 +318,9 @@ class _OpsTile extends StatelessWidget {
             Container(
               width: AppSizes.avatarSm,
               height: AppSizes.avatarSm,
-              decoration: BoxDecoration(
-                color: iconBg,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
               alignment: Alignment.center,
-              child: Icon(icon, color: iconColor, size: AppSizes.iconMd),
+              child: AppIcon(icon, color: iconColor, size: AppSizes.iconMd),
             ),
             const SizedBox(width: AppSizes.md),
             Expanded(
@@ -332,8 +336,9 @@ class _OpsTile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: AppColors.muted),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.muted,
+                    ),
                   ),
                 ],
               ),
@@ -343,7 +348,7 @@ class _OpsTile extends StatelessWidget {
               trailing!,
             ],
             const SizedBox(width: AppSizes.sm),
-            Icon(AppIcons.chevronRightRounded, color: AppColors.subtle),
+            AppIcon(AppIcons.chevronRightRounded, color: AppColors.subtle),
           ],
         ),
       ),

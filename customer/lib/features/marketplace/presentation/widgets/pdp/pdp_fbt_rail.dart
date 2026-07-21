@@ -10,6 +10,7 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/format/app_format.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Phase G — "Frequently bought together" rail. Sits between the offers
 /// strip and the tab bar in the PDP. Self-loads its own cohort on
@@ -60,10 +61,10 @@ class _PdpFbtRailState extends State<PdpFbtRail> {
             child: Text(
               'Frequently bought together',
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 15,
-                    color: AppColors.black,
-                  ),
+                fontWeight: FontWeight.w800,
+                fontSize: 15,
+                color: AppColors.black,
+              ),
             ),
           ),
           const SizedBox(height: AppSizes.sm),
@@ -127,17 +128,18 @@ class _Card extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.black,
-                            fontWeight: FontWeight.w700,
-                            height: 1.25,
-                          ),
+                        color: AppColors.black,
+                        fontWeight: FontWeight.w700,
+                        height: 1.25,
+                      ),
                     ),
                     const SizedBox(height: AppSizes.xs),
                     Row(
                       children: [
                         Text(
                           AppFormat.rupees(card.sellingPrice),
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
                                 color: AppColors.black,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -146,7 +148,8 @@ class _Card extends StatelessWidget {
                           const SizedBox(width: AppSizes.xs),
                           Text(
                             AppFormat.rupees(card.mrp),
-                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(
                                   color: AppColors.muted,
                                   decoration: TextDecoration.lineThrough,
                                 ),
@@ -159,12 +162,16 @@ class _Card extends StatelessWidget {
                         padding: const EdgeInsets.only(top: AppSizes.xs),
                         child: Row(
                           children: [
-                            const Icon(AppIcons.starRounded,
-                                color: Color(0xFFE05A2A), size: 12),
+                            const AppIcon(
+                              AppIcons.starRounded,
+                              color: Color(0xFFE05A2A),
+                              size: 12,
+                            ),
                             const SizedBox(width: AppSizes.xs),
                             Text(
                               '${card.ratingAvg!.toStringAsFixed(1)} (${card.ratingCount})',
-                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              style: Theme.of(context).textTheme.labelSmall
+                                  ?.copyWith(
                                     color: AppColors.muted,
                                     fontWeight: FontWeight.w600,
                                   ),

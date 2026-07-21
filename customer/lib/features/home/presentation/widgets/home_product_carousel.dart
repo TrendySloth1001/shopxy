@@ -8,6 +8,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 class HomeProductCarousel extends StatelessWidget {
   const HomeProductCarousel({
@@ -32,9 +33,9 @@ class HomeProductCarousel extends StatelessWidget {
       onSeeAll!();
       return;
     }
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const SearchPage()),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const SearchPage()));
   }
 
   @override
@@ -84,7 +85,7 @@ class HomeProductCarousel extends StatelessWidget {
                     color: AppColors.black,
                     shape: AppShapes.squircle(AppSizes.radiusFull),
                   ),
-                  child: const Icon(
+                  child: const AppIcon(
                     AppIcons.arrowForwardRounded,
                     color: AppColors.white,
                     size: 18,
@@ -228,7 +229,7 @@ class HomeProductTile extends StatelessWidget {
                         Row(
                           children: [
                             if (product.freeDelivery) ...[
-                              const Icon(
+                              const AppIcon(
                                 AppIcons.localShippingOutlined,
                                 size: 10,
                                 color: AppColors.success,
@@ -253,10 +254,10 @@ class HomeProductTile extends StatelessWidget {
                                   vertical: 1,
                                 ),
                                 decoration: BoxDecoration(
-                                  color:
-                                      AppColors.info.withValues(alpha: 0.12),
-                                  borderRadius:
-                                      BorderRadius.circular(AppSizes.radiusXs),
+                                  color: AppColors.info.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(
+                                    AppSizes.radiusXs,
+                                  ),
                                 ),
                                 child: const Text(
                                   'ASSURED',
@@ -315,11 +316,7 @@ class _Image extends StatelessWidget {
                 ),
               ),
               if (product.isAd)
-                const Positioned(
-                  top: 6,
-                  left: 6,
-                  child: _AdChip(),
-                ),
+                const Positioned(top: 6, left: 6, child: _AdChip()),
               if (hasDiscount)
                 Positioned(
                   top: product.isAd ? 28 : 6,
@@ -443,7 +440,7 @@ class _WishHeart extends StatelessWidget {
           ),
         ],
       ),
-      child: const Icon(
+      child: const AppIcon(
         AppIcons.favoriteBorderRounded,
         size: 15,
         color: AppColors.black,
@@ -483,7 +480,7 @@ class _RatingPill extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 2),
-          const Icon(
+          const AppIcon(
             AppIcons.starRounded,
             color: AppColors.success,
             size: 12,

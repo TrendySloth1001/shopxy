@@ -13,6 +13,7 @@ import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Merchant-facing list of coupons attached to the caller's shop.
 /// Tapping a row opens the editor sheet; the FAB opens the same sheet
@@ -48,16 +49,16 @@ class _MerchantCouponsPageState extends State<MerchantCouponsPage> {
       final rows = await ds.list();
       if (mounted) {
         setState(() {
-        _rows = rows;
-        _loading = false;
-      });
+          _rows = rows;
+          _loading = false;
+        });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-        _loading = false;
-        _error = friendlyError(e);
-      });
+          _loading = false;
+          _error = friendlyError(e);
+        });
       }
     }
   }
@@ -101,9 +102,7 @@ class _MerchantCouponsPageState extends State<MerchantCouponsPage> {
       if (!mounted) return;
       _load();
     } catch (e) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(friendlyError(e))),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(friendlyError(e))));
     }
   }
 
@@ -115,35 +114,34 @@ class _MerchantCouponsPageState extends State<MerchantCouponsPage> {
       appBar: FloatingAppBar(title: l10n.couponsTitle),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openEditor(),
-        icon: const Icon(AppIcons.add),
+        icon: const AppIcon(AppIcons.add),
         label: Text(l10n.couponsNewCoupon),
       ),
       body: _loading
           ? const _CouponListSkeleton()
           : _error != null
-              ? _ErrorBlock(message: _error!, onRetry: _load)
-              : _rows.isEmpty
-                  ? const _EmptyBlock()
-                  : RefreshIndicator(
-                      onRefresh: _load,
-                      child: ListView.builder(
-                        padding: EdgeInsets.only(
-                          left: AppSizes.lg,
-                          right: AppSizes.lg,
-                          top: AppSizes.sm +
-                              FloatingAppBar.contentTopInset(context),
-                          bottom: AppSizes.sm,
-                        ),
-                        itemCount: _rows.length,
-                        itemBuilder: (_, i) => _CouponRow(
-                          row: _rows[i],
-                          onEdit: () => _openEditor(existing: _rows[i]),
-                          onDeactivate: () => _deactivate(_rows[i]),
-                          dateFormat: _date,
-                          currencyFormat: _currency,
-                        ),
-                      ),
-                    ),
+          ? _ErrorBlock(message: _error!, onRetry: _load)
+          : _rows.isEmpty
+          ? const _EmptyBlock()
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: ListView.builder(
+                padding: EdgeInsets.only(
+                  left: AppSizes.lg,
+                  right: AppSizes.lg,
+                  top: AppSizes.sm + FloatingAppBar.contentTopInset(context),
+                  bottom: AppSizes.sm,
+                ),
+                itemCount: _rows.length,
+                itemBuilder: (_, i) => _CouponRow(
+                  row: _rows[i],
+                  onEdit: () => _openEditor(existing: _rows[i]),
+                  onDeactivate: () => _deactivate(_rows[i]),
+                  dateFormat: _date,
+                  currencyFormat: _currency,
+                ),
+              ),
+            ),
     );
   }
 }
@@ -172,23 +170,25 @@ class _CouponRow extends StatelessWidget {
     final tone = !row.isActive
         ? AppStatusTone.error
         : row.isExpired
-            ? AppStatusTone.warning
-            : row.isExhausted
-                ? AppStatusTone.warning
-                : AppStatusTone.success;
+        ? AppStatusTone.warning
+        : row.isExhausted
+        ? AppStatusTone.warning
+        : AppStatusTone.success;
     final label = !row.isActive
         ? l10n.couponsStatusInactive
         : row.isExpired
-            ? l10n.couponsStatusExpired
-            : row.isExhausted
-                ? l10n.couponsStatusExhausted
-                : l10n.couponsStatusLive;
+        ? l10n.couponsStatusExpired
+        : row.isExhausted
+        ? l10n.couponsStatusExhausted
+        : l10n.couponsStatusLive;
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSizes.sm),
       child: Material(
         color: AppColors.surface,
-        shape: AppShapes.squircle(AppSizes.radiusLg,
-            side: BorderSide(color: AppColors.hairline)),
+        shape: AppShapes.squircle(
+          AppSizes.radiusLg,
+          side: BorderSide(color: AppColors.hairline),
+        ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           customBorder: AppShapes.squircle(AppSizes.radiusMd),
@@ -216,8 +216,7 @@ class _CouponRow extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: AppSizes.xs),
-                Text(row.title,
-                    style: theme.textTheme.bodyMedium),
+                Text(row.title, style: theme.textTheme.bodyMedium),
                 if (row.isPublic || row.firstOrderOnly) ...[
                   const SizedBox(height: AppSizes.xs),
                   Wrap(
@@ -247,7 +246,7 @@ class _CouponRow extends StatelessWidget {
                     dateFormat.format(row.validFrom),
                     dateFormat.format(row.validUntil),
                     '${row.totalRedemptions}'
-                        '${row.totalCap > 0 ? '/${row.totalCap}' : ''}',
+                    '${row.totalCap > 0 ? '/${row.totalCap}' : ''}',
                   ),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: AppColors.muted,
@@ -259,8 +258,10 @@ class _CouponRow extends StatelessWidget {
                     alignment: Alignment.centerRight,
                     child: TextButton.icon(
                       onPressed: onDeactivate,
-                      icon: const Icon(AppIcons.powerSettingsNew,
-                          size: AppSizes.iconSm),
+                      icon: const AppIcon(
+                        AppIcons.powerSettingsNew,
+                        size: AppSizes.iconSm,
+                      ),
                       label: Text(l10n.couponsDeactivate),
                       style: TextButton.styleFrom(
                         foregroundColor: AppColors.error,
@@ -292,8 +293,10 @@ class _CouponRowSkeleton extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: AppSizes.sm),
       child: Material(
         color: AppColors.surface,
-        shape: AppShapes.squircle(AppSizes.radiusLg,
-            side: BorderSide(color: AppColors.hairline)),
+        shape: AppShapes.squircle(
+          AppSizes.radiusLg,
+          side: BorderSide(color: AppColors.hairline),
+        ),
         clipBehavior: Clip.antiAlias,
         child: Padding(
           padding: const EdgeInsets.all(AppSizes.md),
@@ -307,7 +310,11 @@ class _CouponRowSkeleton extends StatelessWidget {
                     child: AppShimmerLine(widthFactor: 0.55, height: 16),
                   ),
                   const SizedBox(width: AppSizes.sm),
-                  AppShimmerBox(width: 56, height: 22, radius: AppSizes.radiusSm),
+                  AppShimmerBox(
+                    width: 56,
+                    height: 22,
+                    radius: AppSizes.radiusSm,
+                  ),
                 ],
               ),
               const SizedBox(height: AppSizes.xs),
@@ -317,9 +324,17 @@ class _CouponRowSkeleton extends StatelessWidget {
               // Optional feature badge row (Public / First order)
               Row(
                 children: [
-                  AppShimmerBox(width: 100, height: 20, radius: AppSizes.radiusSm),
+                  AppShimmerBox(
+                    width: 100,
+                    height: 20,
+                    radius: AppSizes.radiusSm,
+                  ),
                   const SizedBox(width: AppSizes.sm),
-                  AppShimmerBox(width: 80, height: 20, radius: AppSizes.radiusSm),
+                  AppShimmerBox(
+                    width: 80,
+                    height: 20,
+                    radius: AppSizes.radiusSm,
+                  ),
                 ],
               ),
               const SizedBox(height: AppSizes.xs),
@@ -364,8 +379,11 @@ class _EmptyBlock extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(AppIcons.localOfferOutlined,
-                size: AppSizes.iconHuge, color: AppColors.subtle),
+            AppIcon(
+              AppIcons.localOfferOutlined,
+              size: AppSizes.iconHuge,
+              color: AppColors.subtle,
+            ),
             const SizedBox(height: AppSizes.md),
             Text(
               l10n.couponsEmptyBody,

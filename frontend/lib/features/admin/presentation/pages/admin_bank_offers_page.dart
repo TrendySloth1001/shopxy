@@ -13,6 +13,7 @@ import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Admin-only page (drawer entry gated by `User.isPlatformAdmin`). One
 /// list of all platform bank offers regardless of status — admin
@@ -73,9 +74,9 @@ class _AdminBankOffersPageState extends State<AdminBankOffersPage> {
       await context.read<AdminBankOffersProvider>().deactivate(o.id);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(friendlyError(e))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(friendlyError(e))));
     }
   }
 
@@ -91,44 +92,44 @@ class _AdminBankOffersPageState extends State<AdminBankOffersPage> {
         actions: [
           IconButton(
             tooltip: l10n.adminRefresh,
-            icon: const Icon(AppIcons.refresh),
+            icon: const AppIcon(AppIcons.refresh),
             onPressed: provider.isLoading ? null : provider.load,
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openEditor(),
-        icon: const Icon(AppIcons.add),
+        icon: const AppIcon(AppIcons.add),
         label: Text(l10n.adminBankOfferNew),
       ),
       body: provider.isLoading && provider.offers.isEmpty
           ? const _OfferListSkeleton()
           : provider.error != null && provider.offers.isEmpty
-              ? _ErrorBlock(message: provider.error!, onRetry: provider.load)
-              : provider.offers.isEmpty
-                  ? const _EmptyBlock()
-                  : RefreshIndicator(
-                      onRefresh: provider.load,
-                      child: ListView.builder(
-                        padding: EdgeInsets.fromLTRB(
-                          AppSizes.lg,
-                          AppSizes.sm + FloatingAppBar.contentTopInset(context),
-                          AppSizes.lg,
-                          AppSizes.fabClearance,
-                        ),
-                        itemCount: provider.offers.length,
-                        itemBuilder: (_, i) {
-                          final o = provider.offers[i];
-                          return _OfferRow(
-                            offer: o,
-                            onEdit: () => _openEditor(existing: o),
-                            onDeactivate: () => _deactivate(o),
-                            dateFormat: _date,
-                            currencyFormat: _currency,
-                          );
-                        },
-                      ),
-                    ),
+          ? _ErrorBlock(message: provider.error!, onRetry: provider.load)
+          : provider.offers.isEmpty
+          ? const _EmptyBlock()
+          : RefreshIndicator(
+              onRefresh: provider.load,
+              child: ListView.builder(
+                padding: EdgeInsets.fromLTRB(
+                  AppSizes.lg,
+                  AppSizes.sm + FloatingAppBar.contentTopInset(context),
+                  AppSizes.lg,
+                  AppSizes.fabClearance,
+                ),
+                itemCount: provider.offers.length,
+                itemBuilder: (_, i) {
+                  final o = provider.offers[i];
+                  return _OfferRow(
+                    offer: o,
+                    onEdit: () => _openEditor(existing: o),
+                    onDeactivate: () => _deactivate(o),
+                    dateFormat: _date,
+                    currencyFormat: _currency,
+                  );
+                },
+              ),
+            ),
     );
   }
 }
@@ -234,7 +235,9 @@ class _OfferRow extends StatelessWidget {
     final theme = Theme.of(context);
     final discount = offer.discountType == 'PERCENT'
         ? l10n.adminBankOfferPercentOff(offer.discountValue.toStringAsFixed(0))
-        : l10n.adminBankOfferAmountOff(currencyFormat.format(offer.discountValue));
+        : l10n.adminBankOfferAmountOff(
+            currencyFormat.format(offer.discountValue),
+          );
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSizes.sm),
       child: Material(
@@ -299,8 +302,10 @@ class _OfferRow extends StatelessWidget {
                     alignment: Alignment.centerRight,
                     child: TextButton.icon(
                       onPressed: onDeactivate,
-                      icon: const Icon(AppIcons.powerSettingsNew,
-                          size: AppSizes.iconSm),
+                      icon: const AppIcon(
+                        AppIcons.powerSettingsNew,
+                        size: AppSizes.iconSm,
+                      ),
                       label: Text(l10n.adminDeactivate),
                       style: TextButton.styleFrom(
                         foregroundColor: AppColors.error,
@@ -326,22 +331,25 @@ class _EmptyBlock extends StatelessWidget {
       top: true,
       bottom: false,
       child: Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSizes.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(AppIcons.accountBalanceOutlined,
-                size: AppSizes.iconHuge, color: AppColors.subtle),
-            const SizedBox(height: AppSizes.md),
-            Text(
-              AppLocalizations.of(context).adminBankOffersEmpty,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.muted),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(AppSizes.xl),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AppIcon(
+                AppIcons.accountBalanceOutlined,
+                size: AppSizes.iconHuge,
+                color: AppColors.subtle,
+              ),
+              const SizedBox(height: AppSizes.md),
+              Text(
+                AppLocalizations.of(context).adminBankOffersEmpty,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppColors.muted),
+              ),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -358,20 +366,20 @@ class _ErrorBlock extends StatelessWidget {
       top: true,
       bottom: false,
       child: Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSizes.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(message, textAlign: TextAlign.center),
-            const SizedBox(height: AppSizes.md),
-            FilledButton(
-              onPressed: () => onRetry(),
-              child: Text(AppLocalizations.of(context).adminRetry),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(AppSizes.xl),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(message, textAlign: TextAlign.center),
+              const SizedBox(height: AppSizes.md),
+              FilledButton(
+                onPressed: () => onRetry(),
+                child: Text(AppLocalizations.of(context).adminRetry),
+              ),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }

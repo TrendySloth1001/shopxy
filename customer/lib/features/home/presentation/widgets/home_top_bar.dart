@@ -22,6 +22,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 class HomeTopBar extends StatelessWidget {
   const HomeTopBar({super.key, this.shrink = 0.0});
@@ -59,9 +60,9 @@ class HomeTopBar extends StatelessWidget {
               Expanded(
                 child: _CollapsedSearchField(
                   t: t,
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const SearchPage()),
-                  ),
+                  onTap: () => Navigator.of(
+                    context,
+                  ).push(MaterialPageRoute(builder: (_) => const SearchPage())),
                 ),
               ),
               // Pending-payment affordance. Lives up here next to the
@@ -94,7 +95,9 @@ class HomeTopBar extends StatelessWidget {
                   icon: AppIcons.notificationsNoneRounded,
                   count: unread,
                   onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const NotificationsPage()),
+                    MaterialPageRoute(
+                      builder: (_) => const NotificationsPage(),
+                    ),
                   ),
                 ),
               ),
@@ -222,8 +225,11 @@ class _CollapsedSearchFieldState extends State<_CollapsedSearchField> {
               ),
               child: Row(
                 children: [
-                  const Icon(AppIcons.searchRounded,
-                      color: AppColors.muted, size: 18),
+                  const AppIcon(
+                    AppIcons.searchRounded,
+                    color: AppColors.muted,
+                    size: 18,
+                  ),
                   const SizedBox(width: AppSizes.sm),
                   Expanded(
                     child: AnimatedSwitcher(
@@ -283,7 +289,7 @@ class _BrandWordmark extends StatelessWidget {
           ),
           alignment: Alignment.center,
           // Placeholder mark — to be replaced with the real logo later.
-          child: const Icon(
+          child: const AppIcon(
             AppIcons.storefrontRounded,
             color: AppColors.white,
             size: 18,
@@ -374,7 +380,7 @@ class _LocationPill extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 2),
         child: Row(
           children: [
-            Icon(
+            AppIcon(
               hasAddress
                   ? AppIcons.locationOnRounded
                   : AppIcons.addLocationAltOutlined,
@@ -431,7 +437,7 @@ class _LocationPill extends StatelessWidget {
                 ),
               ),
             const SizedBox(width: 2),
-            const Icon(
+            const AppIcon(
               AppIcons.keyboardArrowDownRounded,
               color: AppColors.muted,
               size: 18,
@@ -461,8 +467,9 @@ Future<void> _showAddressSheet(BuildContext context) async {
     isScrollControlled: true,
     backgroundColor: AppColors.canvas,
     shape: const RoundedRectangleBorder(
-      borderRadius:
-          BorderRadius.vertical(top: Radius.circular(AppSizes.radiusLg)),
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(AppSizes.radiusLg),
+      ),
     ),
     builder: (_) => const _AddressSheet(),
   );
@@ -516,8 +523,7 @@ class _AddressSheet extends StatelessWidget {
                 }
                 if (p.items.isEmpty) {
                   return Padding(
-                    padding:
-                        const EdgeInsets.symmetric(vertical: AppSizes.lg),
+                    padding: const EdgeInsets.symmetric(vertical: AppSizes.lg),
                     child: Text(
                       p.error ?? 'No saved addresses yet.',
                       style: const TextStyle(
@@ -529,8 +535,7 @@ class _AddressSheet extends StatelessWidget {
                 }
                 return ConstrainedBox(
                   constraints: BoxConstraints(
-                    maxHeight:
-                        MediaQuery.of(context).size.height * 0.5,
+                    maxHeight: MediaQuery.of(context).size.height * 0.5,
                   ),
                   child: ListView.separated(
                     shrinkWrap: true,
@@ -543,9 +548,9 @@ class _AddressSheet extends StatelessWidget {
                         address: addr,
                         onTap: () async {
                           if (!addr.isDefault) {
-                            await context
-                                .read<AddressesProvider>()
-                                .setDefault(addr.id);
+                            await context.read<AddressesProvider>().setDefault(
+                              addr.id,
+                            );
                           }
                           if (context.mounted) Navigator.of(context).pop();
                         },
@@ -624,7 +629,7 @@ class _AddressRow extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
+            AppIcon(
               selected
                   ? AppIcons.radioButtonChecked
                   : AppIcons.radioButtonUnchecked,
@@ -701,7 +706,7 @@ class _SheetButton extends StatelessWidget {
     required this.label,
     required this.onTap,
   });
-  final IconData icon;
+  final AppIconData icon;
   final String label;
   final VoidCallback onTap;
 
@@ -719,7 +724,7 @@ class _SheetButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: AppColors.brand, size: 18),
+            AppIcon(icon, color: AppColors.brand, size: 18),
             const SizedBox(width: AppSizes.xs),
             Text(
               label,
@@ -738,7 +743,7 @@ class _SheetButton extends StatelessWidget {
 
 class _TopBarIcon extends StatelessWidget {
   const _TopBarIcon({required this.icon, this.count, this.onTap});
-  final IconData icon;
+  final AppIconData icon;
   final int? count;
   final VoidCallback? onTap;
 
@@ -761,22 +766,21 @@ class _TopBarIcon extends StatelessWidget {
                 color: AppColors.white,
                 shape: AppShapes.squircle(
                   AppSizes.radiusMd,
-                  side: const BorderSide(
-                    color: AppColors.hairline,
-                    width: 0.6,
-                  ),
+                  side: const BorderSide(color: AppColors.hairline, width: 0.6),
                 ),
               ),
               alignment: Alignment.center,
-              child: Icon(icon, color: AppColors.black, size: 20),
+              child: AppIcon(icon, color: AppColors.black, size: 20),
             ),
             if (count != null && count! > 0)
               Positioned(
                 right: -2,
                 top: -2,
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 1,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.brand,
                     borderRadius: BorderRadius.circular(AppSizes.radiusSm),
@@ -815,11 +819,9 @@ class _ProfileButton extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Selector<AuthProvider, ({String? name, String? avatarUrl})>(
-        selector: (_, a) =>
-            (name: a.user?.name, avatarUrl: a.user?.avatarUrl),
+        selector: (_, a) => (name: a.user?.name, avatarUrl: a.user?.avatarUrl),
         builder: (_, u, _) {
-          final hasAvatar =
-              u.avatarUrl != null && u.avatarUrl!.isNotEmpty;
+          final hasAvatar = u.avatarUrl != null && u.avatarUrl!.isNotEmpty;
           return Container(
             width: 38,
             height: 38,
@@ -827,10 +829,7 @@ class _ProfileButton extends StatelessWidget {
               color: AppColors.white,
               shape: AppShapes.squircle(
                 AppSizes.radiusMd,
-                side: const BorderSide(
-                  color: AppColors.hairline,
-                  width: 0.6,
-                ),
+                side: const BorderSide(color: AppColors.hairline, width: 0.6),
               ),
             ),
             padding: const EdgeInsets.all(2),

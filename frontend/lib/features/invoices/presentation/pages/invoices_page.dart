@@ -29,6 +29,7 @@ import 'package:shopxy/shared/widgets/empty_state.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 class InvoicesPage extends StatefulWidget {
   const InvoicesPage({super.key});
@@ -85,7 +86,9 @@ class _InvoicesPageState extends State<InvoicesPage> {
       isScrollControlled: true,
       backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppSizes.bottomSheetRadius)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppSizes.bottomSheetRadius),
+        ),
       ),
       builder: (_) => _InvoiceFilterSheet(
         documentType: provider.documentTypeFilter,
@@ -103,7 +106,8 @@ class _InvoicesPageState extends State<InvoicesPage> {
     final l10n = AppLocalizations.of(context);
     final provider = context.watch<InvoicesProvider>();
     final canManage = context.select<AuthProvider, bool>(
-        (a) => a.user?.canManage('invoices') ?? false);
+      (a) => a.user?.canManage('invoices') ?? false,
+    );
     final activeSecondary = [
       if (provider.documentTypeFilter != null) provider.documentTypeFilter!,
       if (provider.statusFilter != null) provider.statusFilter!,
@@ -118,7 +122,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
             clipBehavior: Clip.none,
             children: [
               IconButton(
-                icon: const Icon(AppIcons.tuneRounded),
+                icon: const AppIcon(AppIcons.tuneRounded),
                 tooltip: l10n.invoicesFiltersTooltip,
                 onPressed: () => _openFilterSheet(provider),
               ),
@@ -138,7 +142,8 @@ class _InvoicesPageState extends State<InvoicesPage> {
             ],
           ),
           AccessReloadButton(
-              onReload: () => provider.loadInvoices(refresh: true)),
+            onReload: () => provider.loadInvoices(refresh: true),
+          ),
           LockedIconButton(
             allowed: canManage,
             icon: AppIcons.addRounded,
@@ -152,126 +157,123 @@ class _InvoicesPageState extends State<InvoicesPage> {
         context: context,
         removeTop: true,
         child: Column(
-        children: [
-          SizedBox(height: FloatingAppBar.contentTopInset(context)),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSizes.lg,
-              AppSizes.md,
-              AppSizes.lg,
-              0,
-            ),
-            child: AppSearchBar(
-              hint: l10n.invoicesSearchHint,
-              controller: _searchCtrl,
-              onChanged: provider.updateSearch,
-            ),
-          ),
-          // Primary axis filter — direction of money. Document type +
-          // status live in the filter sheet (tune icon in the AppBar)
-          // since they're orthogonal and would crowd the header.
-          AppFilterStrip(
-            children: [
-              AppFilterPill(
-                label: l10n.invoicesFilterAll,
-                selected: provider.typeFilter == null,
-                onTap: () => provider.setTypeFilter(null),
+          children: [
+            SizedBox(height: FloatingAppBar.contentTopInset(context)),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSizes.lg,
+                AppSizes.md,
+                AppSizes.lg,
+                0,
               ),
-              AppFilterPill(
-                label: l10n.invoicesFilterSales,
-                icon: AppIcons.arrowUpwardRounded,
-                selected: provider.typeFilter == 'SALE',
-                onTap: () => provider.setTypeFilter(
-                  provider.typeFilter == 'SALE' ? null : 'SALE',
+              child: AppSearchBar(
+                hint: l10n.invoicesSearchHint,
+                controller: _searchCtrl,
+                onChanged: provider.updateSearch,
+              ),
+            ),
+            // Primary axis filter — direction of money. Document type +
+            // status live in the filter sheet (tune icon in the AppBar)
+            // since they're orthogonal and would crowd the header.
+            AppFilterStrip(
+              children: [
+                AppFilterPill(
+                  label: l10n.invoicesFilterAll,
+                  selected: provider.typeFilter == null,
+                  onTap: () => provider.setTypeFilter(null),
                 ),
-              ),
-              AppFilterPill(
-                label: l10n.invoicesFilterPurchases,
-                icon: AppIcons.arrowDownwardRounded,
-                selected: provider.typeFilter == 'PURCHASE',
-                onTap: () => provider.setTypeFilter(
-                  provider.typeFilter == 'PURCHASE' ? null : 'PURCHASE',
+                AppFilterPill(
+                  label: l10n.invoicesFilterSales,
+                  icon: AppIcons.arrowUpwardRounded,
+                  selected: provider.typeFilter == 'SALE',
+                  onTap: () => provider.setTypeFilter(
+                    provider.typeFilter == 'SALE' ? null : 'SALE',
+                  ),
                 ),
-              ),
-            ],
-          ),
-          if (activeSecondary.isNotEmpty)
-            _ActiveSecondaryFiltersRow(
-              documentType: provider.documentTypeFilter,
-              status: provider.statusFilter,
-              onClearDocumentType: () => provider.setDocumentTypeFilter(null),
-              onClearStatus: () => provider.setStatusFilter(null),
+                AppFilterPill(
+                  label: l10n.invoicesFilterPurchases,
+                  icon: AppIcons.arrowDownwardRounded,
+                  selected: provider.typeFilter == 'PURCHASE',
+                  onTap: () => provider.setTypeFilter(
+                    provider.typeFilter == 'PURCHASE' ? null : 'PURCHASE',
+                  ),
+                ),
+              ],
             ),
-          const AppDivider.flush(),
-          Expanded(
-            child: provider.isLoading && provider.invoices.isEmpty
-                ? const _InvoicesListSkeleton()
-                : provider.error != null && provider.invoices.isEmpty
-                    ? EmptyState.line(
-                        kind: LineArt.warning,
-                        title: l10n.invoicesErrorTitle,
-                        action: AppButton.secondary(
-                          label: l10n.invoicesRetry,
-                          onPressed: () =>
-                              provider.loadInvoices(refresh: true),
+            if (activeSecondary.isNotEmpty)
+              _ActiveSecondaryFiltersRow(
+                documentType: provider.documentTypeFilter,
+                status: provider.statusFilter,
+                onClearDocumentType: () => provider.setDocumentTypeFilter(null),
+                onClearStatus: () => provider.setStatusFilter(null),
+              ),
+            const AppDivider.flush(),
+            Expanded(
+              child: provider.isLoading && provider.invoices.isEmpty
+                  ? const _InvoicesListSkeleton()
+                  : provider.error != null && provider.invoices.isEmpty
+                  ? EmptyState.line(
+                      kind: LineArt.warning,
+                      title: l10n.invoicesErrorTitle,
+                      action: AppButton.secondary(
+                        label: l10n.invoicesRetry,
+                        onPressed: () => provider.loadInvoices(refresh: true),
+                      ),
+                    )
+                  : provider.invoices.isEmpty
+                  ? EmptyState.line(
+                      kind: LineArt.invoice,
+                      title: l10n.invoicesEmptyTitle,
+                      subtitle: l10n.invoicesEmptyBody,
+                      action: MaybeLocked(
+                        allowed: canManage,
+                        what: 'create invoices',
+                        child: AppButton.primary(
+                          label: l10n.invoicesCreateTitle,
+                          icon: AppIcons.addRounded,
+                          onPressed: _openCreate,
                         ),
-                      )
-                    : provider.invoices.isEmpty
-                        ? EmptyState.line(
-                            kind: LineArt.invoice,
-                            title: l10n.invoicesEmptyTitle,
-                            subtitle: l10n.invoicesEmptyBody,
-                            action: MaybeLocked(
-                              allowed: canManage,
-                              what: 'create invoices',
-                              child: AppButton.primary(
-                                label: l10n.invoicesCreateTitle,
-                                icon: AppIcons.addRounded,
-                                onPressed: _openCreate,
+                      ),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: () => provider.loadInvoices(refresh: true),
+                      color: AppColors.black,
+                      backgroundColor: AppColors.surface,
+                      child: ListView.separated(
+                        controller: _scrollCtrl,
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSizes.lg,
+                          AppSizes.sm,
+                          AppSizes.lg,
+                          100,
+                        ),
+                        itemCount:
+                            provider.invoices.length +
+                            (provider.hasMore ? 1 : 0),
+                        separatorBuilder: (_, _) =>
+                            const SizedBox(height: AppSizes.sm),
+                        itemBuilder: (context, i) {
+                          if (i >= provider.invoices.length) {
+                            return const _InvoicesLoadMoreFooter();
+                          }
+                          final invoice = provider.invoices[i];
+                          return _InvoiceTile(
+                            invoice: invoice,
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    InvoiceDetailPage(invoiceId: invoice.id),
                               ),
                             ),
-                          )
-                        : RefreshIndicator(
-                            onRefresh: () =>
-                                provider.loadInvoices(refresh: true),
-                            color: AppColors.black,
-                            backgroundColor: AppColors.surface,
-                            child: ListView.separated(
-                              controller: _scrollCtrl,
-                              padding: const EdgeInsets.fromLTRB(
-                                AppSizes.lg,
-                                AppSizes.sm,
-                                AppSizes.lg,
-                                100,
-                              ),
-                              itemCount: provider.invoices.length +
-                                  (provider.hasMore ? 1 : 0),
-                              separatorBuilder: (_, _) =>
-                                  const SizedBox(height: AppSizes.sm),
-                              itemBuilder: (context, i) {
-                                if (i >= provider.invoices.length) {
-                                  return const _InvoicesLoadMoreFooter();
-                                }
-                                final invoice = provider.invoices[i];
-                                return _InvoiceTile(
-                                  invoice: invoice,
-                                  onTap: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => InvoiceDetailPage(
-                                        invoiceId: invoice.id,
-                                      ),
-                                    ),
-                                  ),
-                                  onDownload: () =>
-                                      _downloadPdf(context, invoice),
-                                );
-                              },
-                            ),
-                          ),
-          ),
-        ],
-      ),
+                            onDownload: () => _downloadPdf(context, invoice),
+                          );
+                        },
+                      ),
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -279,9 +281,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
   Future<void> _downloadPdf(BuildContext context, Invoice invoice) async {
     final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
-    messenger.showSnackBar(
-      SnackBar(content: Text(l10n.invoicesGeneratingPdf)),
-    );
+    messenger.showSnackBar(SnackBar(content: Text(l10n.invoicesGeneratingPdf)));
 
     try {
       final ds = context.read<InvoicesRemoteDataSource>();
@@ -319,31 +319,36 @@ class _ActiveSecondaryFiltersRow extends StatelessWidget {
   final VoidCallback onClearStatus;
 
   String _documentLabel(AppLocalizations l10n, String d) => switch (d) {
-        'TAX_INVOICE' => l10n.invoicesDocTaxInvoice,
-        'BILL_OF_SUPPLY' => l10n.invoicesDocBillOfSupply,
-        'ESTIMATE' => l10n.invoicesDocEstimate,
-        'PROFORMA' => l10n.invoicesDocProforma,
-        'CREDIT_NOTE' => l10n.invoicesDocCreditNote,
-        'DEBIT_NOTE' => l10n.invoicesDocDebitNote,
-        _ => d,
-      };
+    'TAX_INVOICE' => l10n.invoicesDocTaxInvoice,
+    'BILL_OF_SUPPLY' => l10n.invoicesDocBillOfSupply,
+    'ESTIMATE' => l10n.invoicesDocEstimate,
+    'PROFORMA' => l10n.invoicesDocProforma,
+    'CREDIT_NOTE' => l10n.invoicesDocCreditNote,
+    'DEBIT_NOTE' => l10n.invoicesDocDebitNote,
+    _ => d,
+  };
 
   String _statusLabel(AppLocalizations l10n, String s) => switch (s) {
-        'DRAFT' => l10n.invoicesStatusDraft,
-        'CONFIRMED' => l10n.invoicesStatusConfirmed,
-        'CANCELLED' => l10n.invoicesStatusCancelled,
-        _ => s,
-      };
+    'DRAFT' => l10n.invoicesStatusDraft,
+    'CONFIRMED' => l10n.invoicesStatusConfirmed,
+    'CANCELLED' => l10n.invoicesStatusCancelled,
+    _ => s,
+  };
 
   (Color, Color) _statusColors(String s) => switch (s) {
-        'DRAFT' => (AppColors.warning, AppColors.warningSoft),
-        'CONFIRMED' => (AppColors.success, AppColors.successSoft),
-        'CANCELLED' => (AppColors.error, AppColors.errorSoft),
-        _ => (AppColors.muted, AppColors.surfaceTint),
-      };
+    'DRAFT' => (AppColors.warning, AppColors.warningSoft),
+    'CONFIRMED' => (AppColors.success, AppColors.successSoft),
+    'CANCELLED' => (AppColors.error, AppColors.errorSoft),
+    _ => (AppColors.muted, AppColors.surfaceTint),
+  };
 
-  Widget _chip(BuildContext context, String label, VoidCallback onClear,
-      {Color? color, Color? soft}) {
+  Widget _chip(
+    BuildContext context,
+    String label,
+    VoidCallback onClear, {
+    Color? color,
+    Color? soft,
+  }) {
     final c = color ?? AppColors.brandStrong;
     final s = soft ?? AppColors.brandSoft;
     return Material(
@@ -356,21 +361,30 @@ class _ActiveSecondaryFiltersRow extends StatelessWidget {
         customBorder: AppShapes.squircle(AppSizes.radiusFull),
         onTap: onClear,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(AppSizes.md, AppSizes.sm, AppSizes.sm, AppSizes.sm),
+          padding: const EdgeInsets.fromLTRB(
+            AppSizes.md,
+            AppSizes.sm,
+            AppSizes.sm,
+            AppSizes.sm,
+          ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 label,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: c,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  color: c,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(width: AppSizes.xs),
               Padding(
                 padding: const EdgeInsets.all(AppSizes.xs),
-                child: Icon(AppIcons.closeRounded, size: AppSizes.iconSm, color: c),
+                child: AppIcon(
+                  AppIcons.closeRounded,
+                  size: AppSizes.iconSm,
+                  color: c,
+                ),
               ),
             ],
           ),
@@ -384,14 +398,33 @@ class _ActiveSecondaryFiltersRow extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final chips = <Widget>[];
     if (documentType != null) {
-      chips.add(_chip(context, _documentLabel(l10n, documentType!), onClearDocumentType));
+      chips.add(
+        _chip(
+          context,
+          _documentLabel(l10n, documentType!),
+          onClearDocumentType,
+        ),
+      );
     }
     if (status != null) {
       final (c, s) = _statusColors(status!);
-      chips.add(_chip(context, _statusLabel(l10n, status!), onClearStatus, color: c, soft: s));
+      chips.add(
+        _chip(
+          context,
+          _statusLabel(l10n, status!),
+          onClearStatus,
+          color: c,
+          soft: s,
+        ),
+      );
     }
     return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSizes.lg, 0, AppSizes.lg, AppSizes.sm),
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        0,
+        AppSizes.lg,
+        AppSizes.sm,
+      ),
       child: Wrap(
         spacing: AppSizes.sm,
         runSpacing: AppSizes.xs,
@@ -424,7 +457,7 @@ class _InvoiceFilterSheetState extends State<_InvoiceFilterSheet> {
   late String? _documentType = widget.documentType;
   late String? _status = widget.status;
 
-  static const _documentOptions = <(String?, IconData)>[
+  static const _documentOptions = <(String?, AppIconData)>[
     (null, AppIcons.layersOutlined),
     ('TAX_INVOICE', AppIcons.receiptLongRounded),
     ('BILL_OF_SUPPLY', AppIcons.descriptionOutlined),
@@ -437,11 +470,11 @@ class _InvoiceFilterSheetState extends State<_InvoiceFilterSheet> {
   // Getter, not `static final`: the status colours are theme-aware getters, so
   // a cached list would freeze the light-mode values and not flip in dark.
   static List<(String?, Color?)> get _statusOptions => [
-        (null, null),
-        ('DRAFT', AppColors.warning),
-        ('CONFIRMED', AppColors.success),
-        ('CANCELLED', AppColors.error),
-      ];
+    (null, null),
+    ('DRAFT', AppColors.warning),
+    ('CONFIRMED', AppColors.success),
+    ('CANCELLED', AppColors.error),
+  ];
 
   String _documentOptionLabel(AppLocalizations l10n, String? value) =>
       switch (value) {
@@ -470,7 +503,9 @@ class _InvoiceFilterSheetState extends State<_InvoiceFilterSheet> {
     final theme = Theme.of(context);
     return SafeArea(
       child: Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppSizes.lg),
           child: Column(
@@ -488,7 +523,12 @@ class _InvoiceFilterSheetState extends State<_InvoiceFilterSheet> {
                 ),
               ),
               const SizedBox(height: AppSizes.lg),
-              Text(l10n.invoicesFiltersTitle, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+              Text(
+                l10n.invoicesFiltersTitle,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
               const SizedBox(height: AppSizes.lg),
               Text(
                 l10n.invoicesDocumentTypeLabel,
@@ -579,8 +619,9 @@ class _InvoicesLoadMoreFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final loadingMore =
-        context.select<InvoicesProvider, bool>((p) => p.isLoadingMore);
+    final loadingMore = context.select<InvoicesProvider, bool>(
+      (p) => p.isLoadingMore,
+    );
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSizes.lg),
       child: Center(
@@ -809,7 +850,10 @@ class _InvoiceTile extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(AppIcons.downloadRounded, size: AppSizes.iconMd),
+                    icon: const AppIcon(
+                      AppIcons.downloadRounded,
+                      size: AppSizes.iconMd,
+                    ),
                     onPressed: onDownload,
                     tooltip: l10n.invoicesDownloadTooltip,
                     visualDensity: VisualDensity.compact,

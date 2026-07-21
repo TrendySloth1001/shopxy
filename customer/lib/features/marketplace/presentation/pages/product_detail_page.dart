@@ -26,6 +26,7 @@ import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Customer-facing product detail page.
 ///
@@ -107,16 +108,18 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       body: _loading && _product == null
           ? const _ProductDetailSkeleton()
           : _error != null
-              ? _ErrorState(message: _error!, onRetry: _load)
-              : _Body(
-                  product: _product!,
-                  selectedVariant: _selectedVariant,
-                  onSelectVariant: (v) =>
-                      setState(() => _selectedVariant = v),
-                ),
+          ? _ErrorState(message: _error!, onRetry: _load)
+          : _Body(
+              product: _product!,
+              selectedVariant: _selectedVariant,
+              onSelectVariant: (v) => setState(() => _selectedVariant = v),
+            ),
       bottomNavigationBar: _product == null
           ? null
-          : _ActionBar(catalogProduct: _catalogProductForCart()!, productId: _product!.id),
+          : _ActionBar(
+              catalogProduct: _catalogProductForCart()!,
+              productId: _product!.id,
+            ),
     );
   }
 }
@@ -144,29 +147,18 @@ class _Body extends StatelessWidget {
           scrolledUnderElevation: 0,
         ),
         SliverToBoxAdapter(
-          child: PdpGallery(
-            productId: p.id,
-            urls: p.images,
-            offers: p.offers,
-          ),
+          child: PdpGallery(productId: p.id, urls: p.images, offers: p.offers),
         ),
         SliverToBoxAdapter(child: _TitleBlock(product: p)),
         SliverToBoxAdapter(
-          child: PdpVariantPicker(
-            product: p,
-            onSelect: onSelectVariant,
-          ),
+          child: PdpVariantPicker(product: p, onSelect: onSelectVariant),
         ),
         SliverToBoxAdapter(
-          child: PdpPriceBlock(
-            product: p,
-            variantOverride: selectedVariant,
-          ),
+          child: PdpPriceBlock(product: p, variantOverride: selectedVariant),
         ),
         SliverToBoxAdapter(
           child: PdpStockChip(
-            stockQuantity:
-                selectedVariant?.stockQuantity ?? p.stockQuantity,
+            stockQuantity: selectedVariant?.stockQuantity ?? p.stockQuantity,
             lowStockThreshold: 5,
           ),
         ),
@@ -180,22 +172,23 @@ class _Body extends StatelessWidget {
         const SliverToBoxAdapter(child: _SectionHeader(title: 'Details')),
         SliverToBoxAdapter(child: PdpHighlights(items: p.highlights)),
         if (p.contentBlocks.isNotEmpty)
-          SliverToBoxAdapter(
-            child: PdpContentBlocks(blocks: p.contentBlocks),
-          ),
+          SliverToBoxAdapter(child: PdpContentBlocks(blocks: p.contentBlocks)),
         if (p.description != null && p.description!.length > 80)
           SliverToBoxAdapter(child: _Description(text: p.description!)),
         SliverToBoxAdapter(child: _ShopCard(product: p)),
 
         // ── Specs section ────────────────────────────────────────
         const SliverToBoxAdapter(child: _SectionDivider()),
-        const SliverToBoxAdapter(child: _SectionHeader(title: 'Specifications')),
+        const SliverToBoxAdapter(
+          child: _SectionHeader(title: 'Specifications'),
+        ),
         if (p.specs.isEmpty)
           const SliverToBoxAdapter(
             child: _EmptySection(
               icon: AppIcons.listAltOutlined,
               title: 'No specifications yet',
-              subtitle: "The seller hasn't added a spec sheet for this product.",
+              subtitle:
+                  "The seller hasn't added a spec sheet for this product.",
             ),
           )
         else
@@ -203,12 +196,11 @@ class _Body extends StatelessWidget {
 
         // ── Reviews section ──────────────────────────────────────
         const SliverToBoxAdapter(child: _SectionDivider()),
-        const SliverToBoxAdapter(child: _SectionHeader(title: 'Ratings & reviews')),
+        const SliverToBoxAdapter(
+          child: _SectionHeader(title: 'Ratings & reviews'),
+        ),
         SliverToBoxAdapter(
-          child: ProductReviewsSection(
-            productId: p.id,
-            productName: p.name,
-          ),
+          child: ProductReviewsSection(productId: p.id, productName: p.name),
         ),
 
         const SliverToBoxAdapter(child: SizedBox(height: AppSizes.huge)),
@@ -241,14 +233,18 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg, AppSizes.lg, AppSizes.lg, AppSizes.sm),
+        AppSizes.lg,
+        AppSizes.lg,
+        AppSizes.lg,
+        AppSizes.sm,
+      ),
       child: Text(
         title,
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: AppColors.black,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.2,
-            ),
+          color: AppColors.black,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.2,
+        ),
       ),
     );
   }
@@ -262,7 +258,11 @@ class _TitleBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg, AppSizes.lg, AppSizes.lg, AppSizes.sm),
+        AppSizes.lg,
+        AppSizes.lg,
+        AppSizes.lg,
+        AppSizes.sm,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -275,22 +275,22 @@ class _TitleBlock extends StatelessWidget {
             Text(
               product.brand!.toUpperCase(),
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: AppColors.muted,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.0,
-                  ),
+                color: AppColors.muted,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.0,
+              ),
             ),
             const SizedBox(height: AppSizes.xs),
           ],
           Text(
             product.name,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppColors.black,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.2,
-                  height: 1.25,
-                ),
+              color: AppColors.black,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.2,
+              height: 1.25,
+            ),
           ),
           const SizedBox(height: AppSizes.sm),
           _SoldByChip(product: product),
@@ -300,9 +300,9 @@ class _TitleBlock extends StatelessWidget {
               child: Text(
                 '${_compact(product.soldLast30d)}+ bought in the past month',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.muted,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  color: AppColors.muted,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           if (product.description != null && product.description!.isNotEmpty)
@@ -313,9 +313,9 @@ class _TitleBlock extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.muted,
-                      height: 1.35,
-                    ),
+                  color: AppColors.muted,
+                  height: 1.35,
+                ),
               ),
             ),
           const SizedBox(height: AppSizes.sm),
@@ -340,27 +340,22 @@ class _SystemTagsRow extends StatelessWidget {
   final List<String> tags;
 
   String _label(String tag) => switch (tag) {
-        'BESTSELLER' => 'Bestseller',
-        'EDITORS_PICK' => "Editor's pick",
-        'NEW_ARRIVAL' => 'New arrival',
-        'TRENDING' => 'Trending',
-        _ => tag,
-      };
+    'BESTSELLER' => 'Bestseller',
+    'EDITORS_PICK' => "Editor's pick",
+    'NEW_ARRIVAL' => 'New arrival',
+    'TRENDING' => 'Trending',
+    _ => tag,
+  };
 
   // Pull every tag color from the theme so the pills feel like part of
   // the same palette as the rest of the app.
   ({Color bg, Color fg}) _palette(String tag) => switch (tag) {
-        'BESTSELLER' =>
-          (bg: AppColors.black, fg: AppColors.white),
-        'EDITORS_PICK' =>
-          (bg: AppColors.info, fg: AppColors.white),
-        'NEW_ARRIVAL' =>
-          (bg: AppColors.success, fg: AppColors.white),
-        'TRENDING' =>
-          (bg: AppColors.accentAmber, fg: AppColors.white),
-        _ =>
-          (bg: AppColors.black, fg: AppColors.white),
-      };
+    'BESTSELLER' => (bg: AppColors.black, fg: AppColors.white),
+    'EDITORS_PICK' => (bg: AppColors.info, fg: AppColors.white),
+    'NEW_ARRIVAL' => (bg: AppColors.success, fg: AppColors.white),
+    'TRENDING' => (bg: AppColors.accentAmber, fg: AppColors.white),
+    _ => (bg: AppColors.black, fg: AppColors.white),
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -371,7 +366,9 @@ class _SystemTagsRow extends StatelessWidget {
         for (final t in tags)
           Container(
             padding: const EdgeInsets.symmetric(
-                horizontal: AppSizes.sm, vertical: AppSizes.xs),
+              horizontal: AppSizes.sm,
+              vertical: AppSizes.xs,
+            ),
             decoration: BoxDecoration(
               color: _palette(t).bg,
               borderRadius: BorderRadius.circular(3),
@@ -379,11 +376,11 @@ class _SystemTagsRow extends StatelessWidget {
             child: Text(
               _label(t),
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: _palette(t).fg,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.4,
-                  ),
+                color: _palette(t).fg,
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.4,
+              ),
             ),
           ),
       ],
@@ -410,25 +407,31 @@ class _SoldByChip extends StatelessWidget {
           Text(
             'Sold by ',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.muted,
-                  fontWeight: FontWeight.w600,
-                ),
+              color: AppColors.muted,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           Text(
             shop.name,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.brandStrong,
-                  fontWeight: FontWeight.w800,
-                ),
+              color: AppColors.brandStrong,
+              fontWeight: FontWeight.w800,
+            ),
           ),
           if (shop.isVerified) ...[
             const SizedBox(width: AppSizes.xs),
-            const Icon(AppIcons.verifiedRounded,
-                color: AppColors.info, size: AppSizes.iconSm),
+            const AppIcon(
+              AppIcons.verifiedRounded,
+              color: AppColors.info,
+              size: AppSizes.iconSm,
+            ),
           ],
           const SizedBox(width: AppSizes.xs),
-          const Icon(AppIcons.chevronRightRounded,
-              color: AppColors.brandStrong, size: AppSizes.iconSm),
+          const AppIcon(
+            AppIcons.chevronRightRounded,
+            color: AppColors.brandStrong,
+            size: AppSizes.iconSm,
+          ),
         ],
       ),
     );
@@ -444,7 +447,9 @@ class _RatingChip extends StatelessWidget {
     if (product.ratingAvg == null) {
       return Container(
         padding: const EdgeInsets.symmetric(
-            horizontal: AppSizes.sm, vertical: AppSizes.xs),
+          horizontal: AppSizes.sm,
+          vertical: AppSizes.xs,
+        ),
         decoration: BoxDecoration(
           color: AppColors.heroPanel,
           borderRadius: BorderRadius.circular(2),
@@ -452,9 +457,9 @@ class _RatingChip extends StatelessWidget {
         child: Text(
           'No reviews yet',
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: AppColors.muted,
-                fontWeight: FontWeight.w600,
-              ),
+            color: AppColors.muted,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       );
     }
@@ -462,7 +467,9 @@ class _RatingChip extends StatelessWidget {
       children: [
         Container(
           padding: const EdgeInsets.symmetric(
-              horizontal: AppSizes.sm, vertical: AppSizes.xs),
+            horizontal: AppSizes.sm,
+            vertical: AppSizes.xs,
+          ),
           decoration: BoxDecoration(
             color: AppColors.success,
             borderRadius: BorderRadius.circular(2),
@@ -472,13 +479,16 @@ class _RatingChip extends StatelessWidget {
               Text(
                 product.ratingAvg!.toStringAsFixed(1),
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: AppColors.white,
-                      fontWeight: FontWeight.w800,
-                    ),
+                  color: AppColors.white,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               const SizedBox(width: AppSizes.xs),
-              const Icon(AppIcons.starRounded,
-                  color: AppColors.white, size: 12),
+              const AppIcon(
+                AppIcons.starRounded,
+                color: AppColors.white,
+                size: 12,
+              ),
             ],
           ),
         ),
@@ -486,9 +496,9 @@ class _RatingChip extends StatelessWidget {
         Text(
           '${product.ratingCount} ratings · ${product.totalSold} sold',
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: AppColors.muted,
-                fontWeight: FontWeight.w600,
-              ),
+            color: AppColors.muted,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ],
     );
@@ -542,14 +552,17 @@ class _SpecTabsAndSheetState extends State<_SpecTabsAndSheet> {
         if (tabs.isNotEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(
-                AppSizes.lg, AppSizes.md, AppSizes.lg, 0),
+              AppSizes.lg,
+              AppSizes.md,
+              AppSizes.lg,
+              0,
+            ),
             child: SizedBox(
               height: AppSizes.xxxl,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: tabs.length,
-                separatorBuilder: (_, _) =>
-                    const SizedBox(width: AppSizes.sm),
+                separatorBuilder: (_, _) => const SizedBox(width: AppSizes.sm),
                 itemBuilder: (_, i) {
                   final t = tabs[i];
                   final sel = t == _selectedTab;
@@ -557,26 +570,25 @@ class _SpecTabsAndSheetState extends State<_SpecTabsAndSheet> {
                     onTap: () => setState(() => _selectedTab = t),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: AppSizes.md, vertical: AppSizes.sm),
+                        horizontal: AppSizes.md,
+                        vertical: AppSizes.sm,
+                      ),
                       decoration: BoxDecoration(
                         color: sel ? AppColors.brandSoft : AppColors.white,
                         border: Border.all(
-                          color: sel
-                              ? AppColors.brand
-                              : AppColors.hairline,
+                          color: sel ? AppColors.brand : AppColors.hairline,
                           width: sel ? 1.5 : 1,
                         ),
-                        borderRadius:
-                            BorderRadius.circular(AppSizes.radiusFull),
+                        borderRadius: BorderRadius.circular(
+                          AppSizes.radiusFull,
+                        ),
                       ),
                       child: Text(
                         t,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: sel
-                                  ? AppColors.brandStrong
-                                  : AppColors.black,
-                              fontWeight: FontWeight.w700,
-                            ),
+                          color: sel ? AppColors.brandStrong : AppColors.black,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   );
@@ -598,21 +610,27 @@ class _SpecSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg, AppSizes.md, AppSizes.lg, 0),
+        AppSizes.lg,
+        AppSizes.md,
+        AppSizes.lg,
+        0,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           for (final g in groups) ...[
             Padding(
               padding: const EdgeInsets.only(
-                  top: AppSizes.sm, bottom: AppSizes.xs),
+                top: AppSizes.sm,
+                bottom: AppSizes.xs,
+              ),
               child: Text(
                 g.title,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: AppColors.muted,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.8,
-                    ),
+                  color: AppColors.muted,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.8,
+                ),
               ),
             ),
             Container(
@@ -626,8 +644,9 @@ class _SpecSheet extends StatelessWidget {
                   for (var i = 0; i < g.rows.length; i++) ...[
                     Padding(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: AppSizes.md,
-                          vertical: AppSizes.sm),
+                        horizontal: AppSizes.md,
+                        vertical: AppSizes.sm,
+                      ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -635,7 +654,8 @@ class _SpecSheet extends StatelessWidget {
                             width: 110,
                             child: Text(
                               g.rows[i].label,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
                                     color: AppColors.muted,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -644,7 +664,8 @@ class _SpecSheet extends StatelessWidget {
                           Expanded(
                             child: Text(
                               g.rows[i].value,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
                                     color: AppColors.black,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -654,8 +675,7 @@ class _SpecSheet extends StatelessWidget {
                       ),
                     ),
                     if (i != g.rows.length - 1)
-                      const Divider(
-                          height: 1, color: AppColors.hairline),
+                      const Divider(height: 1, color: AppColors.hairline),
                   ],
                 ],
               ),
@@ -675,25 +695,29 @@ class _Description extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg, AppSizes.md, AppSizes.lg, 0),
+        AppSizes.lg,
+        AppSizes.md,
+        AppSizes.lg,
+        0,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Description',
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 15,
-                  color: AppColors.black,
-                ),
+              fontWeight: FontWeight.w800,
+              fontSize: 15,
+              color: AppColors.black,
+            ),
           ),
           const SizedBox(height: AppSizes.sm),
           Text(
             text,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.black,
-                  height: 1.5,
-                ),
+              color: AppColors.black,
+              height: 1.5,
+            ),
           ),
         ],
       ),
@@ -736,10 +760,10 @@ class _ShopCard extends StatelessWidget {
                 child: Text(
                   shop.name.isEmpty ? '?' : shop.name[0].toUpperCase(),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppColors.brand,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 18,
-                      ),
+                    color: AppColors.brand,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 18,
+                  ),
                 ),
               ),
               const SizedBox(width: AppSizes.md),
@@ -750,16 +774,17 @@ class _ShopCard extends StatelessWidget {
                     Text(
                       'Sold by ${shop.name}',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.black,
-                            fontWeight: FontWeight.w700,
-                          ),
+                        color: AppColors.black,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     if (shop.rating != null)
                       Padding(
                         padding: const EdgeInsets.only(top: AppSizes.xs),
                         child: Text(
                           '${shop.rating!.toStringAsFixed(1)} ★ · ${shop.ratingCount} ratings',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
                                 color: AppColors.muted,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -768,8 +793,10 @@ class _ShopCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(AppIcons.chevronRightRounded,
-                  color: AppColors.muted),
+              const AppIcon(
+                AppIcons.chevronRightRounded,
+                color: AppColors.muted,
+              ),
             ],
           ),
         ),
@@ -784,7 +811,7 @@ class _EmptySection extends StatelessWidget {
     required this.title,
     required this.subtitle,
   });
-  final IconData icon;
+  final AppIconData icon;
   final String title;
   final String subtitle;
 
@@ -794,23 +821,23 @@ class _EmptySection extends StatelessWidget {
       padding: const EdgeInsets.all(AppSizes.xxl),
       child: Column(
         children: [
-          Icon(icon, color: AppColors.subtle, size: AppSizes.iconXl),
+          AppIcon(icon, color: AppColors.subtle, size: AppSizes.iconXl),
           const SizedBox(height: AppSizes.sm),
           Text(
             title,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.black,
-                  fontWeight: FontWeight.w800,
-                ),
+              color: AppColors.black,
+              fontWeight: FontWeight.w800,
+            ),
           ),
           const SizedBox(height: AppSizes.xs),
           Text(
             subtitle,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.muted,
-                  height: 1.35,
-                ),
+              color: AppColors.muted,
+              height: 1.35,
+            ),
           ),
         ],
       ),
@@ -879,9 +906,9 @@ class _ActionBarState extends State<_ActionBar> {
   }
 
   void _openCart() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const CartPage()),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const CartPage()));
   }
 
   void _setQuantity(double q) {
@@ -913,29 +940,31 @@ class _ActionBarState extends State<_ActionBar> {
         top: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(
-              AppSizes.md, AppSizes.sm, AppSizes.md, AppSizes.sm),
+            AppSizes.md,
+            AppSizes.sm,
+            AppSizes.md,
+            AppSizes.sm,
+          ),
           child: SizedBox(
             height: 52,
             child: outOfStock
                 ? const _OutOfStockButton()
                 : inCart
-                    ? _InCartRow(
-                        quantity: line.quantity.toInt(),
-                        onIncrement: () =>
-                            _setQuantity(line.quantity + 1),
-                        onDecrement: () =>
-                            _setQuantity(line.quantity - 1),
-                        onGoToCart: _openCart,
-                      )
-                    : _IdleRow(
-                        busy: _busy,
-                        onAdd: _addToCart,
-                        onBuyNow: () async {
-                          await _addToCart();
-                          if (!mounted) return;
-                          _openCart();
-                        },
-                      ),
+                ? _InCartRow(
+                    quantity: line.quantity.toInt(),
+                    onIncrement: () => _setQuantity(line.quantity + 1),
+                    onDecrement: () => _setQuantity(line.quantity - 1),
+                    onGoToCart: _openCart,
+                  )
+                : _IdleRow(
+                    busy: _busy,
+                    onAdd: _addToCart,
+                    onBuyNow: () async {
+                      await _addToCart();
+                      if (!mounted) return;
+                      _openCart();
+                    },
+                  ),
           ),
         ),
       ),
@@ -1056,15 +1085,12 @@ class _QuantityStepper extends StatelessWidget {
             child: Text(
               '$quantity',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppColors.brandStrong,
-                    fontWeight: FontWeight.w800,
-                  ),
+                color: AppColors.brandStrong,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
-          _StepperButton(
-            icon: AppIcons.addRounded,
-            onPressed: onIncrement,
-          ),
+          _StepperButton(icon: AppIcons.addRounded, onPressed: onIncrement),
         ],
       ),
     );
@@ -1073,7 +1099,7 @@ class _QuantityStepper extends StatelessWidget {
 
 class _StepperButton extends StatelessWidget {
   const _StepperButton({required this.icon, required this.onPressed});
-  final IconData icon;
+  final AppIconData icon;
   final VoidCallback onPressed;
 
   @override
@@ -1084,7 +1110,11 @@ class _StepperButton extends StatelessWidget {
       child: SizedBox(
         width: 44,
         height: 52,
-        child: Icon(icon, color: AppColors.brandStrong, size: AppSizes.iconMd),
+        child: AppIcon(
+          icon,
+          color: AppColors.brandStrong,
+          size: AppSizes.iconMd,
+        ),
       ),
     );
   }
@@ -1104,10 +1134,10 @@ class _OutOfStockButton extends StatelessWidget {
       child: Text(
         'Out of stock',
         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: AppColors.white,
-              fontWeight: FontWeight.w800,
-              fontSize: 15,
-            ),
+          color: AppColors.white,
+          fontWeight: FontWeight.w800,
+          fontSize: 15,
+        ),
       ),
     );
   }
@@ -1124,7 +1154,7 @@ class _PrimaryPillButton extends StatelessWidget {
     this.loading = false,
   });
   final String label;
-  final IconData icon;
+  final AppIconData icon;
   final _PillKind kind;
   final VoidCallback? onPressed;
   final bool loading;
@@ -1177,15 +1207,15 @@ class _PrimaryPillButton extends StatelessWidget {
               : Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(icon, color: fg, size: AppSizes.iconMd),
+                    AppIcon(icon, color: fg, size: AppSizes.iconMd),
                     const SizedBox(width: AppSizes.sm),
                     Text(
                       label,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            color: fg,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 15,
-                          ),
+                        color: fg,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                      ),
                     ),
                   ],
                 ),
@@ -1265,11 +1295,7 @@ class _GallerySkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppShimmerBox(
-      width: double.infinity,
-      height: 320,
-      radius: 0,
-    );
+    return AppShimmerBox(width: double.infinity, height: 320, radius: 0);
   }
 }
 
@@ -1281,7 +1307,11 @@ class _TitleSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg, AppSizes.lg, AppSizes.lg, AppSizes.sm),
+        AppSizes.lg,
+        AppSizes.lg,
+        AppSizes.lg,
+        AppSizes.sm,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1319,7 +1349,11 @@ class _VariantPickerSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.sm),
+        AppSizes.lg,
+        AppSizes.sm,
+        AppSizes.lg,
+        AppSizes.sm,
+      ),
       child: Row(
         children: [
           for (var i = 0; i < 4; i++) ...[
@@ -1340,7 +1374,11 @@ class _PriceBlockSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.xs),
+        AppSizes.lg,
+        AppSizes.sm,
+        AppSizes.lg,
+        AppSizes.xs,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
@@ -1363,7 +1401,11 @@ class _StockChipSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg, AppSizes.xs, AppSizes.lg, AppSizes.sm),
+        AppSizes.lg,
+        AppSizes.xs,
+        AppSizes.lg,
+        AppSizes.sm,
+      ),
       child: AppShimmerBox(width: 80, height: 22, radius: AppSizes.radiusFull),
     );
   }
@@ -1377,9 +1419,16 @@ class _OffersStripSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.sm),
+        AppSizes.lg,
+        AppSizes.sm,
+        AppSizes.lg,
+        AppSizes.sm,
+      ),
       child: AppShimmerBox(
-          width: double.infinity, height: 44, radius: AppSizes.radiusSm),
+        width: double.infinity,
+        height: 44,
+        radius: AppSizes.radiusSm,
+      ),
     );
   }
 }
@@ -1392,7 +1441,11 @@ class _FbtRailSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg, AppSizes.sm, 0, AppSizes.sm),
+        AppSizes.lg,
+        AppSizes.sm,
+        0,
+        AppSizes.sm,
+      ),
       child: SizedBox(
         height: 120,
         child: Row(
@@ -1402,7 +1455,10 @@ class _FbtRailSkeleton extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   AppShimmerBox(
-                      width: 80, height: 80, radius: AppSizes.radiusSm),
+                    width: 80,
+                    height: 80,
+                    radius: AppSizes.radiusSm,
+                  ),
                   const SizedBox(height: AppSizes.xs),
                   AppShimmerLine(widthFactor: 0.6, height: 10),
                 ],
@@ -1424,7 +1480,11 @@ class _SkeletonSectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg, AppSizes.lg, AppSizes.lg, AppSizes.sm),
+        AppSizes.lg,
+        AppSizes.lg,
+        AppSizes.lg,
+        AppSizes.sm,
+      ),
       child: AppShimmerBox(width: 120, height: 16, radius: AppSizes.radiusSm),
     );
   }
@@ -1438,15 +1498,18 @@ class _DetailsSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg, AppSizes.xs, AppSizes.lg, AppSizes.sm),
+        AppSizes.lg,
+        AppSizes.xs,
+        AppSizes.lg,
+        AppSizes.sm,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           for (var i = 0; i < 4; i++) ...[
             Row(
               children: [
-                AppShimmerBox(
-                    width: 16, height: 16, radius: AppSizes.radiusSm),
+                AppShimmerBox(width: 16, height: 16, radius: AppSizes.radiusSm),
                 const SizedBox(width: AppSizes.sm),
                 AppShimmerLine(widthFactor: 0.7, height: 12),
               ],
@@ -1473,7 +1536,11 @@ class _SpecsSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg, AppSizes.xs, AppSizes.lg, AppSizes.sm),
+        AppSizes.lg,
+        AppSizes.xs,
+        AppSizes.lg,
+        AppSizes.sm,
+      ),
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.white,
@@ -1517,7 +1584,11 @@ class _ReviewsSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg, AppSizes.xs, AppSizes.lg, AppSizes.sm),
+        AppSizes.lg,
+        AppSizes.xs,
+        AppSizes.lg,
+        AppSizes.sm,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1556,9 +1627,10 @@ class _ReviewsSkeleton extends StatelessWidget {
                   Row(
                     children: [
                       AppShimmerBox(
-                          width: 32,
-                          height: 32,
-                          radius: AppSizes.radiusFull),
+                        width: 32,
+                        height: 32,
+                        radius: AppSizes.radiusFull,
+                      ),
                       const SizedBox(width: AppSizes.sm),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1599,8 +1671,11 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(AppIcons.cloudOffRounded,
-                size: AppSizes.iconHuge, color: AppColors.muted),
+            const AppIcon(
+              AppIcons.cloudOffRounded,
+              size: AppSizes.iconHuge,
+              color: AppColors.muted,
+            ),
             const SizedBox(height: AppSizes.md),
             Text(
               "Couldn't load this product",
@@ -1609,10 +1684,9 @@ class _ErrorState extends StatelessWidget {
             const SizedBox(height: AppSizes.sm),
             Text(
               message,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: AppColors.muted),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
             ),
             const SizedBox(height: AppSizes.lg),
             TextButton(onPressed: onRetry, child: const Text('Try again')),

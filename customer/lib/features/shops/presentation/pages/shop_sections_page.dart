@@ -9,6 +9,7 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_divider.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// The per-shop landing for a customer. Every record the shop keeps for them —
 /// invoices, quotations — is a first-class section here, so nothing is buried
@@ -68,8 +69,8 @@ class _ShopSectionsPageState extends State<ShopSectionsPage> {
           subtitle: quotes.isEmpty
               ? 'No quotations yet'
               : pendingQuotes > 0
-                  ? '$pendingQuotes awaiting you · ${quotes.length} total'
-                  : '${quotes.length} quotation${quotes.length == 1 ? '' : 's'}',
+              ? '$pendingQuotes awaiting you · ${quotes.length} total'
+              : '${quotes.length} quotation${quotes.length == 1 ? '' : 's'}',
           badge: pendingQuotes > 0 ? '$pendingQuotes' : null,
           onTap: () => _open(ShopQuotationsPage(shop: widget.shop)),
         ),
@@ -110,7 +111,7 @@ class _SectionRow extends StatelessWidget {
     required this.onTap,
     this.badge,
   });
-  final IconData icon;
+  final AppIconData icon;
   final Color accent;
   final String title;
   final String subtitle;
@@ -128,51 +129,62 @@ class _SectionRow extends StatelessWidget {
           vertical: AppSizes.md,
         ),
         child: Row(
-            children: [
-              Container(
-                width: AppSizes.tapTargetMin,
-                height: AppSizes.tapTargetMin,
-                decoration: ShapeDecoration(
-                  color: accent.withValues(alpha: 0.12),
-                  shape: AppShapes.squircle(AppSizes.radiusMd),
-                ),
-                alignment: Alignment.center,
-                child: Icon(icon, color: accent, size: AppSizes.iconLg),
+          children: [
+            Container(
+              width: AppSizes.tapTargetMin,
+              height: AppSizes.tapTargetMin,
+              decoration: ShapeDecoration(
+                color: accent.withValues(alpha: 0.12),
+                shape: AppShapes.squircle(AppSizes.radiusMd),
               ),
-              const SizedBox(width: AppSizes.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title,
-                        style: theme.textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w800)),
-                    const SizedBox(height: 2),
-                    Text(subtitle,
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: AppColors.muted)),
-                  ],
-                ),
-              ),
-              if (badge != null) ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: AppSizes.sm, vertical: AppSizes.xs),
-                  decoration: ShapeDecoration(
-                    color: AppColors.accentIndigo,
-                    shape: AppShapes.squircle(AppSizes.radiusFull),
+              alignment: Alignment.center,
+              child: AppIcon(icon, color: accent, size: AppSizes.iconLg),
+            ),
+            const SizedBox(width: AppSizes.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
-                  child: Text(badge!,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                          color: AppColors.white,
-                          fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.muted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (badge != null) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSizes.sm,
+                  vertical: AppSizes.xs,
                 ),
-                const SizedBox(width: AppSizes.sm),
-              ],
-              const Icon(AppIcons.chevronRightRounded, color: AppColors.muted),
+                decoration: ShapeDecoration(
+                  color: AppColors.accentIndigo,
+                  shape: AppShapes.squircle(AppSizes.radiusFull),
+                ),
+                child: Text(
+                  badge!,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: AppColors.white,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSizes.sm),
             ],
-          ),
+            const AppIcon(AppIcons.chevronRightRounded, color: AppColors.muted),
+          ],
         ),
-      );
+      ),
+    );
   }
 }

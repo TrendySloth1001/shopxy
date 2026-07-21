@@ -11,6 +11,7 @@ import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Platform-admin editor for the marketplace taxonomy tree. Each node
 /// is rendered as an expandable tile; tapping it opens an inline editor
@@ -54,6 +55,7 @@ class _AdminCategoryTaxonomyPageState extends State<AdminCategoryTaxonomyPage> {
           walk(n.children);
         }
       }
+
       walk(tree);
       if (!mounted) return;
       setState(() {
@@ -85,10 +87,7 @@ class _AdminCategoryTaxonomyPageState extends State<AdminCategoryTaxonomyPage> {
     if (created == true) await _load();
   }
 
-  Future<bool?> _openEditor({
-    Category? existing,
-    int? parentId,
-  }) async {
+  Future<bool?> _openEditor({Category? existing, int? parentId}) async {
     return showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -112,10 +111,12 @@ class _AdminCategoryTaxonomyPageState extends State<AdminCategoryTaxonomyPage> {
             availableParents: existing == null
                 ? _flat
                 : _flat
-                    .where((c) =>
-                        c.id != existing.id &&
-                        !_isDescendantOf(c.id, existing.id))
-                    .toList(),
+                      .where(
+                        (c) =>
+                            c.id != existing.id &&
+                            !_isDescendantOf(c.id, existing.id),
+                      )
+                      .toList(),
             ds: _ds,
           ),
         ),
@@ -179,61 +180,61 @@ class _AdminCategoryTaxonomyPageState extends State<AdminCategoryTaxonomyPage> {
         actions: [
           IconButton(
             tooltip: l10n.adminRefresh,
-            icon: const Icon(AppIcons.refresh),
+            icon: const AppIcon(AppIcons.refresh),
             onPressed: _loading ? null : _load,
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _createRoot,
-        icon: const Icon(AppIcons.add),
+        icon: const AppIcon(AppIcons.add),
         label: Text(l10n.adminCategoryRoot),
       ),
       body: _loading && _tree.isEmpty
           ? const _CategoryListSkeleton()
           : _error != null && _tree.isEmpty
-              ? SafeArea(
-                  top: true,
-                  bottom: false,
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppSizes.xl),
-                      child: Text(_error!, textAlign: TextAlign.center),
-                    ),
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: ListView(
-                    padding: EdgeInsets.fromLTRB(
-                      AppSizes.lg,
-                      AppSizes.lg + FloatingAppBar.contentTopInset(context),
-                      AppSizes.lg,
-                      AppSizes.fabClearance,
-                    ),
-                    children: [
-                      for (final n in _tree)
-                        _CategoryTreeTile(
-                          node: n,
-                          depth: 0,
-                          expanded: _expanded,
-                          onToggle: (id) => setState(() {
-                            if (_expanded.contains(id)) {
-                              _expanded.remove(id);
-                            } else {
-                              _expanded.add(id);
-                            }
-                          }),
-                          onEdit: (c) async {
-                            final ok = await _openEditor(existing: c);
-                            if (ok == true) await _load();
-                          },
-                          onAddChild: (id) => _createChild(id),
-                          onDelete: _delete,
-                        ),
-                    ],
-                  ),
+          ? SafeArea(
+              top: true,
+              bottom: false,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSizes.xl),
+                  child: Text(_error!, textAlign: TextAlign.center),
                 ),
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: ListView(
+                padding: EdgeInsets.fromLTRB(
+                  AppSizes.lg,
+                  AppSizes.lg + FloatingAppBar.contentTopInset(context),
+                  AppSizes.lg,
+                  AppSizes.fabClearance,
+                ),
+                children: [
+                  for (final n in _tree)
+                    _CategoryTreeTile(
+                      node: n,
+                      depth: 0,
+                      expanded: _expanded,
+                      onToggle: (id) => setState(() {
+                        if (_expanded.contains(id)) {
+                          _expanded.remove(id);
+                        } else {
+                          _expanded.add(id);
+                        }
+                      }),
+                      onEdit: (c) async {
+                        final ok = await _openEditor(existing: c);
+                        if (ok == true) await _load();
+                      },
+                      onAddChild: (id) => _createChild(id),
+                      onDelete: _delete,
+                    ),
+                ],
+              ),
+            ),
     );
   }
 }
@@ -273,7 +274,11 @@ class _CategoryTileSkeleton extends StatelessWidget {
                 ),
               ),
               // Category icon box (32×32 coloured square)
-              const AppShimmerBox(width: 32, height: 32, radius: AppSizes.radiusSm),
+              const AppShimmerBox(
+                width: 32,
+                height: 32,
+                radius: AppSizes.radiusSm,
+              ),
               const SizedBox(width: AppSizes.sm),
               // Title + subtitle lines
               const Expanded(
@@ -375,13 +380,15 @@ class _CategoryTreeTile extends StatelessWidget {
                   children: [
                     IconButton(
                       iconSize: AppSizes.iconMd,
-                      icon: Icon(
+                      icon: AppIcon(
                         hasChildren
                             ? (isExpanded
-                                ? AppIcons.expandMoreRounded
-                                : AppIcons.chevronRightRounded)
+                                  ? AppIcons.expandMoreRounded
+                                  : AppIcons.chevronRightRounded)
                             : AppIcons.circle,
-                        color: hasChildren ? AppColors.muted : AppColors.disabled,
+                        color: hasChildren
+                            ? AppColors.muted
+                            : AppColors.disabled,
                       ),
                       onPressed: hasChildren ? () => onToggle(c.id) : null,
                     ),
@@ -395,7 +402,7 @@ class _CategoryTreeTile extends StatelessWidget {
                         shape: AppShapes.squircle(AppSizes.radiusSm),
                       ),
                       alignment: Alignment.center,
-                      child: Icon(
+                      child: AppIcon(
                         c.iconName != null
                             ? AppIcons.labelOutline
                             : AppIcons.folderOutlined,
@@ -410,7 +417,8 @@ class _CategoryTreeTile extends StatelessWidget {
                         children: [
                           Text(
                             c.name,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
                                   fontWeight: FontWeight.w600,
                                   color: c.isActive
                                       ? AppColors.black
@@ -421,22 +429,22 @@ class _CategoryTreeTile extends StatelessWidget {
                           Text(
                             '${c.slug ?? '-'}'
                             '${c.productCount != null ? '  ·  ${AppLocalizations.of(context).adminCategoryProductCount('${c.productCount}')}' : ''}',
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelSmall
+                            style: Theme.of(context).textTheme.labelSmall
                                 ?.copyWith(color: AppColors.subtle),
                           ),
                         ],
                       ),
                     ),
                     IconButton(
-                      tooltip: AppLocalizations.of(context).adminCategoryAddChild,
-                      icon: const Icon(AppIcons.add),
+                      tooltip: AppLocalizations.of(
+                        context,
+                      ).adminCategoryAddChild,
+                      icon: const AppIcon(AppIcons.add),
                       onPressed: () => onAddChild(c.id),
                     ),
                     IconButton(
                       tooltip: AppLocalizations.of(context).adminDelete,
-                      icon: const Icon(AppIcons.deleteOutline),
+                      icon: const AppIcon(AppIcons.deleteOutline),
                       onPressed: () => onDelete(c),
                     ),
                   ],
@@ -526,7 +534,9 @@ class _CategoryEditorSheetState extends State<_CategoryEditorSheet> {
 
   Future<void> _save() async {
     if (_name.text.trim().isEmpty) {
-      setState(() => _error = AppLocalizations.of(context).adminCategoryNameRequired);
+      setState(
+        () => _error = AppLocalizations.of(context).adminCategoryNameRequired,
+      );
       return;
     }
     setState(() {
@@ -539,7 +549,8 @@ class _CategoryEditorSheetState extends State<_CategoryEditorSheet> {
           'name': _name.text.trim(),
           if (_description.text.trim().isNotEmpty)
             'description': _description.text.trim(),
-          if (_imageUrl.text.trim().isNotEmpty) 'imageUrl': _imageUrl.text.trim(),
+          if (_imageUrl.text.trim().isNotEmpty)
+            'imageUrl': _imageUrl.text.trim(),
           'sortOrder': int.tryParse(_sortOrder.text) ?? 0,
           'isActive': _isActive,
           // Always send parentId — null means re-parent to root.
@@ -550,7 +561,8 @@ class _CategoryEditorSheetState extends State<_CategoryEditorSheet> {
           'name': _name.text.trim(),
           if (_description.text.trim().isNotEmpty)
             'description': _description.text.trim(),
-          if (_imageUrl.text.trim().isNotEmpty) 'imageUrl': _imageUrl.text.trim(),
+          if (_imageUrl.text.trim().isNotEmpty)
+            'imageUrl': _imageUrl.text.trim(),
           'sortOrder': int.tryParse(_sortOrder.text) ?? 0,
           if (_parentId != null) 'parentId': _parentId,
         });
@@ -586,12 +598,14 @@ class _CategoryEditorSheetState extends State<_CategoryEditorSheet> {
           child: Row(
             children: [
               Text(
-                _isEdit ? l10n.adminCategoryEditTitle : l10n.adminCategoryNewTitle,
+                _isEdit
+                    ? l10n.adminCategoryEditTitle
+                    : l10n.adminCategoryNewTitle,
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const Spacer(),
               IconButton(
-                icon: const Icon(AppIcons.close),
+                icon: const AppIcon(AppIcons.close),
                 onPressed: () => Navigator.of(context).pop(false),
               ),
             ],
@@ -616,7 +630,9 @@ class _CategoryEditorSheetState extends State<_CategoryEditorSheet> {
               const SizedBox(height: AppSizes.md),
               TextField(
                 controller: _description,
-                decoration: InputDecoration(labelText: l10n.adminCategoryDescriptionLabel),
+                decoration: InputDecoration(
+                  labelText: l10n.adminCategoryDescriptionLabel,
+                ),
                 maxLines: 2,
               ),
               const SizedBox(height: AppSizes.md),
@@ -630,10 +646,15 @@ class _CategoryEditorSheetState extends State<_CategoryEditorSheet> {
               const SizedBox(height: AppSizes.md),
               DropdownButtonFormField<int?>(
                 initialValue: _parentId,
-                decoration: InputDecoration(labelText: l10n.adminCategoryParentLabel),
+                decoration: InputDecoration(
+                  labelText: l10n.adminCategoryParentLabel,
+                ),
                 isExpanded: true,
                 items: [
-                  DropdownMenuItem(value: null, child: Text(l10n.adminCategoryRootOption)),
+                  DropdownMenuItem(
+                    value: null,
+                    child: Text(l10n.adminCategoryRootOption),
+                  ),
                   for (final c in widget.availableParents)
                     DropdownMenuItem(value: c.id, child: Text(c.name)),
                 ],
@@ -646,7 +667,9 @@ class _CategoryEditorSheetState extends State<_CategoryEditorSheet> {
                     width: 96,
                     child: TextField(
                       controller: _sortOrder,
-                      decoration: InputDecoration(labelText: l10n.adminSortLabel),
+                      decoration: InputDecoration(
+                        labelText: l10n.adminSortLabel,
+                      ),
                       keyboardType: TextInputType.number,
                     ),
                   ),
@@ -663,16 +686,15 @@ class _CategoryEditorSheetState extends State<_CategoryEditorSheet> {
               ),
               if (_error != null) ...[
                 const SizedBox(height: AppSizes.sm),
-                Text(
-                  _error!,
-                  style: TextStyle(color: AppColors.error),
-                ),
+                Text(_error!, style: TextStyle(color: AppColors.error)),
               ],
               const SizedBox(height: AppSizes.lg),
               FilledButton(
                 onPressed: _busy ? null : _save,
                 child: Text(
-                  _busy ? l10n.adminSaving : (_isEdit ? l10n.adminSaveChanges : l10n.adminCreate),
+                  _busy
+                      ? l10n.adminSaving
+                      : (_isEdit ? l10n.adminSaveChanges : l10n.adminCreate),
                 ),
               ),
             ],

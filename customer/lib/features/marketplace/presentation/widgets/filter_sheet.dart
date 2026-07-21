@@ -4,6 +4,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Modal bottom sheet for editing [ListingFilters] against a fixed set
 /// of [ListingFacets]. Local mutation only — the caller commits the
@@ -106,7 +107,10 @@ class _FilterSheetState extends State<_FilterSheet> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(
-              AppSizes.lg, AppSizes.md, AppSizes.lg, AppSizes.sm,
+              AppSizes.lg,
+              AppSizes.md,
+              AppSizes.lg,
+              AppSizes.sm,
             ),
             child: Row(
               children: [
@@ -127,7 +131,7 @@ class _FilterSheetState extends State<_FilterSheet> {
                     child: const Text('Reset'),
                   ),
                 IconButton(
-                  icon: const Icon(AppIcons.closeRounded),
+                  icon: const AppIcon(AppIcons.closeRounded),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
@@ -138,7 +142,10 @@ class _FilterSheetState extends State<_FilterSheet> {
             child: ListView(
               controller: controller,
               padding: const EdgeInsets.fromLTRB(
-                AppSizes.lg, AppSizes.lg, AppSizes.lg, AppSizes.lg,
+                AppSizes.lg,
+                AppSizes.lg,
+                AppSizes.lg,
+                AppSizes.lg,
               ),
               children: [
                 if (hasPrice) ...[
@@ -191,13 +198,15 @@ class _FilterSheetState extends State<_FilterSheet> {
                       label: '4★ & up',
                       count: facets.gte4Count,
                       selected: _draft.ratingMin == 4,
-                      onTap: () => _setRatingMin(_draft.ratingMin == 4 ? null : 4),
+                      onTap: () =>
+                          _setRatingMin(_draft.ratingMin == 4 ? null : 4),
                     ),
                     _RatingChip(
                       label: '3★ & up',
                       count: facets.gte3Count,
                       selected: _draft.ratingMin == 3,
-                      onTap: () => _setRatingMin(_draft.ratingMin == 3 ? null : 3),
+                      onTap: () =>
+                          _setRatingMin(_draft.ratingMin == 3 ? null : 3),
                     ),
                   ],
                 ),
@@ -240,7 +249,10 @@ class _FilterSheetState extends State<_FilterSheet> {
           const Divider(height: 1, color: AppColors.hairline),
           Padding(
             padding: const EdgeInsets.fromLTRB(
-              AppSizes.lg, AppSizes.md, AppSizes.lg, AppSizes.md,
+              AppSizes.lg,
+              AppSizes.md,
+              AppSizes.lg,
+              AppSizes.md,
             ),
             child: Row(
               children: [
@@ -248,7 +260,9 @@ class _FilterSheetState extends State<_FilterSheet> {
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: AppSizes.lg),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSizes.lg,
+                      ),
                       shape: AppShapes.squircle(AppSizes.radiusMd),
                       side: const BorderSide(color: AppColors.hairline),
                       foregroundColor: AppColors.black,
@@ -266,7 +280,9 @@ class _FilterSheetState extends State<_FilterSheet> {
                     },
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.black,
-                      padding: const EdgeInsets.symmetric(vertical: AppSizes.lg),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSizes.lg,
+                      ),
                       shape: AppShapes.squircle(AppSizes.radiusMd),
                     ),
                     child: Text(
@@ -294,10 +310,10 @@ class _SectionTitle extends StatelessWidget {
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: AppColors.muted,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.6,
-            ),
+          color: AppColors.muted,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.6,
+        ),
       ),
     );
   }
@@ -329,10 +345,10 @@ class _RatingChip extends StatelessWidget {
             Text(
               '($count)',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: selected
-                        ? AppColors.white.withValues(alpha: 0.7)
-                        : AppColors.muted,
-                  ),
+                color: selected
+                    ? AppColors.white.withValues(alpha: 0.7)
+                    : AppColors.muted,
+              ),
             ),
           ],
         ],
@@ -364,10 +380,10 @@ class _BrandChip extends StatelessWidget {
           Text(
             '(${brand.count})',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: selected
-                      ? AppColors.white.withValues(alpha: 0.7)
-                      : AppColors.muted,
-                ),
+              color: selected
+                  ? AppColors.white.withValues(alpha: 0.7)
+                  : AppColors.muted,
+            ),
           ),
         ],
       ),
@@ -406,9 +422,9 @@ class _ChipShell extends StatelessWidget {
           ),
           child: DefaultTextStyle.merge(
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: selected ? AppColors.white : AppColors.black,
-                  fontWeight: FontWeight.w700,
-                ),
+              color: selected ? AppColors.white : AppColors.black,
+              fontWeight: FontWeight.w700,
+            ),
             child: child,
           ),
         ),

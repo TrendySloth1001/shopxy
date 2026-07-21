@@ -1,317 +1,421 @@
-// GENERATED-ish: single source of truth for icons in this app.
+// Single source of truth for icons in this app (Hugeicons stroke-rounded).
 //
-// Every icon the app uses is named here exactly once. UI code references
-// `AppIcons.<name>` and NEVER `Icons.<name>` / `FontAwesomeIcons.<name>`
-// directly, so changing or retiring an icon is a one-line edit here and the
-// full set of icons in use stays enumerable in this file.
+// Every icon the app uses is named here exactly once. UI code renders
+// `AppIcon(AppIcons.<name>)` (see app_icon.dart) and references the glyph
+// only through `AppIcons.<name>`, so changing or retiring an icon is a
+// one-line edit here.
 //
-// Entries were seeded by a codemod over existing `Icons.*` usage; add new
-// icons here (and reference them via AppIcons) rather than reaching for the
-// raw library at the call site.
+// NOTE: the WhatsApp mark is intentionally NOT here — it comes from
+// font_awesome as an FaIconData and renders via the FaIcon widget at its
+// single call site (invoice_detail_page.dart).
 
-import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
+
+/// SVG glyph payload used across the app (a Hugeicons icon, `List<List>`).
+typedef AppIconData = List<List<dynamic>>;
 
 /// Central icon registry. See file header.
-///
-/// Note: the WhatsApp mark is intentionally NOT here. It comes from
-/// `font_awesome_flutter` as an `FaIconData` (not an `IconData`) and renders
-/// through the `FaIcon` widget, so it stays at its single call site
-/// (`invoice_detail_page.dart`) — the one brand-glyph exception, like a logo.
 abstract final class AppIcons {
-  static const IconData accountBalanceOutlined = Icons.account_balance_outlined;
-  static const IconData accountBalanceRounded = Icons.account_balance_rounded;
-  static const IconData accountBalanceWalletOutlined = Icons.account_balance_wallet_outlined;
-  static const IconData accountBalanceWalletRounded = Icons.account_balance_wallet_rounded;
-  static const IconData accountCircleOutlined = Icons.account_circle_outlined;
-  static const IconData accountTreeOutlined = Icons.account_tree_outlined;
-  static const IconData add = Icons.add;
-  static const IconData addAPhotoOutlined = Icons.add_a_photo_outlined;
-  static const IconData addBoxOutlined = Icons.add_box_outlined;
-  static const IconData addCircleOutline = Icons.add_circle_outline;
-  static const IconData addCircleOutlineRounded = Icons.add_circle_outline_rounded;
-  static const IconData addPhotoAlternateOutlined = Icons.add_photo_alternate_outlined;
-  static const IconData addRounded = Icons.add_rounded;
-  static const IconData alternateEmail = Icons.alternate_email;
-  static const IconData alternateEmailRounded = Icons.alternate_email_rounded;
-  static const IconData apps = Icons.apps;
-  static const IconData appsOutlined = Icons.apps_outlined;
-  static const IconData archiveOutlined = Icons.archive_outlined;
-  static const IconData arrowBackIosNewRounded = Icons.arrow_back_ios_new_rounded;
-  static const IconData arrowBackRounded = Icons.arrow_back_rounded;
-  static const IconData arrowDownwardRounded = Icons.arrow_downward_rounded;
-  static const IconData arrowForwardIosRounded = Icons.arrow_forward_ios_rounded;
-  static const IconData arrowForwardRounded = Icons.arrow_forward_rounded;
-  static const IconData arrowUpwardRounded = Icons.arrow_upward_rounded;
-  static const IconData articleOutlined = Icons.article_outlined;
-  static const IconData assignmentOutlined = Icons.assignment_outlined;
-  static const IconData assignmentReturnOutlined = Icons.assignment_return_outlined;
-  static const IconData autoAwesomeRounded = Icons.auto_awesome_rounded;
-  static const IconData badgeOutlined = Icons.badge_outlined;
-  static const IconData badgeRounded = Icons.badge_rounded;
-  static const IconData bakeryDiningRounded = Icons.bakery_dining_rounded;
-  static const IconData barChartOutlined = Icons.bar_chart_outlined;
-  static const IconData batteryFullRounded = Icons.battery_full_rounded;
-  static const IconData block = Icons.block;
-  static const IconData blockRounded = Icons.block_rounded;
-  static const IconData boltOutlined = Icons.bolt_outlined;
-  static const IconData boltRounded = Icons.bolt_rounded;
-  static const IconData brokenImageOutlined = Icons.broken_image_outlined;
-  static const IconData brokenImageRounded = Icons.broken_image_rounded;
-  static const IconData buildOutlined = Icons.build_outlined;
-  static const IconData buildRounded = Icons.build_rounded;
-  static const IconData businessRounded = Icons.business_rounded;
-  static const IconData calculateOutlined = Icons.calculate_outlined;
-  static const IconData calendarTodayOutlined = Icons.calendar_today_outlined;
-  static const IconData calendarTodayRounded = Icons.calendar_today_rounded;
-  static const IconData callOutlined = Icons.call_outlined;
-  static const IconData callRounded = Icons.call_rounded;
-  static const IconData cameraAltOutlined = Icons.camera_alt_outlined;
-  static const IconData cameraAltRounded = Icons.camera_alt_rounded;
-  static const IconData cancelOutlined = Icons.cancel_outlined;
-  static const IconData cancelScheduleSendOutlined = Icons.cancel_schedule_send_outlined;
-  static const IconData cardGiftcardRounded = Icons.card_giftcard_rounded;
-  static const IconData categoryOutlined = Icons.category_outlined;
-  static const IconData categoryRounded = Icons.category_rounded;
-  static const IconData chairRounded = Icons.chair_rounded;
-  static const IconData chatBubbleOutline = Icons.chat_bubble_outline;
-  static const IconData chatRounded = Icons.chat_rounded;
-  static const IconData check = Icons.check;
-  static const IconData checkCircleOutline = Icons.check_circle_outline;
-  static const IconData checkCircleOutlineRounded = Icons.check_circle_outline_rounded;
-  static const IconData checkCircleRounded = Icons.check_circle_rounded;
-  static const IconData checkRounded = Icons.check_rounded;
-  static const IconData checkroomRounded = Icons.checkroom_rounded;
-  static const IconData chevronRightRounded = Icons.chevron_right_rounded;
-  static const IconData circle = Icons.circle;
-  static const IconData circleOutlined = Icons.circle_outlined;
-  static const IconData cleaningServicesRounded = Icons.cleaning_services_rounded;
-  static const IconData close = Icons.close;
-  static const IconData closeRounded = Icons.close_rounded;
-  static const IconData cloudOffRounded = Icons.cloud_off_rounded;
-  static const IconData collectionsBookmark = Icons.collections_bookmark;
-  static const IconData collectionsBookmarkOutlined = Icons.collections_bookmark_outlined;
-  static const IconData collectionsRounded = Icons.collections_rounded;
-  static const IconData compareArrowsRounded = Icons.compare_arrows_rounded;
-  static const IconData computerRounded = Icons.computer_rounded;
-  static const IconData contactsOutlined = Icons.contacts_outlined;
-  static const IconData copyRounded = Icons.copy_rounded;
-  static const IconData creditCardOutlined = Icons.credit_card_outlined;
-  static const IconData currencyRupeeRounded = Icons.currency_rupee_rounded;
-  static const IconData dashboardCustomizeOutlined = Icons.dashboard_customize_outlined;
-  static const IconData deleteForeverRounded = Icons.delete_forever_rounded;
-  static const IconData deleteOutline = Icons.delete_outline;
-  static const IconData deleteOutlineRounded = Icons.delete_outline_rounded;
-  static const IconData deleteSweepOutlined = Icons.delete_sweep_outlined;
-  static const IconData densityMediumRounded = Icons.density_medium_rounded;
-  static const IconData densitySmallRounded = Icons.density_small_rounded;
-  static const IconData descriptionOutlined = Icons.description_outlined;
-  static const IconData descriptionRounded = Icons.description_rounded;
-  static const IconData devicesOtherRounded = Icons.devices_other_rounded;
-  static const IconData devicesRounded = Icons.devices_rounded;
-  static const IconData diamondRounded = Icons.diamond_rounded;
-  static const IconData differenceRounded = Icons.difference_rounded;
-  static const IconData directionsCarFilledRounded = Icons.directions_car_filled_rounded;
-  static const IconData directionsWalkRounded = Icons.directions_walk_rounded;
-  static const IconData documentScannerOutlined = Icons.document_scanner_outlined;
-  static const IconData doneAllRounded = Icons.done_all_rounded;
-  static const IconData downloadRounded = Icons.download_rounded;
-  static const IconData dragHandle = Icons.drag_handle;
-  static const IconData ecoRounded = Icons.eco_rounded;
-  static const IconData editNoteRounded = Icons.edit_note_rounded;
-  static const IconData editOutlined = Icons.edit_outlined;
-  static const IconData editRounded = Icons.edit_rounded;
-  static const IconData emailOutlined = Icons.email_outlined;
-  static const IconData emailRounded = Icons.email_rounded;
-  static const IconData errorOutline = Icons.error_outline;
-  static const IconData errorOutlineRounded = Icons.error_outline_rounded;
-  static const IconData event = Icons.event;
-  static const IconData eventAvailable = Icons.event_available;
-  static const IconData eventBusyOutlined = Icons.event_busy_outlined;
-  static const IconData eventBusyRounded = Icons.event_busy_rounded;
-  static const IconData eventRounded = Icons.event_rounded;
-  static const IconData expandMoreRounded = Icons.expand_more_rounded;
-  static const IconData factCheckOutlined = Icons.fact_check_outlined;
-  static const IconData factCheckRounded = Icons.fact_check_rounded;
-  static const IconData factoryRounded = Icons.factory_rounded;
-  static const IconData featuredPlayListRounded = Icons.featured_play_list_rounded;
-  static const IconData flashOnRounded = Icons.flash_on_rounded;
-  static const IconData folderOutlined = Icons.folder_outlined;
-  static const IconData formatLineSpacingRounded = Icons.format_line_spacing_rounded;
-  static const IconData formatPaintRounded = Icons.format_paint_rounded;
-  static const IconData formatQuoteRounded = Icons.format_quote_rounded;
-  static const IconData gridViewRounded = Icons.grid_view_rounded;
-  static const IconData groupOutlined = Icons.group_outlined;
-  static const IconData groups2Outlined = Icons.groups_2_outlined;
-  static const IconData groupsOutlined = Icons.groups_outlined;
-  static const IconData groupsRounded = Icons.groups_rounded;
-  static const IconData handymanRounded = Icons.handyman_rounded;
-  static const IconData helpOutlineRounded = Icons.help_outline_rounded;
-  static const IconData historyRounded = Icons.history_rounded;
-  static const IconData homeOutlined = Icons.home_outlined;
-  static const IconData homeRounded = Icons.home_rounded;
-  static const IconData hourglassTopRounded = Icons.hourglass_top_rounded;
-  static const IconData icecreamRounded = Icons.icecream_rounded;
-  static const IconData imageNotSupportedOutlined = Icons.image_not_supported_outlined;
-  static const IconData imageOutlined = Icons.image_outlined;
-  static const IconData imageRounded = Icons.image_rounded;
-  static const IconData inboxOutlined = Icons.inbox_outlined;
-  static const IconData inboxRounded = Icons.inbox_rounded;
-  static const IconData infoOutline = Icons.info_outline;
-  static const IconData infoOutlineRounded = Icons.info_outline_rounded;
-  static const IconData infoRounded = Icons.info_rounded;
-  static const IconData inventory2Outlined = Icons.inventory_2_outlined;
-  static const IconData inventory2Rounded = Icons.inventory_2_rounded;
-  static const IconData inventoryOutlined = Icons.inventory_outlined;
-  static const IconData inventoryRounded = Icons.inventory_rounded;
-  static const IconData iosShareRounded = Icons.ios_share_rounded;
-  static const IconData kebabDiningRounded = Icons.kebab_dining_rounded;
-  static const IconData keyboardArrowDownRounded = Icons.keyboard_arrow_down_rounded;
-  static const IconData keyboardArrowUpRounded = Icons.keyboard_arrow_up_rounded;
-  static const IconData kitchenRounded = Icons.kitchen_rounded;
-  static const IconData labelOutline = Icons.label_outline;
-  static const IconData labelOutlineRounded = Icons.label_outline_rounded;
-  static const IconData labelRounded = Icons.label_rounded;
-  static const IconData languageRounded = Icons.language_rounded;
-  static const IconData layersOutlined = Icons.layers_outlined;
-  static const IconData linkRounded = Icons.link_rounded;
-  static const IconData localCafeRounded = Icons.local_cafe_rounded;
-  static const IconData localFloristRounded = Icons.local_florist_rounded;
-  static const IconData localGroceryStoreRounded = Icons.local_grocery_store_rounded;
-  static const IconData localOfferOutlined = Icons.local_offer_outlined;
-  static const IconData localOfferRounded = Icons.local_offer_rounded;
-  static const IconData localShippingOutlined = Icons.local_shipping_outlined;
-  static const IconData localShippingRounded = Icons.local_shipping_rounded;
-  static const IconData locationCityOutlined = Icons.location_city_outlined;
-  static const IconData locationOnOutlined = Icons.location_on_outlined;
-  static const IconData lockOpenRounded = Icons.lock_open_rounded;
-  static const IconData lockOutlineRounded = Icons.lock_outline_rounded;
-  static const IconData lockRounded = Icons.lock_rounded;
-  static const IconData loginRounded = Icons.login_rounded;
-  static const IconData logoutRounded = Icons.logout_rounded;
-  static const IconData mailOutlineRounded = Icons.mail_outline_rounded;
-  static const IconData mapOutlined = Icons.map_outlined;
-  static const IconData markEmailUnreadOutlined = Icons.mark_email_unread_outlined;
-  static const IconData markunreadMailboxOutlined = Icons.markunread_mailbox_outlined;
-  static const IconData medicationRounded = Icons.medication_rounded;
-  static const IconData memoryRounded = Icons.memory_rounded;
-  static const IconData menuBookRounded = Icons.menu_book_rounded;
-  static const IconData miscellaneousServicesRounded = Icons.miscellaneous_services_rounded;
-  static const IconData moreVert = Icons.more_vert;
-  static const IconData moreVertRounded = Icons.more_vert_rounded;
-  static const IconData northEastRounded = Icons.north_east_rounded;
-  static const IconData notesRounded = Icons.notes_rounded;
-  static const IconData notificationsNoneRounded = Icons.notifications_none_rounded;
-  static const IconData openInNewRounded = Icons.open_in_new_rounded;
-  static const IconData outboxOutlined = Icons.outbox_outlined;
-  static const IconData paletteOutlined = Icons.palette_outlined;
-  static const IconData paletteRounded = Icons.palette_rounded;
-  static const IconData pauseCircleOutlineRounded = Icons.pause_circle_outline_rounded;
-  static const IconData paymentsOutlined = Icons.payments_outlined;
-  static const IconData paymentsRounded = Icons.payments_rounded;
-  static const IconData pendingOutlined = Icons.pending_outlined;
-  static const IconData peopleRounded = Icons.people_rounded;
-  static const IconData percentRounded = Icons.percent_rounded;
-  static const IconData personAddAlt1Outlined = Icons.person_add_alt_1_outlined;
-  static const IconData personAddAlt1Rounded = Icons.person_add_alt_1_rounded;
-  static const IconData personAddOutlined = Icons.person_add_outlined;
-  static const IconData personOutline = Icons.person_outline;
-  static const IconData personOutlineRounded = Icons.person_outline_rounded;
-  static const IconData personRounded = Icons.person_rounded;
-  static const IconData personSearchRounded = Icons.person_search_rounded;
-  static const IconData petsRounded = Icons.pets_rounded;
-  static const IconData phoneOutlined = Icons.phone_outlined;
-  static const IconData phoneRounded = Icons.phone_rounded;
-  static const IconData photoCameraOutlined = Icons.photo_camera_outlined;
-  static const IconData photoLibraryOutlined = Icons.photo_library_outlined;
-  static const IconData photoLibraryRounded = Icons.photo_library_rounded;
-  static const IconData placeOutlined = Icons.place_outlined;
-  static const IconData placeRounded = Icons.place_rounded;
-  static const IconData pointOfSaleOutlined = Icons.point_of_sale_outlined;
-  static const IconData pointOfSaleRounded = Icons.point_of_sale_rounded;
-  static const IconData powerRounded = Icons.power_rounded;
-  static const IconData powerSettingsNew = Icons.power_settings_new;
-  static const IconData printOutlined = Icons.print_outlined;
-  static const IconData public = Icons.public;
-  static const IconData publicOffOutlined = Icons.public_off_outlined;
-  static const IconData qrCode2Outlined = Icons.qr_code_2_outlined;
-  static const IconData qrCode2Rounded = Icons.qr_code_2_rounded;
-  static const IconData qrCodeRounded = Icons.qr_code_rounded;
-  static const IconData qrCodeScannerRounded = Icons.qr_code_scanner_rounded;
-  static const IconData receiptLong = Icons.receipt_long;
-  static const IconData receiptLongOutlined = Icons.receipt_long_outlined;
-  static const IconData receiptLongRounded = Icons.receipt_long_rounded;
-  static const IconData receiptOutlined = Icons.receipt_outlined;
-  static const IconData redoRounded = Icons.redo_rounded;
-  static const IconData refresh = Icons.refresh;
-  static const IconData refreshRounded = Icons.refresh_rounded;
-  static const IconData remove = Icons.remove;
-  static const IconData removeCircleOutline = Icons.remove_circle_outline;
-  static const IconData removeCircleOutlineRounded = Icons.remove_circle_outline_rounded;
-  static const IconData removeRounded = Icons.remove_rounded;
-  static const IconData replayRounded = Icons.replay_rounded;
-  static const IconData requestQuoteOutlined = Icons.request_quote_outlined;
-  static const IconData restaurantRounded = Icons.restaurant_rounded;
-  static const IconData restoreRounded = Icons.restore_rounded;
-  static const IconData reviewsOutlined = Icons.reviews_outlined;
-  static const IconData savingsOutlined = Icons.savings_outlined;
-  static const IconData scaleRounded = Icons.scale_rounded;
-  static const IconData scheduleRounded = Icons.schedule_rounded;
-  static const IconData search = Icons.search;
-  static const IconData searchOffRounded = Icons.search_off_rounded;
-  static const IconData searchRounded = Icons.search_rounded;
-  static const IconData sellOutlined = Icons.sell_outlined;
-  static const IconData sellRounded = Icons.sell_rounded;
-  static const IconData sendRounded = Icons.send_rounded;
-  static const IconData settingsOutlined = Icons.settings_outlined;
-  static const IconData settingsRounded = Icons.settings_rounded;
-  static const IconData shareRounded = Icons.share_rounded;
-  static const IconData shieldOutlined = Icons.shield_outlined;
-  static const IconData shieldRounded = Icons.shield_rounded;
-  static const IconData shoppingBagOutlined = Icons.shopping_bag_outlined;
-  static const IconData smartphoneRounded = Icons.smartphone_rounded;
-  static const IconData southWestRounded = Icons.south_west_rounded;
-  static const IconData spaRounded = Icons.spa_rounded;
-  static const IconData sportsCricketRounded = Icons.sports_cricket_rounded;
-  static const IconData starHalfRounded = Icons.star_half_rounded;
-  static const IconData starOutlineRounded = Icons.star_outline_rounded;
-  static const IconData starRounded = Icons.star_rounded;
-  static const IconData storefrontOutlined = Icons.storefront_outlined;
-  static const IconData storefrontRounded = Icons.storefront_rounded;
-  static const IconData straightenRounded = Icons.straighten_rounded;
-  static const IconData styleOutlined = Icons.style_outlined;
-  static const IconData summarizeOutlined = Icons.summarize_outlined;
-  static const IconData swapHorizRounded = Icons.swap_horiz_rounded;
-  static const IconData swapVertRounded = Icons.swap_vert_rounded;
-  static const IconData syncProblemRounded = Icons.sync_problem_rounded;
-  static const IconData syncRounded = Icons.sync_rounded;
-  static const IconData tableChartRounded = Icons.table_chart_rounded;
-  static const IconData tagRounded = Icons.tag_rounded;
-  static const IconData textSnippetRounded = Icons.text_snippet_rounded;
-  static const IconData textureRounded = Icons.texture_rounded;
-  static const IconData timelineRounded = Icons.timeline_rounded;
-  static const IconData timerOffOutlined = Icons.timer_off_outlined;
-  static const IconData timerOutlined = Icons.timer_outlined;
-  static const IconData toggleOnRounded = Icons.toggle_on_rounded;
-  static const IconData toysRounded = Icons.toys_rounded;
-  static const IconData trendingUpRounded = Icons.trending_up_rounded;
-  static const IconData tune = Icons.tune;
-  static const IconData tuneRounded = Icons.tune_rounded;
-  static const IconData undoRounded = Icons.undo_rounded;
-  static const IconData unfoldMoreRounded = Icons.unfold_more_rounded;
-  static const IconData uploadFileRounded = Icons.upload_file_rounded;
-  static const IconData uploadOutlined = Icons.upload_outlined;
-  static const IconData uploadRounded = Icons.upload_rounded;
-  static const IconData verifiedOutlined = Icons.verified_outlined;
-  static const IconData verifiedRounded = Icons.verified_rounded;
-  static const IconData verifiedUserOutlined = Icons.verified_user_outlined;
-  static const IconData verifiedUserRounded = Icons.verified_user_rounded;
-  static const IconData viewCarouselOutlined = Icons.view_carousel_outlined;
-  static const IconData viewListRounded = Icons.view_list_rounded;
-  static const IconData viewSidebarRounded = Icons.view_sidebar_rounded;
-  static const IconData visibilityOffOutlined = Icons.visibility_off_outlined;
-  static const IconData visibilityOutlined = Icons.visibility_outlined;
-  static const IconData wallpaperRounded = Icons.wallpaper_rounded;
-  static const IconData warningAmberRounded = Icons.warning_amber_rounded;
-  static const IconData widgetsRounded = Icons.widgets_rounded;
-  static const IconData workOutlineRounded = Icons.work_outline_rounded;
+  static const AppIconData accountBalanceOutlined = HugeIcons.strokeRoundedBank;
+  static const AppIconData accountBalanceRounded = HugeIcons.strokeRoundedBank;
+  static const AppIconData accountBalanceWalletOutlined =
+      HugeIcons.strokeRoundedWallet01;
+  static const AppIconData accountBalanceWalletRounded =
+      HugeIcons.strokeRoundedWallet01;
+  static const AppIconData accountCircleOutlined =
+      HugeIcons.strokeRoundedUserCircle;
+  static const AppIconData accountTreeOutlined =
+      HugeIcons.strokeRoundedHierarchy;
+  static const AppIconData add = HugeIcons.strokeRoundedAdd01;
+  static const AppIconData addAPhotoOutlined =
+      HugeIcons.strokeRoundedImageAdd01;
+  static const AppIconData addBoxOutlined = HugeIcons.strokeRoundedAddSquare;
+  static const AppIconData addCircleOutline = HugeIcons.strokeRoundedAddCircle;
+  static const AppIconData addCircleOutlineRounded =
+      HugeIcons.strokeRoundedAddCircle;
+  static const AppIconData addPhotoAlternateOutlined =
+      HugeIcons.strokeRoundedImageAdd01;
+  static const AppIconData addRounded = HugeIcons.strokeRoundedAdd01;
+  static const AppIconData alternateEmail = HugeIcons.strokeRoundedAt;
+  static const AppIconData alternateEmailRounded = HugeIcons.strokeRoundedAt;
+  static const AppIconData apps = HugeIcons.strokeRoundedDashboardSquare01;
+  static const AppIconData appsOutlined =
+      HugeIcons.strokeRoundedDashboardSquare01;
+  static const AppIconData archiveOutlined = HugeIcons.strokeRoundedArchive;
+  static const AppIconData arrowBackIosNewRounded =
+      HugeIcons.strokeRoundedArrowLeft01;
+  static const AppIconData arrowBackRounded =
+      HugeIcons.strokeRoundedArrowLeft01;
+  static const AppIconData arrowDownwardRounded =
+      HugeIcons.strokeRoundedArrowDown01;
+  static const AppIconData arrowForwardIosRounded =
+      HugeIcons.strokeRoundedArrowRight01;
+  static const AppIconData arrowForwardRounded =
+      HugeIcons.strokeRoundedArrowRight01;
+  static const AppIconData arrowUpwardRounded =
+      HugeIcons.strokeRoundedArrowUp01;
+  static const AppIconData articleOutlined = HugeIcons.strokeRoundedNews;
+  static const AppIconData assignmentOutlined =
+      HugeIcons.strokeRoundedAssignments;
+  static const AppIconData assignmentReturnOutlined =
+      HugeIcons.strokeRoundedReturnRequest;
+  static const AppIconData autoAwesomeRounded = HugeIcons.strokeRoundedSparkles;
+  static const AppIconData badgeOutlined = HugeIcons.strokeRoundedIdentityCard;
+  static const AppIconData badgeRounded = HugeIcons.strokeRoundedIdentityCard;
+  static const AppIconData bakeryDiningRounded =
+      HugeIcons.strokeRoundedCroissant;
+  static const AppIconData barChartOutlined = HugeIcons.strokeRoundedBarChart;
+  static const AppIconData batteryFullRounded =
+      HugeIcons.strokeRoundedBatteryFull;
+  static const AppIconData block = HugeIcons.strokeRoundedBlocked;
+  static const AppIconData blockRounded = HugeIcons.strokeRoundedBlocked;
+  static const AppIconData boltOutlined = HugeIcons.strokeRoundedFlash;
+  static const AppIconData boltRounded = HugeIcons.strokeRoundedFlash;
+  static const AppIconData brokenImageOutlined =
+      HugeIcons.strokeRoundedImageNotFound01;
+  static const AppIconData brokenImageRounded =
+      HugeIcons.strokeRoundedImageNotFound01;
+  static const AppIconData buildOutlined = HugeIcons.strokeRoundedWrench01;
+  static const AppIconData buildRounded = HugeIcons.strokeRoundedWrench01;
+  static const AppIconData businessRounded = HugeIcons.strokeRoundedBuilding02;
+  static const AppIconData calculateOutlined =
+      HugeIcons.strokeRoundedCalculator;
+  static const AppIconData calendarTodayOutlined =
+      HugeIcons.strokeRoundedCalendar01;
+  static const AppIconData calendarTodayRounded =
+      HugeIcons.strokeRoundedCalendar01;
+  static const AppIconData callOutlined = HugeIcons.strokeRoundedCall;
+  static const AppIconData callRounded = HugeIcons.strokeRoundedCall;
+  static const AppIconData cameraAltOutlined = HugeIcons.strokeRoundedCamera01;
+  static const AppIconData cameraAltRounded = HugeIcons.strokeRoundedCamera01;
+  static const AppIconData cancelOutlined = HugeIcons.strokeRoundedCancelCircle;
+  static const AppIconData cancelScheduleSendOutlined =
+      HugeIcons.strokeRoundedSent;
+  static const AppIconData cardGiftcardRounded =
+      HugeIcons.strokeRoundedGiftCard;
+  static const AppIconData categoryOutlined =
+      HugeIcons.strokeRoundedDashboardSquare01;
+  static const AppIconData categoryRounded =
+      HugeIcons.strokeRoundedDashboardSquare01;
+  static const AppIconData chairRounded = HugeIcons.strokeRoundedChair01;
+  static const AppIconData chatBubbleOutline =
+      HugeIcons.strokeRoundedBubbleChat;
+  static const AppIconData chatRounded = HugeIcons.strokeRoundedChat;
+  static const AppIconData check = HugeIcons.strokeRoundedTick02;
+  static const AppIconData checkCircleOutline =
+      HugeIcons.strokeRoundedCheckmarkCircle01;
+  static const AppIconData checkCircleOutlineRounded =
+      HugeIcons.strokeRoundedCheckmarkCircle01;
+  static const AppIconData checkCircleRounded =
+      HugeIcons.strokeRoundedCheckmarkCircle01;
+  static const AppIconData checkRounded = HugeIcons.strokeRoundedTick02;
+  static const AppIconData checkroomRounded = HugeIcons.strokeRoundedWardrobe01;
+  static const AppIconData chevronRightRounded =
+      HugeIcons.strokeRoundedArrowRight01;
+  static const AppIconData circle = HugeIcons.strokeRoundedCircle;
+  static const AppIconData circleOutlined = HugeIcons.strokeRoundedCircle;
+  static const AppIconData cleaningServicesRounded =
+      HugeIcons.strokeRoundedCleaningBucket;
+  static const AppIconData close = HugeIcons.strokeRoundedCancel01;
+  static const AppIconData closeRounded = HugeIcons.strokeRoundedCancel01;
+  static const AppIconData cloudOffRounded = HugeIcons.strokeRoundedCloudOff;
+  static const AppIconData collectionsBookmark = HugeIcons.strokeRoundedAlbum02;
+  static const AppIconData collectionsBookmarkOutlined =
+      HugeIcons.strokeRoundedAlbum02;
+  static const AppIconData collectionsRounded = HugeIcons.strokeRoundedAlbum02;
+  static const AppIconData compareArrowsRounded =
+      HugeIcons.strokeRoundedExchange01;
+  static const AppIconData computerRounded = HugeIcons.strokeRoundedComputer;
+  static const AppIconData contactsOutlined =
+      HugeIcons.strokeRoundedContactBook;
+  static const AppIconData copyRounded = HugeIcons.strokeRoundedCopy01;
+  static const AppIconData creditCardOutlined =
+      HugeIcons.strokeRoundedCreditCard;
+  static const AppIconData currencyRupeeRounded = HugeIcons.strokeRoundedRupee;
+  static const AppIconData dashboardCustomizeOutlined =
+      HugeIcons.strokeRoundedDashboardSquare02;
+  static const AppIconData deleteForeverRounded =
+      HugeIcons.strokeRoundedDelete02;
+  static const AppIconData deleteOutline = HugeIcons.strokeRoundedDelete02;
+  static const AppIconData deleteOutlineRounded =
+      HugeIcons.strokeRoundedDelete02;
+  static const AppIconData deleteSweepOutlined =
+      HugeIcons.strokeRoundedDelete03;
+  static const AppIconData densityMediumRounded = HugeIcons.strokeRoundedMenu01;
+  static const AppIconData densitySmallRounded = HugeIcons.strokeRoundedMenu02;
+  static const AppIconData descriptionOutlined = HugeIcons.strokeRoundedFile02;
+  static const AppIconData descriptionRounded = HugeIcons.strokeRoundedFile02;
+  static const AppIconData devicesOtherRounded =
+      HugeIcons.strokeRoundedComputer;
+  static const AppIconData devicesRounded = HugeIcons.strokeRoundedComputer;
+  static const AppIconData diamondRounded = HugeIcons.strokeRoundedDiamond;
+  static const AppIconData differenceRounded =
+      HugeIcons.strokeRoundedExchange01;
+  static const AppIconData directionsCarFilledRounded =
+      HugeIcons.strokeRoundedCar01;
+  static const AppIconData directionsWalkRounded =
+      HugeIcons.strokeRoundedWalking;
+  static const AppIconData documentScannerOutlined =
+      HugeIcons.strokeRoundedScan;
+  static const AppIconData doneAllRounded = HugeIcons.strokeRoundedTickDouble01;
+  static const AppIconData downloadRounded = HugeIcons.strokeRoundedDownload01;
+  static const AppIconData dragHandle = HugeIcons.strokeRoundedDragDrop;
+  static const AppIconData ecoRounded = HugeIcons.strokeRoundedLeaf01;
+  static const AppIconData editNoteRounded = HugeIcons.strokeRoundedNoteEdit;
+  static const AppIconData editOutlined = HugeIcons.strokeRoundedPencilEdit01;
+  static const AppIconData editRounded = HugeIcons.strokeRoundedPencilEdit01;
+  static const AppIconData emailOutlined = HugeIcons.strokeRoundedMail01;
+  static const AppIconData emailRounded = HugeIcons.strokeRoundedMail01;
+  static const AppIconData errorOutline = HugeIcons.strokeRoundedAlertCircle;
+  static const AppIconData errorOutlineRounded =
+      HugeIcons.strokeRoundedAlertCircle;
+  static const AppIconData event = HugeIcons.strokeRoundedCalendar01;
+  static const AppIconData eventAvailable =
+      HugeIcons.strokeRoundedCalendarCheckIn01;
+  static const AppIconData eventBusyOutlined =
+      HugeIcons.strokeRoundedCalendarRemove01;
+  static const AppIconData eventBusyRounded =
+      HugeIcons.strokeRoundedCalendarRemove01;
+  static const AppIconData eventRounded = HugeIcons.strokeRoundedCalendar01;
+  static const AppIconData expandMoreRounded =
+      HugeIcons.strokeRoundedArrowDown01;
+  static const AppIconData factCheckOutlined = HugeIcons.strokeRoundedCheckList;
+  static const AppIconData factCheckRounded = HugeIcons.strokeRoundedCheckList;
+  static const AppIconData factoryRounded = HugeIcons.strokeRoundedFactory;
+  static const AppIconData featuredPlayListRounded =
+      HugeIcons.strokeRoundedPlayList;
+  static const AppIconData flashOnRounded = HugeIcons.strokeRoundedFlash;
+  static const AppIconData folderOutlined = HugeIcons.strokeRoundedFolder01;
+  static const AppIconData formatLineSpacingRounded =
+      HugeIcons.strokeRoundedTextIndent;
+  static const AppIconData formatPaintRounded =
+      HugeIcons.strokeRoundedPaintBrush01;
+  static const AppIconData formatQuoteRounded = HugeIcons.strokeRoundedQuoteUp;
+  static const AppIconData gridViewRounded = HugeIcons.strokeRoundedGridView;
+  static const AppIconData groupOutlined = HugeIcons.strokeRoundedUserGroup;
+  static const AppIconData groups2Outlined =
+      HugeIcons.strokeRoundedUserMultiple;
+  static const AppIconData groupsOutlined = HugeIcons.strokeRoundedUserGroup;
+  static const AppIconData groupsRounded = HugeIcons.strokeRoundedUserGroup;
+  static const AppIconData handymanRounded = HugeIcons.strokeRoundedTools;
+  static const AppIconData helpOutlineRounded =
+      HugeIcons.strokeRoundedHelpCircle;
+  static const AppIconData historyRounded = HugeIcons.strokeRoundedClock01;
+  static const AppIconData homeOutlined = HugeIcons.strokeRoundedHome01;
+  static const AppIconData homeRounded = HugeIcons.strokeRoundedHome01;
+  static const AppIconData hourglassTopRounded =
+      HugeIcons.strokeRoundedHourglass;
+  static const AppIconData icecreamRounded = HugeIcons.strokeRoundedIceCream01;
+  static const AppIconData imageNotSupportedOutlined =
+      HugeIcons.strokeRoundedImageNotFound01;
+  static const AppIconData imageOutlined = HugeIcons.strokeRoundedImage01;
+  static const AppIconData imageRounded = HugeIcons.strokeRoundedImage01;
+  static const AppIconData inboxOutlined = HugeIcons.strokeRoundedInbox;
+  static const AppIconData inboxRounded = HugeIcons.strokeRoundedInbox;
+  static const AppIconData infoOutline =
+      HugeIcons.strokeRoundedInformationCircle;
+  static const AppIconData infoOutlineRounded =
+      HugeIcons.strokeRoundedInformationCircle;
+  static const AppIconData infoRounded =
+      HugeIcons.strokeRoundedInformationCircle;
+  static const AppIconData inventory2Outlined = HugeIcons.strokeRoundedPackage;
+  static const AppIconData inventory2Rounded = HugeIcons.strokeRoundedPackage;
+  static const AppIconData inventoryOutlined = HugeIcons.strokeRoundedPackage;
+  static const AppIconData inventoryRounded = HugeIcons.strokeRoundedPackage;
+  static const AppIconData iosShareRounded = HugeIcons.strokeRoundedShare01;
+  static const AppIconData kebabDiningRounded = HugeIcons.strokeRoundedBbqGrill;
+  static const AppIconData keyboardArrowDownRounded =
+      HugeIcons.strokeRoundedArrowDown01;
+  static const AppIconData keyboardArrowUpRounded =
+      HugeIcons.strokeRoundedArrowUp01;
+  static const AppIconData kitchenRounded = HugeIcons.strokeRoundedRefrigerator;
+  static const AppIconData labelOutline = HugeIcons.strokeRoundedLabel;
+  static const AppIconData labelOutlineRounded = HugeIcons.strokeRoundedLabel;
+  static const AppIconData labelRounded = HugeIcons.strokeRoundedLabel;
+  static const AppIconData languageRounded = HugeIcons.strokeRoundedGlobe;
+  static const AppIconData layersOutlined = HugeIcons.strokeRoundedLayers01;
+  static const AppIconData linkRounded = HugeIcons.strokeRoundedLink01;
+  static const AppIconData localCafeRounded = HugeIcons.strokeRoundedCoffee01;
+  static const AppIconData localFloristRounded = HugeIcons.strokeRoundedFlower;
+  static const AppIconData localGroceryStoreRounded =
+      HugeIcons.strokeRoundedShoppingCart01;
+  static const AppIconData localOfferOutlined = HugeIcons.strokeRoundedTag01;
+  static const AppIconData localOfferRounded = HugeIcons.strokeRoundedTag01;
+  static const AppIconData localShippingOutlined = HugeIcons.strokeRoundedTruck;
+  static const AppIconData localShippingRounded = HugeIcons.strokeRoundedTruck;
+  static const AppIconData locationCityOutlined = HugeIcons.strokeRoundedCity01;
+  static const AppIconData locationOnOutlined =
+      HugeIcons.strokeRoundedLocation01;
+  static const AppIconData lockOpenRounded =
+      HugeIcons.strokeRoundedSquareUnlock01;
+  static const AppIconData lockOutlineRounded = HugeIcons.strokeRoundedLock;
+  static const AppIconData lockRounded = HugeIcons.strokeRoundedLock;
+  static const AppIconData loginRounded = HugeIcons.strokeRoundedLogin01;
+  static const AppIconData logoutRounded = HugeIcons.strokeRoundedLogout01;
+  static const AppIconData mailOutlineRounded = HugeIcons.strokeRoundedMail01;
+  static const AppIconData mapOutlined = HugeIcons.strokeRoundedMaps;
+  static const AppIconData markEmailUnreadOutlined =
+      HugeIcons.strokeRoundedMail01;
+  static const AppIconData markunreadMailboxOutlined =
+      HugeIcons.strokeRoundedMailbox01;
+  static const AppIconData medicationRounded = HugeIcons.strokeRoundedPill;
+  static const AppIconData memoryRounded = HugeIcons.strokeRoundedCpu;
+  static const AppIconData menuBookRounded = HugeIcons.strokeRoundedBookOpen01;
+  static const AppIconData miscellaneousServicesRounded =
+      HugeIcons.strokeRoundedTools;
+  static const AppIconData moreVert = HugeIcons.strokeRoundedMoreVertical;
+  static const AppIconData moreVertRounded =
+      HugeIcons.strokeRoundedMoreVertical;
+  static const AppIconData northEastRounded =
+      HugeIcons.strokeRoundedArrowUpRight01;
+  static const AppIconData notesRounded = HugeIcons.strokeRoundedNote01;
+  static const AppIconData notificationsNoneRounded =
+      HugeIcons.strokeRoundedNotification01;
+  static const AppIconData openInNewRounded =
+      HugeIcons.strokeRoundedLinkSquare01;
+  static const AppIconData outboxOutlined = HugeIcons.strokeRoundedInboxUpload;
+  static const AppIconData paletteOutlined = HugeIcons.strokeRoundedPaintBoard;
+  static const AppIconData paletteRounded = HugeIcons.strokeRoundedPaintBoard;
+  static const AppIconData pauseCircleOutlineRounded =
+      HugeIcons.strokeRoundedPauseCircle;
+  static const AppIconData paymentsOutlined = HugeIcons.strokeRoundedPayment01;
+  static const AppIconData paymentsRounded = HugeIcons.strokeRoundedPayment01;
+  static const AppIconData pendingOutlined = HugeIcons.strokeRoundedClock01;
+  static const AppIconData peopleRounded = HugeIcons.strokeRoundedUserGroup;
+  static const AppIconData percentRounded = HugeIcons.strokeRoundedPercent;
+  static const AppIconData personAddAlt1Outlined =
+      HugeIcons.strokeRoundedUserAdd01;
+  static const AppIconData personAddAlt1Rounded =
+      HugeIcons.strokeRoundedUserAdd01;
+  static const AppIconData personAddOutlined = HugeIcons.strokeRoundedUserAdd01;
+  static const AppIconData personOutline = HugeIcons.strokeRoundedUser;
+  static const AppIconData personOutlineRounded = HugeIcons.strokeRoundedUser;
+  static const AppIconData personRounded = HugeIcons.strokeRoundedUser;
+  static const AppIconData personSearchRounded =
+      HugeIcons.strokeRoundedUserSearch01;
+  static const AppIconData petsRounded = HugeIcons.strokeRoundedBird;
+  static const AppIconData phoneOutlined = HugeIcons.strokeRoundedCall;
+  static const AppIconData phoneRounded = HugeIcons.strokeRoundedCall;
+  static const AppIconData photoCameraOutlined =
+      HugeIcons.strokeRoundedCamera01;
+  static const AppIconData photoLibraryOutlined =
+      HugeIcons.strokeRoundedAlbum02;
+  static const AppIconData photoLibraryRounded = HugeIcons.strokeRoundedAlbum02;
+  static const AppIconData placeOutlined = HugeIcons.strokeRoundedLocation01;
+  static const AppIconData placeRounded = HugeIcons.strokeRoundedLocation01;
+  static const AppIconData pointOfSaleOutlined =
+      HugeIcons.strokeRoundedCreditCardPos;
+  static const AppIconData pointOfSaleRounded =
+      HugeIcons.strokeRoundedCreditCardPos;
+  static const AppIconData powerRounded = HugeIcons.strokeRoundedPower;
+  static const AppIconData powerSettingsNew = HugeIcons.strokeRoundedPowerOff;
+  static const AppIconData printOutlined = HugeIcons.strokeRoundedPrinter;
+  static const AppIconData public = HugeIcons.strokeRoundedGlobe;
+  static const AppIconData publicOffOutlined = HugeIcons.strokeRoundedGlobeX;
+  static const AppIconData qrCode2Outlined = HugeIcons.strokeRoundedQrCode;
+  static const AppIconData qrCode2Rounded = HugeIcons.strokeRoundedQrCode;
+  static const AppIconData qrCodeRounded = HugeIcons.strokeRoundedQrCode;
+  static const AppIconData qrCodeScannerRounded =
+      HugeIcons.strokeRoundedQrCodeScan;
+  static const AppIconData receiptLong = HugeIcons.strokeRoundedInvoice;
+  static const AppIconData receiptLongOutlined = HugeIcons.strokeRoundedInvoice;
+  static const AppIconData receiptLongRounded = HugeIcons.strokeRoundedInvoice;
+  static const AppIconData receiptOutlined =
+      HugeIcons.strokeRoundedReceiptIndianRupee;
+  static const AppIconData redoRounded = HugeIcons.strokeRoundedRedo;
+  static const AppIconData refresh = HugeIcons.strokeRoundedRefresh;
+  static const AppIconData refreshRounded = HugeIcons.strokeRoundedRefresh;
+  static const AppIconData remove = HugeIcons.strokeRoundedRemove01;
+  static const AppIconData removeCircleOutline =
+      HugeIcons.strokeRoundedRemoveCircle;
+  static const AppIconData removeCircleOutlineRounded =
+      HugeIcons.strokeRoundedRemoveCircle;
+  static const AppIconData removeRounded = HugeIcons.strokeRoundedRemove01;
+  static const AppIconData replayRounded = HugeIcons.strokeRoundedReplay;
+  static const AppIconData requestQuoteOutlined =
+      HugeIcons.strokeRoundedInvoice;
+  static const AppIconData restaurantRounded =
+      HugeIcons.strokeRoundedRestaurant01;
+  static const AppIconData restoreRounded = HugeIcons.strokeRoundedRotateLeft01;
+  static const AppIconData reviewsOutlined = HugeIcons.strokeRoundedStar;
+  static const AppIconData savingsOutlined = HugeIcons.strokeRoundedSavings;
+  static const AppIconData scaleRounded = HugeIcons.strokeRoundedWeightScale;
+  static const AppIconData scheduleRounded = HugeIcons.strokeRoundedClock01;
+  static const AppIconData search = HugeIcons.strokeRoundedSearch01;
+  static const AppIconData searchOffRounded =
+      HugeIcons.strokeRoundedSearchRemove;
+  static const AppIconData searchRounded = HugeIcons.strokeRoundedSearch01;
+  static const AppIconData sellOutlined = HugeIcons.strokeRoundedSaleTag01;
+  static const AppIconData sellRounded = HugeIcons.strokeRoundedSaleTag01;
+  static const AppIconData sendRounded = HugeIcons.strokeRoundedSent;
+  static const AppIconData settingsOutlined = HugeIcons.strokeRoundedSettings01;
+  static const AppIconData settingsRounded = HugeIcons.strokeRoundedSettings01;
+  static const AppIconData shareRounded = HugeIcons.strokeRoundedShare01;
+  static const AppIconData shieldOutlined = HugeIcons.strokeRoundedShield01;
+  static const AppIconData shieldRounded = HugeIcons.strokeRoundedShield01;
+  static const AppIconData shoppingBagOutlined =
+      HugeIcons.strokeRoundedShoppingBag01;
+  static const AppIconData smartphoneRounded =
+      HugeIcons.strokeRoundedSmartPhone01;
+  static const AppIconData southWestRounded =
+      HugeIcons.strokeRoundedArrowDownLeft01;
+  static const AppIconData spaRounded = HugeIcons.strokeRoundedFlower;
+  static const AppIconData sportsCricketRounded =
+      HugeIcons.strokeRoundedCricketBat;
+  static const AppIconData starHalfRounded = HugeIcons.strokeRoundedStarHalf;
+  static const AppIconData starOutlineRounded = HugeIcons.strokeRoundedStar;
+  static const AppIconData starRounded = HugeIcons.strokeRoundedStar;
+  static const AppIconData storefrontOutlined = HugeIcons.strokeRoundedStore01;
+  static const AppIconData storefrontRounded = HugeIcons.strokeRoundedStore01;
+  static const AppIconData straightenRounded = HugeIcons.strokeRoundedRuler;
+  static const AppIconData styleOutlined = HugeIcons.strokeRoundedShirt01;
+  static const AppIconData summarizeOutlined =
+      HugeIcons.strokeRoundedDocumentValidation;
+  static const AppIconData swapHorizRounded = HugeIcons.strokeRoundedExchange01;
+  static const AppIconData swapVertRounded = HugeIcons.strokeRoundedArrowUpDown;
+  static const AppIconData syncProblemRounded =
+      HugeIcons.strokeRoundedRefreshCwOff;
+  static const AppIconData syncRounded = HugeIcons.strokeRoundedRefresh;
+  static const AppIconData tableChartRounded = HugeIcons.strokeRoundedGridTable;
+  static const AppIconData tagRounded = HugeIcons.strokeRoundedTag01;
+  static const AppIconData textSnippetRounded = HugeIcons.strokeRoundedFile02;
+  static const AppIconData textureRounded = HugeIcons.strokeRoundedGrid;
+  static const AppIconData timelineRounded = HugeIcons.strokeRoundedTimeline;
+  static const AppIconData timerOffOutlined = HugeIcons.strokeRoundedTimer01;
+  static const AppIconData timerOutlined = HugeIcons.strokeRoundedTimer01;
+  static const AppIconData toggleOnRounded = HugeIcons.strokeRoundedToggleOn;
+  static const AppIconData toysRounded = HugeIcons.strokeRoundedToyBrick;
+  static const AppIconData trendingUpRounded = HugeIcons.strokeRoundedTradeUp;
+  static const AppIconData tune = HugeIcons.strokeRoundedPreferenceHorizontal;
+  static const AppIconData tuneRounded =
+      HugeIcons.strokeRoundedPreferenceHorizontal;
+  static const AppIconData undoRounded = HugeIcons.strokeRoundedUndo;
+  static const AppIconData unfoldMoreRounded =
+      HugeIcons.strokeRoundedUnfoldMore;
+  static const AppIconData uploadFileRounded =
+      HugeIcons.strokeRoundedFileUpload;
+  static const AppIconData uploadOutlined = HugeIcons.strokeRoundedUpload01;
+  static const AppIconData uploadRounded = HugeIcons.strokeRoundedUpload01;
+  static const AppIconData verifiedOutlined =
+      HugeIcons.strokeRoundedCheckmarkBadge01;
+  static const AppIconData verifiedRounded =
+      HugeIcons.strokeRoundedCheckmarkBadge01;
+  static const AppIconData verifiedUserOutlined =
+      HugeIcons.strokeRoundedSecurityCheck;
+  static const AppIconData verifiedUserRounded =
+      HugeIcons.strokeRoundedSecurityCheck;
+  static const AppIconData viewCarouselOutlined =
+      HugeIcons.strokeRoundedCarouselHorizontal;
+  static const AppIconData viewListRounded = HugeIcons.strokeRoundedListView;
+  static const AppIconData viewSidebarRounded =
+      HugeIcons.strokeRoundedViewSidebarLeft;
+  static const AppIconData visibilityOffOutlined =
+      HugeIcons.strokeRoundedViewOff;
+  static const AppIconData visibilityOutlined = HugeIcons.strokeRoundedEye;
+  static const AppIconData wallpaperRounded = HugeIcons.strokeRoundedImage01;
+  static const AppIconData warningAmberRounded = HugeIcons.strokeRoundedAlert02;
+  static const AppIconData widgetsRounded =
+      HugeIcons.strokeRoundedDashboardSquare01;
+  static const AppIconData workOutlineRounded =
+      HugeIcons.strokeRoundedBriefcase01;
 }

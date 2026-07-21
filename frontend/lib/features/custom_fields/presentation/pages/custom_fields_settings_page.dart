@@ -18,6 +18,7 @@ import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Settings → Custom Fields.
 ///
@@ -90,21 +91,26 @@ class _CustomFieldsSettingsPageState extends State<CustomFieldsSettingsPage> {
         title: l10n.customFieldsTitle,
         actions: [
           IconButton(
-            icon: const Icon(AppIcons.autoAwesomeRounded),
+            icon: const AppIcon(AppIcons.autoAwesomeRounded),
             tooltip: l10n.customFieldsTemplates,
             onPressed: _showTemplates,
           ),
           PopupMenuButton<String>(
-            icon: const Icon(AppIcons.addRounded),
+            icon: const AppIcon(AppIcons.addRounded),
             tooltip: l10n.customFieldsAddField,
             onSelected: (v) {
               if (v == 'section') _addSection();
               if (v == 'field') _addFieldTo(null);
             },
             itemBuilder: (_) => [
-              PopupMenuItem(value: 'field', child: Text(l10n.customFieldsAddField)),
               PopupMenuItem(
-                  value: 'section', child: Text(l10n.customFieldsAddSection)),
+                value: 'field',
+                child: Text(l10n.customFieldsAddField),
+              ),
+              PopupMenuItem(
+                value: 'section',
+                child: Text(l10n.customFieldsAddSection),
+              ),
             ],
           ),
         ],
@@ -112,56 +118,53 @@ class _CustomFieldsSettingsPageState extends State<CustomFieldsSettingsPage> {
       body: !provider.hasLoadedOnce && provider.isLoading
           ? const _CustomFieldsSkeleton()
           : tree.isEmpty
-              ? _EmptyState(
-                  onAddField: () => _addFieldTo(null),
-                  onShowTemplates: _showTemplates,
-                )
-              : RefreshIndicator(
-                  onRefresh: () => provider.load(),
-                  color: AppColors.black,
-                  backgroundColor: AppColors.surface,
-                  child: ListView(
-                    padding: EdgeInsets.fromLTRB(
-                      AppSizes.lg,
-                      AppSizes.md + FloatingAppBar.contentTopInset(context),
-                      AppSizes.lg,
-                      AppSizes.huge,
-                    ),
-                    children: [
-                      _TemplatesCallout(onTap: _showTemplates),
-                      const SizedBox(height: AppSizes.lg),
-                      if (tree.ungrouped.isNotEmpty) ...[
-                        _UngroupedSectionCard(
-                          fields: tree.ungrouped,
-                          onAddField: () => _addFieldTo(null),
-                          onTapField: _editField,
-                          onArchiveField: _archiveField,
-                        ),
-                        const SizedBox(height: AppSizes.md),
-                      ],
-                      for (final section in tree.sections) ...[
-                        _SectionCard(
-                          section: section,
-                          onAddField: () => _addFieldTo(section.id),
-                          onEditSection: () => _editSection(section),
-                          onArchiveSection: () => _archiveSection(section),
-                          onTapField: _editField,
-                          onArchiveField: _archiveField,
-                        ),
-                        const SizedBox(height: AppSizes.md),
-                      ],
-                    ],
-                  ),
+          ? _EmptyState(
+              onAddField: () => _addFieldTo(null),
+              onShowTemplates: _showTemplates,
+            )
+          : RefreshIndicator(
+              onRefresh: () => provider.load(),
+              color: AppColors.black,
+              backgroundColor: AppColors.surface,
+              child: ListView(
+                padding: EdgeInsets.fromLTRB(
+                  AppSizes.lg,
+                  AppSizes.md + FloatingAppBar.contentTopInset(context),
+                  AppSizes.lg,
+                  AppSizes.huge,
                 ),
+                children: [
+                  _TemplatesCallout(onTap: _showTemplates),
+                  const SizedBox(height: AppSizes.lg),
+                  if (tree.ungrouped.isNotEmpty) ...[
+                    _UngroupedSectionCard(
+                      fields: tree.ungrouped,
+                      onAddField: () => _addFieldTo(null),
+                      onTapField: _editField,
+                      onArchiveField: _archiveField,
+                    ),
+                    const SizedBox(height: AppSizes.md),
+                  ],
+                  for (final section in tree.sections) ...[
+                    _SectionCard(
+                      section: section,
+                      onAddField: () => _addFieldTo(section.id),
+                      onEditSection: () => _editSection(section),
+                      onArchiveSection: () => _archiveSection(section),
+                      onTapField: _editField,
+                      onArchiveField: _archiveField,
+                    ),
+                    const SizedBox(height: AppSizes.md),
+                  ],
+                ],
+              ),
+            ),
     );
   }
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({
-    required this.onAddField,
-    required this.onShowTemplates,
-  });
+  const _EmptyState({required this.onAddField, required this.onShowTemplates});
 
   final VoidCallback onAddField;
   final VoidCallback onShowTemplates;
@@ -214,7 +217,7 @@ class _TemplatesCallout extends StatelessWidget {
           padding: const EdgeInsets.all(AppSizes.md),
           child: Row(
             children: [
-              Icon(
+              AppIcon(
                 AppIcons.autoAwesomeRounded,
                 color: AppColors.brandStrong,
               ),
@@ -239,7 +242,7 @@ class _TemplatesCallout extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(
+              AppIcon(
                 AppIcons.chevronRightRounded,
                 color: AppColors.brandStrong,
               ),
@@ -295,7 +298,7 @@ class _SectionCard extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Icon(
+                  AppIcon(
                     resolveCustomFieldIcon(section.icon),
                     color: AppColors.black,
                     size: AppSizes.iconLg,
@@ -324,7 +327,7 @@ class _SectionCard extends StatelessWidget {
                   ),
                   IconButton(
                     onPressed: onArchiveSection,
-                    icon: Icon(
+                    icon: AppIcon(
                       AppIcons.archiveOutlined,
                       color: AppColors.muted,
                     ),
@@ -334,8 +337,7 @@ class _SectionCard extends StatelessWidget {
               ),
             ),
           ),
-          if (fields.isNotEmpty)
-            Divider(height: 1, color: AppColors.hairline),
+          if (fields.isNotEmpty) Divider(height: 1, color: AppColors.hairline),
           for (int i = 0; i < fields.length; i++) ...[
             _FieldRow(
               field: fields[i],
@@ -360,7 +362,7 @@ class _SectionCard extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Icon(AppIcons.addRounded, color: AppColors.muted),
+                  AppIcon(AppIcons.addRounded, color: AppColors.muted),
                   const SizedBox(width: AppSizes.sm),
                   Text(
                     l10n.customFieldsAddField,
@@ -411,7 +413,7 @@ class _UngroupedSectionCard extends StatelessWidget {
             padding: const EdgeInsets.all(AppSizes.md),
             child: Row(
               children: [
-                Icon(
+                AppIcon(
                   AppIcons.labelOutlineRounded,
                   color: AppColors.black,
                   size: AppSizes.iconLg,
@@ -430,8 +432,9 @@ class _UngroupedSectionCard extends StatelessWidget {
                       Text(
                         active.length == 1
                             ? l10n.customFieldsUngroupedCountOne(active.length)
-                            : l10n
-                                .customFieldsUngroupedCountOther(active.length),
+                            : l10n.customFieldsUngroupedCountOther(
+                                active.length,
+                              ),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: AppColors.muted,
                         ),
@@ -442,8 +445,7 @@ class _UngroupedSectionCard extends StatelessWidget {
               ],
             ),
           ),
-          if (active.isNotEmpty)
-            Divider(height: 1, color: AppColors.hairline),
+          if (active.isNotEmpty) Divider(height: 1, color: AppColors.hairline),
           for (int i = 0; i < active.length; i++) ...[
             _FieldRow(
               field: active[i],
@@ -468,7 +470,7 @@ class _UngroupedSectionCard extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Icon(AppIcons.addRounded, color: AppColors.muted),
+                  AppIcon(AppIcons.addRounded, color: AppColors.muted),
                   const SizedBox(width: AppSizes.sm),
                   Text(
                     l10n.customFieldsAddField,
@@ -639,9 +641,11 @@ class _FieldRow extends StatelessWidget {
     }
     if (field.type == CustomFieldType.DROPDOWN) {
       final count = field.options?.length ?? 0;
-      parts.add(count == 1
-          ? l10n.customFieldsOptionCountOne(count)
-          : l10n.customFieldsOptionCountOther(count));
+      parts.add(
+        count == 1
+            ? l10n.customFieldsOptionCountOne(count)
+            : l10n.customFieldsOptionCountOther(count),
+      );
     }
     return parts.join(' · ');
   }
@@ -659,7 +663,7 @@ class _FieldRow extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(
+            AppIcon(
               resolveCustomFieldIcon(field.icon),
               color: AppColors.muted,
               size: AppSizes.iconMd,
@@ -685,7 +689,7 @@ class _FieldRow extends StatelessWidget {
               ),
             ),
             IconButton(
-              icon: Icon(
+              icon: AppIcon(
                 AppIcons.archiveOutlined,
                 color: AppColors.muted,
                 size: AppSizes.iconMd,

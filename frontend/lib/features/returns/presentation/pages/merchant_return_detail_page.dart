@@ -13,6 +13,7 @@ import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Workflow-heavy detail page. Header shows the customer + refund
 /// total; each item gets a small thumbnail + reason chip; the bottom
@@ -33,8 +34,7 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
   bool _busy = false;
   String? _error;
 
-  static final _currency =
-      NumberFormat.currency(symbol: '₹', decimalDigits: 2);
+  static final _currency = NumberFormat.currency(symbol: '₹', decimalDigits: 2);
 
   @override
   void initState() {
@@ -52,16 +52,16 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
       final r = await ds.getById(widget.returnId);
       if (mounted) {
         setState(() {
-        _row = r;
-        _loading = false;
-      });
+          _row = r;
+          _loading = false;
+        });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-        _loading = false;
-        _error = friendlyError(e);
-      });
+          _loading = false;
+          _error = friendlyError(e);
+        });
       }
     }
   }
@@ -75,17 +75,15 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
       final ds = context.read<MerchantReturnsRemoteDataSource>();
       await op(ds);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(successMessage)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(successMessage)));
       await _load();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(
-          friendlyError(e),
-        )),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(friendlyError(e))));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -116,9 +114,12 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-            )),
+            Text(
+              title,
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+            ),
             const SizedBox(height: AppSizes.md),
             TextField(
               controller: ctrl,
@@ -188,136 +189,133 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
           context: context,
           removeTop: true,
           child: Column(
-          children: [
-            SizedBox(height: FloatingAppBar.contentTopInset(context)),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.all(AppSizes.lg),
-                children: [
-                  _HeaderCard(row: row),
-                  const SizedBox(height: AppSizes.md),
-                  _ItemsCard(items: row.items),
-                  const SizedBox(height: AppSizes.md),
-                  _TimelineCard(events: row.events),
-                  if (row.note != null && row.note!.isNotEmpty) ...[
+            children: [
+              SizedBox(height: FloatingAppBar.contentTopInset(context)),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.all(AppSizes.lg),
+                  children: [
+                    _HeaderCard(row: row),
                     const SizedBox(height: AppSizes.md),
-                    _NoteCard(
-                      title: l10n.returnsBuyerNote,
-                      body: row.note!,
-                      icon: AppIcons.chatBubbleOutline,
-                    ),
-                  ],
-                  if (row.decisionNote != null &&
-                      row.decisionNote!.isNotEmpty) ...[
+                    _ItemsCard(items: row.items),
                     const SizedBox(height: AppSizes.md),
-                    _NoteCard(
-                      title: l10n.returnsYourNote,
-                      body: row.decisionNote!,
-                      icon: AppIcons.assignmentOutlined,
-                    ),
-                  ],
-                  if (row.refundMethod != null) ...[
-                    const SizedBox(height: AppSizes.md),
-                    Container(
-                      padding: const EdgeInsets.all(AppSizes.md),
-                      decoration: ShapeDecoration(
-                        color: AppColors.successSoft,
-                        shape: AppShapes.squircle(AppSizes.radiusMd),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            AppIcons.accountBalanceWalletOutlined,
-                            color: AppColors.success,
-                          ),
-                          const SizedBox(width: AppSizes.sm),
-                          Expanded(
-                            child: Text(
-                              l10n.returnsRefundedToOriginal(
-                                _currency.format(row.refundAmount),
-                                row.customerName,
-                              ),
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            _ActionBar(
-              row: row,
-              busy: _busy,
-              onApprove: () async {
-                final note = await _askForNote(
-                  title: l10n.returnsApproveTitle,
-                  confirmLabel: l10n.returnsApprove,
-                  hint: l10n.returnsApproveHint,
-                );
-                if (note == null) return;
-                await _run(
-                  (ds) => ds.approve(row.id, note: note.isEmpty ? null : note),
-                  l10n.returnsApprovedToast,
-                );
-              },
-              onReject: () async {
-                final note = await _askForNote(
-                  title: l10n.returnsRejectTitle,
-                  confirmLabel: l10n.returnsReject,
-                  hint: l10n.returnsRejectHint,
-                  noteRequired: true,
-                );
-                if (note == null) return;
-                await _run(
-                  (ds) => ds.reject(row.id, note: note),
-                  l10n.returnsRejectedToast,
-                );
-              },
-              onPickedUp: () => _run(
-                (ds) => ds.markPickedUp(row.id),
-                l10n.returnsPickedUpToast,
-              ),
-              onReceived: () => _run(
-                (ds) => ds.markReceived(row.id),
-                l10n.returnsReceivedToast,
-              ),
-              onRefund: () async {
-                final ok = await showDialog<bool>(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: Text(
-                      l10n.returnsRefundConfirmTitle(
-                        _currency.format(row.refundAmount),
-                      ),
-                    ),
-                    content: Text(l10n.returnsRefundConfirmBody),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(ctx).pop(false),
-                        child: Text(l10n.returnsCancel),
-                      ),
-                      FilledButton(
-                        onPressed: () => Navigator.of(ctx).pop(true),
-                        child: Text(l10n.returnsRefund),
+                    _TimelineCard(events: row.events),
+                    if (row.note != null && row.note!.isNotEmpty) ...[
+                      const SizedBox(height: AppSizes.md),
+                      _NoteCard(
+                        title: l10n.returnsBuyerNote,
+                        body: row.note!,
+                        icon: AppIcons.chatBubbleOutline,
                       ),
                     ],
-                  ),
-                );
-                if (ok != true) return;
-                await _run(
-                  (ds) async {
+                    if (row.decisionNote != null &&
+                        row.decisionNote!.isNotEmpty) ...[
+                      const SizedBox(height: AppSizes.md),
+                      _NoteCard(
+                        title: l10n.returnsYourNote,
+                        body: row.decisionNote!,
+                        icon: AppIcons.assignmentOutlined,
+                      ),
+                    ],
+                    if (row.refundMethod != null) ...[
+                      const SizedBox(height: AppSizes.md),
+                      Container(
+                        padding: const EdgeInsets.all(AppSizes.md),
+                        decoration: ShapeDecoration(
+                          color: AppColors.successSoft,
+                          shape: AppShapes.squircle(AppSizes.radiusMd),
+                        ),
+                        child: Row(
+                          children: [
+                            AppIcon(
+                              AppIcons.accountBalanceWalletOutlined,
+                              color: AppColors.success,
+                            ),
+                            const SizedBox(width: AppSizes.sm),
+                            Expanded(
+                              child: Text(
+                                l10n.returnsRefundedToOriginal(
+                                  _currency.format(row.refundAmount),
+                                  row.customerName,
+                                ),
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              _ActionBar(
+                row: row,
+                busy: _busy,
+                onApprove: () async {
+                  final note = await _askForNote(
+                    title: l10n.returnsApproveTitle,
+                    confirmLabel: l10n.returnsApprove,
+                    hint: l10n.returnsApproveHint,
+                  );
+                  if (note == null) return;
+                  await _run(
+                    (ds) =>
+                        ds.approve(row.id, note: note.isEmpty ? null : note),
+                    l10n.returnsApprovedToast,
+                  );
+                },
+                onReject: () async {
+                  final note = await _askForNote(
+                    title: l10n.returnsRejectTitle,
+                    confirmLabel: l10n.returnsReject,
+                    hint: l10n.returnsRejectHint,
+                    noteRequired: true,
+                  );
+                  if (note == null) return;
+                  await _run(
+                    (ds) => ds.reject(row.id, note: note),
+                    l10n.returnsRejectedToast,
+                  );
+                },
+                onPickedUp: () => _run(
+                  (ds) => ds.markPickedUp(row.id),
+                  l10n.returnsPickedUpToast,
+                ),
+                onReceived: () => _run(
+                  (ds) => ds.markReceived(row.id),
+                  l10n.returnsReceivedToast,
+                ),
+                onRefund: () async {
+                  final ok = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: Text(
+                        l10n.returnsRefundConfirmTitle(
+                          _currency.format(row.refundAmount),
+                        ),
+                      ),
+                      content: Text(l10n.returnsRefundConfirmBody),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(ctx).pop(false),
+                          child: Text(l10n.returnsCancel),
+                        ),
+                        FilledButton(
+                          onPressed: () => Navigator.of(ctx).pop(true),
+                          child: Text(l10n.returnsRefund),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (ok != true) return;
+                  await _run((ds) async {
                     await ds.refund(row.id);
-                  },
-                  l10n.returnsRefundIssuedToast,
-                );
-              },
-            ),
-          ],
-        ),
+                  }, l10n.returnsRefundIssuedToast);
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -335,29 +333,31 @@ class _ReturnDetailSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
-      appBar: FloatingAppBar(titleWidget: const AppShimmerLine(widthFactor: 0.4, height: 18)),
+      appBar: FloatingAppBar(
+        titleWidget: const AppShimmerLine(widthFactor: 0.4, height: 18),
+      ),
       body: SafeArea(
         child: MediaQuery.removePadding(
           context: context,
           removeTop: true,
           child: Column(
-          children: [
-            SizedBox(height: FloatingAppBar.contentTopInset(context)),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.all(AppSizes.lg),
-                children: const [
-                  _HeaderCardSkeleton(),
-                  SizedBox(height: AppSizes.md),
-                  _ItemsCardSkeleton(),
-                  SizedBox(height: AppSizes.md),
-                  _TimelineCardSkeleton(),
-                ],
+            children: [
+              SizedBox(height: FloatingAppBar.contentTopInset(context)),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.all(AppSizes.lg),
+                  children: const [
+                    _HeaderCardSkeleton(),
+                    SizedBox(height: AppSizes.md),
+                    _ItemsCardSkeleton(),
+                    SizedBox(height: AppSizes.md),
+                    _TimelineCardSkeleton(),
+                  ],
+                ),
               ),
-            ),
-            _ActionBarSkeleton(),
-          ],
-        ),
+              _ActionBarSkeleton(),
+            ],
+          ),
         ),
       ),
     );
@@ -384,11 +384,7 @@ class _HeaderCardSkeleton extends StatelessWidget {
                 child: AppShimmerLine(widthFactor: 0.55, height: 16),
               ),
               const SizedBox(width: AppSizes.md),
-              AppShimmerBox(
-                width: 72,
-                height: 24,
-                radius: AppSizes.radiusSm,
-              ),
+              AppShimmerBox(width: 72, height: 24, radius: AppSizes.radiusSm),
             ],
           ),
           const SizedBox(height: AppSizes.sm),
@@ -495,7 +491,11 @@ class _TimelineCardSkeleton extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: AppSizes.sm),
-                  AppShimmerBox(width: 72, height: 12, radius: AppSizes.radiusSm),
+                  AppShimmerBox(
+                    width: 72,
+                    height: 12,
+                    radius: AppSizes.radiusSm,
+                  ),
                 ],
               ),
             ),
@@ -516,7 +516,11 @@ class _ActionBarSkeleton extends StatelessWidget {
         border: Border(top: BorderSide(color: AppColors.hairline)),
       ),
       padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg, AppSizes.md, AppSizes.lg, AppSizes.md),
+        AppSizes.lg,
+        AppSizes.md,
+        AppSizes.lg,
+        AppSizes.md,
+      ),
       child: Row(
         children: [
           Expanded(
@@ -575,10 +579,10 @@ class _HeaderCard extends StatelessWidget {
                 tone: row.canRefund
                     ? AppStatusTone.warning
                     : row.status == 'REFUNDED'
-                        ? AppStatusTone.success
-                        : row.status == 'REJECTED' || row.status == 'CANCELLED'
-                            ? AppStatusTone.error
-                            : AppStatusTone.info,
+                    ? AppStatusTone.success
+                    : row.status == 'REJECTED' || row.status == 'CANCELLED'
+                    ? AppStatusTone.error
+                    : AppStatusTone.info,
                 weight: AppStatusWeight.soft,
               ),
             ],
@@ -588,18 +592,24 @@ class _HeaderCard extends StatelessWidget {
             l10n.returnsOrderSlice(row.parentOrderId, row.shopOrderId),
             style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
           ),
-          if (row.customerAddress != null && row.customerAddress!.isNotEmpty) ...[
+          if (row.customerAddress != null &&
+              row.customerAddress!.isNotEmpty) ...[
             const SizedBox(height: AppSizes.sm),
-            Text(row.customerAddress!,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: AppColors.muted,
-                )),
+            Text(
+              row.customerAddress!,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.muted,
+              ),
+            ),
           ],
           const SizedBox(height: AppSizes.md),
           Row(
             children: [
-              Icon(AppIcons.accountBalanceWalletOutlined,
-                  size: AppSizes.iconSm, color: AppColors.muted),
+              AppIcon(
+                AppIcons.accountBalanceWalletOutlined,
+                size: AppSizes.iconSm,
+                color: AppColors.muted,
+              ),
               const SizedBox(width: AppSizes.xs),
               Text(
                 l10n.returnsRefundPreview,
@@ -608,8 +618,10 @@ class _HeaderCard extends StatelessWidget {
                 ),
               ),
               Text(
-                NumberFormat.currency(symbol: '₹', decimalDigits: 2)
-                    .format(row.refundAmount),
+                NumberFormat.currency(
+                  symbol: '₹',
+                  decimalDigits: 2,
+                ).format(row.refundAmount),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
@@ -638,9 +650,12 @@ class _ItemsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(l10n.returnsItems, style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w800,
-          )),
+          Text(
+            l10n.returnsItems,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
           const SizedBox(height: AppSizes.sm),
           for (final it in items)
             Padding(
@@ -672,10 +687,12 @@ class _ItemsCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(it.productName,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            )),
+                        Text(
+                          it.productName,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                         Text(
                           '${it.quantity.toStringAsFixed(0)} ${it.unit} · '
                           '${l10n.returnsRefundLabel} ₹${it.refundAmount.toStringAsFixed(2)}',
@@ -686,7 +703,8 @@ class _ItemsCard extends StatelessWidget {
                         const SizedBox(height: AppSizes.xs),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: AppSizes.sm, vertical: AppSizes.xs,
+                            horizontal: AppSizes.sm,
+                            vertical: AppSizes.xs,
                           ),
                           decoration: ShapeDecoration(
                             color: AppColors.tileBg(AppColors.brandSoft),
@@ -731,22 +749,31 @@ class _TimelineCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(l10n.returnsTimeline, style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w800,
-          )),
+          Text(
+            l10n.returnsTimeline,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
           const SizedBox(height: AppSizes.sm),
           for (final e in events)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
               child: Row(
                 children: [
-                  Icon(_iconFor(e.type), size: AppSizes.iconSm, color: AppColors.brand),
+                  AppIcon(
+                    _iconFor(e.type),
+                    size: AppSizes.iconSm,
+                    color: AppColors.brand,
+                  ),
                   const SizedBox(width: AppSizes.sm),
                   Expanded(child: Text(_statusLabel(l10n, e.type))),
-                  Text(_date.format(e.occurredAt),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColors.muted,
-                      )),
+                  Text(
+                    _date.format(e.occurredAt),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.muted,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -755,7 +782,7 @@ class _TimelineCard extends StatelessWidget {
     );
   }
 
-  static IconData _iconFor(String type) {
+  static AppIconData _iconFor(String type) {
     switch (type) {
       case 'REQUESTED':
         return AppIcons.receiptOutlined;
@@ -775,7 +802,6 @@ class _TimelineCard extends StatelessWidget {
         return AppIcons.circleOutlined;
     }
   }
-
 }
 
 /// Localised label for a return status / timeline event code. Lives at
@@ -825,11 +851,13 @@ String _reasonLabel(AppLocalizations l10n, String code) {
 
 class _NoteCard extends StatelessWidget {
   const _NoteCard({
-    required this.title, required this.body, required this.icon,
+    required this.title,
+    required this.body,
+    required this.icon,
   });
   final String title;
   final String body;
-  final IconData icon;
+  final AppIconData icon;
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -842,15 +870,18 @@ class _NoteCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: AppSizes.iconMd, color: AppColors.brand),
+          AppIcon(icon, size: AppSizes.iconMd, color: AppColors.brand),
           const SizedBox(width: AppSizes.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                )),
+                Text(
+                  title,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
                 const SizedBox(height: AppSizes.xs),
                 Text(body),
               ],
@@ -892,7 +923,11 @@ class _ActionBar extends StatelessWidget {
         border: Border(top: BorderSide(color: AppColors.hairline)),
       ),
       padding: const EdgeInsets.fromLTRB(
-        AppSizes.lg, AppSizes.md, AppSizes.lg, AppSizes.md),
+        AppSizes.lg,
+        AppSizes.md,
+        AppSizes.lg,
+        AppSizes.md,
+      ),
       child: Row(
         children: [
           if (row.canApprove) ...[
@@ -917,7 +952,7 @@ class _ActionBar extends StatelessWidget {
             Expanded(
               child: FilledButton.icon(
                 onPressed: busy ? null : onPickedUp,
-                icon: const Icon(AppIcons.localShippingOutlined),
+                icon: const AppIcon(AppIcons.localShippingOutlined),
                 label: Text(l10n.returnsMarkPickedUp),
               ),
             ),
@@ -925,7 +960,7 @@ class _ActionBar extends StatelessWidget {
             Expanded(
               child: FilledButton.icon(
                 onPressed: busy ? null : onReceived,
-                icon: const Icon(AppIcons.inventory2Outlined),
+                icon: const AppIcon(AppIcons.inventory2Outlined),
                 label: Text(l10n.returnsMarkReceived),
               ),
             ),
@@ -951,7 +986,7 @@ class _ActionBar extends StatelessWidget {
             Expanded(
               child: FilledButton.icon(
                 onPressed: busy ? null : onRefund,
-                icon: const Icon(AppIcons.accountBalanceWalletOutlined),
+                icon: const AppIcon(AppIcons.accountBalanceWalletOutlined),
                 label: Text(l10n.returnsRefund),
               ),
             ),

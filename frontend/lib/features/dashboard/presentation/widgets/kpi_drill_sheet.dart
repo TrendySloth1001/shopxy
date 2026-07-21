@@ -15,6 +15,7 @@ import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Which KPI card was tapped — mirrors the web `KpiDrawerKind`.
 enum KpiDrillKind { sales, profit, receivables, payables }
@@ -72,11 +73,11 @@ class _KpiDrillSheet extends StatelessWidget {
   final BuildContext hostContext;
 
   String _title(AppLocalizations l10n) => switch (kind) {
-        KpiDrillKind.sales => l10n.dashboardSales,
-        KpiDrillKind.profit => l10n.dashboardNetProfit,
-        KpiDrillKind.receivables => l10n.dashboardReceivables,
-        KpiDrillKind.payables => l10n.dashboardPayables,
-      };
+    KpiDrillKind.sales => l10n.dashboardSales,
+    KpiDrillKind.profit => l10n.dashboardNetProfit,
+    KpiDrillKind.receivables => l10n.dashboardReceivables,
+    KpiDrillKind.payables => l10n.dashboardPayables,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -99,14 +100,18 @@ class _KpiDrillSheet extends StatelessWidget {
               const _Grabber(),
               Padding(
                 padding: const EdgeInsets.fromLTRB(
-                    AppSizes.lg, 0, AppSizes.sm, AppSizes.sm),
+                  AppSizes.lg,
+                  0,
+                  AppSizes.sm,
+                  AppSizes.sm,
+                ),
                 child: Row(
                   children: [
                     Expanded(
                       child: Text(_title(l10n), style: DashText.titleMd),
                     ),
                     IconButton(
-                      icon: const Icon(AppIcons.closeRounded),
+                      icon: const AppIcon(AppIcons.closeRounded),
                       color: AppColors.muted,
                       onPressed: () => Navigator.of(context).pop(),
                     ),
@@ -226,7 +231,10 @@ class _SalesBodyState extends State<_SalesBody> {
             onChanged: _onSearchChanged,
             decoration: InputDecoration(
               isDense: true,
-              prefixIcon: const Icon(AppIcons.searchRounded, size: AppSizes.iconMd),
+              prefixIcon: const AppIcon(
+                AppIcons.searchRounded,
+                size: AppSizes.iconMd,
+              ),
               hintText: l10n.kpiDrawerSalesFilterHint,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppSizes.radiusMd),
@@ -249,13 +257,19 @@ class _SalesBodyState extends State<_SalesBody> {
               final rows = page?.data ?? const <SoldProduct>[];
               if (rows.isEmpty) {
                 return _Empty(
-                  _search.isEmpty ? l10n.kpiDrawerNoSales : l10n.kpiDrawerNoMatch,
+                  _search.isEmpty
+                      ? l10n.kpiDrawerNoSales
+                      : l10n.kpiDrawerNoMatch,
                 );
               }
               return ListView(
                 controller: widget.controller,
                 padding: const EdgeInsets.fromLTRB(
-                    AppSizes.lg, 0, AppSizes.lg, AppSizes.lg),
+                  AppSizes.lg,
+                  0,
+                  AppSizes.lg,
+                  AppSizes.lg,
+                ),
                 children: [
                   Padding(
                     padding: const EdgeInsets.only(bottom: AppSizes.sm),
@@ -263,11 +277,15 @@ class _SalesBodyState extends State<_SalesBody> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          l10n.kpiDrawerProductCount('${page!.pagination.total}'),
+                          l10n.kpiDrawerProductCount(
+                            '${page!.pagination.total}',
+                          ),
                           style: DashText.labelMd,
                         ),
                         Text(
-                          l10n.kpiDrawerRevenue(inr.format(page.totals.totalAmount)),
+                          l10n.kpiDrawerRevenue(
+                            inr.format(page.totals.totalAmount),
+                          ),
                           style: DashText.labelMd,
                         ),
                       ],
@@ -284,7 +302,8 @@ class _SalesBodyState extends State<_SalesBody> {
                     ),
                   _MoreLink(
                     label: l10n.kpiDrawerViewFullReports,
-                    onTap: () => _pushFull(widget.hostContext, const ReportsPage()),
+                    onTap: () =>
+                        _pushFull(widget.hostContext, const ReportsPage()),
                   ),
                 ],
               );
@@ -326,7 +345,8 @@ class _SoldRow extends StatelessWidget {
                         fmtQty(product.totalQuantity),
                         product.unit ?? l10n.kpiDrawerUnits,
                       ) +
-                      (product.productSku != null && product.productSku!.isNotEmpty
+                      (product.productSku != null &&
+                              product.productSku!.isNotEmpty
                           ? ' · ${product.productSku}'
                           : ''),
                   style: DashText.bodySm,
@@ -395,22 +415,24 @@ class _ProfitBodyState extends State<_ProfitBody> {
           padding: const EdgeInsets.all(AppSizes.lg),
           children: [
             _TraceRow(label: l10n.reportsRevenue, value: pnl.revenue),
-            _TraceRow(
-                label: l10n.reportsLessSalesReturns, value: -pnl.refunds),
-            _TraceRow(
-                label: l10n.reportsCostOfGoodsSold, value: -pnl.cogs),
+            _TraceRow(label: l10n.reportsLessSalesReturns, value: -pnl.refunds),
+            _TraceRow(label: l10n.reportsCostOfGoodsSold, value: -pnl.cogs),
             const SizedBox(height: AppSizes.xs),
             _TraceRow(
-                label: l10n.reportsGrossProfit,
-                value: pnl.grossProfit,
-                emphasise: true),
+              label: l10n.reportsGrossProfit,
+              value: pnl.grossProfit,
+              emphasise: true,
+            ),
             _TraceRow(
-                label: l10n.reportsAdjustmentWriteoffs, value: -pnl.writeoffs),
+              label: l10n.reportsAdjustmentWriteoffs,
+              value: -pnl.writeoffs,
+            ),
             Divider(height: AppSizes.xl, color: AppColors.hairline),
             _TraceRow(
-                label: l10n.reportsNetProfitRow,
-                value: pnl.netProfit,
-                headline: true),
+              label: l10n.reportsNetProfitRow,
+              value: pnl.netProfit,
+              headline: true,
+            ),
             Padding(
               padding: const EdgeInsets.only(top: AppSizes.xs),
               child: Text(
@@ -447,10 +469,11 @@ class _TraceRow extends StatelessWidget {
     final labelStyle = headline
         ? DashText.titleMd
         : emphasise
-            ? DashText.bodyMd.copyWith(fontWeight: FontWeight.w600)
-            : DashText.bodyMd;
-    final valueStyle = (headline ? DashText.headlineSm : labelStyle)
-        .copyWith(fontFeatures: tabularFigures);
+        ? DashText.bodyMd.copyWith(fontWeight: FontWeight.w600)
+        : DashText.bodyMd;
+    final valueStyle = (headline ? DashText.headlineSm : labelStyle).copyWith(
+      fontFeatures: tabularFigures,
+    );
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
       child: Row(
@@ -511,25 +534,35 @@ class _BreakdownBodyState extends State<_BreakdownBody> {
         }
         final data = snap.data!;
         if (data.parties.isEmpty) {
-          return _Empty(widget.isReceivables
-              ? l10n.kpiDrawerNoReceivables
-              : l10n.kpiDrawerNoPayables);
+          return _Empty(
+            widget.isReceivables
+                ? l10n.kpiDrawerNoReceivables
+                : l10n.kpiDrawerNoPayables,
+          );
         }
         return ListView(
           controller: widget.controller,
           padding: const EdgeInsets.fromLTRB(
-              AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.lg),
+            AppSizes.lg,
+            AppSizes.sm,
+            AppSizes.lg,
+            AppSizes.lg,
+          ),
           children: [
             for (final party in data.parties)
               _CounterpartyTile(
-                  party: party, isReceivables: widget.isReceivables),
+                party: party,
+                isReceivables: widget.isReceivables,
+              ),
             _MoreLink(
               label: widget.isReceivables
                   ? l10n.kpiDrawerViewAllParties
                   : l10n.kpiDrawerViewAllVendors,
               onTap: () => _pushFull(
                 widget.hostContext,
-                widget.isReceivables ? const PartiesPage() : const VendorsPage(),
+                widget.isReceivables
+                    ? const PartiesPage()
+                    : const VendorsPage(),
               ),
             ),
           ],
@@ -553,8 +586,11 @@ class _CounterpartyTile extends StatelessWidget {
       child: ExpansionTile(
         tilePadding: EdgeInsets.zero,
         childrenPadding: const EdgeInsets.only(bottom: AppSizes.sm),
-        title: Text(party.name,
-            style: DashText.bodyMd, overflow: TextOverflow.ellipsis),
+        title: Text(
+          party.name,
+          style: DashText.bodyMd,
+          overflow: TextOverflow.ellipsis,
+        ),
         subtitle: Text(
           '${isReceivables ? l10n.kpiDrawerReceived : l10n.kpiDrawerPaid}: '
           '${inr.format(party.settled)} · ${l10n.kpiDrawerBilled}: ${inr.format(party.billed)}',
@@ -573,8 +609,11 @@ class _CounterpartyTile extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 2),
               child: Row(
                 children: [
-                  Icon(AppIcons.descriptionOutlined,
-                      size: AppSizes.iconSm, color: AppColors.subtle),
+                  AppIcon(
+                    AppIcons.descriptionOutlined,
+                    size: AppSizes.iconSm,
+                    color: AppColors.subtle,
+                  ),
                   const SizedBox(width: AppSizes.sm),
                   Expanded(
                     child: Text(
@@ -585,7 +624,9 @@ class _CounterpartyTile extends StatelessWidget {
                   ),
                   Text(
                     inr.format(inv.total),
-                    style: DashText.bodySm.copyWith(fontFeatures: tabularFigures),
+                    style: DashText.bodySm.copyWith(
+                      fontFeatures: tabularFigures,
+                    ),
                   ),
                 ],
               ),
@@ -648,11 +689,16 @@ class _ErrorBlock extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(l10n.kpiDrawerLoadError,
-                style: DashText.bodyMd, textAlign: TextAlign.center),
+            Text(
+              l10n.kpiDrawerLoadError,
+              style: DashText.bodyMd,
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: AppSizes.md),
             OutlinedButton(
-                onPressed: onRetry, child: Text(l10n.kpiDrawerRetry)),
+              onPressed: onRetry,
+              child: Text(l10n.kpiDrawerRetry),
+            ),
           ],
         ),
       ),
@@ -668,9 +714,11 @@ class _Empty extends StatelessWidget {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSizes.xl),
-        child: Text(message,
-            style: DashText.bodyMd.copyWith(color: AppColors.muted),
-            textAlign: TextAlign.center),
+        child: Text(
+          message,
+          style: DashText.bodyMd.copyWith(color: AppColors.muted),
+          textAlign: TextAlign.center,
+        ),
       ),
     );
   }
@@ -691,13 +739,19 @@ class _MoreLink extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(label,
-                  style: DashText.bodyMd.copyWith(
-                      color: AppColors.brandStrong,
-                      fontWeight: FontWeight.w600)),
+              Text(
+                label,
+                style: DashText.bodyMd.copyWith(
+                  color: AppColors.brandStrong,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               const SizedBox(width: AppSizes.xs),
-              Icon(AppIcons.openInNewRounded,
-                  size: 14, color: AppColors.brandStrong),
+              AppIcon(
+                AppIcons.openInNewRounded,
+                size: 14,
+                color: AppColors.brandStrong,
+              ),
             ],
           ),
         ),

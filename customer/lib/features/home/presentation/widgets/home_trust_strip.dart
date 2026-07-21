@@ -6,6 +6,7 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_bottom_sheet.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// One reassurance promise: the short [label] shown in the strip, plus
 /// the [title]/[detail] shown when a shopper taps through to learn more.
@@ -16,7 +17,7 @@ class TrustItem {
     required this.title,
     required this.detail,
   });
-  final IconData icon;
+  final AppIconData icon;
   final String label;
   final String title;
   final String detail;
@@ -160,7 +161,10 @@ class _HomeTrustStripState extends State<HomeTrustStrip>
             onPageChanged: (i) => _page = i,
             itemBuilder: (_, i) {
               final idx = i % _items.length;
-              final cell = _TrustCell(item: _items[idx], onTap: () => _open(idx));
+              final cell = _TrustCell(
+                item: _items[idx],
+                onTap: () => _open(idx),
+              );
               return AnimatedBuilder(
                 animation: _controller,
                 builder: (_, child) {
@@ -172,8 +176,10 @@ class _HomeTrustStripState extends State<HomeTrustStrip>
                   final dist = delta.abs().clamp(0.0, 1.0);
                   return Opacity(
                     opacity: 1 - dist * 0.7,
-                    child:
-                        Transform.scale(scale: 1 - dist * 0.12, child: child),
+                    child: Transform.scale(
+                      scale: 1 - dist * 0.12,
+                      child: child,
+                    ),
                   );
                 },
                 child: cell,
@@ -204,7 +210,7 @@ class _TrustCell extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(item.icon, color: AppColors.brandStrong, size: 16),
+              AppIcon(item.icon, color: AppColors.brandStrong, size: 16),
               const SizedBox(width: 6),
               Text(
                 item.label,
@@ -235,7 +241,9 @@ class _StaticTrustRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.lg, vertical: AppSizes.xs),
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.xs,
+      ),
       child: Row(
         children: [
           for (int i = 0; i < items.length; i++)
@@ -246,8 +254,11 @@ class _StaticTrustRow extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(items[i].icon,
-                        color: AppColors.brandStrong, size: 17),
+                    AppIcon(
+                      items[i].icon,
+                      color: AppColors.brandStrong,
+                      size: 17,
+                    ),
                     const SizedBox(height: 3),
                     Text(
                       items[i].label,
@@ -284,10 +295,15 @@ void showTrustPromisesSheet(
     builder: (ctx) => ListView.separated(
       shrinkWrap: true,
       padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg, AppSizes.xs, AppSizes.lg, AppSizes.lg),
+        AppSizes.lg,
+        AppSizes.xs,
+        AppSizes.lg,
+        AppSizes.lg,
+      ),
       itemCount: items.length,
       separatorBuilder: (_, _) => const SizedBox(height: AppSizes.sm),
-      itemBuilder: (_, i) => _PromiseRow(item: items[i], highlighted: i == active),
+      itemBuilder: (_, i) =>
+          _PromiseRow(item: items[i], highlighted: i == active),
     ),
   );
 }
@@ -321,7 +337,7 @@ class _PromiseRow extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
-            child: Icon(item.icon, color: AppColors.brandStrong, size: 20),
+            child: AppIcon(item.icon, color: AppColors.brandStrong, size: 20),
           ),
           const SizedBox(width: AppSizes.md),
           Expanded(

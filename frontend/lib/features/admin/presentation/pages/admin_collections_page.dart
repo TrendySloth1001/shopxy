@@ -11,6 +11,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Index of all editorial collections (curated product lists). Tap a
 /// row to open the editor — that's where meta, cover, and items get
@@ -89,14 +90,14 @@ class _AdminCollectionsPageState extends State<AdminCollectionsPage> {
         actions: [
           IconButton(
             tooltip: l10n.adminRefresh,
-            icon: const Icon(AppIcons.refresh),
+            icon: const AppIcon(AppIcons.refresh),
             onPressed: provider.isLoading ? null : () => provider.load(),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openNew,
-        icon: const Icon(AppIcons.add),
+        icon: const AppIcon(AppIcons.add),
         label: Text(l10n.adminCollectionNew),
       ),
       body: provider.isLoading && provider.list.isEmpty
@@ -106,7 +107,8 @@ class _AdminCollectionsPageState extends State<AdminCollectionsPage> {
               child: provider.list.isEmpty
                   ? ListView(
                       padding: EdgeInsets.only(
-                          top: FloatingAppBar.contentTopInset(context)),
+                        top: FloatingAppBar.contentTopInset(context),
+                      ),
                       children: [
                         const SizedBox(height: AppSizes.huge),
                         Center(child: Text(l10n.adminCollectionsEmpty)),
@@ -169,12 +171,15 @@ class _CollectionRow extends StatelessWidget {
                 shape: AppShapes.squircle(AppSizes.radiusMd),
               ),
               child: collection.coverImageUrl == null
-                  ? Icon(AppIcons.collectionsBookmark, color: AppColors.muted)
+                  ? AppIcon(
+                      AppIcons.collectionsBookmark,
+                      color: AppColors.muted,
+                    )
                   : Image.network(
                       resolveImageUrl(collection.coverImageUrl!),
                       fit: BoxFit.cover,
                       errorBuilder: (_, _, _) =>
-                          const Icon(AppIcons.brokenImageOutlined),
+                          const AppIcon(AppIcons.brokenImageOutlined),
                     ),
             ),
             const SizedBox(width: AppSizes.md),
@@ -190,10 +195,9 @@ class _CollectionRow extends StatelessWidget {
                   Text(
                     '/${collection.slug}  ·  '
                     '${collection.itemCount == 1 ? l10n.adminCollectionItemCountOne('${collection.itemCount}') : l10n.adminCollectionItemCountOther('${collection.itemCount}')}',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: AppColors.muted),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
                   ),
                 ],
               ),
@@ -201,7 +205,7 @@ class _CollectionRow extends StatelessWidget {
             const SizedBox(width: AppSizes.sm),
             _StatusChip(published: collection.isPublished),
             IconButton(
-              icon: const Icon(AppIcons.deleteOutline),
+              icon: const AppIcon(AppIcons.deleteOutline),
               onPressed: onDelete,
             ),
           ],
@@ -230,8 +234,8 @@ class _StatusChip extends StatelessWidget {
             ? AppLocalizations.of(context).adminPublished
             : AppLocalizations.of(context).adminDraft,
         style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: published ? AppColors.success : AppColors.black,
-            ),
+          color: published ? AppColors.success : AppColors.black,
+        ),
       ),
     );
   }
@@ -274,11 +278,7 @@ class _CollectionRowSkeleton extends StatelessWidget {
       child: Row(
         children: [
           // Cover image placeholder
-          AppShimmerBox(
-            width: 60,
-            height: 60,
-            radius: AppSizes.radiusMd,
-          ),
+          AppShimmerBox(width: 60, height: 60, radius: AppSizes.radiusMd),
           const SizedBox(width: AppSizes.md),
           // Title + subtitle lines
           const Expanded(

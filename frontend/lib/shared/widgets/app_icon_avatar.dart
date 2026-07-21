@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Square (squircle) icon container — used as a leading element in list rows.
 /// Two variants:
@@ -21,7 +23,7 @@ class AppIconAvatar extends StatelessWidget {
     this.size = AppSizes.avatarSm,
   }) : filled = false;
 
-  final IconData icon;
+  final AppIconData icon;
   final double size;
   final bool filled;
 
@@ -40,7 +42,7 @@ class AppIconAvatar extends StatelessWidget {
           ),
         ),
       ),
-      child: Icon(
+      child: AppIcon(
         icon,
         size: size * 0.5,
         color: filled ? AppColors.onInverse : AppColors.black,
@@ -51,7 +53,11 @@ class AppIconAvatar extends StatelessWidget {
 
 /// Circular monogram avatar — letter on hairline-bordered surface circle.
 class AppMonogramAvatar extends StatelessWidget {
-  const AppMonogramAvatar({super.key, required this.label, this.size = AppSizes.avatarSm});
+  const AppMonogramAvatar({
+    super.key,
+    required this.label,
+    this.size = AppSizes.avatarSm,
+  });
 
   final String label;
   final double size;

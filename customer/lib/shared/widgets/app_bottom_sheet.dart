@@ -3,6 +3,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Wrapper around [showModalBottomSheet] with our defaults locked in:
 /// canvas-on-white surface, top-rounded squircle, grab handle, padded
@@ -26,9 +27,7 @@ Future<T?> showAppBottomSheet<T>(
     backgroundColor: AppColors.white,
     shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
     builder: (ctx) => Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(ctx).viewInsets.bottom,
-      ),
+      padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
       child: SafeArea(
         top: false,
         child: Column(
@@ -46,14 +45,17 @@ Future<T?> showAppBottomSheet<T>(
                       child: Text(
                         title,
                         style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.black,
-                            ),
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.black,
+                        ),
                       ),
                     ),
                     IconButton(
                       onPressed: () => Navigator.of(ctx).pop(),
-                      icon: const Icon(AppIcons.closeRounded, size: AppSizes.iconMd),
+                      icon: const AppIcon(
+                        AppIcons.closeRounded,
+                        size: AppSizes.iconMd,
+                      ),
                       tooltip: 'Close',
                       visualDensity: VisualDensity.compact,
                     ),

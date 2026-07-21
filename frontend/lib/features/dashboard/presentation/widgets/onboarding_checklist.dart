@@ -10,6 +10,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 class _Step {
   const _Step(this.done, this.title, this.desc, this.cta, this.onTap);
@@ -79,8 +80,10 @@ class OnboardingChecklist extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(l10n.dashboardGetShopReady,
-                        style: DashText.headlineSm),
+                    Text(
+                      l10n.dashboardGetShopReady,
+                      style: DashText.headlineSm,
+                    ),
                     const SizedBox(height: AppSizes.xs),
                     Text(
                       l10n.dashboardOnboardingSubtitle,
@@ -118,7 +121,7 @@ class _StepRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
       child: Row(
         children: [
-          Icon(
+          AppIcon(
             step.done ? AppIcons.checkCircleRounded : AppIcons.circleOutlined,
             size: AppSizes.iconMd,
             color: step.done ? AppColors.success : AppColors.subtle,
@@ -132,12 +135,10 @@ class _StepRow extends StatelessWidget {
                   step.title,
                   style: DashText.bodyMd.copyWith(
                     color: step.done ? AppColors.muted : AppColors.black,
-                    decoration:
-                        step.done ? TextDecoration.lineThrough : null,
+                    decoration: step.done ? TextDecoration.lineThrough : null,
                   ),
                 ),
-                if (!step.done)
-                  Text(step.desc, style: DashText.bodySm),
+                if (!step.done) Text(step.desc, style: DashText.bodySm),
               ],
             ),
           ),
@@ -156,11 +157,15 @@ class _StepRow extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(step.cta,
-                      style: const TextStyle(
-                          fontSize: 12, fontWeight: FontWeight.w600)),
+                  Text(
+                    step.cta,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   const SizedBox(width: 2),
-                  const Icon(AppIcons.arrowForwardRounded, size: 14),
+                  const AppIcon(AppIcons.arrowForwardRounded, size: 14),
                 ],
               ),
             ),

@@ -12,6 +12,7 @@ import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Read-only browse of the canonical taxonomy. Merchants don't manage
 /// categories any more — the seed lives in the backend manifest. This
@@ -47,45 +48,44 @@ class _CategoriesPageState extends State<CategoriesPage> {
       body: provider.isLoading && tree.isEmpty
           ? const _CategoriesGridSkeleton()
           : tree.isEmpty
-              ? EmptyState.line(
-                  kind: LineArt.productTag,
-                  title: l10n.categoriesEmptyTitle,
-                  subtitle: l10n.categoriesEmptyHint,
-                )
-              : RefreshIndicator(
-                  onRefresh: () => provider.loadTree(),
-                  color: AppColors.black,
-                  backgroundColor: AppColors.surface,
-                  child: GridView.builder(
-                    padding: EdgeInsets.fromLTRB(
-                      AppSizes.md,
-                      AppSizes.md + FloatingAppBar.contentTopInset(context),
-                      AppSizes.md,
-                      AppSizes.md,
-                    ),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      mainAxisSpacing: AppSizes.md,
-                      crossAxisSpacing: AppSizes.md,
-                      childAspectRatio: 0.82,
-                    ),
-                    itemCount: tree.length,
-                    itemBuilder: (context, index) {
-                      final node = tree[index];
-                      return _CategoryCard(
-                        category: node.category,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => CategoryProductsPage(
-                              category: node.category,
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+          ? EmptyState.line(
+              kind: LineArt.productTag,
+              title: l10n.categoriesEmptyTitle,
+              subtitle: l10n.categoriesEmptyHint,
+            )
+          : RefreshIndicator(
+              onRefresh: () => provider.loadTree(),
+              color: AppColors.black,
+              backgroundColor: AppColors.surface,
+              child: GridView.builder(
+                padding: EdgeInsets.fromLTRB(
+                  AppSizes.md,
+                  AppSizes.md + FloatingAppBar.contentTopInset(context),
+                  AppSizes.md,
+                  AppSizes.md,
                 ),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  mainAxisSpacing: AppSizes.md,
+                  crossAxisSpacing: AppSizes.md,
+                  childAspectRatio: 0.82,
+                ),
+                itemCount: tree.length,
+                itemBuilder: (context, index) {
+                  final node = tree[index];
+                  return _CategoryCard(
+                    category: node.category,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            CategoryProductsPage(category: node.category),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
     );
   }
 }
@@ -189,7 +189,7 @@ class _CategoryImage extends StatelessWidget {
     final fallback = Container(
       color: AppColors.heroPanel,
       alignment: Alignment.center,
-      child: Icon(
+      child: AppIcon(
         resolveCategoryIcon(category.iconName),
         color: AppColors.black,
         size: AppSizes.iconLg,

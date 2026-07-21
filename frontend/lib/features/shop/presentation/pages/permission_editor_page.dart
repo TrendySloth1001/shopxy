@@ -5,6 +5,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Member-access editor returns the role label + exact grant.
 typedef PermissionResult = ({String roleName, List<String> permissions});
@@ -32,7 +33,11 @@ class _PermissionMatrix extends StatelessWidget {
         // Column headers
         Padding(
           padding: const EdgeInsets.fromLTRB(
-              AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.xs),
+            AppSizes.lg,
+            AppSizes.sm,
+            AppSizes.lg,
+            AppSizes.xs,
+          ),
           child: Row(
             children: [
               const Spacer(),
@@ -56,12 +61,16 @@ class _PermissionMatrix extends StatelessWidget {
   }
 
   Widget _hdr(ThemeData theme, String label) => SizedBox(
-        width: 52,
-        child: Text(label,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.labelSmall
-                ?.copyWith(color: AppColors.muted, fontWeight: FontWeight.w800)),
-      );
+    width: 52,
+    child: Text(
+      label,
+      textAlign: TextAlign.center,
+      style: theme.textTheme.labelSmall?.copyWith(
+        color: AppColors.muted,
+        fontWeight: FontWeight.w800,
+      ),
+    ),
+  );
 }
 
 class _AreaRow extends StatelessWidget {
@@ -97,12 +106,20 @@ class _AreaRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(info.label,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.black, fontWeight: FontWeight.w600)),
+                Text(
+                  info.label,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.black,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 if (info.hint.isNotEmpty)
-                  Text(info.hint,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.muted)),
+                  Text(
+                    info.hint,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
+                  ),
               ],
             ),
           ),
@@ -114,8 +131,15 @@ class _AreaRow extends StatelessWidget {
           SizedBox(
             width: 52,
             child: info.viewOnly
-                ? Icon(AppIcons.remove, size: AppSizes.iconSm, color: AppColors.subtle)
-                : Checkbox(value: manage, onChanged: (v) => onManage(v ?? false)),
+                ? AppIcon(
+                    AppIcons.remove,
+                    size: AppSizes.iconSm,
+                    color: AppColors.subtle,
+                  )
+                : Checkbox(
+                    value: manage,
+                    onChanged: (v) => onManage(v ?? false),
+                  ),
           ),
         ],
       ),
@@ -125,7 +149,12 @@ class _AreaRow extends StatelessWidget {
 
 /// Applies a toggle to a grant set honouring the invariants: manage⇒view,
 /// and removing view removes manage.
-Set<String> applyToggle(Set<String> granted, String area, String action, bool on) {
+Set<String> applyToggle(
+  Set<String> granted,
+  String area,
+  String action,
+  bool on,
+) {
   final next = {...granted};
   final view = '$area:view';
   final manage = '$area:manage';
@@ -133,11 +162,15 @@ Set<String> applyToggle(Set<String> granted, String area, String action, bool on
     if (on) {
       next.add(view);
     } else {
-      next..remove(view)..remove(manage);
+      next
+        ..remove(view)
+        ..remove(manage);
     }
   } else {
     if (on) {
-      next..add(manage)..add(view);
+      next
+        ..add(manage)
+        ..add(view);
     } else {
       next.remove(manage);
     }
@@ -219,10 +252,10 @@ class _PermissionEditorPageState extends State<PermissionEditorPage> {
   void _save() {
     final match = _matchingRole;
     final name = match?.name ?? _roleName ?? 'Custom';
-    Navigator.pop<PermissionResult>(
-      context,
-      (roleName: name, permissions: _granted.toList()..sort()),
-    );
+    Navigator.pop<PermissionResult>(context, (
+      roleName: name,
+      permissions: _granted.toList()..sort(),
+    ));
   }
 
   @override
@@ -240,25 +273,35 @@ class _PermissionEditorPageState extends State<PermissionEditorPage> {
         actions: [
           TextButton(
             onPressed: _save,
-            child: Text(widget.submitLabel,
-                style: Theme.of(context)
-                    .textTheme
-                    .labelLarge
-                    ?.copyWith(fontWeight: FontWeight.w800)),
+            child: Text(
+              widget.submitLabel,
+              style: Theme.of(
+                context,
+              ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
+            ),
           ),
         ],
       ),
       body: ListView(
         padding: EdgeInsets.only(
-            top: FloatingAppBar.contentTopInset(context), bottom: AppSizes.huge),
+          top: FloatingAppBar.contentTopInset(context),
+          bottom: AppSizes.huge,
+        ),
         children: [
           if (widget.subtitle != null)
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                  AppSizes.lg, AppSizes.md, AppSizes.lg, 0),
-              child: Text(widget.subtitle!,
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(color: AppColors.muted)),
+                AppSizes.lg,
+                AppSizes.md,
+                AppSizes.lg,
+                0,
+              ),
+              child: Text(
+                widget.subtitle!,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppColors.muted,
+                ),
+              ),
             ),
           const SizedBox(height: AppSizes.lg),
           _Eyebrow(l10n.shopStartFromRole),
@@ -276,7 +319,11 @@ class _PermissionEditorPageState extends State<PermissionEditorPage> {
                     onTap: () => _applyRole(r),
                   ),
                 if (match == null && _granted.isNotEmpty)
-                  _RoleChip(label: l10n.shopCustomRole, selected: true, custom: true),
+                  _RoleChip(
+                    label: l10n.shopCustomRole,
+                    selected: true,
+                    custom: true,
+                  ),
               ],
             ),
           ),
@@ -288,8 +335,9 @@ class _PermissionEditorPageState extends State<PermissionEditorPage> {
             padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
             child: Text(
               l10n.shopPermissionTrustHint,
-              style:
-                  theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.muted,
+              ),
             ),
           ),
         ],
@@ -347,10 +395,10 @@ class _RoleEditorPageState extends State<RoleEditorPage> {
       );
       return;
     }
-    Navigator.pop<RoleResult>(
-      context,
-      (name: name, permissions: _granted.toList()..sort()),
-    );
+    Navigator.pop<RoleResult>(context, (
+      name: name,
+      permissions: _granted.toList()..sort(),
+    ));
   }
 
   @override
@@ -366,21 +414,28 @@ class _RoleEditorPageState extends State<RoleEditorPage> {
         actions: [
           TextButton(
             onPressed: _save,
-            child: Text(l10n.shopSave,
-                style: Theme.of(context)
-                    .textTheme
-                    .labelLarge
-                    ?.copyWith(fontWeight: FontWeight.w800)),
+            child: Text(
+              l10n.shopSave,
+              style: Theme.of(
+                context,
+              ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
+            ),
           ),
         ],
       ),
       body: ListView(
         padding: EdgeInsets.only(
-            top: FloatingAppBar.contentTopInset(context), bottom: AppSizes.huge),
+          top: FloatingAppBar.contentTopInset(context),
+          bottom: AppSizes.huge,
+        ),
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(
-                AppSizes.lg, AppSizes.lg, AppSizes.lg, 0),
+              AppSizes.lg,
+              AppSizes.lg,
+              AppSizes.lg,
+              0,
+            ),
             child: TextField(
               controller: _name,
               textCapitalization: TextCapitalization.words,
@@ -398,8 +453,9 @@ class _RoleEditorPageState extends State<RoleEditorPage> {
             padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
             child: Text(
               l10n.shopRoleTemplatesHint,
-              style:
-                  theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.muted,
+              ),
             ),
           ),
         ],
@@ -415,13 +471,16 @@ class _Eyebrow extends StatelessWidget {
   final String text;
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
-        child: Text(text,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: AppColors.muted,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.6)),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+    child: Text(
+      text,
+      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+        color: AppColors.muted,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 0.6,
+      ),
+    ),
+  );
 }
 
 class _RoleChip extends StatelessWidget {
@@ -444,26 +503,35 @@ class _RoleChip extends StatelessWidget {
       color: bg,
       shape: StadiumBorder(
         side: BorderSide(
-            color: selected ? AppColors.brandStrong : AppColors.hairline),
+          color: selected ? AppColors.brandStrong : AppColors.hairline,
+        ),
       ),
       child: InkWell(
         customBorder: const StadiumBorder(),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(
-              horizontal: AppSizes.md, vertical: AppSizes.sm),
+            horizontal: AppSizes.md,
+            vertical: AppSizes.sm,
+          ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (custom) ...[
-                Icon(AppIcons.tuneRounded, size: AppSizes.iconSm, color: AppColors.brandStrong),
+                AppIcon(
+                  AppIcons.tuneRounded,
+                  size: AppSizes.iconSm,
+                  color: AppColors.brandStrong,
+                ),
                 const SizedBox(width: AppSizes.xs),
               ],
-              Text(label,
-                  style: Theme.of(context)
-                      .textTheme
-                      .labelLarge
-                      ?.copyWith(color: fg, fontWeight: FontWeight.w700)),
+              Text(
+                label,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: fg,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ],
           ),
         ),

@@ -14,6 +14,7 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_price_text.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Global product search. Opened from the home page's search entry
 /// and pushed full-screen so the keyboard and the chip strip can
@@ -138,7 +139,7 @@ class _BackChip extends StatelessWidget {
           ),
         ),
         alignment: Alignment.center,
-        child: const Icon(
+        child: const AppIcon(
           AppIcons.arrowBackRounded,
           color: AppColors.black,
           size: AppSizes.iconMd,
@@ -185,7 +186,7 @@ class _SearchField extends StatelessWidget {
               shape: AppShapes.squircle(AppSizes.radiusSm),
             ),
             alignment: Alignment.center,
-            child: const Icon(
+            child: const AppIcon(
               AppIcons.searchRounded,
               color: AppColors.white,
               size: AppSizes.iconSm,
@@ -200,15 +201,15 @@ class _SearchField extends StatelessWidget {
               onChanged: onChanged,
               onSubmitted: onSubmitted,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.black,
-                    fontWeight: FontWeight.w600,
-                  ),
+                color: AppColors.black,
+                fontWeight: FontWeight.w600,
+              ),
               decoration: InputDecoration(
                 hintText: AppStrings.searchProducts,
                 hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.muted,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  color: AppColors.muted,
+                  fontWeight: FontWeight.w500,
+                ),
                 isDense: true,
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
@@ -229,7 +230,7 @@ class _SearchField extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
-                child: const Icon(
+                child: const AppIcon(
                   AppIcons.closeRounded,
                   color: AppColors.muted,
                   size: AppSizes.iconSm,
@@ -261,7 +262,10 @@ class _Body extends StatelessWidget {
     if (provider.results.isEmpty) {
       return _NoMatches(query: provider.query);
     }
-    return _ResultsList(results: provider.results, semantic: provider.isSemantic);
+    return _ResultsList(
+      results: provider.results,
+      semantic: provider.isSemantic,
+    );
   }
 }
 
@@ -298,7 +302,7 @@ class _IdleView extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
-                child: const Icon(
+                child: const AppIcon(
                   AppIcons.searchRounded,
                   size: AppSizes.iconXl,
                   color: AppColors.brand,
@@ -347,10 +351,7 @@ class _IdleView extends StatelessWidget {
             runSpacing: AppSizes.sm,
             children: [
               for (final h in p.hints)
-                _TrendingChip(
-                  label: h,
-                  onTap: () => _apply(context, h),
-                ),
+                _TrendingChip(label: h, onTap: () => _apply(context, h)),
             ],
           ),
           const SizedBox(height: AppSizes.xl),
@@ -386,9 +387,9 @@ class _IdleView extends StatelessWidget {
                   child: Text(
                     'Clear',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: AppColors.muted,
-                          fontWeight: FontWeight.w700,
-                        ),
+                      color: AppColors.muted,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),
@@ -425,7 +426,7 @@ class _SectionHeading extends StatelessWidget {
   });
   final String eyebrow;
   final String title;
-  final IconData icon;
+  final AppIconData icon;
 
   @override
   Widget build(BuildContext context) {
@@ -446,7 +447,7 @@ class _SectionHeading extends StatelessWidget {
         const SizedBox(height: AppSizes.xs),
         Row(
           children: [
-            Icon(icon, color: AppColors.black, size: AppSizes.iconMd),
+            AppIcon(icon, color: AppColors.black, size: AppSizes.iconMd),
             const SizedBox(width: AppSizes.sm),
             Text(
               title,
@@ -498,7 +499,7 @@ class _TrendingChip extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
-                child: const Icon(
+                child: const AppIcon(
                   AppIcons.localFireDepartmentRounded,
                   color: AppColors.brand,
                   size: AppSizes.iconSm,
@@ -512,10 +513,10 @@ class _TrendingChip extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: AppColors.black,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.1,
-                      ),
+                    color: AppColors.black,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.1,
+                  ),
                 ),
               ),
             ],
@@ -547,7 +548,7 @@ class _RecentRow extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
-              child: const Icon(
+              child: const AppIcon(
                 AppIcons.historyRounded,
                 color: AppColors.muted,
                 size: AppSizes.iconSm,
@@ -560,14 +561,14 @@ class _RecentRow extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.black,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: -0.1,
-                    ),
+                  color: AppColors.black,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.1,
+                ),
               ),
             ),
             const SizedBox(width: AppSizes.sm),
-            const Icon(
+            const AppIcon(
               AppIcons.northWestRounded,
               color: AppColors.muted,
               size: AppSizes.iconSm,
@@ -594,9 +595,10 @@ class _LoadingResults extends StatelessWidget {
       itemBuilder: (_, index) => Row(
         children: const [
           AppShimmerBox(
-              width: AppSizes.avatarMd,
-              height: AppSizes.avatarMd,
-              radius: AppSizes.radiusMd),
+            width: AppSizes.avatarMd,
+            height: AppSizes.avatarMd,
+            radius: AppSizes.radiusMd,
+          ),
           SizedBox(width: AppSizes.md),
           Expanded(
             child: Column(
@@ -635,8 +637,10 @@ class _ResultsList extends StatelessWidget {
           return Row(
             children: [
               Expanded(
-                child:
-                    _SemanticBadge(semantic: semantic, count: results.length),
+                child: _SemanticBadge(
+                  semantic: semantic,
+                  count: results.length,
+                ),
               ),
               _FilterButton(
                 onTap: () async {
@@ -650,7 +654,10 @@ class _ResultsList extends StatelessWidget {
                   );
                   if (next != null) p.setFilters(next);
                 },
-                activeCount: context.watch<SearchProvider>().filters.activeCount,
+                activeCount: context
+                    .watch<SearchProvider>()
+                    .filters
+                    .activeCount,
                 disabled: context.watch<SearchProvider>().facets == null,
               ),
             ],
@@ -678,7 +685,10 @@ class _ResultsList extends StatelessWidget {
                     height: AppSizes.avatarMd,
                     color: AppColors.heroPanel,
                     child: p.imageUrl == null || p.imageUrl!.isEmpty
-                        ? const Icon(AppIcons.imageOutlined, color: AppColors.muted)
+                        ? const AppIcon(
+                            AppIcons.imageOutlined,
+                            color: AppColors.muted,
+                          )
                         : NetworkImageBox(url: resolveImageUrl(p.imageUrl!)),
                   ),
                 ),
@@ -718,8 +728,11 @@ class _ResultsList extends StatelessWidget {
                           padding: const EdgeInsets.only(top: AppSizes.xs),
                           child: Row(
                             children: [
-                              const Icon(AppIcons.starRounded,
-                                  color: AppColors.success, size: AppSizes.iconSm),
+                              const AppIcon(
+                                AppIcons.starRounded,
+                                color: AppColors.success,
+                                size: AppSizes.iconSm,
+                              ),
                               const SizedBox(width: AppSizes.xs),
                               Text(
                                 '${p.ratingAvg!.toStringAsFixed(1)} (${p.ratingCount})',
@@ -761,21 +774,19 @@ class _SemanticBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
       child: Row(
         children: [
-          Icon(
+          AppIcon(
             semantic ? AppIcons.autoAwesomeRounded : AppIcons.searchRounded,
             size: AppSizes.iconSm,
             color: semantic ? AppColors.brand : AppColors.muted,
           ),
           const SizedBox(width: AppSizes.xs),
           Text(
-            semantic
-                ? '$count results · ranked by AI'
-                : '$count results',
+            semantic ? '$count results · ranked by AI' : '$count results',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: semantic ? AppColors.brand : AppColors.muted,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.3,
-                ),
+              color: semantic ? AppColors.brand : AppColors.muted,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.3,
+            ),
           ),
         ],
       ),
@@ -796,7 +807,7 @@ class _NoMatches extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            const AppIcon(
               AppIcons.searchOffRounded,
               size: AppSizes.iconHuge,
               color: AppColors.muted,
@@ -838,7 +849,7 @@ class _ErrorBlock extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            const AppIcon(
               AppIcons.errorOutlineRounded,
               size: 40,
               color: AppColors.error,
@@ -873,7 +884,7 @@ class _FilterButton extends StatelessWidget {
     final hasActive = activeCount > 0;
     return TextButton.icon(
       onPressed: disabled ? null : onTap,
-      icon: Icon(
+      icon: AppIcon(
         AppIcons.tuneRounded,
         size: AppSizes.iconMd,
         color: hasActive ? AppColors.brand : AppColors.muted,
@@ -881,9 +892,9 @@ class _FilterButton extends StatelessWidget {
       label: Text(
         hasActive ? 'Filters · $activeCount' : 'Filters',
         style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: hasActive ? AppColors.brand : AppColors.muted,
-              fontWeight: FontWeight.w700,
-            ),
+          color: hasActive ? AppColors.brand : AppColors.muted,
+          fontWeight: FontWeight.w700,
+        ),
       ),
       style: TextButton.styleFrom(
         visualDensity: VisualDensity.compact,

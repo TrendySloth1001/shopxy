@@ -5,6 +5,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// One-time startup nudge that prompts the owner to finish payout onboarding.
 ///
@@ -14,13 +15,18 @@ import 'package:shopxy/core/icons/app_icons.dart';
 ///
 /// Returns true when the owner chose to set up now. [hasDraft] switches the copy
 /// to "continue" when there's a saved, half-finished onboarding.
-Future<bool> showPayoutSetupSheet(BuildContext context, {bool hasDraft = false}) async {
+Future<bool> showPayoutSetupSheet(
+  BuildContext context, {
+  bool hasDraft = false,
+}) async {
   final result = await showModalBottomSheet<bool>(
     context: context,
     backgroundColor: AppColors.surface,
     isScrollControlled: true,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(AppSizes.radiusLg)),
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(AppSizes.radiusLg),
+      ),
     ),
     builder: (sheetContext) => _PayoutSetupSheet(hasDraft: hasDraft),
   );
@@ -38,7 +44,11 @@ class _PayoutSetupSheet extends StatelessWidget {
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
-            AppSizes.lg, AppSizes.md, AppSizes.lg, AppSizes.lg),
+          AppSizes.lg,
+          AppSizes.md,
+          AppSizes.lg,
+          AppSizes.lg,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -62,8 +72,11 @@ class _PayoutSetupSheet extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
-              child: Icon(AppIcons.accountBalanceOutlined,
-                  color: AppColors.info, size: AppSizes.iconLg),
+              child: AppIcon(
+                AppIcons.accountBalanceOutlined,
+                color: AppColors.info,
+                size: AppSizes.iconLg,
+              ),
             ),
             const SizedBox(height: AppSizes.md),
             Text(
@@ -75,10 +88,10 @@ class _PayoutSetupSheet extends StatelessWidget {
             ),
             const SizedBox(height: AppSizes.sm),
             Text(
-              hasDraft
-                  ? l10n.shopSheetFinishBody
-                  : l10n.shopSheetSetupBody,
-              style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+              hasDraft ? l10n.shopSheetFinishBody : l10n.shopSheetSetupBody,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: AppColors.muted,
+              ),
             ),
             const SizedBox(height: AppSizes.xl),
             FilledButton(

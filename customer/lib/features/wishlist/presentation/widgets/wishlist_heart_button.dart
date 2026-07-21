@@ -7,6 +7,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Heart toggle for product cards + detail pages. Animates the icon
 /// crossfade when the saved-state flips. Optimistic — taps update
@@ -26,8 +27,8 @@ class WishlistHeartButton extends StatelessWidget {
   }) : flat = false;
 
   const WishlistHeartButton.flat({super.key, required this.productId})
-      : size = AppSizes.iconHuge,
-        flat = true;
+    : size = AppSizes.iconHuge,
+      flat = true;
 
   final int productId;
   final double size;
@@ -54,8 +55,8 @@ class WishlistHeartButton extends StatelessWidget {
             color: flat
                 ? Colors.transparent
                 : (saved
-                    ? AppColors.accentRoseSoft
-                    : AppColors.white.withValues(alpha: 0.92)),
+                      ? AppColors.accentRoseSoft
+                      : AppColors.white.withValues(alpha: 0.92)),
             shape: BoxShape.circle,
             border: flat
                 ? null
@@ -66,7 +67,7 @@ class WishlistHeartButton extends StatelessWidget {
             duration: AppDurations.short,
             transitionBuilder: (child, anim) =>
                 ScaleTransition(scale: anim, child: child),
-            child: Icon(
+            child: AppIcon(
               saved ? AppIcons.favoriteRounded : AppIcons.favoriteBorderRounded,
               key: ValueKey<bool>(saved),
               size: iconSize,

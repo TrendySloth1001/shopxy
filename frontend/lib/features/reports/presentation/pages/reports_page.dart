@@ -13,6 +13,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// The reports workspace: four date-ranged reports (Sales, Purchases, GST, P&L)
 /// plus a live Calculator tool — a faithful port of merchant-web's
@@ -56,12 +57,16 @@ class _ReportsPageState extends State<ReportsPage> {
     final to = DateTime(now.year, now.month, now.day, 23, 59, 59);
     final DateTime from = switch (preset) {
       _Preset.month => DateTime(now.year, now.month, 1),
-      _Preset.days30 => DateTime(now.year, now.month, now.day)
-          .subtract(const Duration(days: 30)),
+      _Preset.days30 => DateTime(
+        now.year,
+        now.month,
+        now.day,
+      ).subtract(const Duration(days: 30)),
       // Indian financial year runs April → March.
-      _Preset.fy => now.month >= 4
-          ? DateTime(now.year, 4, 1)
-          : DateTime(now.year - 1, 4, 1),
+      _Preset.fy =>
+        now.month >= 4
+            ? DateTime(now.year, 4, 1)
+            : DateTime(now.year - 1, 4, 1),
     };
     p.setRange(from, to);
   }
@@ -96,7 +101,7 @@ class _ReportsPageState extends State<ReportsPage> {
           if (!isCalculator)
             IconButton(
               tooltip: l10n.reportsRefresh,
-              icon: const Icon(AppIcons.refreshRounded),
+              icon: const AppIcon(AppIcons.refreshRounded),
               onPressed: p.refresh,
             ),
         ],
@@ -105,90 +110,109 @@ class _ReportsPageState extends State<ReportsPage> {
         context: context,
         removeTop: true,
         child: Column(
-        children: [
-          SizedBox(height: FloatingAppBar.contentTopInset(context)),
-          // Tabs.
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.fromLTRB(
-                AppSizes.lg, AppSizes.md, AppSizes.lg, AppSizes.sm),
-            child: Row(
-              children: [
-                for (final t in _ReportTab.values) ...[
-                  _TabPill(
-                    label: _tabLabel(t),
-                    selected: _tab == t,
-                    onTap: () => _selectTab(t),
-                  ),
-                  const SizedBox(width: AppSizes.sm),
-                ],
-              ],
-            ),
-          ),
-          // Date range + presets — hidden for the live calculator tool.
-          if (!isCalculator)
-            Padding(
+          children: [
+            SizedBox(height: FloatingAppBar.contentTopInset(context)),
+            // Tabs.
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.fromLTRB(
-                  AppSizes.lg, AppSizes.xs, AppSizes.lg, AppSizes.sm),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                AppSizes.lg,
+                AppSizes.md,
+                AppSizes.lg,
+                AppSizes.sm,
+              ),
+              child: Row(
                 children: [
-                  InkWell(
-                    onTap: () => _pickRange(p),
-                    borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSizes.lg,
-                        vertical: AppSizes.md,
-                      ),
-                      decoration: ShapeDecoration(
-                        color: AppColors.heroPanel,
-                        shape: AppShapes.squircle(AppSizes.radiusMd),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(AppIcons.calendarTodayOutlined,
-                              size: AppSizes.iconMd),
-                          const SizedBox(width: AppSizes.sm),
-                          Expanded(
-                            child: Text(
-                              '${dateFmt.format(p.from)} → ${dateFmt.format(p.to)}',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                          const Icon(AppIcons.expandMoreRounded,
-                              size: AppSizes.iconMd),
-                        ],
-                      ),
+                  for (final t in _ReportTab.values) ...[
+                    _TabPill(
+                      label: _tabLabel(t),
+                      selected: _tab == t,
+                      onTap: () => _selectTab(t),
                     ),
-                  ),
-                  const SizedBox(height: AppSizes.sm),
-                  Wrap(
-                    spacing: AppSizes.xs,
-                    children: [
-                      _PresetChip(label: l10n.reportsPresetThisMonth, onTap: () => _preset(p, _Preset.month)),
-                      _PresetChip(label: l10n.reportsPresetLast30Days, onTap: () => _preset(p, _Preset.days30)),
-                      _PresetChip(label: l10n.reportsPresetThisFy, onTap: () => _preset(p, _Preset.fy)),
-                    ],
-                  ),
+                    const SizedBox(width: AppSizes.sm),
+                  ],
                 ],
               ),
             ),
-          const SizedBox(height: AppSizes.xs),
-          Expanded(
-            child: isCalculator
-                ? const CalculatorView()
-                : p.isLoading
-                    ? const _ReportSkeleton()
-                    : p.error != null
-                        ? _ErrorBlock(error: p.error!, onRetry: p.load)
-                        : _ReportBody(provider: p),
-          ),
-        ],
-      ),
+            // Date range + presets — hidden for the live calculator tool.
+            if (!isCalculator)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSizes.lg,
+                  AppSizes.xs,
+                  AppSizes.lg,
+                  AppSizes.sm,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    InkWell(
+                      onTap: () => _pickRange(p),
+                      borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSizes.lg,
+                          vertical: AppSizes.md,
+                        ),
+                        decoration: ShapeDecoration(
+                          color: AppColors.heroPanel,
+                          shape: AppShapes.squircle(AppSizes.radiusMd),
+                        ),
+                        child: Row(
+                          children: [
+                            const AppIcon(
+                              AppIcons.calendarTodayOutlined,
+                              size: AppSizes.iconMd,
+                            ),
+                            const SizedBox(width: AppSizes.sm),
+                            Expanded(
+                              child: Text(
+                                '${dateFmt.format(p.from)} → ${dateFmt.format(p.to)}',
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                            const AppIcon(
+                              AppIcons.expandMoreRounded,
+                              size: AppSizes.iconMd,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSizes.sm),
+                    Wrap(
+                      spacing: AppSizes.xs,
+                      children: [
+                        _PresetChip(
+                          label: l10n.reportsPresetThisMonth,
+                          onTap: () => _preset(p, _Preset.month),
+                        ),
+                        _PresetChip(
+                          label: l10n.reportsPresetLast30Days,
+                          onTap: () => _preset(p, _Preset.days30),
+                        ),
+                        _PresetChip(
+                          label: l10n.reportsPresetThisFy,
+                          onTap: () => _preset(p, _Preset.fy),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: AppSizes.xs),
+            Expanded(
+              child: isCalculator
+                  ? const CalculatorView()
+                  : p.isLoading
+                  ? const _ReportSkeleton()
+                  : p.error != null
+                  ? _ErrorBlock(error: p.error!, onRetry: p.load)
+                  : _ReportBody(provider: p),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -225,13 +249,15 @@ class _PresetChip extends StatelessWidget {
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(
-              horizontal: AppSizes.md, vertical: AppSizes.sm),
+            horizontal: AppSizes.md,
+            vertical: AppSizes.sm,
+          ),
           child: Text(
             label,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: AppColors.black,
-                  fontWeight: FontWeight.w600,
-                ),
+              color: AppColors.black,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ),
@@ -240,7 +266,11 @@ class _PresetChip extends StatelessWidget {
 }
 
 class _TabPill extends StatelessWidget {
-  const _TabPill({required this.label, required this.selected, required this.onTap});
+  const _TabPill({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -251,7 +281,9 @@ class _TabPill extends StatelessWidget {
       color: selected ? AppColors.inverseSurface : AppColors.surface,
       shape: AppShapes.squircle(
         AppSizes.radiusFull,
-        side: BorderSide(color: selected ? AppColors.inverseSurface : AppColors.hairline),
+        side: BorderSide(
+          color: selected ? AppColors.inverseSurface : AppColors.hairline,
+        ),
       ),
       child: InkWell(
         customBorder: AppShapes.squircle(AppSizes.radiusFull),
@@ -264,9 +296,9 @@ class _TabPill extends StatelessWidget {
           child: Text(
             label,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: selected ? AppColors.onInverse : AppColors.black,
-                  fontWeight: FontWeight.w700,
-                ),
+              color: selected ? AppColors.onInverse : AppColors.black,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ),
@@ -286,14 +318,20 @@ class _ErrorBlock extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(AppIcons.errorOutlineRounded, color: AppColors.error, size: AppSizes.iconXl),
+          AppIcon(
+            AppIcons.errorOutlineRounded,
+            color: AppColors.error,
+            size: AppSizes.iconXl,
+          ),
           const SizedBox(height: AppSizes.sm),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSizes.xxl),
             child: Text(
               error,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
             ),
           ),
           const SizedBox(height: AppSizes.md),
@@ -322,7 +360,11 @@ class _ReportBody extends StatelessWidget {
         return _GstView(report: provider.gst!);
       case ReportKind.pnl:
         if (provider.pnl == null) return const _ReportSkeleton();
-        return _PnlView(report: provider.pnl!, from: provider.from, to: provider.to);
+        return _PnlView(
+          report: provider.pnl!,
+          from: provider.from,
+          to: provider.to,
+        );
     }
   }
 }
@@ -401,7 +443,12 @@ class _EyebrowSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Padding(
-      padding: EdgeInsets.fromLTRB(AppSizes.lg, AppSizes.xl, AppSizes.lg, AppSizes.sm),
+      padding: EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.xl,
+        AppSizes.lg,
+        AppSizes.sm,
+      ),
       child: AppShimmerLine(widthFactor: 0.28, height: 9),
     );
   }
@@ -414,7 +461,10 @@ class _LeaderRowSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.sm,
+        AppSizes.lg,
+        AppSizes.sm,
+        AppSizes.lg,
+        AppSizes.sm,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -459,32 +509,38 @@ class _SkeletonDivider extends StatelessWidget {
 // Shared primitives
 // ─────────────────────────────────────────────────────────────────────
 
-NumberFormat _money() => NumberFormat.currency(
-      symbol: AppStrings.currencySymbol,
-      decimalDigits: 0,
-    );
+NumberFormat _money() =>
+    NumberFormat.currency(symbol: AppStrings.currencySymbol, decimalDigits: 0);
 
 class _Eyebrow extends StatelessWidget {
   const _Eyebrow(this.text);
   final String text;
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg, AppSizes.xl, AppSizes.lg, AppSizes.sm,
-        ),
-        child: Text(
-          text,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: AppColors.muted,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.6,
-              ),
-        ),
-      );
+    padding: const EdgeInsets.fromLTRB(
+      AppSizes.lg,
+      AppSizes.xl,
+      AppSizes.lg,
+      AppSizes.sm,
+    ),
+    child: Text(
+      text,
+      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+        color: AppColors.muted,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 1.6,
+      ),
+    ),
+  );
 }
 
 class _BigStat extends StatelessWidget {
-  const _BigStat({required this.label, required this.value, this.helper, this.tone});
+  const _BigStat({
+    required this.label,
+    required this.value,
+    this.helper,
+    this.tone,
+  });
   final String label;
   final String value;
   final String? helper;
@@ -521,7 +577,12 @@ class _BigStat extends StatelessWidget {
           ),
           if (helper != null) ...[
             const SizedBox(height: AppSizes.xs),
-            Text(helper!, style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted)),
+            Text(
+              helper!,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.muted,
+              ),
+            ),
           ],
         ],
       ),
@@ -533,12 +594,12 @@ class _Divider extends StatelessWidget {
   const _Divider();
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.lg,
-          vertical: AppSizes.lg,
-        ),
-        child: Container(height: 1, color: AppColors.hairline),
-      );
+    padding: const EdgeInsets.symmetric(
+      horizontal: AppSizes.lg,
+      vertical: AppSizes.lg,
+    ),
+    child: Container(height: 1, color: AppColors.hairline),
+  );
 }
 
 class _MiniBar extends StatelessWidget {
@@ -554,7 +615,9 @@ class _MiniBar extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
         child: Text(
           l10n.reportsNoActivityInRange,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
         ),
       );
     }
@@ -581,7 +644,8 @@ class _MiniBar extends StatelessWidget {
                           margin: const EdgeInsets.symmetric(horizontal: 1.5),
                           height: maxV == 0
                               ? AppSizes.xs
-                              : (p.amount / maxV).clamp(0.04, 1.0) * c.maxHeight,
+                              : (p.amount / maxV).clamp(0.04, 1.0) *
+                                    c.maxHeight,
                           decoration: ShapeDecoration(
                             color: AppColors.brand,
                             shape: AppShapes.squircle(AppSizes.radiusSm),
@@ -601,16 +665,18 @@ class _MiniBar extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(DateFormat('d MMM').format(series.first.day),
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: AppColors.subtle)),
-              Text(DateFormat('d MMM').format(series.last.day),
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: AppColors.subtle)),
+              Text(
+                DateFormat('d MMM').format(series.first.day),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: AppColors.subtle),
+              ),
+              Text(
+                DateFormat('d MMM').format(series.last.day),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: AppColors.subtle),
+              ),
             ],
           ),
         ),
@@ -619,9 +685,12 @@ class _MiniBar extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
           child: Text(
             l10n.reportsPace(
-                _money().format(perDay), _money().format(perDay * 30)),
-            style:
-                Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.muted),
+              _money().format(perDay),
+              _money().format(perDay * 30),
+            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
           ),
         ),
       ],
@@ -646,7 +715,10 @@ class _LeaderRow extends StatelessWidget {
     final pct = max == 0 ? 0.0 : (amount / max).clamp(0.02, 1.0);
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.sm,
+        AppSizes.lg,
+        AppSizes.sm,
+        AppSizes.lg,
+        AppSizes.sm,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -726,8 +798,11 @@ class _SalesView extends StatelessWidget {
         _BigStat(
           label: l10n.reportsTotalSales,
           value: f.format(s.total),
-          helper: l10n.reportsSalesHelper('${s.invoiceCount}',
-              f.format(s.taxAmount), f.format(s.netRevenue)),
+          helper: l10n.reportsSalesHelper(
+            '${s.invoiceCount}',
+            f.format(s.taxAmount),
+            f.format(s.netRevenue),
+          ),
         ),
         const SizedBox(height: AppSizes.xl),
         _MiniBar(series: report.daily),
@@ -739,7 +814,8 @@ class _SalesView extends StatelessWidget {
           for (final p in report.topProducts)
             _LeaderRow(
               title: p.productName,
-              subtitle: l10n.reportsSoldCount(p.quantity.toStringAsFixed(0)) +
+              subtitle:
+                  l10n.reportsSoldCount(p.quantity.toStringAsFixed(0)) +
                   (p.productSku.isNotEmpty ? " · ${p.productSku}" : ""),
               amount: p.amount,
               max: maxP,
@@ -771,8 +847,14 @@ class _PurchasesView extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final f = _money();
     final s = report.summary;
-    final maxP = report.topProducts.fold<double>(0, (m, p) => p.amount > m ? p.amount : m);
-    final maxV = report.topVendors.fold<double>(0, (m, c) => c.amount > m ? c.amount : m);
+    final maxP = report.topProducts.fold<double>(
+      0,
+      (m, p) => p.amount > m ? p.amount : m,
+    );
+    final maxV = report.topVendors.fold<double>(
+      0,
+      (m, c) => c.amount > m ? c.amount : m,
+    );
     return ListView(
       padding: const EdgeInsets.only(bottom: AppSizes.huge),
       children: [
@@ -780,7 +862,9 @@ class _PurchasesView extends StatelessWidget {
           label: l10n.reportsTotalPurchases,
           value: f.format(s.total),
           helper: l10n.reportsPurchasesHelper(
-              '${s.invoiceCount}', f.format(s.taxAmount)),
+            '${s.invoiceCount}',
+            f.format(s.taxAmount),
+          ),
         ),
         const SizedBox(height: AppSizes.xl),
         _MiniBar(series: report.daily),
@@ -792,7 +876,8 @@ class _PurchasesView extends StatelessWidget {
           for (final p in report.topProducts)
             _LeaderRow(
               title: p.productName,
-              subtitle: l10n.reportsBoughtCount(p.quantity.toStringAsFixed(0)) +
+              subtitle:
+                  l10n.reportsBoughtCount(p.quantity.toStringAsFixed(0)) +
                   (p.productSku.isNotEmpty ? " · ${p.productSku}" : ""),
               amount: p.amount,
               max: maxP,
@@ -879,28 +964,44 @@ class _GstView extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(
-                AppSizes.lg, AppSizes.sm, AppSizes.lg, 0),
+              AppSizes.lg,
+              AppSizes.sm,
+              AppSizes.lg,
+              0,
+            ),
             child: Text(
               l10n.reportsTaxHeadNote,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: AppColors.subtle),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppColors.subtle),
             ),
           ),
         ],
 
         // By rate.
         _Eyebrow(l10n.reportsOutputGstByRate),
-        _RateBreakdown(rows: report.outputByRate, empty: l10n.reportsNoOutputGstInRange),
+        _RateBreakdown(
+          rows: report.outputByRate,
+          empty: l10n.reportsNoOutputGstInRange,
+        ),
         _Eyebrow(l10n.reportsInputGstByRate),
-        _RateBreakdown(rows: report.inputByRate, empty: l10n.reportsNoInputGstInRange),
+        _RateBreakdown(
+          rows: report.inputByRate,
+          empty: l10n.reportsNoInputGstInRange,
+        ),
 
         // Cess — only when there is any.
         if (hasCess) ...[
           _Eyebrow(l10n.reportsCess),
-          _PnlRow(label: l10n.reportsOutputCess, value: f.format(report.outputCess), strong: true),
-          _PnlRow(label: l10n.reportsInputCess, value: '− ${f.format(report.inputCess)}'),
+          _PnlRow(
+            label: l10n.reportsOutputCess,
+            value: f.format(report.outputCess),
+            strong: true,
+          ),
+          _PnlRow(
+            label: l10n.reportsInputCess,
+            value: '− ${f.format(report.inputCess)}',
+          ),
           _PnlRow(
             label: l10n.reportsNetCessPayable,
             value: f.format(report.netCessPayable),
@@ -909,13 +1010,16 @@ class _GstView extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(
-                AppSizes.lg, AppSizes.sm, AppSizes.lg, 0),
+              AppSizes.lg,
+              AppSizes.sm,
+              AppSizes.lg,
+              0,
+            ),
             child: Text(
               l10n.reportsCessNote,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: AppColors.subtle),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppColors.subtle),
             ),
           ),
         ],
@@ -924,13 +1028,16 @@ class _GstView extends StatelessWidget {
         if (returnedGst > 0)
           Padding(
             padding: const EdgeInsets.fromLTRB(
-                AppSizes.lg, AppSizes.lg, AppSizes.lg, 0),
+              AppSizes.lg,
+              AppSizes.lg,
+              AppSizes.lg,
+              0,
+            ),
             child: Text(
               l10n.reportsOutputGstReturnsNote(f.format(returnedGst)),
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: AppColors.subtle),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppColors.subtle),
             ),
           ),
       ],
@@ -960,12 +1067,30 @@ class _GstHeadTable extends StatelessWidget {
         child: Column(
           children: [
             _headerRow(context),
-            _row(context, 'IGST', l10n.reportsHeadInterState, head.output.igst, head.input.igst,
-                head.netPayable.igst),
-            _row(context, 'CGST', l10n.reportsHeadCentral, head.output.cgst, head.input.cgst,
-                head.netPayable.cgst),
-            _row(context, 'SGST', l10n.reportsHeadState, head.output.sgst, head.input.sgst,
-                head.netPayable.sgst),
+            _row(
+              context,
+              'IGST',
+              l10n.reportsHeadInterState,
+              head.output.igst,
+              head.input.igst,
+              head.netPayable.igst,
+            ),
+            _row(
+              context,
+              'CGST',
+              l10n.reportsHeadCentral,
+              head.output.cgst,
+              head.input.cgst,
+              head.netPayable.cgst,
+            ),
+            _row(
+              context,
+              'SGST',
+              l10n.reportsHeadState,
+              head.output.sgst,
+              head.input.sgst,
+              head.netPayable.sgst,
+            ),
             _totalRow(context),
           ],
         ),
@@ -976,45 +1101,77 @@ class _GstHeadTable extends StatelessWidget {
   Widget _headerRow(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final style = Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: AppColors.muted,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.6,
-        );
+      color: AppColors.muted,
+      fontWeight: FontWeight.w700,
+      letterSpacing: 0.6,
+    );
     return Container(
       color: AppColors.heroPanel,
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.md, vertical: AppSizes.sm),
+        horizontal: AppSizes.md,
+        vertical: AppSizes.sm,
+      ),
       child: Row(
         children: [
           Expanded(child: Text(l10n.reportsColHead, style: style)),
-          SizedBox(width: 68, child: Text(l10n.reportsColOutput, style: style, textAlign: TextAlign.right)),
-          SizedBox(width: 68, child: Text(l10n.reportsColItc, style: style, textAlign: TextAlign.right)),
-          SizedBox(width: 68, child: Text(l10n.reportsColNet, style: style, textAlign: TextAlign.right)),
+          SizedBox(
+            width: 68,
+            child: Text(
+              l10n.reportsColOutput,
+              style: style,
+              textAlign: TextAlign.right,
+            ),
+          ),
+          SizedBox(
+            width: 68,
+            child: Text(
+              l10n.reportsColItc,
+              style: style,
+              textAlign: TextAlign.right,
+            ),
+          ),
+          SizedBox(
+            width: 68,
+            child: Text(
+              l10n.reportsColNet,
+              style: style,
+              textAlign: TextAlign.right,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _row(BuildContext context, String label, String sub, double o, double i, double n) {
+  Widget _row(
+    BuildContext context,
+    String label,
+    String sub,
+    double o,
+    double i,
+    double n,
+  ) {
     final theme = Theme.of(context);
     final f = _money();
     Widget amt(String v, {bool strong = false}) => SizedBox(
-          width: 68,
-          child: Text(
-            v,
-            textAlign: TextAlign.right,
-            style: theme.textTheme.bodySmall?.copyWith(
-              fontWeight: strong ? FontWeight.w700 : FontWeight.w500,
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
-          ),
-        );
+      width: 68,
+      child: Text(
+        v,
+        textAlign: TextAlign.right,
+        style: theme.textTheme.bodySmall?.copyWith(
+          fontWeight: strong ? FontWeight.w700 : FontWeight.w500,
+          fontFeatures: const [FontFeature.tabularFigures()],
+        ),
+      ),
+    );
     return Container(
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: AppColors.hairline)),
       ),
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.md, vertical: AppSizes.sm),
+        horizontal: AppSizes.md,
+        vertical: AppSizes.sm,
+      ),
       child: Row(
         children: [
           Expanded(
@@ -1025,8 +1182,9 @@ class _GstHeadTable extends StatelessWidget {
                   TextSpan(text: label),
                   TextSpan(
                     text: '  $sub',
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: AppColors.subtle),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.subtle,
+                    ),
                   ),
                 ],
               ),
@@ -1045,29 +1203,33 @@ class _GstHeadTable extends StatelessWidget {
     final theme = Theme.of(context);
     final f = _money();
     Widget amt(String v, {bool bold = false}) => SizedBox(
-          width: 68,
-          child: Text(
-            v,
-            textAlign: TextAlign.right,
-            style: theme.textTheme.bodySmall?.copyWith(
-              fontWeight: bold ? FontWeight.w800 : FontWeight.w700,
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
-          ),
-        );
+      width: 68,
+      child: Text(
+        v,
+        textAlign: TextAlign.right,
+        style: theme.textTheme.bodySmall?.copyWith(
+          fontWeight: bold ? FontWeight.w800 : FontWeight.w700,
+          fontFeatures: const [FontFeature.tabularFigures()],
+        ),
+      ),
+    );
     return Container(
       color: AppColors.heroPanel,
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.md, vertical: AppSizes.sm),
+        horizontal: AppSizes.md,
+        vertical: AppSizes.sm,
+      ),
       child: Row(
         children: [
           Expanded(
-            child: Text(l10n.reportsColTotal,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: AppColors.muted,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.6,
-                )),
+            child: Text(
+              l10n.reportsColTotal,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: AppColors.muted,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.6,
+              ),
+            ),
           ),
           amt(f.format(report.outputTax)),
           amt(f.format(report.inputTax)),
@@ -1100,7 +1262,9 @@ class _RateBreakdown extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
       child: ClipPath(
-        clipper: ShapeBorderClipper(shape: AppShapes.squircle(AppSizes.radiusMd)),
+        clipper: ShapeBorderClipper(
+          shape: AppShapes.squircle(AppSizes.radiusMd),
+        ),
         child: Container(
           decoration: ShapeDecoration(
             shape: AppShapes.squircle(
@@ -1113,34 +1277,53 @@ class _RateBreakdown extends StatelessWidget {
               Container(
                 color: AppColors.heroPanel,
                 padding: const EdgeInsets.symmetric(
-                    horizontal: AppSizes.md, vertical: AppSizes.sm),
+                  horizontal: AppSizes.md,
+                  vertical: AppSizes.sm,
+                ),
                 child: Row(
                   children: [
-                    SizedBox(width: 52, child: Text(l10n.reportsColRate, style: headStyle)),
-                    Expanded(
-                        child: Text(l10n.reportsColTaxable,
-                            style: headStyle, textAlign: TextAlign.right)),
                     SizedBox(
-                        width: 96,
-                        child: Text('GST',
-                            style: headStyle, textAlign: TextAlign.right)),
+                      width: 52,
+                      child: Text(l10n.reportsColRate, style: headStyle),
+                    ),
+                    Expanded(
+                      child: Text(
+                        l10n.reportsColTaxable,
+                        style: headStyle,
+                        textAlign: TextAlign.right,
+                      ),
+                    ),
+                    SizedBox(
+                      width: 96,
+                      child: Text(
+                        'GST',
+                        style: headStyle,
+                        textAlign: TextAlign.right,
+                      ),
+                    ),
                   ],
                 ),
               ),
               for (final g in rows)
                 Container(
                   decoration: BoxDecoration(
-                    border: Border(bottom: BorderSide(color: AppColors.hairline)),
+                    border: Border(
+                      bottom: BorderSide(color: AppColors.hairline),
+                    ),
                   ),
                   padding: const EdgeInsets.symmetric(
-                      horizontal: AppSizes.md, vertical: AppSizes.sm),
+                    horizontal: AppSizes.md,
+                    vertical: AppSizes.sm,
+                  ),
                   child: Row(
                     children: [
                       SizedBox(
                         width: 52,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: AppSizes.sm, vertical: 1),
+                            horizontal: AppSizes.sm,
+                            vertical: 1,
+                          ),
                           decoration: ShapeDecoration(
                             color: AppColors.surfaceTint,
                             shape: AppShapes.squircle(AppSizes.radiusFull),
@@ -1150,7 +1333,9 @@ class _RateBreakdown extends StatelessWidget {
                             textAlign: TextAlign.center,
                             style: theme.textTheme.bodySmall?.copyWith(
                               fontWeight: FontWeight.w700,
-                              fontFeatures: const [FontFeature.tabularFigures()],
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
                             ),
                           ),
                         ),
@@ -1182,10 +1367,15 @@ class _RateBreakdown extends StatelessWidget {
               Container(
                 color: AppColors.heroPanel,
                 padding: const EdgeInsets.symmetric(
-                    horizontal: AppSizes.md, vertical: AppSizes.sm),
+                  horizontal: AppSizes.md,
+                  vertical: AppSizes.sm,
+                ),
                 child: Row(
                   children: [
-                    SizedBox(width: 52, child: Text(l10n.reportsColTotal, style: headStyle)),
+                    SizedBox(
+                      width: 52,
+                      child: Text(l10n.reportsColTotal, style: headStyle),
+                    ),
                     Expanded(
                       child: Text(
                         f.format(totalTaxable),
@@ -1311,15 +1501,35 @@ class _PnlView extends StatelessWidget {
           value: f.format(r.netProfit),
           tone: r.netProfit >= 0 ? AppColors.success : AppColors.error,
           helper: l10n.reportsGrossMargin(
-              (r.grossMargin * 100).toStringAsFixed(1)),
+            (r.grossMargin * 100).toStringAsFixed(1),
+          ),
         ),
         const SizedBox(height: AppSizes.xl),
         const _Divider(),
-        _PnlRow(label: l10n.reportsRevenue, value: f.format(r.revenue), strong: true),
-        _PnlRow(label: l10n.reportsCostOfGoodsSold, value: '− ${f.format(r.cogs)}'),
-        _PnlRow(label: l10n.reportsGrossProfit, value: f.format(r.grossProfit), strong: true),
-        _PnlRow(label: l10n.reportsAdjustmentWriteoffs, value: '− ${f.format(r.writeoffs)}'),
-        _PnlRow(label: l10n.reportsNetProfitRow, value: f.format(r.netProfit), strong: true, big: true),
+        _PnlRow(
+          label: l10n.reportsRevenue,
+          value: f.format(r.revenue),
+          strong: true,
+        ),
+        _PnlRow(
+          label: l10n.reportsCostOfGoodsSold,
+          value: '− ${f.format(r.cogs)}',
+        ),
+        _PnlRow(
+          label: l10n.reportsGrossProfit,
+          value: f.format(r.grossProfit),
+          strong: true,
+        ),
+        _PnlRow(
+          label: l10n.reportsAdjustmentWriteoffs,
+          value: '− ${f.format(r.writeoffs)}',
+        ),
+        _PnlRow(
+          label: l10n.reportsNetProfitRow,
+          value: f.format(r.netProfit),
+          strong: true,
+          big: true,
+        ),
 
         // Proof — every headline figure traced back to its documents.
         _Eyebrow(l10n.reportsHowThisIsCalculated),
@@ -1333,7 +1543,11 @@ class _PnlView extends StatelessWidget {
           basis: l10n.reportsLessSalesReturnsBasis,
           value: '− ${f.format(r.refunds)}',
         ),
-        _StatementRow(label: l10n.reportsRevenueA, value: f.format(r.revenue), kind: _RowKind.subtotal),
+        _StatementRow(
+          label: l10n.reportsRevenueA,
+          value: f.format(r.revenue),
+          kind: _RowKind.subtotal,
+        ),
         _StatementRow(
           label: l10n.reportsGoodsSoldAtCost,
           basis: l10n.reportsGoodsSoldAtCostBasis,
@@ -1345,26 +1559,37 @@ class _PnlView extends StatelessWidget {
           value: '− ${f.format(r.returnedCogs)}',
         ),
         _StatementRow(
-            label: l10n.reportsCostOfGoodsSoldB, value: f.format(r.cogs), kind: _RowKind.subtotal),
+          label: l10n.reportsCostOfGoodsSoldB,
+          value: f.format(r.cogs),
+          kind: _RowKind.subtotal,
+        ),
         _StatementRow(
-            label: l10n.reportsGrossProfitAB,
-            value: f.format(r.grossProfit),
-            kind: _RowKind.subtotal),
+          label: l10n.reportsGrossProfitAB,
+          value: f.format(r.grossProfit),
+          kind: _RowKind.subtotal,
+        ),
         _StatementRow(
           label: l10n.reportsLessStockWriteoffs,
           basis: l10n.reportsLessStockWriteoffsBasis,
           value: '− ${f.format(r.writeoffs)}',
         ),
         _StatementRow(
-            label: l10n.reportsNetProfitFormula,
-            value: f.format(r.netProfit),
-            kind: _RowKind.total),
+          label: l10n.reportsNetProfitFormula,
+          value: f.format(r.netProfit),
+          kind: _RowKind.total,
+        ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(AppSizes.lg, AppSizes.md, AppSizes.lg, 0),
+          padding: const EdgeInsets.fromLTRB(
+            AppSizes.lg,
+            AppSizes.md,
+            AppSizes.lg,
+            0,
+          ),
           child: Text(
             l10n.reportsPnlNote((r.grossMargin * 100).toStringAsFixed(1)),
-            style:
-                Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.subtle),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: AppColors.subtle),
           ),
         ),
 
@@ -1401,20 +1626,31 @@ class _StatementRow extends StatelessWidget {
     final labelStyle = total
         ? theme.textTheme.titleMedium
         : subtotal
-            ? theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700)
-            : theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted);
-    final valueStyle = (total
-            ? theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)
-            : subtotal
-                ? theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700)
+        ? theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700)
+        : theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted);
+    final valueStyle =
+        (total
+                ? theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  )
+                : subtotal
+                ? theme.textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  )
                 : theme.textTheme.bodyMedium)
-        ?.copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
+            ?.copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
     return Container(
       decoration: ruled
-          ? BoxDecoration(border: Border(top: BorderSide(color: AppColors.hairline)))
+          ? BoxDecoration(
+              border: Border(top: BorderSide(color: AppColors.hairline)),
+            )
           : null,
       padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.sm),
+        AppSizes.lg,
+        AppSizes.sm,
+        AppSizes.lg,
+        AppSizes.sm,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1428,8 +1664,9 @@ class _StatementRow extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 1),
                     child: Text(
                       basis!,
-                      style:
-                          theme.textTheme.bodySmall?.copyWith(color: AppColors.subtle),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.subtle,
+                      ),
                     ),
                   ),
               ],
@@ -1468,21 +1705,25 @@ class _PnlRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: (big ? theme.textTheme.titleMedium : theme.textTheme.bodyLarge)
-                  ?.copyWith(
-                color: AppColors.black,
-                fontWeight: strong ? FontWeight.w700 : FontWeight.w500,
-              ),
+              style:
+                  (big
+                          ? theme.textTheme.titleMedium
+                          : theme.textTheme.bodyLarge)
+                      ?.copyWith(
+                        color: AppColors.black,
+                        fontWeight: strong ? FontWeight.w700 : FontWeight.w500,
+                      ),
             ),
           ),
           Text(
             value,
-            style: (big ? theme.textTheme.titleLarge : theme.textTheme.bodyLarge)
-                ?.copyWith(
-              color: AppColors.black,
-              fontWeight: strong ? FontWeight.w800 : FontWeight.w600,
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
+            style:
+                (big ? theme.textTheme.titleLarge : theme.textTheme.bodyLarge)
+                    ?.copyWith(
+                      color: AppColors.black,
+                      fontWeight: strong ? FontWeight.w800 : FontWeight.w600,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
           ),
         ],
       ),
@@ -1495,11 +1736,15 @@ class _EmptyHint extends StatelessWidget {
   final String text;
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(
-            horizontal: AppSizes.lg, vertical: AppSizes.lg),
-        child: Text(
-          text,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.subtle),
-        ),
-      );
+    padding: const EdgeInsets.symmetric(
+      horizontal: AppSizes.lg,
+      vertical: AppSizes.lg,
+    ),
+    child: Text(
+      text,
+      style: Theme.of(
+        context,
+      ).textTheme.bodySmall?.copyWith(color: AppColors.subtle),
+    ),
+  );
 }

@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// The one text-field widget for the app. Wraps Material's [TextField]
 /// with consistent shape, label-above pattern, helper/error below, and
@@ -41,7 +43,7 @@ class AppTextField extends StatelessWidget {
   final String? hint;
   final String? helper;
   final String? errorText;
-  final IconData? prefixIcon;
+  final AppIconData? prefixIcon;
   final Widget? suffixIcon;
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
@@ -107,7 +109,7 @@ class AppTextField extends StatelessWidget {
             ),
             prefixIcon: prefixIcon == null
                 ? null
-                : Icon(
+                : AppIcon(
                     prefixIcon,
                     size: AppSizes.iconMd,
                     color: AppColors.muted,

@@ -9,6 +9,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Bottom-sheet list of predefined custom-field bundles ("Electronics",
 /// "Apparel", "Logistics" …). Tapping a row stamps the whole section
@@ -61,14 +62,14 @@ class _TemplatesPickerSheetState extends State<TemplatesPickerSheet> {
       if (!mounted) return;
       final l10n = AppLocalizations.of(context);
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.customFieldsTemplateApplied)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.customFieldsTemplateApplied)));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(friendlyError(e))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(friendlyError(e))));
     } finally {
       if (mounted) setState(() => _applyingId = null);
     }
@@ -137,60 +138,58 @@ class _TemplatesPickerSheetState extends State<TemplatesPickerSheet> {
                 )
               else
                 Flexible(
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  itemCount: templates.length,
-                  separatorBuilder: (_, _) => Divider(
-                    height: 1,
-                    color: AppColors.hairline,
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: templates.length,
+                    separatorBuilder: (_, _) =>
+                        Divider(height: 1, color: AppColors.hairline),
+                    itemBuilder: (context, i) {
+                      final t = templates[i];
+                      final isApplying = t.id == _applyingId;
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: Container(
+                          width: AppSizes.huge,
+                          height: AppSizes.huge,
+                          decoration: ShapeDecoration(
+                            color: AppColors.surfaceTint,
+                            shape: AppShapes.squircle(AppSizes.radiusSm),
+                          ),
+                          child: AppIcon(
+                            resolveCustomFieldIcon(t.icon),
+                            color: AppColors.black,
+                            size: AppSizes.iconLg,
+                          ),
+                        ),
+                        title: Text(
+                          t.label,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        subtitle: Text(
+                          '${t.description} · ${l10n.customFieldsTemplateFieldCount(t.fieldCount)}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppColors.muted,
+                          ),
+                        ),
+                        trailing: isApplying
+                            ? const SizedBox(
+                                width: AppSizes.iconMd,
+                                height: AppSizes.iconMd,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : AppIcon(
+                                AppIcons.addRounded,
+                                color: AppColors.black,
+                              ),
+                        onTap: _applyingId == null ? () => _apply(t.id) : null,
+                      );
+                    },
                   ),
-                  itemBuilder: (context, i) {
-                    final t = templates[i];
-                    final isApplying = t.id == _applyingId;
-                    return ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: Container(
-                        width: AppSizes.huge,
-                        height: AppSizes.huge,
-                        decoration: ShapeDecoration(
-                          color: AppColors.surfaceTint,
-                          shape: AppShapes.squircle(AppSizes.radiusSm),
-                        ),
-                        child: Icon(
-                          resolveCustomFieldIcon(t.icon),
-                          color: AppColors.black,
-                          size: AppSizes.iconLg,
-                        ),
-                      ),
-                      title: Text(
-                        t.label,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      subtitle: Text(
-                        '${t.description} · ${l10n.customFieldsTemplateFieldCount(t.fieldCount)}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: AppColors.muted,
-                        ),
-                      ),
-                      trailing: isApplying
-                          ? const SizedBox(
-                              width: AppSizes.iconMd,
-                              height: AppSizes.iconMd,
-                              child:
-                                  CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Icon(
-                              AppIcons.addRounded,
-                              color: AppColors.black,
-                            ),
-                      onTap:
-                          _applyingId == null ? () => _apply(t.id) : null,
-                    );
-                  },
                 ),
-              ),
               const SizedBox(height: AppSizes.md),
             ],
           ),

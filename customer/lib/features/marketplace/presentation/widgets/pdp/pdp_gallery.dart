@@ -7,6 +7,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shadows.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// PDP gallery — paginated image carousel with page indicator and an
 /// overlaid coupon pill when the product carries an `offers[]` row with
@@ -53,8 +54,11 @@ class _PdpGalleryState extends State<PdpGallery> {
         height: 320,
         color: AppColors.heroPanel,
         alignment: Alignment.center,
-        child: const Icon(AppIcons.imageOutlined,
-            size: AppSizes.iconHuge, color: AppColors.muted),
+        child: const AppIcon(
+          AppIcons.imageOutlined,
+          size: AppSizes.iconHuge,
+          color: AppColors.muted,
+        ),
       );
     }
     final coupon = _couponOffer;
@@ -107,9 +111,7 @@ class _PdpGalleryState extends State<PdpGallery> {
                     height: AppSizes.sm,
                     margin: const EdgeInsets.symmetric(horizontal: AppSizes.xs),
                     decoration: BoxDecoration(
-                      color: i == _index
-                          ? AppColors.black
-                          : AppColors.hairline,
+                      color: i == _index ? AppColors.black : AppColors.hairline,
                       borderRadius: BorderRadius.circular(3),
                     ),
                   ),
@@ -129,7 +131,9 @@ class _CouponPill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.sm, vertical: AppSizes.sm),
+        horizontal: AppSizes.sm,
+        vertical: AppSizes.sm,
+      ),
       decoration: BoxDecoration(
         color: const Color(0xFFE05A2A),
         borderRadius: BorderRadius.circular(AppSizes.radiusFull),
@@ -138,17 +142,20 @@ class _CouponPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(AppIcons.localOfferRounded,
-              color: AppColors.white, size: AppSizes.iconSm),
+          const AppIcon(
+            AppIcons.localOfferRounded,
+            color: AppColors.white,
+            size: AppSizes.iconSm,
+          ),
           const SizedBox(width: AppSizes.sm),
           Text(
             offer.code != null && offer.code!.isNotEmpty
                 ? '${offer.headline} · ${offer.code}'
                 : offer.headline,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.white,
-                  fontWeight: FontWeight.w800,
-                ),
+              color: AppColors.white,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ],
       ),

@@ -20,6 +20,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 int _i(Object? v) => v is num ? v.toInt() : 0;
 double _d(Object? v) => v is num ? v.toDouble() : 0;
@@ -73,7 +74,9 @@ class _PosPageState extends State<PosPage> {
   Future<void> _loadShift() async {
     try {
       final res = await _cashierDs.current();
-      if (mounted) setState(() => _shift = res['shift'] as Map<String, dynamic>?);
+      if (mounted) {
+        setState(() => _shift = res['shift'] as Map<String, dynamic>?);
+      }
     } catch (_) {
       /* the WS gate is the backstop */
     }
@@ -91,12 +94,16 @@ class _PosPageState extends State<PosPage> {
       // Closed on another till (or voided) — show a terminal state too.
       _shownInvoice = true;
       _controller.stop();
-      WidgetsBinding.instance.addPostFrameCallback((_) => _showReceipt('completed on another till'));
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _showReceipt('completed on another till'),
+      );
     }
     final unknown = _client.unknownCode;
     if (unknown != null && !_quickAddOpen) {
       _quickAddOpen = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) => _showQuickAdd(unknown));
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _showQuickAdd(unknown),
+      );
     }
     // Online payment settled → terminal receipt.
     final paid = _client.onlinePaidAmount;
@@ -121,7 +128,8 @@ class _PosPageState extends State<PosPage> {
     try {
       final session = await _client.startOnline();
       if (session == null || !mounted) return; // error shown in the banner
-      final clientParams = (session['clientParams'] as Map).cast<String, dynamic>();
+      final clientParams = (session['clientParams'] as Map)
+          .cast<String, dynamic>();
       final result = await RazorpayCheckout().open(clientParams: clientParams);
       if (!mounted) return;
       if (result.isSuccess) {
@@ -131,7 +139,9 @@ class _PosPageState extends State<PosPage> {
         if (result.outcome == RazorpayOutcome.failed && mounted) {
           final l10n = AppLocalizations.of(context);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result.message ?? l10n.posPaymentFailedRetry)),
+            SnackBar(
+              content: Text(result.message ?? l10n.posPaymentFailedRetry),
+            ),
           );
         }
       }
@@ -154,22 +164,48 @@ class _PosPageState extends State<PosPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: nameCtrl, decoration: InputDecoration(labelText: l10n.posName)),
-              TextField(controller: priceCtrl, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: l10n.posSellingPrice)),
-              TextField(controller: taxCtrl, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: l10n.posGstPercentOptional)),
-              TextField(controller: stockCtrl, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: l10n.posOnHand)),
+              TextField(
+                controller: nameCtrl,
+                decoration: InputDecoration(labelText: l10n.posName),
+              ),
+              TextField(
+                controller: priceCtrl,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(labelText: l10n.posSellingPrice),
+              ),
+              TextField(
+                controller: taxCtrl,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: l10n.posGstPercentOptional,
+                ),
+              ),
+              TextField(
+                controller: stockCtrl,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(labelText: l10n.posOnHand),
+              ),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.posCancel)),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.posAdd)),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.posCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.posAdd),
+          ),
         ],
       ),
     );
     _quickAddOpen = false;
     final price = double.tryParse(priceCtrl.text.trim());
-    if (added == true && nameCtrl.text.trim().isNotEmpty && price != null && price > 0) {
+    if (added == true &&
+        nameCtrl.text.trim().isNotEmpty &&
+        price != null &&
+        price > 0) {
       await _client.quickAdd(
         code: code,
         name: nameCtrl.text.trim(),
@@ -196,7 +232,9 @@ class _PosPageState extends State<PosPage> {
     final code = capture.barcodes.firstOrNull?.rawValue;
     if (code == null || code.isEmpty) return;
     final now = DateTime.now();
-    if (code == _lastCode && _lastAt != null && now.difference(_lastAt!) < const Duration(milliseconds: 1200)) {
+    if (code == _lastCode &&
+        _lastAt != null &&
+        now.difference(_lastAt!) < const Duration(milliseconds: 1200)) {
       return;
     }
     _lastCode = code;
@@ -211,14 +249,21 @@ class _PosPageState extends State<PosPage> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        icon: Icon(AppIcons.checkCircleRounded, color: AppColors.success, size: AppSizes.iconHuge),
+        icon: AppIcon(
+          AppIcons.checkCircleRounded,
+          color: AppColors.success,
+          size: AppSizes.iconHuge,
+        ),
         title: Text(l10n.posSaleComplete),
         content: Text('${l10n.posInvoice} $invoiceNo'),
         actions: [
           if (_client.checkoutInvoiceId != null)
             TextButton.icon(
-              onPressed: () => _printReceipt(_client.checkoutInvoiceId!, _client.checkoutInvoiceNo ?? 'receipt'),
-              icon: const Icon(AppIcons.printOutlined),
+              onPressed: () => _printReceipt(
+                _client.checkoutInvoiceId!,
+                _client.checkoutInvoiceNo ?? 'receipt',
+              ),
+              icon: const AppIcon(AppIcons.printOutlined),
               label: Text(l10n.posPrint),
             ),
           FilledButton(
@@ -240,21 +285,27 @@ class _PosPageState extends State<PosPage> {
     try {
       final ds = context.read<InvoicesRemoteDataSource>();
       final response = await ds.downloadPdf(invoiceId);
-      if (response.statusCode != 200) throw Exception(l10n.posCouldNotGenerateReceipt);
+      if (response.statusCode != 200) {
+        throw Exception(l10n.posCouldNotGenerateReceipt);
+      }
       final dir = await getApplicationDocumentsDirectory();
       final safe = invoiceNo.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
       final file = File('${dir.path}/$safe.pdf');
       await file.writeAsBytes(response.bodyBytes);
       await OpenFilex.open(file.path);
     } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))));
+      messenger.showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      );
     }
   }
 
   Future<void> _editLineDiscount(SaleLine line) async {
     final l10n = AppLocalizations.of(context);
     final gross = line.unitPrice * line.quantity;
-    final ctrl = TextEditingController(text: line.lineDiscount > 0 ? line.lineDiscount.toStringAsFixed(2) : '');
+    final ctrl = TextEditingController(
+      text: line.lineDiscount > 0 ? line.lineDiscount.toStringAsFixed(2) : '',
+    );
     final amount = await showDialog<double>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -262,37 +313,79 @@ class _PosPageState extends State<PosPage> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: ctrl, autofocus: true, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: l10n.posDiscountMax(gross.toStringAsFixed(2)), border: const OutlineInputBorder())),
+            TextField(
+              controller: ctrl,
+              autofocus: true,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: l10n.posDiscountMax(gross.toStringAsFixed(2)),
+                border: const OutlineInputBorder(),
+              ),
+            ),
             const SizedBox(height: AppSizes.sm),
-            Wrap(spacing: AppSizes.sm, children: [
-              for (final pct in const [5, 10, 20])
-                ActionChip(label: Text('$pct%'), onPressed: () => ctrl.text = (gross * pct / 100).toStringAsFixed(2)),
-            ]),
+            Wrap(
+              spacing: AppSizes.sm,
+              children: [
+                for (final pct in const [5, 10, 20])
+                  ActionChip(
+                    label: Text('$pct%'),
+                    onPressed: () =>
+                        ctrl.text = (gross * pct / 100).toStringAsFixed(2),
+                  ),
+              ],
+            ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.posCancel)),
-          FilledButton(onPressed: () => Navigator.pop(ctx, double.tryParse(ctrl.text.trim()) ?? 0), child: Text(l10n.posApply)),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l10n.posCancel),
+          ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.pop(ctx, double.tryParse(ctrl.text.trim()) ?? 0),
+            child: Text(l10n.posApply),
+          ),
         ],
       ),
     );
     if (amount != null && amount >= 0) {
-      await _client.setLineDiscount(line.productId, amount > gross ? gross : amount);
+      await _client.setLineDiscount(
+        line.productId,
+        amount > gross ? gross : amount,
+      );
     }
   }
 
   Future<void> _editBillDiscount() async {
     final l10n = AppLocalizations.of(context);
     final current = _client.snapshot?.headerDiscount ?? 0;
-    final ctrl = TextEditingController(text: current > 0 ? current.toStringAsFixed(2) : '');
+    final ctrl = TextEditingController(
+      text: current > 0 ? current.toStringAsFixed(2) : '',
+    );
     final amount = await showDialog<double>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(l10n.posBillDiscount),
-        content: TextField(controller: ctrl, autofocus: true, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: l10n.posDiscount, border: const OutlineInputBorder())),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+            labelText: l10n.posDiscount,
+            border: const OutlineInputBorder(),
+          ),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.posCancel)),
-          FilledButton(onPressed: () => Navigator.pop(ctx, double.tryParse(ctrl.text.trim()) ?? 0), child: Text(l10n.posApply)),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l10n.posCancel),
+          ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.pop(ctx, double.tryParse(ctrl.text.trim()) ?? 0),
+            child: Text(l10n.posApply),
+          ),
         ],
       ),
     );
@@ -326,21 +419,47 @@ class _PosPageState extends State<PosPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('${l10n.posCollect} ₹${total.toStringAsFixed(2)}',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+                Text(
+                  '${l10n.posCollect} ₹${total.toStringAsFixed(2)}',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
                 const SizedBox(height: AppSizes.lg),
-                Row(children: [
-                  Expanded(child: TextField(controller: nameCtrl, decoration: InputDecoration(labelText: l10n.posCustomerOptional, border: const OutlineInputBorder()))),
-                  const SizedBox(width: AppSizes.sm),
-                  Expanded(child: TextField(controller: phoneCtrl, keyboardType: TextInputType.phone, decoration: InputDecoration(labelText: l10n.posPhone, border: const OutlineInputBorder()))),
-                ]),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: nameCtrl,
+                        decoration: InputDecoration(
+                          labelText: l10n.posCustomerOptional,
+                          border: const OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSizes.sm),
+                    Expanded(
+                      child: TextField(
+                        controller: phoneCtrl,
+                        keyboardType: TextInputType.phone,
+                        decoration: InputDecoration(
+                          labelText: l10n.posPhone,
+                          border: const OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: AppSizes.md),
                 TextField(
                   controller: cashCtrl,
                   keyboardType: TextInputType.number,
                   onChanged: (_) => setSheet(() {}),
-                  decoration: InputDecoration(labelText: l10n.posCashReceived, border: const OutlineInputBorder()),
+                  decoration: InputDecoration(
+                    labelText: l10n.posCashReceived,
+                    border: const OutlineInputBorder(),
+                  ),
                 ),
                 if (change != null)
                   Padding(
@@ -359,14 +478,24 @@ class _PosPageState extends State<PosPage> {
                   onPressed: (received != null && received >= total)
                       ? () {
                           Navigator.pop(ctx);
-                          _client.checkout('CASH', customerName: nameCtrl.text.trim(), customerPhone: phoneCtrl.text.trim());
+                          _client.checkout(
+                            'CASH',
+                            customerName: nameCtrl.text.trim(),
+                            customerPhone: phoneCtrl.text.trim(),
+                          );
                         }
                       : null,
-                  icon: const Icon(AppIcons.paymentsOutlined),
+                  icon: const AppIcon(AppIcons.paymentsOutlined),
                   label: Text(l10n.posCashDone),
                 ),
                 const SizedBox(height: AppSizes.lg),
-                Text(l10n.posOtherTenders, textAlign: TextAlign.center, style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted)),
+                Text(
+                  l10n.posOtherTenders,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.muted,
+                  ),
+                ),
                 const SizedBox(height: AppSizes.sm),
                 Wrap(
                   spacing: AppSizes.sm,
@@ -377,7 +506,11 @@ class _PosPageState extends State<PosPage> {
                       OutlinedButton(
                         onPressed: () {
                           Navigator.pop(ctx);
-                          _client.checkout(m, customerName: nameCtrl.text.trim(), customerPhone: phoneCtrl.text.trim());
+                          _client.checkout(
+                            m,
+                            customerName: nameCtrl.text.trim(),
+                            customerPhone: phoneCtrl.text.trim(),
+                          );
                         },
                         child: Text(m),
                       ),
@@ -386,7 +519,7 @@ class _PosPageState extends State<PosPage> {
                         Navigator.pop(ctx);
                         _payOnline();
                       },
-                      icon: const Icon(AppIcons.smartphoneRounded),
+                      icon: const AppIcon(AppIcons.smartphoneRounded),
                       label: Text(l10n.posOnline),
                     ),
                   ],
@@ -421,16 +554,28 @@ class _PosPageState extends State<PosPage> {
       shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
       builder: (ctx) => SafeArea(
         child: bills.isEmpty
-            ? Padding(padding: const EdgeInsets.all(AppSizes.xl), child: Text(l10n.posNoHeldBills, textAlign: TextAlign.center))
+            ? Padding(
+                padding: const EdgeInsets.all(AppSizes.xl),
+                child: Text(l10n.posNoHeldBills, textAlign: TextAlign.center),
+              )
             : Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Padding(padding: const EdgeInsets.all(AppSizes.lg), child: Text(l10n.posHeldBills, style: const TextStyle(fontWeight: FontWeight.w700))),
+                  Padding(
+                    padding: const EdgeInsets.all(AppSizes.lg),
+                    child: Text(
+                      l10n.posHeldBills,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ),
                   for (final b in bills)
                     ListTile(
-                      title: Text((b['customerName'] as String?) ?? '${l10n.posBill} #${b['id']}'),
+                      title: Text(
+                        (b['customerName'] as String?) ??
+                            '${l10n.posBill} #${b['id']}',
+                      ),
                       subtitle: Text(l10n.posItemCount('${b['lineCount']}')),
-                      trailing: const Icon(AppIcons.chevronRightRounded),
+                      trailing: const AppIcon(AppIcons.chevronRightRounded),
                       onTap: () {
                         Navigator.pop(ctx);
                         _client.recall(b['id'] as int);
@@ -445,7 +590,9 @@ class _PosPageState extends State<PosPage> {
   /// Tap a line's quantity to type it directly (0 removes the line).
   Future<void> _editQty(SaleLine line) async {
     final l10n = AppLocalizations.of(context);
-    final ctrl = TextEditingController(text: line.quantity.toStringAsFixed(line.quantity % 1 == 0 ? 0 : 2));
+    final ctrl = TextEditingController(
+      text: line.quantity.toStringAsFixed(line.quantity % 1 == 0 ? 0 : 2),
+    );
     final qty = await showDialog<double>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -454,12 +601,22 @@ class _PosPageState extends State<PosPage> {
           controller: ctrl,
           autofocus: true,
           keyboardType: TextInputType.number,
-          decoration: InputDecoration(labelText: l10n.posQuantity, border: const OutlineInputBorder()),
+          decoration: InputDecoration(
+            labelText: l10n.posQuantity,
+            border: const OutlineInputBorder(),
+          ),
           onSubmitted: (v) => Navigator.pop(ctx, double.tryParse(v.trim())),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.posCancel)),
-          FilledButton(onPressed: () => Navigator.pop(ctx, double.tryParse(ctrl.text.trim())), child: Text(l10n.posSet)),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l10n.posCancel),
+          ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.pop(ctx, double.tryParse(ctrl.text.trim())),
+            child: Text(l10n.posSet),
+          ),
         ],
       ),
     );
@@ -483,17 +640,31 @@ class _PosPageState extends State<PosPage> {
           IconButton(
             tooltip: l10n.posFindItem,
             onPressed: _shiftOpen ? _openSearch : null,
-            icon: const Icon(AppIcons.searchRounded),
+            icon: const AppIcon(AppIcons.searchRounded),
           ),
           IconButton(
             tooltip: l10n.posCashierTooltip,
-            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CashierPage())).then((_) => _loadShift()),
-            icon: const Icon(AppIcons.calculateOutlined),
+            onPressed: () => Navigator.of(context)
+                .push(MaterialPageRoute(builder: (_) => const CashierPage()))
+                .then((_) => _loadShift()),
+            icon: const AppIcon(AppIcons.calculateOutlined),
           ),
-          IconButton(tooltip: l10n.posHold, onPressed: () => _client.holdAndNew(), icon: const Icon(AppIcons.pauseCircleOutlineRounded)),
-          IconButton(tooltip: l10n.posRecall, onPressed: _openHeldBills, icon: const Icon(AppIcons.restoreRounded)),
+          IconButton(
+            tooltip: l10n.posHold,
+            onPressed: () => _client.holdAndNew(),
+            icon: const AppIcon(AppIcons.pauseCircleOutlineRounded),
+          ),
+          IconButton(
+            tooltip: l10n.posRecall,
+            onPressed: _openHeldBills,
+            icon: const AppIcon(AppIcons.restoreRounded),
+          ),
           if (widget.kiosk)
-            IconButton(tooltip: l10n.posLogOut, onPressed: () => context.read<AuthProvider>().logout(), icon: const Icon(AppIcons.logoutRounded)),
+            IconButton(
+              tooltip: l10n.posLogOut,
+              onPressed: () => context.read<AuthProvider>().logout(),
+              icon: const AppIcon(AppIcons.logoutRounded),
+            ),
           _StatusChip(status: _client.status),
         ],
       ),
@@ -501,130 +672,207 @@ class _PosPageState extends State<PosPage> {
         top: true,
         bottom: false,
         child: Column(
-        children: [
-          if (_shiftOpen)
-            Container(
-              width: double.infinity,
-              color: AppColors.tileBg(AppColors.brandSoft),
-              padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg, vertical: AppSizes.sm),
-              child: Row(
-                children: [
-                  Icon(AppIcons.accountCircleOutlined, size: AppSizes.iconSm, color: AppColors.brand),
-                  const SizedBox(width: AppSizes.xs),
-                  Expanded(
-                    child: Text(
-                      '${_shift!['openedByName'] ?? l10n.posCashier}'
-                      '${_shift!['openedByEmail'] != null ? ' · ${_shift!['openedByEmail']}' : ''}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
+          children: [
+            if (_shiftOpen)
+              Container(
+                width: double.infinity,
+                color: AppColors.tileBg(AppColors.brandSoft),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSizes.lg,
+                  vertical: AppSizes.sm,
+                ),
+                child: Row(
+                  children: [
+                    AppIcon(
+                      AppIcons.accountCircleOutlined,
+                      size: AppSizes.iconSm,
+                      color: AppColors.brand,
                     ),
-                  ),
-                  Icon(AppIcons.timerOutlined, size: AppSizes.iconSm, color: AppColors.muted),
-                  const SizedBox(width: AppSizes.xs),
-                  Text(_elapsedSince(_shift!['openedAt']), style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700)),
-                ],
+                    const SizedBox(width: AppSizes.xs),
+                    Expanded(
+                      child: Text(
+                        '${_shift!['openedByName'] ?? l10n.posCashier}'
+                        '${_shift!['openedByEmail'] != null ? ' · ${_shift!['openedByEmail']}' : ''}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    AppIcon(
+                      AppIcons.timerOutlined,
+                      size: AppSizes.iconSm,
+                      color: AppColors.muted,
+                    ),
+                    const SizedBox(width: AppSizes.xs),
+                    Text(
+                      _elapsedSince(_shift!['openedAt']),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Container(
+                width: double.infinity,
+                color: AppColors.warningSoft,
+                padding: const EdgeInsets.all(AppSizes.md),
+                child: Row(
+                  children: [
+                    AppIcon(
+                      AppIcons.lockOutlineRounded,
+                      size: AppSizes.iconSm,
+                      color: AppColors.warning,
+                    ),
+                    const SizedBox(width: AppSizes.sm),
+                    Expanded(
+                      child: Text(
+                        l10n.posOpenShiftToBill,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: AppColors.warning,
+                        ),
+                      ),
+                    ),
+                    FilledButton(
+                      onPressed: () => Navigator.of(context)
+                          .push(
+                            MaterialPageRoute(
+                              builder: (_) => const CashierPage(),
+                            ),
+                          )
+                          .then((_) => _loadShift()),
+                      child: Text(l10n.posOpenShift),
+                    ),
+                  ],
+                ),
               ),
-            )
-          else
-            Container(
-              width: double.infinity,
-              color: AppColors.warningSoft,
-              padding: const EdgeInsets.all(AppSizes.md),
-              child: Row(
+            SizedBox(
+              height: 200,
+              child: Stack(
+                fit: StackFit.expand,
                 children: [
-                  Icon(AppIcons.lockOutlineRounded, size: AppSizes.iconSm, color: AppColors.warning),
-                  const SizedBox(width: AppSizes.sm),
-                  Expanded(child: Text(l10n.posOpenShiftToBill, style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.warning))),
-                  FilledButton(
-                    onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CashierPage())).then((_) => _loadShift()),
-                    child: Text(l10n.posOpenShift),
+                  ColoredBox(color: AppColors.canvas),
+                  MobileScanner(controller: _controller, onDetect: _onDetect),
+                  Center(
+                    child: Container(
+                      width: 150,
+                      height: 150,
+                      decoration: ShapeDecoration(
+                        shape: AppShapes.squircle(
+                          AppSizes.radiusLg,
+                          side: BorderSide(color: AppColors.black, width: 3),
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
-          SizedBox(
-            height: 200,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                ColoredBox(color: AppColors.canvas),
-                MobileScanner(controller: _controller, onDetect: _onDetect),
-                Center(
-                  child: Container(
-                    width: 150,
-                    height: 150,
-                    decoration: ShapeDecoration(
-                      shape: AppShapes.squircle(AppSizes.radiusLg, side: BorderSide(color: AppColors.black, width: 3)),
-                    ),
+            if (_client.error != null)
+              Container(
+                width: double.infinity,
+                color: AppColors.errorSoft,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSizes.xl,
+                  vertical: AppSizes.sm,
+                ),
+                child: Text(
+                  _client.error!,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.error,
                   ),
                 ),
-              ],
+              ),
+            Expanded(
+              child: lines.isEmpty
+                  ? Center(
+                      child: Text(
+                        l10n.posScanFirstItem,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: AppColors.muted,
+                        ),
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.all(AppSizes.lg),
+                      itemCount: lines.length,
+                      separatorBuilder: (_, _) =>
+                          Divider(height: 1, color: AppColors.hairline),
+                      itemBuilder: (_, i) => _CartTile(
+                        line: lines[i],
+                        onInc: () => _client.setQty(
+                          lines[i].productId,
+                          lines[i].quantity + 1,
+                        ),
+                        onDec: () => _client.setQty(
+                          lines[i].productId,
+                          lines[i].quantity - 1,
+                        ),
+                        onRemove: () => _client.removeItem(lines[i].productId),
+                        onTapQty: () => _editQty(lines[i]),
+                        onDiscount: () => _editLineDiscount(lines[i]),
+                      ),
+                    ),
             ),
-          ),
-          if (_client.error != null)
-            Container(
-              width: double.infinity,
-              color: AppColors.errorSoft,
-              padding: const EdgeInsets.symmetric(horizontal: AppSizes.xl, vertical: AppSizes.sm),
-              child: Text(_client.error!, style: theme.textTheme.bodySmall?.copyWith(color: AppColors.error)),
-            ),
-          Expanded(
-            child: lines.isEmpty
-                ? Center(child: Text(l10n.posScanFirstItem, style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted)))
-                : ListView.separated(
-                    padding: const EdgeInsets.all(AppSizes.lg),
-                    itemCount: lines.length,
-                    separatorBuilder: (_, _) => Divider(height: 1, color: AppColors.hairline),
-                    itemBuilder: (_, i) => _CartTile(
-                      line: lines[i],
-                      onInc: () => _client.setQty(lines[i].productId, lines[i].quantity + 1),
-                      onDec: () => _client.setQty(lines[i].productId, lines[i].quantity - 1),
-                      onRemove: () => _client.removeItem(lines[i].productId),
-                      onTapQty: () => _editQty(lines[i]),
-                      onDiscount: () => _editLineDiscount(lines[i]),
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.all(AppSizes.lg),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.posTotal,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: AppColors.muted,
+                            ),
+                          ),
+                          Text(
+                            '₹${total.toStringAsFixed(2)}',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-          ),
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.all(AppSizes.lg),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(l10n.posTotal, style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted)),
-                        Text('₹${total.toStringAsFixed(2)}', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
-                      ],
+                    if (lines.isNotEmpty)
+                      IconButton(
+                        tooltip: l10n.posBillDiscount,
+                        onPressed: _editBillDiscount,
+                        icon: const AppIcon(AppIcons.percentRounded),
+                      ),
+                    FilledButton.icon(
+                      onPressed: lines.isEmpty ? null : _openCheckoutSheet,
+                      icon: const AppIcon(AppIcons.pointOfSaleRounded),
+                      label: Text(l10n.posCheckout),
                     ),
-                  ),
-                  if (lines.isNotEmpty)
-                    IconButton(
-                      tooltip: l10n.posBillDiscount,
-                      onPressed: _editBillDiscount,
-                      icon: const Icon(AppIcons.percentRounded),
-                    ),
-                  FilledButton.icon(
-                    onPressed: lines.isEmpty ? null : _openCheckoutSheet,
-                    icon: const Icon(AppIcons.pointOfSaleRounded),
-                    label: Text(l10n.posCheckout),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
 }
 
 class _CartTile extends StatelessWidget {
-  const _CartTile({required this.line, required this.onInc, required this.onDec, required this.onRemove, required this.onTapQty, required this.onDiscount});
+  const _CartTile({
+    required this.line,
+    required this.onInc,
+    required this.onDec,
+    required this.onRemove,
+    required this.onTapQty,
+    required this.onDiscount,
+  });
   final SaleLine line;
   final VoidCallback onInc;
   final VoidCallback onDec;
@@ -642,33 +890,77 @@ class _CartTile extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(line.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+              Text(
+                line.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               Text(
                 '${line.sku} · ₹${line.unitPrice.toStringAsFixed(2)}${line.lineDiscount > 0 ? ' · −₹${line.lineDiscount.toStringAsFixed(2)}' : ''}',
-                style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.muted,
+                ),
               ),
             ],
           ),
         ),
-        IconButton(onPressed: onDiscount, tooltip: l10n.posLineDiscount, icon: Icon(AppIcons.percentRounded, color: line.lineDiscount > 0 ? AppColors.brand : AppColors.muted), iconSize: AppSizes.iconSm),
-        IconButton(onPressed: onDec, icon: const Icon(AppIcons.removeCircleOutline), iconSize: AppSizes.iconMd),
+        IconButton(
+          onPressed: onDiscount,
+          tooltip: l10n.posLineDiscount,
+          icon: AppIcon(
+            AppIcons.percentRounded,
+            color: line.lineDiscount > 0 ? AppColors.brand : AppColors.muted,
+          ),
+          iconSize: AppSizes.iconSm,
+        ),
+        IconButton(
+          onPressed: onDec,
+          icon: const AppIcon(AppIcons.removeCircleOutline),
+          iconSize: AppSizes.iconMd,
+        ),
         // Tap the quantity to type it directly.
         InkWell(
           onTap: onTapQty,
           borderRadius: BorderRadius.circular(AppSizes.radiusSm),
           child: Container(
             constraints: const BoxConstraints(minWidth: 36),
-            padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm, vertical: 4),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSizes.sm,
+              vertical: 4,
+            ),
             alignment: Alignment.center,
-            child: Text(line.quantity.toStringAsFixed(line.quantity % 1 == 0 ? 0 : 2), style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+            child: Text(
+              line.quantity.toStringAsFixed(line.quantity % 1 == 0 ? 0 : 2),
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         ),
-        IconButton(onPressed: onInc, icon: const Icon(AppIcons.addCircleOutline), iconSize: AppSizes.iconMd),
+        IconButton(
+          onPressed: onInc,
+          icon: const AppIcon(AppIcons.addCircleOutline),
+          iconSize: AppSizes.iconMd,
+        ),
         SizedBox(
           width: 72,
-          child: Text('₹${line.total.toStringAsFixed(2)}', textAlign: TextAlign.right, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+          child: Text(
+            '₹${line.total.toStringAsFixed(2)}',
+            textAlign: TextAlign.right,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ),
-        IconButton(onPressed: onRemove, icon: const Icon(AppIcons.closeRounded), iconSize: AppSizes.iconSm, color: AppColors.muted),
+        IconButton(
+          onPressed: onRemove,
+          icon: const AppIcon(AppIcons.closeRounded),
+          iconSize: AppSizes.iconSm,
+          color: AppColors.muted,
+        ),
       ],
     );
   }
@@ -699,14 +991,22 @@ class _ProductSearchSheetState extends State<_ProductSearchSheet> {
     _debounce?.cancel();
     final t = v.trim();
     if (t.isEmpty) {
-      setState(() { _results = const []; _searching = false; });
+      setState(() {
+        _results = const [];
+        _searching = false;
+      });
       return;
     }
     setState(() => _searching = true);
     final seq = ++_seq;
     _debounce = Timer(const Duration(milliseconds: 250), () async {
       final r = await widget.client.searchProducts(t);
-      if (mounted && seq == _seq) setState(() { _results = r; _searching = false; });
+      if (mounted && seq == _seq) {
+        setState(() {
+          _results = r;
+          _searching = false;
+        });
+      }
     });
   }
 
@@ -724,32 +1024,63 @@ class _ProductSearchSheetState extends State<_ProductSearchSheet> {
               controller: _ctrl,
               autofocus: true,
               onChanged: _onChanged,
-              decoration: InputDecoration(labelText: l10n.posFindItemByNameSku, prefixIcon: const Icon(AppIcons.searchRounded), border: const OutlineInputBorder()),
+              decoration: InputDecoration(
+                labelText: l10n.posFindItemByNameSku,
+                prefixIcon: const AppIcon(AppIcons.searchRounded),
+                border: const OutlineInputBorder(),
+              ),
             ),
             const SizedBox(height: AppSizes.sm),
             ConstrainedBox(
               constraints: const BoxConstraints(maxHeight: 320),
               child: _searching && _results.isEmpty
-                  ? Padding(padding: const EdgeInsets.all(AppSizes.lg), child: Text(l10n.posSearching))
+                  ? Padding(
+                      padding: const EdgeInsets.all(AppSizes.lg),
+                      child: Text(l10n.posSearching),
+                    )
                   : _results.isEmpty
-                      ? Padding(padding: const EdgeInsets.all(AppSizes.lg), child: Text(l10n.posTypeToSearch))
-                      : ListView.builder(
-                          shrinkWrap: true,
-                          itemCount: _results.length,
-                          itemBuilder: (_, i) {
-                            final p = _results[i];
-                            return ListTile(
-                              contentPadding: EdgeInsets.zero,
-                              title: Text('${p['name']}', maxLines: 1, overflow: TextOverflow.ellipsis),
-                              subtitle: Text('${p['sku']} · ${l10n.posStock} ${_i(p['stock'])}', style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted)),
-                              trailing: Text('₹${_d(p['sellingPrice']).toStringAsFixed(2)}', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
-                              onTap: () {
-                                widget.client.addItem(_i(p['id']));
-                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.posAddedItem('${p['name']}')), duration: const Duration(milliseconds: 700)));
-                              },
+                  ? Padding(
+                      padding: const EdgeInsets.all(AppSizes.lg),
+                      child: Text(l10n.posTypeToSearch),
+                    )
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: _results.length,
+                      itemBuilder: (_, i) {
+                        final p = _results[i];
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(
+                            '${p['name']}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Text(
+                            '${p['sku']} · ${l10n.posStock} ${_i(p['stock'])}',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: AppColors.muted,
+                            ),
+                          ),
+                          trailing: Text(
+                            '₹${_d(p['sellingPrice']).toStringAsFixed(2)}',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          onTap: () {
+                            widget.client.addItem(_i(p['id']));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  l10n.posAddedItem('${p['name']}'),
+                                ),
+                                duration: const Duration(milliseconds: 700),
+                              ),
                             );
                           },
-                        ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
@@ -786,7 +1117,7 @@ class _StatusChip extends StatelessWidget {
         padding: const EdgeInsets.only(right: AppSizes.lg),
         child: Row(
           children: [
-            Icon(AppIcons.circle, size: 10, color: color),
+            AppIcon(AppIcons.circle, size: 10, color: color),
             const SizedBox(width: AppSizes.xs),
             Text(label, style: Theme.of(context).textTheme.bodySmall),
           ],

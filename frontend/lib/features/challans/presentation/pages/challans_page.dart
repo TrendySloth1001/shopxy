@@ -20,6 +20,7 @@ import 'package:shopxy/shared/widgets/empty_state.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 class ChallansPage extends StatefulWidget {
   const ChallansPage({super.key});
@@ -63,105 +64,105 @@ class _ChallansPageState extends State<ChallansPage> {
         context: context,
         removeTop: true,
         child: Column(
-        children: [
-          SizedBox(height: FloatingAppBar.contentTopInset(context)),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSizes.lg,
-              AppSizes.md,
-              AppSizes.lg,
-              0,
+          children: [
+            SizedBox(height: FloatingAppBar.contentTopInset(context)),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSizes.lg,
+                AppSizes.md,
+                AppSizes.lg,
+                0,
+              ),
+              child: AppSearchBar(
+                hint: l10n.challansSearchHint,
+                onChanged: context.read<ChallansProvider>().setSearch,
+              ),
             ),
-            child: AppSearchBar(
-              hint: l10n.challansSearchHint,
-              onChanged: context.read<ChallansProvider>().setSearch,
-            ),
-          ),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSizes.lg,
-              vertical: AppSizes.sm,
-            ),
-            child: Row(
-              children:
-                  <String?>[null, 'PENDING', 'CONVERTED', 'CANCELLED']
-                      .map(
-                        (s) => Padding(
-                          padding: const EdgeInsets.only(right: AppSizes.sm),
-                          child: FilterChip(
-                            label: Text(s ?? l10n.challansFilterAll),
-                            selected: provider.statusFilter == s,
-                            onSelected: (_) =>
-                                context.read<ChallansProvider>().setStatus(s),
-                          ),
-                        ),
-                      )
-                      .toList(),
-            ),
-          ),
-          Expanded(
-            child: provider.isLoading && provider.challans.isEmpty
-                ? const _ChallanListSkeleton()
-                : provider.error != null && provider.challans.isEmpty
-                    ? AppErrorView(
-                        onRetry: () =>
-                            context.read<ChallansProvider>().loadChallans(),
-                      )
-                    : provider.challans.isEmpty
-                    ? EmptyState.line(
-                        kind: LineArt.deliveryNote,
-                        title: l10n.challansEmptyTitle,
-                        subtitle: l10n.challansEmptySubtitle,
-                      )
-                    : RefreshIndicator(
-                        onRefresh: () =>
-                            context.read<ChallansProvider>().loadChallans(),
-                        color: AppColors.black,
-                        backgroundColor: AppColors.surface,
-                        child: ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(
-                            AppSizes.lg,
-                            AppSizes.sm,
-                            AppSizes.lg,
-                            AppSizes.fabClearance,
-                          ),
-                          itemCount: provider.challans.length,
-                          separatorBuilder: (_, _) =>
-                              const SizedBox(height: AppSizes.sm),
-                          itemBuilder: (ctx, i) {
-                            final c = provider.challans[i];
-                            return _ChallanTile(
-                              challan: c,
-                              onTap: () async {
-                                final challansProvider =
-                                    context.read<ChallansProvider>();
-                                final changed = await Navigator.push<bool>(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        ChallanDetailPage(challanId: c.id),
-                                  ),
-                                );
-                                if (changed == true && mounted) {
-                                  challansProvider.loadChallans();
-                                }
-                              },
-                            );
-                          },
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSizes.lg,
+                vertical: AppSizes.sm,
+              ),
+              child: Row(
+                children: <String?>[null, 'PENDING', 'CONVERTED', 'CANCELLED']
+                    .map(
+                      (s) => Padding(
+                        padding: const EdgeInsets.only(right: AppSizes.sm),
+                        child: FilterChip(
+                          label: Text(s ?? l10n.challansFilterAll),
+                          selected: provider.statusFilter == s,
+                          onSelected: (_) =>
+                              context.read<ChallansProvider>().setStatus(s),
                         ),
                       ),
-          ),
-        ],
-      ),
+                    )
+                    .toList(),
+              ),
+            ),
+            Expanded(
+              child: provider.isLoading && provider.challans.isEmpty
+                  ? const _ChallanListSkeleton()
+                  : provider.error != null && provider.challans.isEmpty
+                  ? AppErrorView(
+                      onRetry: () =>
+                          context.read<ChallansProvider>().loadChallans(),
+                    )
+                  : provider.challans.isEmpty
+                  ? EmptyState.line(
+                      kind: LineArt.deliveryNote,
+                      title: l10n.challansEmptyTitle,
+                      subtitle: l10n.challansEmptySubtitle,
+                    )
+                  : RefreshIndicator(
+                      onRefresh: () =>
+                          context.read<ChallansProvider>().loadChallans(),
+                      color: AppColors.black,
+                      backgroundColor: AppColors.surface,
+                      child: ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSizes.lg,
+                          AppSizes.sm,
+                          AppSizes.lg,
+                          AppSizes.fabClearance,
+                        ),
+                        itemCount: provider.challans.length,
+                        separatorBuilder: (_, _) =>
+                            const SizedBox(height: AppSizes.sm),
+                        itemBuilder: (ctx, i) {
+                          final c = provider.challans[i];
+                          return _ChallanTile(
+                            challan: c,
+                            onTap: () async {
+                              final challansProvider = context
+                                  .read<ChallansProvider>();
+                              final changed = await Navigator.push<bool>(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      ChallanDetailPage(challanId: c.id),
+                                ),
+                              );
+                              if (changed == true && mounted) {
+                                challansProvider.loadChallans();
+                              }
+                            },
+                          );
+                        },
+                      ),
+                    ),
+            ),
+          ],
+        ),
       ),
       floatingActionButton: MaybeLocked(
         allowed: context.select<AuthProvider, bool>(
-            (a) => a.user?.canManage('challans') ?? false),
+          (a) => a.user?.canManage('challans') ?? false,
+        ),
         what: 'create challans',
         child: FloatingActionButton.extended(
           onPressed: _openCreate,
-          icon: const Icon(AppIcons.addRounded),
+          icon: const AppIcon(AppIcons.addRounded),
           label: Text(l10n.challansCreate),
         ),
       ),
@@ -188,7 +189,11 @@ class _ChallanListSkeleton extends StatelessWidget {
     return ListView.separated(
       physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.sm),
+        AppSizes.lg,
+        AppSizes.sm,
+        AppSizes.lg,
+        AppSizes.sm,
+      ),
       itemCount: 5,
       separatorBuilder: (_, _) => const SizedBox(height: AppSizes.sm),
       itemBuilder: (_, _) => const _ChallanTileSkeleton(),
@@ -204,8 +209,10 @@ class _ChallanTileSkeleton extends StatelessWidget {
     return Container(
       decoration: ShapeDecoration(
         color: AppColors.surface,
-        shape: AppShapes.squircle(AppSizes.radiusLg,
-            side: BorderSide(color: AppColors.hairline)),
+        shape: AppShapes.squircle(
+          AppSizes.radiusLg,
+          side: BorderSide(color: AppColors.hairline),
+        ),
       ),
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.lg,
@@ -246,8 +253,10 @@ class _ChallanTile extends StatelessWidget {
 
     return Material(
       color: AppColors.surface,
-      shape: AppShapes.squircle(AppSizes.radiusLg,
-          side: BorderSide(color: AppColors.hairline)),
+      shape: AppShapes.squircle(
+        AppSizes.radiusLg,
+        side: BorderSide(color: AppColors.hairline),
+      ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,

@@ -11,6 +11,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 enum _Tone { brand, amber, error }
 
@@ -18,7 +19,7 @@ class _Item {
   const _Item(this.count, this.label, this.icon, this.tone, this.page);
   final int count;
   final String label;
-  final IconData icon;
+  final AppIconData icon;
   final _Tone tone;
   final Widget Function() page;
 }
@@ -33,21 +34,48 @@ class ActionCenter extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final items = <_Item>[
-      _Item(queue.orders, l10n.dashboardOrdersToConfirm,
-          AppIcons.shoppingBagOutlined, _Tone.brand,
-          () => const OrdersInboxPage()),
-      _Item(queue.returns, l10n.dashboardReturnsToReview, AppIcons.replayRounded,
-          _Tone.amber, () => const MerchantReturnsPage()),
-      _Item(queue.quotations, l10n.dashboardQuotesToPrice,
-          AppIcons.descriptionOutlined, _Tone.brand,
-          () => const QuotationsPage()),
-      _Item(queue.drafts, l10n.dashboardDraftsToConfirm,
-          AppIcons.assignmentOutlined, _Tone.brand, () => const InvoicesPage()),
-      _Item(queue.outOfStock, l10n.dashboardOutOfStock,
-          AppIcons.inventory2Outlined, _Tone.error,
-          () => const ProductsPage()),
-      _Item(queue.lowStock, l10n.dashboardLowStock, AppIcons.inventoryOutlined,
-          _Tone.amber, () => const ProductsPage()),
+      _Item(
+        queue.orders,
+        l10n.dashboardOrdersToConfirm,
+        AppIcons.shoppingBagOutlined,
+        _Tone.brand,
+        () => const OrdersInboxPage(),
+      ),
+      _Item(
+        queue.returns,
+        l10n.dashboardReturnsToReview,
+        AppIcons.replayRounded,
+        _Tone.amber,
+        () => const MerchantReturnsPage(),
+      ),
+      _Item(
+        queue.quotations,
+        l10n.dashboardQuotesToPrice,
+        AppIcons.descriptionOutlined,
+        _Tone.brand,
+        () => const QuotationsPage(),
+      ),
+      _Item(
+        queue.drafts,
+        l10n.dashboardDraftsToConfirm,
+        AppIcons.assignmentOutlined,
+        _Tone.brand,
+        () => const InvoicesPage(),
+      ),
+      _Item(
+        queue.outOfStock,
+        l10n.dashboardOutOfStock,
+        AppIcons.inventory2Outlined,
+        _Tone.error,
+        () => const ProductsPage(),
+      ),
+      _Item(
+        queue.lowStock,
+        l10n.dashboardLowStock,
+        AppIcons.inventoryOutlined,
+        _Tone.amber,
+        () => const ProductsPage(),
+      ),
     ].where((it) => it.count > 0).toList();
 
     return DashSection(
@@ -55,11 +83,16 @@ class ActionCenter extends StatelessWidget {
       child: items.isEmpty
           ? DashCard(
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSizes.md, vertical: AppSizes.lg),
+                horizontal: AppSizes.md,
+                vertical: AppSizes.lg,
+              ),
               child: Row(
                 children: [
-                  Icon(AppIcons.checkCircleRounded,
-                      size: AppSizes.iconMd, color: AppColors.success),
+                  AppIcon(
+                    AppIcons.checkCircleRounded,
+                    size: AppSizes.iconMd,
+                    color: AppColors.success,
+                  ),
                   const SizedBox(width: AppSizes.md),
                   Expanded(
                     child: Text(
@@ -72,8 +105,7 @@ class ActionCenter extends StatelessWidget {
             )
           : LayoutBuilder(
               builder: (context, c) {
-                final cols =
-                    responsiveCols(c.maxWidth, base: 2, lg: 3, xl: 6);
+                final cols = responsiveCols(c.maxWidth, base: 2, lg: 3, xl: 6);
                 return ResponsiveGrid(
                   columns: cols,
                   children: [for (final it in items) _Tile(item: it)],
@@ -103,9 +135,11 @@ class _Tile extends StatelessWidget {
             width: AppSizes.avatarXs,
             height: AppSizes.avatarXs,
             decoration: ShapeDecoration(
-                color: bg, shape: AppShapes.squircle(AppSizes.radiusMd)),
+              color: bg,
+              shape: AppShapes.squircle(AppSizes.radiusMd),
+            ),
             alignment: Alignment.center,
-            child: Icon(item.icon, size: 18, color: fg),
+            child: AppIcon(item.icon, size: 18, color: fg),
           ),
           const SizedBox(width: AppSizes.md),
           Expanded(
@@ -115,8 +149,9 @@ class _Tile extends StatelessWidget {
               children: [
                 Text(
                   '${item.count}',
-                  style: DashText.headlineSm
-                      .copyWith(fontFeatures: tabularFigures),
+                  style: DashText.headlineSm.copyWith(
+                    fontFeatures: tabularFigures,
+                  ),
                 ),
                 Text(
                   item.label,

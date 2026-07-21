@@ -5,6 +5,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// One review row — used both inline in the PDP recent-reviews block
 /// and on the full all-reviews page. Designed to read like Flipkart:
@@ -13,6 +14,7 @@ import 'package:shopxy_customer/core/icons/app_icons.dart';
 class ReviewTile extends StatelessWidget {
   const ReviewTile({super.key, required this.review, this.dense = false});
   final Review review;
+
   /// Compact mode trims the body to 4 lines + drops the divider — used
   /// in the PDP card stack where there's a hard height budget.
   final bool dense;
@@ -106,7 +108,7 @@ class ReviewTile extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
+                    const AppIcon(
                       AppIcons.verifiedRounded,
                       size: AppSizes.iconSm,
                       color: AppColors.success,
@@ -168,12 +170,12 @@ class _RatingChip extends StatelessWidget {
           Text(
             '$rating',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppColors.white,
-                  fontWeight: FontWeight.w800,
-                ),
+              color: AppColors.white,
+              fontWeight: FontWeight.w800,
+            ),
           ),
           const SizedBox(width: AppSizes.xs),
-          const Icon(
+          const AppIcon(
             AppIcons.starRounded,
             color: AppColors.white,
             size: AppSizes.iconSm,

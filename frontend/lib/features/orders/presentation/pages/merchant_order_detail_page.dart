@@ -25,13 +25,15 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 class MerchantOrderDetailPage extends StatefulWidget {
   const MerchantOrderDetailPage({super.key, required this.orderId});
   final int orderId;
 
   @override
-  State<MerchantOrderDetailPage> createState() => _MerchantOrderDetailPageState();
+  State<MerchantOrderDetailPage> createState() =>
+      _MerchantOrderDetailPageState();
 }
 
 class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
@@ -39,9 +41,11 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
   bool _loading = true;
   String? _error;
   bool _busy = false;
+
   /// Set on a stock-shortfall failure so we can highlight the offending
   /// line in the items list.
   int? _shortfallProductId;
+
   /// Collapses the verbose customer card into a sticky summary header
   /// once the user scrolls past it. ScrollController offset > threshold.
   final _scrollCtrl = ScrollController();
@@ -58,10 +62,13 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
 
   static final _date = DateFormat('d MMM y · h:mm a');
   static final _relativeFmt = DateFormat('h:mm a');
-  static final _currency =
-      NumberFormat.currency(symbol: AppStrings.currencySymbol, decimalDigits: 2);
-  static final _currencyCompact =
-      NumberFormat.compactCurrency(symbol: AppStrings.currencySymbol);
+  static final _currency = NumberFormat.currency(
+    symbol: AppStrings.currencySymbol,
+    decimalDigits: 2,
+  );
+  static final _currencyCompact = NumberFormat.compactCurrency(
+    symbol: AppStrings.currencySymbol,
+  );
 
   @override
   void initState() {
@@ -149,7 +156,9 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _shortfallProductId = e.code == 'INSUFFICIENT_STOCK' ? e.productId : null;
+        _shortfallProductId = e.code == 'INSUFFICIENT_STOCK'
+            ? e.productId
+            : null;
       });
       // Server is the source of truth for stock; re-pull so the
       // shortfall chip on the page matches what just blocked the confirm.
@@ -159,9 +168,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
       messenger.showSnackBar(SnackBar(content: Text(e.message)));
     } catch (e) {
       if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(content: Text(friendlyError(e))),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(friendlyError(e))));
       setState(() => _busy = false);
     }
   }
@@ -197,9 +204,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
       navigator.pop();
     } catch (e) {
       if (mounted) {
-        messenger.showSnackBar(
-          SnackBar(content: Text(friendlyError(e))),
-        );
+        messenger.showSnackBar(SnackBar(content: Text(friendlyError(e))));
         setState(() => _busy = false);
       }
     }
@@ -242,9 +247,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
       await _load();
     } catch (e) {
       if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(content: Text(friendlyError(e))),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(friendlyError(e))));
       setState(() => _busy = false);
     }
   }
@@ -271,12 +274,14 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
       if (!mounted) return;
       if (draftId != null) {
         setState(() {
-          _pendingStockDrafts.add(_PendingStockDraft(
-            invoiceId: draftId,
-            productId: item.productId,
-            productName: item.productName,
-            unit: item.unit,
-          ));
+          _pendingStockDrafts.add(
+            _PendingStockDraft(
+              invoiceId: draftId,
+              productId: item.productId,
+              productName: item.productName,
+              unit: item.unit,
+            ),
+          );
         });
         // We don't reload the order yet — stock chips only move once
         // the draft is confirmed (the ledger posts on confirm, not on
@@ -284,9 +289,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
       }
     } catch (e) {
       if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(content: Text(friendlyError(e))),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(friendlyError(e))));
     }
   }
 
@@ -296,14 +299,13 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
     final messenger = ScaffoldMessenger.of(context);
     setState(() => _confirmingDraftIds.add(draft.invoiceId));
     try {
-      await context
-          .read<InvoicesProvider>()
-          .updateStatus(draft.invoiceId, 'CONFIRMED');
+      await context.read<InvoicesProvider>().updateStatus(
+        draft.invoiceId,
+        'CONFIRMED',
+      );
       if (!mounted) return;
       setState(() {
-        _pendingStockDrafts.removeWhere(
-          (d) => d.invoiceId == draft.invoiceId,
-        );
+        _pendingStockDrafts.removeWhere((d) => d.invoiceId == draft.invoiceId);
         _confirmingDraftIds.remove(draft.invoiceId);
       });
       messenger.showSnackBar(
@@ -313,9 +315,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _confirmingDraftIds.remove(draft.invoiceId));
-      messenger.showSnackBar(
-        SnackBar(content: Text(friendlyError(e))),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(friendlyError(e))));
     }
   }
 
@@ -399,7 +399,8 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
     final l10n = AppLocalizations.of(context);
     final order = _order;
     final canWriteOrders = context.select<AuthProvider, bool>(
-        (a) => a.user?.canWriteOrders ?? false);
+      (a) => a.user?.canWriteOrders ?? false,
+    );
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: FloatingAppBar(
@@ -408,7 +409,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
           if (order != null)
             IconButton(
               tooltip: l10n.ordersActionShare,
-              icon: const Icon(AppIcons.iosShareRounded),
+              icon: const AppIcon(AppIcons.iosShareRounded),
               onPressed: _shareSummary,
             ),
         ],
@@ -422,31 +423,31 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
       body: _loading
           ? const _OrderDetailSkeleton()
           : _error != null
-              ? _ErrorState(message: _error!, onRetry: _load)
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: _Body(
-                    order: order!,
-                    dateFmt: _date,
-                    relativeFmt: _relativeFmt,
-                    currency: _currency,
-                    currencyCompact: _currencyCompact,
-                    scrollController: _scrollCtrl,
-                    shortfallProductId: _shortfallProductId,
-                    pendingStockDrafts: _pendingStockDrafts,
-                    confirmingDraftIds: _confirmingDraftIds,
-                    onRestock: _restock,
-                    onRestockBanner: _restockFirstShortfall,
-                    onConfirmDraft: _confirmStockDraft,
-                    onDismissDraft: _dismissStockDraft,
-                    onCall: _callCustomer,
-                    onWhatsapp: _whatsappCustomer,
-                    onEmail: _emailCustomer,
-                    canWriteOrders: canWriteOrders,
-                    shippingBusy: _busy,
-                    onUpdateShipping: _updateShipping,
-                  ),
-                ),
+          ? _ErrorState(message: _error!, onRetry: _load)
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: _Body(
+                order: order!,
+                dateFmt: _date,
+                relativeFmt: _relativeFmt,
+                currency: _currency,
+                currencyCompact: _currencyCompact,
+                scrollController: _scrollCtrl,
+                shortfallProductId: _shortfallProductId,
+                pendingStockDrafts: _pendingStockDrafts,
+                confirmingDraftIds: _confirmingDraftIds,
+                onRestock: _restock,
+                onRestockBanner: _restockFirstShortfall,
+                onConfirmDraft: _confirmStockDraft,
+                onDismissDraft: _dismissStockDraft,
+                onCall: _callCustomer,
+                onWhatsapp: _whatsappCustomer,
+                onEmail: _emailCustomer,
+                canWriteOrders: canWriteOrders,
+                shippingBusy: _busy,
+                onUpdateShipping: _updateShipping,
+              ),
+            ),
       bottomNavigationBar: order == null || !order.isPending
           ? null
           : SafeArea(
@@ -464,8 +465,10 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
                         what: l10n.ordersManageWhat,
                         child: OutlinedButton.icon(
                           onPressed: _busy ? null : _reject,
-                          icon: Icon(AppIcons.closeRounded,
-                              color: AppColors.error),
+                          icon: AppIcon(
+                            AppIcons.closeRounded,
+                            color: AppColors.error,
+                          ),
                           label: Text(
                             l10n.ordersDecline,
                             style: TextStyle(color: AppColors.error),
@@ -485,7 +488,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
                         what: l10n.ordersManageWhat,
                         child: FilledButton.icon(
                           onPressed: _busy ? null : _confirm,
-                          icon: const Icon(AppIcons.checkRounded),
+                          icon: const AppIcon(AppIcons.checkRounded),
                           label: Text(l10n.ordersConfirmAndCreateInvoice),
                           style: FilledButton.styleFrom(
                             backgroundColor: AppColors.brand,
@@ -525,8 +528,9 @@ class _StickyContextStrip extends StatelessWidget {
           Expanded(
             child: Text(
               order.customerName,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(fontWeight: FontWeight.w700),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -643,7 +647,7 @@ class _Body extends StatelessWidget {
               children: [
                 Padding(
                   padding: const EdgeInsets.only(top: 2),
-                  child: Icon(
+                  child: AppIcon(
                     AppIcons.locationOnOutlined,
                     size: AppSizes.iconSm,
                     color: AppColors.muted,
@@ -653,8 +657,9 @@ class _Body extends StatelessWidget {
                 Expanded(
                   child: Text(
                     order.customerAddress!,
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: AppColors.muted),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.muted,
+                    ),
                   ),
                 ),
               ],
@@ -676,14 +681,12 @@ class _Body extends StatelessWidget {
             children: [
               Text(
                 dateFmt.format(order.createdAt.toLocal()),
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: AppColors.muted),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.muted,
+                ),
               ),
               const Spacer(),
-              AppStatusBadge(
-                label: order.status,
-                tone: _statusTone(order),
-              ),
+              AppStatusBadge(label: order.status, tone: _statusTone(order)),
             ],
           ),
         ),
@@ -705,10 +708,7 @@ class _Body extends StatelessWidget {
         const AppDivider(),
 
         // Itemized totals block
-        _TotalsBlock(
-          order: order,
-          currency: currency,
-        ),
+        _TotalsBlock(order: order, currency: currency),
 
         // Open invoice CTA when this order has already been confirmed
         if (order.linkedInvoiceNo != null) ...[
@@ -719,10 +719,11 @@ class _Body extends StatelessWidget {
               onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => InvoiceDetailPage(invoiceId: order.invoiceId!),
+                  builder: (_) =>
+                      InvoiceDetailPage(invoiceId: order.invoiceId!),
                 ),
               ),
-              icon: const Icon(AppIcons.receiptLongOutlined),
+              icon: const AppIcon(AppIcons.receiptLongOutlined),
               label: Text(l10n.ordersOpenInvoice(order.linkedInvoiceNo!)),
               style: FilledButton.styleFrom(
                 minimumSize: const Size.fromHeight(AppSizes.huge),
@@ -787,13 +788,11 @@ class _DecisionSummaryStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final urgency = DateTime.now().difference(order.createdAt).inHours >= 1 &&
+    final urgency =
+        DateTime.now().difference(order.createdAt).inHours >= 1 &&
         order.isPending;
 
-    final totalQty = order.items.fold<double>(
-      0,
-      (acc, i) => acc + i.quantity,
-    );
+    final totalQty = order.items.fold<double>(0, (acc, i) => acc + i.quantity);
     final qtyLabel = totalQty.truncateToDouble() == totalQty
         ? totalQty.toInt().toString()
         : totalQty.toStringAsFixed(2);
@@ -817,8 +816,9 @@ class _DecisionSummaryStrip extends StatelessWidget {
                 ),
               Text(
                 '${relativeFmt.format(order.createdAt.toLocal())} · ${_relative(l10n, order.createdAt)}',
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: AppColors.muted),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.muted,
+                ),
               ),
             ],
           ),
@@ -946,8 +946,11 @@ class _ShortfallBanner extends StatelessWidget {
               children: [
                 Padding(
                   padding: const EdgeInsets.only(top: 2),
-                  child: Icon(AppIcons.warningAmberRounded,
-                      color: AppColors.warning, size: AppSizes.iconMd),
+                  child: AppIcon(
+                    AppIcons.warningAmberRounded,
+                    color: AppColors.warning,
+                    size: AppSizes.iconMd,
+                  ),
                 ),
                 const SizedBox(width: AppSizes.sm),
                 Expanded(
@@ -955,8 +958,7 @@ class _ShortfallBanner extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        l10n.ordersShortfallTitle(
-                            '$shortCount', '$totalCount'),
+                        l10n.ordersShortfallTitle('$shortCount', '$totalCount'),
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: AppColors.warning,
                           fontWeight: FontWeight.w800,
@@ -965,8 +967,9 @@ class _ShortfallBanner extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         l10n.ordersShortfallBody,
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: AppColors.warning),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.warning,
+                        ),
                       ),
                     ],
                   ),
@@ -978,7 +981,10 @@ class _ShortfallBanner extends StatelessWidget {
               children: [
                 FilledButton.icon(
                   onPressed: onRestock,
-                  icon: const Icon(AppIcons.addBoxOutlined, size: AppSizes.iconSm),
+                  icon: const AppIcon(
+                    AppIcons.addBoxOutlined,
+                    size: AppSizes.iconSm,
+                  ),
                   label: Text(l10n.ordersRestock),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.warning,
@@ -1053,17 +1059,24 @@ class _CustomerCard extends StatelessWidget {
                   children: [
                     Text(
                       order.customerName,
-                      style: theme.textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.w800),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                     if (phone != null)
-                      Text(phone,
-                          style: theme.textTheme.bodySmall
-                              ?.copyWith(color: AppColors.muted)),
+                      Text(
+                        phone,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.muted,
+                        ),
+                      ),
                     if (email != null)
-                      Text(email,
-                          style: theme.textTheme.bodySmall
-                              ?.copyWith(color: AppColors.muted)),
+                      Text(
+                        email,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.muted,
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -1114,7 +1127,7 @@ class _ReachButton extends StatelessWidget {
     required this.label,
     required this.onTap,
   });
-  final IconData icon;
+  final AppIconData icon;
   final String label;
   final VoidCallback onTap;
 
@@ -1135,7 +1148,7 @@ class _ReachButton extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: AppSizes.iconSm, color: AppColors.black),
+              AppIcon(icon, size: AppSizes.iconSm, color: AppColors.black),
               const SizedBox(width: AppSizes.sm),
               Text(
                 label,
@@ -1176,8 +1189,11 @@ class _CustomerNote extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(AppIcons.formatQuoteRounded,
-                    size: AppSizes.iconSm, color: AppColors.muted),
+                AppIcon(
+                  AppIcons.formatQuoteRounded,
+                  size: AppSizes.iconSm,
+                  color: AppColors.muted,
+                ),
                 const SizedBox(width: AppSizes.xs),
                 Text(
                   l10n.ordersCustomerNote.toUpperCase(),
@@ -1225,8 +1241,8 @@ class _StatusJourney extends StatelessWidget {
         label: order.isRejected
             ? l10n.ordersJourneyDeclined
             : order.isCancelled
-                ? l10n.ordersJourneyCancelled
-                : l10n.ordersJourneyConfirmed,
+            ? l10n.ordersJourneyCancelled
+            : l10n.ordersJourneyConfirmed,
         done: confirmed,
         failed: order.isRejected || order.isCancelled,
       ),
@@ -1242,9 +1258,7 @@ class _StatusJourney extends StatelessWidget {
             Expanded(
               child: Container(
                 height: 1,
-                color: steps[i + 1].done
-                    ? AppColors.brand
-                    : AppColors.hairline,
+                color: steps[i + 1].done ? AppColors.brand : AppColors.hairline,
               ),
             ),
         ],
@@ -1273,8 +1287,8 @@ class _JourneyDot extends StatelessWidget {
     final color = step.failed
         ? AppColors.error
         : step.done
-            ? AppColors.brand
-            : AppColors.hairline;
+        ? AppColors.brand
+        : AppColors.hairline;
     final theme = Theme.of(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -1288,7 +1302,7 @@ class _JourneyDot extends StatelessWidget {
             border: Border.all(color: color, width: 1.4),
           ),
           child: step.done && !step.failed
-              ? Icon(AppIcons.check, size: 8, color: AppColors.white)
+              ? AppIcon(AppIcons.check, size: 8, color: AppColors.white)
               : null,
         ),
         const SizedBox(height: AppSizes.xs),
@@ -1313,6 +1327,7 @@ class _ItemRow extends StatelessWidget {
   });
   final MerchantOrderItem item;
   final NumberFormat currency;
+
   /// True if this row was flagged by the most recent stock-shortfall
   /// confirm failure — gives the merchant a visual to scroll to.
   final bool highlight;
@@ -1339,14 +1354,16 @@ class _ItemRow extends StatelessWidget {
               children: [
                 Text(
                   item.productName,
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.w700),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 Text(
                   '${item.productSku} · '
                   '${currency.format(item.unitPrice)} / ${item.unit}',
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: AppColors.muted),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.muted,
+                  ),
                 ),
                 const SizedBox(height: AppSizes.xs),
                 _StockChip(item: item),
@@ -1359,8 +1376,9 @@ class _ItemRow extends StatelessWidget {
             children: [
               Text(
                 '$qtyLabel ${item.unit}',
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: AppColors.muted),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppColors.muted,
+                ),
               ),
               const SizedBox(height: 2),
               SizedBox(
@@ -1368,8 +1386,9 @@ class _ItemRow extends StatelessWidget {
                 child: Text(
                   currency.format(item.total),
                   textAlign: TextAlign.right,
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.w800),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ],
@@ -1401,7 +1420,7 @@ class _ProductThumb extends StatelessWidget {
       height: AppSizes.productThumbSize,
       decoration: ShapeDecoration(color: AppColors.heroPanel, shape: shape),
       alignment: Alignment.center,
-      child: Icon(
+      child: AppIcon(
         AppIcons.inventory2Outlined,
         size: AppSizes.iconMd,
         color: AppColors.muted,
@@ -1476,7 +1495,7 @@ class _Chip extends StatelessWidget {
   final String label;
   final Color color;
   final Color soft;
-  final IconData icon;
+  final AppIconData icon;
 
   @override
   Widget build(BuildContext context) {
@@ -1490,7 +1509,7 @@ class _Chip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: AppSizes.iconSm, color: color),
+          AppIcon(icon, size: AppSizes.iconSm, color: color),
           const SizedBox(width: AppSizes.xs),
           Text(
             label,
@@ -1557,8 +1576,9 @@ class _TotalsBlock extends StatelessWidget {
             const SizedBox(height: AppSizes.xs),
             Text(
               l10n.ordersPartialFulfillFootnote,
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: AppColors.muted),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.muted,
+              ),
             ),
           ],
         ],
@@ -1625,7 +1645,9 @@ class _ReasonChip extends StatelessWidget {
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(
-              horizontal: AppSizes.md, vertical: AppSizes.sm),
+            horizontal: AppSizes.md,
+            vertical: AppSizes.sm,
+          ),
           child: Text(
             label,
             style: theme.textTheme.labelMedium?.copyWith(
@@ -1652,35 +1674,40 @@ class _ErrorState extends StatelessWidget {
       top: true,
       bottom: false,
       child: Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSizes.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(AppIcons.cloudOffRounded,
-                size: AppSizes.iconHuge, color: AppColors.muted),
-            const SizedBox(height: AppSizes.md),
-            Text(
-              l10n.ordersError,
-              style: theme.textTheme.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: AppSizes.xs),
-            Text(
-              message,
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: AppColors.muted),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSizes.lg),
-            FilledButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(AppIcons.refreshRounded),
-              label: Text(l10n.ordersRetry),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(AppSizes.xl),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AppIcon(
+                AppIcons.cloudOffRounded,
+                size: AppSizes.iconHuge,
+                color: AppColors.muted,
+              ),
+              const SizedBox(height: AppSizes.md),
+              Text(
+                l10n.ordersError,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: AppSizes.xs),
+              Text(
+                message,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.muted,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSizes.lg),
+              FilledButton.icon(
+                onPressed: onRetry,
+                icon: const AppIcon(AppIcons.refreshRounded),
+                label: Text(l10n.ordersRetry),
+              ),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -1736,8 +1763,9 @@ class _ConfirmOrderSheet extends StatelessWidget {
               shortfall
                   ? l10n.ordersConfirmShortfallTitle
                   : l10n.ordersConfirmOrderTitle,
-              style: theme.textTheme.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w800),
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
             ),
             const SizedBox(height: AppSizes.sm),
             if (shortfall)
@@ -1756,15 +1784,19 @@ class _ConfirmOrderSheet extends StatelessWidget {
                   children: [
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
-                      child: Icon(AppIcons.warningAmberRounded,
-                          color: AppColors.warning, size: AppSizes.iconMd),
+                      child: AppIcon(
+                        AppIcons.warningAmberRounded,
+                        color: AppColors.warning,
+                        size: AppSizes.iconMd,
+                      ),
                     ),
                     const SizedBox(width: AppSizes.sm),
                     Expanded(
                       child: Text(
                         l10n.ordersConfirmShortfallWarning,
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: AppColors.warning),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.warning,
+                        ),
                       ),
                     ),
                   ],
@@ -1772,8 +1804,10 @@ class _ConfirmOrderSheet extends StatelessWidget {
               ),
             Text(
               l10n.ordersConfirmOrderBody,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: AppColors.muted, height: 1.4),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: AppColors.muted,
+                height: 1.4,
+              ),
             ),
             const SizedBox(height: AppSizes.lg),
             Row(
@@ -1794,8 +1828,9 @@ class _ConfirmOrderSheet extends StatelessWidget {
                   child: FilledButton(
                     onPressed: () => Navigator.pop(context, true),
                     style: FilledButton.styleFrom(
-                      backgroundColor:
-                          shortfall ? AppColors.warning : AppColors.brand,
+                      backgroundColor: shortfall
+                          ? AppColors.warning
+                          : AppColors.brand,
                       minimumSize: const Size.fromHeight(AppSizes.huge),
                     ),
                     child: Text(l10n.ordersConfirmOrder),
@@ -1866,14 +1901,17 @@ class _DeclineOrderSheetState extends State<_DeclineOrderSheet> {
             const _SheetHandle(),
             Text(
               l10n.ordersDeclineOrderTitle,
-              style: theme.textTheme.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w800),
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
             ),
             const SizedBox(height: AppSizes.xs),
             Text(
               l10n.ordersDeclineOrderBody,
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: AppColors.muted, height: 1.4),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.muted,
+                height: 1.4,
+              ),
             ),
             const SizedBox(height: AppSizes.md),
             Wrap(
@@ -1917,10 +1955,8 @@ class _DeclineOrderSheetState extends State<_DeclineOrderSheet> {
                 Expanded(
                   flex: 2,
                   child: FilledButton(
-                    onPressed: () => Navigator.pop(
-                      context,
-                      (ok: true, note: _ctrl.text),
-                    ),
+                    onPressed: () =>
+                        Navigator.pop(context, (ok: true, note: _ctrl.text)),
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.error,
                       minimumSize: const Size.fromHeight(AppSizes.huge),
@@ -1994,8 +2030,10 @@ class _ShippingSection extends StatelessWidget {
                   what: l10n.ordersManageWhat,
                   child: OutlinedButton.icon(
                     onPressed: busy ? null : onUpdateShipping,
-                    icon: const Icon(AppIcons.localShippingOutlined,
-                        size: AppSizes.iconSm),
+                    icon: const AppIcon(
+                      AppIcons.localShippingOutlined,
+                      size: AppSizes.iconSm,
+                    ),
                     label: Text(l10n.ordersUpdateShipping),
                     style: OutlinedButton.styleFrom(
                       visualDensity: VisualDensity.compact,
@@ -2010,10 +2048,13 @@ class _ShippingSection extends StatelessWidget {
           if (order.events.isEmpty)
             Text(
               l10n.ordersNoShippingUpdates,
-              style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.muted,
+              ),
             )
           else
-            for (final ev in order.events) _ShippingEventRow(event: ev, dateFmt: dateFmt),
+            for (final ev in order.events)
+              _ShippingEventRow(event: ev, dateFmt: dateFmt),
         ],
       ),
     );
@@ -2057,19 +2098,22 @@ class _ShippingEventRow extends StatelessWidget {
               children: [
                 Text(
                   _milestoneLabel(l10n, event.type),
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.w700),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 Text(
                   meta,
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: AppColors.muted),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.muted,
+                  ),
                 ),
                 if (event.note != null && event.note!.isNotEmpty)
                   Text(
                     event.note!,
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: AppColors.muted),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.muted,
+                    ),
                   ),
               ],
             ),
@@ -2191,14 +2235,17 @@ class _ShippingUpdateSheetState extends State<_ShippingUpdateSheet> {
               const _SheetHandle(),
               Text(
                 l10n.ordersUpdateShipping,
-                style: theme.textTheme.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w800),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               const SizedBox(height: AppSizes.xs),
               Text(
                 l10n.ordersShippingSheetBody,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: AppColors.muted, height: 1.4),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.muted,
+                  height: 1.4,
+                ),
               ),
               const SizedBox(height: AppSizes.md),
               Wrap(
@@ -2231,8 +2278,10 @@ class _ShippingUpdateSheetState extends State<_ShippingUpdateSheet> {
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: _pickEta,
-                        icon: const Icon(AppIcons.scheduleRounded,
-                            size: AppSizes.iconSm),
+                        icon: const AppIcon(
+                          AppIcons.scheduleRounded,
+                          size: AppSizes.iconSm,
+                        ),
                         label: Text(
                           _eta == null
                               ? l10n.ordersEtaHint
@@ -2250,8 +2299,10 @@ class _ShippingUpdateSheetState extends State<_ShippingUpdateSheet> {
                       IconButton(
                         tooltip: l10n.ordersClearEta,
                         onPressed: () => setState(() => _eta = null),
-                        icon: const Icon(AppIcons.closeRounded,
-                            size: AppSizes.iconSm),
+                        icon: const AppIcon(
+                          AppIcons.closeRounded,
+                          size: AppSizes.iconSm,
+                        ),
                       ),
                   ],
                 ),
@@ -2280,8 +2331,10 @@ class _ShippingUpdateSheetState extends State<_ShippingUpdateSheet> {
                     flex: 2,
                     child: FilledButton.icon(
                       onPressed: _submit,
-                      icon: const Icon(AppIcons.localShippingOutlined,
-                          size: AppSizes.iconSm),
+                      icon: const AppIcon(
+                        AppIcons.localShippingOutlined,
+                        size: AppSizes.iconSm,
+                      ),
                       label: Text(l10n.ordersSaveUpdate),
                       style: FilledButton.styleFrom(
                         backgroundColor: AppColors.brand,
@@ -2479,7 +2532,9 @@ class _AddressLineSkeleton extends StatelessWidget {
             radius: AppSizes.radiusFull,
           ),
           SizedBox(width: AppSizes.xs),
-          Expanded(child: AppShimmerLine(widthFactor: 0.8, height: AppSizes.md)),
+          Expanded(
+            child: AppShimmerLine(widthFactor: 0.8, height: AppSizes.md),
+          ),
         ],
       ),
     );
@@ -2496,9 +2551,15 @@ class _DateStatusSkeleton extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
       child: Row(
         children: const [
-          Expanded(child: AppShimmerLine(widthFactor: 0.5, height: AppSizes.md)),
+          Expanded(
+            child: AppShimmerLine(widthFactor: 0.5, height: AppSizes.md),
+          ),
           SizedBox(width: AppSizes.md),
-          AppShimmerBox(width: 72, height: AppSizes.xl, radius: AppSizes.radiusFull),
+          AppShimmerBox(
+            width: 72,
+            height: AppSizes.xl,
+            radius: AppSizes.radiusFull,
+          ),
         ],
       ),
     );
@@ -2518,9 +2579,7 @@ class _StatusJourneySkeleton extends StatelessWidget {
           for (int i = 0; i < 4; i++) ...[
             _JourneyDotSkeleton(),
             if (i < 3)
-              const Expanded(
-                child: AppShimmerBox(height: 1, radius: 0),
-              ),
+              const Expanded(child: AppShimmerBox(height: 1, radius: 0)),
           ],
         ],
       ),
@@ -2540,7 +2599,11 @@ class _JourneyDotSkeleton extends StatelessWidget {
           radius: AppSizes.radiusFull,
         ),
         SizedBox(height: AppSizes.xs),
-        AppShimmerBox(width: 40, height: AppSizes.sm, radius: AppSizes.radiusFull),
+        AppShimmerBox(
+          width: 40,
+          height: AppSizes.sm,
+          radius: AppSizes.radiusFull,
+        ),
       ],
     );
   }
@@ -2585,7 +2648,11 @@ class _ItemRowSkeleton extends StatelessWidget {
                 AppShimmerLine(widthFactor: 0.5, height: AppSizes.md),
                 SizedBox(height: AppSizes.xs),
                 // Stock chip placeholder
-                AppShimmerBox(width: 100, height: AppSizes.lg, radius: AppSizes.radiusFull),
+                AppShimmerBox(
+                  width: 100,
+                  height: AppSizes.lg,
+                  radius: AppSizes.radiusFull,
+                ),
               ],
             ),
           ),
@@ -2593,9 +2660,17 @@ class _ItemRowSkeleton extends StatelessWidget {
           const Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              AppShimmerBox(width: 48, height: AppSizes.md, radius: AppSizes.radiusSm),
+              AppShimmerBox(
+                width: 48,
+                height: AppSizes.md,
+                radius: AppSizes.radiusSm,
+              ),
               SizedBox(height: AppSizes.xs),
-              AppShimmerBox(width: 64, height: AppSizes.md, radius: AppSizes.radiusSm),
+              AppShimmerBox(
+                width: 64,
+                height: AppSizes.md,
+                radius: AppSizes.radiusSm,
+              ),
             ],
           ),
         ],
@@ -2732,7 +2807,7 @@ class _StockDraftCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(
+                AppIcon(
                   AppIcons.inventoryOutlined,
                   size: AppSizes.iconSm,
                   color: AppColors.brandStrong,
@@ -2752,8 +2827,9 @@ class _StockDraftCard extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               l10n.ordersStockDraftHint,
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: AppColors.brandStrong),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.brandStrong,
+              ),
             ),
             const SizedBox(height: AppSizes.sm),
             for (final d in drafts) ...[
@@ -2807,8 +2883,9 @@ class _StockDraftRow extends StatelessWidget {
                 ),
                 Text(
                   l10n.ordersDraftInvoiceNo('${draft.invoiceId}'),
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: AppColors.muted),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.muted,
+                  ),
                 ),
               ],
             ),
@@ -2818,13 +2895,16 @@ class _StockDraftRow extends StatelessWidget {
             onPressed: isConfirming
                 ? null
                 : () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            InvoiceDetailPage(invoiceId: draft.invoiceId),
-                      ),
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          InvoiceDetailPage(invoiceId: draft.invoiceId),
                     ),
-            icon: const Icon(AppIcons.openInNewRounded, size: AppSizes.iconMd),
+                  ),
+            icon: const AppIcon(
+              AppIcons.openInNewRounded,
+              size: AppSizes.iconMd,
+            ),
           ),
           const SizedBox(width: AppSizes.xs),
           FilledButton.icon(
@@ -2838,7 +2918,7 @@ class _StockDraftRow extends StatelessWidget {
                       color: AppColors.onInverse,
                     ),
                   )
-                : const Icon(AppIcons.checkRounded, size: AppSizes.iconSm),
+                : const AppIcon(AppIcons.checkRounded, size: AppSizes.iconSm),
             label: Text(l10n.ordersConfirm),
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.brand,
@@ -2849,7 +2929,7 @@ class _StockDraftRow extends StatelessWidget {
           IconButton(
             tooltip: l10n.ordersHide,
             onPressed: isConfirming ? null : onDismiss,
-            icon: const Icon(AppIcons.closeRounded, size: AppSizes.iconSm),
+            icon: const AppIcon(AppIcons.closeRounded, size: AppSizes.iconSm),
           ),
         ],
       ),

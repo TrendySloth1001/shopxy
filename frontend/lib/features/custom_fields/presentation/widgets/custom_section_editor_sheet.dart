@@ -11,6 +11,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Create-or-edit sheet for a custom-field [CustomFieldSection].
 /// Mirrors [CustomFieldEditorSheet]'s ergonomics: name + icon picker,
@@ -40,8 +41,9 @@ class CustomSectionEditorSheet extends StatefulWidget {
 
 class _CustomSectionEditorSheetState extends State<CustomSectionEditorSheet> {
   final _formKey = GlobalKey<FormState>();
-  late final _nameController =
-      TextEditingController(text: widget.existing?.name ?? '');
+  late final _nameController = TextEditingController(
+    text: widget.existing?.name ?? '',
+  );
   late String? _iconName = widget.existing?.icon;
   bool _isSaving = false;
 
@@ -78,9 +80,9 @@ class _CustomSectionEditorSheetState extends State<CustomSectionEditorSheet> {
       Navigator.of(context).pop(result);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(friendlyError(e))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(friendlyError(e))));
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -96,9 +98,7 @@ class _CustomSectionEditorSheetState extends State<CustomSectionEditorSheet> {
     return SafeArea(
       top: false,
       child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: mediaQuery.size.height * 0.85,
-        ),
+        constraints: BoxConstraints(maxHeight: mediaQuery.size.height * 0.85),
         child: SingleChildScrollView(
           padding: EdgeInsets.only(
             left: AppSizes.lg,
@@ -139,15 +139,12 @@ class _CustomSectionEditorSheetState extends State<CustomSectionEditorSheet> {
                       color: AppColors.surfaceTint,
                       shape: AppShapes.squircle(
                         AppSizes.radiusSm,
-                        side: BorderSide(
-                          color: AppColors.hairline,
-                          width: 1,
-                        ),
+                        side: BorderSide(color: AppColors.hairline, width: 1),
                       ),
                       child: SizedBox(
                         width: AppSizes.avatarMd,
                         height: AppSizes.avatarMd,
-                        child: Icon(
+                        child: AppIcon(
                           resolveCustomFieldIcon(_iconName),
                           color: AppColors.black,
                           size: AppSizes.iconLg,

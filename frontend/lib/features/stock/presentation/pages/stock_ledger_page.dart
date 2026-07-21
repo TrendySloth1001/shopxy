@@ -20,6 +20,7 @@ import 'package:shopxy/shared/widgets/empty_state.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Full chronological stock ledger for a single product.
 ///
@@ -161,7 +162,10 @@ class _StockLedgerPageState extends State<StockLedgerPage> {
       child: ListView.separated(
         padding: EdgeInsets.fromLTRB(
           AppSizes.lg,
-          AppSizes.md + FloatingAppBar.contentTopInset(context) + AppSizes.xxl + AppSizes.xs,
+          AppSizes.md +
+              FloatingAppBar.contentTopInset(context) +
+              AppSizes.xxl +
+              AppSizes.xs,
           AppSizes.lg,
           AppSizes.md,
         ),
@@ -191,7 +195,10 @@ class _StockLedgerSkeleton extends StatelessWidget {
     return ListView.separated(
       padding: EdgeInsets.fromLTRB(
         AppSizes.lg,
-        AppSizes.md + FloatingAppBar.contentTopInset(context) + AppSizes.xxl + AppSizes.xs,
+        AppSizes.md +
+            FloatingAppBar.contentTopInset(context) +
+            AppSizes.xxl +
+            AppSizes.xs,
         AppSizes.lg,
         AppSizes.md,
       ),
@@ -250,9 +257,7 @@ class _LedgerEntryCardSkeleton extends StatelessWidget {
               AppShimmerBox(width: 60, height: 20, radius: AppSizes.radiusSm),
               const SizedBox(width: AppSizes.sm),
               // Supplier / created-by text line
-              Expanded(
-                child: AppShimmerLine(widthFactor: 0.5, height: 11),
-              ),
+              Expanded(child: AppShimmerLine(widthFactor: 0.5, height: 11)),
               // Balance text
               AppShimmerLine(widthFactor: 0.18, height: 11),
             ],
@@ -309,8 +314,9 @@ class _LedgerEntryCard extends StatelessWidget {
     final qtyStr = '$sign${_formatQty(entry.quantity)}';
     final unitLabel = unit ?? entry.productUnit ?? '';
     final accent = entry.isStockIn ? AppColors.brandStrong : AppColors.error;
-    final dateStr =
-        DateFormat('d MMM yyyy · hh:mm a').format(entry.createdAt.toLocal());
+    final dateStr = DateFormat(
+      'd MMM yyyy · hh:mm a',
+    ).format(entry.createdAt.toLocal());
 
     return AppCard(
       padding: const EdgeInsets.all(AppSizes.lg),
@@ -332,7 +338,7 @@ class _LedgerEntryCard extends StatelessWidget {
                   ),
                 ),
                 alignment: Alignment.center,
-                child: Icon(
+                child: AppIcon(
                   entry.isStockIn
                       ? AppIcons.arrowDownwardRounded
                       : AppIcons.arrowUpwardRounded,
@@ -453,7 +459,7 @@ class _LedgerEntryCard extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  Icon(
+                  AppIcon(
                     AppIcons.arrowForwardRounded,
                     color: AppColors.black,
                     size: AppSizes.iconSm,

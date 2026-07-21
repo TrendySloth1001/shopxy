@@ -12,6 +12,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Shown right after login/registration when the account has been
 /// invited onto a shop's team but isn't a member yet. Lays out the
@@ -49,8 +50,7 @@ class _JoinRequestPageState extends State<JoinRequestPage> {
 
   void _snack(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   Future<void> _accept() async {
@@ -88,10 +88,12 @@ class _JoinRequestPageState extends State<JoinRequestPage> {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
     final inv = widget.invite;
-    final shop = inv.fromShopName ?? inv.fromUserName ?? l10n.shopJoinFallbackShop;
+    final shop =
+        inv.fromShopName ?? inv.fromUserName ?? l10n.shopJoinFallbackShop;
     final roleLabel = widget.invite.teamRoleName ?? l10n.shopStaffRole;
-    final responsibilities =
-        responsibilitiesFromPermissions(inv.teamPermissions);
+    final responsibilities = responsibilitiesFromPermissions(
+      inv.teamPermissions,
+    );
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -106,9 +108,12 @@ class _JoinRequestPageState extends State<JoinRequestPage> {
       ),
       body: SafeArea(
         child: ListView(
-          padding: EdgeInsets.fromLTRB(AppSizes.lg,
-              AppSizes.sm + FloatingAppBar.contentTopInset(context),
-              AppSizes.lg, AppSizes.huge),
+          padding: EdgeInsets.fromLTRB(
+            AppSizes.lg,
+            AppSizes.sm + FloatingAppBar.contentTopInset(context),
+            AppSizes.lg,
+            AppSizes.huge,
+          ),
           children: [
             Container(
               width: AppSizes.massive,
@@ -118,29 +123,40 @@ class _JoinRequestPageState extends State<JoinRequestPage> {
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
-              child: Icon(AppIcons.groupsRounded,
-                  color: AppColors.brandStrong, size: AppSizes.iconXl),
+              child: AppIcon(
+                AppIcons.groupsRounded,
+                color: AppColors.brandStrong,
+                size: AppSizes.iconXl,
+              ),
             ),
             const SizedBox(height: AppSizes.lg),
             Text(
               l10n.shopYoureInvitedToJoin,
-              style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: AppColors.muted,
+              ),
             ),
             const SizedBox(height: 2),
             Text(
               shop,
-              style: theme.textTheme.headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.w800),
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
             ),
             const SizedBox(height: AppSizes.md),
             Row(
               children: [
-                Text(l10n.shopAsA,
-                    style: theme.textTheme.titleMedium
-                        ?.copyWith(color: AppColors.muted)),
+                Text(
+                  l10n.shopAsA,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: AppColors.muted,
+                  ),
+                ),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: AppSizes.md, vertical: AppSizes.xs),
+                    horizontal: AppSizes.md,
+                    vertical: AppSizes.xs,
+                  ),
                   decoration: ShapeDecoration(
                     color: AppColors.tileBg(AppColors.brandSoft),
                     shape: AppShapes.squircle(AppSizes.radiusFull),
@@ -162,9 +178,12 @@ class _JoinRequestPageState extends State<JoinRequestPage> {
                 shape: AppShapes.squircle(AppSizes.radiusMd),
                 child: Padding(
                   padding: const EdgeInsets.all(AppSizes.md),
-                  child: Text('“${inv.message!.trim()}”',
-                      style: theme.textTheme.bodyMedium
-                          ?.copyWith(fontStyle: FontStyle.italic)),
+                  child: Text(
+                    '“${inv.message!.trim()}”',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -172,9 +191,10 @@ class _JoinRequestPageState extends State<JoinRequestPage> {
             Text(
               l10n.shopWhatYoullBeAbleToDo,
               style: theme.textTheme.labelSmall?.copyWith(
-                  color: AppColors.muted,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.6),
+                color: AppColors.muted,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.6,
+              ),
             ),
             const SizedBox(height: AppSizes.sm),
             Material(
@@ -205,9 +225,17 @@ class _JoinRequestPageState extends State<JoinRequestPage> {
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, valueColor: AlwaysStoppedAnimation(AppColors.onInverse)),
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation(
+                            AppColors.onInverse,
+                          ),
+                        ),
                       )
-                    : Text(shop.length > 18 ? l10n.shopJoinTheTeam : l10n.shopJoinNamed(shop)),
+                    : Text(
+                        shop.length > 18
+                            ? l10n.shopJoinTheTeam
+                            : l10n.shopJoinNamed(shop),
+                      ),
               ),
             ),
             const SizedBox(height: AppSizes.sm),
@@ -238,7 +266,7 @@ class _ResponsibilityRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
+          AppIcon(
             denied ? AppIcons.blockRounded : AppIcons.checkCircleRounded,
             size: 18,
             color: denied ? AppColors.subtle : AppColors.success,
@@ -248,8 +276,8 @@ class _ResponsibilityRow extends StatelessWidget {
             child: Text(
               text,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: denied ? AppColors.muted : AppColors.black,
-                  ),
+                color: denied ? AppColors.muted : AppColors.black,
+              ),
             ),
           ),
         ],

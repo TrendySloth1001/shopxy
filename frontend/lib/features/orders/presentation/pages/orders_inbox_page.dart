@@ -19,6 +19,7 @@ import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 class OrdersInboxPage extends StatefulWidget {
   const OrdersInboxPage({super.key});
@@ -30,7 +31,12 @@ class OrdersInboxPage extends StatefulWidget {
 class _OrdersInboxPageState extends State<OrdersInboxPage> {
   // Status filters for the four inbox tabs. Labels are resolved from
   // l10n at build time (see _tabLabel); only the status codes live here.
-  static const _tabStatuses = <String?>['PENDING', 'CONFIRMED', 'REJECTED', null];
+  static const _tabStatuses = <String?>[
+    'PENDING',
+    'CONFIRMED',
+    'REJECTED',
+    null,
+  ];
 
   String _tabLabel(AppLocalizations l10n, String? status) {
     switch (status) {
@@ -103,7 +109,8 @@ class _OrdersInboxPageState extends State<OrdersInboxPage> {
     final l10n = AppLocalizations.of(context);
     final p = context.watch<OrdersProvider>();
     final canView = context.select<AuthProvider, bool>(
-        (a) => a.user?.canView('orders') ?? false);
+      (a) => a.user?.canView('orders') ?? false,
+    );
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: FloatingAppBar(
@@ -113,119 +120,131 @@ class _OrdersInboxPageState extends State<OrdersInboxPage> {
       body: !canView
           ? NoAccessView(title: l10n.ordersNoAccessTitle)
           : Column(
-        children: [
-          SizedBox(height: FloatingAppBar.contentTopInset(context)),
-          // ── Status pills ───────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSizes.lg,
-              AppSizes.md,
-              AppSizes.lg,
-              AppSizes.sm,
-            ),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  for (int i = 0; i < _tabStatuses.length; i++)
-                    Padding(
-                      padding: const EdgeInsets.only(right: AppSizes.sm),
-                      child: _Pill(
-                        label: _tabLabel(l10n, _tabStatuses[i]),
-                        // Tiny count badge on Pending so a busy merchant
-                        // sees the pile growing without leaving the
-                        // inbox.
-                        badge: _tabStatuses[i] == 'PENDING' && p.pendingCount > 0
-                            ? p.pendingCount
-                            : null,
-                        selected: i == _index,
-                        onTap: () {
-                          setState(() => _index = i);
-                          p.setStatusFilter(_tabStatuses[i]);
-                        },
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-          // ── Search + date filter row ───────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSizes.lg,
-              0,
-              AppSizes.lg,
-              AppSizes.sm,
-            ),
-            child: Row(
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _searchCtrl,
-                    onChanged: _onSearchChanged,
-                    decoration: InputDecoration(
-                      isDense: true,
-                      hintText: l10n.ordersSearchHint,
-                      prefixIcon:
-                          const Icon(AppIcons.searchRounded, size: AppSizes.iconMd),
-                      suffixIcon: p.search.isEmpty
-                          ? null
-                          : IconButton(
-                              icon: const Icon(AppIcons.closeRounded,
-                                  size: AppSizes.iconMd),
-                              onPressed: () {
-                                _searchCtrl.clear();
-                                _onSearchChanged('');
+                SizedBox(height: FloatingAppBar.contentTopInset(context)),
+                // ── Status pills ───────────────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSizes.lg,
+                    AppSizes.md,
+                    AppSizes.lg,
+                    AppSizes.sm,
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        for (int i = 0; i < _tabStatuses.length; i++)
+                          Padding(
+                            padding: const EdgeInsets.only(right: AppSizes.sm),
+                            child: _Pill(
+                              label: _tabLabel(l10n, _tabStatuses[i]),
+                              // Tiny count badge on Pending so a busy merchant
+                              // sees the pile growing without leaving the
+                              // inbox.
+                              badge:
+                                  _tabStatuses[i] == 'PENDING' &&
+                                      p.pendingCount > 0
+                                  ? p.pendingCount
+                                  : null,
+                              selected: i == _index,
+                              onTap: () {
+                                setState(() => _index = i);
+                                p.setStatusFilter(_tabStatuses[i]);
                               },
                             ),
-                      border: OutlineInputBorder(
-                        borderRadius:
-                            AppShapes.squircleRadius(AppSizes.radiusMd),
-                      ),
+                          ),
+                      ],
                     ),
                   ),
                 ),
-                const SizedBox(width: AppSizes.sm),
-                _DateFilterChip(
-                  from: p.from,
-                  to: p.to,
-                  onTap: _pickDateRange,
-                  onClear: _clearDateRange,
+                // ── Search + date filter row ───────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSizes.lg,
+                    0,
+                    AppSizes.lg,
+                    AppSizes.sm,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _searchCtrl,
+                          onChanged: _onSearchChanged,
+                          decoration: InputDecoration(
+                            isDense: true,
+                            hintText: l10n.ordersSearchHint,
+                            prefixIcon: const AppIcon(
+                              AppIcons.searchRounded,
+                              size: AppSizes.iconMd,
+                            ),
+                            suffixIcon: p.search.isEmpty
+                                ? null
+                                : IconButton(
+                                    icon: const AppIcon(
+                                      AppIcons.closeRounded,
+                                      size: AppSizes.iconMd,
+                                    ),
+                                    onPressed: () {
+                                      _searchCtrl.clear();
+                                      _onSearchChanged('');
+                                    },
+                                  ),
+                            border: OutlineInputBorder(
+                              borderRadius: AppShapes.squircleRadius(
+                                AppSizes.radiusMd,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: AppSizes.sm),
+                      _DateFilterChip(
+                        from: p.from,
+                        to: p.to,
+                        onTap: _pickDateRange,
+                        onClear: _clearDateRange,
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: p.load,
+                    child: p.isLoading && p.orders.isEmpty
+                        ? const _OrdersInboxSkeleton()
+                        : p.error != null && p.orders.isEmpty
+                        ? _ErrorState(message: p.error!, onRetry: p.load)
+                        : p.orders.isEmpty
+                        ? _EmptyInbox(
+                            isPending: _tabStatuses[_index] == 'PENDING',
+                            hasFilters:
+                                p.search.isNotEmpty ||
+                                p.from != null ||
+                                p.to != null,
+                          )
+                        : ListView.separated(
+                            // Header already clears the bar; stop the list
+                            // from auto-applying the MediaQuery top inset
+                            // (extendBodyBehindAppBar) a second time.
+                            padding: const EdgeInsets.fromLTRB(
+                              AppSizes.lg,
+                              0,
+                              AppSizes.lg,
+                              0,
+                            ),
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            itemCount: p.orders.length,
+                            separatorBuilder: (_, _) =>
+                                const SizedBox(height: AppSizes.sm),
+                            itemBuilder: (_, i) =>
+                                _OrderRow(order: p.orders[i]),
+                          ),
+                  ),
                 ),
               ],
             ),
-          ),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: p.load,
-              child: p.isLoading && p.orders.isEmpty
-                  ? const _OrdersInboxSkeleton()
-                  : p.error != null && p.orders.isEmpty
-                      ? _ErrorState(message: p.error!, onRetry: p.load)
-                      : p.orders.isEmpty
-                          ? _EmptyInbox(
-                              isPending: _tabStatuses[_index] == 'PENDING',
-                              hasFilters: p.search.isNotEmpty ||
-                                  p.from != null ||
-                                  p.to != null,
-                            )
-                          : ListView.separated(
-                              // Header already clears the bar; stop the list
-                              // from auto-applying the MediaQuery top inset
-                              // (extendBodyBehindAppBar) a second time.
-                              padding: const EdgeInsets.fromLTRB(
-                                  AppSizes.lg, 0, AppSizes.lg, 0),
-                              physics: const AlwaysScrollableScrollPhysics(),
-                              itemCount: p.orders.length,
-                              separatorBuilder: (_, _) =>
-                                  const SizedBox(height: AppSizes.sm),
-                              itemBuilder: (_, i) =>
-                                  _OrderRow(order: p.orders[i]),
-                            ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -270,9 +289,13 @@ class _Pill extends StatelessWidget {
                 const SizedBox(width: AppSizes.sm),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: AppSizes.sm, vertical: 1),
+                    horizontal: AppSizes.sm,
+                    vertical: 1,
+                  ),
                   decoration: BoxDecoration(
-                    color: selected ? AppColors.inverseSurface : AppColors.warning,
+                    color: selected
+                        ? AppColors.inverseSurface
+                        : AppColors.warning,
                     borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
                   ),
                   child: Text(
@@ -328,7 +351,7 @@ class _DateFilterChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
+              AppIcon(
                 AppIcons.eventRounded,
                 size: AppSizes.iconSm,
                 color: active ? AppColors.onInverse : AppColors.black,
@@ -346,7 +369,7 @@ class _DateFilterChip extends StatelessWidget {
                 InkWell(
                   onTap: onClear,
                   customBorder: const CircleBorder(),
-                  child: Icon(
+                  child: AppIcon(
                     AppIcons.closeRounded,
                     size: AppSizes.iconSm,
                     color: AppColors.onInverse,
@@ -374,8 +397,10 @@ class _OrderRow extends StatelessWidget {
     final preview = _itemPreviewText(order);
     return Material(
       color: AppColors.surface,
-      shape: AppShapes.squircle(AppSizes.radiusLg,
-          side: BorderSide(color: AppColors.hairline)),
+      shape: AppShapes.squircle(
+        AppSizes.radiusLg,
+        side: BorderSide(color: AppColors.hairline),
+      ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => Navigator.push(
@@ -400,15 +425,17 @@ class _OrderRow extends StatelessWidget {
                       children: [
                         Text(
                           '#${order.id}',
-                          style: theme.textTheme.titleSmall
-                              ?.copyWith(fontWeight: FontWeight.w700),
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                         const SizedBox(width: AppSizes.sm),
                         Expanded(
                           child: Text(
                             order.customerName,
-                            style: theme.textTheme.bodyMedium
-                                ?.copyWith(fontWeight: FontWeight.w600),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -426,8 +453,9 @@ class _OrderRow extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       '${_date.format(order.createdAt.toLocal())} · ${order.itemCount} ${order.itemCount == 1 ? l10n.ordersItemUnit : l10n.ordersItemsUnit}',
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: AppColors.muted),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.muted,
+                      ),
                     ),
                   ],
                 ),
@@ -438,8 +466,9 @@ class _OrderRow extends StatelessWidget {
                 children: [
                   Text(
                     '₹${order.estimatedTotal.toStringAsFixed(2)}',
-                    style: theme.textTheme.titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w800),
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   const SizedBox(height: AppSizes.xs),
                   AppStatusBadge(
@@ -503,12 +532,12 @@ class _EmptyInbox extends StatelessWidget {
               shape: AppShapes.squircle(AppSizes.radiusLg),
             ),
             alignment: Alignment.center,
-            child: Icon(
+            child: AppIcon(
               isAllCaughtUp
                   ? AppIcons.checkCircleOutlineRounded
                   : hasFilters
-                      ? AppIcons.searchOffRounded
-                      : AppIcons.inboxOutlined,
+                  ? AppIcons.searchOffRounded
+                  : AppIcons.inboxOutlined,
               size: AppSizes.iconHuge,
               color: AppColors.muted,
             ),
@@ -520,10 +549,11 @@ class _EmptyInbox extends StatelessWidget {
             isAllCaughtUp
                 ? l10n.ordersAllCaughtUp
                 : hasFilters
-                    ? l10n.ordersNoMatching
-                    : l10n.ordersNoneYet,
-            style: theme.textTheme.titleMedium
-                ?.copyWith(fontWeight: FontWeight.w700),
+                ? l10n.ordersNoMatching
+                : l10n.ordersNoneYet,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
         const SizedBox(height: AppSizes.xs),
@@ -534,10 +564,11 @@ class _EmptyInbox extends StatelessWidget {
               isAllCaughtUp
                   ? l10n.ordersAllCaughtUpHint
                   : hasFilters
-                      ? l10n.ordersNoMatchingHint
-                      : l10n.ordersNoneYetHint,
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: AppColors.muted),
+                  ? l10n.ordersNoMatchingHint
+                  : l10n.ordersNoneYetHint,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.muted,
+              ),
               textAlign: TextAlign.center,
             ),
           ),
@@ -578,8 +609,10 @@ class _OrderRowSkeleton extends StatelessWidget {
     return Container(
       decoration: ShapeDecoration(
         color: AppColors.surface,
-        shape: AppShapes.squircle(AppSizes.radiusLg,
-            side: BorderSide(color: AppColors.hairline)),
+        shape: AppShapes.squircle(
+          AppSizes.radiusLg,
+          side: BorderSide(color: AppColors.hairline),
+        ),
       ),
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.lg,
@@ -622,18 +655,10 @@ class _OrderRowSkeleton extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               // Price
-              AppShimmerBox(
-                width: 64,
-                height: 14,
-                radius: AppSizes.radiusSm,
-              ),
+              AppShimmerBox(width: 64, height: 14, radius: AppSizes.radiusSm),
               const SizedBox(height: AppSizes.xs),
               // Status badge
-              AppShimmerBox(
-                width: 72,
-                height: 22,
-                radius: AppSizes.radiusFull,
-              ),
+              AppShimmerBox(width: 72, height: 22, radius: AppSizes.radiusFull),
             ],
           ),
         ],
@@ -657,13 +682,17 @@ class _ErrorState extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
         const SizedBox(height: AppSizes.massive),
-        Icon(AppIcons.cloudOffRounded,
-            size: AppSizes.iconHuge, color: AppColors.muted),
+        AppIcon(
+          AppIcons.cloudOffRounded,
+          size: AppSizes.iconHuge,
+          color: AppColors.muted,
+        ),
         const SizedBox(height: AppSizes.md),
         Text(
           l10n.ordersError,
-          style: theme.textTheme.titleMedium
-              ?.copyWith(fontWeight: FontWeight.w700),
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: AppSizes.xs),
@@ -679,7 +708,7 @@ class _ErrorState extends StatelessWidget {
         Center(
           child: FilledButton.icon(
             onPressed: onRetry,
-            icon: const Icon(AppIcons.refreshRounded),
+            icon: const AppIcon(AppIcons.refreshRounded),
             label: Text(l10n.ordersRetry),
           ),
         ),

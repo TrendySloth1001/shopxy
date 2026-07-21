@@ -6,6 +6,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Phase C — A+ content blocks editor used inside the add/edit product
 /// page. Each block is one of HERO / FEATURE / COMPARISON / GALLERY /
@@ -41,7 +42,7 @@ class _ContentBlocksEditorState extends State<ContentBlocksEditor> {
   // + a one-liner so the merchant knows what each block does without
   // having to guess from an acronym. Labels/hints resolved via l10n at
   // render time; only the kind + icon are static.
-  static const _kinds = <(String, IconData)>[
+  static const _kinds = <(String, AppIconData)>[
     ('HERO', AppIcons.wallpaperRounded),
     ('FEATURE', AppIcons.viewSidebarRounded),
     ('COMPARISON', AppIcons.tableChartRounded),
@@ -52,10 +53,20 @@ class _ContentBlocksEditorState extends State<ContentBlocksEditor> {
   (String, String) _kindLabelHint(AppLocalizations l10n, String kind) =>
       switch (kind) {
         'HERO' => (l10n.productsBlockHeroLabel, l10n.productsBlockHeroHint),
-        'FEATURE' => (l10n.productsBlockFeatureLabel, l10n.productsBlockFeatureHint),
-        'COMPARISON' => (l10n.productsBlockComparisonLabel, l10n.productsBlockComparisonHint),
-        'GALLERY' => (l10n.productsBlockGalleryLabel, l10n.productsBlockGalleryHint),
-        'TEXT' || _ => (l10n.productsBlockTextLabel, l10n.productsBlockTextHint),
+        'FEATURE' => (
+          l10n.productsBlockFeatureLabel,
+          l10n.productsBlockFeatureHint,
+        ),
+        'COMPARISON' => (
+          l10n.productsBlockComparisonLabel,
+          l10n.productsBlockComparisonHint,
+        ),
+        'GALLERY' => (
+          l10n.productsBlockGalleryLabel,
+          l10n.productsBlockGalleryHint,
+        ),
+        'TEXT' ||
+        _ => (l10n.productsBlockTextLabel, l10n.productsBlockTextHint),
       };
 
   void _add(String kind) {
@@ -90,27 +101,28 @@ class _ContentBlocksEditorState extends State<ContentBlocksEditor> {
   }
 
   Map<String, dynamic> _defaultPayload(String kind) => switch (kind) {
-        'HERO' => {'imageUrl': '', 'headline': ''},
-        'FEATURE' => {
-            'imageUrl': '',
-            'side': 'LEFT',
-            'title': '',
-            'body': '',
-          },
-        'COMPARISON' => {
-            'columns': [
-              {'label': 'This product', 'values': <String>['']},
-              {'label': 'Others', 'values': <String>['']},
-            ],
-            'rows': <String>[''],
-          },
-        'GALLERY' => {
-            'images': [
-              {'url': ''},
-            ],
-          },
-        'TEXT' || _ => {'markdown': ''},
-      };
+    'HERO' => {'imageUrl': '', 'headline': ''},
+    'FEATURE' => {'imageUrl': '', 'side': 'LEFT', 'title': '', 'body': ''},
+    'COMPARISON' => {
+      'columns': [
+        {
+          'label': 'This product',
+          'values': <String>[''],
+        },
+        {
+          'label': 'Others',
+          'values': <String>[''],
+        },
+      ],
+      'rows': <String>[''],
+    },
+    'GALLERY' => {
+      'images': [
+        {'url': ''},
+      ],
+    },
+    'TEXT' || _ => {'markdown': ''},
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -123,10 +135,9 @@ class _ContentBlocksEditorState extends State<ContentBlocksEditor> {
             padding: const EdgeInsets.only(bottom: AppSizes.sm),
             child: Text(
               l10n.productsBlocksEmptyHint,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: AppColors.muted),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
             ),
           ),
         for (var i = 0; i < widget.blocks.length; i++)
@@ -143,18 +154,20 @@ class _ContentBlocksEditorState extends State<ContentBlocksEditor> {
         if (widget.blocks.length < _maxBlocks) ...[
           const SizedBox(height: AppSizes.sm),
           for (final (kind, icon) in _kinds)
-            Builder(builder: (_) {
-              final (label, hint) = _kindLabelHint(l10n, kind);
-              return Padding(
-                padding: const EdgeInsets.only(bottom: AppSizes.sm),
-                child: _AddBlockTile(
-                  icon: icon,
-                  label: label,
-                  hint: hint,
-                  onTap: () => _add(kind),
-                ),
-              );
-            }),
+            Builder(
+              builder: (_) {
+                final (label, hint) = _kindLabelHint(l10n, kind);
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: AppSizes.sm),
+                  child: _AddBlockTile(
+                    icon: icon,
+                    label: label,
+                    hint: hint,
+                    onTap: () => _add(kind),
+                  ),
+                );
+              },
+            ),
         ],
       ],
     );
@@ -170,7 +183,7 @@ class _AddBlockTile extends StatelessWidget {
     required this.hint,
     required this.onTap,
   });
-  final IconData icon;
+  final AppIconData icon;
   final String label;
   final String hint;
   final VoidCallback onTap;
@@ -191,22 +204,28 @@ class _AddBlockTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, size: AppSizes.iconMd, color: AppColors.muted),
+            AppIcon(icon, size: AppSizes.iconMd, color: AppColors.muted),
             const SizedBox(width: AppSizes.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label,
-                      style: theme.textTheme.bodyMedium
-                          ?.copyWith(fontWeight: FontWeight.w700)),
-                  Text(hint,
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: AppColors.muted)),
+                  Text(
+                    label,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    hint,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.muted,
+                    ),
+                  ),
                 ],
               ),
             ),
-            Icon(AppIcons.addRounded, color: AppColors.muted),
+            AppIcon(AppIcons.addRounded, color: AppColors.muted),
           ],
         ),
       ),
@@ -235,13 +254,13 @@ class _BlockCard extends StatelessWidget {
   final Future<String?> Function() onPickImage;
 
   String _blockTitle(AppLocalizations l10n, String kind) => switch (kind) {
-        'HERO' => l10n.productsBlockHeroLabel,
-        'FEATURE' => l10n.productsBlockFeature,
-        'COMPARISON' => l10n.productsBlockComparisonLabel,
-        'GALLERY' => l10n.productsBlockGallery,
-        'TEXT' => l10n.productsBlockText,
-        _ => kind,
-      };
+    'HERO' => l10n.productsBlockHeroLabel,
+    'FEATURE' => l10n.productsBlockFeature,
+    'COMPARISON' => l10n.productsBlockComparisonLabel,
+    'GALLERY' => l10n.productsBlockGallery,
+    'TEXT' => l10n.productsBlockText,
+    _ => kind,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -263,44 +282,54 @@ class _BlockCard extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: AppSizes.sm, vertical: 3),
+                  horizontal: AppSizes.sm,
+                  vertical: 3,
+                ),
                 decoration: ShapeDecoration(
                   color: AppColors.heroPanel,
                   shape: AppShapes.squircle(AppSizes.radiusSm),
                 ),
                 child: Text(
                   _blockTitle(l10n, block.kind),
-                  style: theme.textTheme.labelSmall
-                      ?.copyWith(fontWeight: FontWeight.w800),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
               const SizedBox(width: AppSizes.sm),
-              Text(l10n.productsBlockPosition('${index + 1}', '$total'),
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: AppColors.muted)),
+              Text(
+                l10n.productsBlockPosition('${index + 1}', '$total'),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.muted,
+                ),
+              ),
               const Spacer(),
               IconButton(
                 tooltip: l10n.productsMoveUp,
                 visualDensity: VisualDensity.compact,
                 onPressed: index == 0 ? null : onUp,
-                icon: const Icon(AppIcons.keyboardArrowUpRounded),
+                icon: const AppIcon(AppIcons.keyboardArrowUpRounded),
               ),
               IconButton(
                 tooltip: l10n.productsMoveDown,
                 visualDensity: VisualDensity.compact,
                 onPressed: index == total - 1 ? null : onDown,
-                icon: const Icon(AppIcons.keyboardArrowDownRounded),
+                icon: const AppIcon(AppIcons.keyboardArrowDownRounded),
               ),
               IconButton(
                 tooltip: l10n.productsRemove,
                 visualDensity: VisualDensity.compact,
                 onPressed: onRemove,
-                icon: const Icon(AppIcons.deleteOutline),
+                icon: const AppIcon(AppIcons.deleteOutline),
               ),
             ],
           ),
           const SizedBox(height: AppSizes.sm),
-          _BlockForm(block: block, onUpdate: onUpdate, onPickImage: onPickImage),
+          _BlockForm(
+            block: block,
+            onUpdate: onUpdate,
+            onPickImage: onPickImage,
+          ),
         ],
       ),
     );
@@ -317,8 +346,10 @@ class _BlockForm extends StatelessWidget {
   final ValueChanged<Map<String, dynamic>> onUpdate;
   final Future<String?> Function() onPickImage;
 
-  Map<String, dynamic> _patch(Map<String, dynamic> patch) =>
-      {...block.data, ...patch};
+  Map<String, dynamic> _patch(Map<String, dynamic> patch) => {
+    ...block.data,
+    ...patch,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -368,8 +399,14 @@ class _BlockForm extends StatelessWidget {
                 DropdownButton<String>(
                   value: (block.data['side'] as String?) ?? 'LEFT',
                   items: [
-                    DropdownMenuItem(value: 'LEFT', child: Text(l10n.productsSideLeft)),
-                    DropdownMenuItem(value: 'RIGHT', child: Text(l10n.productsSideRight)),
+                    DropdownMenuItem(
+                      value: 'LEFT',
+                      child: Text(l10n.productsSideLeft),
+                    ),
+                    DropdownMenuItem(
+                      value: 'RIGHT',
+                      child: Text(l10n.productsSideRight),
+                    ),
                   ],
                   onChanged: (v) =>
                       v == null ? null : onUpdate(_patch({'side': v})),
@@ -427,7 +464,7 @@ class _BlockForm extends StatelessWidget {
             ],
             if (imgs.length < 6)
               OutlinedButton.icon(
-                icon: const Icon(AppIcons.add, size: 16),
+                icon: const AppIcon(AppIcons.add, size: 16),
                 label: Text(l10n.productsAddImageAction),
                 onPressed: () {
                   imgs.add({'url': ''});
@@ -479,14 +516,16 @@ class _ComparisonEditorState extends State<_ComparisonEditor> {
   void initState() {
     super.initState();
     _columns = (((widget.data['columns'] as List?) ?? const [])
-            .whereType<Map>()
-            .map((m) => <String, dynamic>{
-                  'label': (m['label'] as String?) ?? '',
-                  'values': ((m['values'] as List?) ?? const [])
-                      .map((e) => e?.toString() ?? '')
-                      .toList(),
-                })
-            .toList());
+        .whereType<Map>()
+        .map(
+          (m) => <String, dynamic>{
+            'label': (m['label'] as String?) ?? '',
+            'values': ((m['values'] as List?) ?? const [])
+                .map((e) => e?.toString() ?? '')
+                .toList(),
+          },
+        )
+        .toList());
     _rows = ((widget.data['rows'] as List?) ?? const [])
         .map((e) => e?.toString() ?? '')
         .toList();
@@ -515,10 +554,12 @@ class _ComparisonEditorState extends State<_ComparisonEditor> {
   void _emit() {
     widget.onChanged(<String, dynamic>{
       'columns': _columns
-          .map((c) => <String, dynamic>{
-                'label': c['label'],
-                'values': c['values'],
-              })
+          .map(
+            (c) => <String, dynamic>{
+              'label': c['label'],
+              'values': c['values'],
+            },
+          )
           .toList(),
       'rows': _rows,
     });
@@ -544,9 +585,12 @@ class _ComparisonEditorState extends State<_ComparisonEditor> {
           style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
         ),
         const SizedBox(height: AppSizes.md),
-        Text(l10n.productsColumns,
-            style: theme.textTheme.labelMedium
-                ?.copyWith(fontWeight: FontWeight.w800)),
+        Text(
+          l10n.productsColumns,
+          style: theme.textTheme.labelMedium?.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
+        ),
         const SizedBox(height: AppSizes.sm),
         for (var c = 0; c < _columns.length; c++)
           Padding(
@@ -559,7 +603,9 @@ class _ComparisonEditorState extends State<_ComparisonEditor> {
                     onChanged: (v) => _mutate(() => _columns[c]['label'] = v),
                     decoration: InputDecoration(
                       labelText: l10n.productsColumnNName('${c + 1}'),
-                      hintText: c == 0 ? l10n.productsThisProductHint : l10n.productsOtherCompetitorHint,
+                      hintText: c == 0
+                          ? l10n.productsThisProductHint
+                          : l10n.productsOtherCompetitorHint,
                       border: const OutlineInputBorder(),
                       isDense: true,
                     ),
@@ -567,7 +613,7 @@ class _ComparisonEditorState extends State<_ComparisonEditor> {
                 ),
                 if (_columns.length > _minColumns)
                   IconButton(
-                    icon: const Icon(AppIcons.close, size: 18),
+                    icon: const AppIcon(AppIcons.close, size: 18),
                     tooltip: l10n.productsRemoveColumn,
                     onPressed: () => _mutate(() => _columns.removeAt(c)),
                   ),
@@ -578,16 +624,23 @@ class _ComparisonEditorState extends State<_ComparisonEditor> {
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
-              icon: const Icon(AppIcons.add, size: 16),
+              icon: const AppIcon(AppIcons.add, size: 16),
               label: Text(l10n.productsAddColumn),
-              onPressed: () => _mutate(() => _columns
-                  .add(<String, dynamic>{'label': '', 'values': <String>[]})),
+              onPressed: () => _mutate(
+                () => _columns.add(<String, dynamic>{
+                  'label': '',
+                  'values': <String>[],
+                }),
+              ),
             ),
           ),
         const SizedBox(height: AppSizes.md),
-        Text(l10n.productsRows,
-            style: theme.textTheme.labelMedium
-                ?.copyWith(fontWeight: FontWeight.w800)),
+        Text(
+          l10n.productsRows,
+          style: theme.textTheme.labelMedium?.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
+        ),
         const SizedBox(height: AppSizes.sm),
         for (var r = 0; r < _rows.length; r++)
           Container(
@@ -615,7 +668,7 @@ class _ComparisonEditorState extends State<_ComparisonEditor> {
                     ),
                     if (_rows.length > 1)
                       IconButton(
-                        icon: const Icon(AppIcons.deleteOutline, size: 20),
+                        icon: const AppIcon(AppIcons.deleteOutline, size: 20),
                         tooltip: l10n.productsRemoveRow,
                         onPressed: () => _mutate(() {
                           _rows.removeAt(r);
@@ -631,14 +684,15 @@ class _ComparisonEditorState extends State<_ComparisonEditor> {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 6),
                     child: TextFormField(
-                      initialValue: (_columns[c]['values'] as List)[r] as String,
+                      initialValue:
+                          (_columns[c]['values'] as List)[r] as String,
                       onChanged: (v) =>
                           _mutate(() => (_columns[c]['values'] as List)[r] = v),
                       decoration: InputDecoration(
                         labelText:
                             (_columns[c]['label'] as String).trim().isEmpty
-                                ? l10n.productsColumnN('${c + 1}')
-                                : _columns[c]['label'] as String,
+                            ? l10n.productsColumnN('${c + 1}')
+                            : _columns[c]['label'] as String,
                         border: const OutlineInputBorder(),
                         isDense: true,
                       ),
@@ -651,7 +705,7 @@ class _ComparisonEditorState extends State<_ComparisonEditor> {
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
-              icon: const Icon(AppIcons.add, size: 16),
+              icon: const AppIcon(AppIcons.add, size: 16),
               label: Text(l10n.productsAddRow),
               onPressed: () => _mutate(() => _rows.add('')),
             ),
@@ -716,11 +770,12 @@ class _ImageFieldState extends State<_ImageField> {
                     ? Image.network(
                         resolveImageUrl(widget.value),
                         fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => Icon(
-                            AppIcons.brokenImageOutlined,
-                            color: AppColors.muted),
+                        errorBuilder: (_, _, _) => AppIcon(
+                          AppIcons.brokenImageOutlined,
+                          color: AppColors.muted,
+                        ),
                       )
-                    : Icon(AppIcons.imageOutlined, color: AppColors.muted),
+                    : AppIcon(AppIcons.imageOutlined, color: AppColors.muted),
               ),
             ),
             const SizedBox(width: AppSizes.md),
@@ -728,11 +783,12 @@ class _ImageFieldState extends State<_ImageField> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(widget.label,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(fontWeight: FontWeight.w600)),
+                  Text(
+                    widget.label,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   const SizedBox(height: AppSizes.sm),
                   Row(
                     children: [
@@ -742,14 +798,18 @@ class _ImageFieldState extends State<_ImageField> {
                             ? const SizedBox(
                                 width: 14,
                                 height: 14,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
-                            : const Icon(AppIcons.uploadRounded, size: 16),
-                        label: Text(hasImage ? l10n.productsReplace : l10n.productsUpload),
+                            : const AppIcon(AppIcons.uploadRounded, size: 16),
+                        label: Text(
+                          hasImage ? l10n.productsReplace : l10n.productsUpload,
+                        ),
                       ),
                       if (hasImage && widget.onRemove != null)
                         IconButton(
-                          icon: const Icon(AppIcons.deleteOutline, size: 20),
+                          icon: const AppIcon(AppIcons.deleteOutline, size: 20),
                           tooltip: l10n.productsRemove,
                           onPressed: widget.onRemove,
                         ),
@@ -762,8 +822,12 @@ class _ImageFieldState extends State<_ImageField> {
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                     onPressed: () => setState(() => _showUrl = !_showUrl),
-                    child: Text(_showUrl ? l10n.productsHideLinkField : l10n.productsOrPasteLink,
-                        style: Theme.of(context).textTheme.bodySmall),
+                    child: Text(
+                      _showUrl
+                          ? l10n.productsHideLinkField
+                          : l10n.productsOrPasteLink,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ),
                 ],
               ),

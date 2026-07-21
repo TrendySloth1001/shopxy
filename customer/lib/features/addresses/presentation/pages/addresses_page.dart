@@ -11,6 +11,7 @@ import 'package:shopxy_customer/shared/widgets/app_button.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Manage delivery addresses. Reached from the home top-bar
 /// location chip and from the profile screen. The default flag
@@ -34,9 +35,9 @@ class _AddressesPageState extends State<AddressesPage> {
   }
 
   Future<void> _add(BuildContext context) async {
-    final created = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (_) => const EditAddressPage()),
-    );
+    final created = await Navigator.of(
+      context,
+    ).push<bool>(MaterialPageRoute(builder: (_) => const EditAddressPage()));
     if (created == true && context.mounted) {
       showAppSnackbar(
         context,
@@ -90,23 +91,22 @@ class _AddressesPageState extends State<AddressesPage> {
         child: p.isLoading && p.items.isEmpty
             ? const _AddressesLoadingSkeleton()
             : p.items.isEmpty
-                ? _Empty(onAdd: () => _add(context))
-                : ListView(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: AppSizes.sm),
-                    children: [
-                      for (final a in p.items)
-                        _AddressTile(
-                          address: a,
-                          onDefault: () => p.setDefault(a.id),
-                          onDelete: () => _confirmDelete(context, p, a.id),
-                        ),
-                    ],
-                  ),
+            ? _Empty(onAdd: () => _add(context))
+            : ListView(
+                padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
+                children: [
+                  for (final a in p.items)
+                    _AddressTile(
+                      address: a,
+                      onDefault: () => p.setDefault(a.id),
+                      onDelete: () => _confirmDelete(context, p, a.id),
+                    ),
+                ],
+              ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _add(context),
-        icon: const Icon(AppIcons.add),
+        icon: const AppIcon(AppIcons.add),
         label: const Text('Add address'),
       ),
     );
@@ -140,7 +140,12 @@ class _AddressTileSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(AppSizes.lg, AppSizes.sm, AppSizes.lg, 0),
+      margin: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.sm,
+        AppSizes.lg,
+        0,
+      ),
       padding: const EdgeInsets.all(AppSizes.md),
       decoration: ShapeDecoration(
         color: AppColors.white,
@@ -184,7 +189,12 @@ class _AddressTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(AppSizes.lg, AppSizes.sm, AppSizes.lg, 0),
+      margin: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.sm,
+        AppSizes.lg,
+        0,
+      ),
       padding: const EdgeInsets.all(AppSizes.md),
       decoration: ShapeDecoration(
         color: AppColors.white,
@@ -198,14 +208,17 @@ class _AddressTile extends StatelessWidget {
               Text(
                 address.label ?? address.fullName,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: AppColors.black,
-                      fontWeight: FontWeight.w800,
-                    ),
+                  color: AppColors.black,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               const SizedBox(width: AppSizes.sm),
               if (address.isDefault)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm, vertical: AppSizes.xs),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSizes.sm,
+                    vertical: AppSizes.xs,
+                  ),
                   decoration: ShapeDecoration(
                     color: AppColors.brandSoft,
                     shape: AppShapes.squircle(AppSizes.radiusSm),
@@ -213,10 +226,10 @@ class _AddressTile extends StatelessWidget {
                   child: Text(
                     'DEFAULT',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: AppColors.brand,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.8,
-                        ),
+                      color: AppColors.brand,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.8,
+                    ),
                   ),
                 ),
             ],
@@ -225,17 +238,21 @@ class _AddressTile extends StatelessWidget {
           Text(
             address.fullName,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.black,
-                  fontWeight: FontWeight.w600,
-                ),
+              color: AppColors.black,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           Text(
             address.oneLine,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
           ),
           Text(
             address.phone,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.muted),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
           ),
           const SizedBox(height: AppSizes.sm),
           Row(
@@ -243,13 +260,19 @@ class _AddressTile extends StatelessWidget {
               if (!address.isDefault)
                 TextButton.icon(
                   onPressed: onDefault,
-                  icon: const Icon(AppIcons.checkCircleOutline, size: AppSizes.iconSm),
+                  icon: const AppIcon(
+                    AppIcons.checkCircleOutline,
+                    size: AppSizes.iconSm,
+                  ),
                   label: const Text('Set as default'),
                 ),
               const Spacer(),
               IconButton(
                 tooltip: 'Delete',
-                icon: const Icon(AppIcons.deleteOutline, color: AppColors.error),
+                icon: const AppIcon(
+                  AppIcons.deleteOutline,
+                  color: AppColors.error,
+                ),
                 onPressed: onDelete,
               ),
             ],
@@ -268,25 +291,39 @@ class _Empty extends StatelessWidget {
     return ListView(
       children: [
         const SizedBox(height: 120),
-        const Center(child: Icon(AppIcons.locationOffOutlined, size: AppSizes.iconHuge, color: AppColors.muted)),
+        const Center(
+          child: AppIcon(
+            AppIcons.locationOffOutlined,
+            size: AppSizes.iconHuge,
+            color: AppColors.muted,
+          ),
+        ),
         const SizedBox(height: AppSizes.md),
         Center(
           child: Text(
             'No addresses saved yet',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
         ),
         const SizedBox(height: AppSizes.xs),
         Center(
           child: Text(
             'Add one to speed up checkout.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
           ),
         ),
         const SizedBox(height: AppSizes.lg),
-        Center(child: AppButton.primary(label: 'Add address', onPressed: onAdd, icon: AppIcons.add)),
+        Center(
+          child: AppButton.primary(
+            label: 'Add address',
+            onPressed: onAdd,
+            icon: AppIcons.add,
+          ),
+        ),
       ],
     );
   }

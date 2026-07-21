@@ -13,6 +13,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Modal sheet for creating or editing a banner. The slim banner is just
 /// an image + placement + optional link + optional schedule, so the editor
@@ -81,7 +82,10 @@ class _AdminBannerEditorSheetState extends State<AdminBannerEditorSheet> {
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery, maxWidth: 1600);
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1600,
+    );
     if (picked == null || !mounted) return;
     final file = File(picked.path);
     if (!_validateImageSize(file)) return;
@@ -92,7 +96,11 @@ class _AdminBannerEditorSheetState extends State<AdminBannerEditorSheet> {
     setState(() => _busy = false);
     if (url == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(shop.error ?? AppLocalizations.of(context).adminImageUploadFailed)),
+        SnackBar(
+          content: Text(
+            shop.error ?? AppLocalizations.of(context).adminImageUploadFailed,
+          ),
+        ),
       );
       return;
     }
@@ -130,7 +138,13 @@ class _AdminBannerEditorSheetState extends State<AdminBannerEditorSheet> {
     );
     if (!mounted) return;
     final t = time ?? const TimeOfDay(hour: 0, minute: 0);
-    final combined = DateTime(date.year, date.month, date.day, t.hour, t.minute);
+    final combined = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      t.hour,
+      t.minute,
+    );
     setState(() {
       if (isStart) {
         _startAt = combined;
@@ -143,7 +157,9 @@ class _AdminBannerEditorSheetState extends State<AdminBannerEditorSheet> {
   Future<void> _save() async {
     if (_imageUrl == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).adminBannerImageRequired)),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).adminBannerImageRequired),
+        ),
       );
       return;
     }
@@ -167,7 +183,11 @@ class _AdminBannerEditorSheetState extends State<AdminBannerEditorSheet> {
       Navigator.of(context).pop(true);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(provider.error ?? AppLocalizations.of(context).adminSaveFailed)),
+        SnackBar(
+          content: Text(
+            provider.error ?? AppLocalizations.of(context).adminSaveFailed,
+          ),
+        ),
       );
     }
   }
@@ -189,7 +209,7 @@ class _AdminBannerEditorSheetState extends State<AdminBannerEditorSheet> {
               ),
               const Spacer(),
               IconButton(
-                icon: const Icon(AppIcons.close),
+                icon: const AppIcon(AppIcons.close),
                 onPressed: () => Navigator.of(context).pop(false),
               ),
             ],
@@ -208,9 +228,13 @@ class _AdminBannerEditorSheetState extends State<AdminBannerEditorSheet> {
               const SizedBox(height: AppSizes.md),
               DropdownButtonFormField<BannerPlacement>(
                 initialValue: _placement,
-                decoration: InputDecoration(labelText: l10n.adminBannerPlacementLabel),
+                decoration: InputDecoration(
+                  labelText: l10n.adminBannerPlacementLabel,
+                ),
                 items: BannerPlacement.values
-                    .map((p) => DropdownMenuItem(value: p, child: Text(p.label)))
+                    .map(
+                      (p) => DropdownMenuItem(value: p, child: Text(p.label)),
+                    )
                     .toList(),
                 onChanged: (v) => setState(() => _placement = v ?? _placement),
               ),
@@ -231,7 +255,9 @@ class _AdminBannerEditorSheetState extends State<AdminBannerEditorSheet> {
                     width: 80,
                     child: TextField(
                       controller: _sortOrder,
-                      decoration: InputDecoration(labelText: l10n.adminSortLabel),
+                      decoration: InputDecoration(
+                        labelText: l10n.adminSortLabel,
+                      ),
                       keyboardType: TextInputType.number,
                     ),
                   ),
@@ -250,7 +276,13 @@ class _AdminBannerEditorSheetState extends State<AdminBannerEditorSheet> {
               const SizedBox(height: AppSizes.lg),
               FilledButton(
                 onPressed: _busy ? null : _save,
-                child: Text(_busy ? l10n.adminSaving : (_isEdit ? l10n.adminSaveChanges : l10n.adminBannerCreate)),
+                child: Text(
+                  _busy
+                      ? l10n.adminSaving
+                      : (_isEdit
+                            ? l10n.adminSaveChanges
+                            : l10n.adminBannerCreate),
+                ),
               ),
             ],
           ),
@@ -271,20 +303,23 @@ class _AdminBannerEditorSheetState extends State<AdminBannerEditorSheet> {
           ),
           clipBehavior: Clip.antiAlias,
           child: _imageUrl == null
-              ? Icon(AppIcons.imageOutlined, color: AppColors.muted)
+              ? AppIcon(AppIcons.imageOutlined, color: AppColors.muted)
               : Image.network(
                   resolveImageUrl(_imageUrl!),
                   fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => const Icon(AppIcons.brokenImageOutlined),
+                  errorBuilder: (_, _, _) =>
+                      const AppIcon(AppIcons.brokenImageOutlined),
                 ),
         ),
         const SizedBox(width: AppSizes.md),
         Expanded(
           child: OutlinedButton.icon(
-            icon: const Icon(AppIcons.uploadOutlined),
-            label: Text(_imageUrl == null
-                ? AppLocalizations.of(context).adminBannerUploadImage
-                : AppLocalizations.of(context).adminReplaceImage),
+            icon: const AppIcon(AppIcons.uploadOutlined),
+            label: Text(
+              _imageUrl == null
+                  ? AppLocalizations.of(context).adminBannerUploadImage
+                  : AppLocalizations.of(context).adminReplaceImage,
+            ),
             onPressed: _busy ? null : _pickImage,
           ),
         ),
@@ -315,7 +350,9 @@ class _AdminBannerEditorSheetState extends State<AdminBannerEditorSheet> {
             value: _endAt,
             formatter: df,
             onTap: () => _pickDate(isStart: false),
-            onClear: _endAt == null ? null : () => setState(() => _endAt = null),
+            onClear: _endAt == null
+                ? null
+                : () => setState(() => _endAt = null),
           ),
         ),
       ],
@@ -363,11 +400,13 @@ class _DateField extends StatelessWidget {
           labelText: label,
           suffixIcon: onClear != null
               ? IconButton(
-                  icon: const Icon(AppIcons.close, size: AppSizes.iconMd),
+                  icon: const AppIcon(AppIcons.close, size: AppSizes.iconMd),
                   onPressed: onClear,
                 )
-              : const Icon(AppIcons.calendarTodayOutlined,
-                  size: AppSizes.iconMd),
+              : const AppIcon(
+                  AppIcons.calendarTodayOutlined,
+                  size: AppSizes.iconMd,
+                ),
         ),
         child: Text(
           value == null

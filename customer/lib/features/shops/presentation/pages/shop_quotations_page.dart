@@ -12,6 +12,7 @@ import 'package:shopxy_customer/shared/widgets/app_list_section.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/format/app_format.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Clean list of quotations the shop sent the customer. Tapping a row opens the
 /// full detail page (line items, totals, Accept / Decline).
@@ -56,12 +57,13 @@ class _ShopQuotationsPageState extends State<ShopQuotationsPage> {
         },
         backgroundColor: AppColors.brand,
         foregroundColor: AppColors.white,
-        icon: const Icon(AppIcons.addRounded),
-        label: Text('Request a quote',
-            style: Theme.of(context)
-                .textTheme
-                .labelLarge
-                ?.copyWith(fontWeight: FontWeight.w800)),
+        icon: const AppIcon(AppIcons.addRounded),
+        label: Text(
+          'Request a quote',
+          style: Theme.of(
+            context,
+          ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
+        ),
       ),
       body: RefreshIndicator(
         color: AppColors.brand,
@@ -69,48 +71,51 @@ class _ShopQuotationsPageState extends State<ShopQuotationsPage> {
         child: loading && quotes.isEmpty
             ? const _QuotationListSkeleton()
             : quotes.isEmpty
-                ? ListView(
+            ? ListView(
+                children: [
+                  const SizedBox(height: 120),
+                  const AppIcon(
+                    AppIcons.requestQuoteOutlined,
+                    size: AppSizes.iconHuge,
+                    color: AppColors.muted,
+                  ),
+                  const SizedBox(height: AppSizes.md),
+                  Center(
+                    child: Text(
+                      'No quotations yet. Tap “Request a quote” to ask\nthis shop to price a basket for you.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+                    ),
+                  ),
+                ],
+              )
+            : ListView(
+                padding: const EdgeInsets.only(top: AppSizes.sm),
+                children: [
+                  AppListSection(
+                    flushDividers: true,
                     children: [
-                      const SizedBox(height: 120),
-                      const Icon(AppIcons.requestQuoteOutlined,
-                          size: AppSizes.iconHuge, color: AppColors.muted),
-                      const SizedBox(height: AppSizes.md),
-                      Center(
-                        child: Text(
-                            'No quotations yet. Tap “Request a quote” to ask\nthis shop to price a basket for you.',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(color: AppColors.muted)),
-                      ),
-                    ],
-                  )
-                : ListView(
-                    padding: const EdgeInsets.only(top: AppSizes.sm),
-                    children: [
-                      AppListSection(
-                        flushDividers: true,
-                        children: [
-                          for (final q in quotes)
-                            _QuotationRow(
-                              q: q,
-                              currency: _currency,
-                              dateFmt: _dateFmt,
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => ShopQuotationDetailPage(
-                                    shop: widget.shop,
-                                    quotation: q,
-                                  ),
-                                ),
+                      for (final q in quotes)
+                        _QuotationRow(
+                          q: q,
+                          currency: _currency,
+                          dateFmt: _dateFmt,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ShopQuotationDetailPage(
+                                shop: widget.shop,
+                                quotation: q,
                               ),
                             ),
-                        ],
-                      ),
+                          ),
+                        ),
                     ],
                   ),
+                ],
+              ),
       ),
     );
   }
@@ -145,7 +150,9 @@ class _QuotationRowSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.lg, vertical: AppSizes.md),
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
       child: Row(
         children: [
           Expanded(
@@ -155,10 +162,18 @@ class _QuotationRowSkeleton extends StatelessWidget {
                 Row(
                   children: [
                     // Quotation number pill
-                    AppShimmerBox(width: 80, height: 20, radius: AppSizes.radiusSm),
+                    AppShimmerBox(
+                      width: 80,
+                      height: 20,
+                      radius: AppSizes.radiusSm,
+                    ),
                     const SizedBox(width: AppSizes.sm),
                     // Status badge
-                    AppShimmerBox(width: 60, height: 20, radius: AppSizes.radiusFull),
+                    AppShimmerBox(
+                      width: 60,
+                      height: 20,
+                      radius: AppSizes.radiusFull,
+                    ),
                   ],
                 ),
                 const SizedBox(height: AppSizes.xs),
@@ -217,7 +232,9 @@ class _QuotationRow extends StatelessWidget {
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(
-            horizontal: AppSizes.lg, vertical: AppSizes.md),
+          horizontal: AppSizes.lg,
+          vertical: AppSizes.md,
+        ),
         child: Row(
           children: [
             Expanded(
@@ -226,36 +243,50 @@ class _QuotationRow extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Text(q.quotationNo,
-                          style: theme.textTheme.bodyLarge
-                              ?.copyWith(fontWeight: FontWeight.w800)),
+                      Text(
+                        q.quotationNo,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                       const SizedBox(width: AppSizes.sm),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: AppSizes.sm, vertical: AppSizes.xs),
+                          horizontal: AppSizes.sm,
+                          vertical: AppSizes.xs,
+                        ),
                         decoration: ShapeDecoration(
-                            color: bg,
-                            shape: AppShapes.squircle(AppSizes.radiusFull)),
-                        child: Text(label,
-                            style: theme.textTheme.labelSmall?.copyWith(
-                                color: fg, fontWeight: FontWeight.w800)),
+                          color: bg,
+                          shape: AppShapes.squircle(AppSizes.radiusFull),
+                        ),
+                        child: Text(
+                          label,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: fg,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: AppSizes.xs),
                   Text(
                     '${dateFmt.format(q.createdAt.toLocal())} · ${q.items.length} item(s)',
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: AppColors.muted),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.muted,
+                    ),
                   ),
                 ],
               ),
             ),
-            Text(currency.format(q.total),
-                style: theme.textTheme.bodyLarge
-                    ?.copyWith(fontWeight: FontWeight.w800)),
+            Text(
+              currency.format(q.total),
+              style: theme.textTheme.bodyLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+            ),
             const SizedBox(width: AppSizes.xs),
-            const Icon(AppIcons.chevronRightRounded, color: AppColors.muted),
+            const AppIcon(AppIcons.chevronRightRounded, color: AppColors.muted),
           ],
         ),
       ),

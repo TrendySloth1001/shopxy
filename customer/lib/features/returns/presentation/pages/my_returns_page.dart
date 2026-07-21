@@ -12,6 +12,7 @@ import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/format/app_format.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Customer-side list of return requests. Each row links to the
 /// return detail page.
@@ -94,9 +95,7 @@ class _ReturnRow extends StatelessWidget {
       child: InkWell(
         customBorder: AppShapes.squircle(AppSizes.radiusMd),
         onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => ReturnDetailPage(returnId: r.id),
-          ),
+          MaterialPageRoute(builder: (_) => ReturnDetailPage(returnId: r.id)),
         ),
         child: Padding(
           padding: const EdgeInsets.all(AppSizes.md),
@@ -109,9 +108,9 @@ class _ReturnRow extends StatelessWidget {
                     child: Text(
                       'Return #${r.id} · ${r.shop.name}',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.black,
-                            fontWeight: FontWeight.w800,
-                          ),
+                        color: AppColors.black,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                   _StatusPill(status: r.status),
@@ -120,16 +119,16 @@ class _ReturnRow extends StatelessWidget {
               const SizedBox(height: AppSizes.xs),
               Text(
                 '${r.items.length} ${r.items.length == 1 ? "item" : "items"} · ${AppFormat.rupees(r.refundAmount)}',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.muted,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
               ),
               const SizedBox(height: AppSizes.xs),
               Text(
                 DateFormat('d MMM y · h:mm a').format(r.createdAt),
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: AppColors.muted,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.labelSmall?.copyWith(color: AppColors.muted),
               ),
             ],
           ),
@@ -177,9 +176,9 @@ class _StatusPill extends StatelessWidget {
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: fg,
-              fontWeight: FontWeight.w800,
-            ),
+          color: fg,
+          fontWeight: FontWeight.w800,
+        ),
       ),
     );
   }
@@ -259,8 +258,11 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(AppIcons.assignmentReturnOutlined,
-                size: AppSizes.iconHuge, color: AppColors.muted),
+            const AppIcon(
+              AppIcons.assignmentReturnOutlined,
+              size: AppSizes.iconHuge,
+              color: AppColors.muted,
+            ),
             const SizedBox(height: AppSizes.md),
             Text(
               'No returns yet',

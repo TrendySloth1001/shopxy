@@ -15,6 +15,7 @@ import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/format/app_format.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Public shop landing page. Reached from any "brand" tap — brand
 /// spotlight cards, sponsored product rails, and the PDP "Visit shop"
@@ -61,8 +62,7 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
 
   void _maybeLoadMore() {
     if (_loadingMore || _loading || !_hasMore) return;
-    if (_scroll.position.pixels >
-        _scroll.position.maxScrollExtent - 400) {
+    if (_scroll.position.pixels > _scroll.position.maxScrollExtent - 400) {
       _loadNextPage();
     }
   }
@@ -134,20 +134,20 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
         child: _loading && _shop == null
             ? const _ShopProfileSkeleton()
             : _error != null
-                ? _ErrorState(message: _error!, onRetry: _loadFirstPage)
-                : _Body(
-                    shop: _shop!,
-                    products: _products,
-                    total: _total,
-                    sort: _sort,
-                    scrollController: _scroll,
-                    loadingMore: _loadingMore,
-                    hasMore: _hasMore,
-                    onSort: (s) {
-                      setState(() => _sort = s);
-                      _loadFirstPage();
-                    },
-                  ),
+            ? _ErrorState(message: _error!, onRetry: _loadFirstPage)
+            : _Body(
+                shop: _shop!,
+                products: _products,
+                total: _total,
+                sort: _sort,
+                scrollController: _scroll,
+                loadingMore: _loadingMore,
+                hasMore: _hasMore,
+                onSort: (s) {
+                  setState(() => _sort = s);
+                  _loadFirstPage();
+                },
+              ),
       ),
     );
   }
@@ -184,22 +184,24 @@ class _Body extends StatelessWidget {
           expandedHeight: 200,
           pinned: true,
           actions: [
-            Builder(builder: (ctx) {
-              return IconButton(
-                tooltip: 'Share shop',
-                icon: const Icon(AppIcons.iosShareRounded),
-                onPressed: () {
-                  final box = ctx.findRenderObject() as RenderBox?;
-                  const ShareService().shareShop(
-                    slug: shop.slug,
-                    name: shop.name,
-                    originBox: box != null
-                        ? box.localToGlobal(Offset.zero) & box.size
-                        : null,
-                  );
-                },
-              );
-            }),
+            Builder(
+              builder: (ctx) {
+                return IconButton(
+                  tooltip: 'Share shop',
+                  icon: const AppIcon(AppIcons.iosShareRounded),
+                  onPressed: () {
+                    final box = ctx.findRenderObject() as RenderBox?;
+                    const ShareService().shareShop(
+                      slug: shop.slug,
+                      name: shop.name,
+                      originBox: box != null
+                          ? box.localToGlobal(Offset.zero) & box.size
+                          : null,
+                    );
+                  },
+                );
+              },
+            ),
             const SizedBox(width: AppSizes.xs),
           ],
           flexibleSpace: FlexibleSpaceBar(
@@ -228,15 +230,19 @@ class _Body extends StatelessWidget {
           ),
           title: Text(
             shop.name,
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(fontWeight: FontWeight.w800),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
           ),
         ),
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(AppSizes.lg, AppSizes.lg, AppSizes.lg, AppSizes.md),
+            padding: const EdgeInsets.fromLTRB(
+              AppSizes.lg,
+              AppSizes.lg,
+              AppSizes.lg,
+              AppSizes.md,
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -244,13 +250,17 @@ class _Body extends StatelessWidget {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(AppSizes.radiusSm),
                     child: SizedBox(
-                      width: 56, height: 56,
-                      child: NetworkImageBox(url: resolveImageUrl(shop.logoUrl!)),
+                      width: 56,
+                      height: 56,
+                      child: NetworkImageBox(
+                        url: resolveImageUrl(shop.logoUrl!),
+                      ),
                     ),
                   )
                 else
                   Container(
-                    width: 56, height: 56,
+                    width: 56,
+                    height: 56,
                     decoration: ShapeDecoration(
                       color: AppColors.brandSoft,
                       shape: AppShapes.squircle(AppSizes.radiusSm),
@@ -259,10 +269,10 @@ class _Body extends StatelessWidget {
                     child: Text(
                       shop.name.isEmpty ? '?' : shop.name[0].toUpperCase(),
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: AppColors.brand,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 22,
-                          ),
+                        color: AppColors.brand,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 22,
+                      ),
                     ),
                   ),
                 const SizedBox(width: AppSizes.md),
@@ -275,9 +285,7 @@ class _Body extends StatelessWidget {
                           Flexible(
                             child: Text(
                               shop.name,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
+                              style: Theme.of(context).textTheme.titleMedium
                                   ?.copyWith(
                                     color: AppColors.black,
                                     fontSize: 18,
@@ -288,7 +296,7 @@ class _Body extends StatelessWidget {
                           ),
                           if (shop.isVerified) ...[
                             const SizedBox(width: AppSizes.sm),
-                            const Icon(
+                            const AppIcon(
                               AppIcons.verifiedRounded,
                               color: AppColors.info,
                               size: AppSizes.iconSm,
@@ -301,7 +309,8 @@ class _Body extends StatelessWidget {
                           padding: const EdgeInsets.only(top: AppSizes.xs),
                           child: Text(
                             shop.tagline!,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
                                   color: AppColors.muted,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -350,7 +359,10 @@ class _Body extends StatelessWidget {
         ),
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg, vertical: AppSizes.sm),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSizes.lg,
+              vertical: AppSizes.sm,
+            ),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -378,9 +390,14 @@ class _Body extends StatelessWidget {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(
-                  AppSizes.lg, 0, AppSizes.lg, AppSizes.sm),
+                AppSizes.lg,
+                0,
+                AppSizes.lg,
+                AppSizes.sm,
+              ),
               child: _VacationBanner(
-                message: shop.vacationMessage ??
+                message:
+                    shop.vacationMessage ??
                     'This shop is on vacation. New orders are paused.',
               ),
             ),
@@ -391,7 +408,11 @@ class _Body extends StatelessWidget {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(
-                  AppSizes.lg, 0, AppSizes.lg, AppSizes.sm),
+                AppSizes.lg,
+                0,
+                AppSizes.lg,
+                AppSizes.sm,
+              ),
               child: _PoliciesCard(shop: shop),
             ),
           ),
@@ -404,9 +425,9 @@ class _Body extends StatelessWidget {
                 child: Text(
                   'No products published yet.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.muted,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    color: AppColors.muted,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
@@ -414,7 +435,11 @@ class _Body extends StatelessWidget {
         else ...[
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(
-                AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.sm),
+              AppSizes.lg,
+              AppSizes.sm,
+              AppSizes.lg,
+              AppSizes.sm,
+            ),
             sliver: SliverGrid(
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
@@ -439,14 +464,18 @@ class _Body extends StatelessWidget {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(
-                    AppSizes.lg, AppSizes.lg, AppSizes.lg, AppSizes.xl),
+                  AppSizes.lg,
+                  AppSizes.lg,
+                  AppSizes.lg,
+                  AppSizes.xl,
+                ),
                 child: Center(
                   child: Text(
                     "You've reached the end.",
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.muted,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      color: AppColors.muted,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
@@ -472,7 +501,10 @@ class _VacationBanner extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(AppIcons.beachAccessRounded, color: AppColors.warning),
+            const AppIcon(
+              AppIcons.beachAccessRounded,
+              color: AppColors.warning,
+            ),
             const SizedBox(width: AppSizes.sm),
             Expanded(
               child: Column(
@@ -481,17 +513,17 @@ class _VacationBanner extends StatelessWidget {
                   Text(
                     'On vacation',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: AppColors.warning,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.3,
-                        ),
+                      color: AppColors.warning,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.3,
+                    ),
                   ),
                   const SizedBox(height: AppSizes.xs),
                   Text(
                     message,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.black,
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: AppColors.black),
                   ),
                 ],
               ),
@@ -510,7 +542,7 @@ class _InlineStat extends StatelessWidget {
     required this.label,
     this.labelColor,
   });
-  final IconData icon;
+  final AppIconData icon;
   final Color iconColor;
   final String label;
   final Color? labelColor;
@@ -520,14 +552,14 @@ class _InlineStat extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, color: iconColor, size: AppSizes.iconSm),
+        AppIcon(icon, color: iconColor, size: AppSizes.iconSm),
         const SizedBox(width: AppSizes.xs),
         Text(
           label,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: labelColor ?? AppColors.muted,
-                fontWeight: FontWeight.w700,
-              ),
+            color: labelColor ?? AppColors.muted,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ],
     );
@@ -556,13 +588,19 @@ class _PoliciesCard extends StatelessWidget {
     final pills = <_PolicyPillSpec>[
       if (shop.returnPolicy?.isNotEmpty == true)
         const _PolicyPillSpec(
-            icon: AppIcons.assignmentReturnOutlined, label: 'Returns'),
+          icon: AppIcons.assignmentReturnOutlined,
+          label: 'Returns',
+        ),
       if (shop.shippingPolicy?.isNotEmpty == true)
         const _PolicyPillSpec(
-            icon: AppIcons.localShippingOutlined, label: 'Shipping'),
+          icon: AppIcons.localShippingOutlined,
+          label: 'Shipping',
+        ),
       if (shop.refundPolicy?.isNotEmpty == true)
         const _PolicyPillSpec(
-            icon: AppIcons.currencyRupeeRounded, label: 'Refund'),
+          icon: AppIcons.currencyRupeeRounded,
+          label: 'Refund',
+        ),
     ];
     if (pills.isEmpty) return const SizedBox.shrink();
     return Material(
@@ -578,8 +616,11 @@ class _PoliciesCard extends StatelessWidget {
           padding: const EdgeInsets.all(AppSizes.md),
           child: Row(
             children: [
-              const Icon(AppIcons.factCheckOutlined,
-                  color: AppColors.brandStrong, size: AppSizes.iconMd),
+              const AppIcon(
+                AppIcons.factCheckOutlined,
+                color: AppColors.brandStrong,
+                size: AppSizes.iconMd,
+              ),
               const SizedBox(width: AppSizes.sm),
               Expanded(
                 child: Column(
@@ -588,9 +629,9 @@ class _PoliciesCard extends StatelessWidget {
                     Text(
                       'Shop policies',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.black,
-                            fontWeight: FontWeight.w800,
-                          ),
+                        color: AppColors.black,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                     const SizedBox(height: AppSizes.xs),
                     Wrap(
@@ -600,7 +641,9 @@ class _PoliciesCard extends StatelessWidget {
                         for (final p in pills)
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: AppSizes.sm, vertical: AppSizes.xs),
+                              horizontal: AppSizes.sm,
+                              vertical: AppSizes.xs,
+                            ),
                             decoration: ShapeDecoration(
                               color: AppColors.brandSoft,
                               shape: AppShapes.squircle(AppSizes.radiusFull),
@@ -608,14 +651,15 @@ class _PoliciesCard extends StatelessWidget {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(p.icon,
-                                    size: 12, color: AppColors.brandStrong),
+                                AppIcon(
+                                  p.icon,
+                                  size: 12,
+                                  color: AppColors.brandStrong,
+                                ),
                                 const SizedBox(width: AppSizes.xs),
                                 Text(
                                   p.label,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelSmall
+                                  style: Theme.of(context).textTheme.labelSmall
                                       ?.copyWith(
                                         color: AppColors.brandStrong,
                                         fontWeight: FontWeight.w700,
@@ -629,7 +673,10 @@ class _PoliciesCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(AppIcons.chevronRightRounded, color: AppColors.subtle),
+              const AppIcon(
+                AppIcons.chevronRightRounded,
+                color: AppColors.subtle,
+              ),
             ],
           ),
         ),
@@ -640,7 +687,7 @@ class _PoliciesCard extends StatelessWidget {
 
 class _PolicyPillSpec {
   const _PolicyPillSpec({required this.icon, required this.label});
-  final IconData icon;
+  final AppIconData icon;
   final String label;
 }
 
@@ -656,7 +703,11 @@ class _PoliciesSheet extends StatelessWidget {
       expand: false,
       builder: (_, scrollController) => Padding(
         padding: const EdgeInsets.fromLTRB(
-            AppSizes.lg, AppSizes.lg, AppSizes.lg, AppSizes.lg),
+          AppSizes.lg,
+          AppSizes.lg,
+          AppSizes.lg,
+          AppSizes.lg,
+        ),
         child: ListView(
           controller: scrollController,
           children: [
@@ -666,14 +717,14 @@ class _PoliciesSheet extends StatelessWidget {
                   child: Text(
                     '${shop.name} policies',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppColors.black,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                        ),
+                      color: AppColors.black,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(AppIcons.closeRounded),
+                  icon: const AppIcon(AppIcons.closeRounded),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
@@ -711,7 +762,7 @@ class _PolicyBlock extends StatelessWidget {
     required this.body,
   });
   final String title;
-  final IconData icon;
+  final AppIconData icon;
   final String body;
   @override
   Widget build(BuildContext context) {
@@ -722,15 +773,19 @@ class _PolicyBlock extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: AppSizes.iconSm, color: AppColors.brandStrong),
+              AppIcon(
+                icon,
+                size: AppSizes.iconSm,
+                color: AppColors.brandStrong,
+              ),
               const SizedBox(width: AppSizes.sm),
               Text(
                 title,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.brandStrong,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.4,
-                    ),
+                  color: AppColors.brandStrong,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.4,
+                ),
               ),
             ],
           ),
@@ -738,9 +793,9 @@ class _PolicyBlock extends StatelessWidget {
           Text(
             body,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.black,
-                  height: 1.45,
-                ),
+              color: AppColors.black,
+              height: 1.45,
+            ),
           ),
         ],
       ),
@@ -775,7 +830,10 @@ class _ProductTile extends StatelessWidget {
                   shape: AppShapes.squircle(AppSizes.radiusMd),
                 ),
                 child: image.isEmpty
-                    ? const Icon(AppIcons.imageOutlined, color: AppColors.muted)
+                    ? const AppIcon(
+                        AppIcons.imageOutlined,
+                        color: AppColors.muted,
+                      )
                     : NetworkImageBox(url: resolveImageUrl(image)),
               ),
             ),
@@ -786,9 +844,9 @@ class _ProductTile extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.black,
-                  fontWeight: FontWeight.w600,
-                ),
+              color: AppColors.black,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: AppSizes.xs),
           Row(
@@ -797,27 +855,27 @@ class _ProductTile extends StatelessWidget {
               Text(
                 AppFormat.rupees(product.sellingPrice),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.black,
-                      fontWeight: FontWeight.w800,
-                    ),
+                  color: AppColors.black,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               const SizedBox(width: AppSizes.xs),
               if (product.isDiscounted)
                 Text(
                   AppFormat.rupees(product.mrp),
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: AppColors.muted,
-                        decoration: TextDecoration.lineThrough,
-                      ),
+                    color: AppColors.muted,
+                    decoration: TextDecoration.lineThrough,
+                  ),
                 ),
               const SizedBox(width: AppSizes.xs),
               if (product.isDiscounted)
                 Text(
                   '${product.discountPct}% off',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: AppColors.success,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    color: AppColors.success,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
             ],
           ),
@@ -826,14 +884,18 @@ class _ProductTile extends StatelessWidget {
               padding: const EdgeInsets.only(top: AppSizes.xs),
               child: Row(
                 children: [
-                  const Icon(AppIcons.starRounded, color: AppColors.success, size: 12),
+                  const AppIcon(
+                    AppIcons.starRounded,
+                    color: AppColors.success,
+                    size: 12,
+                  ),
                   const SizedBox(width: AppSizes.xs),
                   Text(
                     '${product.ratingAvg!.toStringAsFixed(1)} (${product.ratingCount})',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: AppColors.muted,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      color: AppColors.muted,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),
@@ -861,26 +923,22 @@ class _ShopProfileSkeleton extends StatelessWidget {
       slivers: [
         // ── Banner (SliverAppBar stand-in) ──────────────────────────────
         SliverToBoxAdapter(
-          child: AppShimmerBox(
-            width: double.infinity,
-            height: 200,
-            radius: 0,
-          ),
+          child: AppShimmerBox(width: double.infinity, height: 200, radius: 0),
         ),
         // ── Shop-info row ────────────────────────────────────────────────
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
-                AppSizes.lg, AppSizes.lg, AppSizes.lg, AppSizes.md),
+              AppSizes.lg,
+              AppSizes.lg,
+              AppSizes.lg,
+              AppSizes.md,
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Logo
-                AppShimmerBox(
-                  width: 56,
-                  height: 56,
-                  radius: AppSizes.radiusSm,
-                ),
+                AppShimmerBox(width: 56, height: 56, radius: AppSizes.radiusSm),
                 const SizedBox(width: AppSizes.md),
                 Expanded(
                   child: Column(
@@ -913,11 +971,17 @@ class _ShopProfileSkeleton extends StatelessWidget {
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.symmetric(
-                horizontal: AppSizes.lg, vertical: AppSizes.sm),
+              horizontal: AppSizes.lg,
+              vertical: AppSizes.sm,
+            ),
             child: Row(
               children: [
                 for (final w in const [72.0, 64.0, 68.0, 72.0]) ...[
-                  AppShimmerBox(width: w, height: 32, radius: AppSizes.radiusFull),
+                  AppShimmerBox(
+                    width: w,
+                    height: 32,
+                    radius: AppSizes.radiusFull,
+                  ),
                   const SizedBox(width: AppSizes.sm),
                 ],
               ],
@@ -927,7 +991,11 @@ class _ShopProfileSkeleton extends StatelessWidget {
         // ── Product grid skeleton (6 tiles) ──────────────────────────────
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(
-              AppSizes.lg, AppSizes.sm, AppSizes.lg, AppSizes.xl),
+            AppSizes.lg,
+            AppSizes.sm,
+            AppSizes.lg,
+            AppSizes.xl,
+          ),
           sliver: SliverGrid(
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
@@ -991,8 +1059,11 @@ class _ErrorState extends StatelessWidget {
       padding: const EdgeInsets.all(AppSizes.xl),
       children: [
         const SizedBox(height: 80),
-        const Icon(AppIcons.cloudOffRounded,
-            size: AppSizes.iconHuge, color: AppColors.muted),
+        const AppIcon(
+          AppIcons.cloudOffRounded,
+          size: AppSizes.iconHuge,
+          color: AppColors.muted,
+        ),
         const SizedBox(height: AppSizes.md),
         Center(
           child: Text(
@@ -1004,10 +1075,9 @@ class _ErrorState extends StatelessWidget {
         Center(
           child: Text(
             message,
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.copyWith(color: AppColors.muted),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
           ),
         ),
         const SizedBox(height: AppSizes.lg),

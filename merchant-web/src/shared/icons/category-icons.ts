@@ -31,7 +31,7 @@ import {
   Tag,
   ToyBrick,
   Utensils,
-} from "lucide-react";
+} from "./lucide-compat";
 
 /**
  * Category icon catalogue, mirroring the Flutter `kCategoryIconOptions`. The

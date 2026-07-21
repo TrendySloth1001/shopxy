@@ -6,6 +6,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Shared dashboard primitives — formatters, responsive breakpoints, the
 /// editorial card chrome, section headers and the delta chip. Mirrors
@@ -103,7 +104,10 @@ class ResponsiveGrid extends StatelessWidget {
               ),
       );
     }
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: rows);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: rows,
+    );
   }
 }
 
@@ -115,32 +119,32 @@ class DashText {
   // cached `final` would freeze the ink colour at first access so dashboard
   // text wouldn't flip in dark/OLED. Re-resolving per access keeps them themed.
   static TextStyle get labelMd => TextStyle(
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.6,
-        height: 1.2,
-        color: AppColors.muted,
-      );
+    fontSize: 12,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.6,
+    height: 1.2,
+    color: AppColors.muted,
+  );
   static TextStyle get headlineMd => TextStyle(
-        fontSize: 28,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.4,
-        height: 1.15,
-        color: AppColors.black,
-      );
+    fontSize: 28,
+    fontWeight: FontWeight.w700,
+    letterSpacing: -0.4,
+    height: 1.15,
+    color: AppColors.black,
+  );
   static TextStyle get headlineSm => TextStyle(
-        fontSize: 22,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.3,
-        height: 1.2,
-        color: AppColors.black,
-      );
+    fontSize: 22,
+    fontWeight: FontWeight.w700,
+    letterSpacing: -0.3,
+    height: 1.2,
+    color: AppColors.black,
+  );
   static TextStyle get titleMd => TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        letterSpacing: -0.1,
-        color: AppColors.black,
-      );
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    letterSpacing: -0.1,
+    color: AppColors.black,
+  );
   static TextStyle get bodyMd =>
       TextStyle(fontSize: 14, height: 1.4, color: AppColors.black);
   static TextStyle get bodySm =>
@@ -253,8 +257,10 @@ class DeltaChip extends StatelessWidget {
       return _pill(
         bg: AppColors.surfaceTint,
         fg: AppColors.muted,
-        child: Text(AppLocalizations.of(context).dashboardDeltaNew,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+        child: Text(
+          AppLocalizations.of(context).dashboardDeltaNew,
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        ),
       );
     }
     final v = value!;
@@ -263,8 +269,8 @@ class DeltaChip extends StatelessWidget {
     final (bg, fg) = flat
         ? (AppColors.surfaceTint, AppColors.muted)
         : up
-            ? (AppColors.successSoft, AppColors.success)
-            : (AppColors.errorSoft, AppColors.error);
+        ? (AppColors.successSoft, AppColors.success)
+        : (AppColors.errorSoft, AppColors.error);
     return _pill(
       bg: bg,
       fg: fg,
@@ -272,10 +278,17 @@ class DeltaChip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (!flat)
-            Icon(up ? AppIcons.arrowUpwardRounded : AppIcons.arrowDownwardRounded,
-                size: 12, color: fg),
+            AppIcon(
+              up ? AppIcons.arrowUpwardRounded : AppIcons.arrowDownwardRounded,
+              size: 12,
+              color: fg,
+            ),
           Text(
-            '${up ? '+' : flat ? '' : '−'}${v.abs()}%',
+            '${up
+                ? '+'
+                : flat
+                ? ''
+                : '−'}${v.abs()}%',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,

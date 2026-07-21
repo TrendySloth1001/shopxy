@@ -14,6 +14,7 @@ import 'package:shopxy_customer/shared/widgets/app_pill_button.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/features/profile/presentation/pages/info_pages.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Multi-step, onboarding-style registration. One question per screen
 /// (name → email → password) with a progress bar, so signing up feels
@@ -98,8 +99,10 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
     if (!_consentAccepted) {
-      setState(() => _error =
-          'Please accept the Terms of Service and Privacy Policy to continue.');
+      setState(
+        () => _error =
+            'Please accept the Terms of Service and Privacy Policy to continue.',
+      );
       return;
     }
     await _submit();
@@ -113,12 +116,12 @@ class _RegisterPageState extends State<RegisterPage> {
     });
     try {
       await context.read<AuthProvider>().register(
-            _name.text.trim(),
-            _email.text.trim(),
-            _password.text,
-            acceptedTerms: _consentAccepted,
-            acceptedPrivacy: _consentAccepted,
-          );
+        _name.text.trim(),
+        _email.text.trim(),
+        _password.text,
+        acceptedTerms: _consentAccepted,
+        acceptedPrivacy: _consentAccepted,
+      );
     } catch (e) {
       if (mounted) {
         setState(() => _error = friendlyError(e));
@@ -143,12 +146,18 @@ class _RegisterPageState extends State<RegisterPage> {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(
-                    AppSizes.lg, AppSizes.sm, AppSizes.sm, AppSizes.md),
+                  AppSizes.lg,
+                  AppSizes.sm,
+                  AppSizes.sm,
+                  AppSizes.md,
+                ),
                 child: Row(
                   children: [
                     _CircleBack(onTap: _back),
                     const SizedBox(width: AppSizes.md),
-                    Expanded(child: _StepProgress(step: _step, total: _stepCount)),
+                    Expanded(
+                      child: _StepProgress(step: _step, total: _stepCount),
+                    ),
                     const SizedBox(width: AppSizes.md),
                     const SkipToGuestButton(),
                   ],
@@ -172,7 +181,11 @@ class _RegisterPageState extends State<RegisterPage> {
                     child: SingleChildScrollView(
                       key: ValueKey(_step),
                       padding: const EdgeInsets.fromLTRB(
-                          AppSizes.xl, AppSizes.xl, AppSizes.xl, AppSizes.lg),
+                        AppSizes.xl,
+                        AppSizes.xl,
+                        AppSizes.xl,
+                        AppSizes.lg,
+                      ),
                       child: _buildStep(),
                     ),
                   ),
@@ -180,7 +193,11 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(
-                    AppSizes.xl, 0, AppSizes.xl, AppSizes.md),
+                  AppSizes.xl,
+                  0,
+                  AppSizes.xl,
+                  AppSizes.md,
+                ),
                 child: Column(
                   children: [
                     if (_error != null) ...[
@@ -199,16 +216,18 @@ class _RegisterPageState extends State<RegisterPage> {
                       children: [
                         Text(
                           AppStrings.haveAccount,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppColors.muted,
-                              fontWeight: FontWeight.w500),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: AppColors.muted,
+                                fontWeight: FontWeight.w500,
+                              ),
                         ),
                         TextButton(
                           onPressed: () => Navigator.of(context).pop(),
                           style: TextButton.styleFrom(
                             foregroundColor: AppColors.brandStrong,
-                            textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w800),
+                            textStyle: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(fontWeight: FontWeight.w800),
                           ),
                           child: const Text(AppStrings.login),
                         ),
@@ -241,7 +260,9 @@ class _RegisterPageState extends State<RegisterPage> {
               textInputAction: TextInputAction.next,
               onSubmitted: (_) => _continue(),
               validator: (v) {
-                if (v == null || v.trim().isEmpty) return AppStrings.fieldRequired;
+                if (v == null || v.trim().isEmpty) {
+                  return AppStrings.fieldRequired;
+                }
                 if (v.trim().length < 2) return AppStrings.nameTooShort;
                 return null;
               },
@@ -264,7 +285,9 @@ class _RegisterPageState extends State<RegisterPage> {
               textInputAction: TextInputAction.next,
               onSubmitted: (_) => _continue(),
               validator: (v) {
-                if (v == null || v.trim().isEmpty) return AppStrings.fieldRequired;
+                if (v == null || v.trim().isEmpty) {
+                  return AppStrings.fieldRequired;
+                }
                 if (!v.contains('@') || !v.contains('.')) {
                   return AppStrings.invalidEmail;
                 }
@@ -499,8 +522,11 @@ class _CircleBack extends StatelessWidget {
         child: const SizedBox(
           width: AppSizes.avatarSm,
           height: AppSizes.avatarSm,
-          child: Icon(AppIcons.arrowBackRounded,
-              color: AppColors.black, size: AppSizes.iconMd),
+          child: AppIcon(
+            AppIcons.arrowBackRounded,
+            color: AppColors.black,
+            size: AppSizes.iconMd,
+          ),
         ),
       ),
     );

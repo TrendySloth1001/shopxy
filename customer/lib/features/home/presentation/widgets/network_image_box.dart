@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 class NetworkImageBox extends StatefulWidget {
   const NetworkImageBox({
@@ -67,18 +68,18 @@ class _NetworkImageBoxState extends State<NetworkImageBox> {
   }
 
   Widget _placeholder({bool errorIcon = false}) => Container(
-        width: widget.width,
-        height: widget.height,
-        color: widget.placeholderColor ?? AppColors.heroPanel,
-        alignment: errorIcon ? Alignment.center : null,
-        child: errorIcon
-            ? const Icon(
-                AppIcons.imageOutlined,
-                color: AppColors.disabled,
-                size: 28,
-              )
-            : null,
-      );
+    width: widget.width,
+    height: widget.height,
+    color: widget.placeholderColor ?? AppColors.heroPanel,
+    alignment: errorIcon ? Alignment.center : null,
+    child: errorIcon
+        ? const AppIcon(
+            AppIcons.imageOutlined,
+            color: AppColors.disabled,
+            size: 28,
+          )
+        : null,
+  );
 
   @override
   Widget build(BuildContext context) {

@@ -4,6 +4,8 @@ import 'package:shopxy/features/custom_fields/presentation/widgets/custom_field_
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Grid picker over the curated [kCustomFieldIcons] palette. Tap an
 /// icon to select; tapping the same icon clears the choice. Designed
@@ -48,7 +50,7 @@ class _IconTile extends StatelessWidget {
   });
 
   final String name;
-  final IconData icon;
+  final AppIconData icon;
   final bool selected;
   final VoidCallback onTap;
 
@@ -69,7 +71,7 @@ class _IconTile extends StatelessWidget {
         child: SizedBox(
           width: AppSizes.huge,
           height: AppSizes.huge,
-          child: Icon(
+          child: AppIcon(
             icon,
             color: selected ? AppColors.onInverse : AppColors.black,
             size: AppSizes.iconLg,

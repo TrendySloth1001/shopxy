@@ -9,6 +9,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Continuous "scan to console" mode. The phone holds a live WebSocket to the
 /// shop room (role=scanner): every barcode/QR is pushed over the socket, the
@@ -32,7 +33,8 @@ class _ScanConsolePageState extends State<ScanConsolePage> {
   @override
   void initState() {
     super.initState();
-    _client = ScanConsoleClient(context.read<ApiClient>())..addListener(_onChange);
+    _client = ScanConsoleClient(context.read<ApiClient>())
+      ..addListener(_onChange);
     _client.start();
   }
 
@@ -89,7 +91,10 @@ class _ScanConsolePageState extends State<ScanConsolePage> {
         actions: [
           TextButton.icon(
             onPressed: _client.recent.isEmpty ? null : _clear,
-            icon: const Icon(AppIcons.deleteSweepOutlined, size: AppSizes.iconSm),
+            icon: const AppIcon(
+              AppIcons.deleteSweepOutlined,
+              size: AppSizes.iconSm,
+            ),
             label: Text(l10n.scanConsoleClear),
           ),
         ],
@@ -98,49 +103,52 @@ class _ScanConsolePageState extends State<ScanConsolePage> {
         context: context,
         removeTop: true,
         child: Column(
-        children: [
-          SizedBox(height: FloatingAppBar.contentTopInset(context)),
-          SizedBox(
-            height: 280,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                ColoredBox(color: AppColors.inverseSurface),
-                MobileScanner(controller: _controller, onDetect: _onDetect),
-                Center(
-                  child: Container(
-                    width: 210,
-                    height: 210,
-                    decoration: ShapeDecoration(
-                      shape: AppShapes.squircle(
-                        AppSizes.radiusLg,
-                        side: BorderSide(color: AppColors.white, width: 3),
+          children: [
+            SizedBox(height: FloatingAppBar.contentTopInset(context)),
+            SizedBox(
+              height: 280,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  ColoredBox(color: AppColors.inverseSurface),
+                  MobileScanner(controller: _controller, onDetect: _onDetect),
+                  Center(
+                    child: Container(
+                      width: 210,
+                      height: 210,
+                      decoration: ShapeDecoration(
+                        shape: AppShapes.squircle(
+                          AppSizes.radiusLg,
+                          side: BorderSide(color: AppColors.white, width: 3),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          _ConnectionBanner(client: _client),
-          Expanded(
-            child: _client.recent.isEmpty
-                ? Center(
-                    child: Text(
-                      l10n.scanConsoleEmpty,
-                      style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+            _ConnectionBanner(client: _client),
+            Expanded(
+              child: _client.recent.isEmpty
+                  ? Center(
+                      child: Text(
+                        l10n.scanConsoleEmpty,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: AppColors.muted,
+                        ),
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.all(AppSizes.lg),
+                      itemCount: _client.recent.length,
+                      separatorBuilder: (_, _) =>
+                          Divider(height: 1, color: AppColors.hairline),
+                      itemBuilder: (_, i) =>
+                          _FeedbackTile(item: _client.recent[i]),
                     ),
-                  )
-                : ListView.separated(
-                    padding: const EdgeInsets.all(AppSizes.lg),
-                    itemCount: _client.recent.length,
-                    separatorBuilder: (_, _) =>
-                        Divider(height: 1, color: AppColors.hairline),
-                    itemBuilder: (_, i) => _FeedbackTile(item: _client.recent[i]),
-                  ),
-          ),
-        ],
-      ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -158,7 +166,7 @@ class _ConnectionBanner extends StatelessWidget {
 
     late final Color bg;
     late final Color fg;
-    late final IconData icon;
+    late final AppIconData icon;
     late final String title;
     String? subtitle;
 
@@ -198,7 +206,7 @@ class _ConnectionBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(icon, size: AppSizes.iconMd, color: fg),
+          AppIcon(icon, size: AppSizes.iconMd, color: fg),
           const SizedBox(width: AppSizes.sm),
           Expanded(
             child: Column(
@@ -206,8 +214,10 @@ class _ConnectionBanner extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(color: fg, fontWeight: FontWeight.w700),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: fg,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 if (subtitle != null)
                   Text(
@@ -241,7 +251,7 @@ class _FeedbackTile extends StatelessWidget {
           color: soft,
           shape: AppShapes.squircle(AppSizes.radiusMd),
         ),
-        child: Icon(
+        child: AppIcon(
           item.ok ? AppIcons.checkRounded : AppIcons.closeRounded,
           color: color,
           size: AppSizes.iconMd,
@@ -251,7 +261,9 @@ class _FeedbackTile extends StatelessWidget {
         item.title,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+        style: theme.textTheme.titleSmall?.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
       ),
       subtitle: Text(
         item.subtitle,

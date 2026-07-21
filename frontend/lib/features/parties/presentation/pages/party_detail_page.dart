@@ -21,6 +21,7 @@ import 'package:shopxy/shared/widgets/contact_changes_section.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 class PartyDetailPage extends StatefulWidget {
   const PartyDetailPage({super.key, required this.partyId});
@@ -36,8 +37,11 @@ class _PartyDetailPageState extends State<PartyDetailPage> {
   bool _isLoading = true;
   String? _error;
 
-  static final _currency =
-      NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2);
+  static final _currency = NumberFormat.currency(
+    locale: 'en_IN',
+    symbol: '₹',
+    decimalDigits: 2,
+  );
   static final _dateFmt = DateFormat('d MMM y');
 
   @override
@@ -89,42 +93,41 @@ class _PartyDetailPageState extends State<PartyDetailPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final canRecord = !_isLoading &&
-        _overview != null &&
-        !(_overview!.isSystem);
+    final canRecord =
+        !_isLoading && _overview != null && !(_overview!.isSystem);
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: FloatingAppBar(title: l10n.partiesPartyTitle),
       floatingActionButton: canRecord
           ? FloatingActionButton.extended(
               onPressed: _openRecordPayment,
-              icon: const Icon(AppIcons.paymentsOutlined),
+              icon: const AppIcon(AppIcons.paymentsOutlined),
               label: Text(l10n.partiesRecordPayment),
             )
           : null,
       body: _isLoading
           ? const _PartyDetailSkeleton()
           : _error != null
-              ? SafeArea(
-                  top: true,
-                  bottom: false,
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppSizes.xl),
-                      child: Text(_error!, textAlign: TextAlign.center),
-                    ),
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: ListView(
-                    padding: EdgeInsets.only(
-                      top: AppSizes.md + FloatingAppBar.contentTopInset(context),
-                      bottom: AppSizes.md,
-                    ),
-                    children: _buildBody(_overview!),
-                  ),
+          ? SafeArea(
+              top: true,
+              bottom: false,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSizes.xl),
+                  child: Text(_error!, textAlign: TextAlign.center),
                 ),
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: ListView(
+                padding: EdgeInsets.only(
+                  top: AppSizes.md + FloatingAppBar.contentTopInset(context),
+                  bottom: AppSizes.md,
+                ),
+                children: _buildBody(_overview!),
+              ),
+            ),
     );
   }
 
@@ -290,7 +293,11 @@ class _BalanceTileSkeleton extends StatelessWidget {
               ),
             ),
             SizedBox(width: AppSizes.md),
-            AppShimmerBox(width: 72, height: AppSizes.xl, radius: AppSizes.radiusSm),
+            AppShimmerBox(
+              width: 72,
+              height: AppSizes.xl,
+              radius: AppSizes.radiusSm,
+            ),
           ],
         ),
       ),
@@ -395,9 +402,17 @@ class _LedgerRowSkeleton extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              AppShimmerBox(width: 56, height: AppSizes.md, radius: AppSizes.radiusSm),
+              AppShimmerBox(
+                width: 56,
+                height: AppSizes.md,
+                radius: AppSizes.radiusSm,
+              ),
               SizedBox(height: AppSizes.xs),
-              AppShimmerBox(width: 44, height: AppSizes.sm, radius: AppSizes.radiusSm),
+              AppShimmerBox(
+                width: 44,
+                height: AppSizes.sm,
+                radius: AppSizes.radiusSm,
+              ),
             ],
           ),
         ],
@@ -451,9 +466,17 @@ class _InvoiceRowSkeleton extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              AppShimmerBox(width: 60, height: AppSizes.md, radius: AppSizes.radiusSm),
+              AppShimmerBox(
+                width: 60,
+                height: AppSizes.md,
+                radius: AppSizes.radiusSm,
+              ),
               SizedBox(height: AppSizes.xs),
-              AppShimmerBox(width: 48, height: AppSizes.sm, radius: AppSizes.radiusSm),
+              AppShimmerBox(
+                width: 48,
+                height: AppSizes.sm,
+                radius: AppSizes.radiusSm,
+              ),
             ],
           ),
         ],
@@ -487,16 +510,19 @@ class _Header extends StatelessWidget {
                   children: [
                     Text(
                       party.name,
-                      style: theme.textTheme.titleLarge
-                          ?.copyWith(fontWeight: FontWeight.w700),
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                    if (party.contactName != null && party.contactName!.isNotEmpty)
+                    if (party.contactName != null &&
+                        party.contactName!.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: AppSizes.xs),
                         child: Text(
                           party.contactName!,
-                          style: theme.textTheme.bodyMedium
-                              ?.copyWith(color: AppColors.muted),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: AppColors.muted,
+                          ),
                         ),
                       ),
                   ],
@@ -519,8 +545,9 @@ class _Header extends StatelessWidget {
             _ContactLine(icon: AppIcons.placeOutlined, value: party.address!),
           if (party.gstin != null && party.gstin!.isNotEmpty)
             _ContactLine(
-                icon: AppIcons.badgeOutlined,
-                value: '${l10n.partiesGstinLabel} ${party.gstin}'),
+              icon: AppIcons.badgeOutlined,
+              value: '${l10n.partiesGstinLabel} ${party.gstin}',
+            ),
         ],
       ),
     );
@@ -529,7 +556,7 @@ class _Header extends StatelessWidget {
 
 class _ContactLine extends StatelessWidget {
   const _ContactLine({required this.icon, required this.value});
-  final IconData icon;
+  final AppIconData icon;
   final String value;
 
   @override
@@ -539,13 +566,14 @@ class _ContactLine extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: AppSizes.iconSm, color: AppColors.muted),
+          AppIcon(icon, size: AppSizes.iconSm, color: AppColors.muted),
           const SizedBox(width: AppSizes.sm),
           Expanded(
             child: Text(
               value,
-              style: Theme.of(context).textTheme.bodyMedium
-                  ?.copyWith(color: AppColors.black),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppColors.black),
             ),
           ),
         ],
@@ -599,7 +627,11 @@ class _Totals extends StatelessWidget {
 }
 
 class _StatBlock extends StatelessWidget {
-  const _StatBlock({required this.label, required this.value, required this.hint});
+  const _StatBlock({
+    required this.label,
+    required this.value,
+    required this.hint,
+  });
   final String label;
   final String value;
   final String hint;
@@ -621,7 +653,9 @@ class _StatBlock extends StatelessWidget {
         const SizedBox(height: AppSizes.xs),
         Text(
           value,
-          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
         ),
         const SizedBox(height: AppSizes.xs),
         Text(
@@ -669,13 +703,15 @@ class _InvoiceRow extends StatelessWidget {
                   children: [
                     Text(
                       invoice.invoiceNo,
-                      style: theme.textTheme.titleSmall
-                          ?.copyWith(fontWeight: FontWeight.w600),
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     Text(
                       '${dateFmt.format(invoice.invoiceDate)} · ${invoice.itemCount} ${l10n.partiesItemsUnit}',
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: AppColors.muted),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.muted,
+                      ),
                     ),
                   ],
                 ),
@@ -685,8 +721,9 @@ class _InvoiceRow extends StatelessWidget {
                 children: [
                   Text(
                     currency.format(invoice.total),
-                    style: theme.textTheme.titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w700),
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(height: AppSizes.xs),
                   AppStatusBadge(
@@ -728,20 +765,20 @@ class _BalanceTile extends StatelessWidget {
     final label = settled
         ? l10n.partiesNoOutstanding
         : positive
-            ? l10n.partiesOwesYou
-            : l10n.partiesAdvanceCredit;
+        ? l10n.partiesOwesYou
+        : l10n.partiesAdvanceCredit;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
       child: AppCard(
         padding: const EdgeInsets.all(AppSizes.lg),
         child: Row(
           children: [
-            Icon(
+            AppIcon(
               positive
                   ? AppIcons.arrowDownwardRounded
                   : settled
-                      ? AppIcons.checkCircleOutlineRounded
-                      : AppIcons.arrowUpwardRounded,
+                  ? AppIcons.checkCircleOutlineRounded
+                  : AppIcons.arrowUpwardRounded,
               color: color,
             ),
             const SizedBox(width: AppSizes.md),
@@ -760,8 +797,9 @@ class _BalanceTile extends StatelessWidget {
                   const SizedBox(height: AppSizes.xs),
                   Text(
                     label,
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(color: AppColors.muted),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: AppColors.muted,
+                    ),
                   ),
                 ],
               ),
@@ -803,7 +841,7 @@ class _LedgerRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
+          AppIcon(
             isInvoice
                 ? AppIcons.receiptLongOutlined
                 : AppIcons.paymentsOutlined,
@@ -817,15 +855,17 @@ class _LedgerRow extends StatelessWidget {
               children: [
                 Text(
                   entry.label,
-                  style: theme.textTheme.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w600),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 Text(
                   isInvoice
                       ? dateFmt.format(entry.date)
                       : '${dateFmt.format(entry.date)} · ${entry.mode ?? ''}',
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: AppColors.muted),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.muted,
+                  ),
                 ),
               ],
             ),
@@ -843,8 +883,9 @@ class _LedgerRow extends StatelessWidget {
               const SizedBox(height: AppSizes.xs),
               Text(
                 '${l10n.partiesBalanceShort} ${currency.format(entry.runningBalance)}',
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: AppColors.muted),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.muted,
+                ),
               ),
             ],
           ),
@@ -885,13 +926,15 @@ class _ChallanRow extends StatelessWidget {
                   children: [
                     Text(
                       challan.challanNo,
-                      style: theme.textTheme.titleSmall
-                          ?.copyWith(fontWeight: FontWeight.w600),
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     Text(
                       '${dateFmt.format(challan.createdAt)} · ${challan.itemCount} ${l10n.partiesItemsUnit}',
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: AppColors.muted),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.muted,
+                      ),
                     ),
                   ],
                 ),

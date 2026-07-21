@@ -17,6 +17,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
@@ -75,7 +76,7 @@ class _NotificationsPageState extends State<NotificationsPage>
         actions: [
           IconButton(
             tooltip: l10n.notificationsMarkAllRead,
-            icon: const Icon(AppIcons.doneAllRounded),
+            icon: const AppIcon(AppIcons.doneAllRounded),
             onPressed: p.unread == 0 ? null : p.markAllRead,
           ),
         ],
@@ -85,16 +86,12 @@ class _NotificationsPageState extends State<NotificationsPage>
           context,
           MaterialPageRoute(builder: (_) => const SendInvitePage()),
         ),
-        icon: const Icon(AppIcons.personAddAlt1Rounded),
+        icon: const AppIcon(AppIcons.personAddAlt1Rounded),
         label: Text(l10n.notificationsInviteButton),
       ),
       body: TabBarView(
         controller: _tabs,
-        children: const [
-          _InboxTab(),
-          _IncomingTab(),
-          _OutgoingTab(),
-        ],
+        children: const [_InboxTab(), _IncomingTab(), _OutgoingTab()],
       ),
     );
   }
@@ -126,7 +123,10 @@ class _InboxTab extends StatelessWidget {
       color: AppColors.brand,
       child: ListView.separated(
         padding: EdgeInsets.only(
-          top: AppSizes.sm + FloatingAppBar.contentTopInset(context) + kTextTabBarHeight,
+          top:
+              AppSizes.sm +
+              FloatingAppBar.contentTopInset(context) +
+              kTextTabBarHeight,
           bottom: AppSizes.massive + AppSizes.xxxl,
         ),
         itemCount: p.items.length,
@@ -157,7 +157,9 @@ class _NotificationTile extends StatelessWidget {
         }
       },
       child: Container(
-        color: notification.isUnread ? AppColors.brandSoft.withValues(alpha: 0.35) : null,
+        color: notification.isUnread
+            ? AppColors.brandSoft.withValues(alpha: 0.35)
+            : null,
         padding: const EdgeInsets.symmetric(
           horizontal: AppSizes.lg,
           vertical: AppSizes.md,
@@ -173,7 +175,11 @@ class _NotificationTile extends StatelessWidget {
                 shape: AppShapes.squircle(AppSizes.radiusSm),
               ),
               alignment: Alignment.center,
-              child: Icon(accent.$3, size: AppSizes.iconMd, color: accent.$1),
+              child: AppIcon(
+                accent.$3,
+                size: AppSizes.iconMd,
+                color: accent.$1,
+              ),
             ),
             const SizedBox(width: AppSizes.md),
             Expanded(
@@ -184,8 +190,9 @@ class _NotificationTile extends StatelessWidget {
                     notification.title,
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: AppColors.black,
-                      fontWeight:
-                          notification.isUnread ? FontWeight.w700 : FontWeight.w500,
+                      fontWeight: notification.isUnread
+                          ? FontWeight.w700
+                          : FontWeight.w500,
                     ),
                   ),
                   if (notification.body != null) ...[
@@ -199,7 +206,9 @@ class _NotificationTile extends StatelessWidget {
                   ],
                   const SizedBox(height: AppSizes.xs),
                   Text(
-                    DateFormat('d MMM · hh:mm a').format(notification.createdAt.toLocal()),
+                    DateFormat(
+                      'd MMM · hh:mm a',
+                    ).format(notification.createdAt.toLocal()),
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: AppColors.subtle,
                       letterSpacing: 0.4,
@@ -210,7 +219,10 @@ class _NotificationTile extends StatelessWidget {
             ),
             if (notification.isUnread)
               Container(
-                margin: const EdgeInsets.only(left: AppSizes.sm, top: AppSizes.sm),
+                margin: const EdgeInsets.only(
+                  left: AppSizes.sm,
+                  top: AppSizes.sm,
+                ),
                 width: AppSizes.sm,
                 height: AppSizes.sm,
                 decoration: BoxDecoration(
@@ -234,11 +246,11 @@ class _NotificationTile extends StatelessWidget {
     final navigator = Navigator.of(context);
     final quotationsProvider = context.read<QuotationsProvider>();
     final raw = notification.data['quotationId'];
-    final quotationId = raw is int ? raw : (raw == null ? null : int.tryParse('$raw'));
+    final quotationId = raw is int
+        ? raw
+        : (raw == null ? null : int.tryParse('$raw'));
 
-    navigator.push(
-      MaterialPageRoute(builder: (_) => const QuotationsPage()),
-    );
+    navigator.push(MaterialPageRoute(builder: (_) => const QuotationsPage()));
     if (quotationId == null) return;
     await quotationsProvider.load();
     for (final Quotation q in quotationsProvider.items) {
@@ -251,24 +263,56 @@ class _NotificationTile extends StatelessWidget {
     }
   }
 
-  (Color fg, Color bg, IconData icon) _accentFor(String kind) {
+  (Color fg, Color bg, AppIconData icon) _accentFor(String kind) {
     switch (kind) {
       case 'INVITE_RECEIVED':
-        return (AppColors.brandStrong, AppColors.brandSoft, AppIcons.mailOutlineRounded);
+        return (
+          AppColors.brandStrong,
+          AppColors.brandSoft,
+          AppIcons.mailOutlineRounded,
+        );
       case 'INVITE_ACCEPTED':
-        return (AppColors.success, AppColors.successSoft, AppIcons.checkCircleOutlineRounded);
+        return (
+          AppColors.success,
+          AppColors.successSoft,
+          AppIcons.checkCircleOutlineRounded,
+        );
       case 'INVITE_DECLINED':
-        return (AppColors.warning, AppColors.warningSoft, AppIcons.cancelOutlined);
+        return (
+          AppColors.warning,
+          AppColors.warningSoft,
+          AppIcons.cancelOutlined,
+        );
       case 'INVITE_CANCELLED':
-        return (AppColors.muted, AppColors.heroPanel, AppIcons.cancelScheduleSendOutlined);
+        return (
+          AppColors.muted,
+          AppColors.heroPanel,
+          AppIcons.cancelScheduleSendOutlined,
+        );
       case 'QUOTATION_REQUESTED':
-        return (AppColors.brandStrong, AppColors.brandSoft, AppIcons.requestQuoteOutlined);
+        return (
+          AppColors.brandStrong,
+          AppColors.brandSoft,
+          AppIcons.requestQuoteOutlined,
+        );
       case 'QUOTATION_ACCEPTED':
-        return (AppColors.success, AppColors.successSoft, AppIcons.requestQuoteOutlined);
+        return (
+          AppColors.success,
+          AppColors.successSoft,
+          AppIcons.requestQuoteOutlined,
+        );
       case 'QUOTATION_DECLINED':
-        return (AppColors.warning, AppColors.warningSoft, AppIcons.requestQuoteOutlined);
+        return (
+          AppColors.warning,
+          AppColors.warningSoft,
+          AppIcons.requestQuoteOutlined,
+        );
       default:
-        return (AppColors.accentIndigo, AppColors.accentIndigoSoft, AppIcons.notificationsNoneRounded);
+        return (
+          AppColors.accentIndigo,
+          AppColors.accentIndigoSoft,
+          AppIcons.notificationsNoneRounded,
+        );
     }
   }
 }
@@ -284,7 +328,10 @@ class _InboxSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView.separated(
       padding: EdgeInsets.only(
-        top: AppSizes.sm + FloatingAppBar.contentTopInset(context) + kTextTabBarHeight,
+        top:
+            AppSizes.sm +
+            FloatingAppBar.contentTopInset(context) +
+            kTextTabBarHeight,
         bottom: AppSizes.massive + AppSizes.xxxl,
       ),
       itemCount: 6,
@@ -360,7 +407,10 @@ class _IncomingTab extends StatelessWidget {
       color: AppColors.brand,
       child: ListView.separated(
         padding: EdgeInsets.only(
-          top: AppSizes.sm + FloatingAppBar.contentTopInset(context) + kTextTabBarHeight,
+          top:
+              AppSizes.sm +
+              FloatingAppBar.contentTopInset(context) +
+              kTextTabBarHeight,
           bottom: AppSizes.massive + AppSizes.xxxl,
         ),
         itemCount: p.incoming.length,
@@ -381,7 +431,8 @@ class _IncomingInviteTile extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final p = context.read<NotificationsProvider>();
-    final shopName = invite.fromShopName ?? invite.fromUserName ?? l10n.notificationsAShop;
+    final shopName =
+        invite.fromShopName ?? invite.fromUserName ?? l10n.notificationsAShop;
     final roleLabel = invite.isParty
         ? l10n.notificationsRolePartyCustomer
         : l10n.notificationsRoleVendorSupplier;
@@ -408,8 +459,10 @@ class _IncomingInviteTile extends StatelessWidget {
                   shape: AppShapes.squircle(AppSizes.radiusSm),
                 ),
                 alignment: Alignment.center,
-                child: Icon(
-                  invite.isParty ? AppIcons.groupsOutlined : AppIcons.storefrontOutlined,
+                child: AppIcon(
+                  invite.isParty
+                      ? AppIcons.groupsOutlined
+                      : AppIcons.storefrontOutlined,
                   color: invite.isParty
                       ? AppColors.accentRose
                       : AppColors.accentIndigo,
@@ -464,7 +517,10 @@ class _IncomingInviteTile extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () => _decline(context, p),
-                    icon: const Icon(AppIcons.closeRounded, size: AppSizes.iconMd),
+                    icon: const AppIcon(
+                      AppIcons.closeRounded,
+                      size: AppSizes.iconMd,
+                    ),
                     label: Text(l10n.notificationsDecline),
                   ),
                 ),
@@ -472,7 +528,10 @@ class _IncomingInviteTile extends StatelessWidget {
                 Expanded(
                   child: FilledButton.icon(
                     onPressed: () => _accept(context, p),
-                    icon: const Icon(AppIcons.checkRounded, size: AppSizes.iconMd),
+                    icon: const AppIcon(
+                      AppIcons.checkRounded,
+                      size: AppSizes.iconMd,
+                    ),
                     label: Text(l10n.notificationsAccept),
                   ),
                 ),
@@ -494,9 +553,9 @@ class _IncomingInviteTile extends StatelessWidget {
       );
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(friendlyError(e))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(friendlyError(e))));
     }
   }
 
@@ -510,9 +569,9 @@ class _IncomingInviteTile extends StatelessWidget {
       );
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(friendlyError(e))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(friendlyError(e))));
     }
   }
 }
@@ -540,7 +599,10 @@ class _OutgoingTab extends StatelessWidget {
       color: AppColors.brand,
       child: ListView.separated(
         padding: EdgeInsets.only(
-          top: AppSizes.sm + FloatingAppBar.contentTopInset(context) + kTextTabBarHeight,
+          top:
+              AppSizes.sm +
+              FloatingAppBar.contentTopInset(context) +
+              kTextTabBarHeight,
           bottom: AppSizes.massive + AppSizes.xxxl,
         ),
         itemCount: p.outgoing.length,
@@ -581,8 +643,10 @@ class _OutgoingInviteTile extends StatelessWidget {
               shape: AppShapes.squircle(AppSizes.radiusSm),
             ),
             alignment: Alignment.center,
-            child: Icon(
-              invite.isParty ? AppIcons.groupsOutlined : AppIcons.storefrontOutlined,
+            child: AppIcon(
+              invite.isParty
+                  ? AppIcons.groupsOutlined
+                  : AppIcons.storefrontOutlined,
               color: invite.isParty
                   ? AppColors.accentRose
                   : AppColors.accentIndigo,
@@ -617,19 +681,21 @@ class _OutgoingInviteTile extends StatelessWidget {
           if (invite.isPending)
             IconButton(
               tooltip: l10n.notificationsCancel,
-              icon: const Icon(AppIcons.closeRounded, size: AppSizes.iconMd),
+              icon: const AppIcon(AppIcons.closeRounded, size: AppSizes.iconMd),
               onPressed: () async {
                 try {
                   await p.cancel(invite.id);
                   if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.notificationsInvitationCancelled)),
+                    SnackBar(
+                      content: Text(l10n.notificationsInvitationCancelled),
+                    ),
                   );
                 } catch (e) {
                   if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(friendlyError(e))),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(friendlyError(e))));
                 }
               },
             ),
@@ -651,11 +717,31 @@ class _StatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final (label, fg, bg) = switch (status) {
-      InviteStatus.pending => (l10n.notificationsStatusPending, AppColors.warning, AppColors.warningSoft),
-      InviteStatus.accepted => (l10n.notificationsStatusAccepted, AppColors.success, AppColors.successSoft),
-      InviteStatus.declined => (l10n.notificationsStatusDeclined, AppColors.muted, AppColors.heroPanel),
-      InviteStatus.cancelled => (l10n.notificationsStatusCancelled, AppColors.muted, AppColors.heroPanel),
-      InviteStatus.expired => (l10n.notificationsStatusExpired, AppColors.error, AppColors.errorSoft),
+      InviteStatus.pending => (
+        l10n.notificationsStatusPending,
+        AppColors.warning,
+        AppColors.warningSoft,
+      ),
+      InviteStatus.accepted => (
+        l10n.notificationsStatusAccepted,
+        AppColors.success,
+        AppColors.successSoft,
+      ),
+      InviteStatus.declined => (
+        l10n.notificationsStatusDeclined,
+        AppColors.muted,
+        AppColors.heroPanel,
+      ),
+      InviteStatus.cancelled => (
+        l10n.notificationsStatusCancelled,
+        AppColors.muted,
+        AppColors.heroPanel,
+      ),
+      InviteStatus.expired => (
+        l10n.notificationsStatusExpired,
+        AppColors.error,
+        AppColors.errorSoft,
+      ),
     };
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -669,18 +755,22 @@ class _StatusChip extends StatelessWidget {
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: fg,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.4,
-            ),
+          color: fg,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.4,
+        ),
       ),
     );
   }
 }
 
 class _EmptyHint extends StatelessWidget {
-  const _EmptyHint({required this.icon, required this.title, required this.body});
-  final IconData icon;
+  const _EmptyHint({
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
+  final AppIconData icon;
   final String title;
   final String body;
 
@@ -691,40 +781,44 @@ class _EmptyHint extends StatelessWidget {
       top: true,
       bottom: false,
       child: Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSizes.xxl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: AppSizes.massive,
-              height: AppSizes.massive,
-              decoration: ShapeDecoration(
-                color: AppColors.heroPanel,
-                shape: AppShapes.squircle(AppSizes.radiusLg),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSizes.xxl),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: AppSizes.massive,
+                height: AppSizes.massive,
+                decoration: ShapeDecoration(
+                  color: AppColors.heroPanel,
+                  shape: AppShapes.squircle(AppSizes.radiusLg),
+                ),
+                alignment: Alignment.center,
+                child: AppIcon(
+                  icon,
+                  color: AppColors.muted,
+                  size: AppSizes.iconXl,
+                ),
               ),
-              alignment: Alignment.center,
-              child: Icon(icon, color: AppColors.muted, size: AppSizes.iconXl),
-            ),
-            const SizedBox(height: AppSizes.lg),
-            Text(
-              title,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
+              const SizedBox(height: AppSizes.lg),
+              Text(
+                title,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSizes.xs),
-            Text(
-              body,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: AppColors.muted,
+              const SizedBox(height: AppSizes.xs),
+              Text(
+                body,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppColors.muted,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
       ),
     );
   }

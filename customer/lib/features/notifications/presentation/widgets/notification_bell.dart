@@ -6,6 +6,7 @@ import 'package:shopxy_customer/features/notifications/presentation/pages/notifi
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// AppBar action that opens the notifications inbox and surfaces a
 /// small unread badge on the bell glyph. For guests the bell still
@@ -38,7 +39,7 @@ class NotificationBell extends StatelessWidget {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            const Center(child: Icon(AppIcons.notificationsNoneRounded)),
+            const Center(child: AppIcon(AppIcons.notificationsNoneRounded)),
             if (unread > 0)
               Positioned(
                 right: -2,
@@ -57,10 +58,10 @@ class NotificationBell extends StatelessWidget {
                   child: Text(
                     unread > 99 ? '99+' : '$unread',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: AppColors.white,
-                          fontWeight: FontWeight.w800,
-                          height: 1.1,
-                        ),
+                      color: AppColors.white,
+                      fontWeight: FontWeight.w800,
+                      height: 1.1,
+                    ),
                   ),
                 ),
               ),

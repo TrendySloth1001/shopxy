@@ -11,6 +11,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Create-or-edit sheet for a custom field definition.
 ///
@@ -54,10 +55,12 @@ class CustomFieldEditorSheet extends StatefulWidget {
 
 class _CustomFieldEditorSheetState extends State<CustomFieldEditorSheet> {
   final _formKey = GlobalKey<FormState>();
-  late final _nameController =
-      TextEditingController(text: widget.existing?.name ?? '');
-  late final _unitController =
-      TextEditingController(text: widget.existing?.unitSuffix ?? '');
+  late final _nameController = TextEditingController(
+    text: widget.existing?.name ?? '',
+  );
+  late final _unitController = TextEditingController(
+    text: widget.existing?.unitSuffix ?? '',
+  );
   late final _optionsController = TextEditingController(
     text: widget.existing?.options?.join('\n') ?? '',
   );
@@ -91,9 +94,7 @@ class _CustomFieldEditorSheetState extends State<CustomFieldEditorSheet> {
         (_parsedOptions()?.length ?? 0) < 2) {
       final l10n = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.customFieldsDropdownMinOptions),
-        ),
+        SnackBar(content: Text(l10n.customFieldsDropdownMinOptions)),
       );
       return;
     }
@@ -103,10 +104,12 @@ class _CustomFieldEditorSheetState extends State<CustomFieldEditorSheet> {
       final provider = context.read<CustomFieldsProvider>();
       final name = _nameController.text.trim();
       final unit = _unitController.text.trim();
-      final options =
-          _type == CustomFieldType.DROPDOWN ? _parsedOptions() : null;
-      final unitSuffix =
-          _type == CustomFieldType.NUMBER && unit.isNotEmpty ? unit : null;
+      final options = _type == CustomFieldType.DROPDOWN
+          ? _parsedOptions()
+          : null;
+      final unitSuffix = _type == CustomFieldType.NUMBER && unit.isNotEmpty
+          ? unit
+          : null;
 
       CustomFieldDefinition? result;
       if (widget.existing == null) {
@@ -148,9 +151,9 @@ class _CustomFieldEditorSheetState extends State<CustomFieldEditorSheet> {
       Navigator.of(context).pop(result);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(friendlyError(e))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(friendlyError(e))));
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -171,15 +174,13 @@ class _CustomFieldEditorSheetState extends State<CustomFieldEditorSheet> {
     // want to change it).
     final dropdownSectionValue =
         _sectionId != null && activeSections.any((s) => s.id == _sectionId)
-            ? _sectionId
-            : null;
+        ? _sectionId
+        : null;
 
     return SafeArea(
       top: false,
       child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: mediaQuery.size.height * 0.9,
-        ),
+        constraints: BoxConstraints(maxHeight: mediaQuery.size.height * 0.9),
         child: SingleChildScrollView(
           padding: EdgeInsets.only(
             left: AppSizes.lg,
@@ -209,9 +210,8 @@ class _CustomFieldEditorSheetState extends State<CustomFieldEditorSheet> {
                   children: [
                     _IconChip(
                       iconName: _iconName,
-                      onTap: () => setState(
-                        () => _showIconPalette = !_showIconPalette,
-                      ),
+                      onTap: () =>
+                          setState(() => _showIconPalette = !_showIconPalette),
                     ),
                     const SizedBox(width: AppSizes.md),
                     Expanded(
@@ -338,7 +338,7 @@ class _IconChip extends StatelessWidget {
         child: SizedBox(
           width: AppSizes.avatarMd,
           height: AppSizes.avatarMd,
-          child: Icon(
+          child: AppIcon(
             resolveCustomFieldIcon(iconName),
             color: AppColors.black,
             size: AppSizes.iconLg,

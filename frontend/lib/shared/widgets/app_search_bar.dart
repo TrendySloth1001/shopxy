@@ -5,6 +5,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Shared search input. Debounces `onChanged` so every keystroke
 /// doesn't fire a network request — typing "stainless steel" used to
@@ -67,7 +68,7 @@ class _AppSearchBarState extends State<AppSearchBar> {
       child: Row(
         children: [
           const SizedBox(width: AppSizes.md),
-          Icon(
+          AppIcon(
             AppIcons.searchRounded,
             size: AppSizes.iconMd,
             color: AppColors.muted,
@@ -80,7 +81,9 @@ class _AppSearchBarState extends State<AppSearchBar> {
               style: theme.textTheme.bodyMedium,
               decoration: InputDecoration(
                 hintText: widget.hint,
-                hintStyle: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+                hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppColors.muted,
+                ),
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,

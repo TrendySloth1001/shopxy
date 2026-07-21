@@ -13,6 +13,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Merchant-side editor for the marketplace shop profile. Distinct from
 /// the legal/GST shop details on EditProfilePage — those drive invoice
@@ -110,11 +111,7 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
     const maxBytes = 5 * 1024 * 1024;
     if (file.lengthSync() > maxBytes) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            AppLocalizations.of(context).shopImageTooLarge,
-          ),
-        ),
+        SnackBar(content: Text(AppLocalizations.of(context).shopImageTooLarge)),
       );
       return;
     }
@@ -139,7 +136,11 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
     });
     if (url == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(shop.error ?? AppLocalizations.of(context).shopImageUploadFailed)),
+        SnackBar(
+          content: Text(
+            shop.error ?? AppLocalizations.of(context).shopImageUploadFailed,
+          ),
+        ),
       );
     }
   }
@@ -190,25 +191,25 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
       name: newName == current.name ? null : newName,
       tagline: maybe(_diffText(_tagline, current.tagline)),
       logoUrl: _logoUrl == current.logoUrl ? const Object() : _logoUrl,
-      bannerUrl:
-          _bannerUrl == current.bannerUrl ? const Object() : _bannerUrl,
+      bannerUrl: _bannerUrl == current.bannerUrl ? const Object() : _bannerUrl,
       locationCity: maybe(_diffText(_locationCity, current.locationCity)),
       locationState: maybe(_diffText(_locationState, current.locationState)),
       returnPolicy: maybe(_diffText(_returnPolicy, current.returnPolicy)),
-      shippingPolicy:
-          maybe(_diffText(_shippingPolicy, current.shippingPolicy)),
+      shippingPolicy: maybe(_diffText(_shippingPolicy, current.shippingPolicy)),
       refundPolicy: maybe(_diffText(_refundPolicy, current.refundPolicy)),
       returnsEnabled: _returnsEnabled == current.returnsEnabled
           ? const Object()
           : _returnsEnabled,
       returnWindowDays:
           newWindowDays == null || newWindowDays == current.returnWindowDays
-              ? const Object()
-              : newWindowDays,
-      refundMode:
-          _refundMode == current.refundMode ? const Object() : _refundMode,
-      returnPolicyNote:
-          maybe(_diffText(_returnPolicyNote, current.returnPolicyNote)),
+          ? const Object()
+          : newWindowDays,
+      refundMode: _refundMode == current.refundMode
+          ? const Object()
+          : _refundMode,
+      returnPolicyNote: maybe(
+        _diffText(_returnPolicyNote, current.returnPolicyNote),
+      ),
       cancellationPolicy: _cancellationPolicy == current.cancellationPolicy
           ? const Object()
           : _cancellationPolicy,
@@ -227,9 +228,7 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
         context: context,
         builder: (ctx) => AlertDialog(
           title: Text(l10n.shopUnpublishTitle),
-          content: Text(
-            l10n.shopUnpublishMessage,
-          ),
+          content: Text(l10n.shopUnpublishMessage),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -245,15 +244,17 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
       if (confirm != true) return;
     }
     if (!mounted) return;
-    final ok = await context.read<ShopProvider>().togglePublish(!shop.isPublished);
+    final ok = await context.read<ShopProvider>().togglePublish(
+      !shop.isPublished,
+    );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
           ok
               ? (!shop.isPublished
-                  ? l10n.shopNowLive
-                  : l10n.shopHiddenFromMarketplace)
+                    ? l10n.shopNowLive
+                    : l10n.shopHiddenFromMarketplace)
               : l10n.shopPublishUpdateFailed,
         ),
       ),
@@ -268,9 +269,7 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(l10n.shopDiscardChangesTitle),
-        content: Text(
-          l10n.shopDiscardChangesMessage,
-        ),
+        content: Text(l10n.shopDiscardChangesMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -306,35 +305,37 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
         if (discard && mounted) nav.pop();
       },
       child: Scaffold(
-      extendBodyBehindAppBar: true,
-      backgroundColor: AppColors.canvas,
-      appBar: FloatingAppBar(
-        title: l10n.shopMyShopTitle,
-        actions: [
-          if (dirty)
-            TextButton(
-              onPressed: provider.isSaving ? null : () => _save(shop),
-              child: Text(provider.isSaving ? l10n.shopSaving : l10n.shopSave),
-            ),
-        ],
-      ),
-      body: provider.isLoading && shop == null
-          ? const _ShopProfileSkeleton()
-          : shop == null
-              ? SafeArea(
-                  top: true,
-                  bottom: false,
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppSizes.xl),
-                      child: Text(
-                        provider.error ?? l10n.shopNotFound,
-                        textAlign: TextAlign.center,
-                      ),
+        extendBodyBehindAppBar: true,
+        backgroundColor: AppColors.canvas,
+        appBar: FloatingAppBar(
+          title: l10n.shopMyShopTitle,
+          actions: [
+            if (dirty)
+              TextButton(
+                onPressed: provider.isSaving ? null : () => _save(shop),
+                child: Text(
+                  provider.isSaving ? l10n.shopSaving : l10n.shopSave,
+                ),
+              ),
+          ],
+        ),
+        body: provider.isLoading && shop == null
+            ? const _ShopProfileSkeleton()
+            : shop == null
+            ? SafeArea(
+                top: true,
+                bottom: false,
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSizes.xl),
+                    child: Text(
+                      provider.error ?? l10n.shopNotFound,
+                      textAlign: TextAlign.center,
                     ),
                   ),
-                )
-              : _buildForm(shop),
+                ),
+              )
+            : _buildForm(shop),
       ),
     );
   }
@@ -346,7 +347,9 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
       key: _formKey,
       child: ListView(
         padding: EdgeInsets.only(
-            top: FloatingAppBar.contentTopInset(context), bottom: AppSizes.huge),
+          top: FloatingAppBar.contentTopInset(context),
+          bottom: AppSizes.huge,
+        ),
         children: [
           _BannerEditor(
             url: _bannerUrl,
@@ -357,8 +360,9 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
                 : () => setState(() => _bannerUrl = null),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg)
-                .copyWith(top: AppSizes.lg),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSizes.lg,
+            ).copyWith(top: AppSizes.lg),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -382,7 +386,7 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
                       const SizedBox(height: 2),
                       Row(
                         children: [
-                          Icon(
+                          AppIcon(
                             shop.isPublished
                                 ? AppIcons.public
                                 : AppIcons.publicOffOutlined,
@@ -396,9 +400,7 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
                             shop.isPublished
                                 ? l10n.shopLiveOnMarketplaceSlug(shop.slug)
                                 : l10n.shopNotPublished,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
+                            style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(
                                   color: shop.isPublished
                                       ? AppColors.brand
@@ -454,9 +456,7 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
                     Expanded(
                       child: TextFormField(
                         controller: _locationCity,
-                        decoration: InputDecoration(
-                          labelText: l10n.shopCity,
-                        ),
+                        decoration: InputDecoration(labelText: l10n.shopCity),
                         textCapitalization: TextCapitalization.words,
                         onChanged: (_) => setState(() {}),
                       ),
@@ -465,9 +465,7 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
                     Expanded(
                       child: TextFormField(
                         controller: _locationState,
-                        decoration: InputDecoration(
-                          labelText: l10n.shopState,
-                        ),
+                        decoration: InputDecoration(labelText: l10n.shopState),
                         textCapitalization: TextCapitalization.words,
                         onChanged: (_) => setState(() {}),
                       ),
@@ -525,9 +523,7 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
                   value: _returnsEnabled,
                   onChanged: (v) => setState(() => _returnsEnabled = v),
                   title: Text(l10n.shopAcceptReturns),
-                  subtitle: Text(
-                    l10n.shopAcceptReturnsSubtitle,
-                  ),
+                  subtitle: Text(l10n.shopAcceptReturnsSubtitle),
                   contentPadding: EdgeInsets.zero,
                 ),
                 if (_returnsEnabled) ...[
@@ -566,9 +562,8 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
                         child: Text(l10n.shopRefundMethodReplacement),
                       ),
                     ],
-                    onChanged: (v) => setState(
-                      () => _refundMode = v ?? _refundMode,
-                    ),
+                    onChanged: (v) =>
+                        setState(() => _refundMode = v ?? _refundMode),
                   ),
                   const SizedBox(height: AppSizes.md),
                   TextFormField(
@@ -635,7 +630,9 @@ class _ShopProfileSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       padding: EdgeInsets.only(
-          top: FloatingAppBar.contentTopInset(context), bottom: AppSizes.huge),
+        top: FloatingAppBar.contentTopInset(context),
+        bottom: AppSizes.huge,
+      ),
       children: const [
         _BannerSkeleton(),
         _HeaderRowSkeleton(),
@@ -670,8 +667,9 @@ class _HeaderRowSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg)
-          .copyWith(top: AppSizes.lg),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+      ).copyWith(top: AppSizes.lg),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -717,13 +715,9 @@ class _FormFieldsSkeleton extends StatelessWidget {
           // City + State row
           Row(
             children: [
-              Expanded(
-                child: AppShimmerLine(widthFactor: 1.0, height: 48),
-              ),
+              Expanded(child: AppShimmerLine(widthFactor: 1.0, height: 48)),
               const SizedBox(width: AppSizes.md),
-              Expanded(
-                child: AppShimmerLine(widthFactor: 1.0, height: 48),
-              ),
+              Expanded(child: AppShimmerLine(widthFactor: 1.0, height: 48)),
             ],
           ),
           const SizedBox(height: AppSizes.xl),
@@ -818,8 +812,7 @@ class _SectionHeader extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             subtitle!,
-            style:
-                theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+            style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
           ),
         ],
       ],
@@ -880,7 +873,9 @@ class _BannerEditor extends StatelessWidget {
                     ],
                     _ImageActionChip(
                       icon: AppIcons.cameraAltOutlined,
-                      label: url == null ? l10n.shopAddBanner : l10n.shopReplace,
+                      label: url == null
+                          ? l10n.shopAddBanner
+                          : l10n.shopReplace,
                       onTap: onPick,
                     ),
                   ],
@@ -899,24 +894,24 @@ class _BannerPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              AppIcons.imageOutlined,
-              size: AppSizes.iconXl,
-              color: AppColors.muted,
-            ),
-            const SizedBox(height: AppSizes.xs),
-            Text(
-              AppLocalizations.of(context).shopAddBanner,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: AppColors.muted,
-                  ),
-            ),
-          ],
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AppIcon(
+          AppIcons.imageOutlined,
+          size: AppSizes.iconXl,
+          color: AppColors.muted,
         ),
-      );
+        const SizedBox(height: AppSizes.xs),
+        Text(
+          AppLocalizations.of(context).shopAddBanner,
+          style: Theme.of(
+            context,
+          ).textTheme.labelMedium?.copyWith(color: AppColors.muted),
+        ),
+      ],
+    ),
+  );
 }
 
 class _LogoEditor extends StatelessWidget {
@@ -952,15 +947,12 @@ class _LogoEditor extends StatelessWidget {
                 ? Image.network(
                     resolveImageUrl(url!),
                     fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => Icon(
+                    errorBuilder: (_, _, _) => AppIcon(
                       AppIcons.storefrontOutlined,
                       color: AppColors.muted,
                     ),
                   )
-                : Icon(
-                    AppIcons.addAPhotoOutlined,
-                    color: AppColors.muted,
-                  ),
+                : AppIcon(AppIcons.addAPhotoOutlined, color: AppColors.muted),
           ),
           if (isUploading)
             Positioned.fill(
@@ -991,7 +983,7 @@ class _LogoEditor extends StatelessWidget {
                     color: AppColors.inverseSurface,
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
+                  child: AppIcon(
                     AppIcons.close,
                     size: AppSizes.iconSm,
                     color: AppColors.onInverse,
@@ -1011,7 +1003,7 @@ class _ImageActionChip extends StatelessWidget {
     required this.label,
     required this.onTap,
   });
-  final IconData icon;
+  final AppIconData icon;
   final String label;
   final VoidCallback onTap;
 
@@ -1031,14 +1023,14 @@ class _ImageActionChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: AppSizes.iconSm, color: AppColors.black),
+              AppIcon(icon, size: AppSizes.iconSm, color: AppColors.black),
               const SizedBox(width: AppSizes.xs),
               Text(
                 label,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: AppColors.black,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  color: AppColors.black,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
@@ -1070,7 +1062,7 @@ class _PublishCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(
+            AppIcon(
               shop.isPublished ? AppIcons.public : AppIcons.publicOffOutlined,
               color: color,
             ),
@@ -1084,18 +1076,18 @@ class _PublishCard extends StatelessWidget {
                         ? l10n.shopLiveOnMarketplace
                         : l10n.shopNotPublishedYet,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: color,
-                          fontWeight: FontWeight.w700,
-                        ),
+                      color: color,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     shop.isPublished
                         ? l10n.shopPublishCardLiveDesc
                         : l10n.shopPublishCardHiddenDesc,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.muted,
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
                   ),
                 ],
               ),

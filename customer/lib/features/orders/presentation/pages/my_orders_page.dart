@@ -17,6 +17,7 @@ import 'package:shopxy_customer/shared/widgets/app_price_text.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/widgets/empty_state.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Order status buckets used by the filter chips. Each order is placed
 /// in exactly one bucket via [_statusOf] so it shows once per filter.
@@ -24,21 +25,21 @@ enum OrderFilter { all, pending, confirmed, cancelled, declined }
 
 extension _OrderFilterX on OrderFilter {
   String get label => switch (this) {
-        OrderFilter.all => 'All',
-        OrderFilter.pending => 'Pending',
-        OrderFilter.confirmed => 'Confirmed',
-        OrderFilter.cancelled => 'Cancelled',
-        OrderFilter.declined => 'Declined',
-      };
+    OrderFilter.all => 'All',
+    OrderFilter.pending => 'Pending',
+    OrderFilter.confirmed => 'Confirmed',
+    OrderFilter.cancelled => 'Cancelled',
+    OrderFilter.declined => 'Declined',
+  };
 
   /// Empty-state copy when a filter has no orders.
   String get emptyLine => switch (this) {
-        OrderFilter.all => "You haven't placed any orders yet",
-        OrderFilter.pending => 'No orders waiting on a seller',
-        OrderFilter.confirmed => 'No confirmed orders yet',
-        OrderFilter.cancelled => 'No cancelled orders',
-        OrderFilter.declined => 'No declined orders',
-      };
+    OrderFilter.all => "You haven't placed any orders yet",
+    OrderFilter.pending => 'No orders waiting on a seller',
+    OrderFilter.confirmed => 'No confirmed orders yet',
+    OrderFilter.cancelled => 'No cancelled orders',
+    OrderFilter.declined => 'No declined orders',
+  };
 }
 
 /// Classifies a parent order into a single bucket. Priority reflects
@@ -149,26 +150,24 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
               child: p.isLoading && orders.isEmpty
                   ? const _LoadingState()
                   : p.error != null && orders.isEmpty
-                      ? _ErrorState(message: p.error!, onRetry: p.load)
-                      : orders.isEmpty
-                          ? const _EmptyOrders()
-                          : visible.isEmpty
-                              ? _FilteredEmpty(filter: _filter)
-                              : ListView.separated(
-                                  physics:
-                                      const AlwaysScrollableScrollPhysics(),
-                                  padding: const EdgeInsets.fromLTRB(
-                                    AppSizes.lg,
-                                    AppSizes.sm,
-                                    AppSizes.lg,
-                                    AppSizes.lg,
-                                  ),
-                                  itemCount: visible.length,
-                                  separatorBuilder: (_, _) =>
-                                      const SizedBox(height: AppSizes.md),
-                                  itemBuilder: (_, i) =>
-                                      _OrderCard(order: visible[i]),
-                                ),
+                  ? _ErrorState(message: p.error!, onRetry: p.load)
+                  : orders.isEmpty
+                  ? const _EmptyOrders()
+                  : visible.isEmpty
+                  ? _FilteredEmpty(filter: _filter)
+                  : ListView.separated(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSizes.lg,
+                        AppSizes.sm,
+                        AppSizes.lg,
+                        AppSizes.lg,
+                      ),
+                      itemCount: visible.length,
+                      separatorBuilder: (_, _) =>
+                          const SizedBox(height: AppSizes.md),
+                      itemBuilder: (_, i) => _OrderCard(order: visible[i]),
+                    ),
             ),
           ),
         ],
@@ -214,7 +213,9 @@ class _FilterBar extends StatelessWidget {
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(
-              horizontal: AppSizes.lg, vertical: AppSizes.sm),
+            horizontal: AppSizes.lg,
+            vertical: AppSizes.sm,
+          ),
           itemCount: chips.length,
           separatorBuilder: (_, _) => const SizedBox(width: AppSizes.sm),
           itemBuilder: (_, i) {
@@ -260,26 +261,28 @@ class _FilterChip extends StatelessWidget {
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(
-              horizontal: AppSizes.md, vertical: AppSizes.sm),
+            horizontal: AppSizes.md,
+            vertical: AppSizes.sm,
+          ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 label,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: fg,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  color: fg,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(width: AppSizes.sm),
               Text(
                 '$count',
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: selected
-                          ? AppColors.white.withValues(alpha: 0.7)
-                          : AppColors.muted,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  color: selected
+                      ? AppColors.white.withValues(alpha: 0.7)
+                      : AppColors.muted,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
@@ -312,9 +315,7 @@ class _OrderCard extends StatelessWidget {
         customBorder: AppShapes.squircle(AppSizes.radiusMd),
         onTap: () => Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (_) => OrderDetailPage(orderId: order.id),
-          ),
+          MaterialPageRoute(builder: (_) => OrderDetailPage(orderId: order.id)),
         ),
         child: Padding(
           padding: const EdgeInsets.all(AppSizes.md),
@@ -328,9 +329,9 @@ class _OrderCard extends StatelessWidget {
                     child: Text(
                       'Order #${order.id}',
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            color: AppColors.black,
-                            fontWeight: FontWeight.w800,
-                          ),
+                        color: AppColors.black,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                   const SizedBox(width: AppSizes.sm),
@@ -348,18 +349,17 @@ class _OrderCard extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.muted,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  color: AppColors.muted,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const SizedBox(height: 2),
               Text(
                 '${itemCount == 1 ? "1 item" : "$itemCount items"} · '
                 '${_date.format(order.createdAt)}',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.copyWith(color: AppColors.muted),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
               ),
               const SizedBox(height: AppSizes.sm),
               const Divider(height: 1, color: AppColors.hairline),
@@ -370,9 +370,9 @@ class _OrderCard extends StatelessWidget {
                   Text(
                     'Total',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.muted,
-                          fontWeight: FontWeight.w700,
-                        ),
+                      color: AppColors.muted,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(width: AppSizes.xs),
                   AppPriceText.precise(
@@ -384,7 +384,9 @@ class _OrderCard extends StatelessWidget {
                   if (order.needsOnlinePayment)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: AppSizes.sm, vertical: 3),
+                        horizontal: AppSizes.sm,
+                        vertical: 3,
+                      ),
                       decoration: ShapeDecoration(
                         color: AppColors.warning.withValues(alpha: 0.12),
                         shape: AppShapes.squircle(AppSizes.radiusFull),
@@ -400,7 +402,7 @@ class _OrderCard extends StatelessWidget {
                       ),
                     )
                   else
-                    const Icon(
+                    const AppIcon(
                       AppIcons.chevronRightRounded,
                       color: AppColors.subtle,
                       size: AppSizes.iconMd,
@@ -416,8 +418,9 @@ class _OrderCard extends StatelessWidget {
 
   /// "Sold by Foo", "Sold by Foo & Bar", "Sold by Foo & 2 others".
   static String _sellerLine(CustomerOrder order) {
-    final names =
-        order.shopOrders.map((s) => s.shop?.displayName ?? 'Seller').toList();
+    final names = order.shopOrders
+        .map((s) => s.shop?.displayName ?? 'Seller')
+        .toList();
     if (names.isEmpty) return 'No sellers';
     if (names.length == 1) return 'Sold by ${names[0]}';
     if (names.length == 2) return 'Sold by ${names[0]} & ${names[1]}';
@@ -426,11 +429,14 @@ class _OrderCard extends StatelessWidget {
 
   /// Aggregate visual across the parent's children. Mirrors the order
   /// detail hero so the list row and detail header agree at a glance.
-  static (Color, Color, IconData) _aggregateVisual(CustomerOrder o) {
+  static (Color, Color, AppIconData) _aggregateVisual(CustomerOrder o) {
     final children = o.shopOrders;
     if (children.isEmpty) {
-      return (AppColors.muted, AppColors.surfaceTint,
-          AppIcons.helpOutlineRounded);
+      return (
+        AppColors.muted,
+        AppColors.surfaceTint,
+        AppIcons.helpOutlineRounded,
+      );
     }
     final confirmed = children.where((c) => c.isConfirmed).length;
     final pending = children.where((c) => c.isPending).length;
@@ -438,21 +444,34 @@ class _OrderCard extends StatelessWidget {
     final cancelled = children.where((c) => c.isCancelled).length;
     final total = children.length;
     if (confirmed == total) {
-      return (AppColors.success, AppColors.successSoft,
-          AppIcons.checkCircleRounded);
+      return (
+        AppColors.success,
+        AppColors.successSoft,
+        AppIcons.checkCircleRounded,
+      );
     }
     if (cancelled == total) {
-      return (AppColors.muted, AppColors.surfaceTint,
-          AppIcons.doDisturbAltRounded);
+      return (
+        AppColors.muted,
+        AppColors.surfaceTint,
+        AppIcons.doDisturbAltRounded,
+      );
     }
     if (rejected == total) {
       return (AppColors.error, AppColors.errorSoft, AppIcons.cancelRounded);
     }
     if (pending == total) {
-      return (AppColors.warning, AppColors.warningSoft, AppIcons.scheduleRounded);
+      return (
+        AppColors.warning,
+        AppColors.warningSoft,
+        AppIcons.scheduleRounded,
+      );
     }
-    return (AppColors.warning, AppColors.warningSoft,
-        AppIcons.hourglassBottomRounded);
+    return (
+      AppColors.warning,
+      AppColors.warningSoft,
+      AppIcons.hourglassBottomRounded,
+    );
   }
 }
 
@@ -466,7 +485,7 @@ class _StatusPill extends StatelessWidget {
   final String label;
   final Color color;
   final Color soft;
-  final IconData icon;
+  final AppIconData icon;
 
   @override
   Widget build(BuildContext context) {
@@ -479,7 +498,7 @@ class _StatusPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: color, size: 12),
+          AppIcon(icon, color: color, size: 12),
           const SizedBox(width: AppSizes.xs),
           Text(
             label.toUpperCase(),
@@ -508,16 +527,19 @@ class _FilteredEmpty extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
         const SizedBox(height: AppSizes.massive),
-        const Icon(AppIcons.filterListOffRounded,
-            size: AppSizes.iconHuge, color: AppColors.subtle),
+        const AppIcon(
+          AppIcons.filterListOffRounded,
+          size: AppSizes.iconHuge,
+          color: AppColors.subtle,
+        ),
         const SizedBox(height: AppSizes.md),
         Text(
           filter.emptyLine,
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.muted,
-                fontWeight: FontWeight.w600,
-              ),
+            color: AppColors.muted,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ],
     );
@@ -552,18 +574,27 @@ class _LoadingState extends StatelessWidget {
           children: const [
             Row(
               children: [
-                AppShimmerBox(width: 80, height: 18, radius: AppSizes.radiusFull),
+                AppShimmerBox(
+                  width: 80,
+                  height: 18,
+                  radius: AppSizes.radiusFull,
+                ),
                 Spacer(),
-                AppShimmerBox(width: 70, height: 18, radius: AppSizes.radiusFull),
+                AppShimmerBox(
+                  width: 70,
+                  height: 18,
+                  radius: AppSizes.radiusFull,
+                ),
               ],
             ),
             SizedBox(height: AppSizes.md),
             Row(
               children: [
                 AppShimmerBox(
-                    width: AppSizes.productThumbSize,
-                    height: AppSizes.productThumbSize,
-                    radius: AppSizes.radiusSm),
+                  width: AppSizes.productThumbSize,
+                  height: AppSizes.productThumbSize,
+                  radius: AppSizes.radiusSm,
+                ),
                 SizedBox(width: AppSizes.md),
                 Expanded(
                   child: Column(
@@ -605,7 +636,7 @@ class _EmptyOrders extends StatelessWidget {
               shape: AppShapes.squircle(AppSizes.radiusLg),
             ),
             alignment: Alignment.center,
-            child: const Icon(
+            child: const AppIcon(
               AppIcons.receiptLongOutlined,
               size: AppSizes.iconHuge,
               color: AppColors.muted,
@@ -632,8 +663,9 @@ class _EmptyOrders extends StatelessWidget {
           child: AppButton.primary(
             label: 'Browse products',
             icon: AppIcons.gridViewRounded,
-            onPressed: () => CustomerShellScope.of(context)
-                ?.select(CustomerShellTab.home.index),
+            onPressed: () => CustomerShellScope.of(
+              context,
+            )?.select(CustomerShellTab.home.index),
           ),
         ),
       ],
@@ -653,13 +685,17 @@ class _ErrorState extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
         const SizedBox(height: AppSizes.massive),
-        const Icon(AppIcons.cloudOffRounded,
-            size: AppSizes.iconHuge, color: AppColors.muted),
+        const AppIcon(
+          AppIcons.cloudOffRounded,
+          size: AppSizes.iconHuge,
+          color: AppColors.muted,
+        ),
         const SizedBox(height: AppSizes.md),
         Text(
           AppStrings.somethingWentWrong,
-          style:
-              theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: AppSizes.xs),

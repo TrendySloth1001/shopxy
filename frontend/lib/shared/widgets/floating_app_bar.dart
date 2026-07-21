@@ -7,6 +7,7 @@ import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// The app-wide **floating app bar** — the single source of truth for every
 /// screen's top bar. Replace `AppBar(...)` with `FloatingAppBar(...)`.
@@ -51,9 +52,9 @@ class FloatingAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.titleWidget,
     this.actions = const [],
     this.bottom,
-  })  : _brand = true,
-        showBack = false,
-        onBack = null;
+  }) : _brand = true,
+       showBack = false,
+       onBack = null;
 
   final String? title;
 
@@ -75,8 +76,8 @@ class FloatingAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Size get preferredSize => Size.fromHeight(
-        _islandHeight + _vMargin * 2 + (bottom?.preferredSize.height ?? 0),
-      );
+    _islandHeight + _vMargin * 2 + (bottom?.preferredSize.height ?? 0),
+  );
 
   /// The top inset a page's scroll content needs so it clears (and can scroll
   /// behind) this bar: the device status bar + the island band. Read from the
@@ -98,13 +99,12 @@ class FloatingAppBar extends StatelessWidget implements PreferredSizeWidget {
     // status-bar style; since we replace it, restore a transparent status
     // bar with icons that suit the current theme brightness.
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final overlayStyle = (isDark
-            ? SystemUiOverlayStyle.light
-            : SystemUiOverlayStyle.dark)
-        .copyWith(
-      statusBarColor: Colors.transparent,
-      systemNavigationBarColor: Colors.transparent,
-    );
+    final overlayStyle =
+        (isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark)
+            .copyWith(
+              statusBarColor: Colors.transparent,
+              systemNavigationBarColor: Colors.transparent,
+            );
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: overlayStyle,
@@ -172,7 +172,8 @@ class FloatingAppBar extends StatelessWidget implements PreferredSizeWidget {
                 if (bottom != null)
                   Padding(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: AppSizes.lg),
+                      horizontal: AppSizes.lg,
+                    ),
                     child: bottom,
                   ),
               ],
@@ -250,7 +251,8 @@ class _LeadingIsland extends StatelessWidget {
               const SizedBox(width: AppSizes.sm),
             ],
             Flexible(
-              child: titleWidget ??
+              child:
+                  titleWidget ??
                   Text(
                     title ?? AppStrings.appName,
                     maxLines: 1,
@@ -296,7 +298,7 @@ class _LeadingIsland extends StatelessWidget {
               child: SizedBox(
                 width: FloatingAppBar._islandHeight,
                 height: FloatingAppBar._islandHeight,
-                child: Icon(
+                child: AppIcon(
                   AppIcons.arrowBackIosNewRounded,
                   size: AppSizes.iconSm,
                   color: AppColors.black,

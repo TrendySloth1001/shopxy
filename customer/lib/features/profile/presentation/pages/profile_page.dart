@@ -25,6 +25,7 @@ import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_button.dart';
 import 'package:shopxy_customer/shared/widgets/app_dialog.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 class CustomerProfilePage extends StatelessWidget {
   const CustomerProfilePage({super.key});
@@ -67,203 +68,210 @@ class CustomerProfilePage extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.only(bottom: AppSizes.huge),
       children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSizes.lg, AppSizes.lg, AppSizes.lg, AppSizes.md,
-            ),
-            child: Row(
-              children: [
-                ProfileAvatar(
-                  name: user?.name ?? '?',
-                  avatarUrl: user?.avatarUrl,
-                  size: 72,
-                ),
-                const SizedBox(width: AppSizes.lg),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        user?.name ?? '—',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.3,
-                        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSizes.lg,
+            AppSizes.lg,
+            AppSizes.lg,
+            AppSizes.md,
+          ),
+          child: Row(
+            children: [
+              ProfileAvatar(
+                name: user?.name ?? '?',
+                avatarUrl: user?.avatarUrl,
+                size: 72,
+              ),
+              const SizedBox(width: AppSizes.lg),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      user?.name ?? '—',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
                       ),
+                    ),
+                    Text(
+                      user?.email ?? '',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: AppColors.muted,
+                      ),
+                    ),
+                    if (user?.createdAt != null) ...[
+                      const SizedBox(height: AppSizes.xs),
                       Text(
-                        user?.email ?? '',
-                        style: theme.textTheme.bodyMedium?.copyWith(
+                        '${AppStrings.memberSince} '
+                        '${DateFormat('MMM yyyy').format(user!.createdAt)}',
+                        style: theme.textTheme.labelSmall?.copyWith(
                           color: AppColors.muted,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                      if (user?.createdAt != null) ...[
-                        const SizedBox(height: AppSizes.xs),
-                        Text(
-                          '${AppStrings.memberSince} '
-                          '${DateFormat('MMM yyyy').format(user!.createdAt)}',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: AppColors.muted,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
                     ],
-                  ),
+                  ],
                 ),
-              ],
+              ),
+            ],
+          ),
+        ),
+        const _Gap(),
+        _Row(
+          icon: AppIcons.editOutlined,
+          title: 'Edit profile',
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const EditProfilePage())),
+        ),
+        _Row(
+          icon: AppIcons.storefrontOutlined,
+          title: 'Linked merchants',
+          subtitle: 'Browse shops you have a relationship with',
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const LinkedMerchantsPage()),
+          ),
+        ),
+        _Row(
+          icon: AppIcons.receiptLongOutlined,
+          title: 'Invoices from shops',
+          subtitle: 'Tap a shop to see the invoices it sent you',
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const MyShopsPage())),
+        ),
+        _Row(
+          icon: AppIcons.locationOnOutlined,
+          title: 'Delivery addresses',
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const AddressesPage())),
+        ),
+        // Orders deliberately omitted — it lives in the bottom nav as
+        // its own tab. Keeping it here too made the profile redundant
+        // and confused which surface is the source of truth.
+        const _SectionLabel(label: 'Activity'),
+        _Row(
+          icon: AppIcons.favoriteBorderRounded,
+          title: 'Wishlist',
+          subtitle: 'Items you saved for later',
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const WishlistPage())),
+        ),
+        _Row(
+          icon: AppIcons.localOfferOutlined,
+          title: 'My coupons',
+          subtitle: 'Redeemable promo codes from your shops',
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const MyCouponsPage())),
+        ),
+        _Row(
+          icon: AppIcons.rateReviewOutlined,
+          title: 'My reviews',
+          subtitle: 'Ratings and reviews you wrote',
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const MyReviewsPage())),
+        ),
+        _Row(
+          icon: AppIcons.assignmentReturnOutlined,
+          title: 'Returns',
+          subtitle: 'Track your return requests',
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const MyReturnsPage())),
+        ),
+        _Row(
+          icon: AppIcons.historyRounded,
+          title: 'Recently viewed',
+          subtitle: 'Pick up where you left off',
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const RecentlyViewedPage())),
+        ),
+        const _SectionLabel(label: 'Settings'),
+        _Row(
+          icon: AppIcons.notificationsActiveOutlined,
+          title: 'Notification preferences',
+          subtitle: 'Order updates, deals, account alerts',
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const NotificationPreferencesPage(),
             ),
           ),
-          const _Gap(),
-          _Row(
-            icon: AppIcons.editOutlined,
-            title: 'Edit profile',
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const EditProfilePage()),
-            ),
+        ),
+        _Row(
+          icon: AppIcons.helpOutlineRounded,
+          title: 'Help & FAQ',
+          subtitle: 'Common questions + email support',
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const HelpAndFaqPage())),
+        ),
+        const _Gap(),
+        _Row(
+          icon: AppIcons.infoOutlineRounded,
+          title: AppStrings.about,
+          subtitle: 'Version 1.0.0',
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const AboutPage())),
+        ),
+        _Row(
+          icon: AppIcons.shieldOutlined,
+          title: AppStrings.privacyPolicy,
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const PrivacyPolicyPage())),
+        ),
+        _Row(
+          icon: AppIcons.descriptionOutlined,
+          title: AppStrings.termsOfService,
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const TermsOfServicePage())),
+        ),
+        const _Gap(),
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.lg,
+            vertical: AppSizes.sm,
           ),
-          _Row(
-            icon: AppIcons.storefrontOutlined,
-            title: 'Linked merchants',
-            subtitle: 'Browse shops you have a relationship with',
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const LinkedMerchantsPage()),
-            ),
-          ),
-          _Row(
-            icon: AppIcons.receiptLongOutlined,
-            title: 'Invoices from shops',
-            subtitle: 'Tap a shop to see the invoices it sent you',
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const MyShopsPage()),
-            ),
-          ),
-          _Row(
-            icon: AppIcons.locationOnOutlined,
-            title: 'Delivery addresses',
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const AddressesPage()),
-            ),
-          ),
-          // Orders deliberately omitted — it lives in the bottom nav as
-          // its own tab. Keeping it here too made the profile redundant
-          // and confused which surface is the source of truth.
-          const _SectionLabel(label: 'Activity'),
-          _Row(
-            icon: AppIcons.favoriteBorderRounded,
-            title: 'Wishlist',
-            subtitle: 'Items you saved for later',
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const WishlistPage()),
-            ),
-          ),
-          _Row(
-            icon: AppIcons.localOfferOutlined,
-            title: 'My coupons',
-            subtitle: 'Redeemable promo codes from your shops',
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const MyCouponsPage()),
-            ),
-          ),
-          _Row(
-            icon: AppIcons.rateReviewOutlined,
-            title: 'My reviews',
-            subtitle: 'Ratings and reviews you wrote',
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const MyReviewsPage()),
-            ),
-          ),
-          _Row(
-            icon: AppIcons.assignmentReturnOutlined,
-            title: 'Returns',
-            subtitle: 'Track your return requests',
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const MyReturnsPage()),
-            ),
-          ),
-          _Row(
-            icon: AppIcons.historyRounded,
-            title: 'Recently viewed',
-            subtitle: 'Pick up where you left off',
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const RecentlyViewedPage()),
-            ),
-          ),
-          const _SectionLabel(label: 'Settings'),
-          _Row(
-            icon: AppIcons.notificationsActiveOutlined,
-            title: 'Notification preferences',
-            subtitle: 'Order updates, deals, account alerts',
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                  builder: (_) => const NotificationPreferencesPage()),
-            ),
-          ),
-          _Row(
-            icon: AppIcons.helpOutlineRounded,
-            title: 'Help & FAQ',
-            subtitle: 'Common questions + email support',
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const HelpAndFaqPage()),
-            ),
-          ),
-          const _Gap(),
-          _Row(
-            icon: AppIcons.infoOutlineRounded,
-            title: AppStrings.about,
-            subtitle: 'Version 1.0.0',
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const AboutPage()),
-            ),
-          ),
-          _Row(
-            icon: AppIcons.shieldOutlined,
-            title: AppStrings.privacyPolicy,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
-            ),
-          ),
-          _Row(
-            icon: AppIcons.descriptionOutlined,
-            title: AppStrings.termsOfService,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const TermsOfServicePage()),
-            ),
-          ),
-          const _Gap(),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSizes.lg,
-              vertical: AppSizes.sm,
-            ),
-            child: Material(
-              color: AppColors.errorSoft,
-              shape: AppShapes.squircle(AppSizes.radiusMd),
-              child: InkWell(
-                onTap: () => _logout(context),
-                customBorder: AppShapes.squircle(AppSizes.radiusMd),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSizes.lg,
-                    vertical: AppSizes.md,
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(AppIcons.logoutRounded,
-                          color: AppColors.error, size: AppSizes.iconMd),
-                      const SizedBox(width: AppSizes.md),
-                      Text(
-                        AppStrings.logout,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: AppColors.error,
-                          fontWeight: FontWeight.w700,
-                        ),
+          child: Material(
+            color: AppColors.errorSoft,
+            shape: AppShapes.squircle(AppSizes.radiusMd),
+            child: InkWell(
+              onTap: () => _logout(context),
+              customBorder: AppShapes.squircle(AppSizes.radiusMd),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSizes.lg,
+                  vertical: AppSizes.md,
+                ),
+                child: Row(
+                  children: [
+                    const AppIcon(
+                      AppIcons.logoutRounded,
+                      color: AppColors.error,
+                      size: AppSizes.iconMd,
+                    ),
+                    const SizedBox(width: AppSizes.md),
+                    Text(
+                      AppStrings.logout,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: AppColors.error,
+                        fontWeight: FontWeight.w700,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
+        ),
       ],
     );
   }
@@ -312,7 +320,7 @@ class _GuestProfileBody extends StatelessWidget {
                         shape: AppShapes.squircle(AppSizes.radiusMd),
                       ),
                       alignment: Alignment.center,
-                      child: const Icon(
+                      child: const AppIcon(
                         AppIcons.personOutlineRounded,
                         size: 28,
                         color: AppColors.black,
@@ -365,31 +373,31 @@ class _GuestProfileBody extends StatelessWidget {
           icon: AppIcons.helpOutlineRounded,
           title: 'Help & FAQ',
           subtitle: 'Common questions + email support',
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const HelpAndFaqPage()),
-          ),
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const HelpAndFaqPage())),
         ),
         _Row(
           icon: AppIcons.infoOutlineRounded,
           title: AppStrings.about,
           subtitle: 'Version 1.0.0',
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const AboutPage()),
-          ),
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const AboutPage())),
         ),
         _Row(
           icon: AppIcons.shieldOutlined,
           title: AppStrings.privacyPolicy,
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
-          ),
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const PrivacyPolicyPage())),
         ),
         _Row(
           icon: AppIcons.descriptionOutlined,
           title: AppStrings.termsOfService,
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const TermsOfServicePage()),
-          ),
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const TermsOfServicePage())),
         ),
       ],
     );
@@ -400,11 +408,12 @@ class _Gap extends StatelessWidget {
   const _Gap();
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.lg, vertical: AppSizes.xl,
-        ),
-        child: Container(height: 1, color: AppColors.hairline),
-      );
+    padding: const EdgeInsets.symmetric(
+      horizontal: AppSizes.lg,
+      vertical: AppSizes.xl,
+    ),
+    child: Container(height: 1, color: AppColors.hairline),
+  );
 }
 
 class _SectionLabel extends StatelessWidget {
@@ -412,21 +421,21 @@ class _SectionLabel extends StatelessWidget {
   final String label;
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg,
-          AppSizes.lg,
-          AppSizes.lg,
-          AppSizes.xs,
-        ),
-        child: Text(
-          label,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: AppColors.muted,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.8,
-              ),
-        ),
-      );
+    padding: const EdgeInsets.fromLTRB(
+      AppSizes.lg,
+      AppSizes.lg,
+      AppSizes.lg,
+      AppSizes.xs,
+    ),
+    child: Text(
+      label,
+      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+        color: AppColors.muted,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.8,
+      ),
+    ),
+  );
 }
 
 class _Row extends StatelessWidget {
@@ -436,7 +445,7 @@ class _Row extends StatelessWidget {
     this.subtitle,
     this.onTap,
   });
-  final IconData icon;
+  final AppIconData icon;
   final String title;
   final String? subtitle;
   final VoidCallback? onTap;
@@ -448,7 +457,8 @@ class _Row extends StatelessWidget {
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.lg, vertical: AppSizes.md,
+          horizontal: AppSizes.lg,
+          vertical: AppSizes.md,
         ),
         child: Row(
           children: [
@@ -460,7 +470,7 @@ class _Row extends StatelessWidget {
                 shape: AppShapes.squircle(AppSizes.radiusSm),
               ),
               alignment: Alignment.center,
-              child: Icon(icon, size: 18, color: AppColors.black),
+              child: AppIcon(icon, size: 18, color: AppColors.black),
             ),
             const SizedBox(width: AppSizes.md),
             Expanded(
@@ -483,7 +493,10 @@ class _Row extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(AppIcons.chevronRightRounded, color: AppColors.subtle),
+            const AppIcon(
+              AppIcons.chevronRightRounded,
+              color: AppColors.subtle,
+            ),
           ],
         ),
       ),

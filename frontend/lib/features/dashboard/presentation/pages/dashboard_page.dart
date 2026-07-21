@@ -30,6 +30,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_error_view.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Merchant dashboard — a 1:1 port of the merchant-web overview
 /// (`merchant-web/src/features/dashboard`): period switcher, KPI row, sales
@@ -81,16 +82,17 @@ class _DashboardPageState extends State<DashboardPage> {
     final provider = context.watch<DashboardProvider>();
     final stats = provider.stats;
     final canViewDashboard = context.select<AuthProvider, bool>(
-        (a) => a.user?.canView('dashboard') ?? false);
+      (a) => a.user?.canView('dashboard') ?? false,
+    );
     if (canViewDashboard) {
       _maybeNudgePayouts(context.watch<LinkedAccountProvider>());
     }
     // The profile action shows the user's actual avatar (their photo, or a
     // colored monogram fallback) rather than a generic person glyph.
-    final profile =
-        context.select<AuthProvider, ({String? name, String? avatarUrl})>(
-      (a) => (name: a.user?.name, avatarUrl: a.user?.avatarUrl),
-    );
+    final profile = context
+        .select<AuthProvider, ({String? name, String? avatarUrl})>(
+          (a) => (name: a.user?.name, avatarUrl: a.user?.avatarUrl),
+        );
 
     return Scaffold(
       // Let the page scroll *behind* the floating app bar (transparent) —
@@ -122,18 +124,15 @@ class _DashboardPageState extends State<DashboardPage> {
               message: l10n.dashboardHiddenMessage,
             )
           : stats == null
-              ? (provider.error != null
-                  ? AppErrorView(onRetry: () => provider.loadStats())
-                  : const _DashboardSkeleton())
-              : RefreshIndicator(
-                  onRefresh: () => provider.loadStats(),
-                  color: AppColors.brand,
-                  backgroundColor: AppColors.surface,
-                  child: _DashboardScroll(
-                    provider: provider,
-                    stats: stats,
-                  ),
-                ),
+          ? (provider.error != null
+                ? AppErrorView(onRetry: () => provider.loadStats())
+                : const _DashboardSkeleton())
+          : RefreshIndicator(
+              onRefresh: () => provider.loadStats(),
+              color: AppColors.brand,
+              backgroundColor: AppColors.surface,
+              child: _DashboardScroll(provider: provider, stats: stats),
+            ),
     );
   }
 }
@@ -155,8 +154,7 @@ class _DashboardScroll extends StatelessWidget {
         // app bar's inset (status bar + island band) to the top padding.
         final topInset = FloatingAppBar.contentTopInset(context) + AppSizes.xxl;
         return ListView(
-          padding: EdgeInsets.fromLTRB(
-              pad, topInset, pad, AppSizes.huge),
+          padding: EdgeInsets.fromLTRB(pad, topInset, pad, AppSizes.huge),
           children: [
             _Header(provider: provider, width: c.maxWidth),
             const _PendingInviteCallout(),
@@ -185,12 +183,15 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final user = context.select<AuthProvider, ({String? name, String? shop})>(
-        (a) => (name: a.user?.name, shop: a.user?.shopName));
+      (a) => (name: a.user?.name, shop: a.user?.shopName),
+    );
     final greeting = _greeting(l10n);
     final hasName = user.name != null && user.name!.trim().isNotEmpty;
     final greetingLine = hasName
         ? l10n.dashboardGreetingWithName(
-            greeting, user.name!.trim().split(' ').first)
+            greeting,
+            user.name!.trim().split(' ').first,
+          )
         : greeting;
     final shopName = user.shop ?? l10n.dashboardYourShop;
 
@@ -250,8 +251,10 @@ class _RefreshButton extends StatelessWidget {
     final busy = provider.isLoading || provider.isRefreshing;
     return Material(
       color: AppColors.canvas,
-      shape: AppShapes.squircle(AppSizes.radiusButton,
-          side: BorderSide(color: AppColors.hairline)),
+      shape: AppShapes.squircle(
+        AppSizes.radiusButton,
+        side: BorderSide(color: AppColors.hairline),
+      ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: busy ? null : () => provider.loadStats(),
@@ -275,8 +278,10 @@ class _SpinningRefresh extends StatefulWidget {
 
 class _SpinningRefreshState extends State<_SpinningRefresh>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _c =
-      AnimationController(vsync: this, duration: const Duration(seconds: 1));
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 1),
+  );
 
   @override
   void didUpdateWidget(_SpinningRefresh old) {
@@ -305,8 +310,11 @@ class _SpinningRefreshState extends State<_SpinningRefresh>
   Widget build(BuildContext context) {
     return RotationTransition(
       turns: _c,
-      child: Icon(AppIcons.refreshRounded,
-          size: AppSizes.iconSm, color: AppColors.muted),
+      child: AppIcon(
+        AppIcons.refreshRounded,
+        size: AppSizes.iconSm,
+        color: AppColors.muted,
+      ),
     );
   }
 }
@@ -322,15 +330,13 @@ class _DashboardBody extends StatelessWidget {
 
     if (stats.isFresh) {
       final payouts = context.watch<LinkedAccountProvider>();
-      final payoutsEnabled =
-          !payouts.loaded ? true : (payouts.status?.payoutsEnabled ?? false);
+      final payoutsEnabled = !payouts.loaded
+          ? true
+          : (payouts.status?.payoutsEnabled ?? false);
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (stats.alerts.isNotEmpty) ...[
-            Alerts(alerts: stats.alerts),
-            gap,
-          ],
+          if (stats.alerts.isNotEmpty) ...[Alerts(alerts: stats.alerts), gap],
           OnboardingChecklist(
             onboarding: stats.onboarding,
             payoutsEnabled: payoutsEnabled,
@@ -340,7 +346,8 @@ class _DashboardBody extends StatelessWidget {
     }
 
     final money = <Widget>[
-      if (stats.kpis != null) KpiRow(kpis: stats.kpis!, period: provider.period),
+      if (stats.kpis != null)
+        KpiRow(kpis: stats.kpis!, period: provider.period),
       if (stats.trend != null) TrendCard(trend: stats.trend!),
       if (stats.insights != null) Analytics(insights: stats.insights!),
     ];
@@ -348,10 +355,7 @@ class _DashboardBody extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (stats.alerts.isNotEmpty) ...[
-          Alerts(alerts: stats.alerts),
-          gap,
-        ],
+        if (stats.alerts.isNotEmpty) ...[Alerts(alerts: stats.alerts), gap],
         // Period-scoped money sections dim while a new period loads.
         if (money.isNotEmpty) ...[
           _DimWhileRefreshing(
@@ -421,27 +425,36 @@ class _PendingInviteCallout extends StatelessWidget {
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(
-                horizontal: AppSizes.md, vertical: AppSizes.sm),
+              horizontal: AppSizes.md,
+              vertical: AppSizes.sm,
+            ),
             child: Row(
               children: [
-                Icon(AppIcons.markEmailUnreadOutlined,
-                    size: 18, color: AppColors.brandStrong),
+                AppIcon(
+                  AppIcons.markEmailUnreadOutlined,
+                  size: 18,
+                  color: AppColors.brandStrong,
+                ),
                 const SizedBox(width: AppSizes.md),
                 Expanded(
                   child: Text(
                     count == 1
                         ? l10n.dashboardPendingInviteOne
                         : l10n.dashboardPendingInviteMany('$count'),
-                    style:
-                        DashText.bodyMd.copyWith(color: AppColors.brandStrong),
+                    style: DashText.bodyMd.copyWith(
+                      color: AppColors.brandStrong,
+                    ),
                   ),
                 ),
                 const SizedBox(width: AppSizes.sm),
-                Text(l10n.dashboardView,
-                    style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.brandStrong)),
+                Text(
+                  l10n.dashboardView,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.brandStrong,
+                  ),
+                ),
               ],
             ),
           ),
@@ -464,8 +477,12 @@ class _DashboardSkeleton extends StatelessWidget {
       builder: (context, c) {
         final pad = _hPad(c.maxWidth);
         final kpiCols = responsiveCols(c.maxWidth - pad * 2, base: 2, lg: 4);
-        final actionCols =
-            responsiveCols(c.maxWidth - pad * 2, base: 2, lg: 3, xl: 6);
+        final actionCols = responsiveCols(
+          c.maxWidth - pad * 2,
+          base: 2,
+          lg: 3,
+          xl: 6,
+        );
         return ListView(
           padding: EdgeInsets.fromLTRB(pad, AppSizes.xxl, pad, AppSizes.huge),
           physics: const NeverScrollableScrollPhysics(),

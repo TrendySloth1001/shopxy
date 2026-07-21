@@ -11,6 +11,7 @@ import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Admin-only listing of marketplace shops with a verified toggle.
 /// Gated by the `isPlatformAdmin` drawer entry. No bulk actions yet —
@@ -75,9 +76,9 @@ class _AdminShopsPageState extends State<AdminShopsPage> {
       });
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(friendlyError(e))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(friendlyError(e))));
     }
   }
 
@@ -92,7 +93,7 @@ class _AdminShopsPageState extends State<AdminShopsPage> {
         actions: [
           IconButton(
             tooltip: l10n.adminRefresh,
-            icon: const Icon(AppIcons.refresh),
+            icon: const AppIcon(AppIcons.refresh),
             onPressed: _loading ? null : _load,
           ),
         ],
@@ -101,57 +102,65 @@ class _AdminShopsPageState extends State<AdminShopsPage> {
         context: context,
         removeTop: true,
         child: Column(
-        children: [
-          SizedBox(height: FloatingAppBar.contentTopInset(context)),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-                AppSizes.lg, AppSizes.md, AppSizes.lg, AppSizes.sm),
-            child: TextField(
-              controller: _searchCtrl,
-              decoration: InputDecoration(
-                hintText: l10n.adminShopsSearchHint,
-                prefixIcon: const Icon(AppIcons.search),
-                suffixIcon: _searchCtrl.text.isEmpty
-                    ? null
-                    : IconButton(
-                        icon: const Icon(AppIcons.close),
-                        onPressed: () {
-                          _searchCtrl.clear();
-                          _load();
-                        },
-                      ),
+          children: [
+            SizedBox(height: FloatingAppBar.contentTopInset(context)),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSizes.lg,
+                AppSizes.md,
+                AppSizes.lg,
+                AppSizes.sm,
               ),
-              onSubmitted: (_) => _load(),
-              textInputAction: TextInputAction.search,
-            ),
-          ),
-          Expanded(
-            child: _loading && _rows.isEmpty
-                ? const _ShopsLoadingSkeleton()
-                : _error != null && _rows.isEmpty
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(AppSizes.xl),
-                          child: Text(_error!, textAlign: TextAlign.center),
+              child: TextField(
+                controller: _searchCtrl,
+                decoration: InputDecoration(
+                  hintText: l10n.adminShopsSearchHint,
+                  prefixIcon: const AppIcon(AppIcons.search),
+                  suffixIcon: _searchCtrl.text.isEmpty
+                      ? null
+                      : IconButton(
+                          icon: const AppIcon(AppIcons.close),
+                          onPressed: () {
+                            _searchCtrl.clear();
+                            _load();
+                          },
                         ),
-                      )
-                    : _rows.isEmpty
-                        ? const _EmptyBlock()
-                        : RefreshIndicator(
-                            onRefresh: _load,
-                            child: ListView.builder(
-                              padding: const EdgeInsets.fromLTRB(
-                                  AppSizes.lg, 0, AppSizes.lg, 96),
-                              itemCount: _rows.length,
-                              itemBuilder: (_, i) => _Row(
-                                row: _rows[i],
-                                onToggle: () => _toggle(_rows[i]),
-                              ),
-                            ),
-                          ),
-          ),
-        ],
-      ),
+                ),
+                onSubmitted: (_) => _load(),
+                textInputAction: TextInputAction.search,
+              ),
+            ),
+            Expanded(
+              child: _loading && _rows.isEmpty
+                  ? const _ShopsLoadingSkeleton()
+                  : _error != null && _rows.isEmpty
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSizes.xl),
+                        child: Text(_error!, textAlign: TextAlign.center),
+                      ),
+                    )
+                  : _rows.isEmpty
+                  ? const _EmptyBlock()
+                  : RefreshIndicator(
+                      onRefresh: _load,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSizes.lg,
+                          0,
+                          AppSizes.lg,
+                          96,
+                        ),
+                        itemCount: _rows.length,
+                        itemBuilder: (_, i) => _Row(
+                          row: _rows[i],
+                          onToggle: () => _toggle(_rows[i]),
+                        ),
+                      ),
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -184,8 +193,10 @@ class _Row extends StatelessWidget {
                       ? Container(
                           color: AppColors.heroPanel,
                           alignment: Alignment.center,
-                          child: Icon(AppIcons.storefrontOutlined,
-                              color: AppColors.muted),
+                          child: AppIcon(
+                            AppIcons.storefrontOutlined,
+                            color: AppColors.muted,
+                          ),
                         )
                       : Image.network(
                           resolveImageUrl(row.logoUrl!),
@@ -227,23 +238,28 @@ class _Row extends StatelessWidget {
                     Text(
                       '/${row.slug}'
                       '${row.isPublished ? "" : " · ${l10n.adminShopDraft}"}',
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: AppColors.muted),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.muted,
+                      ),
                     ),
-                    if (row.locationCity != null ||
-                        row.locationState != null)
+                    if (row.locationCity != null || row.locationState != null)
                       Text(
-                        [row.locationCity, row.locationState]
-                            .where((s) => s != null && s.isNotEmpty)
-                            .join(', '),
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: AppColors.muted),
+                        [
+                          row.locationCity,
+                          row.locationState,
+                        ].where((s) => s != null && s.isNotEmpty).join(', '),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.muted,
+                        ),
                       ),
                   ],
                 ),
               ),
               const SizedBox(width: AppSizes.sm),
-              Switch.adaptive(value: row.isVerified, onChanged: (_) => onToggle()),
+              Switch.adaptive(
+                value: row.isVerified,
+                onChanged: (_) => onToggle(),
+              ),
             ],
           ),
         ),
@@ -315,21 +331,24 @@ class _EmptyBlock extends StatelessWidget {
   const _EmptyBlock();
   @override
   Widget build(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSizes.xl),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(AppIcons.storefrontOutlined,
-                  size: AppSizes.iconHuge, color: AppColors.subtle),
-              const SizedBox(height: AppSizes.md),
-              Text(
-                AppLocalizations.of(context).adminShopsEmpty,
-                textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.muted),
-              ),
-            ],
+    child: Padding(
+      padding: const EdgeInsets.all(AppSizes.xl),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AppIcon(
+            AppIcons.storefrontOutlined,
+            size: AppSizes.iconHuge,
+            color: AppColors.subtle,
           ),
-        ),
-      );
+          const SizedBox(height: AppSizes.md),
+          Text(
+            AppLocalizations.of(context).adminShopsEmpty,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.muted),
+          ),
+        ],
+      ),
+    ),
+  );
 }

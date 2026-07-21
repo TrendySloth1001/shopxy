@@ -5,6 +5,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Immersive auth layout: a full-bleed photo hero with the brand mark +
 /// tagline overlaid, and a white rounded sheet floating up over it that
@@ -65,7 +66,11 @@ class AuthScaffold extends StatelessWidget {
                 top: false,
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(
-                      AppSizes.xl, AppSizes.xxl, AppSizes.xl, AppSizes.xl),
+                    AppSizes.xl,
+                    AppSizes.xxl,
+                    AppSizes.xl,
+                    AppSizes.xl,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -153,8 +158,11 @@ class _HeroArt extends StatelessWidget {
                       shape: AppShapes.squircle(AppSizes.radiusSm),
                     ),
                     alignment: Alignment.center,
-                    child: const Icon(AppIcons.storefrontRounded,
-                        color: AppColors.white, size: AppSizes.iconMd),
+                    child: const AppIcon(
+                      AppIcons.storefrontRounded,
+                      color: AppColors.white,
+                      size: AppSizes.iconMd,
+                    ),
                   ),
                   const SizedBox(width: AppSizes.sm),
                   Text(
@@ -207,10 +215,9 @@ class _WhiteSkip extends StatelessWidget {
         textButtonTheme: TextButtonThemeData(
           style: TextButton.styleFrom(
             foregroundColor: AppColors.white,
-            textStyle: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.copyWith(fontWeight: FontWeight.w700),
+            textStyle: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
         ),
       ),
@@ -241,7 +248,7 @@ class AuthField extends StatelessWidget {
 
   final TextEditingController controller;
   final String label;
-  final IconData icon;
+  final AppIconData icon;
   final bool obscure;
   final VoidCallback? onToggleObscure;
   final TextInputType? keyboardType;
@@ -268,12 +275,14 @@ class AuthField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: label,
         helperText: helper,
-        prefixIcon: Icon(icon, size: AppSizes.iconMd),
+        prefixIcon: AppIcon(icon, size: AppSizes.iconMd),
         suffixIcon: onToggleObscure != null
             ? IconButton(
-                icon: Icon(obscure
-                    ? AppIcons.visibilityOutlined
-                    : AppIcons.visibilityOffOutlined),
+                icon: AppIcon(
+                  obscure
+                      ? AppIcons.visibilityOutlined
+                      : AppIcons.visibilityOffOutlined,
+                ),
                 onPressed: onToggleObscure,
               )
             : null,
@@ -299,14 +308,19 @@ class AuthErrorBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(AppIcons.errorOutlineRounded,
-              color: AppColors.error, size: AppSizes.iconSm),
+          const AppIcon(
+            AppIcons.errorOutlineRounded,
+            color: AppColors.error,
+            size: AppSizes.iconSm,
+          ),
           const SizedBox(width: AppSizes.sm),
           Expanded(
             child: Text(
               message,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.error, height: 1.3),
+                color: AppColors.error,
+                height: 1.3,
+              ),
             ),
           ),
         ],

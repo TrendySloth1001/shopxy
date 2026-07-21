@@ -12,6 +12,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// The P&L "Products sold" drill-down: an aggregated table with ONE row per
 /// product over the range (its number of sales, total qty, total revenue).
@@ -36,7 +37,11 @@ class _SoldProductsTableState extends State<SoldProductsTable> {
 
   List<SoldProduct> _products = const [];
   int _total = 0;
-  SoldTotals _totals = const SoldTotals(salesCount: 0, totalQuantity: 0, totalAmount: 0);
+  SoldTotals _totals = const SoldTotals(
+    salesCount: 0,
+    totalQuantity: 0,
+    totalAmount: 0,
+  );
   int _page = 1;
   bool _loading = true;
   bool _loadingMore = false;
@@ -81,8 +86,13 @@ class _SoldProductsTableState extends State<SoldProductsTable> {
       _expanded = null;
     });
     try {
-      final res = await _ds.soldProducts(widget.from, widget.to,
-          page: 1, limit: _soldPageSize, search: _search);
+      final res = await _ds.soldProducts(
+        widget.from,
+        widget.to,
+        page: 1,
+        limit: _soldPageSize,
+        search: _search,
+      );
       if (!mounted) return;
       setState(() {
         _products = res.data;
@@ -97,7 +107,11 @@ class _SoldProductsTableState extends State<SoldProductsTable> {
         _error = friendlyError(e);
         _products = const [];
         _total = 0;
-        _totals = const SoldTotals(salesCount: 0, totalQuantity: 0, totalAmount: 0);
+        _totals = const SoldTotals(
+          salesCount: 0,
+          totalQuantity: 0,
+          totalAmount: 0,
+        );
         _loading = false;
       });
     }
@@ -107,8 +121,13 @@ class _SoldProductsTableState extends State<SoldProductsTable> {
     final next = _page + 1;
     setState(() => _loadingMore = true);
     try {
-      final res = await _ds.soldProducts(widget.from, widget.to,
-          page: next, limit: _soldPageSize, search: _search);
+      final res = await _ds.soldProducts(
+        widget.from,
+        widget.to,
+        page: next,
+        limit: _soldPageSize,
+        search: _search,
+      );
       if (!mounted) return;
       setState(() {
         _products = [..._products, ...res.data];
@@ -137,7 +156,11 @@ class _SoldProductsTableState extends State<SoldProductsTable> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(
-              AppSizes.lg, AppSizes.xl, AppSizes.lg, AppSizes.sm),
+            AppSizes.lg,
+            AppSizes.xl,
+            AppSizes.lg,
+            AppSizes.sm,
+          ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -170,10 +193,16 @@ class _SoldProductsTableState extends State<SoldProductsTable> {
             onChanged: _onSearchChanged,
             decoration: InputDecoration(
               hintText: l10n.reportsSearchByProductOrSku,
-              prefixIcon: const Icon(AppIcons.searchRounded, size: AppSizes.iconMd),
+              prefixIcon: const AppIcon(
+                AppIcons.searchRounded,
+                size: AppSizes.iconMd,
+              ),
               suffixIcon: _searchCtrl.text.isNotEmpty
                   ? IconButton(
-                      icon: const Icon(AppIcons.closeRounded, size: AppSizes.iconMd),
+                      icon: const AppIcon(
+                        AppIcons.closeRounded,
+                        size: AppSizes.iconMd,
+                      ),
                       onPressed: () {
                         _searchCtrl.clear();
                         _search = '';
@@ -206,20 +235,26 @@ class _SoldProductsTableState extends State<SoldProductsTable> {
               ),
               child: Text(
                 _error!,
-                style: theme.textTheme.bodySmall?.copyWith(color: AppColors.error),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.error,
+                ),
               ),
             ),
           )
         else if (_products.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(
-                horizontal: AppSizes.lg, vertical: AppSizes.lg),
+              horizontal: AppSizes.lg,
+              vertical: AppSizes.lg,
+            ),
             child: Text(
               searching
                   ? l10n.reportsNoSoldProductsMatch(_search)
                   : l10n.reportsNoProductsSoldInRange,
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodySmall?.copyWith(color: AppColors.subtle),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.subtle,
+              ),
             ),
           )
         else ...[
@@ -244,8 +279,11 @@ class _SoldProductsTableState extends State<SoldProductsTable> {
                         from: widget.from,
                         to: widget.to,
                         expanded: _expanded == p.productId,
-                        onToggle: () => setState(() => _expanded =
-                            _expanded == p.productId ? null : p.productId),
+                        onToggle: () => setState(
+                          () => _expanded = _expanded == p.productId
+                              ? null
+                              : p.productId,
+                        ),
                       ),
                     // Grand-total footer.
                     Container(
@@ -256,7 +294,9 @@ class _SoldProductsTableState extends State<SoldProductsTable> {
                         ),
                       ),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: AppSizes.md, vertical: AppSizes.sm),
+                        horizontal: AppSizes.md,
+                        vertical: AppSizes.sm,
+                      ),
                       child: Row(
                         children: [
                           Expanded(
@@ -274,7 +314,9 @@ class _SoldProductsTableState extends State<SoldProductsTable> {
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: AppColors.muted,
                               fontWeight: FontWeight.w600,
-                              fontFeatures: const [FontFeature.tabularFigures()],
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
                             ),
                           ),
                           const SizedBox(width: AppSizes.md),
@@ -282,7 +324,9 @@ class _SoldProductsTableState extends State<SoldProductsTable> {
                             _money().format(_totals.totalAmount),
                             style: theme.textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.w800,
-                              fontFeatures: const [FontFeature.tabularFigures()],
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
                             ),
                           ),
                         ],
@@ -295,20 +339,29 @@ class _SoldProductsTableState extends State<SoldProductsTable> {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(
-                AppSizes.lg, AppSizes.md, AppSizes.lg, 0),
+              AppSizes.lg,
+              AppSizes.md,
+              AppSizes.lg,
+              0,
+            ),
             child: hasMore
                 ? OutlinedButton(
                     onPressed: _loadingMore ? null : _loadMore,
-                    child: Text(_loadingMore
-                        ? l10n.reportsLoading
-                        : l10n.reportsLoadMore('${_total - _products.length}')),
+                    child: Text(
+                      _loadingMore
+                          ? l10n.reportsLoading
+                          : l10n.reportsLoadMore(
+                              '${_total - _products.length}',
+                            ),
+                    ),
                   )
                 : Text(
                     _total == 1
                         ? l10n.reportsAllProductsShownOne('$_total')
                         : l10n.reportsAllProductsShownOther('$_total'),
-                    style:
-                        theme.textTheme.bodySmall?.copyWith(color: AppColors.subtle),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.subtle,
+                    ),
                   ),
           ),
         ],
@@ -338,7 +391,8 @@ class _ProductRow extends StatelessWidget {
     final theme = Theme.of(context);
     final unit = product.unit ?? '';
     final tone = _toneFor(
-        product.productSku ?? product.productName ?? '${product.productId}');
+      product.productSku ?? product.productName ?? '${product.productId}',
+    );
     return Container(
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: AppColors.hairline)),
@@ -350,7 +404,9 @@ class _ProductRow extends StatelessWidget {
             child: Container(
               color: expanded ? AppColors.surfaceTint : null,
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSizes.md, vertical: AppSizes.sm),
+                horizontal: AppSizes.md,
+                vertical: AppSizes.sm,
+              ),
               child: Column(
                 children: [
                   Row(
@@ -358,8 +414,11 @@ class _ProductRow extends StatelessWidget {
                       AnimatedRotation(
                         turns: expanded ? 0.25 : 0,
                         duration: const Duration(milliseconds: 150),
-                        child: Icon(AppIcons.chevronRightRounded,
-                            size: AppSizes.iconMd, color: AppColors.muted),
+                        child: AppIcon(
+                          AppIcons.chevronRightRounded,
+                          size: AppSizes.iconMd,
+                          color: AppColors.muted,
+                        ),
                       ),
                       const SizedBox(width: AppSizes.xs),
                       Container(
@@ -370,8 +429,11 @@ class _ProductRow extends StatelessWidget {
                           color: AppColors.tileBg(tone.$2),
                           shape: AppShapes.squircle(AppSizes.radiusSm),
                         ),
-                        child: Icon(AppIcons.inventory2Outlined,
-                            size: AppSizes.iconSm, color: tone.$1),
+                        child: AppIcon(
+                          AppIcons.inventory2Outlined,
+                          size: AppSizes.iconSm,
+                          color: tone.$1,
+                        ),
                       ),
                       const SizedBox(width: AppSizes.sm),
                       Expanded(
@@ -379,7 +441,8 @@ class _ProductRow extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              product.productName ?? l10n.reportsProductFallback,
+                              product.productName ??
+                                  l10n.reportsProductFallback,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: theme.textTheme.bodyMedium,
@@ -389,8 +452,9 @@ class _ProductRow extends StatelessWidget {
                                 product.productSku!,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.bodySmall
-                                    ?.copyWith(color: AppColors.subtle),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: AppColors.subtle,
+                                ),
                               ),
                           ],
                         ),
@@ -412,8 +476,12 @@ class _ProductRow extends StatelessWidget {
                       children: [
                         _Chip(
                           label: product.salesCount == 1
-                              ? l10n.reportsSaleCountOne('${product.salesCount}')
-                              : l10n.reportsSaleCountOther('${product.salesCount}'),
+                              ? l10n.reportsSaleCountOne(
+                                  '${product.salesCount}',
+                                )
+                              : l10n.reportsSaleCountOther(
+                                  '${product.salesCount}',
+                                ),
                           tone: _countTone(product.salesCount),
                         ),
                         const SizedBox(width: AppSizes.xs),
@@ -429,8 +497,7 @@ class _ProductRow extends StatelessWidget {
               ),
             ),
           ),
-          if (expanded)
-            _ProductTimeline(from: from, to: to, product: product),
+          if (expanded) _ProductTimeline(from: from, to: to, product: product),
         ],
       ),
     );
@@ -477,8 +544,13 @@ class _ProductTimelineState extends State<_ProductTimeline> {
       _error = null;
     });
     try {
-      final res = await _ds.soldItems(widget.from, widget.to,
-          productId: widget.product.productId, page: 1, limit: _timelinePageSize);
+      final res = await _ds.soldItems(
+        widget.from,
+        widget.to,
+        productId: widget.product.productId,
+        page: 1,
+        limit: _timelinePageSize,
+      );
       if (!mounted) return;
       setState(() {
         _items = res.data;
@@ -501,10 +573,13 @@ class _ProductTimelineState extends State<_ProductTimeline> {
     final next = _page + 1;
     setState(() => _loadingMore = true);
     try {
-      final res = await _ds.soldItems(widget.from, widget.to,
-          productId: widget.product.productId,
-          page: next,
-          limit: _timelinePageSize);
+      final res = await _ds.soldItems(
+        widget.from,
+        widget.to,
+        productId: widget.product.productId,
+        page: next,
+        limit: _timelinePageSize,
+      );
       if (!mounted) return;
       setState(() {
         _items = [..._items, ...res.data];
@@ -528,7 +603,11 @@ class _ProductTimelineState extends State<_ProductTimeline> {
     return Container(
       color: AppColors.surface,
       padding: const EdgeInsets.fromLTRB(
-          AppSizes.md, AppSizes.md, AppSizes.md, AppSizes.md),
+        AppSizes.md,
+        AppSizes.md,
+        AppSizes.md,
+        AppSizes.md,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -544,11 +623,19 @@ class _ProductTimelineState extends State<_ProductTimeline> {
               ),
             )
           else if (_error != null)
-            Text(_error!,
-                style: theme.textTheme.bodySmall?.copyWith(color: AppColors.error))
+            Text(
+              _error!,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.error,
+              ),
+            )
           else if (_items.isEmpty)
-            Text(l10n.reportsNoSalesForProduct,
-                style: theme.textTheme.bodySmall?.copyWith(color: AppColors.subtle))
+            Text(
+              l10n.reportsNoSalesForProduct,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.subtle,
+              ),
+            )
           else
             for (final ev in _items) _TimelineRow(item: ev, unit: unit),
           if (!_loading && hasMore)
@@ -556,9 +643,11 @@ class _ProductTimelineState extends State<_ProductTimeline> {
               padding: const EdgeInsets.only(top: AppSizes.sm),
               child: OutlinedButton(
                 onPressed: _loadingMore ? null : _loadMore,
-                child: Text(_loadingMore
-                    ? l10n.reportsLoading
-                    : l10n.reportsLoadMore('${_total - _items.length}')),
+                child: Text(
+                  _loadingMore
+                      ? l10n.reportsLoading
+                      : l10n.reportsLoadMore('${_total - _items.length}'),
+                ),
               ),
             ),
           if (!_loading && _error == null)
@@ -611,15 +700,20 @@ class _TimelineRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
       child: Row(
         children: [
-          Icon(AppIcons.scheduleRounded,
-              size: AppSizes.iconSm, color: _recencyColor(when)),
+          AppIcon(
+            AppIcons.scheduleRounded,
+            size: AppSizes.iconSm,
+            color: _recencyColor(when),
+          ),
           const SizedBox(width: AppSizes.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  when == null ? '—' : DateFormat('d MMM yyyy, h:mm a').format(when.toLocal()),
+                  when == null
+                      ? '—'
+                      : DateFormat('d MMM yyyy, h:mm a').format(when.toLocal()),
                   style: theme.textTheme.bodySmall,
                 ),
                 if ((item.invoiceNo ?? '').isNotEmpty)
@@ -627,8 +721,9 @@ class _TimelineRow extends StatelessWidget {
                     item.invoiceNo!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: AppColors.subtle),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.subtle,
+                    ),
                   ),
               ],
             ),
@@ -669,10 +764,10 @@ class _Chip extends StatelessWidget {
       child: Text(
         label,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: tone.$1,
-              fontWeight: FontWeight.w700,
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
+          color: tone.$1,
+          fontWeight: FontWeight.w700,
+          fontFeatures: const [FontFeature.tabularFigures()],
+        ),
       ),
     );
   }

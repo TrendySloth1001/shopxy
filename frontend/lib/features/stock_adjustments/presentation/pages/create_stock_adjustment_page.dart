@@ -17,6 +17,7 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 const _kReasons = [
   (code: 'DAMAGE', label: 'Damaged', defaultDirection: 'OUT'),
@@ -123,14 +124,16 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
     if (existing >= 0) {
       setState(() => _items[existing].quantity += 1);
     } else {
-      setState(() => _items.add(
-            _ItemDraft(
-              productId: p.id,
-              productName: p.name,
-              productSku: p.sku,
-              unit: p.unit,
-            ),
-          ));
+      setState(
+        () => _items.add(
+          _ItemDraft(
+            productId: p.id,
+            productName: p.name,
+            productSku: p.sku,
+            unit: p.unit,
+          ),
+        ),
+      );
     }
     _searchCtrl.clear();
     setState(() => _searchResults = []);
@@ -140,9 +143,9 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
     if (!_formKey.currentState!.validate()) return;
     if (_items.isEmpty) {
       final l10n = AppLocalizations.of(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.stockAdjAddAtLeastOne)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.stockAdjAddAtLeastOne)));
       return;
     }
     setState(() => _isSaving = true);
@@ -153,20 +156,23 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
         direction: _direction,
         note: _note.text.trim().isEmpty ? null : _note.text.trim(),
         items: _items
-            .map((i) => (
-                  productId: i.productId,
-                  quantity: i.quantity,
-                  unitCost: null,
-                  note: null,
-                ))
+            .map(
+              (i) => (
+                productId: i.productId,
+                quantity: i.quantity,
+                unitCost: null,
+                note: null,
+              ),
+            )
             .toList(),
       );
       _dirty = false;
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(friendlyError(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(friendlyError(e))));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -226,165 +232,183 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
         if (discard && context.mounted) Navigator.pop(context);
       },
       child: Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: FloatingAppBar(
-        title: l10n.stockAdjNewTitle,
-        actions: [
-          TextButton(
-            onPressed: _isSaving ? null : _save,
-            child: _isSaving
-                ? const SizedBox(
-                    width: AppSizes.iconMd,
-                    height: AppSizes.iconMd,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(l10n.stockAdjSubmit),
-          ),
-        ],
-      ),
-      body: Form(
-        key: _formKey,
-        child: MediaQuery.removePadding(
-          context: context,
-          removeTop: true,
-          child: Column(
-          children: [
-            SizedBox(height: FloatingAppBar.contentTopInset(context)),
-            GlassHero.line(
-              kind: LineArt.emptyClipboard,
-              height: AppSizes.heroHeightSm,
-              illustrationSize: AppSizes.productImageSize,
-              accent: AppColors.warning,
-            ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.all(AppSizes.lg),
-                children: [
-            AppSectionHeader(
-              title: l10n.stockAdjReasonSection,
-              padding: const EdgeInsets.only(bottom: AppSizes.sm),
-            ),
-            Wrap(
-              spacing: AppSizes.sm,
-              runSpacing: AppSizes.xs,
-              children: _kReasons.map((r) {
-                final selected = _reason == r.code;
-                return ChoiceChip(
-                  label: Text(_reasonLabel(l10n, r.code)),
-                  selected: selected,
-                  onSelected: (_) => _pickReason(r.code),
-                );
-              }).toList(),
-            ),
-            if (allowDirectionToggle) ...[
-              const SizedBox(height: AppSizes.md),
-              SegmentedButton<String>(
-                segments: [
-                  ButtonSegment(value: 'IN', label: Text(l10n.stockAdjAddStock)),
-                  ButtonSegment(value: 'OUT', label: Text(l10n.stockAdjRemoveStock)),
-                ],
-                selected: {_direction},
-                showSelectedIcon: false,
-                onSelectionChanged: (v) => setState(() => _direction = v.first),
-              ),
-            ],
-            const SizedBox(height: AppSizes.lg),
-            TextFormField(
-              controller: _note,
-              decoration: InputDecoration(labelText: l10n.stockAdjNote),
-              maxLines: 2,
-              textCapitalization: TextCapitalization.sentences,
-            ),
-            const SizedBox(height: AppSizes.xxl),
-            AppSectionHeader(
-              title: l10n.stockAdjProductsSection,
-              padding: const EdgeInsets.only(bottom: AppSizes.sm),
-            ),
-            TextFormField(
-              controller: _searchCtrl,
-              decoration: InputDecoration(
-                labelText: l10n.stockAdjSearchProducts,
-                prefixIcon: const Icon(AppIcons.searchRounded),
-                suffixIcon: _isSearching
-                    ? const Padding(
-                        padding: EdgeInsets.all(AppSizes.md),
-                        child: SizedBox(
-                          width: AppSizes.iconSm,
-                          height: AppSizes.iconSm,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      )
-                    : null,
-              ),
-              onChanged: _onProductSearchChanged,
-            ),
-            if (_searchResults.isNotEmpty) ...[
-              const SizedBox(height: AppSizes.xs),
-              AppCard(
-                padding: EdgeInsets.zero,
-                child: Column(
-                  children: [
-                    for (int i = 0; i < _searchResults.length; i++) ...[
-                      if (i > 0) const AppDivider.flush(),
-                      ListTile(
-                        dense: true,
-                        title: Text(_searchResults[i].name),
-                        subtitle: Text(_searchResults[i].sku),
-                        trailing: const Icon(AppIcons.addCircleOutlineRounded),
-                        onTap: () => _addProduct(_searchResults[i]),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-            const SizedBox(height: AppSizes.lg),
-            if (_items.isEmpty)
-              Container(
-                padding: const EdgeInsets.all(AppSizes.xl),
-                alignment: Alignment.center,
-                child: Text(
-                  l10n.stockAdjNoProductsAdded,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.muted,
-                  ),
-                ),
-              )
-            else
-              AppCard(
-                padding: EdgeInsets.zero,
-                child: Column(
-                  children: [
-                    for (int i = 0; i < _items.length; i++) ...[
-                      if (i > 0) const AppDivider.flush(),
-                      _ItemRow(
-                        item: _items[i],
-                        onQuantityChanged: (q) => setState(() {
-                          _items[i].quantity = q;
-                        }),
-                        onRemove: () => setState(() => _items.removeAt(i)),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            const SizedBox(height: AppSizes.xxl),
-            AppButton.primary(
-              label: l10n.stockAdjPostAdjustment,
-              icon: AppIcons.checkCircleOutlineRounded,
+        extendBodyBehindAppBar: true,
+        appBar: FloatingAppBar(
+          title: l10n.stockAdjNewTitle,
+          actions: [
+            TextButton(
               onPressed: _isSaving ? null : _save,
-              isLoading: _isSaving,
-              fullWidth: true,
-              size: AppButtonSize.lg,
-            ),
-            const SizedBox(height: AppSizes.huge),
-                ],
-              ),
+              child: _isSaving
+                  ? const SizedBox(
+                      width: AppSizes.iconMd,
+                      height: AppSizes.iconMd,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(l10n.stockAdjSubmit),
             ),
           ],
         ),
+        body: Form(
+          key: _formKey,
+          child: MediaQuery.removePadding(
+            context: context,
+            removeTop: true,
+            child: Column(
+              children: [
+                SizedBox(height: FloatingAppBar.contentTopInset(context)),
+                GlassHero.line(
+                  kind: LineArt.emptyClipboard,
+                  height: AppSizes.heroHeightSm,
+                  illustrationSize: AppSizes.productImageSize,
+                  accent: AppColors.warning,
+                ),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.all(AppSizes.lg),
+                    children: [
+                      AppSectionHeader(
+                        title: l10n.stockAdjReasonSection,
+                        padding: const EdgeInsets.only(bottom: AppSizes.sm),
+                      ),
+                      Wrap(
+                        spacing: AppSizes.sm,
+                        runSpacing: AppSizes.xs,
+                        children: _kReasons.map((r) {
+                          final selected = _reason == r.code;
+                          return ChoiceChip(
+                            label: Text(_reasonLabel(l10n, r.code)),
+                            selected: selected,
+                            onSelected: (_) => _pickReason(r.code),
+                          );
+                        }).toList(),
+                      ),
+                      if (allowDirectionToggle) ...[
+                        const SizedBox(height: AppSizes.md),
+                        SegmentedButton<String>(
+                          segments: [
+                            ButtonSegment(
+                              value: 'IN',
+                              label: Text(l10n.stockAdjAddStock),
+                            ),
+                            ButtonSegment(
+                              value: 'OUT',
+                              label: Text(l10n.stockAdjRemoveStock),
+                            ),
+                          ],
+                          selected: {_direction},
+                          showSelectedIcon: false,
+                          onSelectionChanged: (v) =>
+                              setState(() => _direction = v.first),
+                        ),
+                      ],
+                      const SizedBox(height: AppSizes.lg),
+                      TextFormField(
+                        controller: _note,
+                        decoration: InputDecoration(
+                          labelText: l10n.stockAdjNote,
+                        ),
+                        maxLines: 2,
+                        textCapitalization: TextCapitalization.sentences,
+                      ),
+                      const SizedBox(height: AppSizes.xxl),
+                      AppSectionHeader(
+                        title: l10n.stockAdjProductsSection,
+                        padding: const EdgeInsets.only(bottom: AppSizes.sm),
+                      ),
+                      TextFormField(
+                        controller: _searchCtrl,
+                        decoration: InputDecoration(
+                          labelText: l10n.stockAdjSearchProducts,
+                          prefixIcon: const AppIcon(AppIcons.searchRounded),
+                          suffixIcon: _isSearching
+                              ? const Padding(
+                                  padding: EdgeInsets.all(AppSizes.md),
+                                  child: SizedBox(
+                                    width: AppSizes.iconSm,
+                                    height: AppSizes.iconSm,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                )
+                              : null,
+                        ),
+                        onChanged: _onProductSearchChanged,
+                      ),
+                      if (_searchResults.isNotEmpty) ...[
+                        const SizedBox(height: AppSizes.xs),
+                        AppCard(
+                          padding: EdgeInsets.zero,
+                          child: Column(
+                            children: [
+                              for (
+                                int i = 0;
+                                i < _searchResults.length;
+                                i++
+                              ) ...[
+                                if (i > 0) const AppDivider.flush(),
+                                ListTile(
+                                  dense: true,
+                                  title: Text(_searchResults[i].name),
+                                  subtitle: Text(_searchResults[i].sku),
+                                  trailing: const AppIcon(
+                                    AppIcons.addCircleOutlineRounded,
+                                  ),
+                                  onTap: () => _addProduct(_searchResults[i]),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: AppSizes.lg),
+                      if (_items.isEmpty)
+                        Container(
+                          padding: const EdgeInsets.all(AppSizes.xl),
+                          alignment: Alignment.center,
+                          child: Text(
+                            l10n.stockAdjNoProductsAdded,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: AppColors.muted,
+                            ),
+                          ),
+                        )
+                      else
+                        AppCard(
+                          padding: EdgeInsets.zero,
+                          child: Column(
+                            children: [
+                              for (int i = 0; i < _items.length; i++) ...[
+                                if (i > 0) const AppDivider.flush(),
+                                _ItemRow(
+                                  item: _items[i],
+                                  onQuantityChanged: (q) => setState(() {
+                                    _items[i].quantity = q;
+                                  }),
+                                  onRemove: () =>
+                                      setState(() => _items.removeAt(i)),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      const SizedBox(height: AppSizes.xxl),
+                      AppButton.primary(
+                        label: l10n.stockAdjPostAdjustment,
+                        icon: AppIcons.checkCircleOutlineRounded,
+                        onPressed: _isSaving ? null : _save,
+                        isLoading: _isSaving,
+                        fullWidth: true,
+                        size: AppButtonSize.lg,
+                      ),
+                      const SizedBox(height: AppSizes.huge),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-      ),
       ),
     );
   }
@@ -447,7 +471,9 @@ class _ItemRow extends StatelessWidget {
                 ),
                 suffixText: item.unit,
               ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               onChanged: (v) {
                 final q = double.tryParse(v);
                 if (q != null && q > 0) onQuantityChanged(q);
@@ -456,7 +482,7 @@ class _ItemRow extends StatelessWidget {
           ),
           IconButton(
             onPressed: onRemove,
-            icon: Icon(
+            icon: AppIcon(
               AppIcons.closeRounded,
               color: AppColors.error,
               size: AppSizes.iconMd,

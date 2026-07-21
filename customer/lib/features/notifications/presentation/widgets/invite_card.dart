@@ -6,6 +6,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Single source of truth for "you've been invited" card rendering.
 /// Used both as the home-page preview (first pending invite, optional
@@ -101,10 +102,7 @@ class InviteCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _Cover(
-            bannerUrl: invite.shopBannerUrl,
-            onDismiss: onDismiss,
-          ),
+          _Cover(bannerUrl: invite.shopBannerUrl, onDismiss: onDismiss),
           Padding(
             padding: const EdgeInsets.fromLTRB(
               AppSizes.md,
@@ -155,9 +153,7 @@ class InviteCard extends StatelessWidget {
                               const SizedBox(height: AppSizes.sm),
                               Text(
                                 title,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
+                                style: Theme.of(context).textTheme.bodyMedium
                                     ?.copyWith(
                                       color: AppColors.black,
                                       fontWeight: FontWeight.w800,
@@ -170,9 +166,7 @@ class InviteCard extends StatelessWidget {
                               const SizedBox(height: 2),
                               Text(
                                 subtitle,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
+                                style: Theme.of(context).textTheme.bodySmall
                                     ?.copyWith(
                                       color: AppColors.muted,
                                       fontWeight: FontWeight.w500,
@@ -200,7 +194,7 @@ class InviteCard extends StatelessWidget {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(
+                          const AppIcon(
                             AppIcons.formatQuoteRounded,
                             size: AppSizes.iconSm,
                             color: AppColors.muted,
@@ -209,9 +203,7 @@ class InviteCard extends StatelessWidget {
                           Expanded(
                             child: Text(
                               invite.message!,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
+                              style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(
                                     color: AppColors.black,
                                     height: 1.4,
@@ -230,13 +222,9 @@ class InviteCard extends StatelessWidget {
                   // buttons in their natural slot — pulling them up
                   // would overlap the message bubble.
                   Padding(
-                    padding: EdgeInsets.only(
-                      top: hasMessage ? AppSizes.md : 0,
-                    ),
+                    padding: EdgeInsets.only(top: hasMessage ? AppSizes.md : 0),
                     child: Transform.translate(
-                      offset: hasMessage
-                          ? Offset.zero
-                          : const Offset(0, -10),
+                      offset: hasMessage ? Offset.zero : const Offset(0, -10),
                       child: Row(
                         children: [
                           Expanded(
@@ -261,15 +249,13 @@ class InviteCard extends StatelessWidget {
                 ],
                 if (showExpiry)
                   Padding(
-                    padding: EdgeInsets.only(
-                      top: actionable ? 0 : AppSizes.sm,
-                    ),
+                    padding: EdgeInsets.only(top: actionable ? 0 : AppSizes.sm),
                     child: Text(
                       'Expires ${_formatExpiry(invite.expiresAt)}',
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: AppColors.muted,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        color: AppColors.muted,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 if (reviewAllLabel != null && onReviewAll != null) ...[
@@ -286,9 +272,9 @@ class InviteCard extends StatelessWidget {
                       child: Text(
                         reviewAllLabel!,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.brand,
-                            ),
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.brand,
+                        ),
                       ),
                     ),
                   ),
@@ -345,15 +331,12 @@ class _Cover extends StatelessWidget {
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [
-                          AppColors.brandSoft,
-                          AppColors.heroPanel,
-                        ],
+                        colors: [AppColors.brandSoft, AppColors.heroPanel],
                       ),
                     ),
                     alignment: Alignment.centerRight,
                     padding: const EdgeInsets.only(right: AppSizes.lg),
-                    child: const Icon(
+                    child: const AppIcon(
                       AppIcons.storefrontRounded,
                       color: AppColors.brand,
                       size: AppSizes.iconXl,
@@ -392,7 +375,7 @@ class _Cover extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                   alignment: Alignment.center,
-                  child: const Icon(
+                  child: const AppIcon(
                     AppIcons.closeRounded,
                     color: AppColors.white,
                     size: AppSizes.iconSm,
@@ -435,9 +418,9 @@ class _ShopLogo extends StatelessWidget {
                 child: Text(
                   fallbackInitial,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppColors.brand,
-                        fontWeight: FontWeight.w900,
-                      ),
+                    color: AppColors.brand,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ),
       ),
@@ -457,10 +440,10 @@ class _NewBadge extends StatelessWidget {
       child: Text(
         'NEW INVITE',
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.white,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.6,
-            ),
+          color: AppColors.white,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.6,
+        ),
       ),
     );
   }
@@ -473,14 +456,26 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (label, color, soft) = switch (invite.status) {
-      InviteStatus.accepted =>
-        ('Accepted', AppColors.success, AppColors.successSoft),
-      InviteStatus.declined =>
-        ('Declined', AppColors.muted, AppColors.heroPanel),
-      InviteStatus.cancelled =>
-        ('Cancelled', AppColors.muted, AppColors.heroPanel),
-      InviteStatus.expired =>
-        ('Expired', AppColors.warning, AppColors.warningSoft),
+      InviteStatus.accepted => (
+        'Accepted',
+        AppColors.success,
+        AppColors.successSoft,
+      ),
+      InviteStatus.declined => (
+        'Declined',
+        AppColors.muted,
+        AppColors.heroPanel,
+      ),
+      InviteStatus.cancelled => (
+        'Cancelled',
+        AppColors.muted,
+        AppColors.heroPanel,
+      ),
+      InviteStatus.expired => (
+        'Expired',
+        AppColors.warning,
+        AppColors.warningSoft,
+      ),
       InviteStatus.pending => ('Pending', AppColors.info, AppColors.infoSoft),
     };
     return Container(
@@ -492,10 +487,10 @@ class _StatusChip extends StatelessWidget {
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.4,
-            ),
+          color: color,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.4,
+        ),
       ),
     );
   }
@@ -524,9 +519,9 @@ class _GhostButton extends StatelessWidget {
           child: Text(
             label,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: disabled ? AppColors.disabled : AppColors.muted,
-                  fontWeight: FontWeight.w700,
-                ),
+              color: disabled ? AppColors.disabled : AppColors.muted,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ),
@@ -570,13 +565,13 @@ class _SolidButton extends StatelessWidget {
                     Text(
                       label,
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            color: AppColors.white,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.2,
-                          ),
+                        color: AppColors.white,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.2,
+                      ),
                     ),
                     const SizedBox(width: AppSizes.sm),
-                    const Icon(
+                    const AppIcon(
                       AppIcons.arrowForwardRounded,
                       color: AppColors.white,
                       size: AppSizes.iconSm,

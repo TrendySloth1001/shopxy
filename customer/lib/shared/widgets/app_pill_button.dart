@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Large, fully-rounded primary CTA used by onboarding + auth. Bigger
 /// touch target and softer corners than [AppButton] so the first-run
@@ -20,7 +22,7 @@ class AppPillButton extends StatelessWidget {
 
   final String label;
   final VoidCallback? onPressed;
-  final IconData? icon;
+  final AppIconData? icon;
   final bool loading;
   final Color color;
   final Color foreground;
@@ -44,7 +46,9 @@ class AppPillButton extends StatelessWidget {
                     width: AppSizes.xl,
                     height: AppSizes.xl,
                     child: CircularProgressIndicator(
-                        color: foreground, strokeWidth: 2.5),
+                      color: foreground,
+                      strokeWidth: 2.5,
+                    ),
                   ),
                 )
               : Row(
@@ -53,14 +57,14 @@ class AppPillButton extends StatelessWidget {
                     Text(
                       label,
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            color: foreground,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.1,
-                          ),
+                        color: foreground,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.1,
+                      ),
                     ),
                     if (icon != null) ...[
                       const SizedBox(width: AppSizes.sm),
-                      Icon(icon, color: foreground, size: AppSizes.iconMd),
+                      AppIcon(icon, color: foreground, size: AppSizes.iconMd),
                     ],
                   ],
                 ),

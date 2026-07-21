@@ -14,6 +14,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// A field the caller can ask [EditProfilePage] to open focused on — lets
 /// the completion meter deep-link straight to the field a user still needs
@@ -134,21 +135,25 @@ class _EditProfilePageState extends State<EditProfilePage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(AppIcons.cameraAltOutlined),
+              leading: const AppIcon(AppIcons.cameraAltOutlined),
               title: Text(l10n.profileTakePhoto),
               onTap: () => Navigator.of(ctx).pop(_PhotoAction.camera),
             ),
             ListTile(
-              leading: const Icon(AppIcons.photoLibraryOutlined),
+              leading: const AppIcon(AppIcons.photoLibraryOutlined),
               title: Text(l10n.profilePickFromGallery),
               onTap: () => Navigator.of(ctx).pop(_PhotoAction.gallery),
             ),
             if (hasAvatar)
               ListTile(
-                leading: Icon(AppIcons.deleteOutline,
-                    color: AppColors.error),
-                title: Text(l10n.profileRemovePhoto,
-                    style: TextStyle(color: AppColors.error)),
+                leading: AppIcon(
+                  AppIcons.deleteOutline,
+                  color: AppColors.error,
+                ),
+                title: Text(
+                  l10n.profileRemovePhoto,
+                  style: TextStyle(color: AppColors.error),
+                ),
                 onTap: () => Navigator.of(ctx).pop(_PhotoAction.remove),
               ),
           ],
@@ -171,17 +176,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (picked == null || !mounted) return;
     setState(() => _uploadingAvatar = true);
     try {
-      final url = await context
-          .read<ShopProvider>()
-          .uploadImage(File(picked.path));
+      final url = await context.read<ShopProvider>().uploadImage(
+        File(picked.path),
+      );
       if (url == null) throw Exception('Upload failed');
       if (!mounted) return;
       await _setAvatar(url);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(friendlyError(e))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(friendlyError(e))));
     } finally {
       if (mounted) setState(() => _uploadingAvatar = false);
     }
@@ -192,9 +197,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
       await context.read<AuthProvider>().updateAvatar(url);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(friendlyError(e))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(friendlyError(e))));
     }
   }
 
@@ -219,8 +224,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
     // clears only when clearPhone is true, so map '' → clearPhone.
     final phoneDiff = diff(_phone.text, user?.phoneNumber);
     final clearPhone = phoneDiff == '';
-    final phoneArg =
-        (phoneDiff != null && phoneDiff.isNotEmpty) ? phoneDiff : null;
+    final phoneArg = (phoneDiff != null && phoneDiff.isNotEmpty)
+        ? phoneDiff
+        : null;
 
     final shopNameArg = diff(_shopName.text, user?.shopName);
     final shopAddressArg = diff(_shopAddress.text, user?.shopAddress);
@@ -239,7 +245,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
       shopStateArg = IndianStates.stateNameFromCode(_shopStateCode) ?? '';
     }
 
-    final unchanged = nameArg == null &&
+    final unchanged =
+        nameArg == null &&
         phoneDiff == null &&
         shopNameArg == null &&
         shopAddressArg == null &&
@@ -272,15 +279,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).profileProfileUpdated)),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).profileProfileUpdated),
+        ),
       );
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
       setState(() => _busy = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(friendlyError(e))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(friendlyError(e))));
     }
   }
 
@@ -331,7 +340,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                     color: AppColors.onInverse,
                                   ),
                                 )
-                              : Icon(
+                              : AppIcon(
                                   AppIcons.cameraAltOutlined,
                                   color: AppColors.onInverse,
                                   size: AppSizes.iconSm,
@@ -363,7 +372,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               decoration: InputDecoration(
                 labelText: l10n.profileFieldPhone,
                 hintText: '9876543210',
-                prefixIcon: const Icon(AppIcons.callOutlined),
+                prefixIcon: const AppIcon(AppIcons.callOutlined),
               ),
               keyboardType: TextInputType.phone,
               validator: (v) {
@@ -391,7 +400,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
             const SizedBox(height: AppSizes.xs),
             Text(
               l10n.profileShopDetailsHint,
-              style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.muted,
+              ),
             ),
             const SizedBox(height: AppSizes.md),
             TextFormField(

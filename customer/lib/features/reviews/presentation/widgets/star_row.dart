@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 /// Static 5-star row rendered from a 0..5 double. Renders half-stars
 /// when the fraction is between 0.25 and 0.75. Reused everywhere we
@@ -24,7 +25,7 @@ class StarRow extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: List.generate(5, (i) {
         final delta = rating - i;
-        IconData icon;
+        AppIconData icon;
         if (delta >= 0.75) {
           icon = AppIcons.starRounded;
         } else if (delta >= 0.25) {
@@ -32,7 +33,7 @@ class StarRow extends StatelessWidget {
         } else {
           icon = AppIcons.starOutlineRounded;
         }
-        return Icon(icon, size: size, color: color);
+        return AppIcon(icon, size: size, color: color);
       }),
     );
   }

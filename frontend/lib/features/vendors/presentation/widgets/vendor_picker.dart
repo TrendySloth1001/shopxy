@@ -12,6 +12,7 @@ import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Opens a modal search sheet to pick an existing Vendor or create a new
 /// one. Mirrors [showPartyPicker] for the purchase-invoice flow so the
@@ -133,7 +134,7 @@ class _VendorPickerSheetState extends State<_VendorPickerSheet> {
                 autofocus: true,
                 decoration: InputDecoration(
                   hintText: l10n.vendorsSearchHint,
-                  prefixIcon: const Icon(AppIcons.searchRounded),
+                  prefixIcon: const AppIcon(AppIcons.searchRounded),
                 ),
                 onChanged: _load,
               ),
@@ -143,47 +144,47 @@ class _VendorPickerSheetState extends State<_VendorPickerSheet> {
               child: _loading && _vendors.isEmpty
                   ? const Center(child: CircularProgressIndicator())
                   : _error != null
-                      ? Center(child: Text(_error!))
-                      : _vendors.isEmpty
-                          ? Center(
-                              child: Padding(
-                                padding: const EdgeInsets.all(AppSizes.xl),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      AppIcons.localShippingOutlined,
-                                      size: AppSizes.iconXl,
-                                      color: AppColors.muted,
-                                    ),
-                                    const SizedBox(height: AppSizes.md),
-                                    Text(
-                                      l10n.vendorsEmptyTitle,
-                                      style: theme.textTheme.bodyMedium,
-                                    ),
-                                    const SizedBox(height: AppSizes.md),
-                                    AppButton.primary(
-                                      label: l10n.vendorsAddVendor,
-                                      icon: AppIcons.addRounded,
-                                      onPressed: _addNew,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            )
-                          : ListView.separated(
-                              itemCount: _vendors.length,
-                              separatorBuilder: (_, _) => const AppDivider(),
-                              itemBuilder: (context, i) {
-                                final v = _vendors[i];
-                                return ListTile(
-                                  leading: AppMonogramAvatar(label: v.name),
-                                  title: Text(v.name),
-                                  subtitle: Text(v.phone ?? v.contactName ?? '—'),
-                                  onTap: () => Navigator.pop(context, v),
-                                );
-                              },
+                  ? Center(child: Text(_error!))
+                  : _vendors.isEmpty
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSizes.xl),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            AppIcon(
+                              AppIcons.localShippingOutlined,
+                              size: AppSizes.iconXl,
+                              color: AppColors.muted,
                             ),
+                            const SizedBox(height: AppSizes.md),
+                            Text(
+                              l10n.vendorsEmptyTitle,
+                              style: theme.textTheme.bodyMedium,
+                            ),
+                            const SizedBox(height: AppSizes.md),
+                            AppButton.primary(
+                              label: l10n.vendorsAddVendor,
+                              icon: AppIcons.addRounded,
+                              onPressed: _addNew,
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : ListView.separated(
+                      itemCount: _vendors.length,
+                      separatorBuilder: (_, _) => const AppDivider(),
+                      itemBuilder: (context, i) {
+                        final v = _vendors[i];
+                        return ListTile(
+                          leading: AppMonogramAvatar(label: v.name),
+                          title: Text(v.name),
+                          subtitle: Text(v.phone ?? v.contactName ?? '—'),
+                          onTap: () => Navigator.pop(context, v),
+                        );
+                      },
+                    ),
             ),
           ],
         ),

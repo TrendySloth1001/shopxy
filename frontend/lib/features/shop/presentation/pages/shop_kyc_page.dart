@@ -5,6 +5,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// KYC scaffold — UI shell only. Lists the documents the verification flow will
 /// collect; each row shows its status (always "Not uploaded" until the backend
@@ -55,21 +56,33 @@ class ShopKycPage extends StatelessWidget {
       appBar: FloatingAppBar(title: l10n.shopKycTitle),
       body: ListView(
         padding: EdgeInsets.only(
-            top: FloatingAppBar.contentTopInset(context), bottom: AppSizes.huge),
+          top: FloatingAppBar.contentTopInset(context),
+          bottom: AppSizes.huge,
+        ),
         children: [
           // Flat intro — no card.
           Padding(
             padding: const EdgeInsets.fromLTRB(
-                AppSizes.lg, AppSizes.lg, AppSizes.lg, AppSizes.lg),
+              AppSizes.lg,
+              AppSizes.lg,
+              AppSizes.lg,
+              AppSizes.lg,
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(AppIcons.infoOutline, color: AppColors.info, size: AppSizes.iconMd),
+                AppIcon(
+                  AppIcons.infoOutline,
+                  color: AppColors.info,
+                  size: AppSizes.iconMd,
+                ),
                 const SizedBox(width: AppSizes.sm),
                 Expanded(
                   child: Text(
                     l10n.shopKycIntro,
-                    style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.muted,
+                    ),
                   ),
                 ),
               ],
@@ -95,7 +108,9 @@ class _KycRow extends StatelessWidget {
         border: Border(top: BorderSide(color: AppColors.hairline)),
       ),
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.lg, vertical: AppSizes.md),
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -107,7 +122,11 @@ class _KycRow extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
-            child: Icon(doc.icon, color: AppColors.brandStrong, size: AppSizes.iconMd),
+            child: AppIcon(
+              doc.icon,
+              color: AppColors.brandStrong,
+              size: AppSizes.iconMd,
+            ),
           ),
           const SizedBox(width: AppSizes.md),
           Expanded(
@@ -135,12 +154,17 @@ class _KycRow extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   doc.subtitle,
-                  style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.muted,
+                  ),
                 ),
                 const SizedBox(height: AppSizes.sm),
                 OutlinedButton.icon(
                   onPressed: null,
-                  icon: const Icon(AppIcons.uploadFileRounded, size: AppSizes.iconSm),
+                  icon: const AppIcon(
+                    AppIcons.uploadFileRounded,
+                    size: AppSizes.iconSm,
+                  ),
                   label: Text(l10n.shopKycUploadComingSoon),
                 ),
               ],
@@ -160,5 +184,5 @@ class _KycDoc {
   });
   final String title;
   final String subtitle;
-  final IconData icon;
+  final AppIconData icon;
 }

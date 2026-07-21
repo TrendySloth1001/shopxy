@@ -10,6 +10,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Image carousel for the product detail hero.
 ///
@@ -186,7 +187,7 @@ class _AddPhotosPill extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
+              AppIcon(
                 AppIcons.addAPhotoOutlined,
                 size: AppSizes.iconSm,
                 color: AppColors.black,
@@ -288,7 +289,7 @@ class _ThumbnailStrip extends StatelessWidget {
                   ),
                   errorWidget: (_, _, _) => Container(
                     color: AppColors.heroPanel,
-                    child: Icon(
+                    child: AppIcon(
                       AppIcons.imageNotSupportedOutlined,
                       color: AppColors.muted,
                     ),
@@ -317,8 +318,9 @@ class _ProductLightbox extends StatefulWidget {
 }
 
 class _ProductLightboxState extends State<_ProductLightbox> {
-  late final PageController _controller =
-      PageController(initialPage: widget.startIndex);
+  late final PageController _controller = PageController(
+    initialPage: widget.startIndex,
+  );
   late int _index = widget.startIndex;
 
   @override
@@ -338,10 +340,9 @@ class _ProductLightboxState extends State<_ProductLightbox> {
       appBar: FloatingAppBar(
         titleWidget: Text(
           '${_index + 1} / ${widget.urls.length}',
-          style: Theme.of(context)
-              .textTheme
-              .bodyMedium
-              ?.copyWith(color: Colors.white),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: Colors.white),
         ),
       ),
       body: PageView.builder(
@@ -364,7 +365,7 @@ class _ProductLightboxState extends State<_ProductLightbox> {
                     color: Colors.white,
                   ),
                 ),
-                errorWidget: (_, _, _) => const Icon(
+                errorWidget: (_, _, _) => const AppIcon(
                   AppIcons.imageNotSupportedOutlined,
                   color: Colors.white,
                   size: 64,

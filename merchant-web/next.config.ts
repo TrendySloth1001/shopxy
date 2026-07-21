@@ -42,9 +42,9 @@ const SECURITY_HEADERS = [
 const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
-  // Icons funnel through the `@/shared/icons` barrel (which re-exports the whole
-  // lucide set). Register it here so Next rewrites barrel imports to direct
-  // member imports — keeping the icon set fully tree-shaken despite the barrel.
+  // Icons funnel through the `@/shared/icons` barrel (Hugeicons wrappers).
+  // Register it here so Next rewrites barrel imports to direct member imports —
+  // keeping the icon set fully tree-shaken despite the barrel.
   experimental: { optimizePackageImports: ["@/shared/icons"] },
   env: { NEXT_PUBLIC_APP_VERSION: version },
   // `next build` writes to a separate dir (set by the build/start scripts) so a

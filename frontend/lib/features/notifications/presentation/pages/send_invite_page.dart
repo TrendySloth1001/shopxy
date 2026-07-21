@@ -13,6 +13,7 @@ import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// Owner-facing page. Two modes via a segmented switch:
 ///   * **Existing contact** — search-pick a party / vendor; the FK
@@ -26,10 +27,10 @@ import 'package:shopxy/core/icons/app_icons.dart';
 /// to the wrong side and lose the selection.
 class SendInvitePage extends StatefulWidget {
   const SendInvitePage({super.key, this.initialParty, this.initialVendor})
-      : assert(
-          initialParty == null || initialVendor == null,
-          'Pass only one of initialParty / initialVendor',
-        );
+    : assert(
+        initialParty == null || initialVendor == null,
+        'Pass only one of initialParty / initialVendor',
+      );
 
   final Party? initialParty;
   final Vendor? initialVendor;
@@ -88,8 +89,8 @@ class _SendInvitePageState extends State<SendInvitePage> {
     final selOk = _mode == _SourceMode.fresh
         ? _nameCtl.text.trim().isNotEmpty
         : _type == _LinkType.party
-            ? _selectedParty != null
-            : _selectedVendor != null;
+        ? _selectedParty != null
+        : _selectedVendor != null;
     return emailOk && selOk && !_sending;
   }
 
@@ -101,21 +102,21 @@ class _SendInvitePageState extends State<SendInvitePage> {
     });
     try {
       await context.read<NotificationsProvider>().sendInvite(
-            toEmail: _emailCtl.text.trim(),
-            linkType: _type == _LinkType.party ? 'PARTY' : 'VENDOR',
-            partyId: _mode == _SourceMode.existing && _type == _LinkType.party
-                ? _selectedParty?.id
-                : null,
-            vendorId: _mode == _SourceMode.existing && _type == _LinkType.vendor
-                ? _selectedVendor?.id
-                : null,
-            displayName: _mode == _SourceMode.fresh ? _nameCtl.text.trim() : null,
-            message: _messageCtl.text.trim(),
-          );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.notificationsInvitationSent)),
+        toEmail: _emailCtl.text.trim(),
+        linkType: _type == _LinkType.party ? 'PARTY' : 'VENDOR',
+        partyId: _mode == _SourceMode.existing && _type == _LinkType.party
+            ? _selectedParty?.id
+            : null,
+        vendorId: _mode == _SourceMode.existing && _type == _LinkType.vendor
+            ? _selectedVendor?.id
+            : null,
+        displayName: _mode == _SourceMode.fresh ? _nameCtl.text.trim() : null,
+        message: _messageCtl.text.trim(),
       );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.notificationsInvitationSent)));
       Navigator.pop(context);
     } catch (e) {
       if (mounted) setState(() => _error = friendlyError(e));
@@ -180,11 +181,15 @@ class _SendInvitePageState extends State<SendInvitePage> {
                       selectedVendor: _selectedVendor,
                       onPartyPicked: (p) => setState(() {
                         _selectedParty = p;
-                        if ((p.email ?? '').isNotEmpty) _emailCtl.text = p.email!;
+                        if ((p.email ?? '').isNotEmpty) {
+                          _emailCtl.text = p.email!;
+                        }
                       }),
                       onVendorPicked: (v) => setState(() {
                         _selectedVendor = v;
-                        if ((v.email ?? '').isNotEmpty) _emailCtl.text = v.email!;
+                        if ((v.email ?? '').isNotEmpty) {
+                          _emailCtl.text = v.email!;
+                        }
                       }),
                     )
                   else
@@ -195,7 +200,7 @@ class _SendInvitePageState extends State<SendInvitePage> {
                         labelText: _type == _LinkType.party
                             ? l10n.notificationsCustomerName
                             : l10n.notificationsVendorName,
-                        prefixIcon: Icon(
+                        prefixIcon: AppIcon(
                           _type == _LinkType.party
                               ? AppIcons.groupsOutlined
                               : AppIcons.storefrontOutlined,
@@ -210,7 +215,7 @@ class _SendInvitePageState extends State<SendInvitePage> {
                     autocorrect: false,
                     decoration: InputDecoration(
                       labelText: l10n.notificationsRecipientEmail,
-                      prefixIcon: const Icon(AppIcons.alternateEmailRounded),
+                      prefixIcon: const AppIcon(AppIcons.alternateEmailRounded),
                     ),
                     onChanged: (_) => setState(() {}),
                   ),
@@ -234,14 +239,18 @@ class _SendInvitePageState extends State<SendInvitePage> {
                       ),
                       child: Row(
                         children: [
-                          Icon(AppIcons.errorOutlineRounded,
-                              color: AppColors.error, size: AppSizes.iconMd),
+                          AppIcon(
+                            AppIcons.errorOutlineRounded,
+                            color: AppColors.error,
+                            size: AppSizes.iconMd,
+                          ),
                           const SizedBox(width: AppSizes.sm),
                           Expanded(
                             child: Text(
                               _error!,
-                              style: theme.textTheme.bodySmall
-                                  ?.copyWith(color: AppColors.error),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: AppColors.error,
+                              ),
                             ),
                           ),
                         ],
@@ -274,7 +283,10 @@ class _SendInvitePageState extends State<SendInvitePage> {
                             color: AppColors.onInverse,
                           ),
                         )
-                      : const Icon(AppIcons.sendRounded, size: AppSizes.iconMd),
+                      : const AppIcon(
+                          AppIcons.sendRounded,
+                          size: AppSizes.iconMd,
+                        ),
                   label: Text(l10n.notificationsSendInvitationTitle),
                 ),
               ),
@@ -303,12 +315,12 @@ class _TypeSwitch extends StatelessWidget {
       segments: [
         ButtonSegment(
           value: _LinkType.party,
-          icon: const Icon(AppIcons.groupsOutlined),
+          icon: const AppIcon(AppIcons.groupsOutlined),
           label: Text(l10n.notificationsRolePartyCustomer),
         ),
         ButtonSegment(
           value: _LinkType.vendor,
-          icon: const Icon(AppIcons.storefrontOutlined),
+          icon: const AppIcon(AppIcons.storefrontOutlined),
           label: Text(l10n.notificationsRoleVendorSupplier),
         ),
       ],
@@ -330,12 +342,12 @@ class _ModeSwitch extends StatelessWidget {
       segments: [
         ButtonSegment(
           value: _SourceMode.existing,
-          icon: const Icon(AppIcons.contactsOutlined),
+          icon: const AppIcon(AppIcons.contactsOutlined),
           label: Text(l10n.notificationsModeExisting),
         ),
         ButtonSegment(
           value: _SourceMode.fresh,
-          icon: const Icon(AppIcons.personAddAlt1Outlined),
+          icon: const AppIcon(AppIcons.personAddAlt1Outlined),
           label: Text(l10n.notificationsModeNewContact),
         ),
       ],
@@ -413,7 +425,7 @@ class _ContactPickerState extends State<_ContactPicker> {
             hintText: widget.type == _LinkType.party
                 ? l10n.notificationsSearchParties
                 : l10n.notificationsSearchVendors,
-            prefixIcon: const Icon(AppIcons.searchRounded),
+            prefixIcon: const AppIcon(AppIcons.searchRounded),
           ),
           onChanged: (v) {
             _search = v;
@@ -433,8 +445,9 @@ class _ContactPickerState extends State<_ContactPicker> {
                 return Center(
                   child: Text(
                     friendlyError(snap.error!),
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: AppColors.error),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.error,
+                    ),
                   ),
                 );
               }
@@ -457,8 +470,12 @@ class _ContactPickerState extends State<_ContactPicker> {
                       Container(height: 1, color: AppColors.hairline),
                   itemBuilder: (_, i) {
                     final item = list[i];
-                    final name = item is Party ? item.name : (item as Vendor).name;
-                    final email = item is Party ? item.email : (item as Vendor).email;
+                    final name = item is Party
+                        ? item.name
+                        : (item as Vendor).name;
+                    final email = item is Party
+                        ? item.email
+                        : (item as Vendor).email;
                     final selected = item is Party
                         ? widget.selectedParty?.id == item.id
                         : widget.selectedVendor?.id == (item as Vendor).id;
@@ -491,15 +508,14 @@ class _ContactPickerState extends State<_ContactPicker> {
                                   if (email != null && email.isNotEmpty)
                                     Text(
                                       email,
-                                      style: theme.textTheme.bodySmall?.copyWith(
-                                        color: AppColors.muted,
-                                      ),
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(color: AppColors.muted),
                                     ),
                                 ],
                               ),
                             ),
                             if (selected)
-                              Icon(
+                              AppIcon(
                                 AppIcons.checkCircleRounded,
                                 color: AppColors.brand,
                                 size: AppSizes.iconMd,
