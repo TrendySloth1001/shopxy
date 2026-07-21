@@ -7,6 +7,7 @@ import 'package:shopxy_customer/features/home/presentation/widgets/home_banner_i
 import 'package:shopxy_customer/shared/constants/app_durations.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
+import 'package:shopxy_customer/shared/constants/app_curves.dart';
 
 /// Full-width banner carousel. Each slide is now just a plain tappable
 /// image (see [HomeBannerImage]) — the templated card system is gone.
@@ -41,7 +42,7 @@ class _HomeHeroCarouselState extends State<HomeHeroCarousel> {
       _controller.animateToPage(
         next,
         duration: const Duration(milliseconds: 450),
-        curve: Curves.easeOutCubic,
+        curve: AppCurves.decelerateEmphasized,
       );
     });
   }

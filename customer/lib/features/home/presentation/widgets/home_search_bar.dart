@@ -8,6 +8,7 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
+import 'package:shopxy_customer/shared/constants/app_curves.dart';
 
 class HomeSearchBar extends StatefulWidget {
   const HomeSearchBar({super.key, this.shrink = 0.0});
@@ -44,7 +45,7 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
 
   @override
   Widget build(BuildContext context) {
-    final t = Curves.easeOut.transform(widget.shrink.clamp(0.0, 1.0));
+    final t = AppCurves.decelerate.transform(widget.shrink.clamp(0.0, 1.0));
     final visible = (1 - t).clamp(0.0, 1.0);
     return ClipRect(
       child: Align(

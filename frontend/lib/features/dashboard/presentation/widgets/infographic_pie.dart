@@ -4,6 +4,7 @@ import 'package:shopxy/features/dashboard/presentation/widgets/dashboard_ui.dart
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/constants/app_curves.dart';
 
 /// One input row.
 class PieRow {
@@ -81,7 +82,9 @@ List<PieRow> _collapse(List<PieRow> rows, int maxSlices, String otherLabel) {
     ..sort((a, b) => b.value.compareTo(a.value));
   if (sorted.length <= maxSlices) return sorted;
   final head = sorted.sublist(0, maxSlices - 1);
-  final rest = sorted.sublist(maxSlices - 1).fold<double>(0, (s, r) => s + r.value);
+  final rest = sorted
+      .sublist(maxSlices - 1)
+      .fold<double>(0, (s, r) => s + r.value);
   return [...head, PieRow(label: otherLabel, value: rest)];
 }
 
@@ -134,16 +137,18 @@ class _InfographicPieState extends State<InfographicPie> {
       final start = acc;
       final end = start + sweep;
       acc = end;
-      segs.add(_Seg(
-        label: s.label,
-        value: s.value,
-        color: widget.palette[i % widget.palette.length],
-        pct: ((s.value / total) * 100).round(),
-        start: start,
-        end: end,
-        mid: (start + end) / 2,
-        rOut: single ? _rMax : _rMin + (s.value / maxVal) * (_rMax - _rMin),
-      ));
+      segs.add(
+        _Seg(
+          label: s.label,
+          value: s.value,
+          color: widget.palette[i % widget.palette.length],
+          pct: ((s.value / total) * 100).round(),
+          start: start,
+          end: end,
+          mid: (start + end) / 2,
+          rOut: single ? _rMax : _rMin + (s.value / maxVal) * (_rMax - _rMin),
+        ),
+      );
     }
 
     final chart = AspectRatio(
@@ -151,7 +156,8 @@ class _InfographicPieState extends State<InfographicPie> {
       child: LayoutBuilder(
         builder: (context, c) {
           return GestureDetector(
-            onTapUp: (d) => _handleTap(d.localPosition, c.maxWidth, segs, single),
+            onTapUp: (d) =>
+                _handleTap(d.localPosition, c.maxWidth, segs, single),
             child: CustomPaint(
               size: Size(c.maxWidth, c.maxWidth * _h / _w),
               painter: _PiePainter(
@@ -205,7 +211,7 @@ class _InfographicPieState extends State<InfographicPie> {
         // Active-slice detail strip.
         AnimatedSize(
           duration: const Duration(milliseconds: 250),
-          curve: Curves.easeOut,
+          curve: AppCurves.decelerate,
           child: _active == null
               ? const SizedBox(width: double.infinity)
               : Padding(
@@ -273,8 +279,7 @@ class _PiePainter extends CustomPainter {
       canvas.save();
       if (sel && !single) {
         final a = (s.mid - 90) * math.pi / 180;
-        canvas.translate(
-            math.cos(a) * _explode, math.sin(a) * _explode);
+        canvas.translate(math.cos(a) * _explode, math.sin(a) * _explode);
       }
 
       if (single) {
@@ -290,8 +295,10 @@ class _PiePainter extends CustomPainter {
       } else {
         final a0 = s.start + _gapDeg / 2;
         final a1 = s.end - _gapDeg / 2;
-        canvas.drawPath(_sectorPath(_hub, s.rOut, a0, a1),
-            Paint()..color = color);
+        canvas.drawPath(
+          _sectorPath(_hub, s.rOut, a0, a1),
+          Paint()..color = color,
+        );
         if (sel) {
           canvas.drawPath(
             _sectorPath(_hub, s.rOut, a0, a1),
@@ -338,8 +345,7 @@ class _PiePainter extends CustomPainter {
         canvas,
         _trim(s.label),
         Offset(textX, knee.dy - 4),
-        TextStyle(
-            color: color, fontSize: 15, fontWeight: FontWeight.w700),
+        TextStyle(color: color, fontSize: 15, fontWeight: FontWeight.w700),
         anchor: right ? _Anchor.bottomLeft : _Anchor.bottomRight,
       );
       _text(
@@ -347,7 +353,9 @@ class _PiePainter extends CustomPainter {
         formatValue(s.value),
         Offset(textX, knee.dy + 2),
         TextStyle(
-            color: AppColors.muted.withValues(alpha: opacity), fontSize: 13),
+          color: AppColors.muted.withValues(alpha: opacity),
+          fontSize: 13,
+        ),
         anchor: right ? _Anchor.topLeft : _Anchor.topRight,
       );
 
@@ -355,10 +363,16 @@ class _PiePainter extends CustomPainter {
     }
 
     // Dark centre hub (over the slice inner edges).
-    canvas.drawCircle(const Offset(_cx, _cy), _hub + 1,
-        Paint()..color = AppColors.black);
-    canvas.drawCircle(const Offset(_cx, _cy), _hub - 28,
-        Paint()..color = AppColors.canvas);
+    canvas.drawCircle(
+      const Offset(_cx, _cy),
+      _hub + 1,
+      Paint()..color = AppColors.black,
+    );
+    canvas.drawCircle(
+      const Offset(_cx, _cy),
+      _hub - 28,
+      Paint()..color = AppColors.canvas,
+    );
 
     canvas.restore();
   }
@@ -371,16 +385,30 @@ class _PiePainter extends CustomPainter {
     final large = (end - start) > 180;
     return Path()
       ..moveTo(p1.dx, p1.dy)
-      ..arcToPoint(p2,
-          radius: Radius.circular(rOuter), largeArc: large, clockwise: true)
+      ..arcToPoint(
+        p2,
+        radius: Radius.circular(rOuter),
+        largeArc: large,
+        clockwise: true,
+      )
       ..lineTo(p3.dx, p3.dy)
-      ..arcToPoint(p4,
-          radius: Radius.circular(rInner), largeArc: large, clockwise: false)
+      ..arcToPoint(
+        p4,
+        radius: Radius.circular(rInner),
+        largeArc: large,
+        clockwise: false,
+      )
       ..close();
   }
 
-  void _text(Canvas canvas, String text, Offset at, TextStyle style,
-      {TextAlign align = TextAlign.left, required _Anchor anchor}) {
+  void _text(
+    Canvas canvas,
+    String text,
+    Offset at,
+    TextStyle style, {
+    TextAlign align = TextAlign.left,
+    required _Anchor anchor,
+  }) {
     final tp = TextPainter(
       text: TextSpan(text: text, style: style),
       textAlign: align,
@@ -435,35 +463,44 @@ class _Sidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final top = segs.first;
-    final second =
-        segs.length > 1 && segs[1].label != otherLabel ? segs[1] : null;
+    final second = segs.length > 1 && segs[1].label != otherLabel
+        ? segs[1]
+        : null;
     final smallest = segs.length > 2 ? segs.last : null;
     final topK = math.min(2, segs.length);
-    final topKpct =
-        segs.take(topK).fold<int>(0, (a, s) => a + s.pct);
+    final topKpct = segs.take(topK).fold<int>(0, (a, s) => a + s.pct);
     final avg = total / segs.length;
 
     final summary = StringBuffer()
-      ..write(l10n.dashboardPieSummaryBase(
+      ..write(
+        l10n.dashboardPieSummaryBase(
           formatValue(total),
           '${segs.length}',
           itemNoun,
-          formatValue(avg.round().toDouble())))
+          formatValue(avg.round().toDouble()),
+        ),
+      )
       ..write(' ')
-      ..write(l10n.dashboardPieSummaryLead(
-          top.label, '${top.pct}', formatValue(top.value)));
+      ..write(
+        l10n.dashboardPieSummaryLead(
+          top.label,
+          '${top.pct}',
+          formatValue(top.value),
+        ),
+      );
     if (second != null) {
       summary.write(
-          l10n.dashboardPieSummaryAheadOf(second.label, '${second.pct}'));
+        l10n.dashboardPieSummaryAheadOf(second.label, '${second.pct}'),
+      );
     }
     summary.write('.');
     if (segs.length > 2) {
       summary.write(' ');
-      summary.write(
-          l10n.dashboardPieSummaryTopK('$topK', '$topKpct', subject));
+      summary.write(l10n.dashboardPieSummaryTopK('$topK', '$topKpct', subject));
       if (smallest != null) {
-        summary.write(l10n.dashboardPieSummaryTrails(
-            smallest.label, '${smallest.pct}'));
+        summary.write(
+          l10n.dashboardPieSummaryTrails(smallest.label, '${smallest.pct}'),
+        );
       }
       summary.write('.');
     }
@@ -473,8 +510,7 @@ class _Sidebar extends StatelessWidget {
       children: [
         Eyebrow(l10n.dashboardAboutThisChart),
         const SizedBox(height: AppSizes.sm),
-        Text(summary.toString(),
-            style: DashText.bodyMd.copyWith(height: 1.5)),
+        Text(summary.toString(), style: DashText.bodyMd.copyWith(height: 1.5)),
         const SizedBox(height: AppSizes.md),
         Divider(height: 1, thickness: 1, color: AppColors.hairline),
         for (var i = 0; i < segs.length; i++)
@@ -492,28 +528,38 @@ class _Sidebar extends StatelessWidget {
                     width: 8,
                     height: 8,
                     decoration: BoxDecoration(
-                        color: segs[i].color, shape: BoxShape.circle),
+                      color: segs[i].color,
+                      shape: BoxShape.circle,
+                    ),
                   ),
                   const SizedBox(width: AppSizes.sm),
                   Expanded(
-                    child: Text(segs[i].label,
-                        style: DashText.bodySm.copyWith(color: AppColors.black),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis),
+                    child: Text(
+                      segs[i].label,
+                      style: DashText.bodySm.copyWith(color: AppColors.black),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                   const SizedBox(width: AppSizes.sm),
                   Text(
                     '${formatValue(segs[i].value)} · ${segs[i].pct}%',
-                    style: DashText.bodySm.copyWith(fontFeatures: tabularFigures),
+                    style: DashText.bodySm.copyWith(
+                      fontFeatures: tabularFigures,
+                    ),
                   ),
                 ],
               ),
             ),
           ),
         const SizedBox(height: AppSizes.sm),
-        Text(l10n.dashboardTapSliceHint,
-            style: DashText.bodySm.copyWith(
-                color: AppColors.subtle, fontStyle: FontStyle.italic)),
+        Text(
+          l10n.dashboardTapSliceHint,
+          style: DashText.bodySm.copyWith(
+            color: AppColors.subtle,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
       ],
     );
   }
@@ -535,7 +581,9 @@ class _DetailStrip extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.md, vertical: AppSizes.sm),
+        horizontal: AppSizes.md,
+        vertical: AppSizes.sm,
+      ),
       decoration: BoxDecoration(
         color: AppColors.surfaceTint,
         borderRadius: BorderRadius.circular(AppSizes.radiusLg),
@@ -554,15 +602,17 @@ class _DetailStrip extends StatelessWidget {
                 style: DashText.bodySm.copyWith(color: AppColors.black),
                 children: [
                   TextSpan(
-                      text: seg.label,
-                      style: const TextStyle(fontWeight: FontWeight.w700)),
+                    text: seg.label,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
                   const TextSpan(text: ' — '),
                   TextSpan(
-                      text: formatValue(seg.value),
-                      style: const TextStyle(fontWeight: FontWeight.w700)),
+                    text: formatValue(seg.value),
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
                   TextSpan(
-                      text: l10n.dashboardPieDetailTail(
-                          '${seg.pct}', subject)),
+                    text: l10n.dashboardPieDetailTail('${seg.pct}', subject),
+                  ),
                 ],
               ),
             ),

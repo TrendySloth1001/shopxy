@@ -14,6 +14,8 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
+import 'package:shopxy_customer/shared/constants/app_curves.dart';
+import 'package:shopxy_customer/shared/constants/app_durations.dart';
 
 /// Tabs available in the customer-app shell. Orders was added in the
 /// May 2026 nav redesign so it's reachable in one tap instead of
@@ -205,7 +207,7 @@ class _FloatingNav extends StatelessWidget {
           ignoring: !isVisible,
           child: AnimatedSlide(
             duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOutCubic,
+            curve: AppCurves.decelerateEmphasized,
             offset: isVisible ? Offset.zero : const Offset(0, 1.4),
             child: AnimatedOpacity(
               duration: const Duration(milliseconds: 220),
@@ -320,8 +322,8 @@ class _NavPill extends StatelessWidget {
               children: [
                 for (var i = 0; i < items.length; i++)
                   AnimatedContainer(
-                    duration: const Duration(milliseconds: 240),
-                    curve: Curves.easeOutCubic,
+                    duration: AppDurations.medium,
+                    curve: AppCurves.decelerateEmphasized,
                     width: i == currentIndex ? selectedWidth : unselectedWidth,
                     height: 44,
                     decoration: ShapeDecoration(

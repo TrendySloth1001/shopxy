@@ -7,6 +7,7 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_bottom_sheet.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
+import 'package:shopxy_customer/shared/constants/app_curves.dart';
 
 /// One reassurance promise: the short [label] shown in the strip, plus
 /// the [title]/[detail] shown when a shopper taps through to learn more.
@@ -123,7 +124,7 @@ class _HomeTrustStripState extends State<HomeTrustStrip>
         _controller.animateToPage(
           _page,
           duration: _kSlideDuration,
-          curve: Curves.easeInOutCubic,
+          curve: AppCurves.standardEmphasized,
         );
       });
     } else {
