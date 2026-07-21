@@ -33,7 +33,17 @@ class SaleBusImpl implements SaleBus {
   init(): void {
     if (this.useRedis || !redisAvailable()) return;
     try {
-      const sub = getRedis().duplicate();
+      // Override the shared cache client's fail-fast options for this
+      // dedicated subscriber: a pub/sub link must QUEUE its subscribe until
+      // the connection is writeable (enableOfflineQueue), not reject it —
+      // the cache client disables the queue so reads fail fast, but that
+      // rejection here becomes an unhandled promise crash at boot.
+      const sub = getRedis().duplicate({ enableOfflineQueue: true });
+      // Own error handler — the duplicate doesn't inherit the parent's, and
+      // an unhandled 'error' event would take the process down.
+      sub.on('error', (err: Error) => {
+        logger.warn({ err: err.message }, 'pos: SaleBus subscriber connection error');
+      });
       sub.on('message', (_channel: string, payload: string) => {
         try {
           const { shopId, event } = JSON.parse(payload) as { shopId: number; event: SaleEvent };
@@ -42,7 +52,9 @@ class SaleBusImpl implements SaleBus {
           /* ignore malformed */
         }
       });
-      void sub.subscribe(CHANNEL);
+      sub.subscribe(CHANNEL).catch((err: unknown) => {
+        logger.warn({ err }, 'pos: SaleBus subscribe failed; staying in-memory');
+      });
       this.subscriber = sub;
       this.useRedis = true;
       logger.info({ channel: CHANNEL }, 'pos: SaleBus using Redis pub/sub (multi-instance)');
