@@ -13,6 +13,7 @@ import 'package:shopxy_customer/shared/widgets/app_shimmer.dart'
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
+import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
 /// Per-user "recently viewed" page. Pulls the capped (≤20) list from
 /// `GET /me/recently-viewed` and renders it as a 2-col grid so the
@@ -152,9 +153,7 @@ class _ProductTile extends StatelessWidget {
           const SizedBox(height: AppSizes.sm),
           Text(
             product.name,
-            style: theme.textTheme.bodySmall?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+            style: theme.textTheme.bodySmall?.semibold,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -205,12 +204,7 @@ class _ProductTile extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                product.price,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
+              Text(product.price, style: theme.textTheme.bodyMedium?.extraBold),
               if (product.originalPrice.isNotEmpty) ...[
                 const SizedBox(width: AppSizes.sm),
                 Padding(
@@ -252,9 +246,7 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: AppSizes.md),
             Text(
               'Nothing here yet',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+              style: theme.textTheme.titleMedium?.extraBold,
             ),
             const SizedBox(height: AppSizes.xs),
             Text(

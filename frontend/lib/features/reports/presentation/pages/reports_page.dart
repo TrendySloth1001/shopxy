@@ -14,6 +14,7 @@ import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// The reports workspace: four date-ranged reports (Sales, Purchases, GST, P&L)
 /// plus a live Calculator tool — a faithful port of merchant-web's
@@ -168,8 +169,9 @@ class _ReportsPageState extends State<ReportsPage> {
                             Expanded(
                               child: Text(
                                 '${dateFmt.format(p.from)} → ${dateFmt.format(p.to)}',
-                                style: Theme.of(context).textTheme.bodyMedium
-                                    ?.copyWith(fontWeight: FontWeight.w600),
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.bodyMedium?.semibold,
                               ),
                             ),
                             const AppIcon(
@@ -728,18 +730,14 @@ class _LeaderRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: theme.textTheme.bodyMedium?.semibold,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               Text(
                 _money().format(amount),
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: theme.textTheme.bodyMedium?.bold,
               ),
             ],
           ),
@@ -1626,17 +1624,13 @@ class _StatementRow extends StatelessWidget {
     final labelStyle = total
         ? theme.textTheme.titleMedium
         : subtotal
-        ? theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700)
+        ? theme.textTheme.bodyLarge?.bold
         : theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted);
     final valueStyle =
         (total
-                ? theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  )
+                ? theme.textTheme.titleLarge?.extraBold
                 : subtotal
-                ? theme.textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  )
+                ? theme.textTheme.bodyLarge?.bold
                 : theme.textTheme.bodyMedium)
             ?.copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
     return Container(

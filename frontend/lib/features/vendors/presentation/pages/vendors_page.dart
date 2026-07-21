@@ -27,6 +27,7 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 class VendorsPage extends StatefulWidget {
   const VendorsPage({super.key});
@@ -299,9 +300,7 @@ class _VendorTile extends StatelessWidget {
                   children: [
                     Text(
                       vendor.name,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: theme.textTheme.titleSmall?.semibold,
                     ),
                     if (vendor.phone != null)
                       Text(
@@ -753,9 +752,7 @@ class VendorFormSheetState extends State<VendorFormSheet> {
               const SizedBox(height: AppSizes.sm),
               Text(
                 isEditing ? l10n.vendorsEditVendor : l10n.vendorsAddVendor,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                style: Theme.of(context).textTheme.titleLarge?.bold,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppSizes.lg),

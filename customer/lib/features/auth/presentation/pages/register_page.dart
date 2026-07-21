@@ -15,6 +15,7 @@ import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/features/profile/presentation/pages/info_pages.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
+import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
 /// Multi-step, onboarding-style registration. One question per screen
 /// (name → email → password) with a progress bar, so signing up feels
@@ -226,8 +227,9 @@ class _RegisterPageState extends State<RegisterPage> {
                           onPressed: () => Navigator.of(context).pop(),
                           style: TextButton.styleFrom(
                             foregroundColor: AppColors.brandStrong,
-                            textStyle: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(fontWeight: FontWeight.w800),
+                            textStyle: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium?.extraBold,
                           ),
                           child: const Text(AppStrings.login),
                         ),

@@ -13,6 +13,7 @@ import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 enum _MissingProductAction { add, retry }
 
@@ -120,9 +121,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
               Text(
                 l10n.productsNotFoundTitle,
                 textAlign: TextAlign.center,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: theme.textTheme.titleMedium?.bold,
               ),
               const SizedBox(height: AppSizes.xs),
               Text(
@@ -146,12 +145,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
                       side: BorderSide(color: AppColors.hairline, width: 1),
                     ),
                   ),
-                  child: Text(
-                    code,
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                  child: Text(code, style: theme.textTheme.labelLarge?.bold),
                 ),
               ),
               const SizedBox(height: AppSizes.xl),

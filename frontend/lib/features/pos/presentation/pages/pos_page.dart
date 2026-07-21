@@ -21,6 +21,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 int _i(Object? v) => v is num ? v.toInt() : 0;
 double _d(Object? v) => v is num ? v.toDouble() : 0;
@@ -422,9 +423,7 @@ class _PosPageState extends State<PosPage> {
                 Text(
                   '${l10n.posCollect} ₹${total.toStringAsFixed(2)}',
                   textAlign: TextAlign.center,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: theme.textTheme.titleLarge?.bold,
                 ),
                 const SizedBox(height: AppSizes.lg),
                 Row(
@@ -695,9 +694,7 @@ class _PosPageState extends State<PosPage> {
                         '${_shift!['openedByEmail'] != null ? ' · ${_shift!['openedByEmail']}' : ''}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: theme.textTheme.bodySmall?.semibold,
                       ),
                     ),
                     AppIcon(
@@ -708,9 +705,7 @@ class _PosPageState extends State<PosPage> {
                     const SizedBox(width: AppSizes.xs),
                     Text(
                       _elapsedSince(_shift!['openedAt']),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: theme.textTheme.bodySmall?.bold,
                     ),
                   ],
                 ),
@@ -835,9 +830,7 @@ class _PosPageState extends State<PosPage> {
                           ),
                           Text(
                             '₹${total.toStringAsFixed(2)}',
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
+                            style: theme.textTheme.titleLarge?.bold,
                           ),
                         ],
                       ),
@@ -894,9 +887,7 @@ class _CartTile extends StatelessWidget {
                 line.name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+                style: theme.textTheme.titleSmall?.semibold,
               ),
               Text(
                 '${line.sku} · ₹${line.unitPrice.toStringAsFixed(2)}${line.lineDiscount > 0 ? ' · −₹${line.lineDiscount.toStringAsFixed(2)}' : ''}',
@@ -934,9 +925,7 @@ class _CartTile extends StatelessWidget {
             alignment: Alignment.center,
             child: Text(
               line.quantity.toStringAsFixed(line.quantity % 1 == 0 ? 0 : 2),
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+              style: theme.textTheme.titleSmall?.bold,
             ),
           ),
         ),
@@ -950,9 +939,7 @@ class _CartTile extends StatelessWidget {
           child: Text(
             '₹${line.total.toStringAsFixed(2)}',
             textAlign: TextAlign.right,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+            style: theme.textTheme.titleSmall?.bold,
           ),
         ),
         IconButton(
@@ -1063,9 +1050,7 @@ class _ProductSearchSheetState extends State<_ProductSearchSheet> {
                           ),
                           trailing: Text(
                             '₹${_d(p['sellingPrice']).toStringAsFixed(2)}',
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
+                            style: theme.textTheme.titleSmall?.bold,
                           ),
                           onTap: () {
                             widget.client.addItem(_i(p['id']));

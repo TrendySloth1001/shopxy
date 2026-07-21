@@ -24,7 +24,7 @@ export function StatusBadge({
 }) {
   return (
     <span
-      className={`inline-flex items-center gap-xs rounded-full px-sm py-[3px] text-[10px] font-extrabold tracking-[0.4px] ${color} ${bg}`}
+      className={`inline-flex items-center gap-xs rounded-full px-sm py-[3px] text-micro font-extrabold tracking-[0.4px] ${color} ${bg}`}
     >
       {label}
     </span>

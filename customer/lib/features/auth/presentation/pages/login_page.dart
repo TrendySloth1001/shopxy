@@ -10,6 +10,7 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/widgets/app_pill_button.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -61,7 +62,10 @@ class _LoginPageState extends State<LoginPage> {
       _error = null;
     });
     try {
-      await context.read<AuthProvider>().login(_email.text.trim(), _password.text);
+      await context.read<AuthProvider>().login(
+        _email.text.trim(),
+        _password.text,
+      );
     } catch (e) {
       if (mounted) {
         setState(() => _error = friendlyError(e));
@@ -74,7 +78,11 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return AuthScaffold(
-      heroImageUrl: HomeImg.unsplash('1483985988355-763728e1935b', w: 1000, h: 900),
+      heroImageUrl: HomeImg.unsplash(
+        '1483985988355-763728e1935b',
+        w: 1000,
+        h: 900,
+      ),
       heroTagline: 'Pick up right where you left off.',
       title: AppStrings.welcomeBack,
       subtitle: AppStrings.loginSubtitle,
@@ -96,7 +104,9 @@ class _LoginPageState extends State<LoginPage> {
               textInputAction: TextInputAction.next,
               autocorrect: false,
               validator: (v) {
-                if (v == null || v.trim().isEmpty) return AppStrings.fieldRequired;
+                if (v == null || v.trim().isEmpty) {
+                  return AppStrings.fieldRequired;
+                }
                 if (!v.contains('@')) return AppStrings.invalidEmail;
                 return null;
               },
@@ -127,8 +137,9 @@ class _LoginPageState extends State<LoginPage> {
                 Text(
                   AppStrings.noAccount,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.muted,
-                      fontWeight: FontWeight.w500),
+                    color: AppColors.muted,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
                 TextButton(
                   onPressed: () => Navigator.push(
@@ -137,8 +148,9 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.brandStrong,
-                    textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w800),
+                    textStyle: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.extraBold,
                   ),
                   child: const Text(AppStrings.register),
                 ),

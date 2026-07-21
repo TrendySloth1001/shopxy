@@ -26,7 +26,7 @@ function ReturnRow({ item }: { item: ReturnRequest }) {
           Return #{item.id} · {item.shop.shopName ?? item.shop.name}
         </p>
         <span
-          className={`inline-flex flex-shrink-0 rounded-full px-sm py-[3px] text-[11px] font-extrabold ${vis.colorClass} ${vis.bgClass}`}
+          className={`inline-flex flex-shrink-0 rounded-full px-sm py-[3px] text-caption font-extrabold ${vis.colorClass} ${vis.bgClass}`}
         >
           {vis.label}
         </span>

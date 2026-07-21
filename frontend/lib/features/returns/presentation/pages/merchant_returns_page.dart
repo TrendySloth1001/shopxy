@@ -14,6 +14,7 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Merchant returns inbox. Tabs filter by status; each row is tappable
 /// → `MerchantReturnDetailPage`. The inbox doesn't paginate beyond the
@@ -202,9 +203,7 @@ class _ReturnRow extends StatelessWidget {
                     Expanded(
                       child: Text(
                         l10n.returnsRowTitle(row.id, row.customerName),
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: theme.textTheme.bodyLarge?.bold,
                       ),
                     ),
                     AppStatusBadge(

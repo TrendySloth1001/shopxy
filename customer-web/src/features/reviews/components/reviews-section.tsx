@@ -28,7 +28,7 @@ function HistogramRow({ star, count, total }: { star: number; count: number; tot
       {/* Star label — fixed width so bars align */}
       <span className="flex w-[32px] shrink-0 items-center justify-end gap-[2px]">
         <span className="text-label-md font-semibold text-ink">{star}</span>
-        <span className="text-[9px] text-muted">★</span>
+        <span className="text-nano text-muted">★</span>
       </span>
       {/* Track + filled bar — bg-hairline gives a visible neutral track */}
       <div className="relative h-[8px] flex-1 overflow-hidden rounded-full bg-hairline">

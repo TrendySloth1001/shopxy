@@ -11,6 +11,7 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
+import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
 /// Modal sheet that walks the customer through a return:
 ///   1. Pick line(s) to return + quantity per line.
@@ -124,9 +125,7 @@ class _SheetState extends State<_Sheet> {
                 Expanded(
                   child: Text(
                     'Return items',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                    style: theme.textTheme.titleLarge?.extraBold,
                   ),
                 ),
                 IconButton(
@@ -263,9 +262,7 @@ class _SheetState extends State<_Sheet> {
                         )
                       : Text(
                           'Submit return',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
+                          style: theme.textTheme.bodyMedium?.extraBold,
                         ),
                 ),
               ],

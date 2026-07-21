@@ -28,6 +28,7 @@ import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/shared/widgets/shop_chip.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
+import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
 /// Checkout page — full Amazon/Flipkart-style rebuild (May 2026,
 /// build3). Built on a Column { Header, Expanded(Body), Footer }
@@ -125,8 +126,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     Expanded(
                       child: Text(
                         'Choose a delivery address',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w800),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.titleMedium?.extraBold,
                       ),
                     ),
                   ],
@@ -456,9 +458,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 children: [
                   Text(
                     title,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                    style: Theme.of(context).textTheme.bodyMedium?.extraBold,
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -877,9 +877,7 @@ class _SelectedAddressCard extends StatelessWidget {
                   children: [
                     Text(
                       address.fullName,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
+                      style: Theme.of(context).textTheme.bodyMedium?.extraBold,
                     ),
                     if (address.label != null)
                       _LabelPill(text: address.label!, tone: _Tone.neutral),
@@ -984,9 +982,9 @@ class _AddAddressCard extends StatelessWidget {
                     children: [
                       Text(
                         'Add a delivery address',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.extraBold,
                       ),
                       const SizedBox(height: 2),
                       Text(
@@ -1090,9 +1088,7 @@ class _AddressPickerRow extends StatelessWidget {
                 children: [
                   Text(
                     address.fullName,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                    style: Theme.of(context).textTheme.bodyMedium?.extraBold,
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -1785,8 +1781,9 @@ class _CouponCardState extends State<_CouponCard> {
                         )
                       : Text(
                           'Apply',
-                          style: Theme.of(context).textTheme.labelLarge
-                              ?.copyWith(fontWeight: FontWeight.w800),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.labelLarge?.extraBold,
                         ),
                 ),
         ],

@@ -8,6 +8,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
+import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
 /// Customer landing for "All categories". Big image grid; tap drills
 /// down into a [CategoryDetailPage] that lists subcategories + the
@@ -39,39 +40,38 @@ class _CategoriesPageState extends State<CategoriesPage> {
       body: provider.isLoading && tree.isEmpty
           ? const _CategoryGridSkeleton()
           : tree.isEmpty
-              ? const Center(child: Text('No categories yet'))
-              : RefreshIndicator(
-                  onRefresh: () => provider.load(force: true),
-                  color: AppColors.black,
-                  backgroundColor: AppColors.white,
-                  child: GridView.builder(
-                    padding: const EdgeInsets.all(AppSizes.md),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      mainAxisSpacing: AppSizes.lg,
-                      crossAxisSpacing: AppSizes.md,
-                      // Tile has a square thumb + 2-line name + "N subs"
-                      // chip. 0.82 clipped the chip at default text scale;
-                      // 0.7 gives every tile enough vertical room.
-                      childAspectRatio: 0.7,
-                    ),
-                    itemCount: tree.length,
-                    itemBuilder: (context, index) {
-                      final node = tree[index];
-                      return _CategoryTile(
-                        category: node.category,
-                        childCount: node.children.length,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => CategoryDetailPage(node: node),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+          ? const Center(child: Text('No categories yet'))
+          : RefreshIndicator(
+              onRefresh: () => provider.load(force: true),
+              color: AppColors.black,
+              backgroundColor: AppColors.white,
+              child: GridView.builder(
+                padding: const EdgeInsets.all(AppSizes.md),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  mainAxisSpacing: AppSizes.lg,
+                  crossAxisSpacing: AppSizes.md,
+                  // Tile has a square thumb + 2-line name + "N subs"
+                  // chip. 0.82 clipped the chip at default text scale;
+                  // 0.7 gives every tile enough vertical room.
+                  childAspectRatio: 0.7,
                 ),
+                itemCount: tree.length,
+                itemBuilder: (context, index) {
+                  final node = tree[index];
+                  return _CategoryTile(
+                    category: node.category,
+                    childCount: node.children.length,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => CategoryDetailPage(node: node),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
     );
   }
 }
@@ -164,9 +164,7 @@ class _CategoryTile extends StatelessWidget {
           const SizedBox(height: AppSizes.sm),
           Text(
             category.name,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+            style: theme.textTheme.bodyMedium?.bold,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),

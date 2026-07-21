@@ -7,6 +7,7 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
+import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
 /// Bottom-sheet rating editor. Tap-stars 1..5, optional title, optional
 /// body. Server enforces the "only buyers who purchased" rule and
@@ -143,9 +144,7 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
                 Expanded(
                   child: Text(
                     'Rate this product',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                    style: Theme.of(context).textTheme.titleLarge?.extraBold,
                   ),
                 ),
                 IconButton(

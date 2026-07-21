@@ -37,7 +37,7 @@ export function CatalogProductCard({ product }: { product: CatalogProduct }) {
           <ProductImageFallback name={p.name} />
         )}
         {discountPct > 0 ? (
-          <span className="absolute left-[6px] top-[6px] bg-brand text-white text-[11px] font-extrabold rounded-sm px-sm py-[2px]">
+          <span className="absolute left-[6px] top-[6px] bg-brand text-white text-caption font-extrabold rounded-sm px-sm py-[2px]">
             {discountPct}% OFF
           </span>
         ) : null}
@@ -52,11 +52,11 @@ export function CatalogProductCard({ product }: { product: CatalogProduct }) {
         <span className="mt-auto flex flex-col gap-[2px]">
           {p.ratingAvg != null && p.ratingCount > 0 ? (
             <span className="mb-[2px] inline-flex items-center gap-[3px]">
-              <span className="inline-flex items-center gap-[3px] rounded-sm bg-success px-[6px] py-[2px] text-[11px] font-bold text-white">
+              <span className="inline-flex items-center gap-[3px] rounded-sm bg-success px-[6px] py-[2px] text-caption font-bold text-white">
                 {p.ratingAvg.toFixed(1)}
                 <StarSolidIcon size={9} className="shrink-0" />
               </span>
-              <span className="text-[10px] text-muted">
+              <span className="text-micro text-muted">
                 ({p.ratingCount > 999 ? `${(p.ratingCount / 1000).toFixed(1)}k` : p.ratingCount})
               </span>
             </span>
@@ -67,12 +67,12 @@ export function CatalogProductCard({ product }: { product: CatalogProduct }) {
               {formatINR(p.sellingPrice)}
             </span>
             {discounted ? (
-              <span className="text-[11px] text-muted line-through">
+              <span className="text-caption text-muted line-through">
                 {formatINR(p.mrp)}
               </span>
             ) : null}
             {discountPct > 0 ? (
-              <span className="text-[11px] font-bold text-brand">
+              <span className="text-caption font-bold text-brand">
                 {discountPct}% off
               </span>
             ) : null}

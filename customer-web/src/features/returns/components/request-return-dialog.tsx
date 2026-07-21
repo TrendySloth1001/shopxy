@@ -119,7 +119,7 @@ export function RequestReturnDialog({ parentOrderId, shopOrder, onClose, onSubmi
         >
           {/* Items */}
           <div>
-            <p className="mb-sm text-[11px] font-extrabold tracking-[0.6px] text-muted uppercase">
+            <p className="mb-sm text-caption font-extrabold tracking-[0.6px] text-muted uppercase">
               Choose items
             </p>
             <div className="space-y-sm">
@@ -146,12 +146,12 @@ export function RequestReturnDialog({ parentOrderId, shopOrder, onClose, onSubmi
                         >
                           {item.productName}
                         </label>
-                        <p className="mt-xs text-[11px] text-muted">
+                        <p className="mt-xs text-caption text-muted">
                           Ordered: {formatQty(item.quantity)} {item.unit} ·{" "}
                           {formatINR(item.unitPrice, { decimals: 2 })} each
                         </p>
                         {selected && (
-                          <p className="mt-[2px] text-[11px] font-bold text-success">
+                          <p className="mt-[2px] text-caption font-bold text-success">
                             Returning {formatQty(pick!.quantity)} ×{" "}
                             {formatINR(item.unitPrice, { decimals: 2 })}
                           </p>
@@ -189,7 +189,7 @@ export function RequestReturnDialog({ parentOrderId, shopOrder, onClose, onSubmi
 
           {/* Reason */}
           <div>
-            <p className="mb-sm text-[11px] font-extrabold tracking-[0.6px] text-muted uppercase">
+            <p className="mb-sm text-caption font-extrabold tracking-[0.6px] text-muted uppercase">
               Reason
             </p>
             <div className="flex flex-wrap gap-sm">
@@ -211,7 +211,7 @@ export function RequestReturnDialog({ parentOrderId, shopOrder, onClose, onSubmi
 
           {/* Note */}
           <div>
-            <p className="mb-sm text-[11px] font-extrabold tracking-[0.6px] text-muted uppercase">
+            <p className="mb-sm text-caption font-extrabold tracking-[0.6px] text-muted uppercase">
               Add a note (optional)
             </p>
             <textarea
@@ -232,13 +232,13 @@ export function RequestReturnDialog({ parentOrderId, shopOrder, onClose, onSubmi
         {/* Footer */}
         <div className="flex items-center justify-between border-t border-hairline px-lg py-md flex-shrink-0">
           <div>
-            <p className="text-[11px] font-extrabold tracking-[0.4px] text-muted uppercase">
+            <p className="text-caption font-extrabold tracking-[0.4px] text-muted uppercase">
               Estimated refund
             </p>
             <p className="text-title-sm font-extrabold text-ink">
               {formatINR(refundEstimate, { decimals: 2 })}
             </p>
-            <p className="text-[10px] text-muted">Taxes & discounts adjusted at processing</p>
+            <p className="text-micro text-muted">Taxes & discounts adjusted at processing</p>
           </div>
           <button
             onClick={handleSubmit}

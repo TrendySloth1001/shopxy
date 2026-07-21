@@ -14,13 +14,13 @@ const CELLS = [
 export function FooterStrip() {
   return (
     <div className="mx-lg rounded-lg bg-hero-panel p-lg">
-      <h2 className="text-center text-[14px] font-extrabold text-ink">Why millions choose ShopXY</h2>
+      <h2 className="text-center text-body-md font-extrabold text-ink">Why millions choose ShopXY</h2>
       <div className="mt-md grid grid-cols-2 gap-sm">
         {CELLS.map(({ icon: Icon, title, sub }) => (
           <div key={title} className="flex flex-col items-center gap-xs p-xs text-center">
             <Icon size={24} className="text-brand" aria-hidden />
-            <span className="text-[12px] font-bold text-ink">{title}</span>
-            <span className="text-[10px] text-muted">{sub}</span>
+            <span className="text-body-sm font-bold text-ink">{title}</span>
+            <span className="text-micro text-muted">{sub}</span>
           </div>
         ))}
       </div>

@@ -12,6 +12,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Create-or-edit sheet for a custom field definition.
 ///
@@ -200,9 +201,7 @@ class _CustomFieldEditorSheetState extends State<CustomFieldEditorSheet> {
                   isEditing
                       ? l10n.customFieldsEditField
                       : l10n.customFieldsAddField,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: theme.textTheme.titleMedium?.bold,
                 ),
                 const SizedBox(height: AppSizes.lg),
                 Row(

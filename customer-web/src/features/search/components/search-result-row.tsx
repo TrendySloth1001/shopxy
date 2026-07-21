@@ -49,17 +49,17 @@ export function SearchResultRow({
             {hit.name}
           </span>
           {hit.shopName ? (
-            <span className="mt-[2px] block text-[11px] font-bold text-brand">
+            <span className="mt-[2px] block text-caption font-bold text-brand">
               by {hit.shopName}
             </span>
           ) : null}
           {hit.ratingAvg != null && hit.ratingCount > 0 ? (
             <span className="mt-[3px] inline-flex items-center gap-[3px]">
-              <span className="inline-flex items-center gap-[2px] rounded-sm bg-success px-[5px] py-[2px] text-[10px] font-bold text-white">
+              <span className="inline-flex items-center gap-[2px] rounded-sm bg-success px-[5px] py-[2px] text-micro font-bold text-white">
                 {hit.ratingAvg.toFixed(1)}
                 <Star size={8} className="fill-white text-white" aria-hidden />
               </span>
-              <span className="text-[10px] text-muted">
+              <span className="text-micro text-muted">
                 ({hit.ratingCount > 999 ? `${(hit.ratingCount / 1000).toFixed(1)}k` : hit.ratingCount})
               </span>
             </span>

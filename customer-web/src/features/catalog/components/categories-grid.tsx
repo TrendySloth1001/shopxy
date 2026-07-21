@@ -124,11 +124,11 @@ function CategoryTile({ node, index }: { node: CategoryNode; index: number }) {
         {node.name}
       </p>
       {subCount > 0 ? (
-        <p className="text-[11px] text-muted">
+        <p className="text-caption text-muted">
           {subCount} subcategor{subCount === 1 ? "y" : "ies"}
         </p>
       ) : node._count.products > 0 ? (
-        <p className="text-[11px] text-muted">{node._count.products} products</p>
+        <p className="text-caption text-muted">{node._count.products} products</p>
       ) : null}
     </Link>
   );

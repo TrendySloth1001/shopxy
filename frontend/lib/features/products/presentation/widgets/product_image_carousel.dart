@@ -11,6 +11,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Image carousel for the product detail hero.
 ///
@@ -195,9 +196,7 @@ class _AddPhotosPill extends StatelessWidget {
               const SizedBox(width: AppSizes.xs),
               Text(
                 l10n.productsAddPhotos,
-                style: theme.textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: theme.textTheme.labelLarge?.bold,
               ),
             ],
           ),

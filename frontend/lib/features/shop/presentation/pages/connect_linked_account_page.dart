@@ -8,6 +8,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Connect an EXISTING Razorpay linked account by its acc_XXXX id — skips the
 /// 4-step KYC wizard. Enter the id → verify (fetch from Razorpay) → confirm the
@@ -16,7 +17,8 @@ class ConnectLinkedAccountPage extends StatefulWidget {
   const ConnectLinkedAccountPage({super.key});
 
   @override
-  State<ConnectLinkedAccountPage> createState() => _ConnectLinkedAccountPageState();
+  State<ConnectLinkedAccountPage> createState() =>
+      _ConnectLinkedAccountPageState();
 }
 
 class _ConnectLinkedAccountPageState extends State<ConnectLinkedAccountPage> {
@@ -38,7 +40,8 @@ class _ConnectLinkedAccountPageState extends State<ConnectLinkedAccountPage> {
     super.dispose();
   }
 
-  bool get _idValid => RegExp(r'^acc_[A-Za-z0-9]+$').hasMatch(_idCtrl.text.trim());
+  bool get _idValid =>
+      RegExp(r'^acc_[A-Za-z0-9]+$').hasMatch(_idCtrl.text.trim());
 
   Future<void> _verify() async {
     setState(() {
@@ -84,8 +87,12 @@ class _ConnectLinkedAccountPageState extends State<ConnectLinkedAccountPage> {
       extendBodyBehindAppBar: true,
       appBar: FloatingAppBar(title: l10n.shopConnectExistingAccountTitle),
       body: ListView(
-        padding: EdgeInsets.fromLTRB(AppSizes.xl,
-            AppSizes.xl + FloatingAppBar.contentTopInset(context), AppSizes.xl, AppSizes.xl),
+        padding: EdgeInsets.fromLTRB(
+          AppSizes.xl,
+          AppSizes.xl + FloatingAppBar.contentTopInset(context),
+          AppSizes.xl,
+          AppSizes.xl,
+        ),
         children: [
           Text(
             l10n.shopConnectIntro,
@@ -105,14 +112,23 @@ class _ConnectLinkedAccountPageState extends State<ConnectLinkedAccountPage> {
           ),
           if (_error != null) ...[
             const SizedBox(height: AppSizes.md),
-            Text(_error!, style: theme.textTheme.bodySmall?.copyWith(color: AppColors.error)),
+            Text(
+              _error!,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.error,
+              ),
+            ),
           ],
           const SizedBox(height: AppSizes.lg),
           if (d == null)
             FilledButton(
               onPressed: _idValid && !_busy ? _verify : null,
               child: _busy
-                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
                   : Text(l10n.shopConnectVerify),
             )
           else ...[
@@ -125,20 +141,41 @@ class _ConnectLinkedAccountPageState extends State<ConnectLinkedAccountPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(l10n.shopConnectConfirmTitle,
-                      style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+                  Text(
+                    l10n.shopConnectConfirmTitle,
+                    style: theme.textTheme.titleSmall?.bold,
+                  ),
                   const SizedBox(height: AppSizes.md),
                   _Fact(label: l10n.shopConnectFactAccount, value: d.accountId),
-                  _Fact(label: l10n.shopConnectFactBusiness, value: d.legalBusinessName ?? '—'),
-                  _Fact(label: l10n.shopConnectFactContact, value: d.contactName ?? '—'),
-                  _Fact(label: l10n.shopConnectFactEmail, value: d.email ?? '—'),
-                  _Fact(label: l10n.shopConnectFactKycStatus, value: d.kycStatus),
-                  _Fact(label: l10n.shopConnectFactPayouts, value: d.payoutsEnabled ? l10n.shopEnabled : l10n.shopNotYetEnabled),
+                  _Fact(
+                    label: l10n.shopConnectFactBusiness,
+                    value: d.legalBusinessName ?? '—',
+                  ),
+                  _Fact(
+                    label: l10n.shopConnectFactContact,
+                    value: d.contactName ?? '—',
+                  ),
+                  _Fact(
+                    label: l10n.shopConnectFactEmail,
+                    value: d.email ?? '—',
+                  ),
+                  _Fact(
+                    label: l10n.shopConnectFactKycStatus,
+                    value: d.kycStatus,
+                  ),
+                  _Fact(
+                    label: l10n.shopConnectFactPayouts,
+                    value: d.payoutsEnabled
+                        ? l10n.shopEnabled
+                        : l10n.shopNotYetEnabled,
+                  ),
                   if (!d.payoutsEnabled) ...[
                     const SizedBox(height: AppSizes.sm),
                     Text(
                       l10n.shopConnectPayoutsNotEnabledWarning,
-                      style: theme.textTheme.bodySmall?.copyWith(color: AppColors.warning),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.warning,
+                      ),
                     ),
                   ],
                 ],
@@ -151,13 +188,19 @@ class _ConnectLinkedAccountPageState extends State<ConnectLinkedAccountPage> {
                   child: FilledButton(
                     onPressed: _busy ? null : _confirm,
                     child: _busy
-                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
                         : Text(l10n.shopConnectLinkAccount),
                   ),
                 ),
                 const SizedBox(width: AppSizes.md),
                 OutlinedButton(
-                  onPressed: _busy ? null : () => setState(() => _details = null),
+                  onPressed: _busy
+                      ? null
+                      : () => setState(() => _details = null),
                   child: Text(l10n.shopCancel),
                 ),
               ],
@@ -184,10 +227,20 @@ class _Fact extends StatelessWidget {
         children: [
           SizedBox(
             width: 96,
-            child: Text(label, style: theme.textTheme.bodySmall?.copyWith(color: AppColors.subtle)),
+            child: Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.subtle,
+              ),
+            ),
           ),
           Expanded(
-            child: Text(value, style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.black)),
+            child: Text(
+              value,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: AppColors.black,
+              ),
+            ),
           ),
         ],
       ),

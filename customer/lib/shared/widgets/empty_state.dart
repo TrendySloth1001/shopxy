@@ -5,6 +5,7 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
 /// Glassdoor-style empty state: hand-drawn illustration sitting on a soft
 /// gray panel, with a bold headline + calm secondary copy + optional CTA.
@@ -96,9 +97,7 @@ class EmptyState extends StatelessWidget {
             const SizedBox(height: AppSizes.xl),
             Text(
               title,
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+              style: theme.textTheme.titleLarge?.bold,
               textAlign: TextAlign.center,
             ),
             if (subtitle != null) ...[

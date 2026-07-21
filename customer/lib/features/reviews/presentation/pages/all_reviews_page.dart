@@ -11,6 +11,7 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
+import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
 /// Paginated all-reviews page. Loads page 1 on mount; appends pages as
 /// the user scrolls within ~400px of the bottom. Filter chips switch
@@ -344,9 +345,7 @@ class _ErrorView extends StatelessWidget {
             const SizedBox(height: AppSizes.sm),
             Text(
               "Couldn't load reviews",
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+              style: Theme.of(context).textTheme.titleMedium?.extraBold,
             ),
             const SizedBox(height: AppSizes.xs),
             Text(

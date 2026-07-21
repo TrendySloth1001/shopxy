@@ -40,15 +40,15 @@ export function PdpFbtRail({ productId }: Props) {
                 <ImageBox url={imageUrl} alt={item.name} />
               </span>
               <div className="flex flex-col p-sm">
-                <p className="line-clamp-2 text-[12px] font-semibold leading-snug text-ink">
+                <p className="line-clamp-2 text-body-sm font-semibold leading-snug text-ink">
                   {item.name}
                 </p>
                 <div className="mt-xs flex items-baseline gap-xs">
-                  <span className="text-[14px] font-extrabold text-ink">
+                  <span className="text-body-md font-extrabold text-ink">
                     {formatINR(item.sellingPrice)}
                   </span>
                   {isDiscounted ? (
-                    <span className="text-[11px] text-muted line-through">
+                    <span className="text-caption text-muted line-through">
                       {formatINR(item.mrp)}
                     </span>
                   ) : null}
@@ -56,7 +56,7 @@ export function PdpFbtRail({ productId }: Props) {
                 {item.ratingAvg != null ? (
                   <div className="mt-xs flex items-center gap-[2px]">
                     <Star size={11} className="fill-[#E05A2A] text-[#E05A2A]" aria-hidden />
-                    <span className="text-[11px] font-semibold text-muted">
+                    <span className="text-caption font-semibold text-muted">
                       {item.ratingAvg.toFixed(1)} ({item.ratingCount})
                     </span>
                   </div>

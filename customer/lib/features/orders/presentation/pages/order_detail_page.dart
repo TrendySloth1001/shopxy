@@ -32,6 +32,7 @@ import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
+import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
 /// Customer-facing order detail. One parent CustomerOrder = one
 /// checkout submission; per-vendor slices live as sections inside.
@@ -674,8 +675,9 @@ class _DeliverySnapshotCardState extends State<_DeliverySnapshotCard> {
                             o.customerName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(fontWeight: FontWeight.w800),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium?.extraBold,
                           ),
                         ),
                         const SizedBox(width: AppSizes.sm),
@@ -835,9 +837,7 @@ class _BuyAgainCard extends StatelessWidget {
                   )
                 : Text(
                     'Add to cart',
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                    style: Theme.of(context).textTheme.labelLarge?.extraBold,
                   ),
           ),
         ],
@@ -1933,9 +1933,7 @@ class _ErrorState extends StatelessWidget {
             const SizedBox(height: AppSizes.md),
             Text(
               AppStrings.somethingWentWrong,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+              style: Theme.of(context).textTheme.titleMedium?.extraBold,
             ),
             const SizedBox(height: AppSizes.xs),
             Text(

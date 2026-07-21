@@ -14,6 +14,7 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Owner-facing page. Two modes via a segmented switch:
 ///   * **Existing contact** — search-pick a party / vendor; the FK
@@ -141,9 +142,7 @@ class _SendInvitePageState extends State<SendInvitePage> {
                 children: [
                   Text(
                     l10n.notificationsInviteByEmail,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: theme.textTheme.titleLarge?.bold,
                   ),
                   const SizedBox(height: AppSizes.xs),
                   Text(
@@ -501,9 +500,7 @@ class _ContactPickerState extends State<_ContactPicker> {
                                 children: [
                                   Text(
                                     name,
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                    style: theme.textTheme.bodyMedium?.semibold,
                                   ),
                                   if (email != null && email.isNotEmpty)
                                     Text(

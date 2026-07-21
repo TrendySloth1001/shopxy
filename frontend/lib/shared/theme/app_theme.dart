@@ -3,6 +3,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_palette.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/theme/app_typography.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Builds the app [ThemeData] from an [AppPalette]. One builder drives all
 /// eight themes (light / beige / rose / sage / dark / OLED / midnight / nord) —
@@ -97,11 +98,7 @@ class AppTheme {
         ),
         margin: EdgeInsets.zero,
       ),
-      dividerTheme: DividerThemeData(
-        color: p.hairline,
-        thickness: 1,
-        space: 1,
-      ),
+      dividerTheme: DividerThemeData(color: p.hairline, thickness: 1, space: 1),
       listTileTheme: ListTileThemeData(
         iconColor: p.ink,
         textColor: p.ink,
@@ -205,9 +202,7 @@ class AppTheme {
           return IconThemeData(color: p.ink);
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
-          final base = textTheme.labelSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-          );
+          final base = textTheme.labelSmall?.semibold;
           if (states.contains(WidgetState.selected)) {
             return base?.copyWith(color: p.brandStrong);
           }
@@ -320,9 +315,7 @@ class AppTheme {
             if (states.contains(WidgetState.selected)) return p.onInverse;
             return p.ink;
           }),
-          side: WidgetStateProperty.all(
-            BorderSide(color: p.ink, width: 1),
-          ),
+          side: WidgetStateProperty.all(BorderSide(color: p.ink, width: 1)),
           textStyle: WidgetStateProperty.all(textTheme.labelMedium),
         ),
       ),
@@ -351,9 +344,7 @@ class AppTheme {
         side: BorderSide(color: p.ink, width: 1.5),
         shape: AppShapes.squircle(AppSizes.radiusSm / 2),
       ),
-      radioTheme: RadioThemeData(
-        fillColor: WidgetStateProperty.all(p.ink),
-      ),
+      radioTheme: RadioThemeData(fillColor: WidgetStateProperty.all(p.ink)),
       tabBarTheme: TabBarThemeData(
         labelColor: p.ink,
         unselectedLabelColor: p.muted,

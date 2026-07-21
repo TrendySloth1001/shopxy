@@ -19,6 +19,7 @@ import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Internal mutable bucket line.
 class _Line {
@@ -258,9 +259,7 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
                   Expanded(
                     child: Text(
                       widget.respondTo!.partyName,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: theme.textTheme.bodyLarge?.bold,
                     ),
                   ),
                   Text(
@@ -448,9 +447,7 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
               children: [
                 Text(
                   line.name,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: theme.textTheme.bodyLarge?.bold,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -472,9 +469,7 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
                         onChanged: (v) => setState(
                           () => line.unitPrice = double.tryParse(v) ?? 0,
                         ),
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: theme.textTheme.bodyMedium?.bold,
                         decoration: InputDecoration(
                           prefixText: '₹ ',
                           labelText: 'Rate',
@@ -528,9 +523,7 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
                   ),
                   Text(
                     '${line.qty}',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                    style: theme.textTheme.titleMedium?.extraBold,
                   ),
                   IconButton(
                     icon: const AppIcon(AppIcons.addCircleOutlineRounded),
@@ -542,9 +535,7 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
               ),
               Text(
                 _currency.format(line.lineTotal),
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
+                style: theme.textTheme.bodyLarge?.extraBold,
               ),
             ],
           ),

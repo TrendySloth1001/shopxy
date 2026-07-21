@@ -13,6 +13,7 @@ import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
+import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
 /// Customer-side directory of merchants the user has an active Party
 /// or Vendor link with. Each card opens the marketplace `ShopProfilePage`
@@ -125,8 +126,9 @@ class _MerchantCard extends StatelessWidget {
                       children: [
                         Text(
                           merchant.name,
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w800),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleMedium?.extraBold,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -366,9 +368,7 @@ class _EmptyState extends StatelessWidget {
         Text(
           'No linked merchants yet',
           textAlign: TextAlign.center,
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+          style: Theme.of(context).textTheme.titleMedium?.extraBold,
         ),
         const SizedBox(height: AppSizes.xs),
         Text(
@@ -403,9 +403,7 @@ class _ErrorState extends StatelessWidget {
         Text(
           'Could not load',
           textAlign: TextAlign.center,
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+          style: Theme.of(context).textTheme.titleMedium?.extraBold,
         ),
         const SizedBox(height: AppSizes.xs),
         Text(

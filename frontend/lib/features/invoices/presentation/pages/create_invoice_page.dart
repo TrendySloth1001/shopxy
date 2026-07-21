@@ -30,6 +30,7 @@ import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Height of the sticky Save-as-draft / Save-&-confirm action buttons. Taller
 /// than a stock button so the two labels stay on one line and the bar reads as
@@ -1055,12 +1056,7 @@ class _SelectedVendorCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  vendor.name,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                Text(vendor.name, style: theme.textTheme.titleSmall?.semibold),
                 if (vendor.phone != null)
                   Text(vendor.phone!, style: theme.textTheme.bodySmall),
                 if (vendor.gstin != null)
@@ -1114,9 +1110,7 @@ class _ItemRow extends StatelessWidget {
                     children: [
                       Text(
                         item.productName,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: theme.textTheme.titleSmall?.semibold,
                       ),
                       Text(item.productSku, style: theme.textTheme.bodySmall),
                     ],
@@ -1170,9 +1164,7 @@ class _ItemRow extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: Text(
                 '${l10n.invoicesTotal}: ${AppStrings.currencySymbol}${item.total.toStringAsFixed(2)}',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+                style: theme.textTheme.bodySmall?.semibold,
               ),
             ),
           ],
@@ -1228,11 +1220,11 @@ class _TotalRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final labelStyle = isHighlight
-        ? theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)
+        ? theme.textTheme.titleSmall?.bold
         : theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted);
     final valueStyle = isHighlight
-        ? theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)
-        : theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500);
+        ? theme.textTheme.titleSmall?.bold
+        : theme.textTheme.bodyMedium?.medium;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
       child: Row(
@@ -1274,12 +1266,7 @@ class _SelectedPartyCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  party.name,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                Text(party.name, style: theme.textTheme.titleSmall?.semibold),
                 if (party.phone != null)
                   Text(party.phone!, style: theme.textTheme.bodySmall),
                 if (party.gstin != null)

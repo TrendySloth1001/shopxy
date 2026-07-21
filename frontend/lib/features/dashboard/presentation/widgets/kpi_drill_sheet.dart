@@ -16,6 +16,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Which KPI card was tapped — mirrors the web `KpiDrawerKind`.
 enum KpiDrillKind { sales, profit, receivables, payables }
@@ -469,7 +470,7 @@ class _TraceRow extends StatelessWidget {
     final labelStyle = headline
         ? DashText.titleMd
         : emphasise
-        ? DashText.bodyMd.copyWith(fontWeight: FontWeight.w600)
+        ? DashText.bodyMd.semibold
         : DashText.bodyMd;
     final valueStyle = (headline ? DashText.headlineSm : labelStyle).copyWith(
       fontFeatures: tabularFigures,

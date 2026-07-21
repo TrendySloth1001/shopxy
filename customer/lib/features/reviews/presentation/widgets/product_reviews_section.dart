@@ -12,6 +12,7 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
+import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
 /// Ratings & reviews block on the product detail page. Loads its own
 /// summary in initState so the surrounding PDP build never blocks on
@@ -118,9 +119,7 @@ class _ProductReviewsSectionState extends State<ProductReviewsSection> {
                 Expanded(
                   child: Text(
                     'Ratings & Reviews',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                    style: theme.textTheme.titleMedium?.extraBold,
                   ),
                 ),
                 TextButton(
@@ -141,9 +140,7 @@ class _ProductReviewsSectionState extends State<ProductReviewsSection> {
                       const SizedBox(width: AppSizes.xs),
                       Text(
                         'Rate product',
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
+                        style: theme.textTheme.labelMedium?.extraBold,
                       ),
                     ],
                   ),
@@ -308,9 +305,7 @@ class _HistogramRow extends StatelessWidget {
             child: Text(
               '$label',
               textAlign: TextAlign.right,
-              style: theme.textTheme.labelSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+              style: theme.textTheme.labelSmall?.bold,
             ),
           ),
           const SizedBox(width: AppSizes.xs),
@@ -388,9 +383,7 @@ class _EmptyState extends StatelessWidget {
                 children: [
                   Text(
                     'No reviews yet',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                    style: Theme.of(context).textTheme.titleSmall?.extraBold,
                   ),
                   const SizedBox(height: AppSizes.xs),
                   Text(

@@ -13,6 +13,7 @@ import 'package:shopxy_customer/shared/format/app_format.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
+import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
 /// Customer-side list of return requests. Each row links to the
 /// return detail page.
@@ -266,9 +267,7 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: AppSizes.md),
             Text(
               'No returns yet',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+              style: theme.textTheme.titleMedium?.extraBold,
             ),
             const SizedBox(height: AppSizes.xs),
             Text(

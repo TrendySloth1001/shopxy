@@ -6,6 +6,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Member-access editor returns the role label + exact grant.
 typedef PermissionResult = ({String roleName, List<String> permissions});
@@ -275,9 +276,7 @@ class _PermissionEditorPageState extends State<PermissionEditorPage> {
             onPressed: _save,
             child: Text(
               widget.submitLabel,
-              style: Theme.of(
-                context,
-              ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
+              style: Theme.of(context).textTheme.labelLarge?.extraBold,
             ),
           ),
         ],
@@ -416,9 +415,7 @@ class _RoleEditorPageState extends State<RoleEditorPage> {
             onPressed: _save,
             child: Text(
               l10n.shopSave,
-              style: Theme.of(
-                context,
-              ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
+              style: Theme.of(context).textTheme.labelLarge?.extraBold,
             ),
           ),
         ],

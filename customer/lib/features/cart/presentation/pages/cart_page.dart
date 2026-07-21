@@ -18,6 +18,7 @@ import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/shared/widgets/shop_chip.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
+import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
 /// Cart page. Rewritten from zero (May 2026, build3) because earlier
 /// iterations collapsed on certain devices — the AppBar disappeared and
@@ -619,9 +620,7 @@ class _ReassuranceCard extends StatelessWidget {
               children: [
                 Text(
                   'Safe and secure',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w800),
+                  style: Theme.of(context).textTheme.bodySmall?.extraBold,
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -668,9 +667,7 @@ class _EmptyCart extends StatelessWidget {
             const SizedBox(height: AppSizes.lg),
             Text(
               'Your cart is empty',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+              style: Theme.of(context).textTheme.titleMedium?.extraBold,
             ),
             const SizedBox(height: AppSizes.xs),
             Text(

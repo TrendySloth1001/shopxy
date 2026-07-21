@@ -13,6 +13,7 @@ import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Shown right after login/registration when the account has been
 /// invited onto a shop's team but isn't a member yet. Lays out the
@@ -137,12 +138,7 @@ class _JoinRequestPageState extends State<JoinRequestPage> {
               ),
             ),
             const SizedBox(height: 2),
-            Text(
-              shop,
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
-            ),
+            Text(shop, style: theme.textTheme.headlineSmall?.extraBold),
             const SizedBox(height: AppSizes.md),
             Row(
               children: [

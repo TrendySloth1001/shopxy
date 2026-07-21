@@ -125,7 +125,7 @@ export function TrendChart({
               .map((t, i) => (
                 <span
                   key={i}
-                  className="absolute right-0 -translate-y-1/2 text-[11px] tabular-nums text-subtle"
+                  className="absolute right-0 -translate-y-1/2 text-caption tabular-nums text-subtle"
                   style={{ top: `${(i / (ticks.length - 1)) * 100}%` }}
                 >
                   {formatTick(t)}
@@ -216,7 +216,7 @@ export function TrendChart({
               i % xStep === 0 || i === n - 1 ? (
                 <span
                   key={i}
-                  className="absolute -translate-x-1/2 text-[11px] text-subtle"
+                  className="absolute -translate-x-1/2 text-caption text-subtle"
                   style={{ left: `${clamp(xOf(i), 4, 96)}%` }}
                 >
                   {lbl}

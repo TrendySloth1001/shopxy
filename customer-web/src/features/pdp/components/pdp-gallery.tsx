@@ -115,7 +115,7 @@ export function PdpGallery({ images, offers, productName }: Props) {
                   />
                 ) : (
                   <div className="flex size-full items-center justify-center bg-brand-soft">
-                    <span className="text-[11px] font-black text-brand/30">
+                    <span className="text-caption font-black text-brand/30">
                       {(productName[0] ?? "?").toUpperCase()}
                     </span>
                   </div>

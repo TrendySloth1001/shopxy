@@ -21,6 +21,7 @@ import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Full chronological stock ledger for a single product.
 ///
@@ -356,9 +357,7 @@ class _LedgerEntryCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             reasonCodeLabel(entry.reasonCode),
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
+                            style: theme.textTheme.titleSmall?.bold,
                           ),
                         ),
                         if (entry.isReversal)

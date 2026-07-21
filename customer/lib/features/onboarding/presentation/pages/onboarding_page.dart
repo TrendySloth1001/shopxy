@@ -9,6 +9,7 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_pill_button.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
+import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
 /// One onboarding slide's content.
 class _Slide {
@@ -45,14 +46,22 @@ class _OnboardingPageState extends State<OnboardingPage> {
   // load/error/timeout.
   static final List<_Slide> _slides = [
     _Slide(
-      imageUrl: HomeImg.unsplash('1483985988355-763728e1935b', w: 1000, h: 1400),
+      imageUrl: HomeImg.unsplash(
+        '1483985988355-763728e1935b',
+        w: 1000,
+        h: 1400,
+      ),
       eyebrow: 'WELCOME TO SHOPXY',
       title: 'Shop everything\nyou love',
       body:
           'Thousands of products from local shops and the brands you know — discovered in one place.',
     ),
     _Slide(
-      imageUrl: HomeImg.unsplash('1607082348824-0a96f2a4b9da', w: 1000, h: 1400),
+      imageUrl: HomeImg.unsplash(
+        '1607082348824-0a96f2a4b9da',
+        w: 1000,
+        h: 1400,
+      ),
       eyebrow: 'FAST, TRACKED DELIVERY',
       title: 'From cart to\nyour doorstep',
       body:
@@ -123,11 +132,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       style: TextButton.styleFrom(
                         foregroundColor: AppColors.white,
                         padding: const EdgeInsets.symmetric(
-                            horizontal: AppSizes.lg, vertical: AppSizes.sm),
-                        textStyle: Theme.of(context)
-                            .textTheme
-                            .labelLarge
-                            ?.copyWith(fontWeight: FontWeight.w700),
+                          horizontal: AppSizes.lg,
+                          vertical: AppSizes.sm,
+                        ),
+                        textStyle: Theme.of(context).textTheme.labelLarge?.bold,
                       ),
                       child: const Text('Skip'),
                     ),
@@ -136,7 +144,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 const Spacer(),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(
-                      AppSizes.xl, 0, AppSizes.xl, AppSizes.lg),
+                    AppSizes.xl,
+                    0,
+                    AppSizes.xl,
+                    AppSizes.lg,
+                  ),
                   child: Column(
                     children: [
                       _Dots(count: _slides.length, index: _index),
@@ -153,12 +165,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         children: [
                           Text(
                             'Already have an account?',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
+                            style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(
-                                  color:
-                                      AppColors.white.withValues(alpha: 0.7),
+                                  color: AppColors.white.withValues(alpha: 0.7),
                                   fontWeight: FontWeight.w500,
                                 ),
                           ),
@@ -166,10 +175,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
                             onPressed: _signIn,
                             style: TextButton.styleFrom(
                               foregroundColor: AppColors.white,
-                              textStyle: Theme.of(context)
-                                  .textTheme
-                                  .labelMedium
-                                  ?.copyWith(fontWeight: FontWeight.w800),
+                              textStyle: Theme.of(
+                                context,
+                              ).textTheme.labelMedium?.extraBold,
                             ),
                             child: const Text('Sign in'),
                           ),
@@ -226,29 +234,29 @@ class _ImmersiveSlide extends StatelessWidget {
               Text(
                 slide.eyebrow,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: AppColors.brandSoft,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.3,
-                    ),
+                  color: AppColors.brandSoft,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.3,
+                ),
               ),
               const SizedBox(height: AppSizes.md),
               Text(
                 slide.title,
                 style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                      color: AppColors.white,
-                      fontWeight: FontWeight.w800,
-                      height: 1.1,
-                      letterSpacing: -0.6,
-                    ),
+                  color: AppColors.white,
+                  fontWeight: FontWeight.w800,
+                  height: 1.1,
+                  letterSpacing: -0.6,
+                ),
               ),
               const SizedBox(height: AppSizes.md),
               Text(
                 slide.body,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.white.withValues(alpha: 0.7),
-                      fontWeight: FontWeight.w500,
-                      height: 1.45,
-                    ),
+                  color: AppColors.white.withValues(alpha: 0.7),
+                  fontWeight: FontWeight.w500,
+                  height: 1.45,
+                ),
               ),
             ],
           ),

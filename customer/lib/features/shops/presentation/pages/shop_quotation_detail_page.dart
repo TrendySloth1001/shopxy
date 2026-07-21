@@ -15,6 +15,7 @@ import 'package:shopxy_customer/shared/format/app_format.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
+import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
 /// Full quotation detail for the customer: line items, totals, status timeline
 /// and Accept / Decline. Accepting turns it into a confirmed invoice.
@@ -347,9 +348,7 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
                           )
                         : Text(
                             'Withdraw request',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
+                            style: theme.textTheme.bodyMedium?.extraBold,
                           ),
                   ),
                 ),
@@ -395,9 +394,7 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
                               )
                             : Text(
                                 'Accept · ${_currency.format(q.total)}',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                ),
+                                style: theme.textTheme.bodyMedium?.extraBold,
                               ),
                       ),
                     ),
@@ -489,9 +486,7 @@ class _ItemRow extends StatelessWidget {
               children: [
                 Text(
                   line.name,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: theme.textTheme.bodyLarge?.bold,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -508,9 +503,7 @@ class _ItemRow extends StatelessWidget {
           ),
           Text(
             currency.format(line.lineTotal),
-            style: theme.textTheme.bodyLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+            style: theme.textTheme.bodyLarge?.bold,
           ),
         ],
       ),

@@ -22,6 +22,7 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 class PartyDetailPage extends StatefulWidget {
   const PartyDetailPage({super.key, required this.partyId});
@@ -508,12 +509,7 @@ class _Header extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      party.name,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+                    Text(party.name, style: theme.textTheme.titleLarge?.bold),
                     if (party.contactName != null &&
                         party.contactName!.isNotEmpty)
                       Padding(
@@ -651,12 +647,7 @@ class _StatBlock extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSizes.xs),
-        Text(
-          value,
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
-        ),
+        Text(value, style: theme.textTheme.titleLarge?.bold),
         const SizedBox(height: AppSizes.xs),
         Text(
           hint,
@@ -703,9 +694,7 @@ class _InvoiceRow extends StatelessWidget {
                   children: [
                     Text(
                       invoice.invoiceNo,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: theme.textTheme.titleSmall?.semibold,
                     ),
                     Text(
                       '${dateFmt.format(invoice.invoiceDate)} · ${invoice.itemCount} ${l10n.partiesItemsUnit}',
@@ -721,9 +710,7 @@ class _InvoiceRow extends StatelessWidget {
                 children: [
                   Text(
                     currency.format(invoice.total),
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: theme.textTheme.titleSmall?.bold,
                   ),
                   const SizedBox(height: AppSizes.xs),
                   AppStatusBadge(
@@ -853,12 +840,7 @@ class _LedgerRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  entry.label,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                Text(entry.label, style: theme.textTheme.titleSmall?.semibold),
                 Text(
                   isInvoice
                       ? dateFmt.format(entry.date)
@@ -926,9 +908,7 @@ class _ChallanRow extends StatelessWidget {
                   children: [
                     Text(
                       challan.challanNo,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: theme.textTheme.titleSmall?.semibold,
                     ),
                     Text(
                       '${dateFmt.format(challan.createdAt)} · ${challan.itemCount} ${l10n.partiesItemsUnit}',

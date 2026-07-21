@@ -256,6 +256,11 @@ export const typography = {
     lg: { size: 14, weight: 600, tracking: 0, leading: 1.2 },
     md: { size: 12, weight: 600, tracking: 0, leading: 1.2 },
   },
+  // Sub-body micro sizes — captions, badges, dense metadata. Weight 400 so an
+  // explicit weight class at the call site still wins (text-caption, etc.).
+  caption: { size: 11, weight: 400, tracking: 0, leading: 1.35 },
+  micro: { size: 10, weight: 400, tracking: 0, leading: 1.3 },
+  nano: { size: 9, weight: 400, tracking: 0.2, leading: 1.3 },
 } as const;
 
 /** Convenience aggregate — handy for token-table / Storybook style screens. */

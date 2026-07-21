@@ -22,6 +22,7 @@ import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 class CreateChallanPage extends StatefulWidget {
   const CreateChallanPage({super.key});
@@ -433,9 +434,7 @@ class _ItemRow extends StatelessWidget {
                 children: [
                   Text(
                     item.productName,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: theme.textTheme.bodyMedium?.medium,
                   ),
                   Text(
                     item.productSku,
@@ -509,12 +508,7 @@ class _SelectedPartyCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  party.name,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                Text(party.name, style: theme.textTheme.titleSmall?.semibold),
                 if (party.phone != null)
                   Text(party.phone!, style: theme.textTheme.bodySmall),
                 if (party.gstin != null)

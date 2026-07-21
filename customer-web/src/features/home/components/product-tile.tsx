@@ -20,7 +20,7 @@ export function productHref(id: number): string {
  * Follows the shared PRODUCT CARD SPEC:
  *   container  rounded-lg border-hairline bg-white hover:shadow-floating hover:-translate-y-[2px]
  *   image      group-hover:scale-[1.04] object-cover
- *   badge      bg-brand text-white text-[11px] font-extrabold rounded-sm
+ *   badge      bg-brand text-white text-caption font-extrabold rounded-sm
  *   rating     bg-success text-white rounded-sm chip
  *   price      bold selling price, muted line-through MRP, green % off
  */
@@ -51,7 +51,7 @@ export function ProductTile({ product, source = "home" }: { product: ProductCard
 
         {/* Discount badge — top-left, the strongest sell signal */}
         {discounted ? (
-          <span className="absolute left-[8px] top-[8px] rounded-sm bg-brand px-sm py-[2px] text-[11px] font-extrabold tracking-[0.3px] text-white shadow-floating">
+          <span className="absolute left-[8px] top-[8px] rounded-sm bg-brand px-sm py-[2px] text-caption font-extrabold tracking-[0.3px] text-white shadow-floating">
             {p.discountPct}% OFF
           </span>
         ) : null}
@@ -67,7 +67,7 @@ export function ProductTile({ product, source = "home" }: { product: ProductCard
 
         {/* Tag ribbon (Bestseller / New …) — bottom-left over the image */}
         {p.tag ? (
-          <span className="absolute bottom-[8px] left-[8px] rounded-xs bg-ink/85 px-[6px] py-[2px] text-[9px] font-extrabold uppercase tracking-[0.4px] text-white backdrop-blur-sm">
+          <span className="absolute bottom-[8px] left-[8px] rounded-xs bg-ink/85 px-[6px] py-[2px] text-nano font-extrabold uppercase tracking-[0.4px] text-white backdrop-blur-sm">
             {p.tag}
           </span>
         ) : null}
@@ -77,7 +77,7 @@ export function ProductTile({ product, source = "home" }: { product: ProductCard
       <span className="flex flex-1 flex-col p-md">
         {/* Brand eyebrow — adds identity when present */}
         {p.brand ? (
-          <span className="mb-[1px] truncate text-[10px] font-extrabold uppercase tracking-[0.5px] text-muted">
+          <span className="mb-[1px] truncate text-micro font-extrabold uppercase tracking-[0.5px] text-muted">
             {p.brand}
           </span>
         ) : null}
@@ -86,7 +86,7 @@ export function ProductTile({ product, source = "home" }: { product: ProductCard
 
         {/* Seller line — "by <shop>" */}
         {p.shopName ? (
-          <span className="mt-[2px] truncate text-[11px] text-muted">
+          <span className="mt-[2px] truncate text-caption text-muted">
             by <span className="font-semibold text-ink/75">{p.shopName}</span>
           </span>
         ) : null}
@@ -94,28 +94,28 @@ export function ProductTile({ product, source = "home" }: { product: ProductCard
         {/* Rating — moved into the body so it shows even without a photo */}
         {p.ratingCountRaw > 0 ? (
           <span className="mt-[5px] flex items-center gap-[5px]">
-            <span className="inline-flex items-center gap-[3px] rounded-sm bg-success px-[6px] py-[2px] text-[11px] font-bold text-white">
+            <span className="inline-flex items-center gap-[3px] rounded-sm bg-success px-[6px] py-[2px] text-caption font-bold text-white">
               {p.rating.toFixed(1)}
               <Star size={9} className="fill-white text-white" aria-hidden />
             </span>
-            <span className="text-[11px] text-muted">({p.ratingCount})</span>
+            <span className="text-caption text-muted">({p.ratingCount})</span>
           </span>
         ) : null}
 
         {/* Price row: bold selling price, muted line-through MRP, green % off */}
         <span className="mt-[6px] flex flex-wrap items-baseline gap-x-[5px] gap-y-[1px]">
-          <span className="text-[16px] font-extrabold leading-none text-ink">{p.price}</span>
+          <span className="text-body-lg font-extrabold leading-none text-ink">{p.price}</span>
           {p.originalPrice ? (
-            <span className="text-[11px] text-muted line-through">{p.originalPrice}</span>
+            <span className="text-caption text-muted line-through">{p.originalPrice}</span>
           ) : null}
           {discounted ? (
-            <span className="text-[11px] font-bold text-brand">{p.discountPct}% off</span>
+            <span className="text-caption font-bold text-brand">{p.discountPct}% off</span>
           ) : null}
         </span>
 
         {/* Bank offer — a second price hook when there's a deal */}
         {discounted && p.bankPrice ? (
-          <span className="mt-[3px] truncate text-[11px] font-bold leading-tight text-info">
+          <span className="mt-[3px] truncate text-caption font-bold leading-tight text-info">
             {p.bankPrice} with Bank offer
           </span>
         ) : null}
@@ -124,12 +124,12 @@ export function ProductTile({ product, source = "home" }: { product: ProductCard
         {p.freeDelivery || isAssured(p) ? (
           <span className="mt-auto flex items-center gap-[6px] pt-[6px]">
             {p.freeDelivery ? (
-              <span className="flex items-center gap-[3px] text-[10px] font-extrabold tracking-[0.2px] text-success">
+              <span className="flex items-center gap-[3px] text-micro font-extrabold tracking-[0.2px] text-success">
                 <Truck size={11} aria-hidden /> Free delivery
               </span>
             ) : null}
             {isAssured(p) ? (
-              <span className="inline-flex items-center gap-[2px] rounded-xs bg-info/10 px-[4px] py-[1px] text-[9px] font-extrabold tracking-[0.3px] text-info">
+              <span className="inline-flex items-center gap-[2px] rounded-xs bg-info/10 px-[4px] py-[1px] text-nano font-extrabold tracking-[0.3px] text-info">
                 <ShieldCheck size={9} aria-hidden /> ASSURED
               </span>
             ) : null}

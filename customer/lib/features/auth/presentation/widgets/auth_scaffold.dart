@@ -6,6 +6,7 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
+import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
 /// Immersive auth layout: a full-bleed photo hero with the brand mark +
 /// tagline overlaid, and a white rounded sheet floating up over it that
@@ -215,9 +216,7 @@ class _WhiteSkip extends StatelessWidget {
         textButtonTheme: TextButtonThemeData(
           style: TextButton.styleFrom(
             foregroundColor: AppColors.white,
-            textStyle: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+            textStyle: Theme.of(context).textTheme.bodyMedium?.bold,
           ),
         ),
       ),

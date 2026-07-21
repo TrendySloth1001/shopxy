@@ -20,6 +20,7 @@ import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 class OrdersInboxPage extends StatefulWidget {
   const OrdersInboxPage({super.key});
@@ -425,17 +426,13 @@ class _OrderRow extends StatelessWidget {
                       children: [
                         Text(
                           '#${order.id}',
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: theme.textTheme.titleSmall?.bold,
                         ),
                         const SizedBox(width: AppSizes.sm),
                         Expanded(
                           child: Text(
                             order.customerName,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: theme.textTheme.bodyMedium?.semibold,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -466,9 +463,7 @@ class _OrderRow extends StatelessWidget {
                 children: [
                   Text(
                     '₹${order.estimatedTotal.toStringAsFixed(2)}',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                    style: theme.textTheme.titleSmall?.extraBold,
                   ),
                   const SizedBox(height: AppSizes.xs),
                   AppStatusBadge(
@@ -551,9 +546,7 @@ class _EmptyInbox extends StatelessWidget {
                 : hasFilters
                 ? l10n.ordersNoMatching
                 : l10n.ordersNoneYet,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+            style: theme.textTheme.titleMedium?.bold,
           ),
         ),
         const SizedBox(height: AppSizes.xs),
@@ -690,9 +683,7 @@ class _ErrorState extends StatelessWidget {
         const SizedBox(height: AppSizes.md),
         Text(
           l10n.ordersError,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
+          style: theme.textTheme.titleMedium?.bold,
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: AppSizes.xs),

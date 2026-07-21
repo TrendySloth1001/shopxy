@@ -57,7 +57,7 @@ export function OrderCard({ order }: { order: CustomerOrder }) {
           </span>
         </div>
         {needsPayment ? (
-          <span className="inline-flex items-center gap-xs rounded-full bg-warning-soft px-sm py-[3px] text-[9.5px] font-extrabold tracking-[0.4px] text-warning">
+          <span className="inline-flex items-center gap-xs rounded-full bg-warning-soft px-sm py-[3px] text-nano font-extrabold tracking-[0.4px] text-warning">
             <AlertCircle size={9} />
             PAYMENT DUE
           </span>

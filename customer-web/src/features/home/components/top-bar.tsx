@@ -70,7 +70,7 @@ export function TopBar({ collapsed }: { collapsed: boolean }) {
         >
           <ShoppingCart size={20} aria-hidden />
           {cartCount > 0 ? (
-            <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-[3px] text-[9px] font-extrabold leading-none text-white ring-2 ring-canvas">
+            <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-[3px] text-nano font-extrabold leading-none text-white ring-2 ring-canvas">
               {cartCount > 99 ? "99+" : cartCount}
             </span>
           ) : null}
@@ -89,7 +89,7 @@ export function TopBar({ collapsed }: { collapsed: boolean }) {
         >
           <Bell size={20} aria-hidden />
           {unread > 0 ? (
-            <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-[3px] text-[9px] font-extrabold leading-none text-white ring-2 ring-canvas">
+            <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-[3px] text-nano font-extrabold leading-none text-white ring-2 ring-canvas">
               {unread > 99 ? "99+" : unread}
             </span>
           ) : null}
@@ -107,7 +107,7 @@ export function TopBar({ collapsed }: { collapsed: boolean }) {
         ) : (
           <Link
             href="/login"
-            className="shrink-0 rounded-full bg-brand px-md py-[6px] text-[12px] font-bold text-white transition-colors duration-200 hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft motion-safe:transition-colors"
+            className="shrink-0 rounded-full bg-brand px-md py-[6px] text-body-sm font-bold text-white transition-colors duration-200 hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft motion-safe:transition-colors"
           >
             Sign in
           </Link>

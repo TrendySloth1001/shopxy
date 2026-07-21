@@ -27,6 +27,7 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 class PartiesPage extends StatefulWidget {
   const PartiesPage({super.key});
@@ -405,9 +406,7 @@ class _PartyTile extends StatelessWidget {
                   children: [
                     Text(
                       party.name,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: theme.textTheme.titleSmall?.semibold,
                     ),
                     if (party.phone != null)
                       Text(
@@ -779,9 +778,7 @@ class _PartyFormSheetState extends State<PartyFormSheet> {
               const SizedBox(height: AppSizes.sm),
               Text(
                 isEditing ? l10n.partiesEditParty : l10n.partiesAddParty,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                style: Theme.of(context).textTheme.titleLarge?.bold,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppSizes.lg),

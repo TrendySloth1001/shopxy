@@ -13,6 +13,7 @@ import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 class MerchantBannersPage extends StatefulWidget {
   const MerchantBannersPage({super.key});
@@ -160,9 +161,7 @@ class _PlacementSection extends StatelessWidget {
             children: [
               Text(
                 placement.label,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                style: Theme.of(context).textTheme.titleMedium?.extraBold,
               ),
               const SizedBox(width: AppSizes.sm),
               Container(

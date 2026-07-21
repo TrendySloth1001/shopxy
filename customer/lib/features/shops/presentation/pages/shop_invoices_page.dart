@@ -13,6 +13,7 @@ import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/format/app_format.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
+import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
 class ShopInvoicesPage extends StatefulWidget {
   const ShopInvoicesPage({super.key, required this.shop});
@@ -111,9 +112,7 @@ class _InvoiceTile extends StatelessWidget {
                 children: [
                   Text(
                     invoice.invoiceNo,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: theme.textTheme.bodyLarge?.bold,
                   ),
                   Text(
                     '${DateFormat('d MMM yyyy').format(invoice.invoiceDate.toLocal())} · '
@@ -222,9 +221,7 @@ class _EmptyInvoices extends StatelessWidget {
             const SizedBox(height: AppSizes.lg),
             Text(
               AppStrings.noInvoicesTitle,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+              style: theme.textTheme.titleMedium?.bold,
             ),
             const SizedBox(height: AppSizes.xs),
             Text(

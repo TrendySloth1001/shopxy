@@ -13,6 +13,7 @@ import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Opens a modal search sheet to pick an existing Party or create a new one.
 /// Returns the selected [Party], or null if cancelled.
@@ -112,9 +113,7 @@ class _PartyPickerSheetState extends State<_PartyPickerSheet> {
                 children: [
                   Text(
                     l10n.partiesSelectParty,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: theme.textTheme.titleMedium?.bold,
                   ),
                   const Spacer(),
                   AppButton.ghost(

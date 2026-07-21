@@ -15,6 +15,7 @@ import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// A field the caller can ask [EditProfilePage] to open focused on — lets
 /// the completion meter deep-link straight to the field a user still needs
@@ -393,9 +394,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             const SizedBox(height: AppSizes.xl),
             Text(
               l10n.profileShopDetails,
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+              style: theme.textTheme.titleSmall?.bold,
             ),
             const SizedBox(height: AppSizes.xs),
             Text(

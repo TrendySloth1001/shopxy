@@ -3,6 +3,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/theme/app_typography.dart';
+import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
 /// Minimal two-tone theme. White background, black ink, single hairline.
 /// Light and dark currently resolve to the same look — dark colours will be
@@ -57,7 +58,10 @@ class AppTheme {
       highlightColor: AppColors.black.withValues(alpha: 0.04),
       hoverColor: AppColors.black.withValues(alpha: 0.04),
       dividerColor: AppColors.hairline,
-      iconTheme: const IconThemeData(color: AppColors.black, size: AppSizes.iconMd),
+      iconTheme: const IconThemeData(
+        color: AppColors.black,
+        size: AppSizes.iconMd,
+      ),
       primaryIconTheme: const IconThemeData(color: AppColors.white),
       appBarTheme: AppBarTheme(
         backgroundColor: AppColors.canvas,
@@ -101,7 +105,9 @@ class AppTheme {
           color: AppColors.black,
           fontWeight: FontWeight.w500,
         ),
-        subtitleTextStyle: textTheme.bodySmall?.copyWith(color: AppColors.muted),
+        subtitleTextStyle: textTheme.bodySmall?.copyWith(
+          color: AppColors.muted,
+        ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -191,9 +197,7 @@ class AppTheme {
           return const IconThemeData(color: AppColors.black);
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
-          final base = textTheme.labelSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-          );
+          final base = textTheme.labelSmall?.semibold;
           if (states.contains(WidgetState.selected)) {
             return base?.copyWith(color: AppColors.brandStrong);
           }
@@ -209,7 +213,9 @@ class AppTheme {
         ),
         hintStyle: textTheme.bodyMedium?.copyWith(color: AppColors.muted),
         labelStyle: textTheme.bodyMedium?.copyWith(color: AppColors.muted),
-        floatingLabelStyle: textTheme.bodyMedium?.copyWith(color: AppColors.black),
+        floatingLabelStyle: textTheme.bodyMedium?.copyWith(
+          color: AppColors.black,
+        ),
         border: OutlineInputBorder(
           borderRadius: AppShapes.squircleRadius(AppSizes.radiusInput),
           borderSide: BorderSide(color: AppColors.hairline, width: 1),
@@ -233,7 +239,9 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: AppColors.black,
-        contentTextStyle: textTheme.bodyMedium?.copyWith(color: AppColors.white),
+        contentTextStyle: textTheme.bodyMedium?.copyWith(
+          color: AppColors.white,
+        ),
         actionTextColor: AppColors.white,
         shape: AppShapes.squircle(AppSizes.radiusMd),
         behavior: SnackBarBehavior.floating,
@@ -248,7 +256,9 @@ class AppTheme {
           side: BorderSide(color: AppColors.hairline, width: 1),
         ),
         titleTextStyle: textTheme.titleLarge?.copyWith(color: AppColors.black),
-        contentTextStyle: textTheme.bodyMedium?.copyWith(color: AppColors.black),
+        contentTextStyle: textTheme.bodyMedium?.copyWith(
+          color: AppColors.black,
+        ),
       ),
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: AppColors.white,
@@ -265,7 +275,9 @@ class AppTheme {
         secondarySelectedColor: AppColors.black,
         disabledColor: AppColors.white,
         labelStyle: textTheme.labelMedium?.copyWith(color: AppColors.black),
-        secondaryLabelStyle: textTheme.labelMedium?.copyWith(color: AppColors.white),
+        secondaryLabelStyle: textTheme.labelMedium?.copyWith(
+          color: AppColors.white,
+        ),
         side: const BorderSide(color: AppColors.black, width: 1),
         shape: AppShapes.squircle(
           AppSizes.radiusFull,

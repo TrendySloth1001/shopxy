@@ -10,6 +10,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Cashier control center: open/close a till shift, manage the cash drawer,
 /// reconcile (X/Z report), and process returns. Reaches /me/cashier over HTTP.
@@ -206,12 +207,7 @@ class _ShiftOwnerBanner extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  name,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                Text(name, style: theme.textTheme.titleSmall?.bold),
                 if (email != null)
                   Text(
                     email,
@@ -363,12 +359,7 @@ class _Card extends StatelessWidget {
                 AppIcon(icon, size: AppSizes.iconSm, color: AppColors.muted),
                 const SizedBox(width: AppSizes.xs),
               ],
-              Text(
-                title,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+              Text(title, style: theme.textTheme.titleMedium?.bold),
             ],
           ),
           const SizedBox(height: AppSizes.md),

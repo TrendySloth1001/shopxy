@@ -13,6 +13,7 @@ import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
+import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
 /// "My coupons" — read-only list of redeemable promo codes. Customers
 /// copy a code here and paste it into the checkout sheet. Exhausted
@@ -175,9 +176,7 @@ class _CouponCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     coupon.title,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                    style: theme.textTheme.titleSmall?.extraBold,
                   ),
                 ),
                 if (coupon.firstOrderOnly)
@@ -337,9 +336,7 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: AppSizes.md),
             Text(
               'No coupons yet',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+              style: theme.textTheme.titleMedium?.extraBold,
             ),
             const SizedBox(height: AppSizes.xs),
             Text(

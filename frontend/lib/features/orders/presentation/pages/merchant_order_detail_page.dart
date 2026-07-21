@@ -26,6 +26,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 class MerchantOrderDetailPage extends StatefulWidget {
   const MerchantOrderDetailPage({super.key, required this.orderId});
@@ -528,9 +529,7 @@ class _StickyContextStrip extends StatelessWidget {
           Expanded(
             child: Text(
               order.customerName,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+              style: theme.textTheme.bodyMedium?.bold,
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -1059,9 +1058,7 @@ class _CustomerCard extends StatelessWidget {
                   children: [
                     Text(
                       order.customerName,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
+                      style: theme.textTheme.titleMedium?.extraBold,
                     ),
                     if (phone != null)
                       Text(
@@ -1352,12 +1349,7 @@ class _ItemRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  item.productName,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                Text(item.productName, style: theme.textTheme.bodyMedium?.bold),
                 Text(
                   '${item.productSku} · '
                   '${currency.format(item.unitPrice)} / ${item.unit}',
@@ -1386,9 +1378,7 @@ class _ItemRow extends StatelessWidget {
                 child: Text(
                   currency.format(item.total),
                   textAlign: TextAlign.right,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: theme.textTheme.bodyMedium?.extraBold,
                 ),
               ),
             ],
@@ -1603,7 +1593,7 @@ class _TotalLine extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final style = emphasis
-        ? theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)
+        ? theme.textTheme.titleMedium?.extraBold
         : theme.textTheme.bodyMedium?.copyWith(
             color: muted ? AppColors.muted : AppColors.black,
           );
@@ -1685,12 +1675,7 @@ class _ErrorState extends StatelessWidget {
                 color: AppColors.muted,
               ),
               const SizedBox(height: AppSizes.md),
-              Text(
-                l10n.ordersError,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+              Text(l10n.ordersError, style: theme.textTheme.titleMedium?.bold),
               const SizedBox(height: AppSizes.xs),
               Text(
                 message,
@@ -1763,9 +1748,7 @@ class _ConfirmOrderSheet extends StatelessWidget {
               shortfall
                   ? l10n.ordersConfirmShortfallTitle
                   : l10n.ordersConfirmOrderTitle,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+              style: theme.textTheme.titleMedium?.extraBold,
             ),
             const SizedBox(height: AppSizes.sm),
             if (shortfall)
@@ -1901,9 +1884,7 @@ class _DeclineOrderSheetState extends State<_DeclineOrderSheet> {
             const _SheetHandle(),
             Text(
               l10n.ordersDeclineOrderTitle,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+              style: theme.textTheme.titleMedium?.extraBold,
             ),
             const SizedBox(height: AppSizes.xs),
             Text(
@@ -2098,9 +2079,7 @@ class _ShippingEventRow extends StatelessWidget {
               children: [
                 Text(
                   _milestoneLabel(l10n, event.type),
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: theme.textTheme.bodyMedium?.bold,
                 ),
                 Text(
                   meta,
@@ -2235,9 +2214,7 @@ class _ShippingUpdateSheetState extends State<_ShippingUpdateSheet> {
               const _SheetHandle(),
               Text(
                 l10n.ordersUpdateShipping,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
+                style: theme.textTheme.titleMedium?.extraBold,
               ),
               const SizedBox(height: AppSizes.xs),
               Text(

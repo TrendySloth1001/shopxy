@@ -10,6 +10,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Bottom-sheet editor for one PlatformBankOffer. Returns `true` to
 /// the caller iff the save succeeded so the list page can refresh.
@@ -215,9 +216,7 @@ class _BodyState extends State<_Body> {
               isEdit
                   ? l10n.adminBankOfferEditTitle
                   : l10n.adminBankOfferNewTitle,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+              style: Theme.of(context).textTheme.titleMedium?.extraBold,
             ),
             const SizedBox(height: AppSizes.md),
             DropdownButtonFormField<String>(
@@ -376,9 +375,7 @@ class _BodyState extends State<_Body> {
                   const SizedBox(height: AppSizes.xs),
                   Text(
                     preview,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: Theme.of(context).textTheme.bodyMedium?.bold,
                   ),
                 ],
               ),

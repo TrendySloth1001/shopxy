@@ -31,7 +31,7 @@ function SystemTagPill({ tag }: { tag: string }) {
   const cfg = TAG_CONFIG[tag] ?? { label: tag, className: "bg-ink text-white" };
   return (
     <span
-      className={`rounded-xs px-sm py-[3px] text-[10px] font-extrabold tracking-[0.4px] ${cfg.className}`}
+      className={`rounded-xs px-sm py-[3px] text-micro font-extrabold tracking-[0.4px] ${cfg.className}`}
     >
       {cfg.label}
     </span>
@@ -260,7 +260,7 @@ function PdpBody({ product }: BodyProps) {
           </div>
         ) : null}
         {product.brand ? (
-          <p className="mb-xs text-[10px] font-extrabold uppercase tracking-[1px] text-muted">
+          <p className="mb-xs text-micro font-extrabold uppercase tracking-[1px] text-muted">
             {product.brand}
           </p>
         ) : null}
@@ -287,7 +287,7 @@ function PdpBody({ product }: BodyProps) {
               <span className="text-label-md font-extrabold text-white">
                 {product.ratingAvg.toFixed(1)}
               </span>
-              <span className="text-[10px] text-white">★</span>
+              <span className="text-micro text-white">★</span>
             </span>
             <span className="text-label-md text-muted">
               {product.ratingCount} ratings · {product.totalSold} sold

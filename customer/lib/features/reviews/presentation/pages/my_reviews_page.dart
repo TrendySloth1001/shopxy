@@ -15,6 +15,7 @@ import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
+import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
 /// "My reviews" — every review the caller has written, newest first.
 /// Tap a row → PDP. Cursor-paginated; loads next page when the user
@@ -255,9 +256,7 @@ class _Row extends StatelessWidget {
                       children: [
                         Text(
                           row.productName,
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: theme.textTheme.bodyLarge?.bold,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -281,9 +280,7 @@ class _Row extends StatelessWidget {
                 const SizedBox(height: AppSizes.sm),
                 Text(
                   row.review.title!,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: theme.textTheme.bodyMedium?.bold,
                 ),
               ],
               if ((row.review.body ?? '').isNotEmpty) ...[

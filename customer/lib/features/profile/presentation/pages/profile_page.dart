@@ -26,6 +26,7 @@ import 'package:shopxy_customer/shared/widgets/app_button.dart';
 import 'package:shopxy_customer/shared/widgets/app_dialog.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
+import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
 class CustomerProfilePage extends StatelessWidget {
   const CustomerProfilePage({super.key});
@@ -334,9 +335,7 @@ class _GuestProfileBody extends StatelessWidget {
                         children: [
                           Text(
                             'Welcome to ShopXY',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
+                            style: theme.textTheme.titleMedium?.extraBold,
                           ),
                           const SizedBox(height: 2),
                           Text(
@@ -477,12 +476,7 @@ class _Row extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  Text(title, style: theme.textTheme.bodyLarge?.semibold),
                   if (subtitle != null)
                     Text(
                       subtitle!,

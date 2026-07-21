@@ -60,10 +60,10 @@ export function RecentlyViewed({ items }: { items: ProductCard[] }) {
                 )}
               </span>
               <span className="flex min-w-0 flex-1 flex-col">
-                <span className="line-clamp-2 text-[12px] leading-tight text-ink">{p.name}</span>
-                <span className="mt-xs text-[14px] font-extrabold text-ink">{p.price}</span>
+                <span className="line-clamp-2 text-body-sm leading-tight text-ink">{p.name}</span>
+                <span className="mt-xs text-body-md font-extrabold text-ink">{p.price}</span>
                 {p.originalPrice ? (
-                  <span className="text-[10px] text-muted line-through">{p.originalPrice}</span>
+                  <span className="text-micro text-muted line-through">{p.originalPrice}</span>
                 ) : null}
               </span>
             </Link>
