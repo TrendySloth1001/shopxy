@@ -5966,6 +5966,132 @@ abstract class AppLocalizations {
   /// **'{count} vendors to pay'**
   String dashboardVendorsToPay(Object count);
 
+  /// No description provided for @kpiDrawerRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get kpiDrawerRetry;
+
+  /// No description provided for @kpiDrawerLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load. Please try again.'**
+  String get kpiDrawerLoadError;
+
+  /// No description provided for @kpiDrawerSalesFilterHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter by product name or SKU'**
+  String get kpiDrawerSalesFilterHint;
+
+  /// No description provided for @kpiDrawerNoSales.
+  ///
+  /// In en, this message translates to:
+  /// **'No sales in this period.'**
+  String get kpiDrawerNoSales;
+
+  /// No description provided for @kpiDrawerNoMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'No products match your filter.'**
+  String get kpiDrawerNoMatch;
+
+  /// No description provided for @kpiDrawerProductCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} products'**
+  String kpiDrawerProductCount(Object count);
+
+  /// No description provided for @kpiDrawerRevenue.
+  ///
+  /// In en, this message translates to:
+  /// **'Revenue {value}'**
+  String kpiDrawerRevenue(Object value);
+
+  /// No description provided for @kpiDrawerQtySold.
+  ///
+  /// In en, this message translates to:
+  /// **'{qty} {unit} sold'**
+  String kpiDrawerQtySold(Object qty, Object unit);
+
+  /// No description provided for @kpiDrawerShowingTop.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing top {count}'**
+  String kpiDrawerShowingTop(Object count);
+
+  /// No description provided for @kpiDrawerUnnamedProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Unnamed product'**
+  String get kpiDrawerUnnamedProduct;
+
+  /// No description provided for @kpiDrawerUnits.
+  ///
+  /// In en, this message translates to:
+  /// **'units'**
+  String get kpiDrawerUnits;
+
+  /// No description provided for @kpiDrawerViewFullReports.
+  ///
+  /// In en, this message translates to:
+  /// **'View full reports'**
+  String get kpiDrawerViewFullReports;
+
+  /// No description provided for @kpiDrawerViewAllParties.
+  ///
+  /// In en, this message translates to:
+  /// **'View all parties'**
+  String get kpiDrawerViewAllParties;
+
+  /// No description provided for @kpiDrawerViewAllVendors.
+  ///
+  /// In en, this message translates to:
+  /// **'View all vendors'**
+  String get kpiDrawerViewAllVendors;
+
+  /// No description provided for @kpiDrawerNoReceivables.
+  ///
+  /// In en, this message translates to:
+  /// **'No one owes you right now.'**
+  String get kpiDrawerNoReceivables;
+
+  /// No description provided for @kpiDrawerNoPayables.
+  ///
+  /// In en, this message translates to:
+  /// **'You don\'t owe anyone right now.'**
+  String get kpiDrawerNoPayables;
+
+  /// No description provided for @kpiDrawerBilled.
+  ///
+  /// In en, this message translates to:
+  /// **'Billed'**
+  String get kpiDrawerBilled;
+
+  /// No description provided for @kpiDrawerReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'Received'**
+  String get kpiDrawerReceived;
+
+  /// No description provided for @kpiDrawerPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid'**
+  String get kpiDrawerPaid;
+
+  /// No description provided for @kpiDrawerOutstanding.
+  ///
+  /// In en, this message translates to:
+  /// **'Outstanding'**
+  String get kpiDrawerOutstanding;
+
+  /// No description provided for @kpiDrawerDocCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 document} other{{count} documents}}'**
+  String kpiDrawerDocCount(num count);
+
   /// No description provided for @dashboardSalesTrend.
   ///
   /// In en, this message translates to:

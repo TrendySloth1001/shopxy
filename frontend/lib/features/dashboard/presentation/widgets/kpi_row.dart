@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:shopxy/features/dashboard/domain/entities/dashboard_stats.dart';
 import 'package:shopxy/features/dashboard/presentation/widgets/dashboard_ui.dart';
-import 'package:shopxy/features/parties/presentation/pages/parties_page.dart';
-import 'package:shopxy/features/reports/presentation/pages/reports_page.dart';
-import 'package:shopxy/features/vendors/presentation/pages/vendors_page.dart';
+import 'package:shopxy/features/dashboard/presentation/widgets/kpi_drill_sheet.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 
 /// Hero KPI row — what you sold, kept, are owed, and owe. 2 columns on
-/// phones, 4 on wide screens. Mirrors `components/kpi-row.tsx`.
+/// phones, 4 on wide screens. Mirrors `components/kpi-row.tsx`. Each card
+/// opens a drill-down bottom sheet (the mobile take on the web slide-over),
+/// not a full-page jump.
 class KpiRow extends StatelessWidget {
-  const KpiRow({super.key, required this.kpis});
+  const KpiRow({super.key, required this.kpis, required this.period});
   final DashboardKpis kpis;
+  final DashboardPeriod period;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +30,8 @@ class KpiRow extends StatelessWidget {
               label: l10n.dashboardSales,
               value: inr.format(kpis.sales.value),
               footer: DeltaChip(value: kpis.sales.deltaPct),
-              onTap: () => dashPush(context, const ReportsPage()),
+              onTap: () => showKpiDrillSheet(context,
+                  kind: KpiDrillKind.sales, period: period),
             ),
             _KpiCard(
               icon: Icons.trending_up_rounded,
@@ -49,7 +51,8 @@ class KpiRow extends StatelessWidget {
                   ),
                 ],
               ),
-              onTap: () => dashPush(context, const ReportsPage()),
+              onTap: () => showKpiDrillSheet(context,
+                  kind: KpiDrillKind.profit, period: period),
             ),
             _KpiCard(
               icon: Icons.south_west_rounded,
@@ -63,7 +66,8 @@ class KpiRow extends StatelessWidget {
                 style: DashText.labelMd,
                 overflow: TextOverflow.ellipsis,
               ),
-              onTap: () => dashPush(context, const PartiesPage()),
+              onTap: () => showKpiDrillSheet(context,
+                  kind: KpiDrillKind.receivables, period: period),
             ),
             _KpiCard(
               icon: Icons.north_east_rounded,
@@ -77,7 +81,8 @@ class KpiRow extends StatelessWidget {
                 style: DashText.labelMd,
                 overflow: TextOverflow.ellipsis,
               ),
-              onTap: () => dashPush(context, const VendorsPage()),
+              onTap: () => showKpiDrillSheet(context,
+                  kind: KpiDrillKind.payables, period: period),
             ),
           ],
         );

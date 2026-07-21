@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/features/dashboard/domain/entities/dashboard_stats.dart';
+import 'package:shopxy/features/dashboard/domain/entities/kpi_breakdown.dart';
 
 /// Fetches + parses the v2 dashboard payload. Mirrors the zod schema in
 /// `merchant-web/src/features/dashboard/stats.ts`: money sections are
@@ -27,6 +28,27 @@ class DashboardRemoteDataSource {
       trend: _trend(json['trend'] as Map<String, dynamic>?),
       insights: _insights(json['insights'] as Map<String, dynamic>?),
     );
+  }
+
+  /// Per-debtor receivables drill-down for the Receivables KPI card
+  /// (`GET /dashboard/receivables`). Not period-scoped — mirrors the web
+  /// drawer, which shows the full outstanding balance.
+  Future<KpiBreakdown> receivables() async {
+    final response = await _client.get('/dashboard/receivables');
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load receivables: ${response.statusCode}');
+    }
+    return KpiBreakdown.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+  }
+
+  /// Per-creditor payables drill-down for the Payables KPI card
+  /// (`GET /dashboard/payables`) — the vendor-side mirror of [receivables].
+  Future<KpiBreakdown> payables() async {
+    final response = await _client.get('/dashboard/payables');
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load payables: ${response.statusCode}');
+    }
+    return KpiBreakdown.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
   }
 
   // ── parsers ─────────────────────────────────────────────────────────

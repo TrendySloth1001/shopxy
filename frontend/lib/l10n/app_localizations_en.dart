@@ -3139,6 +3139,90 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get kpiDrawerRetry => 'Retry';
+
+  @override
+  String get kpiDrawerLoadError => 'Could not load. Please try again.';
+
+  @override
+  String get kpiDrawerSalesFilterHint => 'Filter by product name or SKU';
+
+  @override
+  String get kpiDrawerNoSales => 'No sales in this period.';
+
+  @override
+  String get kpiDrawerNoMatch => 'No products match your filter.';
+
+  @override
+  String kpiDrawerProductCount(Object count) {
+    return '$count products';
+  }
+
+  @override
+  String kpiDrawerRevenue(Object value) {
+    return 'Revenue $value';
+  }
+
+  @override
+  String kpiDrawerQtySold(Object qty, Object unit) {
+    return '$qty $unit sold';
+  }
+
+  @override
+  String kpiDrawerShowingTop(Object count) {
+    return 'Showing top $count';
+  }
+
+  @override
+  String get kpiDrawerUnnamedProduct => 'Unnamed product';
+
+  @override
+  String get kpiDrawerUnits => 'units';
+
+  @override
+  String get kpiDrawerViewFullReports => 'View full reports';
+
+  @override
+  String get kpiDrawerViewAllParties => 'View all parties';
+
+  @override
+  String get kpiDrawerViewAllVendors => 'View all vendors';
+
+  @override
+  String get kpiDrawerNoReceivables => 'No one owes you right now.';
+
+  @override
+  String get kpiDrawerNoPayables => 'You don\'t owe anyone right now.';
+
+  @override
+  String get kpiDrawerBilled => 'Billed';
+
+  @override
+  String get kpiDrawerReceived => 'Received';
+
+  @override
+  String get kpiDrawerPaid => 'Paid';
+
+  @override
+  String get kpiDrawerOutstanding => 'Outstanding';
+
+  @override
+  String kpiDrawerDocCount(num count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.compact(
+      locale: localeName,
+    );
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString documents',
+      one: '1 document',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get dashboardSalesTrend => 'Sales trend';
 
   @override
