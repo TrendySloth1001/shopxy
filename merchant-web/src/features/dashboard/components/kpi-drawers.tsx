@@ -465,7 +465,7 @@ function CounterpartyRow({
           {c.invoices.length === 0 ? (
             <p className="py-xs text-label-md text-muted">{t("drawer.noOpenDocs")}</p>
           ) : (
-            <ul className="flex flex-col gap-[2px]">
+            <ul className="flex flex-col gap-xxs">
               {c.invoices.map((inv) => {
                 const isCredit = inv.documentType === "CREDIT_NOTE";
                 return (

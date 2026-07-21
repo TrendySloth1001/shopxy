@@ -196,7 +196,7 @@ export function TrendChart({
                   }
                 >
                   <p className="text-label-md text-muted">{xLabels[hover]}</p>
-                  <ul className="mt-xs space-y-[2px]">
+                  <ul className="mt-xs space-y-xxs">
                     {visible.map((s) => (
                       <li key={s.key} className="flex items-center gap-sm text-body-sm">
                         <span className={`size-2 shrink-0 rounded-full ${s.dot}`} aria-hidden="true" />

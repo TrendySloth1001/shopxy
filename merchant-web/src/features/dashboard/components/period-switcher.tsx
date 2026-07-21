@@ -33,7 +33,7 @@ export function PeriodSwitcher({
     <div
       role="radiogroup"
       aria-label={t("period.ariaLabel")}
-      className="inline-flex items-center gap-[2px] rounded-button border border-hairline bg-canvas p-[2px]"
+      className="inline-flex items-center gap-xxs rounded-button border border-hairline bg-canvas p-xxs"
     >
       {PERIODS.map((p, i) => {
         const selected = p === value;

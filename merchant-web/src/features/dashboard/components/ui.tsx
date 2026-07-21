@@ -73,7 +73,7 @@ export function DeltaChip({ value, period }: { value: number | null; period: Das
   const t = useTranslations("dashboard");
   if (value === null) {
     return (
-      <span className="inline-flex items-center rounded-full bg-surface-tint px-sm py-[2px] text-label-md text-muted">
+      <span className="inline-flex items-center rounded-full bg-surface-tint px-sm py-xxs text-label-md text-muted">
         {t("delta.new")}
       </span>
     );
@@ -94,7 +94,7 @@ export function DeltaChip({ value, period }: { value: number | null; period: Das
       : t("delta.down", { pct: Math.abs(value), phrase });
   return (
     <span
-      className={`inline-flex items-center gap-[2px] rounded-full px-sm py-[2px] text-label-md tabular-nums ${tone}`}
+      className={`inline-flex items-center gap-xxs rounded-full px-sm py-xxs text-label-md tabular-nums ${tone}`}
       aria-label={label}
     >
       {!flat ? <Icon size={12} aria-hidden="true" /> : null}
