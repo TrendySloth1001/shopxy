@@ -17,6 +17,7 @@ import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// "Shop operations" hub — entry tiles for Hours/Vacation, Payouts,
 /// KYC, and Team. Hours and Payouts are fully wired (Payouts shows a
@@ -327,12 +328,7 @@ class _OpsTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
+                  Text(title, style: theme.textTheme.bodyLarge?.extraBold),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,

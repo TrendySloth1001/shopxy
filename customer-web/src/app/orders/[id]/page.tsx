@@ -386,7 +386,7 @@ function OrderDetailContent({
             />
           );
         })()}
-        <p className="mt-xs text-[11px] text-muted">
+        <p className="mt-xs text-caption text-muted">
           {usedInvoices
             ? "Confirmed totals from the shops' invoices."
             : "The shops will confirm the final amount when they accept your order."}
@@ -479,7 +479,7 @@ function OrderDetailContent({
 
 function SectionLabel({ text }: { text: string }) {
   return (
-    <p className="px-lg pt-md pb-sm text-[11px] font-extrabold tracking-[0.6px] text-muted uppercase">
+    <p className="px-lg pt-md pb-sm text-caption font-extrabold tracking-[0.6px] text-muted uppercase">
       {text}
     </p>
   );
@@ -564,7 +564,7 @@ function ShippingProgressRow({ events }: { events: { type: string }[] }) {
               </span>
               <span
                 className={[
-                  "text-center text-[10px] leading-[1.2]",
+                  "text-center text-micro leading-[1.2]",
                   done ? "font-extrabold text-brand-strong" : "text-muted",
                 ].join(" ")}
               >
@@ -629,7 +629,7 @@ function ShopSection({
       <div className="px-lg pt-md pb-sm">
         <div className="flex items-center justify-between mb-xs">
           {packageIndex ? (
-            <span className="text-[10px] font-extrabold tracking-[0.6px] text-muted uppercase">
+            <span className="text-micro font-extrabold tracking-[0.6px] text-muted uppercase">
               Package {packageIndex} of {packageCount}
             </span>
           ) : (
@@ -682,11 +682,11 @@ function ShopSection({
               <div className="flex-1 min-w-0">
                 <p className="text-body-sm font-extrabold text-ink line-clamp-2">{item.productName}</p>
                 <div className="mt-xs flex flex-wrap gap-sm items-center">
-                  <span className="rounded-full bg-brand-soft px-sm py-[2px] text-[11px] font-bold text-brand-strong">
+                  <span className="rounded-full bg-brand-soft px-sm py-[2px] text-caption font-bold text-brand-strong">
                     Qty {formatQty(item.quantity)}
                   </span>
-                  <span className="text-[11px] text-muted">{item.unit}</span>
-                  <span className="text-[11px] text-muted">
+                  <span className="text-caption text-muted">{item.unit}</span>
+                  <span className="text-caption text-muted">
                     {formatINR(item.unitPrice, { decimals: 2 })} each
                   </span>
                 </div>

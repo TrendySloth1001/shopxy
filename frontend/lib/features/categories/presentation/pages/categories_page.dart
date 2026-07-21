@@ -13,6 +13,7 @@ import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Read-only browse of the canonical taxonomy. Merchants don't manage
 /// categories any more — the seed lives in the backend manifest. This
@@ -114,9 +115,7 @@ class _CategoryCard extends StatelessWidget {
           const SizedBox(height: AppSizes.xs),
           Text(
             category.name,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+            style: theme.textTheme.bodyMedium?.semibold,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),

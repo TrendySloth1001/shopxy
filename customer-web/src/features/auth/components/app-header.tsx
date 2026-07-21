@@ -118,7 +118,7 @@ function CartBadge({ count }: { count: number }) {
       <ShoppingCart size={20} aria-hidden />
       {count > 0 ? (
         <span
-          className="absolute -right-0.5 -top-0.5 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-brand px-[3px] text-[9px] font-extrabold leading-none text-white ring-2 ring-canvas"
+          className="absolute -right-0.5 -top-0.5 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-brand px-[3px] text-nano font-extrabold leading-none text-white ring-2 ring-canvas"
           aria-hidden
         >
           {count > 99 ? "99+" : count}
@@ -332,7 +332,7 @@ export function AppHeader() {
                 <Bell size={20} aria-hidden />
                 {unread > 0 ? (
                   <span
-                    className="absolute -right-0.5 -top-0.5 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-error px-[3px] text-[9px] font-extrabold leading-none text-white ring-2 ring-canvas"
+                    className="absolute -right-0.5 -top-0.5 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-error px-[3px] text-nano font-extrabold leading-none text-white ring-2 ring-canvas"
                     aria-hidden
                   >
                     {unread > 99 ? "99+" : unread}

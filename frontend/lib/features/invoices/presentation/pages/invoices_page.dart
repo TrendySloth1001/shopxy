@@ -30,6 +30,7 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 class InvoicesPage extends StatefulWidget {
   const InvoicesPage({super.key});
@@ -525,9 +526,7 @@ class _InvoiceFilterSheetState extends State<_InvoiceFilterSheet> {
               const SizedBox(height: AppSizes.lg),
               Text(
                 l10n.invoicesFiltersTitle,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: theme.textTheme.titleLarge?.bold,
               ),
               const SizedBox(height: AppSizes.lg),
               Text(
@@ -803,9 +802,7 @@ class _InvoiceTile extends StatelessWidget {
                         Flexible(
                           child: Text(
                             invoice.invoiceNo,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
+                            style: theme.textTheme.titleSmall?.bold,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -839,9 +836,7 @@ class _InvoiceTile extends StatelessWidget {
                 children: [
                   Text(
                     '${AppStrings.currencySymbol}${invoice.total.toStringAsFixed(2)}',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: theme.textTheme.titleSmall?.bold,
                   ),
                   Text(
                     '$count ${count == 1 ? l10n.invoicesItemUnit : l10n.invoicesItemsUnit}',

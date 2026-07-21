@@ -395,7 +395,7 @@ export function SearchPageClient({ initialQuery }: { initialQuery: string }) {
                     setTimeout(() => setShowDropdown(false), 150);
                   }}
                   placeholder="Search products, brands…"
-                  className="min-w-0 flex-1 bg-transparent text-[14px] font-semibold text-ink placeholder:font-normal placeholder:text-subtle focus:outline-none"
+                  className="min-w-0 flex-1 bg-transparent text-body-md font-semibold text-ink placeholder:font-normal placeholder:text-subtle focus:outline-none"
                   role="combobox"
                   aria-autocomplete="list"
                   aria-expanded={showDropdown}
@@ -517,7 +517,7 @@ function IdleView({
         <section className="mb-xl">
           <div className="mb-sm flex items-center gap-sm">
             <Flame size={15} className="text-brand" aria-hidden />
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.8px] text-brand">
+            <p className="text-micro font-extrabold uppercase tracking-[0.8px] text-brand">
               Popular right now
             </p>
           </div>
@@ -530,7 +530,7 @@ function IdleView({
                 key={h}
                 type="button"
                 onClick={() => onApplyTerm(h)}
-                className="inline-flex items-center gap-[6px] rounded-full border border-hairline bg-white px-md py-[6px] text-[12px] font-bold text-ink transition-all duration-200 hover:border-brand hover:bg-brand-soft hover:text-brand hover:shadow-floating focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+                className="inline-flex items-center gap-[6px] rounded-full border border-hairline bg-white px-md py-[6px] text-body-sm font-bold text-ink transition-all duration-200 hover:border-brand hover:bg-brand-soft hover:text-brand hover:shadow-floating focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
               >
                 <span className="flex size-5 items-center justify-center rounded-full bg-brand-soft">
                   <Flame size={10} className="text-brand" aria-hidden />
@@ -549,7 +549,7 @@ function IdleView({
             <button
               type="button"
               onClick={onClearRecent}
-              className="rounded-xs border border-hairline px-sm py-[3px] text-[11px] font-bold text-muted transition-colors hover:text-ink focus-visible:outline-none"
+              className="rounded-xs border border-hairline px-sm py-[3px] text-caption font-bold text-muted transition-colors hover:text-ink focus-visible:outline-none"
             >
               Clear
             </button>
@@ -560,7 +560,7 @@ function IdleView({
                 key={term}
                 type="button"
                 onClick={() => onApplyTerm(term)}
-                className="inline-flex items-center gap-[6px] rounded-full border border-hairline bg-white px-md py-[6px] text-[12px] font-semibold text-muted transition-all duration-200 hover:border-brand hover:bg-surface-tint hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+                className="inline-flex items-center gap-[6px] rounded-full border border-hairline bg-white px-md py-[6px] text-body-sm font-semibold text-muted transition-all duration-200 hover:border-brand hover:bg-surface-tint hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
               >
                 <span className="flex size-4 shrink-0 items-center justify-center">
                   <Search size={10} className="text-muted" aria-hidden />
@@ -600,7 +600,7 @@ function ResultsView({
           ) : (
             <Search size={13} className="text-subtle" aria-hidden />
           )}
-          <span className="text-[11px] font-semibold text-muted">
+          <span className="text-caption font-semibold text-muted">
             {results.length} result{results.length !== 1 ? "s" : ""}
             {semantic ? (
               <span className="font-bold text-brand"> · AI-ranked</span>

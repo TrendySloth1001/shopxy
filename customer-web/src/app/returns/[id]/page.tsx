@@ -141,13 +141,13 @@ function ReturnDetailContent({ returnId }: { returnId: number }) {
             <p className="mt-xs text-body-sm text-muted">{formatDateTime(data.createdAt)}</p>
           </div>
           <span
-            className={`inline-flex flex-shrink-0 rounded-full px-sm py-[3px] text-[11px] font-extrabold ${vis.colorClass} ${vis.bgClass}`}
+            className={`inline-flex flex-shrink-0 rounded-full px-sm py-[3px] text-caption font-extrabold ${vis.colorClass} ${vis.bgClass}`}
           >
             {vis.label}
           </span>
         </div>
         <div className="mt-md">
-          <p className="text-[11px] font-extrabold tracking-[0.5px] text-muted uppercase">Refund</p>
+          <p className="text-caption font-extrabold tracking-[0.5px] text-muted uppercase">Refund</p>
           <p className="text-headline-sm font-extrabold text-ink">
             {formatINR(data.refundAmount, { decimals: 2 })}
           </p>
@@ -184,7 +184,7 @@ function ReturnDetailContent({ returnId }: { returnId: number }) {
                   <p className="text-body-sm font-bold text-ink line-clamp-2">
                     {item.purchaseRequestItem.productName}
                   </p>
-                  <p className="mt-xs text-[11px] text-muted">
+                  <p className="mt-xs text-caption text-muted">
                     {qtyStr} {item.purchaseRequestItem.unit} · {reasonLabel(item.reason)}
                   </p>
                 </div>
@@ -205,7 +205,7 @@ function ReturnDetailContent({ returnId }: { returnId: number }) {
       {/* Customer note */}
       {data.note && (
         <div className="rounded-lg bg-surface-tint p-md">
-          <p className="text-[11px] font-extrabold tracking-[0.5px] text-muted/70 uppercase mb-xs">
+          <p className="text-caption font-extrabold tracking-[0.5px] text-muted/70 uppercase mb-xs">
             Your note
           </p>
           <p className="text-body-md text-ink">{data.note}</p>
@@ -216,7 +216,7 @@ function ReturnDetailContent({ returnId }: { returnId: number }) {
       {data.decisionNote && (
         <div className={`rounded-lg p-md ${data.status === "REJECTED" ? "bg-error-soft" : "bg-surface-tint"}`}>
           <p
-            className={`text-[11px] font-extrabold tracking-[0.5px] uppercase mb-xs ${data.status === "REJECTED" ? "text-error/70" : "text-muted/70"}`}
+            className={`text-caption font-extrabold tracking-[0.5px] uppercase mb-xs ${data.status === "REJECTED" ? "text-error/70" : "text-muted/70"}`}
           >
             Seller&apos;s note
           </p>

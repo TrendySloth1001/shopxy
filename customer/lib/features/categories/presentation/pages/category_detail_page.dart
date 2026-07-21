@@ -5,6 +5,7 @@ import 'package:shopxy_customer/features/categories/presentation/widgets/categor
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
 /// Subcategory drill-down. Two pieces:
 ///   1. A hero card for the parent — tap pushes the rolled-up products
@@ -93,12 +94,7 @@ class CategoryDetailPage extends StatelessWidget {
           ),
           if (children.isNotEmpty) ...[
             const SizedBox(height: AppSizes.xl),
-            Text(
-              'Subcategories',
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+            Text('Subcategories', style: theme.textTheme.titleSmall?.bold),
             const SizedBox(height: AppSizes.md),
             GridView.builder(
               shrinkWrap: true,
@@ -121,8 +117,9 @@ class CategoryDetailPage extends StatelessWidget {
                       AspectRatio(
                         aspectRatio: 1,
                         child: ClipRRect(
-                          borderRadius:
-                              AppShapes.squircleRadius(AppSizes.radiusMd),
+                          borderRadius: AppShapes.squircleRadius(
+                            AppSizes.radiusMd,
+                          ),
                           child: CategoryImage(category: child.category),
                         ),
                       ),

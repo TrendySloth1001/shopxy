@@ -9,6 +9,7 @@ import 'package:shopxy_customer/shared/widgets/app_bottom_sheet.dart';
 import 'package:shopxy_customer/shared/widgets/app_button.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
+import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
 /// Single sign-in gate used by every guest-blocked action. The contract:
 ///
@@ -87,9 +88,7 @@ class SkipToGuestButton extends StatelessWidget {
           horizontal: AppSizes.md,
           vertical: AppSizes.xs,
         ),
-        textStyle: Theme.of(
-          context,
-        ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+        textStyle: Theme.of(context).textTheme.bodyMedium?.bold,
       ),
       child: const Text('Skip'),
     );

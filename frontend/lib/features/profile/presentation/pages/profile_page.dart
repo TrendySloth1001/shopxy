@@ -15,6 +15,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Profile tab — polished snapshot of the merchant identity plus the
 /// shortcuts that don't deserve a top-level nav slot. One canonical
@@ -293,9 +294,7 @@ class ProfilePage extends StatelessWidget {
               const SizedBox(height: AppSizes.md),
               Text(
                 l10n.profileLogout,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
+                style: theme.textTheme.titleMedium?.extraBold,
               ),
               const SizedBox(height: AppSizes.xs),
               Text(
@@ -320,9 +319,7 @@ class ProfilePage extends StatelessWidget {
                     foregroundColor: AppColors.white,
                     padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
                     shape: AppShapes.squircle(AppSizes.radiusButton),
-                    textStyle: theme.textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                    textStyle: theme.textTheme.labelLarge?.bold,
                   ),
                 ),
               ),
@@ -417,9 +414,7 @@ class _ProfileHero extends StatelessWidget {
                   children: [
                     Text(
                       name,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
+                      style: theme.textTheme.titleLarge?.extraBold,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -486,9 +481,7 @@ class _ProfileHero extends StatelessWidget {
                   vertical: AppSizes.md,
                   horizontal: AppSizes.lg,
                 ),
-                textStyle: theme.textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                textStyle: theme.textTheme.labelLarge?.bold,
               ),
             ),
           ),
@@ -686,9 +679,7 @@ class _ProfileCompletion extends StatelessWidget {
                   children: [
                     Text(
                       '${l10n.profileCompletionTitle} $percent%',
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: theme.textTheme.titleSmall?.bold,
                     ),
                     const SizedBox(height: 2),
                     Text(

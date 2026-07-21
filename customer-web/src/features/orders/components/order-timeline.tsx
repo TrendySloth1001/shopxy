@@ -84,18 +84,18 @@ function StopRow({
         </p>
         {e && (
           <div className="mt-[2px] space-y-[2px]">
-            <p className="text-[11px] text-muted">{formatDateTime(e.occurredAt)}</p>
+            <p className="text-caption text-muted">{formatDateTime(e.occurredAt)}</p>
             {(e.courier ?? e.awb) && (
-              <p className="text-[11px] font-bold text-brand-strong">
+              <p className="text-caption font-bold text-brand-strong">
                 {[e.courier, e.awb ? `AWB ${e.awb}` : null].filter(Boolean).join(" · ")}
               </p>
             )}
             {e.eta && (
-              <p className="text-[11px] font-bold text-brand-strong">
+              <p className="text-caption font-bold text-brand-strong">
                 ETA {new Date(e.eta).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" })}
               </p>
             )}
-            {e.note && <p className="text-[11px] leading-[1.3] text-muted">{e.note}</p>}
+            {e.note && <p className="text-caption leading-[1.3] text-muted">{e.note}</p>}
           </div>
         )}
       </div>
@@ -156,7 +156,7 @@ export function OrderTimeline({
 
   return (
     <div className="px-md pb-sm pt-md">
-      <p className="mb-sm text-[11px] font-extrabold tracking-[0.4px] text-muted uppercase">
+      <p className="mb-sm text-caption font-extrabold tracking-[0.4px] text-muted uppercase">
         Tracking
       </p>
       {stops.map((stop, i) => (

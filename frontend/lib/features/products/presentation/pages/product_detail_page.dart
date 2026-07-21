@@ -46,6 +46,7 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 class ProductDetailPage extends StatefulWidget {
   const ProductDetailPage({super.key, required this.productId});
@@ -411,12 +412,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 ),
               ),
               const SizedBox(height: AppSizes.md),
-              Text(
-                code,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              Text(code, style: theme.textTheme.bodyMedium?.semibold),
               const SizedBox(height: AppSizes.xs),
               Text(
                 _product!.name,
@@ -655,8 +651,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                             children: [
                               Text(
                                 l10n.productsStockLedger,
-                                style: Theme.of(context).textTheme.bodyMedium
-                                    ?.copyWith(fontWeight: FontWeight.w600),
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.bodyMedium?.semibold,
                               ),
                               Text(
                                 l10n.productsStockLedgerHint,
@@ -1237,9 +1234,7 @@ class _MarketplaceCard extends StatelessWidget {
                   published
                       ? l10n.productsListedTitle
                       : l10n.productsNotListedTitle,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: theme.textTheme.bodyMedium?.bold,
                 ),
                 Text(
                   published
@@ -1348,12 +1343,7 @@ class _PerformanceMetric extends StatelessWidget {
       children: [
         AppIcon(icon, size: 18, color: AppColors.muted),
         const SizedBox(height: 4),
-        Text(
-          value,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w800,
-          ),
-        ),
+        Text(value, style: theme.textTheme.titleMedium?.extraBold),
         Text(
           label,
           style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
@@ -1444,12 +1434,7 @@ class _LastActivityRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                label,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              Text(label, style: theme.textTheme.bodyMedium?.semibold),
               if (subtitle != null && subtitle!.isNotEmpty)
                 Text(
                   subtitle!,
@@ -1626,9 +1611,7 @@ class _VariantsSection extends StatelessWidget {
                                 Flexible(
                                   child: Text(
                                     _attrs(l10n, active[i].attributes),
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                    ),
+                                    style: theme.textTheme.bodyMedium?.bold,
                                   ),
                                 ),
                               ],
@@ -1649,9 +1632,7 @@ class _VariantsSection extends StatelessWidget {
                         children: [
                           Text(
                             currencyFormat.format(active[i].sellingPrice),
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
+                            style: theme.textTheme.bodyMedium?.bold,
                           ),
                           if (active[i].mrp > active[i].sellingPrice)
                             Text(
@@ -1789,9 +1770,7 @@ class _ProductSpecsSection extends StatelessWidget {
                           Expanded(
                             child: Text(
                               groups[gi].title,
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w800,
-                              ),
+                              style: theme.textTheme.titleSmall?.extraBold,
                             ),
                           ),
                           if (groups[gi].tab != null)
@@ -1835,9 +1814,7 @@ class _ProductSpecsSection extends StatelessWidget {
                               Expanded(
                                 child: Text(
                                   r.value,
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                  style: theme.textTheme.bodySmall?.semibold,
                                 ),
                               ),
                             ],
@@ -1926,9 +1903,7 @@ class _OffersSection extends StatelessWidget {
                           children: [
                             Text(
                               offers[i].headline,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
+                              style: theme.textTheme.bodyMedium?.bold,
                             ),
                             if (offers[i].detail != null &&
                                 offers[i].detail!.isNotEmpty)
@@ -2218,9 +2193,7 @@ class _StockStatusCard extends StatelessWidget {
               children: [
                 Text(
                   '${_formatQty(product.stockQuantity)} ${AppUnits.label(product.unit)}',
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: theme.textTheme.headlineSmall?.bold,
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -2378,9 +2351,7 @@ class _SupplierHistoryTile extends StatelessWidget {
                 supplierName.isEmpty
                     ? l10n.productsUnknownSupplier
                     : supplierName,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: theme.textTheme.titleSmall?.bold,
               ),
             ),
             if (isVendor)
@@ -2442,17 +2413,10 @@ class _SupplierHistoryTile extends StatelessWidget {
                 ),
                 Text(
                   '${l10n.productsQtyLabel}: $qty',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: theme.textTheme.bodySmall?.medium,
                 ),
                 const SizedBox(width: AppSizes.md),
-                Text(
-                  price,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                Text(price, style: theme.textTheme.bodySmall?.semibold),
               ],
             ),
           );
@@ -2487,12 +2451,7 @@ class _SupplierMetricRow extends StatelessWidget {
             label,
             style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
           ),
-          Text(
-            value,
-            style: theme.textTheme.bodySmall?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          Text(value, style: theme.textTheme.bodySmall?.semibold),
         ],
       ),
     );
@@ -2538,9 +2497,7 @@ class _DetailSection extends StatelessWidget {
                             const SizedBox(height: 2),
                             Text(
                               rows[i].value,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: theme.textTheme.bodyMedium?.semibold,
                             ),
                           ],
                         )
@@ -2561,9 +2518,7 @@ class _DetailSection extends StatelessWidget {
                               child: Text(
                                 rows[i].value,
                                 textAlign: TextAlign.right,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                style: theme.textTheme.bodyMedium?.semibold,
                               ),
                             ),
                           ],
@@ -2798,9 +2753,7 @@ class _PendingDraftsCard extends StatelessWidget {
                     children: [
                       Text(
                         '${l10n.productsPendingDrafts} (${drafts.length})',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: theme.textTheme.titleSmall?.bold,
                       ),
                       Text(
                         l10n.productsPendingDraftsHint,
@@ -2879,9 +2832,7 @@ class _PendingDraftRow extends StatelessWidget {
                 children: [
                   Text(
                     invoice.invoiceNo,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: theme.textTheme.bodyMedium?.semibold,
                   ),
                   Text(
                     '${isSale ? l10n.productsSale : l10n.productsPurchase} · $counterparty',
@@ -3130,9 +3081,7 @@ class _ReviewsSummarySection extends StatelessWidget {
               children: [
                 Text(
                   avg.toStringAsFixed(1),
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: theme.textTheme.headlineMedium?.extraBold,
                 ),
                 _StarRow(rating: avg, size: 16),
                 const SizedBox(height: 2),
@@ -3302,9 +3251,7 @@ class _RecentReviewTile extends StatelessWidget {
                 child: Text(
                   review.title!,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: theme.textTheme.bodyMedium?.bold,
                 ),
               ),
             ],

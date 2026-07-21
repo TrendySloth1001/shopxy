@@ -17,6 +17,7 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Merchant-side quotation detail: who it went to, status, line items, totals,
 /// the invoice it spawned (if accepted), and a Cancel action while pending.
@@ -339,9 +340,7 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
                         ),
                         child: Text(
                           'Price & send',
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
+                          style: theme.textTheme.labelLarge?.extraBold,
                         ),
                       ),
                     ),
@@ -436,9 +435,7 @@ class _ItemRow extends StatelessWidget {
               children: [
                 Text(
                   line.name,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: theme.textTheme.bodyLarge?.bold,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -455,9 +452,7 @@ class _ItemRow extends StatelessWidget {
           ),
           Text(
             currency.format(line.lineTotal),
-            style: theme.textTheme.bodyLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+            style: theme.textTheme.bodyLarge?.bold,
           ),
         ],
       ),

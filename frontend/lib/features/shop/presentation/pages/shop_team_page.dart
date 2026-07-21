@@ -16,6 +16,7 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Team & roles — editorial layout (flat rows + hairline dividers, no
 /// boxed cards). Owners (or anyone with team:manage) invite staff,
@@ -568,9 +569,7 @@ class _MemberRow extends StatelessWidget {
               children: [
                 Text(
                   name,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: theme.textTheme.bodyLarge?.extraBold,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -651,9 +650,7 @@ class _InviteRow extends StatelessWidget {
                 children: [
                   Text(
                     invite.email,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: theme.textTheme.bodyLarge?.bold,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -717,9 +714,7 @@ class _RoleRow extends StatelessWidget {
                     Flexible(
                       child: Text(
                         role.name,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
+                        style: theme.textTheme.bodyLarge?.extraBold,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -1035,9 +1030,7 @@ class _InviteSheetState extends State<_InviteSheet> {
           children: [
             Text(
               l10n.shopInviteTeammate,
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+              style: theme.textTheme.titleLarge?.extraBold,
             ),
             const SizedBox(height: 4),
             Text(

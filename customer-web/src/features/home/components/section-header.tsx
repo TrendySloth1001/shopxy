@@ -31,7 +31,7 @@ export function SectionHeader({
         />
         <div className="min-w-0">
           {eyebrow ? (
-            <p className="mb-[1px] text-[10px] font-extrabold uppercase tracking-[1.2px] text-brand">
+            <p className="mb-[1px] text-micro font-extrabold uppercase tracking-[1.2px] text-brand">
               {eyebrow}
             </p>
           ) : null}
@@ -52,7 +52,7 @@ export function SectionHeader({
         ) : (
           <Link
             href={seeAllHref}
-            className="flex shrink-0 items-center gap-[2px] rounded-full border border-hairline bg-white px-[10px] py-[6px] text-[12px] font-bold text-ink transition-all duration-200 hover:border-brand hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+            className="flex shrink-0 items-center gap-[2px] rounded-full border border-hairline bg-white px-[10px] py-[6px] text-body-sm font-bold text-ink transition-all duration-200 hover:border-brand hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
           >
             See all <ChevronRight size={11} aria-hidden />
           </Link>

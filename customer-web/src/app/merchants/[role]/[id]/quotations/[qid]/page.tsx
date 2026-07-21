@@ -325,7 +325,7 @@ function QuotationDetailView({
 
         {/* Items */}
         <div>
-          <p className="text-[10px] font-extrabold tracking-[1.4px] text-muted uppercase mb-xs">
+          <p className="text-micro font-extrabold tracking-[1.4px] text-muted uppercase mb-xs">
             Items ({quotation.items.length})
           </p>
           <div className="border-t border-hairline">
@@ -402,7 +402,7 @@ function QuotationDetailView({
           <>
             <div className="h-px bg-hairline" />
             <div>
-              <p className="text-[10px] font-extrabold tracking-[1.4px] text-muted uppercase mb-xs">
+              <p className="text-micro font-extrabold tracking-[1.4px] text-muted uppercase mb-xs">
                 {isRequested ? "Your note" : "Note from shop"}
               </p>
               <p className="text-body-md text-ink leading-relaxed">{quotation.note}</p>

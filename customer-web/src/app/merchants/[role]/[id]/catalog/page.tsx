@@ -95,7 +95,7 @@ function CategoryPills({
           {cat.name}
           {cat._count && (
             <span
-              className={`text-[11px] font-bold ${
+              className={`text-caption font-bold ${
                 active === cat.id ? "text-white/70" : "text-muted"
               }`}
             >

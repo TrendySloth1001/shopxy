@@ -6,6 +6,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Hybrid-gating UX primitives.
 ///
@@ -252,12 +253,7 @@ class NoAccessView extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppSizes.lg),
-            Text(
-              title,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
-            ),
+            Text(title, style: theme.textTheme.titleMedium?.extraBold),
             const SizedBox(height: AppSizes.xs),
             Text(
               message ??

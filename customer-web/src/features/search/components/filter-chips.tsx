@@ -62,7 +62,7 @@ export function FilterChips({ filters, facets: _f, onChangeFilters }: Props) {
         <button
           type="button"
           onClick={() => onChangeFilters({})}
-          className="text-[11px] font-bold text-muted underline-offset-2 hover:text-ink hover:underline focus-visible:outline-none"
+          className="text-caption font-bold text-muted underline-offset-2 hover:text-ink hover:underline focus-visible:outline-none"
         >
           Clear all
         </button>
@@ -73,7 +73,7 @@ export function FilterChips({ filters, facets: _f, onChangeFilters }: Props) {
 
 function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
-    <span className="inline-flex items-center gap-[4px] rounded-full border border-brand bg-brand-soft px-md py-[4px] text-[11px] font-bold text-brand">
+    <span className="inline-flex items-center gap-[4px] rounded-full border border-brand bg-brand-soft px-md py-[4px] text-caption font-bold text-brand">
       {label}
       <button
         type="button"

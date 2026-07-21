@@ -6,6 +6,7 @@ import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// KYC scaffold — UI shell only. Lists the documents the verification flow will
 /// collect; each row shows its status (always "Not uploaded" until the backend
@@ -138,9 +139,7 @@ class _KycRow extends StatelessWidget {
                     Expanded(
                       child: Text(
                         doc.title,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
+                        style: theme.textTheme.bodyLarge?.extraBold,
                       ),
                     ),
                     AppStatusBadge(

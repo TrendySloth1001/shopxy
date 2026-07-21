@@ -12,6 +12,7 @@ import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Merchant list of quotations sent to customers. Clean divided rows; tap opens
 /// the detail page. FAB opens the catalogue → bucket → send flow.
@@ -267,9 +268,7 @@ class _QuotationRow extends StatelessWidget {
                       children: [
                         Text(
                           q.quotationNo,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: theme.textTheme.titleMedium?.bold,
                         ),
                         const SizedBox(width: AppSizes.sm),
                         Container(
@@ -305,9 +304,7 @@ class _QuotationRow extends StatelessWidget {
               ),
               Text(
                 currency.format(q.total),
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
+                style: theme.textTheme.titleMedium?.extraBold,
               ),
               const SizedBox(width: AppSizes.xs),
               AppIcon(AppIcons.chevronRightRounded, color: AppColors.muted),

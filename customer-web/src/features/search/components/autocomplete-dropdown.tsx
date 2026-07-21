@@ -32,7 +32,7 @@ export function AutocompleteDropdown({ suggestions, activeIndex, onSelect }: Pro
     >
       {products.length > 0 ? (
         <section>
-          <p className="border-b border-hairline px-md py-[5px] text-[9.5px] font-extrabold uppercase tracking-[0.8px] text-muted">
+          <p className="border-b border-hairline px-md py-[5px] text-nano font-extrabold uppercase tracking-[0.8px] text-muted">
             Products
           </p>
           <ul>
@@ -68,7 +68,7 @@ export function AutocompleteDropdown({ suggestions, activeIndex, onSelect }: Pro
 
       {terms.length > 0 ? (
         <section>
-          <p className="border-b border-hairline px-md py-[5px] text-[9.5px] font-extrabold uppercase tracking-[0.8px] text-muted">
+          <p className="border-b border-hairline px-md py-[5px] text-nano font-extrabold uppercase tracking-[0.8px] text-muted">
             Popular
           </p>
           <ul>
@@ -125,7 +125,7 @@ export function RecentDropdown({
       className="absolute left-0 right-0 top-full z-50 mt-[2px] overflow-hidden rounded-md border border-hairline bg-white shadow-menu"
     >
       <div className="flex items-center justify-between border-b border-hairline px-md py-[5px]">
-        <p className="text-[9.5px] font-extrabold uppercase tracking-[0.8px] text-muted">
+        <p className="text-nano font-extrabold uppercase tracking-[0.8px] text-muted">
           Recent
         </p>
         <button
@@ -134,7 +134,7 @@ export function RecentDropdown({
             e.preventDefault();
             onClear();
           }}
-          className="text-[10px] font-bold text-muted hover:text-ink focus-visible:outline-none"
+          className="text-micro font-bold text-muted hover:text-ink focus-visible:outline-none"
         >
           Clear
         </button>

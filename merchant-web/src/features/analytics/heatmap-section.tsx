@@ -81,7 +81,7 @@ function HeatGrid({ heat, t }: { heat: Heatmap; t: Translate }) {
       <div className="min-w-[34rem]">
         <div className="flex items-center gap-px pl-10">
           {Array.from({ length: 24 }).map((_, h) => (
-            <span key={h} className="flex-1 text-center text-[0.625rem] leading-none text-subtle">
+            <span key={h} className="flex-1 text-center text-micro leading-none text-subtle">
               {h % 3 === 0 ? h : ""}
             </span>
           ))}

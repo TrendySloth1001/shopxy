@@ -31,6 +31,7 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 class InvoiceDetailPage extends StatefulWidget {
   const InvoiceDetailPage({super.key, required this.invoiceId});
@@ -478,9 +479,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                         Expanded(
                           child: Text(
                             invoice.invoiceNo,
-                            style: theme.textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
+                            style: theme.textTheme.headlineSmall?.bold,
                           ),
                         ),
                         AppStatusBadge(
@@ -806,9 +805,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                   const SizedBox(height: AppSizes.lg),
                   Text(
                     l10n.invoicesNote,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: theme.textTheme.titleSmall?.bold,
                   ),
                   const SizedBox(height: AppSizes.sm),
                   Text(invoice.note!),
@@ -964,12 +961,7 @@ class _ActionTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    Text(title, style: theme.textTheme.bodyMedium?.semibold),
                     if (subtitle != null) ...[
                       const SizedBox(height: 2),
                       Text(
@@ -1052,9 +1044,7 @@ class _PaymentTimeline extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 label(payments[i]),
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                style: theme.textTheme.bodyMedium?.semibold,
                               ),
                             ),
                             const SizedBox(width: AppSizes.sm),
@@ -1338,12 +1328,7 @@ class _InfoRow extends StatelessWidget {
             '$label: ',
             style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
           ),
-          Text(
-            value,
-            style: theme.textTheme.bodySmall?.copyWith(
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+          Text(value, style: theme.textTheme.bodySmall?.medium),
         ],
       ),
     );
@@ -1370,9 +1355,7 @@ class _ItemTile extends StatelessWidget {
               children: [
                 Text(
                   item.productName,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: theme.textTheme.bodyMedium?.medium,
                 ),
                 const SizedBox(height: AppSizes.xs),
                 Text(
@@ -1388,9 +1371,7 @@ class _ItemTile extends StatelessWidget {
           const SizedBox(width: AppSizes.md),
           Text(
             '${AppStrings.currencySymbol}${item.total.toStringAsFixed(2)}',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+            style: theme.textTheme.bodyMedium?.semibold,
           ),
         ],
       ),
@@ -1412,11 +1393,11 @@ class _TotalRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final labelStyle = isHighlight
-        ? theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)
+        ? theme.textTheme.titleSmall?.bold
         : theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted);
     final valueStyle = isHighlight
-        ? theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)
-        : theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500);
+        ? theme.textTheme.titleSmall?.bold
+        : theme.textTheme.bodyMedium?.medium;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
       child: Row(

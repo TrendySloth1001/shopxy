@@ -18,6 +18,7 @@ import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 const _kReasons = [
   (code: 'DAMAGE', label: 'Damaged', defaultDirection: 'OUT'),
@@ -441,9 +442,7 @@ class _ItemRow extends StatelessWidget {
               children: [
                 Text(
                   item.productName,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: theme.textTheme.bodyMedium?.semibold,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),

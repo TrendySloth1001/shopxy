@@ -10,6 +10,7 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_divider.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
+import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
 /// The per-shop landing for a customer. Every record the shop keeps for them —
 /// invoices, quotations — is a first-class section here, so nothing is buried
@@ -145,12 +146,7 @@ class _SectionRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
+                  Text(title, style: theme.textTheme.titleMedium?.extraBold),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,

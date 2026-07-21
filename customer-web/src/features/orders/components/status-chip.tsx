@@ -76,7 +76,7 @@ export function ChipStatus({
   const { label, colorClass, bgClass, Icon } = statusVisual(status);
   return (
     <span
-      className={`inline-flex items-center gap-xs rounded-full px-sm py-[3px] text-[10px] font-extrabold tracking-[0.4px] ${colorClass} ${bgClass}`}
+      className={`inline-flex items-center gap-xs rounded-full px-sm py-[3px] text-micro font-extrabold tracking-[0.4px] ${colorClass} ${bgClass}`}
     >
       {showIcon ? <Icon size={10} aria-hidden /> : null}
       {label}
@@ -119,7 +119,7 @@ export function AggregateStatusChip({ order }: { order: { shopOrders: ShopOrderP
   const { colorClass, bgClass, Icon } = statusVisual(statusKey);
   return (
     <span
-      className={`inline-flex items-center gap-xs rounded-full px-sm py-[3px] text-[10px] font-extrabold tracking-[0.4px] ${colorClass} ${bgClass}`}
+      className={`inline-flex items-center gap-xs rounded-full px-sm py-[3px] text-micro font-extrabold tracking-[0.4px] ${colorClass} ${bgClass}`}
     >
       <Icon size={10} aria-hidden />
       {label}

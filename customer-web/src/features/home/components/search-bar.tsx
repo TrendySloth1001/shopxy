@@ -54,7 +54,7 @@ export function SearchBar({ collapsed }: { collapsed: boolean }) {
           <Search size={18} className="text-white" aria-hidden />
         </span>
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className="text-[9.5px] font-extrabold uppercase leading-none tracking-[0.9px] text-brand">
+          <span className="text-nano font-extrabold uppercase leading-none tracking-[0.9px] text-brand">
             Search ShopXY
           </span>
           <span className="mt-[2px] line-clamp-1 text-[13px] font-semibold text-ink">{SEARCH_HINTS[hint]}</span>

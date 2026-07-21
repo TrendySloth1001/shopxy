@@ -10,6 +10,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Bottom-sheet list of predefined custom-field bundles ("Electronics",
 /// "Apparel", "Logistics" …). Tapping a row stamps the whole section
@@ -106,9 +107,7 @@ class _TemplatesPickerSheetState extends State<TemplatesPickerSheet> {
               const SizedBox(height: AppSizes.md),
               Text(
                 l10n.customFieldsQuickStartTemplates,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: theme.textTheme.titleMedium?.bold,
               ),
               const SizedBox(height: AppSizes.xs),
               Text(
@@ -163,9 +162,7 @@ class _TemplatesPickerSheetState extends State<TemplatesPickerSheet> {
                         ),
                         title: Text(
                           t.label,
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: theme.textTheme.bodyLarge?.semibold,
                         ),
                         subtitle: Text(
                           '${t.description} · ${l10n.customFieldsTemplateFieldCount(t.fieldCount)}',

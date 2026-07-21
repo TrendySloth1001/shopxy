@@ -19,6 +19,7 @@ import 'package:shopxy/shared/widgets/empty_state.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Settings → Custom Fields.
 ///
@@ -310,9 +311,7 @@ class _SectionCard extends StatelessWidget {
                       children: [
                         Text(
                           section.name,
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: theme.textTheme.titleSmall?.bold,
                         ),
                         Text(
                           fields.length == 1
@@ -425,9 +424,7 @@ class _UngroupedSectionCard extends StatelessWidget {
                     children: [
                       Text(
                         l10n.customFieldsNoSection,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: theme.textTheme.titleSmall?.bold,
                       ),
                       Text(
                         active.length == 1
@@ -673,12 +670,7 @@ class _FieldRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    field.name,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  Text(field.name, style: theme.textTheme.bodyLarge?.semibold),
                   Text(
                     _typeSubtitle(l10n),
                     style: theme.textTheme.bodySmall?.copyWith(

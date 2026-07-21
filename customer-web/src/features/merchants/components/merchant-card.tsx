@@ -73,7 +73,7 @@ function QuickLinks({ links }: { links: QuickLink[] }) {
           className="inline-flex flex-1 flex-col items-center gap-[3px] rounded-sm py-sm text-center hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         >
           <span className="text-brand">{l.icon}</span>
-          <span className="text-[11px] font-bold text-muted">{l.label}</span>
+          <span className="text-caption font-bold text-muted">{l.label}</span>
         </Link>
       ))}
     </div>
@@ -158,7 +158,7 @@ export function MerchantCard({ item, role }: MerchantCardProps) {
             <div className="mt-[2px] flex flex-wrap items-center gap-xs">
               {/* Role pill */}
               <span
-                className={`inline-block rounded-full px-sm py-[2px] text-[11px] font-extrabold ${roleColorOf(role)}`}
+                className={`inline-block rounded-full px-sm py-[2px] text-caption font-extrabold ${roleColorOf(role)}`}
               >
                 {roleLabelOf(role)}
               </span>

@@ -57,7 +57,7 @@ export function CategoryRail({ pucks }: { pucks: CategoryPuck[] }) {
               {p.imageUrl ? (
                 <ImageBox url={p.imageUrl} alt={p.label} placeholderColor={p.tint} />
               ) : (
-                <span className="text-[12px] font-extrabold text-ink">{(p.label[0] ?? "?").toUpperCase()}</span>
+                <span className="text-body-sm font-extrabold text-ink">{(p.label[0] ?? "?").toUpperCase()}</span>
               )}
             </span>
             <span className="whitespace-nowrap text-body-sm font-semibold text-ink group-hover:text-brand-strong">

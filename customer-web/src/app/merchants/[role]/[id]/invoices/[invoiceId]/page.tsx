@@ -127,7 +127,7 @@ function InvoiceDetailContent({
       {/* Header */}
       <div className="flex justify-between items-start gap-md">
         <div className="space-y-xs flex-1 min-w-0">
-          <p className="text-[10px] font-extrabold tracking-[1.2px] text-brand uppercase">
+          <p className="text-micro font-extrabold tracking-[1.2px] text-brand uppercase">
             {eyebrow}
           </p>
           <h1 className="text-headline-sm font-extrabold text-ink truncate">
@@ -149,7 +149,7 @@ function InvoiceDetailContent({
           <Icon size={18} className="text-brand" />
         </span>
         <div className="min-w-0">
-          <p className="text-[10px] font-extrabold tracking-[0.9px] text-muted uppercase mb-xs">
+          <p className="text-micro font-extrabold tracking-[0.9px] text-muted uppercase mb-xs">
             {counterpartyEyebrow}
           </p>
           <p className="text-title-sm font-extrabold text-ink leading-tight">{cpName}</p>
@@ -163,10 +163,10 @@ function InvoiceDetailContent({
       {/* Items section */}
       <div>
         <div className="flex justify-between items-center mb-sm">
-          <p className="text-[10px] font-extrabold tracking-[1.4px] text-muted uppercase">
+          <p className="text-micro font-extrabold tracking-[1.4px] text-muted uppercase">
             ITEMS
           </p>
-          <p className="text-[10px] font-bold text-muted">
+          <p className="text-micro font-bold text-muted">
             {invoice.items.length} item{invoice.items.length !== 1 ? "s" : ""}
           </p>
         </div>
@@ -220,7 +220,7 @@ function InvoiceDetailContent({
         <>
           <div className="h-px bg-hairline my-lg" />
           <div>
-            <p className="text-[10px] font-extrabold tracking-[1.4px] text-muted uppercase mb-sm">
+            <p className="text-micro font-extrabold tracking-[1.4px] text-muted uppercase mb-sm">
               NOTE
             </p>
             <div className="border-t border-hairline pt-md flex gap-sm">

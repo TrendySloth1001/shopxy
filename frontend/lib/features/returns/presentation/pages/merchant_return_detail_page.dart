@@ -14,6 +14,7 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Workflow-heavy detail page. Header shows the customer + refund
 /// total; each item gets a small thumbnail + reason chip; the bottom
@@ -116,9 +117,7 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
           children: [
             Text(
               title,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+              style: Theme.of(context).textTheme.titleMedium?.extraBold,
             ),
             const SizedBox(height: AppSizes.md),
             TextField(
@@ -238,8 +237,9 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
                                   _currency.format(row.refundAmount),
                                   row.customerName,
                                 ),
-                                style: Theme.of(context).textTheme.bodyMedium
-                                    ?.copyWith(fontWeight: FontWeight.w600),
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.bodyMedium?.semibold,
                               ),
                             ),
                           ],
@@ -569,9 +569,7 @@ class _HeaderCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   row.customerName,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: theme.textTheme.titleMedium?.extraBold,
                 ),
               ),
               AppStatusBadge(
@@ -622,9 +620,7 @@ class _HeaderCard extends StatelessWidget {
                   symbol: '₹',
                   decimalDigits: 2,
                 ).format(row.refundAmount),
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
+                style: theme.textTheme.bodyMedium?.extraBold,
               ),
             ],
           ),
@@ -650,12 +646,7 @@ class _ItemsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            l10n.returnsItems,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
-          ),
+          Text(l10n.returnsItems, style: theme.textTheme.titleSmall?.extraBold),
           const SizedBox(height: AppSizes.sm),
           for (final it in items)
             Padding(
@@ -689,9 +680,7 @@ class _ItemsCard extends StatelessWidget {
                       children: [
                         Text(
                           it.productName,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: theme.textTheme.bodyMedium?.bold,
                         ),
                         Text(
                           '${it.quantity.toStringAsFixed(0)} ${it.unit} · '
@@ -751,9 +740,7 @@ class _TimelineCard extends StatelessWidget {
         children: [
           Text(
             l10n.returnsTimeline,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: theme.textTheme.titleSmall?.extraBold,
           ),
           const SizedBox(height: AppSizes.sm),
           for (final e in events)
@@ -876,12 +863,7 @@ class _NoteCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                Text(title, style: theme.textTheme.bodyMedium?.bold),
                 const SizedBox(height: AppSizes.xs),
                 Text(body),
               ],

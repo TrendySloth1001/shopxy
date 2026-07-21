@@ -13,6 +13,7 @@ import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/widgets/app_filter_pill.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Bottom-sheet form for recording a payment.
 ///
@@ -236,9 +237,7 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
                         _isReceipt
                             ? l10n.paymentsRecordReceiptTitle
                             : l10n.paymentsRecordPaymentTitle,
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: theme.textTheme.titleLarge?.bold,
                       ),
                     ),
                     IconButton(

@@ -19,6 +19,7 @@ import 'package:shopxy_customer/shared/format/app_format.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
+import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
 /// Browse a *single linked shop's* catalogue, build a basket of what the
 /// customer wants, and send it as a QUOTE REQUEST. The shop prices it and
@@ -604,9 +605,7 @@ class _ProductRow extends StatelessWidget {
                   children: [
                     Text(
                       product.name,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: theme.textTheme.bodyLarge?.bold,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -654,12 +653,7 @@ class _ProductRow extends StatelessWidget {
                       vertical: AppSizes.xs,
                     ),
                   ),
-                  child: Text(
-                    'Add',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                  child: Text('Add', style: theme.textTheme.bodyMedium?.bold),
                 )
               else
                 _Stepper(qty: qty, onChanged: onChanged),
@@ -821,9 +815,7 @@ class _BottomBar extends StatelessWidget {
                     Expanded(
                       child: Text(
                         '$itemCount item(s) selected',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: theme.textTheme.bodyMedium?.bold,
                       ),
                     ),
                     Text(
@@ -981,9 +973,7 @@ class _ProductPreviewSheetState extends State<_ProductPreviewSheet> {
                   children: [
                     Text(
                       AppFormat.rupees(p.sellingPrice),
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
+                      style: theme.textTheme.titleLarge?.extraBold,
                     ),
                     const SizedBox(width: AppSizes.sm),
                     Padding(

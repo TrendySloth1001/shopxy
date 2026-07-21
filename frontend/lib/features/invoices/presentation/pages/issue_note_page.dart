@@ -13,6 +13,7 @@ import 'package:shopxy/shared/widgets/app_filter_pill.dart';
 import 'package:shopxy/shared/widgets/app_section_header.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Composer for a Sec 34 credit / debit note raised against a CONFIRMED sale
 /// invoice. The merchant picks which of the original lines the note covers
@@ -32,11 +33,9 @@ class IssueNotePage extends StatefulWidget {
 
 class _NoteLineDraft {
   _NoteLineDraft(this.item)
-      : include = false,
-        qtyCtrl = TextEditingController(
-          text: _trimQty(item.quantity),
-        ),
-        priceCtrl = TextEditingController();
+    : include = false,
+      qtyCtrl = TextEditingController(text: _trimQty(item.quantity)),
+      priceCtrl = TextEditingController();
 
   final InvoiceItem item;
   bool include;
@@ -57,8 +56,9 @@ class _IssueNotePageState extends State<IssueNotePage> {
   bool _restock = true;
   bool _submitting = false;
   final _reasonCtrl = TextEditingController();
-  late final List<_NoteLineDraft> _lines =
-      widget.invoice.items.map(_NoteLineDraft.new).toList();
+  late final List<_NoteLineDraft> _lines = widget.invoice.items
+      .map(_NoteLineDraft.new)
+      .toList();
 
   bool get _isCredit => _docType == 'CREDIT_NOTE';
 
@@ -143,9 +143,7 @@ class _IssueNotePageState extends State<IssueNotePage> {
 
     return Scaffold(
       extendBodyBehindAppBar: true,
-      appBar: FloatingAppBar(
-        title: l10n.invoicesIssueNoteTitle,
-      ),
+      appBar: FloatingAppBar(title: l10n.invoicesIssueNoteTitle),
       body: ListView(
         padding: EdgeInsets.fromLTRB(
           AppSizes.lg,
@@ -223,8 +221,7 @@ class _IssueNotePageState extends State<IssueNotePage> {
             l10n.invoicesNoteApproxTotal(
               '${AppStrings.currencySymbol}${_approxTotal.toStringAsFixed(2)}',
             ),
-            style: theme.textTheme.titleMedium
-                ?.copyWith(fontWeight: FontWeight.w700),
+            style: theme.textTheme.titleMedium?.bold,
           ),
         ],
       ),
@@ -276,8 +273,7 @@ class _IssueNotePageState extends State<IssueNotePage> {
             // qty / extra-price inputs sit OUTSIDE this InkWell so editing
             // them doesn't toggle the row off.
             InkWell(
-              onTap: () =>
-                  setState(() => line.include = !line.include),
+              onTap: () => setState(() => line.include = !line.include),
               child: Padding(
                 padding: const EdgeInsets.all(AppSizes.md),
                 child: Row(
@@ -294,16 +290,16 @@ class _IssueNotePageState extends State<IssueNotePage> {
                         children: [
                           Text(
                             item.productName,
-                            style: theme.textTheme.bodyMedium
-                                ?.copyWith(fontWeight: FontWeight.w600),
+                            style: theme.textTheme.bodyMedium?.semibold,
                           ),
                           const SizedBox(height: 2),
                           Text(
                             '${l10n.invoicesNoteSoldQty(_NoteLineDraft._trimQty(item.quantity))}'
                             ' · ${AppStrings.currencySymbol}${item.unitPrice.toStringAsFixed(2)}'
                             '${item.taxPercent > 0 ? ' · ${item.taxPercent.toStringAsFixed(0)}% GST' : ''}',
-                            style: theme.textTheme.bodySmall
-                                ?.copyWith(color: AppColors.muted),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: AppColors.muted,
+                            ),
                           ),
                         ],
                       ),

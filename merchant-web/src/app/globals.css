@@ -178,6 +178,19 @@
   --text-label-md--line-height: 1.2;
   --text-label-md--font-weight: 600;
 
+  /* Sub-body micro sizes — captions, badges, dense metadata. Weight 400 so an
+     explicit weight class at the call site still wins. */
+  --text-caption: 11px;
+  --text-caption--line-height: 1.35;
+  --text-caption--font-weight: 400;
+  --text-micro: 10px;
+  --text-micro--line-height: 1.3;
+  --text-micro--font-weight: 400;
+  --text-nano: 9px;
+  --text-nano--line-height: 1.3;
+  --text-nano--font-weight: 400;
+  --text-nano--letter-spacing: 0.2px;
+
   /* ── Breakpoints (Material window-size classes) ──────────────────────── */
   --breakpoint-phone: 600px;
   --breakpoint-tablet: 840px;

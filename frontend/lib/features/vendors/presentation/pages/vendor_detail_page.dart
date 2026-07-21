@@ -21,6 +21,7 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 class VendorDetailPage extends StatefulWidget {
   const VendorDetailPage({super.key, required this.vendorId});
@@ -219,12 +220,7 @@ class _Header extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      vendor.name,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+                    Text(vendor.name, style: theme.textTheme.titleLarge?.bold),
                     if (vendor.contactName != null &&
                         vendor.contactName!.isNotEmpty)
                       Padding(
@@ -360,12 +356,7 @@ class _StatBlock extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 2),
-        Text(
-          value,
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
-        ),
+        Text(value, style: theme.textTheme.titleLarge?.bold),
         const SizedBox(height: 2),
         Text(
           hint,
@@ -415,9 +406,7 @@ class _InvoiceRow extends StatelessWidget {
                   children: [
                     Text(
                       invoice.invoiceNo,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: theme.textTheme.titleSmall?.semibold,
                     ),
                     Text(
                       '${dateFmt.format(invoice.invoiceDate)} · ${invoice.itemCount} $itemsUnit',
@@ -433,9 +422,7 @@ class _InvoiceRow extends StatelessWidget {
                 children: [
                   Text(
                     currency.format(invoice.total),
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: theme.textTheme.titleSmall?.bold,
                   ),
                   const SizedBox(height: 2),
                   AppStatusBadge(
@@ -487,9 +474,7 @@ class _StockInRow extends StatelessWidget {
               children: [
                 Text(
                   entry.productName,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: theme.textTheme.titleSmall?.semibold,
                 ),
                 Text(
                   '${entry.productSku} · ${dateFmt.format(entry.createdAt)}',
@@ -505,9 +490,7 @@ class _StockInRow extends StatelessWidget {
             children: [
               Text(
                 '+${qty.format(entry.quantity)} ${entry.unit}',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: theme.textTheme.titleSmall?.bold,
               ),
               if (entry.totalValue != null)
                 Text(
@@ -832,12 +815,7 @@ class _LedgerRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  entry.label,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                Text(entry.label, style: theme.textTheme.titleSmall?.semibold),
                 Text(
                   isInvoice
                       ? dateFmt.format(entry.date)

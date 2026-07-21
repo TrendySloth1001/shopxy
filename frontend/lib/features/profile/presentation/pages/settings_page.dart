@@ -24,6 +24,7 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 enum SettingsSection { account, appearance, notifications, about }
 
@@ -512,9 +513,7 @@ class _DensityRow extends StatelessWidget {
                   style: ButtonStyle(
                     visualDensity: VisualDensity.compact,
                     textStyle: WidgetStatePropertyAll(
-                      theme.textTheme.labelMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                      theme.textTheme.labelMedium?.bold,
                     ),
                   ),
                 ),

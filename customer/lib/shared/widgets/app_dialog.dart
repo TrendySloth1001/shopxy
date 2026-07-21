@@ -4,6 +4,7 @@ import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_button.dart';
+import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
 /// A bottom-sheet confirmation with two actions. Returns `true` when the
 /// user taps the confirm button, `false`/`null` otherwise.
@@ -86,17 +87,15 @@ class AppConfirmSheet extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
+                    style: Theme.of(context).textTheme.titleMedium?.extraBold,
                   ),
                   const SizedBox(height: AppSizes.sm),
                   Text(
                     message,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.muted,
-                          height: 1.4,
-                        ),
+                      color: AppColors.muted,
+                      height: 1.4,
+                    ),
                   ),
                   const SizedBox(height: AppSizes.lg),
                   AppButton(

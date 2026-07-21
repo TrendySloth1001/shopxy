@@ -136,7 +136,7 @@ function PendingPaymentsContent() {
     <>
       {/* Total due header */}
       <div className="px-lg py-lg">
-        <p className="text-[11px] font-extrabold tracking-[0.8px] text-muted uppercase">Total due</p>
+        <p className="text-caption font-extrabold tracking-[0.8px] text-muted uppercase">Total due</p>
         <p className="text-display-sm font-extrabold text-ink tracking-tight">
           {formatINR(total, { decimals: 2 })}
         </p>

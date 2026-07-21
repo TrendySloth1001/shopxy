@@ -20,12 +20,12 @@ export function ReviewTile({ review, dense = false }: Props) {
         </span>
         <div className="flex flex-col">
           <span className="text-body-sm font-bold text-ink">{review.user.name}</span>
-          <span className="text-[11px] text-muted">{formatRelativeTime(review.createdAt)}</span>
+          <span className="text-caption text-muted">{formatRelativeTime(review.createdAt)}</span>
         </div>
         {/* Rating badge on right */}
         <div className="ml-auto flex items-center gap-[2px] rounded-xs bg-success px-sm py-[2px]">
           <span className="text-label-md font-extrabold text-white">{review.rating}</span>
-          <span className="text-[9px] text-white/80">★</span>
+          <span className="text-nano text-white/80">★</span>
         </div>
       </div>
       {/* Stars */}

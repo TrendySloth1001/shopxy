@@ -18,6 +18,7 @@ import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/widgets/empty_state.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
+import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
 /// Order status buckets used by the filter chips. Each order is placed
 /// in exactly one bucket via [_statusOf] so it shows once per filter.
@@ -693,9 +694,7 @@ class _ErrorState extends StatelessWidget {
         const SizedBox(height: AppSizes.md),
         Text(
           AppStrings.somethingWentWrong,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
+          style: theme.textTheme.titleMedium?.bold,
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: AppSizes.xs),

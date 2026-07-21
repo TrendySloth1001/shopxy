@@ -10,6 +10,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Two-level tree picker over the canonical taxonomy. Replaces the
 /// flat searchable list — categories are fixed and curated now, so the
@@ -121,9 +122,7 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
                     Expanded(
                       child: Text(
                         l10n.categoriesPickerTitle,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: theme.textTheme.titleMedium?.bold,
                       ),
                     ),
                     IconButton(

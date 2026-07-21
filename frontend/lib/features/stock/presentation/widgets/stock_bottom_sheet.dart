@@ -19,6 +19,7 @@ import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 // Vendor model scoped to this widget (sourced from /stock/suppliers)
 typedef _SV = SupplierVendor;
@@ -304,9 +305,7 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
 
               Text(
                 widget.product.name,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: theme.textTheme.titleLarge?.bold,
                 textAlign: TextAlign.center,
               ),
               Text(

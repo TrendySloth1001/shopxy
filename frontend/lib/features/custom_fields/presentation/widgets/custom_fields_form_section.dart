@@ -14,6 +14,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// "More about this product" — drops into Add/Edit Product.
 ///
@@ -165,12 +166,7 @@ class _SectionGroup extends StatelessWidget {
             children: [
               AppIcon(icon, size: AppSizes.iconMd, color: AppColors.black),
               const SizedBox(width: AppSizes.sm),
-              Text(
-                title,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+              Text(title, style: theme.textTheme.titleSmall?.bold),
             ],
           ),
           const SizedBox(height: AppSizes.md),

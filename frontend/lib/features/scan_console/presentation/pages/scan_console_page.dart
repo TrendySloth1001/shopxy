@@ -10,6 +10,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Continuous "scan to console" mode. The phone holds a live WebSocket to the
 /// shop room (role=scanner): every barcode/QR is pushed over the socket, the
@@ -261,9 +262,7 @@ class _FeedbackTile extends StatelessWidget {
         item.title,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: theme.textTheme.titleSmall?.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
+        style: theme.textTheme.titleSmall?.semibold,
       ),
       subtitle: Text(
         item.subtitle,

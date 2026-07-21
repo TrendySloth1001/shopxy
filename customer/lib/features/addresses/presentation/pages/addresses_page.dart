@@ -12,6 +12,7 @@ import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
+import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
 /// Manage delivery addresses. Reached from the home top-bar
 /// location chip and from the profile screen. The default flag
@@ -302,9 +303,7 @@ class _Empty extends StatelessWidget {
         Center(
           child: Text(
             'No addresses saved yet',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            style: Theme.of(context).textTheme.titleMedium?.bold,
           ),
         ),
         const SizedBox(height: AppSizes.xs),

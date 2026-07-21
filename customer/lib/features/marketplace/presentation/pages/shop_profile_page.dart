@@ -16,6 +16,7 @@ import 'package:shopxy_customer/shared/format/app_format.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
+import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
 /// Public shop landing page. Reached from any "brand" tap — brand
 /// spotlight cards, sponsored product rails, and the PDP "Visit shop"
@@ -230,9 +231,7 @@ class _Body extends StatelessWidget {
           ),
           title: Text(
             shop.name,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+            style: Theme.of(context).textTheme.titleMedium?.extraBold,
           ),
         ),
         SliverToBoxAdapter(

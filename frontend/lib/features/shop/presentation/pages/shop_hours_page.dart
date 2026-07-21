@@ -8,6 +8,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 const _dayCodes = <String>['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
@@ -72,24 +73,24 @@ class _ShopHoursPageState extends State<ShopHoursPage> {
     for (final entry in _hours.entries) {
       final hours = entry.value;
       if (!hours.closed && hours.open != null && hours.close != null) {
-        body[entry.key] = [
-          _fmtTime(hours.open!),
-          _fmtTime(hours.close!),
-        ];
+        body[entry.key] = [_fmtTime(hours.open!), _fmtTime(hours.close!)];
       }
     }
     final provider = context.read<ShopProvider>();
     final ok = await provider.save(
       vacationMode: _vacationMode,
-      vacationMessage:
-          _vacationMessage.text.trim().isEmpty ? null : _vacationMessage.text.trim(),
+      vacationMessage: _vacationMessage.text.trim().isEmpty
+          ? null
+          : _vacationMessage.text.trim(),
       operatingHours: body.isEmpty ? null : body,
     );
     if (!mounted) return;
     final l10n = AppLocalizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(ok ? l10n.shopHoursSaved : provider.error ?? l10n.shopSaveFailed),
+        content: Text(
+          ok ? l10n.shopHoursSaved : provider.error ?? l10n.shopSaveFailed,
+        ),
       ),
     );
   }
@@ -112,9 +113,7 @@ class _ShopHoursPageState extends State<ShopHoursPage> {
             ),
         ],
       ),
-      body: shop == null
-          ? const _ShopHoursSkeleton()
-          : _buildForm(shop),
+      body: shop == null ? const _ShopHoursSkeleton() : _buildForm(shop),
     );
   }
 
@@ -131,14 +130,15 @@ class _ShopHoursPageState extends State<ShopHoursPage> {
       'sun': l10n.shopDaySunday,
     };
     return ListView(
-      padding: EdgeInsets.fromLTRB(AppSizes.lg,
-          AppSizes.lg + FloatingAppBar.contentTopInset(context),
-          AppSizes.lg, AppSizes.huge),
+      padding: EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.lg + FloatingAppBar.contentTopInset(context),
+        AppSizes.lg,
+        AppSizes.huge,
+      ),
       children: [
         Material(
-          color: _vacationMode
-              ? AppColors.warningSoft
-              : AppColors.surface,
+          color: _vacationMode ? AppColors.warningSoft : AppColors.surface,
           shape: AppShapes.squircle(AppSizes.radiusMd),
           child: Padding(
             padding: const EdgeInsets.all(AppSizes.md),
@@ -151,14 +151,9 @@ class _ShopHoursPageState extends State<ShopHoursPage> {
                   onChanged: (v) => setState(() => _vacationMode = v),
                   title: Text(
                     l10n.shopVacationMode,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w800),
+                    style: Theme.of(context).textTheme.titleMedium?.extraBold,
                   ),
-                  subtitle: Text(
-                    l10n.shopVacationModeSubtitle,
-                  ),
+                  subtitle: Text(l10n.shopVacationModeSubtitle),
                 ),
                 if (_vacationMode) ...[
                   const SizedBox(height: AppSizes.sm),
@@ -180,10 +175,10 @@ class _ShopHoursPageState extends State<ShopHoursPage> {
         Text(
           l10n.shopOpeningHours,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: AppColors.muted,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.6,
-              ),
+            color: AppColors.muted,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.6,
+          ),
         ),
         const SizedBox(height: AppSizes.sm),
         Material(
@@ -213,10 +208,9 @@ class _ShopHoursPageState extends State<ShopHoursPage> {
         const SizedBox(height: AppSizes.lg),
         Text(
           l10n.shopHoursHint,
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(color: AppColors.muted),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
         ),
       ],
     );
@@ -245,9 +239,12 @@ class _ShopHoursSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: EdgeInsets.fromLTRB(AppSizes.lg,
-          AppSizes.lg + FloatingAppBar.contentTopInset(context),
-          AppSizes.lg, AppSizes.huge),
+      padding: EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.lg + FloatingAppBar.contentTopInset(context),
+        AppSizes.lg,
+        AppSizes.huge,
+      ),
       children: [
         // Vacation mode card skeleton
         Material(
@@ -323,7 +320,9 @@ class _DayRowSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.md, vertical: AppSizes.sm),
+        horizontal: AppSizes.md,
+        vertical: AppSizes.sm,
+      ),
       child: Row(
         children: [
           // Day label
@@ -363,11 +362,7 @@ class _DayRowSkeleton extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _DayHours {
-  const _DayHours({
-    required this.closed,
-    this.open,
-    this.close,
-  });
+  const _DayHours({required this.closed, this.open, this.close});
   final bool closed;
   final TimeOfDay? open;
   final TimeOfDay? close;
@@ -386,17 +381,20 @@ class _DayRow extends StatelessWidget {
   Future<void> _pickTime(BuildContext context, bool isOpen) async {
     final t = await showTimePicker(
       context: context,
-      initialTime: (isOpen ? hours.open : hours.close) ??
+      initialTime:
+          (isOpen ? hours.open : hours.close) ??
           const TimeOfDay(hour: 9, minute: 0),
     );
     if (t == null) return;
-    onChange(_DayHours(
-      closed: false,
-      open: isOpen ? t : (hours.open ?? const TimeOfDay(hour: 9, minute: 0)),
-      close: isOpen
-          ? (hours.close ?? const TimeOfDay(hour: 21, minute: 0))
-          : t,
-    ));
+    onChange(
+      _DayHours(
+        closed: false,
+        open: isOpen ? t : (hours.open ?? const TimeOfDay(hour: 9, minute: 0)),
+        close: isOpen
+            ? (hours.close ?? const TimeOfDay(hour: 21, minute: 0))
+            : t,
+      ),
+    );
   }
 
   String _fmt(TimeOfDay? t) {
@@ -412,17 +410,16 @@ class _DayRow extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.md, vertical: AppSizes.sm),
+        horizontal: AppSizes.md,
+        vertical: AppSizes.sm,
+      ),
       child: Row(
         children: [
           SizedBox(
             width: 90,
             child: Text(
               label,
-              style: Theme.of(context)
-                  .textTheme
-                  .labelLarge
-                  ?.copyWith(fontWeight: FontWeight.w700),
+              style: Theme.of(context).textTheme.labelLarge?.bold,
             ),
           ),
           Expanded(
@@ -432,7 +429,9 @@ class _DayRow extends StatelessWidget {
                     child: Text(
                       l10n.shopDayClosed,
                       style: TextStyle(
-                          color: AppColors.muted, fontStyle: FontStyle.italic),
+                        color: AppColors.muted,
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
                   )
                 : Row(
@@ -444,8 +443,7 @@ class _DayRow extends StatelessWidget {
                         ),
                       ),
                       const Padding(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: AppSizes.xs),
+                        padding: EdgeInsets.symmetric(horizontal: AppSizes.xs),
                         child: Text('–'),
                       ),
                       Expanded(

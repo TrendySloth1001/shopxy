@@ -14,6 +14,7 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Merchant-facing list of coupons attached to the caller's shop.
 /// Tapping a row opens the editor sheet; the FAB opens the same sheet
@@ -203,9 +204,7 @@ class _CouponRow extends StatelessWidget {
                     Expanded(
                       child: Text(
                         '${row.code} · $discount',
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
+                        style: theme.textTheme.bodyLarge?.extraBold,
                       ),
                     ),
                     AppStatusBadge(

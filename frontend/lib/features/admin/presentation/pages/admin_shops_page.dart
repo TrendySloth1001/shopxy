@@ -12,6 +12,7 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Admin-only listing of marketplace shops with a verified toggle.
 /// Gated by the `isPlatformAdmin` drawer entry. No bulk actions yet —
@@ -216,9 +217,7 @@ class _Row extends StatelessWidget {
                         Expanded(
                           child: Text(
                             row.name,
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
+                            style: theme.textTheme.bodyLarge?.extraBold,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),

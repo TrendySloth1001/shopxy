@@ -69,8 +69,8 @@ function StopRow({
         </p>
         {e && (
           <div className="mt-[2px] space-y-[2px]">
-            <p className="text-[11px] text-muted">{formatDateTime(e.occurredAt)}</p>
-            {e.note && <p className="text-[11px] leading-[1.3] text-muted">{e.note}</p>}
+            <p className="text-caption text-muted">{formatDateTime(e.occurredAt)}</p>
+            {e.note && <p className="text-caption leading-[1.3] text-muted">{e.note}</p>}
           </div>
         )}
       </div>

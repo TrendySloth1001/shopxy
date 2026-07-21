@@ -21,6 +21,7 @@ import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 class ChallansPage extends StatefulWidget {
   const ChallansPage({super.key});
@@ -277,9 +278,7 @@ class _ChallanTile extends StatelessWidget {
                   children: [
                     Text(
                       challan.challanNo as String,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: theme.textTheme.bodyLarge?.medium,
                     ),
                     const SizedBox(height: AppSizes.xs),
                     Text(

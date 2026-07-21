@@ -19,6 +19,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/theme/app_theme.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 class ShopxyApp extends StatelessWidget {
   const ShopxyApp({super.key});
@@ -154,9 +155,7 @@ class _NoShopScreen extends StatelessWidget {
                 const SizedBox(height: AppSizes.lg),
                 Text(
                   l10n.noShopTitle,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: theme.textTheme.titleLarge?.extraBold,
                 ),
                 const SizedBox(height: AppSizes.sm),
                 Text(
@@ -207,9 +206,7 @@ class _SplashScreen extends StatelessWidget {
             const SizedBox(height: AppSizes.xl),
             Text(
               AppStrings.appName,
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+              style: theme.textTheme.headlineSmall?.bold,
             ),
             const SizedBox(height: AppSizes.xxl),
             const SizedBox(

@@ -14,6 +14,7 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Admin-only page (drawer entry gated by `User.isPlatformAdmin`). One
 /// list of all platform bank offers regardless of status — admin
@@ -256,9 +257,7 @@ class _OfferRow extends StatelessWidget {
                     Expanded(
                       child: Text(
                         '${offer.bank} · $discount',
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
+                        style: theme.textTheme.bodyLarge?.extraBold,
                       ),
                     ),
                     AppStatusBadge(

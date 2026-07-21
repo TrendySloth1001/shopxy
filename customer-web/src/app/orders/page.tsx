@@ -163,7 +163,7 @@ function OrdersContent() {
             >
               {f.label}
               <span
-                className={`text-[11px] font-bold ${filter === f.key ? "text-white/70" : "text-muted"}`}
+                className={`text-caption font-bold ${filter === f.key ? "text-white/70" : "text-muted"}`}
               >
                 {counts[f.key] ?? 0}
               </span>

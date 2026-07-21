@@ -6,6 +6,7 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
+import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
 /// One review row — used both inline in the PDP recent-reviews block
 /// and on the full all-reviews page. Designed to read like Flipkart:
@@ -46,9 +47,7 @@ class ReviewTile extends StatelessWidget {
                     review.title!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                    style: theme.textTheme.titleSmall?.extraBold,
                   ),
                 ),
             ],

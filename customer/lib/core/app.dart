@@ -16,6 +16,7 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/theme/app_theme.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
+import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
 class ShopxyCustomerApp extends StatelessWidget {
   const ShopxyCustomerApp({super.key, this.navigatorKey});
@@ -119,9 +120,7 @@ class _Splash extends StatelessWidget {
             const SizedBox(height: AppSizes.xl),
             Text(
               AppStrings.appName,
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+              style: theme.textTheme.headlineSmall?.bold,
             ),
             const SizedBox(height: AppSizes.xxl),
             const SizedBox(

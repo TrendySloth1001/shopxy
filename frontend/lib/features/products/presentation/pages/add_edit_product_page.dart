@@ -29,6 +29,7 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 class AddEditProductPage extends StatefulWidget {
   const AddEditProductPage({super.key, this.product, this.draft});
@@ -1468,12 +1469,7 @@ class _DetailTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                  Text(title, style: theme.textTheme.bodyMedium?.bold),
                   Text(
                     subtitle,
                     style: theme.textTheme.bodySmall?.copyWith(
@@ -1495,9 +1491,7 @@ class _DetailTile extends StatelessWidget {
                 ),
                 child: Text(
                   '$count',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: theme.textTheme.labelSmall?.extraBold,
                 ),
               ),
               const SizedBox(width: AppSizes.sm),
@@ -1704,9 +1698,7 @@ class _HighlightsEditor extends StatelessWidget {
               children: [
                 Text(
                   '• ',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w800),
+                  style: Theme.of(context).textTheme.bodyMedium?.extraBold,
                 ),
                 Expanded(child: Text(items[i])),
                 IconButton(

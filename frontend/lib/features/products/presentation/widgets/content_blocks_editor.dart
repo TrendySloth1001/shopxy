@@ -7,6 +7,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Phase C — A+ content blocks editor used inside the add/edit product
 /// page. Each block is one of HERO / FEATURE / COMPARISON / GALLERY /
@@ -210,12 +211,7 @@ class _AddBlockTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    label,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                  Text(label, style: theme.textTheme.bodyMedium?.bold),
                   Text(
                     hint,
                     style: theme.textTheme.bodySmall?.copyWith(
@@ -291,9 +287,7 @@ class _BlockCard extends StatelessWidget {
                 ),
                 child: Text(
                   _blockTitle(l10n, block.kind),
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: theme.textTheme.labelSmall?.extraBold,
                 ),
               ),
               const SizedBox(width: AppSizes.sm),
@@ -587,9 +581,7 @@ class _ComparisonEditorState extends State<_ComparisonEditor> {
         const SizedBox(height: AppSizes.md),
         Text(
           l10n.productsColumns,
-          style: theme.textTheme.labelMedium?.copyWith(
-            fontWeight: FontWeight.w800,
-          ),
+          style: theme.textTheme.labelMedium?.extraBold,
         ),
         const SizedBox(height: AppSizes.sm),
         for (var c = 0; c < _columns.length; c++)
@@ -635,12 +627,7 @@ class _ComparisonEditorState extends State<_ComparisonEditor> {
             ),
           ),
         const SizedBox(height: AppSizes.md),
-        Text(
-          l10n.productsRows,
-          style: theme.textTheme.labelMedium?.copyWith(
-            fontWeight: FontWeight.w800,
-          ),
-        ),
+        Text(l10n.productsRows, style: theme.textTheme.labelMedium?.extraBold),
         const SizedBox(height: AppSizes.sm),
         for (var r = 0; r < _rows.length; r++)
           Container(
@@ -785,9 +772,7 @@ class _ImageFieldState extends State<_ImageField> {
                 children: [
                   Text(
                     widget.label,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall?.semibold,
                   ),
                   const SizedBox(height: AppSizes.sm),
                   Row(
