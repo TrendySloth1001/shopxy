@@ -317,9 +317,12 @@ abstract final class AppIcons {
   static const AppIconData qrCodeRounded = HugeIcons.strokeRoundedQrCode;
   static const AppIconData qrCodeScannerRounded =
       HugeIcons.strokeRoundedQrCodeScan;
-  static const AppIconData receiptLong = HugeIcons.strokeRoundedInvoice;
-  static const AppIconData receiptLongOutlined = HugeIcons.strokeRoundedInvoice;
-  static const AppIconData receiptLongRounded = HugeIcons.strokeRoundedInvoice;
+  static const AppIconData receiptLong =
+      HugeIcons.strokeRoundedReceiptIndianRupee;
+  static const AppIconData receiptLongOutlined =
+      HugeIcons.strokeRoundedReceiptIndianRupee;
+  static const AppIconData receiptLongRounded =
+      HugeIcons.strokeRoundedReceiptIndianRupee;
   static const AppIconData receiptOutlined =
       HugeIcons.strokeRoundedReceiptIndianRupee;
   static const AppIconData redoRounded = HugeIcons.strokeRoundedRedo;

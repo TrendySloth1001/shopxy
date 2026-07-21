@@ -593,12 +593,27 @@ html {
   color: var(--color-ink);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  /* Kill the elastic overscroll "rubber-band" bounce at the top/bottom of the
+     page (and stop scroll from chaining to the browser) so the page feels
+     anchored rather than detaching when you hit the edge. */
+  overscroll-behavior: none;
   /* Re-theming swaps colours; ease them so toggling modes isn't a hard cut. */
   transition: background-color var(--duration-medium) var(--ease-standard);
 }
 
 body {
   font-family: var(--font-sans);
+}
+
+/* Hide scrollbars everywhere (scrolling still works) to match the floating-
+   glass UI — no chunky native track. Firefox + legacy Edge use properties;
+   WebKit/Blink use the pseudo-element. */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE / old Edge */
+}
+*::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
 }
 
 /* Devanagari languages (Hindi) swap the sans stack to Noto Sans Devanagari so

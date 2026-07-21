@@ -42,6 +42,10 @@ class ShopxyApp extends StatelessWidget {
 
           return MaterialApp(
             title: AppStrings.appName,
+            // No scrollbars anywhere: the default MaterialScrollBehavior paints
+            // a scrollbar on desktop/web (and drag surfaces), which clashes
+            // with the floating-glass design. Suppress it app-wide.
+            scrollBehavior: const _NoScrollbarBehavior(),
             // Devanagari languages (Hindi) swap the base font to Noto Sans
             // Devanagari; English stays on Inter.
             theme: AppTheme.fromPalette(
@@ -59,6 +63,20 @@ class ShopxyApp extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Scroll behaviour that never wraps scrollables in a [Scrollbar]. Keeps the
+/// floating-glass UI clean on desktop/web (and drag input) where the default
+/// [MaterialScrollBehavior] would otherwise paint one.
+class _NoScrollbarBehavior extends MaterialScrollBehavior {
+  const _NoScrollbarBehavior();
+
+  @override
+  Widget buildScrollbar(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) => child;
 }
 
 class _AuthGate extends StatelessWidget {

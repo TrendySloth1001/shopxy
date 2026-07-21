@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:shopxy/core/network/image_url.dart';
 import 'package:shopxy/features/auth/domain/entities/auth_user.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
+import 'package:shopxy/features/auth/presentation/widgets/logout_confirm_sheet.dart';
 import 'package:shopxy/features/profile/presentation/pages/edit_profile_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/settings_page.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
@@ -246,100 +247,11 @@ class ProfilePage extends StatelessWidget {
   /// the user; the root `_AuthGate` then rebuilds its (home) route to the
   /// login screen — so we pop every pushed route back to it to reveal it.
   static Future<void> _confirmAndLogout(BuildContext context) async {
-    final confirmed = await _showLogoutSheet(context);
+    final confirmed = await showLogoutConfirmSheet(context);
     if (confirmed != true || !context.mounted) return;
     await context.read<AuthProvider>().logout();
     if (!context.mounted) return;
     Navigator.of(context).popUntil((route) => route.isFirst);
-  }
-
-  static Future<bool?> _showLogoutSheet(BuildContext context) {
-    final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context);
-    return showModalBottomSheet<bool>(
-      context: context,
-      backgroundColor: AppColors.surface,
-      showDragHandle: true,
-      shape: RoundedRectangleBorder(
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(AppSizes.radiusDialog),
-        ),
-        side: BorderSide(color: AppColors.hairline),
-      ),
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSizes.lg,
-            0,
-            AppSizes.lg,
-            AppSizes.lg,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: AppSizes.huge,
-                height: AppSizes.huge,
-                decoration: ShapeDecoration(
-                  color: AppColors.error.withValues(alpha: 0.12),
-                  shape: AppShapes.squircle(AppSizes.radiusMd),
-                ),
-                alignment: Alignment.center,
-                child: AppIcon(
-                  AppIcons.logoutRounded,
-                  color: AppColors.error,
-                  size: AppSizes.iconLg,
-                ),
-              ),
-              const SizedBox(height: AppSizes.md),
-              Text(
-                l10n.profileLogout,
-                style: theme.textTheme.titleMedium?.extraBold,
-              ),
-              const SizedBox(height: AppSizes.xs),
-              Text(
-                l10n.profileLogoutConfirm,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: AppColors.muted,
-                ),
-              ),
-              const SizedBox(height: AppSizes.xl),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () => Navigator.of(sheetContext).pop(true),
-                  icon: const AppIcon(
-                    AppIcons.logoutRounded,
-                    size: AppSizes.iconSm,
-                  ),
-                  label: Text(l10n.profileLogout),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.error,
-                    foregroundColor: AppColors.white,
-                    padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
-                    shape: AppShapes.squircle(AppSizes.radiusButton),
-                    textStyle: theme.textTheme.labelLarge?.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSizes.sm),
-              SizedBox(
-                width: double.infinity,
-                child: TextButton(
-                  onPressed: () => Navigator.of(sheetContext).pop(false),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.muted,
-                    padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
-                  ),
-                  child: Text(l10n.profileCancel),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }
 

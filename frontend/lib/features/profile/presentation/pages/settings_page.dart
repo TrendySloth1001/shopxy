@@ -10,6 +10,7 @@ import 'package:shopxy/core/prefs/navigation_prefs.dart';
 import 'package:shopxy/core/prefs/theme_prefs.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
+import 'package:shopxy/features/auth/presentation/widgets/logout_confirm_sheet.dart';
 import 'package:shopxy/features/custom_fields/presentation/pages/custom_fields_settings_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/change_password_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/edit_profile_page.dart';
@@ -19,7 +20,6 @@ import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
-import 'package:shopxy/shared/widgets/app_dialog.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
@@ -97,15 +97,8 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _logout() async {
-    final l10n = AppLocalizations.of(context);
-    final confirmed = await AppConfirmDialog.show(
-      context,
-      title: l10n.profileLogout,
-      message: l10n.profileLogoutConfirm,
-      confirmLabel: l10n.profileLogout,
-      danger: true,
-    );
-    if (confirmed && mounted) {
+    final confirmed = await showLogoutConfirmSheet(context);
+    if (confirmed == true && mounted) {
       await context.read<AuthProvider>().logout();
     }
   }
