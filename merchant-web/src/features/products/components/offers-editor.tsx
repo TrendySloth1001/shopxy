@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { Plus, X } from "lucide-react";
 import type { ProductOffer } from "../schema";
+import { ComboSelect } from "@/shared/ui/combo-select";
 import { MiniButton } from "./form-controls";
 
 const OFFER_KINDS = ["BANK", "COUPON", "EMI", "EXCHANGE"] as const;
@@ -25,17 +26,13 @@ export function OffersEditor({
     <div className="flex flex-col gap-md">
       {offers.map((o, i) => (
         <div key={i} className="flex flex-wrap items-center gap-sm">
-          <select
+          <ComboSelect
+            ariaLabel={t("offers.kindLabel")}
             value={o.kind}
-            onChange={(e) => patch(i, { kind: e.target.value })}
-            className={`${cell} w-32`}
-          >
-            {OFFER_KINDS.map((k) => (
-              <option key={k} value={k}>
-                {k}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => patch(i, { kind: v })}
+            options={OFFER_KINDS.map((k) => ({ value: k, label: k }))}
+            className="w-32"
+          />
           <input
             value={o.headline}
             placeholder={t("offers.headlinePlaceholder")}

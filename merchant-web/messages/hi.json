@@ -127,7 +127,12 @@
       "noAccessHint": "आपके पास पहुँच नहीं है। दुकान मालिक से पूछें।",
       "saving": "सहेजा जा रहा है…",
       "published": "प्रकाशित",
-      "draft": "ड्राफ़्ट"
+      "draft": "ड्राफ़्ट",
+      "gridView": "ग्रिड दृश्य",
+      "listView": "सूची दृश्य",
+      "gridViewAria": "ग्रिड दृश्य पर जाएँ",
+      "listViewAria": "सूची दृश्य पर जाएँ",
+      "sortBy": "इसके अनुसार क्रमबद्ध करें"
     },
     "detail": {
       "loadError": "उत्पाद लोड नहीं हो सका।",
@@ -347,6 +352,7 @@
       "explainer": "कीमतों में GST शामिल है। आपके राज्य के भीतर बिक्री के लिए CGST + SGST दिखाया गया है; दूसरे राज्य में बिक्री पर वही कुल IGST के रूप में लगता है।"
     },
     "offers": {
+      "kindLabel": "ऑफ़र प्रकार",
       "headlinePlaceholder": "शीर्षक",
       "codePlaceholder": "कोड (वैकल्पिक)",
       "removeOffer": "ऑफ़र हटाएँ",
@@ -3425,6 +3431,17 @@
     },
     "colorField": {
       "swatchLabel": "{label} रंग-नमूना"
+    },
+    "datePicker": {
+      "placeholder": "तारीख़ चुनें",
+      "clear": "साफ़ करें",
+      "prevMonth": "पिछला महीना",
+      "nextMonth": "अगला महीना",
+      "today": "आज"
+    },
+    "timeSelect": {
+      "hour": "घंटा",
+      "minute": "मिनट"
     }
   },
   "dashboard": {

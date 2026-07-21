@@ -2,6 +2,7 @@
 
 import { useId, useState, type ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
+import { ComboSelect } from "@/shared/ui/combo-select";
 
 const inputClass =
   "w-full rounded-input border bg-field px-md py-sm text-body-md text-ink outline-none transition-colors placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft disabled:text-disabled";
@@ -108,25 +109,13 @@ export function SelectField({
   onChange: (v: string) => void;
   options: Array<{ value: string; label: string }>;
 }) {
-  const id = useId();
   return (
-    <div className="flex flex-col gap-xs">
-      <label htmlFor={id} className="text-label-md text-muted">
-        {label}
-      </label>
-      <select
-        id={id}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className={`${inputClass} border-hairline`}
-      >
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-    </div>
+    <ComboSelect
+      label={label}
+      value={value}
+      onChange={onChange}
+      options={options}
+    />
   );
 }
 
