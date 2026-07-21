@@ -3560,7 +3560,9 @@
       "slowMoversHint": "Share of idle in-stock units — capital that isn't moving.",
       "slowMoversAria": "Slow movers by idle stock",
       "idleStock": "idle stock",
-      "unitsValue": "{count} units"
+      "unitsValue": "{count} units",
+      "expandChart": "Expand to full screen",
+      "collapseChart": "Exit full screen"
     },
     "trend": {
       "title": "Sales trend",

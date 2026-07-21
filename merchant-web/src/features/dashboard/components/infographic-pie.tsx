@@ -43,9 +43,9 @@ export const PIE_PALETTE_C: PieSwatch[] = [
   { text: "text-accent-teal", bg: "bg-accent-teal" },
 ];
 
-// Geometry (SVG user units). Tighter viewBox + larger radii so the pie fills
-// more of the frame (callouts still sit inside it).
-const W = 800;
+// Geometry (SVG user units). Wide viewBox so the two callout columns get real
+// horizontal room on either side of the pie (that's what stops label overlap).
+const W = 900;
 const H = 520;
 const CX = W / 2;
 const CY = H / 2;
@@ -53,8 +53,15 @@ const HUB = 86;
 const R_MIN = 184;
 const R_MAX = 228;
 const GAP_DEG = 3;
-const STUB = 24;
 const EXPLODE = 14; // how far the hovered slice lifts out (smoothly, via CSS transform)
+
+// Callout layout. Labels are stacked along a fixed outer column per side with a
+// minimum vertical gap; the leader line stretches horizontally out to it.
+const COL_R = R_MAX + 26; // radius of the label column (just past the widest slice)
+const TAIL = 22; // length of the final horizontal run into the text
+const LABEL_GAP = 34; // min vertical spacing between two stacked callouts
+const LABEL_TOP = 22; // top bound of a callout column
+const LABEL_BOT = H - 14; // bottom bound of a callout column
 
 function polar(r: number, angleDeg: number): [number, number] {
   const a = ((angleDeg - 90) * Math.PI) / 180;
@@ -114,6 +121,29 @@ export function InfographicPie({
     const rOut = single ? R_MAX : R_MIN + (s.value / maxVal) * (R_MAX - R_MIN);
     return { ...s, color: palette[i % palette.length], pct: Math.round((s.value / total) * 100), start, end, mid, rOut };
   });
+  // De-collide the callouts: for each slice compute its leader-line tip/knee,
+  // pick a side, then stack the labels along that side's column, pushing any
+  // that land too close apart (and back inside the frame). Indexed by slice.
+  const layout = segs.map((s, i) => {
+    const ang = single ? 0 : s.mid;
+    const [tipX, tipY] = polar(s.rOut + 4, ang);
+    const [kneeX, kneeY] = polar(s.rOut + 18, ang);
+    const right = single ? true : kneeX >= CX;
+    return { i, tipX, tipY, kneeX, kneeY, right, y: kneeY };
+  });
+  for (const side of [true, false]) {
+    const col = layout.filter((l) => l.right === side).sort((a, b) => a.kneeY - b.kneeY);
+    for (let k = 1; k < col.length; k++) {
+      if (col[k].y - col[k - 1].y < LABEL_GAP) col[k].y = col[k - 1].y + LABEL_GAP;
+    }
+    const overflow = col.length ? col[col.length - 1].y - LABEL_BOT : 0;
+    if (overflow > 0) for (const l of col) l.y -= overflow;
+    for (let k = 0; k < col.length; k++) {
+      const minY = k === 0 ? LABEL_TOP : col[k - 1].y + LABEL_GAP;
+      if (col[k].y < minY) col[k].y = minY;
+    }
+  }
+
   const cur = active != null ? segs[active] : null;
   const top = segs[0];
   const second = segs[1] && segs[1].label !== otherLabel ? segs[1] : null;
@@ -133,12 +163,13 @@ export function InfographicPie({
               const a1 = single ? s.end : s.end - GAP_DEG / 2;
               // A lone 100% slice renders as a full ring; put its % at the top.
               const [lx, ly] = polar((HUB + s.rOut) / 2, single ? 0 : s.mid);
-              const [tipX, tipY] = polar(s.rOut + 4, s.mid);
-              const [kneeX, kneeY] = polar(s.rOut + 18, s.mid);
-              const right = kneeX >= CX;
-              const endX = right ? kneeX + STUB : kneeX - STUB;
+              const L = layout[i];
+              const right = L.right;
+              const labelY = L.y;
+              const colX = right ? CX + COL_R : CX - COL_R;
+              const bendX = right ? colX - TAIL : colX + TAIL;
               const anchor = right ? "start" : "end";
-              const textX = right ? endX + 6 : endX - 6;
+              const textX = right ? colX + 6 : colX - 6;
               const sel = active === i;
               const dimmed = active != null && !sel;
               const [ux, uy] = unit(s.mid);
@@ -179,11 +210,17 @@ export function InfographicPie({
                   <text x={lx} y={ly} textAnchor="middle" dominantBaseline="central" className="fill-white" fontSize={s.pct >= 8 ? 22 : 14} fontWeight={700} pointerEvents="none">
                     {s.pct}%
                   </text>
-                  <polyline points={`${tipX},${tipY} ${kneeX},${kneeY} ${endX},${kneeY}`} fill="none" stroke="currentColor" strokeWidth={1.5} className="text-subtle" />
-                  <text x={textX} y={kneeY - 4} textAnchor={anchor} fill="currentColor" className={s.color.text} fontSize={15} fontWeight={700}>
+                  <polyline
+                    points={`${L.tipX},${L.tipY} ${L.kneeX},${L.kneeY} ${bendX},${labelY} ${colX},${labelY}`}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.5}
+                    className="text-subtle"
+                  />
+                  <text x={textX} y={labelY - 4} textAnchor={anchor} fill="currentColor" className={s.color.text} fontSize={15} fontWeight={700}>
                     {trim(s.label)}
                   </text>
-                  <text x={textX} y={kneeY + 14} textAnchor={anchor} className="fill-muted" fontSize={13}>
+                  <text x={textX} y={labelY + 13} textAnchor={anchor} className="fill-muted" fontSize={13}>
                     {formatValue(s.value)}
                   </text>
                 </g>

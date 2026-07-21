@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:16
+    image: pgvector/pgvector:pg16
     container_name: shopxy-postgres
     environment:
       POSTGRES_USER: shopxy
@@ -19,11 +19,24 @@ services:
       MINIO_ROOT_USER: shopxy
       MINIO_ROOT_PASSWORD: shopxy123
     ports:
-      - "9000:9000"   # S3 API
-      - "9001:9001"   # Web console — open http://localhost:9001
+      # Host ports remapped to 9010/9011 to avoid a clash with another local
+      # project's MinIO already bound to 9000/9001. Container ports stay 9000/9001;
+      # backend reaches the API via MINIO_PORT=9010 (see backend/.env).
+      - "9010:9000"   # S3 API      → http://localhost:9010
+      - "9011:9001"   # Web console → http://localhost:9011
     volumes:
       - shopxy_minio:/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: shopxy-redis
+    command: redis-server --save 60 1 --loglevel warning
+    ports:
+      - "6379:6379"   # backend connects via localhost:6379 (redis.ts default)
+    volumes:
+      - shopxy_redis:/data
 
 volumes:
   shopxy_db:
   shopxy_minio:
+  shopxy_redis:
