@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { BadgeCheck } from "lucide-react";
+import { BadgeCheck } from "@/shared/icons";
 import { getReviewSummary } from "./api";
 import type { Review, ReviewSummary } from "./schema";
 import { Stars } from "./stars";

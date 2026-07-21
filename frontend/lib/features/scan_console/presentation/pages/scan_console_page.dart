@@ -8,6 +8,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Continuous "scan to console" mode. The phone holds a live WebSocket to the
 /// shop room (role=scanner): every barcode/QR is pushed over the socket, the
@@ -88,7 +89,7 @@ class _ScanConsolePageState extends State<ScanConsolePage> {
         actions: [
           TextButton.icon(
             onPressed: _client.recent.isEmpty ? null : _clear,
-            icon: const Icon(Icons.delete_sweep_outlined, size: AppSizes.iconSm),
+            icon: const Icon(AppIcons.deleteSweepOutlined, size: AppSizes.iconSm),
             label: Text(l10n.scanConsoleClear),
           ),
         ],
@@ -165,7 +166,7 @@ class _ConnectionBanner extends StatelessWidget {
       case ScanConnStatus.connected:
         bg = AppColors.successSoft;
         fg = AppColors.success;
-        icon = Icons.check_circle_rounded;
+        icon = AppIcons.checkCircleRounded;
         title = l10n.scanConsoleConnected;
         subtitle = client.consoles > 0
             ? l10n.scanConsoleWatching(client.consoles, client.sentCount)
@@ -173,17 +174,17 @@ class _ConnectionBanner extends StatelessWidget {
       case ScanConnStatus.connecting:
         bg = AppColors.surfaceTint;
         fg = AppColors.muted;
-        icon = Icons.sync_rounded;
+        icon = AppIcons.syncRounded;
         title = l10n.scanConsoleConnecting;
       case ScanConnStatus.reconnecting:
         bg = AppColors.warningSoft;
         fg = AppColors.warning;
-        icon = Icons.sync_problem_rounded;
+        icon = AppIcons.syncProblemRounded;
         title = l10n.scanConsoleReconnecting;
       case ScanConnStatus.error:
         bg = AppColors.errorSoft;
         fg = AppColors.error;
-        icon = Icons.error_outline_rounded;
+        icon = AppIcons.errorOutlineRounded;
         title = l10n.scanConsoleNotConnected;
         subtitle = client.error;
     }
@@ -241,7 +242,7 @@ class _FeedbackTile extends StatelessWidget {
           shape: AppShapes.squircle(AppSizes.radiusMd),
         ),
         child: Icon(
-          item.ok ? Icons.check_rounded : Icons.close_rounded,
+          item.ok ? AppIcons.checkRounded : AppIcons.closeRounded,
           color: color,
           size: AppSizes.iconMd,
         ),

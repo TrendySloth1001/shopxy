@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, ShieldCheck } from "@/shared/icons";
 import { useTranslations } from "next-intl";
 import { TextField, SelectField } from "@/shared/ui/form";
 import { onboardingSchema, startOnboarding, type OnboardingInput } from "./api";

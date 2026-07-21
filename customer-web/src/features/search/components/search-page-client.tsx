@@ -21,7 +21,7 @@ import {
   SearchX,
   Sparkles,
   X,
-} from "lucide-react";
+} from "@/shared/icons";
 import { fetchAutocomplete, fetchHints, fetchSearch } from "../api";
 import { useRecentSearches } from "../use-recent-searches";
 import { EMPTY_FILTERS, activeFilterCount } from "../types";

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Heart, ShieldCheck, Star, Truck } from "lucide-react";
+import { Heart, ShieldCheck, Star, Truck } from "@/shared/icons";
 import { isAssured, type ProductCard } from "../types";
 import { recordTap } from "../tracking";
 import { ImageBox } from "./image-box";

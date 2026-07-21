@@ -2,7 +2,7 @@
 
 import { useRef, useState, type ChangeEvent } from "react";
 import { useTranslations } from "next-intl";
-import { ImagePlus, X, ArrowUp, ArrowDown } from "lucide-react";
+import { ImagePlus, X, ArrowUp, ArrowDown } from "@/shared/icons";
 import {
   addImage,
   deleteImage,

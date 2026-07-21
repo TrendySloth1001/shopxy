@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:shopxy_customer/features/orders/domain/entities/customer_order.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Vertical milestone strip for a single per-shop slice's tracking
 /// timeline. Renders the canonical lifecycle from CREATED through
@@ -40,25 +41,25 @@ class OrderTimeline extends StatelessWidget {
     final returned = byType.containsKey('RETURNED');
 
     final stops = <_Stop>[
-      _Stop(label: 'Order placed', icon: Icons.receipt_long_rounded, event: byType['CREATED']),
+      _Stop(label: 'Order placed', icon: AppIcons.receiptLongRounded, event: byType['CREATED']),
       if (terminated)
         _Stop(
           label: status == 'REJECTED' ? 'Declined by seller' : 'Cancelled',
-          icon: Icons.cancel_outlined,
+          icon: AppIcons.cancelOutlined,
           event: byType[status],
           tone: _Tone.danger,
         )
       else ...[
-        _Stop(label: 'Confirmed', icon: Icons.check_circle_outline, event: byType['CONFIRMED']),
-        _Stop(label: 'Packed', icon: Icons.inventory_2_outlined, event: byType['PACKED']),
-        _Stop(label: 'Shipped', icon: Icons.local_shipping_outlined, event: byType['SHIPPED']),
-        _Stop(label: 'Out for delivery', icon: Icons.directions_run_rounded, event: byType['OUT_FOR_DELIVERY']),
-        _Stop(label: 'Delivered', icon: Icons.task_alt_rounded, event: byType['DELIVERED']),
+        _Stop(label: 'Confirmed', icon: AppIcons.checkCircleOutline, event: byType['CONFIRMED']),
+        _Stop(label: 'Packed', icon: AppIcons.inventory2Outlined, event: byType['PACKED']),
+        _Stop(label: 'Shipped', icon: AppIcons.localShippingOutlined, event: byType['SHIPPED']),
+        _Stop(label: 'Out for delivery', icon: AppIcons.directionsRunRounded, event: byType['OUT_FOR_DELIVERY']),
+        _Stop(label: 'Delivered', icon: AppIcons.taskAltRounded, event: byType['DELIVERED']),
       ],
       if (returned)
         _Stop(
           label: 'Returned',
-          icon: Icons.assignment_return_outlined,
+          icon: AppIcons.assignmentReturnOutlined,
           event: byType['RETURNED'],
           tone: _Tone.warning,
         ),

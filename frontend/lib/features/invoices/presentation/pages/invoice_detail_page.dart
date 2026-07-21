@@ -29,6 +29,7 @@ import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/glass_widgets.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 class InvoiceDetailPage extends StatefulWidget {
   const InvoiceDetailPage({super.key, required this.invoiceId});
@@ -376,17 +377,17 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
           if (!_isDownloading) ...[
             if (invoice.isDraft)
               IconButton(
-                icon: const Icon(Icons.edit_outlined),
+                icon: const Icon(AppIcons.editOutlined),
                 tooltip: l10n.invoicesEdit,
                 onPressed: _openEdit,
               ),
             IconButton(
-              icon: const Icon(Icons.share_rounded),
+              icon: const Icon(AppIcons.shareRounded),
               tooltip: l10n.invoicesShare,
               onPressed: _sharePdf,
             ),
             IconButton(
-              icon: const Icon(Icons.download_rounded),
+              icon: const Icon(AppIcons.downloadRounded),
               tooltip: l10n.invoicesDownloadTooltip,
               onPressed: _downloadPdf,
             ),
@@ -702,7 +703,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
             const SizedBox(height: AppSizes.sm),
             _ActionTile(
               iconChild: Icon(
-                Icons.swap_horiz_rounded,
+                AppIcons.swapHorizRounded,
                 color: AppColors.brand,
                 size: 20,
               ),
@@ -718,7 +719,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
             const SizedBox(height: AppSizes.sm),
             _ActionTile(
               iconChild: Icon(
-                Icons.account_balance_wallet_rounded,
+                AppIcons.accountBalanceWalletRounded,
                 color: AppColors.success,
                 size: 20,
               ),
@@ -765,7 +766,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
             const SizedBox(height: AppSizes.sm),
             _ActionTile(
               iconChild: Icon(
-                Icons.difference_rounded,
+                AppIcons.differenceRounded,
                 color: AppColors.brand,
                 size: 20,
               ),
@@ -951,7 +952,7 @@ class _ActionTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSizes.sm),
-              Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+              Icon(AppIcons.chevronRightRounded, color: AppColors.muted),
             ],
           ),
         ),

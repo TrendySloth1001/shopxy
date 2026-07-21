@@ -15,7 +15,7 @@ import {
   Truck,
   TriangleAlert,
   X,
-} from "lucide-react";
+} from "@/shared/icons";
 import { Divider } from "@/shared/ui/divider";
 import { Modal, ModalActions } from "@/shared/ui/modal";
 import { DateTimeField, SelectField, TextField } from "@/shared/ui/form";

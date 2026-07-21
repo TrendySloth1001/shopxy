@@ -3,6 +3,7 @@ import 'package:shopxy_customer/features/marketplace/domain/entities/listing_fil
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Modal bottom sheet for editing [ListingFilters] against a fixed set
 /// of [ListingFacets]. Local mutation only — the caller commits the
@@ -126,7 +127,7 @@ class _FilterSheetState extends State<_FilterSheet> {
                     child: const Text('Reset'),
                   ),
                 IconButton(
-                  icon: const Icon(Icons.close_rounded),
+                  icon: const Icon(AppIcons.closeRounded),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],

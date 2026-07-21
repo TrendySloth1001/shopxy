@@ -17,6 +17,7 @@ import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/shared/format/app_format.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Browse a *single linked shop's* catalogue, build a basket of what the
 /// customer wants, and send it as a QUOTE REQUEST. The shop prices it and
@@ -662,7 +663,7 @@ class _Stepper extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           IconButton(
-            icon: const Icon(Icons.remove_rounded),
+            icon: const Icon(AppIcons.removeRounded),
             color: AppColors.brandStrong,
             iconSize: AppSizes.iconMd,
             visualDensity: VisualDensity.compact,
@@ -674,7 +675,7 @@ class _Stepper extends StatelessWidget {
                 fontWeight: FontWeight.w800, color: AppColors.brandStrong),
           ),
           IconButton(
-            icon: const Icon(Icons.add_rounded),
+            icon: const Icon(AppIcons.addRounded),
             color: AppColors.brandStrong,
             iconSize: AppSizes.iconMd,
             visualDensity: VisualDensity.compact,
@@ -704,7 +705,7 @@ class _Thumb extends StatelessWidget {
           shape: AppShapes.squircle(AppSizes.radiusSm),
         ),
         alignment: Alignment.center,
-        child: const Icon(Icons.inventory_2_outlined,
+        child: const Icon(AppIcons.inventory2Outlined,
             size: AppSizes.iconLg, color: AppColors.brand),
       );
     }
@@ -736,7 +737,7 @@ class _SearchBar extends StatelessWidget {
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
           hintText: 'Search this shop’s catalogue',
-          prefixIcon: const Icon(Icons.search_rounded, size: AppSizes.iconMd),
+          prefixIcon: const Icon(AppIcons.searchRounded, size: AppSizes.iconMd),
           isDense: true,
           filled: true,
           fillColor: AppColors.white,
@@ -833,7 +834,7 @@ class _ErrorView extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline_rounded,
+              const Icon(AppIcons.errorOutlineRounded,
                   color: AppColors.error, size: AppSizes.iconXl),
               const SizedBox(height: AppSizes.sm),
               Text(err, textAlign: TextAlign.center),
@@ -996,7 +997,7 @@ class _ProductPreviewSheetState extends State<_ProductPreviewSheet> {
                           const Padding(
                             padding: EdgeInsets.only(
                                 top: AppSizes.xs, right: AppSizes.sm),
-                            child: Icon(Icons.check_circle_rounded,
+                            child: Icon(AppIcons.checkCircleRounded,
                                 size: AppSizes.iconSm, color: AppColors.brand),
                           ),
                           Expanded(
@@ -1083,7 +1084,7 @@ class _GalleryState extends State<_Gallery> {
         height: 200,
         color: AppColors.heroPanel,
         alignment: Alignment.center,
-        child: const Icon(Icons.inventory_2_outlined,
+        child: const Icon(AppIcons.inventory2Outlined,
             size: AppSizes.iconHuge, color: AppColors.brand),
       );
     }

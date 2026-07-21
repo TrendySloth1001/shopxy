@@ -7,7 +7,7 @@ import {
   ReceiptText,
   FileText,
   ArrowRight,
-} from "lucide-react";
+} from "@/shared/icons";
 import type { Party, Vendor, MerchantRole } from "../types";
 import { merchantBase, roleLabelOf, roleColorOf } from "../types";
 import { formatINR } from "@/shared/format";

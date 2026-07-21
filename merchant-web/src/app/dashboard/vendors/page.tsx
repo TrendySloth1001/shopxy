@@ -13,7 +13,7 @@ import {
   Search,
   Trash2,
   Truck,
-} from "lucide-react";
+} from "@/shared/icons";
 import { PageHeader } from "@/shared/ui/page-header";
 import { Avatar } from "@/features/auth/components/avatar";
 import { Modal, ModalActions } from "@/shared/ui/modal";

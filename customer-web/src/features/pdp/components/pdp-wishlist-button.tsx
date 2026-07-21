@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Heart } from "lucide-react";
+import { Heart } from "@/shared/icons";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/features/auth/auth-context";
 import { toggleWishlist, getWishlistIds } from "../api";

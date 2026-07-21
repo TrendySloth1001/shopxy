@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { UserPlus, X } from "lucide-react";
+import { UserPlus, X } from "@/shared/icons";
 import { Modal, ModalActions } from "@/shared/ui/modal";
 import { TextAreaField, TextField } from "@/shared/ui/form";
 import {

@@ -12,6 +12,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Tabs available in the customer-app shell. Orders was added in the
 /// May 2026 nav redesign so it's reachable in one tap instead of
@@ -242,29 +243,29 @@ class _NavPill extends StatelessWidget {
   final bool linked;
 
   static const _home = _NavItem(
-    icon: Icons.home_outlined,
-    selectedIcon: Icons.home_rounded,
+    icon: AppIcons.homeOutlined,
+    selectedIcon: AppIcons.homeRounded,
     label: AppStrings.navHome,
   );
   static const _merchant = _NavItem(
-    icon: Icons.storefront_outlined,
-    selectedIcon: Icons.storefront_rounded,
+    icon: AppIcons.storefrontOutlined,
+    selectedIcon: AppIcons.storefrontRounded,
     label: 'Merchant',
   );
   static const _cart = _NavItem(
-    icon: Icons.shopping_cart_outlined,
-    selectedIcon: Icons.shopping_cart_rounded,
+    icon: AppIcons.shoppingCartOutlined,
+    selectedIcon: AppIcons.shoppingCartRounded,
     label: AppStrings.navCart,
     isCart: true,
   );
   static const _orders = _NavItem(
-    icon: Icons.receipt_long_outlined,
-    selectedIcon: Icons.receipt_long_rounded,
+    icon: AppIcons.receiptLongOutlined,
+    selectedIcon: AppIcons.receiptLongRounded,
     label: 'Orders',
   );
   static const _profile = _NavItem(
-    icon: Icons.person_outline_rounded,
-    selectedIcon: Icons.person_rounded,
+    icon: AppIcons.personOutlineRounded,
+    selectedIcon: AppIcons.personRounded,
     label: AppStrings.navProfile,
   );
 

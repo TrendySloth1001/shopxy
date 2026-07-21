@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, RefreshCw, Wallet } from "lucide-react";
+import { ArrowLeft, RefreshCw, Wallet } from "@/shared/icons";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Divider } from "@/shared/ui/divider";

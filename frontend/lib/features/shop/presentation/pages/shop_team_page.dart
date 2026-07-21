@@ -14,6 +14,7 @@ import 'package:shopxy/shared/widgets/app_dialog.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Team & roles — editorial layout (flat rows + hairline dividers, no
 /// boxed cards). Owners (or anyone with team:manage) invite staff,
@@ -210,7 +211,7 @@ class _ShopTeamPageState extends State<ShopTeamPage> {
             IconButton(
               tooltip: l10n.shopInviteTeammate,
               onPressed: _loading ? null : _invite,
-              icon: const Icon(Icons.person_add_outlined),
+              icon: const Icon(AppIcons.personAddOutlined),
             ),
         ],
       ),
@@ -267,7 +268,7 @@ class _ShopTeamPageState extends State<ShopTeamPage> {
         _SectionHeader(
           l10n.shopRolesHeader(_roles.length),
           action: _canManage
-              ? _HeaderAction(label: l10n.shopNewRole, icon: Icons.add_rounded, onTap: _createRole)
+              ? _HeaderAction(label: l10n.shopNewRole, icon: AppIcons.addRounded, onTap: _createRole)
               : null,
         ),
         for (var i = 0; i < _roles.length; i++)
@@ -534,7 +535,7 @@ class _MemberRow extends StatelessWidget {
           _RolePill(label: member.label, owner: member.isOwner),
           if (canManage)
             PopupMenuButton<String>(
-              icon: Icon(Icons.more_vert, color: AppColors.subtle),
+              icon: Icon(AppIcons.moreVert, color: AppColors.subtle),
               onSelected: (v) => v == 'edit' ? onEdit() : onRemove(),
               itemBuilder: (_) => [
                 PopupMenuItem(value: 'edit', child: Text(l10n.shopEditAccessMenu)),
@@ -576,7 +577,7 @@ class _InviteRow extends StatelessWidget {
             horizontal: AppSizes.lg, vertical: AppSizes.md),
         child: Row(
           children: [
-            Icon(Icons.mail_outline_rounded, color: AppColors.muted),
+            Icon(AppIcons.mailOutlineRounded, color: AppColors.muted),
             const SizedBox(width: AppSizes.md),
             Expanded(
               child: Column(
@@ -631,7 +632,7 @@ class _RoleRow extends StatelessWidget {
           horizontal: AppSizes.lg, vertical: AppSizes.md),
       child: Row(
         children: [
-          Icon(Icons.badge_outlined, color: AppColors.subtle),
+          Icon(AppIcons.badgeOutlined, color: AppColors.subtle),
           const SizedBox(width: AppSizes.md),
           Expanded(
             child: Column(
@@ -667,7 +668,7 @@ class _RoleRow extends StatelessWidget {
           ),
           if (canManage)
             PopupMenuButton<String>(
-              icon: Icon(Icons.more_vert, color: AppColors.subtle),
+              icon: Icon(AppIcons.moreVert, color: AppColors.subtle),
               onSelected: (v) => v == 'edit' ? onEdit() : onDelete(),
               itemBuilder: (_) => [
                 PopupMenuItem(value: 'edit', child: Text(l10n.shopEditRoleMenu)),
@@ -816,7 +817,7 @@ class _InfoBanner extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.info_outline, color: AppColors.info, size: 18),
+              Icon(AppIcons.infoOutline, color: AppColors.info, size: 18),
               const SizedBox(width: AppSizes.sm),
               Expanded(
                 child: Text(text,
@@ -845,7 +846,7 @@ class _ErrorState extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.error_outline, color: AppColors.muted, size: 40),
+              Icon(AppIcons.errorOutline, color: AppColors.muted, size: 40),
               const SizedBox(height: AppSizes.md),
               Text(message, textAlign: TextAlign.center),
               const SizedBox(height: AppSizes.md),
@@ -937,7 +938,7 @@ class _InviteSheetState extends State<_InviteSheet> {
               width: double.infinity,
               child: FilledButton.icon(
                 onPressed: _next,
-                icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                icon: const Icon(AppIcons.arrowForwardRounded, size: 18),
                 label: Text(l10n.shopChooseAccess),
               ),
             ),

@@ -28,6 +28,7 @@ import 'package:shopxy/shared/widgets/glass_widgets.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/constants/app_durations.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Height of the sticky Save-as-draft / Save-&-confirm action buttons. Taller
 /// than a stock button so the two labels stay on one line and the bar reads as
@@ -587,7 +588,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                             color: AppColors.onInverse,
                           ),
                         )
-                      : const Icon(Icons.check_rounded),
+                      : const Icon(AppIcons.checkRounded),
                   label: Text(
                     _isEditing ? l10n.invoicesUpdateAndConfirm : l10n.invoicesSaveAndConfirm,
                     maxLines: 1,
@@ -645,12 +646,12 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                 ButtonSegment(
                   value: 'SALE',
                   label: Text(l10n.invoicesSaleInvoice),
-                  icon: const Icon(Icons.arrow_upward_rounded),
+                  icon: const Icon(AppIcons.arrowUpwardRounded),
                 ),
                 ButtonSegment(
                   value: 'PURCHASE',
                   label: Text(l10n.invoicesPurchaseInvoice),
-                  icon: const Icon(Icons.arrow_downward_rounded),
+                  icon: const Icon(AppIcons.arrowDownwardRounded),
                 ),
               ],
               selected: {_type},
@@ -685,7 +686,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
               else
                 AppButton.secondary(
                   label: l10n.invoicesSelectVendor,
-                  icon: Icons.local_shipping_outlined,
+                  icon: AppIcons.localShippingOutlined,
                   onPressed: _pickVendor,
                   fullWidth: true,
                 ),
@@ -699,7 +700,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
               else ...[
                 AppButton.secondary(
                   label: l10n.invoicesSelectParty,
-                  icon: Icons.person_search_rounded,
+                  icon: AppIcons.personSearchRounded,
                   onPressed: _pickParty,
                   fullWidth: true,
                 ),
@@ -785,7 +786,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                 child: CircularProgressIndicator(strokeWidth: 2),
                               ),
                             )
-                          : const Icon(Icons.search_rounded),
+                          : const Icon(AppIcons.searchRounded),
                     ),
                     onChanged: _onProductSearchChanged,
                   ),
@@ -794,7 +795,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                 IconButton.filledTonal(
                   tooltip: l10n.invoicesScanBarcode,
                   onPressed: _scanProduct,
-                  icon: const Icon(Icons.qr_code_scanner_rounded),
+                  icon: const Icon(AppIcons.qrCodeScannerRounded),
                 ),
               ],
             ),
@@ -1042,7 +1043,7 @@ class _SelectedVendorCard extends StatelessWidget {
           ),
           TextButton(onPressed: onChange, child: Text(l10n.invoicesChange)),
           IconButton(
-            icon: const Icon(Icons.close_rounded),
+            icon: const Icon(AppIcons.closeRounded),
             onPressed: onClear,
             visualDensity: VisualDensity.compact,
           ),
@@ -1091,7 +1092,7 @@ class _ItemRow extends StatelessWidget {
                 ),
                 IconButton(
                   icon: Icon(
-                    Icons.close_rounded,
+                    AppIcons.closeRounded,
                     color: AppColors.error,
                     size: AppSizes.iconMd,
                   ),
@@ -1262,7 +1263,7 @@ class _SelectedPartyCard extends StatelessWidget {
           ),
           TextButton(onPressed: onChange, child: Text(l10n.invoicesChange)),
           IconButton(
-            icon: const Icon(Icons.close_rounded),
+            icon: const Icon(AppIcons.closeRounded),
             onPressed: onClear,
             visualDensity: VisualDensity.compact,
           ),

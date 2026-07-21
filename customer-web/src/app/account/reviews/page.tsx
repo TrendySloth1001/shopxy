@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, startTransition } from "react";
 import Link from "next/link";
-import { Star, StarHalf, Pencil, Trash2, X, Check } from "lucide-react";
+import { Star, StarHalf, Pencil, Trash2, X, Check } from "@/shared/icons";
 import { RequireAuth } from "@/features/auth/components/require-auth";
 import { AppHeader } from "@/features/auth/components/app-header";
 import { Divider } from "@/shared/ui/divider";

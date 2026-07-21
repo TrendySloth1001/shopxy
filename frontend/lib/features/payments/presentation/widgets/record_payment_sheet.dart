@@ -11,6 +11,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/widgets/app_filter_pill.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Bottom-sheet form for recording a payment.
 ///
@@ -238,7 +239,7 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close_rounded),
+                      icon: const Icon(AppIcons.closeRounded),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ],
@@ -308,7 +309,7 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
                   child: InputDecorator(
                     decoration: InputDecoration(
                       labelText: l10n.paymentsDateLabel,
-                      suffixIcon: const Icon(Icons.calendar_today_outlined),
+                      suffixIcon: const Icon(AppIcons.calendarTodayOutlined),
                     ),
                     child: Text(_dateFmt.format(_date)),
                   ),
@@ -391,7 +392,7 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Icon(
-                          Icons.error_outline_rounded,
+                          AppIcons.errorOutlineRounded,
                           color: AppColors.error,
                           size: AppSizes.iconSm,
                         ),

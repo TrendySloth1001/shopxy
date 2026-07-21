@@ -10,6 +10,7 @@ import 'package:shopxy_customer/shared/widgets/app_divider.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/format/app_format.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 class ShopInvoiceDetailPage extends StatefulWidget {
   const ShopInvoiceDetailPage({
@@ -61,7 +62,7 @@ class _ShopInvoiceDetailPageState extends State<ShopInvoiceDetailPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.error_outline_rounded,
+                    const Icon(AppIcons.errorOutlineRounded,
                         color: AppColors.error, size: AppSizes.iconXl),
                     const SizedBox(height: AppSizes.sm),
                     Text(
@@ -164,7 +165,7 @@ class _Header extends StatelessWidget {
           Row(
             children: [
               const Icon(
-                Icons.event_rounded,
+                AppIcons.eventRounded,
                 color: AppColors.muted,
                 size: AppSizes.iconSm,
               ),
@@ -237,8 +238,8 @@ class _Counterparty extends StatelessWidget {
     final name = invoice.shopName ?? fallbackName;
     final eyebrow = invoice.isSale ? 'ISSUED TO' : 'ISSUED BY';
     final iconData = invoice.isSale
-        ? Icons.person_outline_rounded
-        : Icons.storefront_outlined;
+        ? AppIcons.personOutlineRounded
+        : AppIcons.storefrontOutlined;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
@@ -512,7 +513,7 @@ class _Note extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Icon(
-            Icons.sticky_note_2_outlined,
+            AppIcons.stickyNote2Outlined,
             color: AppColors.muted,
             size: AppSizes.iconSm,
           ),

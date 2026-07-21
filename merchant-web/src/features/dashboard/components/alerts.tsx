@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { AlertCircle, AlertTriangle, ArrowRight, Info, X, type LucideIcon } from "lucide-react";
+import { AlertCircle, AlertTriangle, ArrowRight, Info, X, type LucideIcon } from "@/shared/icons";
 import type { DashboardAlert } from "../stats";
 
 type SevStyle = { icon: LucideIcon; iconClass: string };

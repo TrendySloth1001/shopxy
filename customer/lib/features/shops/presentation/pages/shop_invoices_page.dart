@@ -11,6 +11,7 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_divider.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/format/app_format.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 class ShopInvoicesPage extends StatefulWidget {
   const ShopInvoicesPage({super.key, required this.shop});
@@ -97,7 +98,7 @@ class _InvoiceTile extends StatelessWidget {
               ),
               alignment: Alignment.center,
               child: Icon(
-                invoice.isSale ? Icons.south_west_rounded : Icons.north_east_rounded,
+                invoice.isSale ? AppIcons.southWestRounded : AppIcons.northEastRounded,
                 color: accent,
                 size: AppSizes.iconMd,
               ),
@@ -131,7 +132,7 @@ class _InvoiceTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSizes.xs),
-            const Icon(Icons.chevron_right_rounded, color: AppColors.subtle),
+            const Icon(AppIcons.chevronRightRounded, color: AppColors.subtle),
           ],
         ),
       ),
@@ -209,7 +210,7 @@ class _EmptyInvoices extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.receipt_long_outlined,
+            const Icon(AppIcons.receiptLongOutlined,
                 color: AppColors.muted, size: AppSizes.iconHuge),
             const SizedBox(height: AppSizes.lg),
             Text(
@@ -242,7 +243,7 @@ class _Error extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline_rounded,
+            const Icon(AppIcons.errorOutlineRounded,
                 color: AppColors.error, size: AppSizes.iconXl),
             const SizedBox(height: AppSizes.sm),
             Text(err, textAlign: TextAlign.center),

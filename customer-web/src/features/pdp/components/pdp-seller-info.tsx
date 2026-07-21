@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Store } from "lucide-react";
+import { Store } from "@/shared/icons";
 import type { ShopSummary } from "../types";
 
 /**

@@ -4,6 +4,7 @@ import 'package:shopxy_customer/features/reviews/domain/entities/review.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// One review row — used both inline in the PDP recent-reviews block
 /// and on the full all-reviews page. Designed to read like Flipkart:
@@ -106,7 +107,7 @@ class ReviewTile extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Icon(
-                      Icons.verified_rounded,
+                      AppIcons.verifiedRounded,
                       size: AppSizes.iconSm,
                       color: AppColors.success,
                     ),
@@ -173,7 +174,7 @@ class _RatingChip extends StatelessWidget {
           ),
           const SizedBox(width: AppSizes.xs),
           const Icon(
-            Icons.star_rounded,
+            AppIcons.starRounded,
             color: AppColors.white,
             size: AppSizes.iconSm,
           ),

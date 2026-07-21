@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, startTransition } from "react";
 import Link from "next/link";
-import { Share2, Store, CloudOff, RefreshCw, CheckCircle2, XCircle, Package } from "lucide-react";
+import { Share2, Store, CloudOff, RefreshCw, CheckCircle2, XCircle, Package } from "@/shared/icons";
 import { fetchProduct, recordView } from "../api";
 import type { ProductDetail, Variant } from "../types";
 import { parseSpecGroups, parseOffers } from "../types";

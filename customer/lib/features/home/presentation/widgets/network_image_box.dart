@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 class NetworkImageBox extends StatefulWidget {
   const NetworkImageBox({
@@ -72,7 +73,7 @@ class _NetworkImageBoxState extends State<NetworkImageBox> {
         alignment: errorIcon ? Alignment.center : null,
         child: errorIcon
             ? const Icon(
-                Icons.image_outlined,
+                AppIcons.imageOutlined,
                 color: AppColors.disabled,
                 size: 28,
               )

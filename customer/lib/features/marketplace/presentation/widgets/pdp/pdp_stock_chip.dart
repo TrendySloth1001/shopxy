@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Urgency line: "Only N left" when stock is at or below the merchant's
 /// low-stock threshold (or a hard floor of 5 — whichever is higher).
@@ -21,7 +22,7 @@ class PdpStockChip extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(
             AppSizes.lg, AppSizes.sm, AppSizes.lg, 0),
         child: _Pill(
-          icon: Icons.block_rounded,
+          icon: AppIcons.blockRounded,
           label: 'Out of stock',
           fg: AppColors.error,
           bg: AppColors.errorSoft,
@@ -34,7 +35,7 @@ class PdpStockChip extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(
           AppSizes.lg, AppSizes.sm, AppSizes.lg, 0),
       child: _Pill(
-        icon: Icons.local_fire_department_rounded,
+        icon: AppIcons.localFireDepartmentRounded,
         label: 'Only ${stockQuantity.toStringAsFixed(0)} left',
         fg: AppColors.warning,
         bg: AppColors.warningSoft,

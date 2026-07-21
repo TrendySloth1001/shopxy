@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Boxes, Receipt, Store } from "lucide-react";
+import { Boxes, Receipt, Store } from "@/shared/icons";
 import type { DashboardGstMtd, DashboardTill } from "../stats";
 import { inr } from "./ui";
 

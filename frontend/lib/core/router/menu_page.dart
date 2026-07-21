@@ -32,6 +32,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// One menu row — a feature the user can open. Pushes [builder] on tap.
 /// [requires] gates it by shop capability (null = visible to any team member).
@@ -61,7 +62,7 @@ List<_MenuItem> get _manageItems => [
       _MenuItem(
         label: (l) => l.navMyShop,
         description: (l) => l.menuDescMyShop,
-        icon: Icons.storefront_outlined,
+        icon: AppIcons.storefrontOutlined,
         accent: AppColors.brand,
         accentSoft: AppColors.brandSoft,
         builder: (_) => const ShopProfilePage(),
@@ -70,7 +71,7 @@ List<_MenuItem> get _manageItems => [
       _MenuItem(
         label: (l) => l.navTeamRoles,
         description: (l) => l.menuDescTeam,
-        icon: Icons.groups_2_outlined,
+        icon: AppIcons.groups2Outlined,
         accent: AppColors.accentIndigo,
         accentSoft: AppColors.accentIndigoSoft,
         builder: (_) => const ShopTeamPage(),
@@ -79,7 +80,7 @@ List<_MenuItem> get _manageItems => [
       _MenuItem(
         label: (l) => l.navCategories,
         description: (l) => l.menuDescCategories,
-        icon: Icons.category_outlined,
+        icon: AppIcons.categoryOutlined,
         accent: AppColors.accentTeal,
         accentSoft: AppColors.accentTealSoft,
         builder: (_) => const CategoriesPage(),
@@ -88,7 +89,7 @@ List<_MenuItem> get _manageItems => [
       _MenuItem(
         label: (l) => l.navVendors,
         description: (l) => l.menuDescVendors,
-        icon: Icons.storefront_outlined,
+        icon: AppIcons.storefrontOutlined,
         accent: AppColors.accentIndigo,
         accentSoft: AppColors.accentIndigoSoft,
         builder: (_) => const VendorsPage(),
@@ -97,7 +98,7 @@ List<_MenuItem> get _manageItems => [
       _MenuItem(
         label: (l) => l.navParties,
         description: (l) => l.menuDescParties,
-        icon: Icons.groups_outlined,
+        icon: AppIcons.groupsOutlined,
         accent: AppColors.accentRose,
         accentSoft: AppColors.accentRoseSoft,
         builder: (_) => const PartiesPage(),
@@ -106,7 +107,7 @@ List<_MenuItem> get _manageItems => [
       _MenuItem(
         label: (l) => l.navBanners,
         description: (l) => l.menuDescBanners,
-        icon: Icons.image_outlined,
+        icon: AppIcons.imageOutlined,
         accent: AppColors.accentIndigo,
         accentSoft: AppColors.accentIndigoSoft,
         builder: (_) => const MerchantBannersPage(),
@@ -115,7 +116,7 @@ List<_MenuItem> get _manageItems => [
       _MenuItem(
         label: (l) => l.navCoupons,
         description: (l) => l.menuDescCoupons,
-        icon: Icons.local_offer_outlined,
+        icon: AppIcons.localOfferOutlined,
         accent: AppColors.accentAmber,
         accentSoft: AppColors.accentAmberSoft,
         builder: (_) => const MerchantCouponsPage(),
@@ -128,7 +129,7 @@ List<_MenuItem> get _operationItems => [
       _MenuItem(
         label: (l) => l.navPointOfSale,
         description: (l) => l.menuDescPos,
-        icon: Icons.point_of_sale_rounded,
+        icon: AppIcons.pointOfSaleRounded,
         accent: AppColors.brand,
         accentSoft: AppColors.brandSoft,
         builder: (_) => const PosPage(),
@@ -137,7 +138,7 @@ List<_MenuItem> get _operationItems => [
       _MenuItem(
         label: (l) => l.navCashier,
         description: (l) => l.menuDescCashier,
-        icon: Icons.calculate_outlined,
+        icon: AppIcons.calculateOutlined,
         accent: AppColors.accentIndigo,
         accentSoft: AppColors.accentIndigoSoft,
         builder: (_) => const CashierPage(),
@@ -146,7 +147,7 @@ List<_MenuItem> get _operationItems => [
       _MenuItem(
         label: (l) => l.navScanToConsole,
         description: (l) => l.menuDescScan,
-        icon: Icons.qr_code_scanner_rounded,
+        icon: AppIcons.qrCodeScannerRounded,
         accent: AppColors.accentTeal,
         accentSoft: AppColors.accentTealSoft,
         builder: (_) => const ScanConsolePage(),
@@ -155,7 +156,7 @@ List<_MenuItem> get _operationItems => [
       _MenuItem(
         label: (l) => l.navQuotations,
         description: (l) => l.menuDescQuotations,
-        icon: Icons.request_quote_outlined,
+        icon: AppIcons.requestQuoteOutlined,
         accent: AppColors.accentIndigo,
         accentSoft: AppColors.accentIndigoSoft,
         builder: (_) => const QuotationsPage(),
@@ -164,7 +165,7 @@ List<_MenuItem> get _operationItems => [
       _MenuItem(
         label: (l) => l.navChallans,
         description: (l) => l.menuDescChallans,
-        icon: Icons.assignment_outlined,
+        icon: AppIcons.assignmentOutlined,
         accent: AppColors.accentAmber,
         accentSoft: AppColors.accentAmberSoft,
         builder: (_) => const ChallansPage(),
@@ -173,7 +174,7 @@ List<_MenuItem> get _operationItems => [
       _MenuItem(
         label: (l) => l.navStockAdjustments,
         description: (l) => l.menuDescStockAdj,
-        icon: Icons.tune_rounded,
+        icon: AppIcons.tuneRounded,
         accent: AppColors.brand,
         accentSoft: AppColors.brandSoft,
         builder: (_) => const StockAdjustmentsPage(),
@@ -182,7 +183,7 @@ List<_MenuItem> get _operationItems => [
       _MenuItem(
         label: (l) => l.navReturns,
         description: (l) => l.menuDescReturns,
-        icon: Icons.assignment_return_outlined,
+        icon: AppIcons.assignmentReturnOutlined,
         accent: AppColors.accentRose,
         accentSoft: AppColors.accentRoseSoft,
         builder: (_) => const MerchantReturnsPage(),
@@ -191,7 +192,7 @@ List<_MenuItem> get _operationItems => [
       _MenuItem(
         label: (l) => l.navReports,
         description: (l) => l.menuDescReports,
-        icon: Icons.summarize_outlined,
+        icon: AppIcons.summarizeOutlined,
         accent: AppColors.brandStrong,
         accentSoft: AppColors.brandSoft,
         builder: (_) => const ReportsPage(),
@@ -200,7 +201,7 @@ List<_MenuItem> get _operationItems => [
       _MenuItem(
         label: (l) => l.navAnalytics,
         description: (l) => l.menuDescAnalytics,
-        icon: Icons.bar_chart_outlined,
+        icon: AppIcons.barChartOutlined,
         accent: AppColors.accentIndigo,
         accentSoft: AppColors.accentIndigoSoft,
         builder: (_) => const MerchantAnalyticsPage(),
@@ -212,7 +213,7 @@ List<_MenuItem> get _adminItems => [
       _MenuItem(
         label: (l) => l.navBannerManager,
         description: (l) => l.menuDescBannerManager,
-        icon: Icons.view_carousel_outlined,
+        icon: AppIcons.viewCarouselOutlined,
         accent: AppColors.accentIndigo,
         accentSoft: AppColors.accentIndigoSoft,
         builder: (_) => const AdminBannersPage(),
@@ -220,7 +221,7 @@ List<_MenuItem> get _adminItems => [
       _MenuItem(
         label: (l) => l.navCategoryTaxonomy,
         description: (l) => l.menuDescCategoryTaxonomy,
-        icon: Icons.account_tree_outlined,
+        icon: AppIcons.accountTreeOutlined,
         accent: AppColors.accentTeal,
         accentSoft: AppColors.accentTealSoft,
         builder: (_) => const AdminCategoryTaxonomyPage(),
@@ -228,7 +229,7 @@ List<_MenuItem> get _adminItems => [
       _MenuItem(
         label: (l) => l.navCollections,
         description: (l) => l.menuDescCollections,
-        icon: Icons.collections_bookmark_outlined,
+        icon: AppIcons.collectionsBookmarkOutlined,
         accent: AppColors.accentRose,
         accentSoft: AppColors.accentRoseSoft,
         builder: (_) => const AdminCollectionsPage(),
@@ -236,7 +237,7 @@ List<_MenuItem> get _adminItems => [
       _MenuItem(
         label: (l) => l.navBankOffers,
         description: (l) => l.menuDescBankOffers,
-        icon: Icons.account_balance_outlined,
+        icon: AppIcons.accountBalanceOutlined,
         accent: AppColors.info,
         accentSoft: AppColors.infoSoft,
         builder: (_) => const AdminBankOffersPage(),
@@ -244,7 +245,7 @@ List<_MenuItem> get _adminItems => [
       _MenuItem(
         label: (l) => l.navShopVerification,
         description: (l) => l.menuDescShopVerification,
-        icon: Icons.verified_user_outlined,
+        icon: AppIcons.verifiedUserOutlined,
         accent: AppColors.brandStrong,
         accentSoft: AppColors.brandSoft,
         builder: (_) => const AdminShopsPage(),
@@ -255,7 +256,7 @@ List<_MenuItem> get _accountItems => [
       _MenuItem(
         label: (l) => l.navProfile,
         description: (l) => l.menuDescProfile,
-        icon: Icons.person_outline_rounded,
+        icon: AppIcons.personOutlineRounded,
         accent: AppColors.brand,
         accentSoft: AppColors.brandSoft,
         builder: (_) => const ProfilePage(),
@@ -263,7 +264,7 @@ List<_MenuItem> get _accountItems => [
       _MenuItem(
         label: (l) => l.profileSettings,
         description: (l) => l.menuDescSettings,
-        icon: Icons.settings_outlined,
+        icon: AppIcons.settingsOutlined,
         accent: AppColors.accentIndigo,
         accentSoft: AppColors.accentIndigoSoft,
         builder: (_) => const SettingsPage(),
@@ -312,24 +313,24 @@ class MenuPage extends StatelessWidget {
           if (manage.isNotEmpty)
             _MenuGroup(
               title: l10n.navSectionManage,
-              sectionIcon: Icons.work_outline_rounded,
+              sectionIcon: AppIcons.workOutlineRounded,
               items: manage,
             ),
           if (ops.isNotEmpty)
             _MenuGroup(
               title: l10n.navSectionOperations,
-              sectionIcon: Icons.build_outlined,
+              sectionIcon: AppIcons.buildOutlined,
               items: ops,
             ),
           if (isAdmin)
             _MenuGroup(
               title: l10n.navSectionPlatformAdmin,
-              sectionIcon: Icons.shield_outlined,
+              sectionIcon: AppIcons.shieldOutlined,
               items: _adminItems,
             ),
           _MenuGroup(
             title: l10n.profileSectionAccount,
-            sectionIcon: Icons.person_outline_rounded,
+            sectionIcon: AppIcons.personOutlineRounded,
             items: _accountItems,
           ),
         ],
@@ -456,7 +457,7 @@ class _MenuRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSizes.sm),
-            Icon(Icons.chevron_right_rounded,
+            Icon(AppIcons.chevronRightRounded,
                 size: 20, color: AppColors.subtle),
           ],
         ),

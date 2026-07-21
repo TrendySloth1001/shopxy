@@ -5,6 +5,7 @@ import 'package:shopxy_customer/features/reviews/data/datasources/reviews_remote
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Bottom-sheet rating editor. Tap-stars 1..5, optional title, optional
 /// body. Server enforces the "only buyers who purchased" rule and
@@ -148,7 +149,7 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close),
+                  icon: const Icon(AppIcons.close),
                   onPressed: () => Navigator.of(context).pop(false),
                 ),
               ],
@@ -202,7 +203,7 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
                     child: Row(
                       children: [
                         const Icon(
-                          Icons.info_outline_rounded,
+                          AppIcons.infoOutlineRounded,
                           color: AppColors.warning,
                         ),
                         const SizedBox(width: AppSizes.sm),
@@ -291,7 +292,7 @@ class _TapStars extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm),
             child: Icon(
-              filled ? Icons.star_rounded : Icons.star_outline_rounded,
+              filled ? AppIcons.starRounded : AppIcons.starOutlineRounded,
               size: AppSizes.iconHuge,
               color: filled ? AppColors.success : AppColors.subtle,
             ),

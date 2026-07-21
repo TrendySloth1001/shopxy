@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle } from "@/shared/icons";
 import { AppHeader } from "@/features/auth/components/app-header";
 import { RequireAuth } from "@/features/auth/components/require-auth";
 import { Snackbar, type SnackMessage } from "@/features/orders/components/snackbar";

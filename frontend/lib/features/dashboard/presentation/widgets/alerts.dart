@@ -8,6 +8,7 @@ import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Session-scoped dismissed alert ids — survives rebuilds + period reloads,
 /// resets when the app restarts (mirrors the web's sessionStorage).
@@ -96,9 +97,9 @@ class _AlertRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final (icon, iconColor) = switch (alert.severity) {
-      AlertSeverity.critical => (Icons.error_outline_rounded, AppColors.error),
-      AlertSeverity.warning => (Icons.warning_amber_rounded, AppColors.warning),
-      AlertSeverity.info => (Icons.info_outline_rounded, AppColors.brandStrong),
+      AlertSeverity.critical => (AppIcons.errorOutlineRounded, AppColors.error),
+      AlertSeverity.warning => (AppIcons.warningAmberRounded, AppColors.warning),
+      AlertSeverity.info => (AppIcons.infoOutlineRounded, AppColors.brandStrong),
     };
     final cta = _ctaLabel(l10n, alert.id);
 
@@ -128,13 +129,13 @@ class _AlertRow extends StatelessWidget {
                     style: const TextStyle(
                         fontSize: 12, fontWeight: FontWeight.w600)),
                 const SizedBox(width: 2),
-                const Icon(Icons.arrow_forward_rounded, size: 14),
+                const Icon(AppIcons.arrowForwardRounded, size: 14),
               ],
             ),
           ),
           IconButton(
             onPressed: onDismiss,
-            icon: const Icon(Icons.close_rounded, size: 16),
+            icon: const Icon(AppIcons.closeRounded, size: 16),
             color: AppColors.subtle,
             visualDensity: VisualDensity.compact,
             tooltip: l10n.dashboardDismiss,

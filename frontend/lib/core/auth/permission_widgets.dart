@@ -4,6 +4,7 @@ import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Hybrid-gating UX primitives.
 ///
@@ -27,7 +28,7 @@ void showLockedHint(BuildContext context, [String? what]) {
         behavior: SnackBarBehavior.floating,
         content: Row(
           children: [
-            Icon(Icons.lock_outline_rounded,
+            Icon(AppIcons.lockOutlineRounded,
                 size: 18, color: AppColors.white),
             const SizedBox(width: AppSizes.sm),
             Expanded(child: Text(msg)),
@@ -77,7 +78,7 @@ class MaybeLocked extends StatelessWidget {
                   color: AppColors.muted,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.lock_rounded,
+                child: Icon(AppIcons.lockRounded,
                     size: 10, color: AppColors.white),
               ),
             ),
@@ -145,7 +146,7 @@ class _AccessReloadButtonState extends State<AccessReloadButton> {
               height: 18,
               child: CircularProgressIndicator(strokeWidth: 2),
             )
-          : const Icon(Icons.refresh_rounded),
+          : const Icon(AppIcons.refreshRounded),
     );
   }
 }
@@ -189,7 +190,7 @@ class LockedIconButton extends StatelessWidget {
                 color: AppColors.muted,
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.lock_rounded,
+              child: Icon(AppIcons.lockRounded,
                   size: 9, color: AppColors.white),
             ),
           ),
@@ -225,7 +226,7 @@ class NoAccessView extends StatelessWidget {
                 shape: AppShapes.squircle(AppSizes.radiusLg),
               ),
               alignment: Alignment.center,
-              child: Icon(Icons.lock_outline_rounded,
+              child: Icon(AppIcons.lockOutlineRounded,
                   size: 30, color: AppColors.muted),
             ),
             const SizedBox(height: AppSizes.lg),

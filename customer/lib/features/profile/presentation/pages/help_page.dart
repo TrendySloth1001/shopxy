@@ -5,6 +5,7 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 const _supportEmail = 'support@shopxy.app';
 
@@ -152,7 +153,7 @@ class _ContactCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.support_agent_rounded,
+                const Icon(AppIcons.supportAgentRounded,
                     color: AppColors.brandStrong),
                 const SizedBox(width: AppSizes.sm),
                 Text(
@@ -182,7 +183,7 @@ class _ContactCard extends StatelessWidget {
                       horizontal: AppSizes.md, vertical: AppSizes.sm),
                   child: Row(
                     children: [
-                      const Icon(Icons.email_outlined,
+                      const Icon(AppIcons.emailOutlined,
                           size: AppSizes.iconSm, color: AppColors.brandStrong),
                       const SizedBox(width: AppSizes.sm),
                       Expanded(
@@ -194,7 +195,7 @@ class _ContactCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const Icon(Icons.copy_rounded,
+                      const Icon(AppIcons.copyRounded,
                           size: AppSizes.iconSm, color: AppColors.brandStrong),
                     ],
                   ),

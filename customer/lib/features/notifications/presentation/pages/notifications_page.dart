@@ -13,6 +13,7 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_error_view.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// V2 notifications inbox. Was a static mock with invented "delivered
 /// today" / "price drop" rows until this build — now reads from
@@ -62,7 +63,7 @@ class _NotificationsPageState extends State<NotificationsPage>
         actions: [
           IconButton(
             tooltip: 'Mark all read',
-            icon: const Icon(Icons.done_all_rounded),
+            icon: const Icon(AppIcons.doneAllRounded),
             onPressed: p.unread == 0 ? null : p.markAllRead,
           ),
         ],
@@ -173,7 +174,7 @@ class _TabView extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: AppSizes.xl),
               child: Column(
                 children: [
-                  const Icon(Icons.notifications_off_outlined,
+                  const Icon(AppIcons.notificationsOffOutlined,
                       size: AppSizes.iconHuge, color: AppColors.muted),
                   const SizedBox(height: AppSizes.sm),
                   Text(
@@ -449,55 +450,55 @@ class _NotificationTile extends StatelessWidget {
     // invites → indigo, restock → rose, default → muted.
     if (kind.startsWith('ORDER_') || kind.startsWith('PURCHASE_REQUEST_')) {
       return const _IconSpec(
-        icon: Icons.local_shipping_outlined,
+        icon: AppIcons.localShippingOutlined,
         tint: AppColors.infoSoft,
         accent: AppColors.info,
       );
     }
     if (kind == 'PRICE_DROP' || kind == 'WISHLIST_DEAL') {
       return const _IconSpec(
-        icon: Icons.trending_down_rounded,
+        icon: AppIcons.trendingDownRounded,
         tint: AppColors.successSoft,
         accent: AppColors.success,
       );
     }
     if (kind == 'FLASH_DEAL' || kind == 'DEAL') {
       return const _IconSpec(
-        icon: Icons.bolt_rounded,
+        icon: AppIcons.boltRounded,
         tint: AppColors.accentAmberSoft,
         accent: AppColors.accentAmber,
       );
     }
     if (kind.startsWith('INVITE_')) {
       return const _IconSpec(
-        icon: Icons.mail_outline_rounded,
+        icon: AppIcons.mailOutlineRounded,
         tint: AppColors.accentIndigoSoft,
         accent: AppColors.accentIndigo,
       );
     }
     if (kind == 'PAYMENT_SUCCESS' || kind == 'REFUND') {
       return const _IconSpec(
-        icon: Icons.payments_outlined,
+        icon: AppIcons.paymentsOutlined,
         tint: AppColors.successSoft,
         accent: AppColors.success,
       );
     }
     if (kind.startsWith('QUOTATION_')) {
       return const _IconSpec(
-        icon: Icons.request_quote_outlined,
+        icon: AppIcons.requestQuoteOutlined,
         tint: AppColors.brandSoft,
         accent: AppColors.brandStrong,
       );
     }
     if (kind == 'BACK_IN_STOCK') {
       return const _IconSpec(
-        icon: Icons.inventory_2_outlined,
+        icon: AppIcons.inventory2Outlined,
         tint: AppColors.accentRoseSoft,
         accent: AppColors.accentRose,
       );
     }
     return const _IconSpec(
-      icon: Icons.notifications_none_rounded,
+      icon: AppIcons.notificationsNoneRounded,
       tint: AppColors.surfaceTint,
       accent: AppColors.muted,
     );
@@ -555,7 +556,7 @@ class _PendingInviteBanner extends StatelessWidget {
                 ),
                 alignment: Alignment.center,
                 child: const Icon(
-                  Icons.mark_email_unread_rounded,
+                  AppIcons.markEmailUnreadRounded,
                   color: AppColors.white,
                   size: AppSizes.iconSm,
                 ),
@@ -585,7 +586,7 @@ class _PendingInviteBanner extends StatelessWidget {
                 ),
               ),
               const Icon(
-                Icons.chevron_right_rounded,
+                AppIcons.chevronRightRounded,
                 color: AppColors.brandStrong,
               ),
             ],

@@ -9,6 +9,7 @@ import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Modal sheet that walks the customer through a return:
 ///   1. Pick line(s) to return + quantity per line.
@@ -128,7 +129,7 @@ class _SheetState extends State<_Sheet> {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close_rounded),
+                  icon: const Icon(AppIcons.closeRounded),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
               ],
@@ -406,7 +407,7 @@ class _QtyStepper extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         IconButton(
-          icon: const Icon(Icons.remove_circle_outline_rounded),
+          icon: const Icon(AppIcons.removeCircleOutlineRounded),
           onPressed: value > 1 ? () => onChanged(value - 1) : null,
           padding: EdgeInsets.zero,
           visualDensity: VisualDensity.compact,
@@ -419,7 +420,7 @@ class _QtyStepper extends StatelessWidget {
           ),
         ),
         IconButton(
-          icon: const Icon(Icons.add_circle_outline_rounded),
+          icon: const Icon(AppIcons.addCircleOutlineRounded),
           onPressed: value < max ? () => onChanged(value + 1) : null,
           padding: EdgeInsets.zero,
           visualDensity: VisualDensity.compact,

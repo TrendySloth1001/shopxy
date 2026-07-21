@@ -8,6 +8,7 @@ import 'package:shopxy_customer/features/categories/presentation/widgets/categor
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Horizontal "Shop by category" rail rendered just under the home top
 /// bar. Each parent category is a compact pill — a round thumbnail +
@@ -101,7 +102,7 @@ class _CategoryChip extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
-            child: const Icon(Icons.apps_rounded,
+            child: const Icon(AppIcons.appsRounded,
                 color: AppColors.black, size: AppSizes.iconMd),
           );
 

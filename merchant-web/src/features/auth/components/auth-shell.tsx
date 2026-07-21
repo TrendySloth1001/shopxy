@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ComponentType, ReactNode } from "react";
 import { getTranslations } from "next-intl/server";
-import { LogIn, UserPlus } from "lucide-react";
+import { LogIn, UserPlus } from "@/shared/icons";
 import { Divider } from "@/shared/ui/divider";
 import { Banner } from "./banner";
 

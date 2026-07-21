@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ArrowDownLeft, ArrowUpRight, ChevronRight, Plus, RefreshCw, SlidersHorizontal } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, ChevronRight, Plus, RefreshCw, SlidersHorizontal } from "@/shared/icons";
 import { PageHeader } from "@/shared/ui/page-header";
 import { formatDateTime } from "@/shared/datetime";
 import { listAdjustments } from "@/features/stock-adjustments/api";

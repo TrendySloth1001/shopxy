@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Search, X, Plus, Check, FileText, Send, Download } from "lucide-react";
+import { Search, X, Plus, Check, FileText, Send, Download } from "@/shared/icons";
 import { formatINR2 } from "@/shared/money";
 import { gstFromInclusive } from "@/features/products/gst";
 import { getProduct, listProducts } from "@/features/products/api";

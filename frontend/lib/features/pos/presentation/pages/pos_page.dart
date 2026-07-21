@@ -19,6 +19,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 int _i(Object? v) => v is num ? v.toInt() : 0;
 double _d(Object? v) => v is num ? v.toDouble() : 0;
@@ -210,14 +211,14 @@ class _PosPageState extends State<PosPage> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        icon: Icon(Icons.check_circle_rounded, color: AppColors.success, size: AppSizes.iconHuge),
+        icon: Icon(AppIcons.checkCircleRounded, color: AppColors.success, size: AppSizes.iconHuge),
         title: Text(l10n.posSaleComplete),
         content: Text('${l10n.posInvoice} $invoiceNo'),
         actions: [
           if (_client.checkoutInvoiceId != null)
             TextButton.icon(
               onPressed: () => _printReceipt(_client.checkoutInvoiceId!, _client.checkoutInvoiceNo ?? 'receipt'),
-              icon: const Icon(Icons.print_outlined),
+              icon: const Icon(AppIcons.printOutlined),
               label: Text(l10n.posPrint),
             ),
           FilledButton(
@@ -361,7 +362,7 @@ class _PosPageState extends State<PosPage> {
                           _client.checkout('CASH', customerName: nameCtrl.text.trim(), customerPhone: phoneCtrl.text.trim());
                         }
                       : null,
-                  icon: const Icon(Icons.payments_outlined),
+                  icon: const Icon(AppIcons.paymentsOutlined),
                   label: Text(l10n.posCashDone),
                 ),
                 const SizedBox(height: AppSizes.lg),
@@ -385,7 +386,7 @@ class _PosPageState extends State<PosPage> {
                         Navigator.pop(ctx);
                         _payOnline();
                       },
-                      icon: const Icon(Icons.smartphone_rounded),
+                      icon: const Icon(AppIcons.smartphoneRounded),
                       label: Text(l10n.posOnline),
                     ),
                   ],
@@ -429,7 +430,7 @@ class _PosPageState extends State<PosPage> {
                     ListTile(
                       title: Text((b['customerName'] as String?) ?? '${l10n.posBill} #${b['id']}'),
                       subtitle: Text(l10n.posItemCount('${b['lineCount']}')),
-                      trailing: const Icon(Icons.chevron_right_rounded),
+                      trailing: const Icon(AppIcons.chevronRightRounded),
                       onTap: () {
                         Navigator.pop(ctx);
                         _client.recall(b['id'] as int);
@@ -482,17 +483,17 @@ class _PosPageState extends State<PosPage> {
           IconButton(
             tooltip: l10n.posFindItem,
             onPressed: _shiftOpen ? _openSearch : null,
-            icon: const Icon(Icons.search_rounded),
+            icon: const Icon(AppIcons.searchRounded),
           ),
           IconButton(
             tooltip: l10n.posCashierTooltip,
             onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CashierPage())).then((_) => _loadShift()),
-            icon: const Icon(Icons.calculate_outlined),
+            icon: const Icon(AppIcons.calculateOutlined),
           ),
-          IconButton(tooltip: l10n.posHold, onPressed: () => _client.holdAndNew(), icon: const Icon(Icons.pause_circle_outline_rounded)),
-          IconButton(tooltip: l10n.posRecall, onPressed: _openHeldBills, icon: const Icon(Icons.restore_rounded)),
+          IconButton(tooltip: l10n.posHold, onPressed: () => _client.holdAndNew(), icon: const Icon(AppIcons.pauseCircleOutlineRounded)),
+          IconButton(tooltip: l10n.posRecall, onPressed: _openHeldBills, icon: const Icon(AppIcons.restoreRounded)),
           if (widget.kiosk)
-            IconButton(tooltip: l10n.posLogOut, onPressed: () => context.read<AuthProvider>().logout(), icon: const Icon(Icons.logout_rounded)),
+            IconButton(tooltip: l10n.posLogOut, onPressed: () => context.read<AuthProvider>().logout(), icon: const Icon(AppIcons.logoutRounded)),
           _StatusChip(status: _client.status),
         ],
       ),
@@ -508,7 +509,7 @@ class _PosPageState extends State<PosPage> {
               padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg, vertical: AppSizes.sm),
               child: Row(
                 children: [
-                  Icon(Icons.account_circle_outlined, size: AppSizes.iconSm, color: AppColors.brand),
+                  Icon(AppIcons.accountCircleOutlined, size: AppSizes.iconSm, color: AppColors.brand),
                   const SizedBox(width: AppSizes.xs),
                   Expanded(
                     child: Text(
@@ -519,7 +520,7 @@ class _PosPageState extends State<PosPage> {
                       style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
                     ),
                   ),
-                  Icon(Icons.timer_outlined, size: AppSizes.iconSm, color: AppColors.muted),
+                  Icon(AppIcons.timerOutlined, size: AppSizes.iconSm, color: AppColors.muted),
                   const SizedBox(width: AppSizes.xs),
                   Text(_elapsedSince(_shift!['openedAt']), style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700)),
                 ],
@@ -532,7 +533,7 @@ class _PosPageState extends State<PosPage> {
               padding: const EdgeInsets.all(AppSizes.md),
               child: Row(
                 children: [
-                  Icon(Icons.lock_outline_rounded, size: AppSizes.iconSm, color: AppColors.warning),
+                  Icon(AppIcons.lockOutlineRounded, size: AppSizes.iconSm, color: AppColors.warning),
                   const SizedBox(width: AppSizes.sm),
                   Expanded(child: Text(l10n.posOpenShiftToBill, style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.warning))),
                   FilledButton(
@@ -604,11 +605,11 @@ class _PosPageState extends State<PosPage> {
                     IconButton(
                       tooltip: l10n.posBillDiscount,
                       onPressed: _editBillDiscount,
-                      icon: const Icon(Icons.percent_rounded),
+                      icon: const Icon(AppIcons.percentRounded),
                     ),
                   FilledButton.icon(
                     onPressed: lines.isEmpty ? null : _openCheckoutSheet,
-                    icon: const Icon(Icons.point_of_sale_rounded),
+                    icon: const Icon(AppIcons.pointOfSaleRounded),
                     label: Text(l10n.posCheckout),
                   ),
                 ],
@@ -649,8 +650,8 @@ class _CartTile extends StatelessWidget {
             ],
           ),
         ),
-        IconButton(onPressed: onDiscount, tooltip: l10n.posLineDiscount, icon: Icon(Icons.percent_rounded, color: line.lineDiscount > 0 ? AppColors.brand : AppColors.muted), iconSize: AppSizes.iconSm),
-        IconButton(onPressed: onDec, icon: const Icon(Icons.remove_circle_outline), iconSize: AppSizes.iconMd),
+        IconButton(onPressed: onDiscount, tooltip: l10n.posLineDiscount, icon: Icon(AppIcons.percentRounded, color: line.lineDiscount > 0 ? AppColors.brand : AppColors.muted), iconSize: AppSizes.iconSm),
+        IconButton(onPressed: onDec, icon: const Icon(AppIcons.removeCircleOutline), iconSize: AppSizes.iconMd),
         // Tap the quantity to type it directly.
         InkWell(
           onTap: onTapQty,
@@ -662,12 +663,12 @@ class _CartTile extends StatelessWidget {
             child: Text(line.quantity.toStringAsFixed(line.quantity % 1 == 0 ? 0 : 2), style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
           ),
         ),
-        IconButton(onPressed: onInc, icon: const Icon(Icons.add_circle_outline), iconSize: AppSizes.iconMd),
+        IconButton(onPressed: onInc, icon: const Icon(AppIcons.addCircleOutline), iconSize: AppSizes.iconMd),
         SizedBox(
           width: 72,
           child: Text('₹${line.total.toStringAsFixed(2)}', textAlign: TextAlign.right, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
         ),
-        IconButton(onPressed: onRemove, icon: const Icon(Icons.close_rounded), iconSize: AppSizes.iconSm, color: AppColors.muted),
+        IconButton(onPressed: onRemove, icon: const Icon(AppIcons.closeRounded), iconSize: AppSizes.iconSm, color: AppColors.muted),
       ],
     );
   }
@@ -723,7 +724,7 @@ class _ProductSearchSheetState extends State<_ProductSearchSheet> {
               controller: _ctrl,
               autofocus: true,
               onChanged: _onChanged,
-              decoration: InputDecoration(labelText: l10n.posFindItemByNameSku, prefixIcon: const Icon(Icons.search_rounded), border: const OutlineInputBorder()),
+              decoration: InputDecoration(labelText: l10n.posFindItemByNameSku, prefixIcon: const Icon(AppIcons.searchRounded), border: const OutlineInputBorder()),
             ),
             const SizedBox(height: AppSizes.sm),
             ConstrainedBox(
@@ -785,7 +786,7 @@ class _StatusChip extends StatelessWidget {
         padding: const EdgeInsets.only(right: AppSizes.lg),
         child: Row(
           children: [
-            Icon(Icons.circle, size: 10, color: color),
+            Icon(AppIcons.circle, size: 10, color: color),
             const SizedBox(width: AppSizes.xs),
             Text(label, style: Theme.of(context).textTheme.bodySmall),
           ],

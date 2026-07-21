@@ -4,7 +4,7 @@ import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ChevronLeft, ChevronRight, LogOut, Lock, Menu, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, LogOut, Lock, Menu, X } from "@/shared/icons";
 import { useAuth } from "@/features/auth/auth-context";
 import { Avatar } from "@/features/auth/components/avatar";
 import { useNotifications } from "@/features/notifications/notifications-context";

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw } from "@/shared/icons";
 import { AppHeader } from "@/features/auth/components/app-header";
 import { RequireAuth } from "@/features/auth/components/require-auth";
 import { fetchReturns } from "@/features/returns/api";

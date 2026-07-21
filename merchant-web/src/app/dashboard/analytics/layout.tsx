@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { BarChart3 } from "lucide-react";
+import { BarChart3 } from "@/shared/icons";
 import { PageHeader } from "@/shared/ui/page-header";
 import { todayInputDate } from "@/shared/datetime";
 import { AnalyticsRangeProvider, useAnalyticsRange } from "@/features/analytics/range-context";

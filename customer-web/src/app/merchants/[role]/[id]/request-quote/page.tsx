@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef, startTransition } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Search, AlertCircle, Package, Plus, Minus, ShoppingBag } from "lucide-react";
+import { Search, AlertCircle, Package, Plus, Minus, ShoppingBag } from "@/shared/icons";
 import { RequireAuth } from "@/features/auth/components/require-auth";
 import { AppHeader } from "@/features/auth/components/app-header";
 import { fetchCatalogProducts, requestQuotation } from "@/features/merchant-ledger/api";

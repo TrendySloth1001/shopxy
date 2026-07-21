@@ -1,4 +1,4 @@
-import { FileCheck2, Headphones, Lock, ShieldCheck } from "lucide-react";
+import { FileCheck2, Headphones, Lock, ShieldCheck } from "@/shared/icons";
 
 /**
  * "Why millions choose ShopXY" footer — port of `HomeFooterStrip`. A soft panel

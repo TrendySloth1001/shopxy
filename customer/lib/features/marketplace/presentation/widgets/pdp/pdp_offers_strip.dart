@@ -3,6 +3,7 @@ import 'package:shopxy_customer/features/marketplace/domain/entities/marketplace
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Horizontal carousel mixing two sources of offer cards:
 ///
@@ -105,7 +106,7 @@ class _BankOfferCard extends StatelessWidget {
                     shape: AppShapes.squircle(AppSizes.radiusSm),
                   ),
                   alignment: Alignment.center,
-                  child: const Icon(Icons.account_balance_outlined,
+                  child: const Icon(AppIcons.accountBalanceOutlined,
                       size: AppSizes.iconMd, color: AppColors.info),
                 ),
           const SizedBox(width: AppSizes.sm),
@@ -165,14 +166,14 @@ class _OfferCard extends StatelessWidget {
         return (
           bg: AppColors.brandSoft,
           fg: AppColors.brandStrong,
-          icon: Icons.calendar_month_rounded,
+          icon: AppIcons.calendarMonthRounded,
           label: 'NO-COST EMI',
         );
       case 'EXCHANGE':
         return (
           bg: AppColors.accentRoseSoft,
           fg: AppColors.accentRose,
-          icon: Icons.swap_horiz_rounded,
+          icon: AppIcons.swapHorizRounded,
           label: 'EXCHANGE',
         );
       case 'COUPON':
@@ -180,7 +181,7 @@ class _OfferCard extends StatelessWidget {
         return (
           bg: AppColors.warningSoft,
           fg: AppColors.warning,
-          icon: Icons.local_offer_outlined,
+          icon: AppIcons.localOfferOutlined,
           label: 'COUPON',
         );
     }

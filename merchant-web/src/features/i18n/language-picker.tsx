@@ -3,7 +3,7 @@
 import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-import { Check } from "lucide-react";
+import { Check } from "@/shared/icons";
 import { setLocale } from "./actions";
 
 /** Languages offered by the picker. Names are endonyms (each in its own script)

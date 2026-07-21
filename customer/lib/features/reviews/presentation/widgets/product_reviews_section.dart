@@ -10,6 +10,7 @@ import 'package:shopxy_customer/features/reviews/presentation/widgets/star_row.d
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Ratings & reviews block on the product detail page. Loads its own
 /// summary in initState so the surrounding PDP build never blocks on
@@ -131,7 +132,7 @@ class _ProductReviewsSectionState extends State<ProductReviewsSection> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.edit_outlined, size: AppSizes.iconSm),
+                      const Icon(AppIcons.editOutlined, size: AppSizes.iconSm),
                       const SizedBox(width: AppSizes.xs),
                       Text(
                         'Rate product',
@@ -178,7 +179,7 @@ class _ProductReviewsSectionState extends State<ProductReviewsSection> {
                     ),
                     const SizedBox(width: AppSizes.xs),
                     const Icon(
-                      Icons.chevron_right_rounded,
+                      AppIcons.chevronRightRounded,
                       color: AppColors.brandStrong,
                       size: AppSizes.iconMd,
                     ),
@@ -308,7 +309,7 @@ class _HistogramRow extends StatelessWidget {
           ),
           const SizedBox(width: AppSizes.xs),
           const Icon(
-            Icons.star_rounded,
+            AppIcons.starRounded,
             size: AppSizes.iconSm,
             color: AppColors.subtle,
           ),
@@ -369,7 +370,7 @@ class _EmptyState extends StatelessWidget {
         child: Row(
           children: [
             const Icon(
-              Icons.reviews_outlined,
+              AppIcons.reviewsOutlined,
               color: AppColors.muted,
               size: AppSizes.iconXl,
             ),

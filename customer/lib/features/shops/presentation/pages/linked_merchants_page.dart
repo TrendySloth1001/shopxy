@@ -11,6 +11,7 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Customer-side directory of merchants the user has an active Party
 /// or Vendor link with. Each card opens the marketplace `ShopProfilePage`
@@ -108,7 +109,7 @@ class _MerchantCard extends StatelessWidget {
                       height: AppSizes.huge,
                       color: AppColors.heroPanel,
                       child: merchant.logoUrl == null
-                          ? const Icon(Icons.storefront_outlined,
+                          ? const Icon(AppIcons.storefrontOutlined,
                               color: AppColors.muted)
                           : NetworkImageBox(
                               url: resolveImageUrl(merchant.logoUrl!),
@@ -159,7 +160,7 @@ class _MerchantCard extends StatelessWidget {
                                 Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(Icons.star_rounded,
+                                    const Icon(AppIcons.starRounded,
                                         size: AppSizes.iconSm,
                                         color: AppColors.warning),
                                     Text(
@@ -180,7 +181,7 @@ class _MerchantCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const Icon(Icons.arrow_forward_ios_rounded,
+                  const Icon(AppIcons.arrowForwardIosRounded,
                       size: AppSizes.iconSm, color: AppColors.subtle),
                 ],
               ),
@@ -338,7 +339,7 @@ class _EmptyState extends StatelessWidget {
             ),
             alignment: Alignment.center,
             child: const Icon(
-              Icons.storefront_outlined,
+              AppIcons.storefrontOutlined,
               size: AppSizes.iconHuge,
               color: AppColors.muted,
             ),
@@ -378,7 +379,7 @@ class _ErrorState extends StatelessWidget {
       padding: const EdgeInsets.all(AppSizes.xl),
       children: [
         const SizedBox(height: AppSizes.huge),
-        const Icon(Icons.cloud_off_rounded,
+        const Icon(AppIcons.cloudOffRounded,
             size: AppSizes.iconHuge, color: AppColors.muted),
         const SizedBox(height: AppSizes.md),
         Text(
@@ -402,7 +403,7 @@ class _ErrorState extends StatelessWidget {
         Center(
           child: FilledButton.icon(
             onPressed: onRetry,
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(AppIcons.refresh),
             label: const Text('Retry'),
           ),
         ),

@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ImageOff, Plus, Trash2 } from "lucide-react";
+import { ImageOff, Plus, Trash2 } from "@/shared/icons";
 import { BackLink } from "@/shared/ui/page-header";
 import { DateTimeField, SelectField, TextField, ToggleField } from "@/shared/ui/form";
 import { ImageUploadField } from "@/shared/ui/image-upload";

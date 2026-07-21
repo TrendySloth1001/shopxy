@@ -7,6 +7,7 @@ import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Renders the right input for a [CustomFieldDefinition]'s type:
 ///   TEXT       → single-line TextField
@@ -120,7 +121,7 @@ class _CustomFieldInputState extends State<CustomFieldInput> {
             decoration: InputDecoration(
               labelText: widget.definition.name,
               border: const OutlineInputBorder(),
-              suffixIcon: const Icon(Icons.calendar_today_rounded),
+              suffixIcon: const Icon(AppIcons.calendarTodayRounded),
             ),
             child: Text(
               display.isEmpty ? l10n.customFieldsPickDate : display,

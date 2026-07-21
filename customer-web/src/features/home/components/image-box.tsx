@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ImageOff } from "lucide-react";
+import { ImageOff } from "@/shared/icons";
 import { color } from "@/shared/ui/tokens";
 import { resolveImageUrl } from "../format";
 

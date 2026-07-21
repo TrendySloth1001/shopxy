@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Timer } from "lucide-react";
+import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Timer } from "@/shared/icons";
 import type { DashboardTransaction } from "../stats";
 import { Section } from "./ui";
 

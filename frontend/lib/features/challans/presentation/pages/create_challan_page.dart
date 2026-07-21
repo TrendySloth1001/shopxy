@@ -20,6 +20,7 @@ import 'package:shopxy/shared/widgets/glass_widgets.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/constants/app_durations.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 class CreateChallanPage extends StatefulWidget {
   const CreateChallanPage({super.key});
@@ -244,7 +245,7 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
             else ...[
               AppButton.secondary(
                 label: l10n.challansSelectParty,
-                icon: Icons.person_search_rounded,
+                icon: AppIcons.personSearchRounded,
                 onPressed: _pickParty,
                 fullWidth: true,
               ),
@@ -287,7 +288,7 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
               controller: _searchCtrl,
               decoration: InputDecoration(
                 labelText: l10n.challansSearchProducts,
-                prefixIcon: const Icon(Icons.search_rounded),
+                prefixIcon: const Icon(AppIcons.searchRounded),
                 suffixIcon: _isSearching
                     ? const Padding(
                         padding: EdgeInsets.all(AppSizes.md),
@@ -314,7 +315,7 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
                         title: Text(_searchResults[i].name),
                         subtitle: Text(_searchResults[i].sku),
                         trailing:
-                            const Icon(Icons.add_circle_outline_rounded),
+                            const Icon(AppIcons.addCircleOutlineRounded),
                         onTap: () => _addProduct(_searchResults[i]),
                       ),
                     ],
@@ -447,7 +448,7 @@ class _ItemRow extends StatelessWidget {
             ),
             IconButton(
               icon: Icon(
-                Icons.delete_outline_rounded,
+                AppIcons.deleteOutlineRounded,
                 color: AppColors.error,
               ),
               onPressed: onDelete,
@@ -505,7 +506,7 @@ class _SelectedPartyCard extends StatelessWidget {
           ),
           TextButton(onPressed: onChange, child: Text(l10n.challansChange)),
           IconButton(
-            icon: const Icon(Icons.close_rounded),
+            icon: const Icon(AppIcons.closeRounded),
             onPressed: onClear,
             visualDensity: VisualDensity.compact,
           ),

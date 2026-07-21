@@ -14,6 +14,7 @@ import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/theme/app_theme.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 class ShopxyCustomerApp extends StatelessWidget {
   const ShopxyCustomerApp({super.key, this.navigatorKey});
@@ -109,7 +110,7 @@ class _Splash extends StatelessWidget {
                 shape: AppShapes.squircle(AppSizes.radiusXl),
               ),
               child: const Icon(
-                Icons.storefront_rounded,
+                AppIcons.storefrontRounded,
                 size: AppSizes.iconXl,
                 color: AppColors.white,
               ),

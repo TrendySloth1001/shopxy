@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ChevronRight, RefreshCw, Undo2 } from "lucide-react";
+import { ChevronRight, RefreshCw, Undo2 } from "@/shared/icons";
 import { PageHeader } from "@/shared/ui/page-header";
 import { formatDateTime } from "@/shared/datetime";
 import { formatINR } from "@/shared/money";

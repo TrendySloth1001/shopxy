@@ -4,6 +4,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// KYC scaffold — UI shell only. Lists the documents the verification flow will
 /// collect; each row shows its status (always "Not uploaded" until the backend
@@ -24,27 +25,27 @@ class ShopKycPage extends StatelessWidget {
       _KycDoc(
         title: l10n.shopKycPanTitle,
         subtitle: l10n.shopKycPanSubtitle,
-        icon: Icons.badge_outlined,
+        icon: AppIcons.badgeOutlined,
       ),
       _KycDoc(
         title: l10n.shopKycGstinTitle,
         subtitle: l10n.shopKycGstinSubtitle,
-        icon: Icons.receipt_long_outlined,
+        icon: AppIcons.receiptLongOutlined,
       ),
       _KycDoc(
         title: l10n.shopKycChequeTitle,
         subtitle: l10n.shopKycChequeSubtitle,
-        icon: Icons.account_balance_wallet_outlined,
+        icon: AppIcons.accountBalanceWalletOutlined,
       ),
       _KycDoc(
         title: l10n.shopKycAadhaarTitle,
         subtitle: l10n.shopKycAadhaarSubtitle,
-        icon: Icons.home_outlined,
+        icon: AppIcons.homeOutlined,
       ),
       _KycDoc(
         title: l10n.shopKycPhotoTitle,
         subtitle: l10n.shopKycPhotoSubtitle,
-        icon: Icons.storefront_outlined,
+        icon: AppIcons.storefrontOutlined,
       ),
     ];
 
@@ -63,7 +64,7 @@ class ShopKycPage extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.info_outline, color: AppColors.info, size: AppSizes.iconMd),
+                Icon(AppIcons.infoOutline, color: AppColors.info, size: AppSizes.iconMd),
                 const SizedBox(width: AppSizes.sm),
                 Expanded(
                   child: Text(
@@ -139,7 +140,7 @@ class _KycRow extends StatelessWidget {
                 const SizedBox(height: AppSizes.sm),
                 OutlinedButton.icon(
                   onPressed: null,
-                  icon: const Icon(Icons.upload_file_rounded, size: AppSizes.iconSm),
+                  icon: const Icon(AppIcons.uploadFileRounded, size: AppSizes.iconSm),
                   label: Text(l10n.shopKycUploadComingSoon),
                 ),
               ],

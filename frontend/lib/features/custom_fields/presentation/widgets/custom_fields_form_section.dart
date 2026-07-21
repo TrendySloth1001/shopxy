@@ -12,6 +12,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// "More about this product" — drops into Add/Edit Product.
 ///
@@ -107,17 +108,17 @@ class _CustomFieldsFormSectionState extends State<CustomFieldsFormSection> {
           children: [
             AppButton.secondary(
               label: l10n.customFieldsAddField,
-              icon: Icons.add_rounded,
+              icon: AppIcons.addRounded,
               onPressed: () => CustomFieldEditorSheet.show(context),
             ),
             AppButton.ghost(
               label: l10n.customFieldsAddSection,
-              icon: Icons.folder_outlined,
+              icon: AppIcons.folderOutlined,
               onPressed: () => CustomSectionEditorSheet.show(context),
             ),
             AppButton.ghost(
               label: l10n.customFieldsTemplates,
-              icon: Icons.auto_awesome_rounded,
+              icon: AppIcons.autoAwesomeRounded,
               onPressed: () => TemplatesPickerSheet.show(context),
             ),
           ],
@@ -217,12 +218,12 @@ class _EmptyHint extends StatelessWidget {
             children: [
               AppButton.secondary(
                 label: l10n.customFieldsAddField,
-                icon: Icons.add_rounded,
+                icon: AppIcons.addRounded,
                 onPressed: onAddField,
               ),
               AppButton.ghost(
                 label: l10n.customFieldsBrowseTemplates,
-                icon: Icons.auto_awesome_rounded,
+                icon: AppIcons.autoAwesomeRounded,
                 onPressed: onShowTemplates,
               ),
             ],

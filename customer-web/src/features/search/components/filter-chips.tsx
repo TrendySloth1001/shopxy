@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { X } from "@/shared/icons";
 import type { SearchFacets, SearchFilters } from "../types";
 
 type Props = {

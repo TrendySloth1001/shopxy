@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Grid3X3 } from "lucide-react";
+import { Grid3X3 } from "@/shared/icons";
 import { fetchCategoryTree } from "@/features/catalog/api";
 import type { CategoryNode } from "@/features/catalog/types";
 import { ImageBox } from "@/features/home/components/image-box";

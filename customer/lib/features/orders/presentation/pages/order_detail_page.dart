@@ -30,6 +30,7 @@ import 'package:shopxy_customer/shared/widgets/app_dialog.dart';
 import 'package:shopxy_customer/shared/widgets/app_price_text.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Customer-facing order detail. One parent CustomerOrder = one
 /// checkout submission; per-vendor slices live as sections inside.
@@ -551,7 +552,7 @@ class _CapsuleAction extends StatelessWidget {
   if (children.isEmpty) {
     return (
       color: AppColors.muted,
-      icon: Icons.help_outline_rounded,
+      icon: AppIcons.helpOutlineRounded,
       headline: 'No sellers',
       subtext: null,
     );
@@ -565,7 +566,7 @@ class _CapsuleAction extends StatelessWidget {
   if (confirmed == total) {
     return (
       color: AppColors.success,
-      icon: Icons.check_circle_outline_rounded,
+      icon: AppIcons.checkCircleOutlineRounded,
       headline: total == 1 ? 'Confirmed' : 'All sellers confirmed',
       subtext: null,
     );
@@ -573,7 +574,7 @@ class _CapsuleAction extends StatelessWidget {
   if (cancelled == total) {
     return (
       color: AppColors.muted,
-      icon: Icons.do_disturb_alt_rounded,
+      icon: AppIcons.doDisturbAltRounded,
       headline: 'Cancelled',
       subtext: 'No charges apply',
     );
@@ -581,7 +582,7 @@ class _CapsuleAction extends StatelessWidget {
   if (rejected == total) {
     return (
       color: AppColors.error,
-      icon: Icons.cancel_outlined,
+      icon: AppIcons.cancelOutlined,
       headline: total == 1 ? 'Declined' : 'All sellers declined',
       subtext: null,
     );
@@ -589,14 +590,14 @@ class _CapsuleAction extends StatelessWidget {
   if (pending == total) {
     return (
       color: AppColors.warning,
-      icon: Icons.schedule_rounded,
+      icon: AppIcons.scheduleRounded,
       headline: total == 1 ? 'Waiting on seller' : 'Waiting on $total sellers',
       subtext: null,
     );
   }
   return (
     color: AppColors.warning,
-    icon: Icons.hourglass_bottom_rounded,
+    icon: AppIcons.hourglassBottomRounded,
     headline: '$confirmed of $total confirmed',
     subtext: o.aggregateStatusLabel,
   );
@@ -655,7 +656,7 @@ class _DeliverySnapshotCardState extends State<_DeliverySnapshotCard> {
             const Padding(
               padding: EdgeInsets.only(top: 2),
               child: Icon(
-                Icons.location_on_outlined,
+                AppIcons.locationOnOutlined,
                 color: AppColors.muted,
                 size: AppSizes.iconMd,
               ),
@@ -727,7 +728,7 @@ class _DeliverySnapshotCardState extends State<_DeliverySnapshotCard> {
                                     child: Row(
                                       children: [
                                         const Icon(
-                                          Icons.phone_rounded,
+                                          AppIcons.phoneRounded,
                                           size: AppSizes.iconSm,
                                           color: AppColors.muted,
                                         ),
@@ -755,7 +756,7 @@ class _DeliverySnapshotCardState extends State<_DeliverySnapshotCard> {
               turns: _expanded ? 0.5 : 0,
               duration: AppDurations.short,
               child: const Icon(
-                Icons.expand_more_rounded,
+                AppIcons.expandMoreRounded,
                 color: AppColors.subtle,
               ),
             ),
@@ -788,7 +789,7 @@ class _BuyAgainCard extends StatelessWidget {
       child: Row(
         children: [
           const Icon(
-            Icons.replay_circle_filled_rounded,
+            AppIcons.replayCircleFilledRounded,
             color: AppColors.brand,
             size: AppSizes.iconXl,
           ),
@@ -973,7 +974,7 @@ class _ShopOrderCard extends StatelessWidget {
                   const Padding(
                     padding: EdgeInsets.only(top: 2),
                     child: Icon(
-                      Icons.storefront_outlined,
+                      AppIcons.storefrontOutlined,
                       size: AppSizes.iconSm,
                       color: AppColors.muted,
                     ),
@@ -1070,7 +1071,7 @@ class _ShopOrderCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Icon(
-                    Icons.info_outline_rounded,
+                    AppIcons.infoOutlineRounded,
                     size: AppSizes.iconSm,
                     color: AppColors.error,
                   ),
@@ -1104,7 +1105,7 @@ class _ShopOrderCard extends StatelessWidget {
                 AppSizes.md,
               ),
               child: _CapsuleAction(
-                icon: Icons.close_rounded,
+                icon: AppIcons.closeRounded,
                 label: 'Cancel items',
                 color: AppColors.error,
                 background: AppColors.errorSoft,
@@ -1127,7 +1128,7 @@ class _ShopOrderCard extends StatelessWidget {
                 AppSizes.md,
               ),
               child: _CapsuleAction(
-                icon: Icons.assignment_return_outlined,
+                icon: AppIcons.assignmentReturnOutlined,
                 label: 'Request a return',
                 color: AppColors.brand,
                 background: AppColors.brandSoft,
@@ -1172,7 +1173,7 @@ class _ActionUnavailableNote extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Icon(
-            Icons.info_outline_rounded,
+            AppIcons.infoOutlineRounded,
             size: AppSizes.iconSm,
             color: AppColors.muted,
           ),
@@ -1229,8 +1230,8 @@ class _InvoiceFooter extends StatelessWidget {
         children: [
           Icon(
             invoice.isPaid
-                ? Icons.verified_rounded
-                : Icons.receipt_long_outlined,
+                ? AppIcons.verifiedRounded
+                : AppIcons.receiptLongOutlined,
             size: AppSizes.iconSm,
             color: color,
           ),
@@ -1258,10 +1259,10 @@ class _InvoiceFooter extends StatelessWidget {
                     height: AppSizes.iconSm,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : Icon(Icons.download_rounded, color: color),
+                : Icon(AppIcons.downloadRounded, color: color),
           ),
           if (canOpen)
-            Icon(Icons.chevron_right_rounded,
+            Icon(AppIcons.chevronRightRounded,
                 size: AppSizes.iconMd, color: color),
         ],
       ),
@@ -1379,7 +1380,7 @@ class _ItemRow extends StatelessWidget {
                 color: AppColors.heroPanel,
                 child: item.imageUrl == null
                     ? const Icon(
-                        Icons.image_outlined,
+                        AppIcons.imageOutlined,
                         color: AppColors.muted,
                         size: AppSizes.iconMd,
                       )
@@ -1927,7 +1928,7 @@ class _ErrorState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(
-              Icons.cloud_off_rounded,
+              AppIcons.cloudOffRounded,
               size: AppSizes.iconHuge,
               color: AppColors.muted,
             ),
@@ -1951,7 +1952,7 @@ class _ErrorState extends StatelessWidget {
             const SizedBox(height: AppSizes.lg),
             AppButton.secondary(
               label: AppStrings.tryAgain,
-              icon: Icons.refresh_rounded,
+              icon: AppIcons.refreshRounded,
               onPressed: onRetry,
             ),
           ],

@@ -1,6 +1,6 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { Check } from "@/shared/icons";
 import { useTranslations } from "next-intl";
 import { useTheme } from "./theme-context";
 import { THEME_META, THEMES, type Theme } from "./theme";

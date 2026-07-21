@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ArrowDownLeft, ArrowUpRight, Undo2 } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Undo2 } from "@/shared/icons";
 import { BackLink } from "@/shared/ui/page-header";
 import { Divider } from "@/shared/ui/divider";
 import { Modal, ModalActions } from "@/shared/ui/modal";

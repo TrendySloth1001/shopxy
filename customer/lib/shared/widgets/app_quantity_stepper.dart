@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Quantity control for cart rows and detail pages. Two states:
 ///   * `quantity == 0` → renders a single "Add" button.
@@ -87,8 +88,8 @@ class AppQuantityStepper extends StatelessWidget {
           children: [
             _StepperButton(
               icon: quantity == minQuantity + 1 && minQuantity == 0
-                  ? Icons.delete_outline_rounded
-                  : Icons.remove_rounded,
+                  ? AppIcons.deleteOutlineRounded
+                  : AppIcons.removeRounded,
               enabled: _canDec,
               iconSize: _iconSize,
               hPad: _hPad,
@@ -109,7 +110,7 @@ class AppQuantityStepper extends StatelessWidget {
               ),
             ),
             _StepperButton(
-              icon: Icons.add_rounded,
+              icon: AppIcons.addRounded,
               enabled: _canInc,
               iconSize: _iconSize,
               hPad: _hPad,

@@ -10,6 +10,7 @@ import 'package:shopxy_customer/shared/format/app_format.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Banner-detail page: the banner image at the top, followed by a
 /// responsive grid of the products pinned to it (with banner-discounted
@@ -331,7 +332,7 @@ class _RatingChip extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 2),
-              const Icon(Icons.star, color: AppColors.white, size: 10),
+              const Icon(AppIcons.star, color: AppColors.white, size: 10),
             ],
           ),
         ),
@@ -381,7 +382,7 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline,
+            const Icon(AppIcons.errorOutline,
                 color: AppColors.muted, size: AppSizes.iconXl),
             const SizedBox(height: AppSizes.md),
             Text(

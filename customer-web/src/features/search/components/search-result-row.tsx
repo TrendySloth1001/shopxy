@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Star } from "lucide-react";
+import { Star } from "@/shared/icons";
 import { formatINR } from "@/shared/format";
 import { mediaSrc } from "@/shared/media";
 import type { SearchHit } from "../types";

@@ -17,6 +17,7 @@ import 'package:shopxy/shared/widgets/app_dialog.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Settings → Custom Fields.
 ///
@@ -89,12 +90,12 @@ class _CustomFieldsSettingsPageState extends State<CustomFieldsSettingsPage> {
         title: l10n.customFieldsTitle,
         actions: [
           IconButton(
-            icon: const Icon(Icons.auto_awesome_rounded),
+            icon: const Icon(AppIcons.autoAwesomeRounded),
             tooltip: l10n.customFieldsTemplates,
             onPressed: _showTemplates,
           ),
           PopupMenuButton<String>(
-            icon: const Icon(Icons.add_rounded),
+            icon: const Icon(AppIcons.addRounded),
             tooltip: l10n.customFieldsAddField,
             onSelected: (v) {
               if (v == 'section') _addSection();
@@ -177,13 +178,13 @@ class _EmptyState extends StatelessWidget {
         children: [
           AppButton.primary(
             label: l10n.customFieldsBrowseTemplates,
-            icon: Icons.auto_awesome_rounded,
+            icon: AppIcons.autoAwesomeRounded,
             onPressed: onShowTemplates,
           ),
           const SizedBox(height: AppSizes.sm),
           AppButton.ghost(
             label: l10n.customFieldsAddField,
-            icon: Icons.add_rounded,
+            icon: AppIcons.addRounded,
             onPressed: onAddField,
           ),
         ],
@@ -214,7 +215,7 @@ class _TemplatesCallout extends StatelessWidget {
           child: Row(
             children: [
               Icon(
-                Icons.auto_awesome_rounded,
+                AppIcons.autoAwesomeRounded,
                 color: AppColors.brandStrong,
               ),
               const SizedBox(width: AppSizes.md),
@@ -239,7 +240,7 @@ class _TemplatesCallout extends StatelessWidget {
                 ),
               ),
               Icon(
-                Icons.chevron_right_rounded,
+                AppIcons.chevronRightRounded,
                 color: AppColors.brandStrong,
               ),
             ],
@@ -324,7 +325,7 @@ class _SectionCard extends StatelessWidget {
                   IconButton(
                     onPressed: onArchiveSection,
                     icon: Icon(
-                      Icons.archive_outlined,
+                      AppIcons.archiveOutlined,
                       color: AppColors.muted,
                     ),
                     tooltip: l10n.customFieldsArchive,
@@ -359,7 +360,7 @@ class _SectionCard extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.add_rounded, color: AppColors.muted),
+                  Icon(AppIcons.addRounded, color: AppColors.muted),
                   const SizedBox(width: AppSizes.sm),
                   Text(
                     l10n.customFieldsAddField,
@@ -411,7 +412,7 @@ class _UngroupedSectionCard extends StatelessWidget {
             child: Row(
               children: [
                 Icon(
-                  Icons.label_outline_rounded,
+                  AppIcons.labelOutlineRounded,
                   color: AppColors.black,
                   size: AppSizes.iconLg,
                 ),
@@ -467,7 +468,7 @@ class _UngroupedSectionCard extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.add_rounded, color: AppColors.muted),
+                  Icon(AppIcons.addRounded, color: AppColors.muted),
                   const SizedBox(width: AppSizes.sm),
                   Text(
                     l10n.customFieldsAddField,
@@ -685,7 +686,7 @@ class _FieldRow extends StatelessWidget {
             ),
             IconButton(
               icon: Icon(
-                Icons.archive_outlined,
+                AppIcons.archiveOutlined,
                 color: AppColors.muted,
                 size: AppSizes.iconMd,
               ),

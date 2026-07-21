@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Link2, CheckCircle2, Loader2 } from "lucide-react";
+import { Link2, CheckCircle2, Loader2 } from "@/shared/icons";
 import { useTranslations } from "next-intl";
 import { verifyConnect, confirmConnect, type ConnectDetails } from "./api";
 

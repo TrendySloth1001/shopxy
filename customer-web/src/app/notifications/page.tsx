@@ -15,7 +15,7 @@ import {
   Undo2,
   Zap,
   type LucideIcon,
-} from "lucide-react";
+} from "@/shared/icons";
 import { RequireAuth } from "@/features/auth/components/require-auth";
 import { AppHeader } from "@/features/auth/components/app-header";
 import { Divider } from "@/shared/ui/divider";

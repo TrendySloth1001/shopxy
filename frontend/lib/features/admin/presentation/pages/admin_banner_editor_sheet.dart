@@ -12,6 +12,7 @@ import 'package:shopxy/features/shop/presentation/providers/shop_provider.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Modal sheet for creating or editing a banner. The slim banner is just
 /// an image + placement + optional link + optional schedule, so the editor
@@ -188,7 +189,7 @@ class _AdminBannerEditorSheetState extends State<AdminBannerEditorSheet> {
               ),
               const Spacer(),
               IconButton(
-                icon: const Icon(Icons.close),
+                icon: const Icon(AppIcons.close),
                 onPressed: () => Navigator.of(context).pop(false),
               ),
             ],
@@ -270,17 +271,17 @@ class _AdminBannerEditorSheetState extends State<AdminBannerEditorSheet> {
           ),
           clipBehavior: Clip.antiAlias,
           child: _imageUrl == null
-              ? Icon(Icons.image_outlined, color: AppColors.muted)
+              ? Icon(AppIcons.imageOutlined, color: AppColors.muted)
               : Image.network(
                   resolveImageUrl(_imageUrl!),
                   fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => const Icon(Icons.broken_image_outlined),
+                  errorBuilder: (_, _, _) => const Icon(AppIcons.brokenImageOutlined),
                 ),
         ),
         const SizedBox(width: AppSizes.md),
         Expanded(
           child: OutlinedButton.icon(
-            icon: const Icon(Icons.upload_outlined),
+            icon: const Icon(AppIcons.uploadOutlined),
             label: Text(_imageUrl == null
                 ? AppLocalizations.of(context).adminBannerUploadImage
                 : AppLocalizations.of(context).adminReplaceImage),
@@ -362,10 +363,10 @@ class _DateField extends StatelessWidget {
           labelText: label,
           suffixIcon: onClear != null
               ? IconButton(
-                  icon: const Icon(Icons.close, size: AppSizes.iconMd),
+                  icon: const Icon(AppIcons.close, size: AppSizes.iconMd),
                   onPressed: onClear,
                 )
-              : const Icon(Icons.calendar_today_outlined,
+              : const Icon(AppIcons.calendarTodayOutlined,
                   size: AppSizes.iconMd),
         ),
         child: Text(

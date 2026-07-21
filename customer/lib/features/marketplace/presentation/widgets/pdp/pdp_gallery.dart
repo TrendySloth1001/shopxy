@@ -6,6 +6,7 @@ import 'package:shopxy_customer/features/wishlist/presentation/widgets/wishlist_
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shadows.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// PDP gallery — paginated image carousel with page indicator and an
 /// overlaid coupon pill when the product carries an `offers[]` row with
@@ -52,7 +53,7 @@ class _PdpGalleryState extends State<PdpGallery> {
         height: 320,
         color: AppColors.heroPanel,
         alignment: Alignment.center,
-        child: const Icon(Icons.image_outlined,
+        child: const Icon(AppIcons.imageOutlined,
             size: AppSizes.iconHuge, color: AppColors.muted),
       );
     }
@@ -137,7 +138,7 @@ class _CouponPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.local_offer_rounded,
+          const Icon(AppIcons.localOfferRounded,
               color: AppColors.white, size: AppSizes.iconSm),
           const SizedBox(width: AppSizes.sm),
           Text(

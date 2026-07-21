@@ -1,4 +1,4 @@
-import { Star } from "lucide-react";
+import { Star } from "@/shared/icons";
 
 interface Props {
   rating: number;

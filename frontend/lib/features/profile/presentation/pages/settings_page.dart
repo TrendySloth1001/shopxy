@@ -22,6 +22,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_dialog.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 enum SettingsSection { account, appearance, notifications, about }
 
@@ -140,11 +141,11 @@ class _SettingsPageState extends State<SettingsPage> {
           _Eyebrow(l10n.profileSectionAccount),
           const SizedBox(height: AppSizes.sm),
           _SettingRow(
-            icon: Icons.badge_outlined,
+            icon: AppIcons.badgeOutlined,
             title: l10n.profileEditProfile,
             subtitle: user?.name ?? '—',
             trailing: Icon(
-              Icons.chevron_right_rounded,
+              AppIcons.chevronRightRounded,
               color: AppColors.subtle,
             ),
             onTap: () => Navigator.push(
@@ -153,11 +154,11 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
           _SettingRow(
-            icon: Icons.lock_outline_rounded,
+            icon: AppIcons.lockOutlineRounded,
             title: l10n.profileChangePassword,
             subtitle: l10n.profileChangePasswordSubtitle,
             trailing: Icon(
-              Icons.chevron_right_rounded,
+              AppIcons.chevronRightRounded,
               color: AppColors.subtle,
             ),
             onTap: () => Navigator.push(
@@ -166,7 +167,7 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
           _SettingRow(
-            icon: Icons.alternate_email_rounded,
+            icon: AppIcons.alternateEmailRounded,
             title: l10n.profileEmail,
             subtitle: user?.email ?? '—',
           ),
@@ -182,11 +183,11 @@ class _SettingsPageState extends State<SettingsPage> {
             _Eyebrow(l10n.profileSectionShopOperations),
             const SizedBox(height: AppSizes.sm),
             _SettingRow(
-              icon: Icons.tune_rounded,
+              icon: AppIcons.tuneRounded,
               title: l10n.profileShopOperations,
               subtitle: l10n.profileShopOperationsSubtitle,
               trailing: Icon(
-                Icons.chevron_right_rounded,
+                AppIcons.chevronRightRounded,
                 color: AppColors.subtle,
               ),
               onTap: () => Navigator.push(
@@ -204,7 +205,7 @@ class _SettingsPageState extends State<SettingsPage> {
           // Currency stays a placeholder row — no `onTap` so it doesn't pretend
           // to be live; the "Coming soon" chip signals the future surface.
           _SettingRow(
-            icon: Icons.currency_rupee_rounded,
+            icon: AppIcons.currencyRupeeRounded,
             title: l10n.profileCurrency,
             subtitle: l10n.profileCurrencyIndianRupee,
             trailing: _comingSoonChip(context),
@@ -219,11 +220,11 @@ class _SettingsPageState extends State<SettingsPage> {
           _Eyebrow(l10n.profileSectionInventory),
           const SizedBox(height: AppSizes.sm),
           _SettingRow(
-            icon: Icons.tune_rounded,
+            icon: AppIcons.tuneRounded,
             title: l10n.profileCustomFields,
             subtitle: l10n.profileCustomFieldsHint,
             trailing: Icon(
-              Icons.chevron_right_rounded,
+              AppIcons.chevronRightRounded,
               color: AppColors.subtle,
             ),
             onTap: () => Navigator.push(
@@ -240,7 +241,7 @@ class _SettingsPageState extends State<SettingsPage> {
           _Eyebrow(l10n.profileSectionNotifications),
           const SizedBox(height: AppSizes.sm),
           _SettingToggle(
-            icon: Icons.notifications_none_rounded,
+            icon: AppIcons.notificationsNoneRounded,
             title: l10n.profileEmailNotifications,
             subtitle: l10n.profileEmailNotificationsSubtitle,
             value: user?.emailNotifications ?? true,
@@ -253,15 +254,15 @@ class _SettingsPageState extends State<SettingsPage> {
           _Eyebrow(l10n.profileSectionAbout),
           const SizedBox(height: AppSizes.sm),
           _SettingRow(
-            icon: Icons.info_outline_rounded,
+            icon: AppIcons.infoOutlineRounded,
             title: l10n.profileAppVersion,
             subtitle: '1.0.0',
           ),
           _SettingRow(
-            icon: Icons.shield_outlined,
+            icon: AppIcons.shieldOutlined,
             title: l10n.profilePrivacyPolicy,
             trailing: Icon(
-              Icons.chevron_right_rounded,
+              AppIcons.chevronRightRounded,
               color: AppColors.subtle,
             ),
             onTap: () => Navigator.push(
@@ -270,10 +271,10 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
           _SettingRow(
-            icon: Icons.description_outlined,
+            icon: AppIcons.descriptionOutlined,
             title: l10n.profileTermsOfService,
             trailing: Icon(
-              Icons.chevron_right_rounded,
+              AppIcons.chevronRightRounded,
               color: AppColors.subtle,
             ),
             onTap: () => Navigator.push(
@@ -290,7 +291,7 @@ class _SettingsPageState extends State<SettingsPage> {
           _Eyebrow(l10n.profileSectionDangerZone),
           const SizedBox(height: AppSizes.sm),
           _SettingRow(
-            icon: Icons.download_rounded,
+            icon: AppIcons.downloadRounded,
             title: l10n.profileExportMyData,
             subtitle: l10n.profileExportMyDataSubtitle,
             trailing: _exporting
@@ -300,17 +301,17 @@ class _SettingsPageState extends State<SettingsPage> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : Icon(
-                    Icons.chevron_right_rounded,
+                    AppIcons.chevronRightRounded,
                     color: AppColors.subtle,
                   ),
             onTap: _exporting ? null : _exportData,
           ),
           _SettingRow(
-            icon: Icons.delete_forever_rounded,
+            icon: AppIcons.deleteForeverRounded,
             title: l10n.profileDeleteAccount,
             subtitle: l10n.profileDeleteAccountSubtitle,
             trailing: Icon(
-              Icons.chevron_right_rounded,
+              AppIcons.chevronRightRounded,
               color: AppColors.error,
             ),
             onTap: _deleteAccount,
@@ -338,7 +339,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   child: Row(
                     children: [
                       Icon(
-                        Icons.logout_rounded,
+                        AppIcons.logoutRounded,
                         color: AppColors.error,
                         size: AppSizes.iconMd,
                       ),
@@ -454,7 +455,7 @@ class _DensityRow extends StatelessWidget {
             ),
             alignment: Alignment.center,
             child: Icon(
-              Icons.density_medium_rounded,
+              AppIcons.densityMediumRounded,
               size: AppSizes.iconMd,
               color: AppColors.black,
             ),
@@ -484,13 +485,13 @@ class _DensityRow extends StatelessWidget {
                   segments: [
                     ButtonSegment(
                       value: ListDensity.comfortable,
-                      icon: const Icon(Icons.format_line_spacing_rounded,
+                      icon: const Icon(AppIcons.formatLineSpacingRounded,
                           size: AppSizes.iconSm),
                       label: Text(l10n.profileDensityComfortable),
                     ),
                     ButtonSegment(
                       value: ListDensity.compact,
-                      icon: const Icon(Icons.density_small_rounded, size: AppSizes.iconSm),
+                      icon: const Icon(AppIcons.densitySmallRounded, size: AppSizes.iconSm),
                       label: Text(l10n.profileDensityCompact),
                     ),
                   ],
@@ -543,7 +544,7 @@ class _ThemeRow extends StatelessWidget {
             ),
             alignment: Alignment.center,
             child: Icon(
-              Icons.palette_outlined,
+              AppIcons.paletteOutlined,
               size: AppSizes.iconMd,
               color: AppColors.black,
             ),
@@ -659,7 +660,7 @@ class _LanguageRow extends StatelessWidget {
             ),
             alignment: Alignment.center,
             child: Icon(
-              Icons.language_rounded,
+              AppIcons.languageRounded,
               size: AppSizes.iconMd,
               color: AppColors.black,
             ),
@@ -905,8 +906,8 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
               suffixIcon: IconButton(
                 icon: Icon(
                   _obscure
-                      ? Icons.visibility_outlined
-                      : Icons.visibility_off_outlined,
+                      ? AppIcons.visibilityOutlined
+                      : AppIcons.visibilityOffOutlined,
                 ),
                 onPressed: () => setState(() => _obscure = !_obscure),
               ),

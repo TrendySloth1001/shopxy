@@ -10,7 +10,7 @@ import {
   XCircle,
   Ban,
   RotateCcw,
-} from "lucide-react";
+} from "@/shared/icons";
 import { formatDateTime } from "@/shared/datetime";
 import type { OrderEvent } from "../types";
 

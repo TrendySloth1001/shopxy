@@ -25,6 +25,7 @@ import 'package:shopxy_customer/shared/theme/app_shadows.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Customer-facing product detail page.
 ///
@@ -192,7 +193,7 @@ class _Body extends StatelessWidget {
         if (p.specs.isEmpty)
           const SliverToBoxAdapter(
             child: _EmptySection(
-              icon: Icons.list_alt_outlined,
+              icon: AppIcons.listAltOutlined,
               title: 'No specifications yet',
               subtitle: "The seller hasn't added a spec sheet for this product.",
             ),
@@ -422,11 +423,11 @@ class _SoldByChip extends StatelessWidget {
           ),
           if (shop.isVerified) ...[
             const SizedBox(width: AppSizes.xs),
-            const Icon(Icons.verified_rounded,
+            const Icon(AppIcons.verifiedRounded,
                 color: AppColors.info, size: AppSizes.iconSm),
           ],
           const SizedBox(width: AppSizes.xs),
-          const Icon(Icons.chevron_right_rounded,
+          const Icon(AppIcons.chevronRightRounded,
               color: AppColors.brandStrong, size: AppSizes.iconSm),
         ],
       ),
@@ -476,7 +477,7 @@ class _RatingChip extends StatelessWidget {
                     ),
               ),
               const SizedBox(width: AppSizes.xs),
-              const Icon(Icons.star_rounded,
+              const Icon(AppIcons.starRounded,
                   color: AppColors.white, size: 12),
             ],
           ),
@@ -767,7 +768,7 @@ class _ShopCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right_rounded,
+              const Icon(AppIcons.chevronRightRounded,
                   color: AppColors.muted),
             ],
           ),
@@ -960,7 +961,7 @@ class _IdleRow extends StatelessWidget {
         Expanded(
           child: _PrimaryPillButton(
             label: busy ? 'Adding…' : 'Add to cart',
-            icon: Icons.shopping_cart_outlined,
+            icon: AppIcons.shoppingCartOutlined,
             loading: busy,
             // Outline brand button — pairs with the filled "Buy now"
             // on the right so the two CTAs read at the same visual
@@ -973,7 +974,7 @@ class _IdleRow extends StatelessWidget {
         Expanded(
           child: _PrimaryPillButton(
             label: 'Buy now',
-            icon: Icons.bolt_rounded,
+            icon: AppIcons.boltRounded,
             kind: _PillKind.filled,
             onPressed: busy ? null : onBuyNow,
           ),
@@ -1009,7 +1010,7 @@ class _InCartRow extends StatelessWidget {
         Expanded(
           child: _PrimaryPillButton(
             label: 'Go to cart',
-            icon: Icons.arrow_forward_rounded,
+            icon: AppIcons.arrowForwardRounded,
             kind: _PillKind.filled,
             onPressed: onGoToCart,
           ),
@@ -1045,8 +1046,8 @@ class _QuantityStepper extends StatelessWidget {
         children: [
           _StepperButton(
             icon: quantity <= 1
-                ? Icons.delete_outline_rounded
-                : Icons.remove_rounded,
+                ? AppIcons.deleteOutlineRounded
+                : AppIcons.removeRounded,
             onPressed: onDecrement,
           ),
           Container(
@@ -1061,7 +1062,7 @@ class _QuantityStepper extends StatelessWidget {
             ),
           ),
           _StepperButton(
-            icon: Icons.add_rounded,
+            icon: AppIcons.addRounded,
             onPressed: onIncrement,
           ),
         ],
@@ -1598,7 +1599,7 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.cloud_off_rounded,
+            const Icon(AppIcons.cloudOffRounded,
                 size: AppSizes.iconHuge, color: AppColors.muted),
             const SizedBox(height: AppSizes.md),
             Text(

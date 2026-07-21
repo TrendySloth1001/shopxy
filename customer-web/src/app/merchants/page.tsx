@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Store, Mail } from "lucide-react";
+import { Store, Mail, ChevronRight } from "@/shared/icons";
 import { AppHeader } from "@/features/auth/components/app-header";
 import { RequireAuth } from "@/features/auth/components/require-auth";
 import { MerchantCard, MerchantCardSkeleton } from "@/features/merchants/components/merchant-card";
@@ -67,15 +67,7 @@ function PendingInvitesBanner({ count }: { count: number }) {
       <span className="flex-1 text-body-sm font-extrabold text-brand-strong">
         {count === 1 ? "1 pending invitation" : `${count} pending invitations`}
       </span>
-      <svg
-        className="h-4 w-4 flex-shrink-0 text-brand-strong"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-        aria-hidden
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-      </svg>
+      <ChevronRight className="h-4 w-4 flex-shrink-0 text-brand-strong" aria-hidden />
     </Link>
   );
 }

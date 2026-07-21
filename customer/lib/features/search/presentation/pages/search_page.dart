@@ -13,6 +13,7 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_price_text.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Global product search. Opened from the home page's search entry
 /// and pushed full-screen so the keyboard and the chip strip can
@@ -138,7 +139,7 @@ class _BackChip extends StatelessWidget {
         ),
         alignment: Alignment.center,
         child: const Icon(
-          Icons.arrow_back_rounded,
+          AppIcons.arrowBackRounded,
           color: AppColors.black,
           size: AppSizes.iconMd,
         ),
@@ -185,7 +186,7 @@ class _SearchField extends StatelessWidget {
             ),
             alignment: Alignment.center,
             child: const Icon(
-              Icons.search_rounded,
+              AppIcons.searchRounded,
               color: AppColors.white,
               size: AppSizes.iconSm,
             ),
@@ -229,7 +230,7 @@ class _SearchField extends StatelessWidget {
                 ),
                 alignment: Alignment.center,
                 child: const Icon(
-                  Icons.close_rounded,
+                  AppIcons.closeRounded,
                   color: AppColors.muted,
                   size: AppSizes.iconSm,
                 ),
@@ -298,7 +299,7 @@ class _IdleView extends StatelessWidget {
                 ),
                 alignment: Alignment.center,
                 child: const Icon(
-                  Icons.search_rounded,
+                  AppIcons.searchRounded,
                   size: AppSizes.iconXl,
                   color: AppColors.brand,
                 ),
@@ -338,7 +339,7 @@ class _IdleView extends StatelessWidget {
           const _SectionHeading(
             eyebrow: 'POPULAR RIGHT NOW',
             title: 'Trending searches',
-            icon: Icons.local_fire_department_rounded,
+            icon: AppIcons.localFireDepartmentRounded,
           ),
           const SizedBox(height: AppSizes.md),
           Wrap(
@@ -361,7 +362,7 @@ class _IdleView extends StatelessWidget {
                 child: _SectionHeading(
                   eyebrow: 'YOUR HISTORY',
                   title: 'Recent searches',
-                  icon: Icons.history_rounded,
+                  icon: AppIcons.historyRounded,
                 ),
               ),
               GestureDetector(
@@ -498,7 +499,7 @@ class _TrendingChip extends StatelessWidget {
                 ),
                 alignment: Alignment.center,
                 child: const Icon(
-                  Icons.local_fire_department_rounded,
+                  AppIcons.localFireDepartmentRounded,
                   color: AppColors.brand,
                   size: AppSizes.iconSm,
                 ),
@@ -547,7 +548,7 @@ class _RecentRow extends StatelessWidget {
               ),
               alignment: Alignment.center,
               child: const Icon(
-                Icons.history_rounded,
+                AppIcons.historyRounded,
                 color: AppColors.muted,
                 size: AppSizes.iconSm,
               ),
@@ -567,7 +568,7 @@ class _RecentRow extends StatelessWidget {
             ),
             const SizedBox(width: AppSizes.sm),
             const Icon(
-              Icons.north_west_rounded,
+              AppIcons.northWestRounded,
               color: AppColors.muted,
               size: AppSizes.iconSm,
             ),
@@ -677,7 +678,7 @@ class _ResultsList extends StatelessWidget {
                     height: AppSizes.avatarMd,
                     color: AppColors.heroPanel,
                     child: p.imageUrl == null || p.imageUrl!.isEmpty
-                        ? const Icon(Icons.image_outlined, color: AppColors.muted)
+                        ? const Icon(AppIcons.imageOutlined, color: AppColors.muted)
                         : NetworkImageBox(url: resolveImageUrl(p.imageUrl!)),
                   ),
                 ),
@@ -717,7 +718,7 @@ class _ResultsList extends StatelessWidget {
                           padding: const EdgeInsets.only(top: AppSizes.xs),
                           child: Row(
                             children: [
-                              const Icon(Icons.star_rounded,
+                              const Icon(AppIcons.starRounded,
                                   color: AppColors.success, size: AppSizes.iconSm),
                               const SizedBox(width: AppSizes.xs),
                               Text(
@@ -761,7 +762,7 @@ class _SemanticBadge extends StatelessWidget {
       child: Row(
         children: [
           Icon(
-            semantic ? Icons.auto_awesome_rounded : Icons.search_rounded,
+            semantic ? AppIcons.autoAwesomeRounded : AppIcons.searchRounded,
             size: AppSizes.iconSm,
             color: semantic ? AppColors.brand : AppColors.muted,
           ),
@@ -796,7 +797,7 @@ class _NoMatches extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(
-              Icons.search_off_rounded,
+              AppIcons.searchOffRounded,
               size: AppSizes.iconHuge,
               color: AppColors.muted,
             ),
@@ -838,7 +839,7 @@ class _ErrorBlock extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(
-              Icons.error_outline_rounded,
+              AppIcons.errorOutlineRounded,
               size: 40,
               color: AppColors.error,
             ),
@@ -873,7 +874,7 @@ class _FilterButton extends StatelessWidget {
     return TextButton.icon(
       onPressed: disabled ? null : onTap,
       icon: Icon(
-        Icons.tune_rounded,
+        AppIcons.tuneRounded,
         size: AppSizes.iconMd,
         color: hasActive ? AppColors.brand : AppColors.muted,
       ),

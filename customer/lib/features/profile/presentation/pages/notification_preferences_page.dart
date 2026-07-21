@@ -6,6 +6,7 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Per-category notification preferences. Each row toggles a
 /// `notify*` flag on the user row; the channel rows at the bottom
@@ -67,7 +68,7 @@ class _NotificationPreferencesPageState
           _PrefTile(
             title: 'Order updates',
             subtitle: 'Confirmation, dispatch, delivery, returns.',
-            icon: Icons.local_shipping_outlined,
+            icon: AppIcons.localShippingOutlined,
             tint: AppColors.infoSoft,
             iconColor: AppColors.info,
             value: user?.notifyOrders ?? true,
@@ -76,7 +77,7 @@ class _NotificationPreferencesPageState
           _PrefTile(
             title: 'Deals & price drops',
             subtitle: 'Flash sales, coupons, wishlist deals.',
-            icon: Icons.local_offer_outlined,
+            icon: AppIcons.localOfferOutlined,
             tint: AppColors.accentAmberSoft,
             iconColor: AppColors.accentAmber,
             value: user?.notifyDeals ?? true,
@@ -87,7 +88,7 @@ class _NotificationPreferencesPageState
             subtitle:
                 'Sign-ins from new devices, password changes, account '
                 'recovery.',
-            icon: Icons.shield_outlined,
+            icon: AppIcons.shieldOutlined,
             tint: AppColors.brandSoft,
             iconColor: AppColors.brandStrong,
             value: user?.notifyAccount ?? true,
@@ -98,7 +99,7 @@ class _NotificationPreferencesPageState
             subtitle:
                 'Shop replies and order-related questions. (Coming with '
                 'the chat surface.)',
-            icon: Icons.chat_bubble_outline,
+            icon: AppIcons.chatBubbleOutline,
             tint: AppColors.accentRoseSoft,
             iconColor: AppColors.accentRose,
             value: user?.notifyMessages ?? true,
@@ -111,7 +112,7 @@ class _NotificationPreferencesPageState
             subtitle:
                 'In-app + lockscreen alerts on this device. Turning '
                 'this off mutes every category above on push.',
-            icon: Icons.notifications_active_outlined,
+            icon: AppIcons.notificationsActiveOutlined,
             tint: AppColors.surfaceTint,
             iconColor: AppColors.black,
             value: user?.pushEnabled ?? true,
@@ -122,7 +123,7 @@ class _NotificationPreferencesPageState
             subtitle:
                 'Only for time-sensitive order updates. Carrier rates may '
                 'apply. Off by default.',
-            icon: Icons.sms_outlined,
+            icon: AppIcons.smsOutlined,
             tint: AppColors.surfaceTint,
             iconColor: AppColors.black,
             value: user?.smsEnabled ?? false,

@@ -24,6 +24,7 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_button.dart';
 import 'package:shopxy_customer/shared/widgets/app_dialog.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 class CustomerProfilePage extends StatelessWidget {
   const CustomerProfilePage({super.key});
@@ -114,14 +115,14 @@ class CustomerProfilePage extends StatelessWidget {
           ),
           const _Gap(),
           _Row(
-            icon: Icons.edit_outlined,
+            icon: AppIcons.editOutlined,
             title: 'Edit profile',
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const EditProfilePage()),
             ),
           ),
           _Row(
-            icon: Icons.storefront_outlined,
+            icon: AppIcons.storefrontOutlined,
             title: 'Linked merchants',
             subtitle: 'Browse shops you have a relationship with',
             onTap: () => Navigator.of(context).push(
@@ -129,7 +130,7 @@ class CustomerProfilePage extends StatelessWidget {
             ),
           ),
           _Row(
-            icon: Icons.receipt_long_outlined,
+            icon: AppIcons.receiptLongOutlined,
             title: 'Invoices from shops',
             subtitle: 'Tap a shop to see the invoices it sent you',
             onTap: () => Navigator.of(context).push(
@@ -137,7 +138,7 @@ class CustomerProfilePage extends StatelessWidget {
             ),
           ),
           _Row(
-            icon: Icons.location_on_outlined,
+            icon: AppIcons.locationOnOutlined,
             title: 'Delivery addresses',
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const AddressesPage()),
@@ -148,7 +149,7 @@ class CustomerProfilePage extends StatelessWidget {
           // and confused which surface is the source of truth.
           const _SectionLabel(label: 'Activity'),
           _Row(
-            icon: Icons.favorite_border_rounded,
+            icon: AppIcons.favoriteBorderRounded,
             title: 'Wishlist',
             subtitle: 'Items you saved for later',
             onTap: () => Navigator.of(context).push(
@@ -156,7 +157,7 @@ class CustomerProfilePage extends StatelessWidget {
             ),
           ),
           _Row(
-            icon: Icons.local_offer_outlined,
+            icon: AppIcons.localOfferOutlined,
             title: 'My coupons',
             subtitle: 'Redeemable promo codes from your shops',
             onTap: () => Navigator.of(context).push(
@@ -164,7 +165,7 @@ class CustomerProfilePage extends StatelessWidget {
             ),
           ),
           _Row(
-            icon: Icons.rate_review_outlined,
+            icon: AppIcons.rateReviewOutlined,
             title: 'My reviews',
             subtitle: 'Ratings and reviews you wrote',
             onTap: () => Navigator.of(context).push(
@@ -172,7 +173,7 @@ class CustomerProfilePage extends StatelessWidget {
             ),
           ),
           _Row(
-            icon: Icons.assignment_return_outlined,
+            icon: AppIcons.assignmentReturnOutlined,
             title: 'Returns',
             subtitle: 'Track your return requests',
             onTap: () => Navigator.of(context).push(
@@ -180,7 +181,7 @@ class CustomerProfilePage extends StatelessWidget {
             ),
           ),
           _Row(
-            icon: Icons.history_rounded,
+            icon: AppIcons.historyRounded,
             title: 'Recently viewed',
             subtitle: 'Pick up where you left off',
             onTap: () => Navigator.of(context).push(
@@ -189,7 +190,7 @@ class CustomerProfilePage extends StatelessWidget {
           ),
           const _SectionLabel(label: 'Settings'),
           _Row(
-            icon: Icons.notifications_active_outlined,
+            icon: AppIcons.notificationsActiveOutlined,
             title: 'Notification preferences',
             subtitle: 'Order updates, deals, account alerts',
             onTap: () => Navigator.of(context).push(
@@ -198,7 +199,7 @@ class CustomerProfilePage extends StatelessWidget {
             ),
           ),
           _Row(
-            icon: Icons.help_outline_rounded,
+            icon: AppIcons.helpOutlineRounded,
             title: 'Help & FAQ',
             subtitle: 'Common questions + email support',
             onTap: () => Navigator.of(context).push(
@@ -207,7 +208,7 @@ class CustomerProfilePage extends StatelessWidget {
           ),
           const _Gap(),
           _Row(
-            icon: Icons.info_outline_rounded,
+            icon: AppIcons.infoOutlineRounded,
             title: AppStrings.about,
             subtitle: 'Version 1.0.0',
             onTap: () => Navigator.of(context).push(
@@ -215,14 +216,14 @@ class CustomerProfilePage extends StatelessWidget {
             ),
           ),
           _Row(
-            icon: Icons.shield_outlined,
+            icon: AppIcons.shieldOutlined,
             title: AppStrings.privacyPolicy,
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
             ),
           ),
           _Row(
-            icon: Icons.description_outlined,
+            icon: AppIcons.descriptionOutlined,
             title: AppStrings.termsOfService,
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const TermsOfServicePage()),
@@ -247,7 +248,7 @@ class CustomerProfilePage extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.logout_rounded,
+                      const Icon(AppIcons.logoutRounded,
                           color: AppColors.error, size: AppSizes.iconMd),
                       const SizedBox(width: AppSizes.md),
                       Text(
@@ -312,7 +313,7 @@ class _GuestProfileBody extends StatelessWidget {
                       ),
                       alignment: Alignment.center,
                       child: const Icon(
-                        Icons.person_outline_rounded,
+                        AppIcons.personOutlineRounded,
                         size: 28,
                         color: AppColors.black,
                       ),
@@ -346,7 +347,7 @@ class _GuestProfileBody extends StatelessWidget {
                 const SizedBox(height: AppSizes.lg),
                 AppButton.primary(
                   label: 'Sign in',
-                  icon: Icons.login_rounded,
+                  icon: AppIcons.loginRounded,
                   fullWidth: true,
                   onPressed: () => requireAuth(
                     context,
@@ -361,7 +362,7 @@ class _GuestProfileBody extends StatelessWidget {
         ),
         const _SectionLabel(label: 'About'),
         _Row(
-          icon: Icons.help_outline_rounded,
+          icon: AppIcons.helpOutlineRounded,
           title: 'Help & FAQ',
           subtitle: 'Common questions + email support',
           onTap: () => Navigator.of(context).push(
@@ -369,7 +370,7 @@ class _GuestProfileBody extends StatelessWidget {
           ),
         ),
         _Row(
-          icon: Icons.info_outline_rounded,
+          icon: AppIcons.infoOutlineRounded,
           title: AppStrings.about,
           subtitle: 'Version 1.0.0',
           onTap: () => Navigator.of(context).push(
@@ -377,14 +378,14 @@ class _GuestProfileBody extends StatelessWidget {
           ),
         ),
         _Row(
-          icon: Icons.shield_outlined,
+          icon: AppIcons.shieldOutlined,
           title: AppStrings.privacyPolicy,
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
           ),
         ),
         _Row(
-          icon: Icons.description_outlined,
+          icon: AppIcons.descriptionOutlined,
           title: AppStrings.termsOfService,
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => const TermsOfServicePage()),
@@ -482,7 +483,7 @@ class _Row extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: AppColors.subtle),
+            const Icon(AppIcons.chevronRightRounded, color: AppColors.subtle),
           ],
         ),
       ),

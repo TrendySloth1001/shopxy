@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:shopxy_customer/features/returns/domain/entities/return_request.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Vertical milestone strip for a return request. Short-circuits to
 /// REJECTED / CANCELLED when terminated early.
@@ -24,18 +25,18 @@ class ReturnTimeline extends StatelessWidget {
     final cancelled = status == 'CANCELLED';
 
     final stops = <_Stop>[
-      _Stop('Requested', Icons.receipt_rounded, byType['REQUESTED']),
+      _Stop('Requested', AppIcons.receiptRounded, byType['REQUESTED']),
       if (rejected)
-        _Stop('Rejected', Icons.cancel_outlined, byType['REJECTED'],
+        _Stop('Rejected', AppIcons.cancelOutlined, byType['REJECTED'],
             tone: _Tone.danger)
       else if (cancelled)
-        _Stop('Cancelled', Icons.cancel_outlined, byType['CANCELLED'],
+        _Stop('Cancelled', AppIcons.cancelOutlined, byType['CANCELLED'],
             tone: _Tone.warn)
       else ...[
-        _Stop('Approved', Icons.check_circle_outline, byType['APPROVED']),
-        _Stop('Picked up', Icons.local_shipping_outlined, byType['PICKED_UP']),
-        _Stop('Received', Icons.inventory_2_outlined, byType['RECEIVED']),
-        _Stop('Refunded', Icons.payments_outlined,
+        _Stop('Approved', AppIcons.checkCircleOutline, byType['APPROVED']),
+        _Stop('Picked up', AppIcons.localShippingOutlined, byType['PICKED_UP']),
+        _Stop('Received', AppIcons.inventory2Outlined, byType['RECEIVED']),
+        _Stop('Refunded', AppIcons.paymentsOutlined,
             byType['REFUNDED']),
       ],
     ];

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ChevronDown, ChevronRight, ExternalLink, FileText, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, ExternalLink, FileText, Search } from "@/shared/icons";
 import { SideSheet } from "@/shared/ui/side-sheet";
 import { getPnlReport, getSoldProducts, type Range } from "@/features/reports/api";
 import type { PnlReport, SoldProduct } from "@/features/reports/schema";

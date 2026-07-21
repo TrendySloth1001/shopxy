@@ -29,6 +29,7 @@ import 'package:shopxy/shared/widgets/app_search_bar.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Products listing — same chassis as the Parties and Vendors pages
 /// (AppBar `+` action, [AppSearchBar] header, [ListView.separated]
@@ -266,7 +267,7 @@ class _ProductsPageState extends State<ProductsPage> {
           IconButton(
             tooltip: _grid ? l10n.productsListView : l10n.productsGridView,
             icon: Icon(
-              _grid ? Icons.view_list_rounded : Icons.grid_view_rounded,
+              _grid ? AppIcons.viewListRounded : AppIcons.gridViewRounded,
             ),
             onPressed: () => setState(() => _grid = !_grid),
           ),
@@ -274,7 +275,7 @@ class _ProductsPageState extends State<ProductsPage> {
           if (canView)
             LockedIconButton(
               allowed: canWrite,
-              icon: Icons.add_rounded,
+              icon: AppIcons.addRounded,
               tooltip: l10n.productsAddProduct,
               what: 'add products',
               onPressed: _openAddProduct,
@@ -321,14 +322,14 @@ class _ProductsPageState extends State<ProductsPage> {
               ),
               AppFilterPill(
                 label: l10n.productsLowStock,
-                icon: Icons.warning_amber_rounded,
+                icon: AppIcons.warningAmberRounded,
                 selected: provider.lowStockOnly,
                 accent: AppColors.warning,
                 onTap: () => provider.setLowStockOnly(!provider.lowStockOnly),
               ),
               AppFilterPill(
                 label: l10n.productsOutOfStock,
-                icon: Icons.remove_circle_outline_rounded,
+                icon: AppIcons.removeCircleOutlineRounded,
                 selected: provider.outOfStockOnly,
                 accent: AppColors.error,
                 onTap: () =>
@@ -342,8 +343,8 @@ class _ProductsPageState extends State<ProductsPage> {
                 label: provider.categoryFilter == null
                     ? l10n.productsCategoryPickerLabel
                     : (_selectedCategoryName ?? l10n.productsCategoryPickerLabel),
-                icon: Icons.folder_outlined,
-                trailingIcon: Icons.expand_more_rounded,
+                icon: AppIcons.folderOutlined,
+                trailingIcon: AppIcons.expandMoreRounded,
                 selected: provider.categoryFilter != null,
                 onTap: () => _openCategoryPicker(provider),
               ),
@@ -383,7 +384,7 @@ class _ProductsPageState extends State<ProductsPage> {
                                   ? null
                                   : AppButton.primary(
                                       label: l10n.productsAddProduct,
-                                      icon: Icons.add_rounded,
+                                      icon: AppIcons.addRounded,
                                       onPressed: _openAddProduct,
                                     ),
                             );
@@ -447,7 +448,7 @@ class _ProductsPageState extends State<ProductsPage> {
                                                     AppColors.success,
                                                 foregroundColor: AppColors.white,
                                                 icon:
-                                                    Icons.arrow_downward_rounded,
+                                                    AppIcons.arrowDownwardRounded,
                                                 label: l10n.productsStockInAction,
                                                 padding: EdgeInsets.zero,
                                               ),
@@ -465,7 +466,7 @@ class _ProductsPageState extends State<ProductsPage> {
                                                     p, 'STOCK_OUT'),
                                                 backgroundColor: AppColors.error,
                                                 foregroundColor: AppColors.white,
-                                                icon: Icons.arrow_upward_rounded,
+                                                icon: AppIcons.arrowUpwardRounded,
                                                 label: l10n.productsStockOutAction,
                                                 padding: EdgeInsets.zero,
                                               ),
@@ -704,7 +705,7 @@ class _ScanAction extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(AppSizes.xs),
             child: Icon(
-              Icons.qr_code_scanner_rounded,
+              AppIcons.qrCodeScannerRounded,
               size: AppSizes.iconMd,
               color: AppColors.black,
             ),

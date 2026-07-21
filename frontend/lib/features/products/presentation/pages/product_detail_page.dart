@@ -44,6 +44,7 @@ import 'package:shopxy/shared/widgets/app_section_header.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 class ProductDetailPage extends StatefulWidget {
   const ProductDetailPage({super.key, required this.productId});
@@ -532,26 +533,26 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         actions: [
           IconButton(
             onPressed: _shareProduct,
-            icon: const Icon(Icons.ios_share_rounded),
+            icon: const Icon(AppIcons.iosShareRounded),
             tooltip: l10n.productsShare,
           ),
           IconButton(
             onPressed: _showQrDialog,
-            icon: const Icon(Icons.qr_code_rounded),
+            icon: const Icon(AppIcons.qrCodeRounded),
             tooltip: l10n.productsGenerateQr,
           ),
           // Edit is a product write — shown locked (greyed + padlock) for
           // roles without products:manage so they know it exists.
           LockedIconButton(
             allowed: canWriteProducts,
-            icon: Icons.edit_outlined,
+            icon: AppIcons.editOutlined,
             tooltip: l10n.productsEdit,
             what: 'edit products',
             onPressed: _openEdit,
           ),
           if (canWriteProducts)
             PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert_rounded),
+              icon: const Icon(AppIcons.moreVertRounded),
               itemBuilder: (_) => [
                 PopupMenuItem(
                   value: 'delete',
@@ -633,7 +634,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     child: Row(
                       children: [
                         Icon(
-                          Icons.receipt_long_rounded,
+                          AppIcons.receiptLongRounded,
                           color: AppColors.black,
                           size: AppSizes.iconMd,
                         ),
@@ -658,7 +659,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                           ),
                         ),
                         Icon(
-                          Icons.arrow_forward_ios_rounded,
+                          AppIcons.arrowForwardIosRounded,
                           color: AppColors.muted,
                           size: AppSizes.iconSm,
                         ),
@@ -1055,8 +1056,8 @@ class _ProductHeaderCard extends StatelessWidget {
                     ? AppStatusTone.success
                     : AppStatusTone.neutral,
                 icon: product.isActive
-                    ? Icons.check_circle_outline_rounded
-                    : Icons.pause_circle_outline_rounded,
+                    ? AppIcons.checkCircleOutlineRounded
+                    : AppIcons.pauseCircleOutlineRounded,
                 dense: true,
               ),
               if (product.ratingAvg != null)
@@ -1064,14 +1065,14 @@ class _ProductHeaderCard extends StatelessWidget {
                   label:
                       '${product.ratingAvg!.toStringAsFixed(1)} · ${product.ratingCount} ${product.ratingCount == 1 ? l10n.productsReviewSingular : l10n.productsReviewPlural}',
                   tone: AppStatusTone.neutral,
-                  icon: Icons.star_rounded,
+                  icon: AppIcons.starRounded,
                   dense: true,
                 )
               else
                 AppStatusBadge(
                   label: l10n.productsNoReviewsYet,
                   tone: AppStatusTone.neutral,
-                  icon: Icons.star_outline_rounded,
+                  icon: AppIcons.starOutlineRounded,
                   dense: true,
                 ),
             ],
@@ -1191,8 +1192,8 @@ class _MarketplaceCard extends StatelessWidget {
             ),
             child: Icon(
               published
-                  ? Icons.storefront_rounded
-                  : Icons.visibility_off_outlined,
+                  ? AppIcons.storefrontRounded
+                  : AppIcons.visibilityOffOutlined,
               size: 18,
               color: published ? AppColors.brand : AppColors.muted,
             ),
@@ -1266,21 +1267,21 @@ class _SalesPerformanceCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _PerformanceMetric(
-                  icon: Icons.sell_rounded,
+                  icon: AppIcons.sellRounded,
                   label: l10n.productsLifetimeSold,
                   value: '${product.totalSold}',
                 ),
               ),
               Expanded(
                 child: _PerformanceMetric(
-                  icon: Icons.timeline_rounded,
+                  icon: AppIcons.timelineRounded,
                   label: l10n.productsSold30d,
                   value: '${product.soldLast30d}',
                 ),
               ),
               Expanded(
                 child: _PerformanceMetric(
-                  icon: Icons.star_rounded,
+                  icon: AppIcons.starRounded,
                   label: l10n.productsReviewsLabel,
                   value: product.ratingCount == 0
                       ? '—'
@@ -1363,7 +1364,7 @@ class _LastActivityCard extends StatelessWidget {
           const SizedBox(height: AppSizes.sm),
           if (product.lastStockInAt != null)
             _LastActivityRow(
-              icon: Icons.south_west_rounded,
+              icon: AppIcons.southWestRounded,
               tone: AppColors.success,
               label: l10n.productsStockedIn,
               ago: _ago(product.lastStockInAt!),
@@ -1373,7 +1374,7 @@ class _LastActivityCard extends StatelessWidget {
             const SizedBox(height: AppSizes.sm),
           if (product.lastStockOutAt != null)
             _LastActivityRow(
-              icon: Icons.north_east_rounded,
+              icon: AppIcons.northEastRounded,
               tone: AppColors.error,
               label: l10n.productsSold,
               ago: _ago(product.lastStockOutAt!),
@@ -1800,11 +1801,11 @@ class _OffersSection extends StatelessWidget {
   final List<ProductOffer> offers;
 
   IconData _icon(String kind) => switch (kind) {
-        'BANK' => Icons.account_balance_rounded,
-        'COUPON' => Icons.local_offer_rounded,
-        'EMI' => Icons.payments_rounded,
-        'EXCHANGE' => Icons.swap_horiz_rounded,
-        _ => Icons.local_offer_outlined,
+        'BANK' => AppIcons.accountBalanceRounded,
+        'COUPON' => AppIcons.localOfferRounded,
+        'EMI' => AppIcons.paymentsRounded,
+        'EXCHANGE' => AppIcons.swapHorizRounded,
+        _ => AppIcons.localOfferOutlined,
       };
 
   Color _tint(String kind) => switch (kind) {
@@ -1911,7 +1912,7 @@ class _OffersSection extends StatelessWidget {
                                         ),
                                         const SizedBox(width: 4),
                                         Icon(
-                                          Icons.copy_rounded,
+                                          AppIcons.copyRounded,
                                           size: 12,
                                           color: AppColors.muted,
                                         ),
@@ -1947,33 +1948,33 @@ class _ContentBlocksSection extends StatelessWidget {
     final d = b.data;
     return switch (b.kind) {
       'HERO' => (
-          icon: Icons.image_rounded,
+          icon: AppIcons.imageRounded,
           label: l10n.productsBlockHero,
           preview: (d['headline'] as String?) ?? '',
         ),
       'FEATURE' => (
-          icon: Icons.featured_play_list_rounded,
+          icon: AppIcons.featuredPlayListRounded,
           label: '${l10n.productsBlockFeature} · ${d['side'] ?? 'LEFT'}',
           preview: (d['title'] as String?) ?? '',
         ),
       'COMPARISON' => (
-          icon: Icons.compare_arrows_rounded,
+          icon: AppIcons.compareArrowsRounded,
           label: l10n.productsBlockComparison,
           preview:
               '${(d['columns'] as List?)?.length ?? 0} ${l10n.productsColumnsUnit} · ${(d['rows'] as List?)?.length ?? 0} ${l10n.productsRowsUnit}',
         ),
       'GALLERY' => (
-          icon: Icons.collections_rounded,
+          icon: AppIcons.collectionsRounded,
           label: l10n.productsBlockGallery,
           preview: '${(d['images'] as List?)?.length ?? 0} ${l10n.productsImagesUnit}',
         ),
       'TEXT' => (
-          icon: Icons.text_snippet_rounded,
+          icon: AppIcons.textSnippetRounded,
           label: l10n.productsBlockText,
           preview: ((d['markdown'] as String?) ?? '').split('\n').first,
         ),
       _ => (
-          icon: Icons.widgets_rounded,
+          icon: AppIcons.widgetsRounded,
           label: b.kind,
           preview: '',
         ),
@@ -2117,9 +2118,9 @@ class _StockStatusCard extends StatelessWidget {
   }
 
   IconData get _icon {
-    if (product.isOutOfStock) return Icons.error_outline_rounded;
-    if (product.isLowStock) return Icons.warning_amber_rounded;
-    return Icons.check_circle_outline_rounded;
+    if (product.isOutOfStock) return AppIcons.errorOutlineRounded;
+    if (product.isLowStock) return AppIcons.warningAmberRounded;
+    return AppIcons.checkCircleOutlineRounded;
   }
 
   String _labelOf(AppLocalizations l10n) {
@@ -2312,7 +2313,7 @@ class _SupplierHistoryTile extends StatelessWidget {
             if (isVendor)
               AppStatusBadge(
                 label: l10n.productsVendor,
-                icon: Icons.business_rounded,
+                icon: AppIcons.businessRounded,
                 dense: true,
               ),
           ],
@@ -2551,7 +2552,7 @@ class _StockActionBar extends StatelessWidget {
               Expanded(
                 child: AppButton.secondary(
                   label: l10n.productsStockIn,
-                  icon: Icons.add_rounded,
+                  icon: AppIcons.addRounded,
                   onPressed: onStockIn,
                   fullWidth: true,
                 ),
@@ -2560,7 +2561,7 @@ class _StockActionBar extends StatelessWidget {
               Expanded(
                 child: AppButton.primary(
                   label: l10n.productsStockOut,
-                  icon: Icons.remove_rounded,
+                  icon: AppIcons.removeRounded,
                   onPressed: onStockOut,
                   fullWidth: true,
                 ),
@@ -2601,14 +2602,14 @@ class _IdentifierRibbon extends StatelessWidget {
       runSpacing: AppSizes.xs,
       children: [
         _IdentifierChip(
-          icon: Icons.tag_rounded,
+          icon: AppIcons.tagRounded,
           label: l10n.productsSku,
           value: sku,
           onTap: () => _copy(context, sku, l10n.productsSku),
         ),
         if (barcode != null && barcode!.isNotEmpty)
           _IdentifierChip(
-            icon: Icons.qr_code_2_rounded,
+            icon: AppIcons.qrCode2Rounded,
             label: l10n.productsBarcode,
             value: barcode!,
             onTap: () => _copy(context, barcode!, l10n.productsBarcode),
@@ -2660,7 +2661,7 @@ class _IdentifierChip extends StatelessWidget {
               ),
               const SizedBox(width: AppSizes.xs),
               Icon(
-                Icons.copy_rounded,
+                AppIcons.copyRounded,
                 size: 12,
                 color: AppColors.muted,
               ),
@@ -2715,7 +2716,7 @@ class _PendingDraftsCard extends StatelessWidget {
                     shape: AppShapes.squircle(AppSizes.radiusSm),
                   ),
                   child: Icon(
-                    Icons.hourglass_top_rounded,
+                    AppIcons.hourglassTopRounded,
                     size: 18,
                     color: AppColors.warning,
                   ),
@@ -2798,8 +2799,8 @@ class _PendingDraftRow extends StatelessWidget {
           children: [
             Icon(
               isSale
-                  ? Icons.north_east_rounded
-                  : Icons.south_west_rounded,
+                  ? AppIcons.northEastRounded
+                  : AppIcons.southWestRounded,
               size: 18,
               color: isSale ? AppColors.error : AppColors.success,
             ),
@@ -2833,7 +2834,7 @@ class _PendingDraftRow extends StatelessWidget {
             ),
             const SizedBox(width: AppSizes.xs),
             Icon(
-              Icons.chevron_right_rounded,
+              AppIcons.chevronRightRounded,
               size: 18,
               color: AppColors.muted,
             ),
@@ -3071,7 +3072,7 @@ class _ReviewsSummarySection extends StatelessWidget {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.verified_rounded,
+                      Icon(AppIcons.verifiedRounded,
                           size: 13, color: AppColors.success),
                       const SizedBox(width: 3),
                       Text(
@@ -3112,7 +3113,7 @@ class _ReviewsSummarySection extends StatelessWidget {
           alignment: Alignment.centerLeft,
           child: AppButton.ghost(
             label: l10n.productsSeeAllReviews,
-            icon: Icons.reviews_outlined,
+            icon: AppIcons.reviewsOutlined,
             onPressed: onSeeAll,
           ),
         ),
@@ -3136,10 +3137,10 @@ class _StarRow extends StatelessWidget {
         final half = !filled && rating >= i + 0.5;
         return Icon(
           filled
-              ? Icons.star_rounded
+              ? AppIcons.starRounded
               : half
-                  ? Icons.star_half_rounded
-                  : Icons.star_outline_rounded,
+                  ? AppIcons.starHalfRounded
+                  : AppIcons.starOutlineRounded,
           size: size,
           color: filled || half ? AppColors.accentAmber : AppColors.disabled,
         );

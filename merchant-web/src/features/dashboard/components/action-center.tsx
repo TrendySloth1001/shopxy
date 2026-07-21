@@ -9,7 +9,7 @@ import {
   RotateCcw,
   ShoppingBag,
   type LucideIcon,
-} from "lucide-react";
+} from "@/shared/icons";
 import type { DashboardActionQueue } from "../stats";
 import { Section } from "./ui";
 

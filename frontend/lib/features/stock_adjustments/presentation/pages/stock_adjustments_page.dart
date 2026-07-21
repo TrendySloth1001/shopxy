@@ -18,6 +18,7 @@ import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 class StockAdjustmentsPage extends StatefulWidget {
   const StockAdjustmentsPage({super.key});
@@ -77,7 +78,7 @@ class _StockAdjustmentsPageState extends State<StockAdjustmentsPage> {
       floatingActionButton: FloatingActionButton(
         heroTag: 'stock_adjustments_fab',
         onPressed: _openCreate,
-        child: const Icon(Icons.add_rounded),
+        child: const Icon(AppIcons.addRounded),
       ),
     );
   }
@@ -229,7 +230,7 @@ class _AdjustmentTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const AppIconAvatar.outlined(icon: Icons.tune_rounded),
+            const AppIconAvatar.outlined(icon: AppIcons.tuneRounded),
             const SizedBox(width: AppSizes.md),
             Expanded(
               child: Column(

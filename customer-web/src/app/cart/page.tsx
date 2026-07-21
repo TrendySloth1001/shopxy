@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Minus, Plus, ShoppingCart, Trash2, ShieldCheck } from "lucide-react";
+import { Minus, Plus, ShoppingCart, Trash2, ShieldCheck } from "@/shared/icons";
 import { useCart } from "@/features/cart/cart-context";
 import { useAuth } from "@/features/auth/auth-context";
 import { AppHeader } from "@/features/auth/components/app-header";

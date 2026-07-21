@@ -13,6 +13,7 @@ import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_button.dart';
 import 'package:shopxy_customer/shared/widgets/app_price_text.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Saved-for-later list. Pushed from the Home page's "Saved" tile and
 /// from the profile page's "Wishlist" entry. Empty state guides the
@@ -208,7 +209,7 @@ class _EmptyState extends StatelessWidget {
             shape: AppShapes.squircle(AppSizes.radiusLg),
           ),
           child: const Icon(
-            Icons.favorite_rounded,
+            AppIcons.favoriteRounded,
             size: AppSizes.iconXl,
             color: AppColors.accentRose,
           ),
@@ -233,7 +234,7 @@ class _EmptyState extends StatelessWidget {
           alignment: Alignment.center,
           child: AppButton.primary(
             label: 'Browse products',
-            icon: Icons.grid_view_rounded,
+            icon: AppIcons.gridViewRounded,
             onPressed: () {
               CustomerShellScope.of(context)
                   ?.select(CustomerShellTab.home.index);
@@ -261,7 +262,7 @@ class _ErrorBlock extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(
-              Icons.error_outline_rounded,
+              AppIcons.errorOutlineRounded,
               size: AppSizes.iconHuge,
               color: AppColors.error,
             ),
@@ -276,7 +277,7 @@ class _ErrorBlock extends StatelessWidget {
             const SizedBox(height: AppSizes.md),
             AppButton.secondary(
               label: 'Try again',
-              icon: Icons.refresh_rounded,
+              icon: AppIcons.refreshRounded,
               onPressed: () => onRetry(),
             ),
           ],

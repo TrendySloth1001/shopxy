@@ -1,4 +1,4 @@
-import { Star, StarHalf } from "lucide-react";
+import { Star, StarHalf } from "@/shared/icons";
 
 /**
  * A 5-star rating display. Renders full / half / empty stars for `value`

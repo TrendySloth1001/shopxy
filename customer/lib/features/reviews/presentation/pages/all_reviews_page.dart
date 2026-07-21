@@ -9,6 +9,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Paginated all-reviews page. Loads page 1 on mount; appends pages as
 /// the user scrolls within ~400px of the bottom. Filter chips switch
@@ -142,7 +143,7 @@ class _AllReviewsPageState extends State<AllReviewsPage> {
         onPressed: _openWriteSheet,
         backgroundColor: AppColors.brand,
         foregroundColor: AppColors.white,
-        icon: const Icon(Icons.edit_outlined),
+        icon: const Icon(AppIcons.editOutlined),
         label: const Text('Rate product'),
       ),
       body: RefreshIndicator(
@@ -346,7 +347,7 @@ class _ErrorView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.cloud_off_outlined,
+            const Icon(AppIcons.cloudOffOutlined,
                 size: AppSizes.iconHuge, color: AppColors.muted),
             const SizedBox(height: AppSizes.sm),
             Text(
@@ -368,7 +369,7 @@ class _ErrorView extends StatelessWidget {
             const SizedBox(height: AppSizes.md),
             FilledButton.icon(
               onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
+              icon: const Icon(AppIcons.refresh),
               label: const Text('Try again'),
             ),
           ],

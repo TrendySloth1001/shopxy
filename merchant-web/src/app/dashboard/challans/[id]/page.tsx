@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ClipboardList, FileUp, Phone, ReceiptText, XCircle } from "lucide-react";
+import { ClipboardList, FileUp, Phone, ReceiptText, XCircle } from "@/shared/icons";
 import { BackLink } from "@/shared/ui/page-header";
 import { Divider } from "@/shared/ui/divider";
 import { Modal, ModalActions } from "@/shared/ui/modal";

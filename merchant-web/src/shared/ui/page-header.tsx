@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, type LucideIcon } from "lucide-react";
+import { ArrowLeft, type LucideIcon } from "@/shared/icons";
 
 /** Accent tones for the header icon puck — all from house colour tokens. */
 const TONES = {

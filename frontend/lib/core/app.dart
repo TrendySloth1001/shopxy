@@ -17,6 +17,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_palette.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/theme/app_theme.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 class ShopxyApp extends StatelessWidget {
   const ShopxyApp({super.key});
@@ -144,7 +145,7 @@ class _NoShopScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.storefront_outlined,
+                Icon(AppIcons.storefrontOutlined,
                     size: 48, color: AppColors.muted),
                 const SizedBox(height: AppSizes.lg),
                 Text(l10n.noShopTitle,
@@ -190,7 +191,7 @@ class _SplashScreen extends StatelessWidget {
                 shape: AppShapes.squircle(AppSizes.radiusXl),
               ),
               child: Icon(
-                Icons.inventory_2_rounded,
+                AppIcons.inventory2Rounded,
                 size: AppSizes.iconXl,
                 color: AppColors.onInverse,
               ),

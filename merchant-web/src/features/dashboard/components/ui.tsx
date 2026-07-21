@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ArrowDown, ArrowUp } from "lucide-react";
+import { ArrowDown, ArrowUp } from "@/shared/icons";
 import type { DashboardPeriod } from "../stats";
 
 /** INR formatters shared across the dashboard. */

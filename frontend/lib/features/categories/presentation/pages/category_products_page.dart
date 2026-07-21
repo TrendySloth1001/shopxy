@@ -20,6 +20,7 @@ import 'package:shopxy/shared/widgets/empty_state.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/constants/app_durations.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Drill-down view from CategoriesPage. Loads the products for a single
 /// category directly (own state — not coupled to the global
@@ -298,7 +299,7 @@ class _Header extends StatelessWidget {
                 Row(
                   children: [
                     Icon(
-                      Icons.inventory_2_outlined,
+                      AppIcons.inventory2Outlined,
                       size: AppSizes.iconSm,
                       color: AppColors.muted,
                     ),
@@ -485,12 +486,12 @@ class _SearchField extends StatelessWidget {
         onChanged: onChanged,
         decoration: InputDecoration(
           hintText: l10n.categoriesSearchProductsHint,
-          prefixIcon: Icon(Icons.search_rounded, color: AppColors.subtle),
+          prefixIcon: Icon(AppIcons.searchRounded, color: AppColors.subtle),
           suffixIcon: controller.text.isEmpty
               ? null
               : IconButton(
                   icon: Icon(
-                    Icons.close_rounded,
+                    AppIcons.closeRounded,
                     color: AppColors.subtle,
                   ),
                   onPressed: () {

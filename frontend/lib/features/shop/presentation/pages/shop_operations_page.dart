@@ -15,6 +15,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// "Shop operations" hub — entry tiles for Hours/Vacation, Payouts,
 /// KYC, and Team. Hours and Payouts are fully wired (Payouts shows a
@@ -85,7 +86,7 @@ class _ShopOperationsPageState extends State<ShopOperationsPage> {
         children: [
           if (canShop)
             _OpsTile(
-            icon: Icons.schedule_rounded,
+            icon: AppIcons.scheduleRounded,
             iconBg: AppColors.brandSoft,
             iconColor: AppColors.brandStrong,
             title: l10n.shopHoursTitle,
@@ -106,7 +107,7 @@ class _ShopOperationsPageState extends State<ShopOperationsPage> {
           ),
           if (canBilling)
             _OpsTile(
-            icon: Icons.account_balance_outlined,
+            icon: AppIcons.accountBalanceOutlined,
             iconBg: AppColors.infoSoft,
             iconColor: AppColors.info,
             title: l10n.shopPayoutsTitle,
@@ -118,7 +119,7 @@ class _ShopOperationsPageState extends State<ShopOperationsPage> {
           ),
           if (canBilling)
             _OpsTile(
-            icon: Icons.verified_user_outlined,
+            icon: AppIcons.verifiedUserOutlined,
             iconBg: AppColors.accentIndigoSoft,
             iconColor: AppColors.accentIndigo,
             title: l10n.shopKycTitle,
@@ -135,7 +136,7 @@ class _ShopOperationsPageState extends State<ShopOperationsPage> {
           ),
           if (canTeam)
             _OpsTile(
-              icon: Icons.group_outlined,
+              icon: AppIcons.groupOutlined,
               iconBg: AppColors.accentRoseSoft,
               iconColor: AppColors.accentRose,
               title: l10n.shopTeamTitle,
@@ -342,7 +343,7 @@ class _OpsTile extends StatelessWidget {
               trailing!,
             ],
             const SizedBox(width: AppSizes.sm),
-            Icon(Icons.chevron_right_rounded, color: AppColors.subtle),
+            Icon(AppIcons.chevronRightRounded, color: AppColors.subtle),
           ],
         ),
       ),

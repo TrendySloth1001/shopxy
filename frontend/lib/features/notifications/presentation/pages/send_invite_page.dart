@@ -12,6 +12,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Owner-facing page. Two modes via a segmented switch:
 ///   * **Existing contact** — search-pick a party / vendor; the FK
@@ -196,8 +197,8 @@ class _SendInvitePageState extends State<SendInvitePage> {
                             : l10n.notificationsVendorName,
                         prefixIcon: Icon(
                           _type == _LinkType.party
-                              ? Icons.groups_outlined
-                              : Icons.storefront_outlined,
+                              ? AppIcons.groupsOutlined
+                              : AppIcons.storefrontOutlined,
                         ),
                       ),
                       onChanged: (_) => setState(() {}),
@@ -209,7 +210,7 @@ class _SendInvitePageState extends State<SendInvitePage> {
                     autocorrect: false,
                     decoration: InputDecoration(
                       labelText: l10n.notificationsRecipientEmail,
-                      prefixIcon: const Icon(Icons.alternate_email_rounded),
+                      prefixIcon: const Icon(AppIcons.alternateEmailRounded),
                     ),
                     onChanged: (_) => setState(() {}),
                   ),
@@ -233,7 +234,7 @@ class _SendInvitePageState extends State<SendInvitePage> {
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.error_outline_rounded,
+                          Icon(AppIcons.errorOutlineRounded,
                               color: AppColors.error, size: AppSizes.iconMd),
                           const SizedBox(width: AppSizes.sm),
                           Expanded(
@@ -273,7 +274,7 @@ class _SendInvitePageState extends State<SendInvitePage> {
                             color: AppColors.onInverse,
                           ),
                         )
-                      : const Icon(Icons.send_rounded, size: AppSizes.iconMd),
+                      : const Icon(AppIcons.sendRounded, size: AppSizes.iconMd),
                   label: Text(l10n.notificationsSendInvitationTitle),
                 ),
               ),
@@ -302,12 +303,12 @@ class _TypeSwitch extends StatelessWidget {
       segments: [
         ButtonSegment(
           value: _LinkType.party,
-          icon: const Icon(Icons.groups_outlined),
+          icon: const Icon(AppIcons.groupsOutlined),
           label: Text(l10n.notificationsRolePartyCustomer),
         ),
         ButtonSegment(
           value: _LinkType.vendor,
-          icon: const Icon(Icons.storefront_outlined),
+          icon: const Icon(AppIcons.storefrontOutlined),
           label: Text(l10n.notificationsRoleVendorSupplier),
         ),
       ],
@@ -329,12 +330,12 @@ class _ModeSwitch extends StatelessWidget {
       segments: [
         ButtonSegment(
           value: _SourceMode.existing,
-          icon: const Icon(Icons.contacts_outlined),
+          icon: const Icon(AppIcons.contactsOutlined),
           label: Text(l10n.notificationsModeExisting),
         ),
         ButtonSegment(
           value: _SourceMode.fresh,
-          icon: const Icon(Icons.person_add_alt_1_outlined),
+          icon: const Icon(AppIcons.personAddAlt1Outlined),
           label: Text(l10n.notificationsModeNewContact),
         ),
       ],
@@ -412,7 +413,7 @@ class _ContactPickerState extends State<_ContactPicker> {
             hintText: widget.type == _LinkType.party
                 ? l10n.notificationsSearchParties
                 : l10n.notificationsSearchVendors,
-            prefixIcon: const Icon(Icons.search_rounded),
+            prefixIcon: const Icon(AppIcons.searchRounded),
           ),
           onChanged: (v) {
             _search = v;
@@ -499,7 +500,7 @@ class _ContactPickerState extends State<_ContactPicker> {
                             ),
                             if (selected)
                               Icon(
-                                Icons.check_circle_rounded,
+                                AppIcons.checkCircleRounded,
                                 color: AppColors.brand,
                                 size: AppSizes.iconMd,
                               ),

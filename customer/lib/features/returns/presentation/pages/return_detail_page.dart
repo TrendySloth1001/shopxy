@@ -15,6 +15,7 @@ import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/shared/format/app_format.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 class ReturnDetailPage extends StatefulWidget {
   const ReturnDetailPage({super.key, required this.returnId});
@@ -163,7 +164,7 @@ class _Body extends StatelessWidget {
                         color: AppColors.error,
                       ),
                     )
-                  : const Icon(Icons.close_rounded, color: AppColors.error),
+                  : const Icon(AppIcons.closeRounded, color: AppColors.error),
               label: Text('Cancel return',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppColors.error,

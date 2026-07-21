@@ -10,6 +10,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Index of all editorial collections (curated product lists). Tap a
 /// row to open the editor — that's where meta, cover, and items get
@@ -88,14 +89,14 @@ class _AdminCollectionsPageState extends State<AdminCollectionsPage> {
         actions: [
           IconButton(
             tooltip: l10n.adminRefresh,
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(AppIcons.refresh),
             onPressed: provider.isLoading ? null : () => provider.load(),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openNew,
-        icon: const Icon(Icons.add),
+        icon: const Icon(AppIcons.add),
         label: Text(l10n.adminCollectionNew),
       ),
       body: provider.isLoading && provider.list.isEmpty
@@ -168,12 +169,12 @@ class _CollectionRow extends StatelessWidget {
                 shape: AppShapes.squircle(AppSizes.radiusMd),
               ),
               child: collection.coverImageUrl == null
-                  ? Icon(Icons.collections_bookmark, color: AppColors.muted)
+                  ? Icon(AppIcons.collectionsBookmark, color: AppColors.muted)
                   : Image.network(
                       resolveImageUrl(collection.coverImageUrl!),
                       fit: BoxFit.cover,
                       errorBuilder: (_, _, _) =>
-                          const Icon(Icons.broken_image_outlined),
+                          const Icon(AppIcons.brokenImageOutlined),
                     ),
             ),
             const SizedBox(width: AppSizes.md),
@@ -200,7 +201,7 @@ class _CollectionRow extends StatelessWidget {
             const SizedBox(width: AppSizes.sm),
             _StatusChip(published: collection.isPublished),
             IconButton(
-              icon: const Icon(Icons.delete_outline),
+              icon: const Icon(AppIcons.deleteOutline),
               onPressed: onDelete,
             ),
           ],

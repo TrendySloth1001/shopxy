@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "@/shared/icons";
 import { getTranslations } from "next-intl/server";
 
 /**

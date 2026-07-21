@@ -11,6 +11,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 class AdminBannersPage extends StatefulWidget {
   const AdminBannersPage({super.key});
@@ -50,14 +51,14 @@ class _AdminBannersPageState extends State<AdminBannersPage> {
         actions: [
           IconButton(
             tooltip: l10n.adminRefresh,
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(AppIcons.refresh),
             onPressed: provider.isLoading ? null : () => provider.load(),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openEditor(),
-        icon: const Icon(Icons.add),
+        icon: const Icon(AppIcons.add),
         label: Text(l10n.adminBannerNew),
       ),
       body: provider.isLoading && provider.banners.isEmpty
@@ -215,7 +216,7 @@ class _EmptyTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(Icons.add_photo_alternate_outlined, color: AppColors.muted),
+            Icon(AppIcons.addPhotoAlternateOutlined, color: AppColors.muted),
             const SizedBox(width: AppSizes.md),
             Expanded(
               child: Text(
@@ -290,7 +291,7 @@ class _BannerTile extends StatelessWidget {
                     resolveImageUrl(banner.imageUrl),
                     fit: BoxFit.cover,
                     errorBuilder: (_, _, _) => Icon(
-                      Icons.broken_image_outlined,
+                      AppIcons.brokenImageOutlined,
                       color: AppColors.muted,
                     ),
                   ),
@@ -355,7 +356,7 @@ class _BannerTile extends StatelessWidget {
                 ),
                 IconButton(
                   tooltip: AppLocalizations.of(context).adminDelete,
-                  icon: const Icon(Icons.delete_outline),
+                  icon: const Icon(AppIcons.deleteOutline),
                   onPressed: onDelete,
                 ),
               ],

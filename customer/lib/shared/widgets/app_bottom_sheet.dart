@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Wrapper around [showModalBottomSheet] with our defaults locked in:
 /// canvas-on-white surface, top-rounded squircle, grab handle, padded
@@ -52,7 +53,7 @@ Future<T?> showAppBottomSheet<T>(
                     ),
                     IconButton(
                       onPressed: () => Navigator.of(ctx).pop(),
-                      icon: const Icon(Icons.close_rounded, size: AppSizes.iconMd),
+                      icon: const Icon(AppIcons.closeRounded, size: AppSizes.iconMd),
                       tooltip: 'Close',
                       visualDensity: VisualDensity.compact,
                     ),

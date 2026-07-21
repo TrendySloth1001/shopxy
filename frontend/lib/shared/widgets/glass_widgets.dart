@@ -4,6 +4,7 @@ import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// ─────────────────────────────────────────────────────────────────────
 /// GlassPage — Glassdoor-style page scaffold.
@@ -295,9 +296,9 @@ class GlassNavButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final icon = switch (direction) {
-      GlassNavDirection.back => Icons.arrow_back_rounded,
-      GlassNavDirection.forward => Icons.arrow_forward_rounded,
-      GlassNavDirection.close => Icons.close_rounded,
+      GlassNavDirection.back => AppIcons.arrowBackRounded,
+      GlassNavDirection.forward => AppIcons.arrowForwardRounded,
+      GlassNavDirection.close => AppIcons.closeRounded,
     };
     return Material(
       color: background ?? AppColors.inverseSurface,

@@ -11,6 +11,7 @@ import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Opens a modal search sheet to pick an existing Party or create a new one.
 /// Returns the selected [Party], or null if cancelled.
@@ -117,7 +118,7 @@ class _PartyPickerSheetState extends State<_PartyPickerSheet> {
                   const Spacer(),
                   AppButton.ghost(
                     label: l10n.partiesNewParty,
-                    icon: Icons.add_rounded,
+                    icon: AppIcons.addRounded,
                     onPressed: _addNew,
                     size: AppButtonSize.sm,
                   ),
@@ -131,7 +132,7 @@ class _PartyPickerSheetState extends State<_PartyPickerSheet> {
                 autofocus: true,
                 decoration: InputDecoration(
                   hintText: l10n.partiesSearchParties,
-                  prefixIcon: const Icon(Icons.search_rounded),
+                  prefixIcon: const Icon(AppIcons.searchRounded),
                 ),
                 onChanged: _load,
               ),
@@ -150,7 +151,7 @@ class _PartyPickerSheetState extends State<_PartyPickerSheet> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(
-                                      Icons.groups_outlined,
+                                      AppIcons.groupsOutlined,
                                       size: AppSizes.iconXl,
                                       color: AppColors.muted,
                                     ),
@@ -162,7 +163,7 @@ class _PartyPickerSheetState extends State<_PartyPickerSheet> {
                                     const SizedBox(height: AppSizes.md),
                                     AppButton.primary(
                                       label: l10n.partiesAddParty,
-                                      icon: Icons.add_rounded,
+                                      icon: AppIcons.addRounded,
                                       onPressed: _addNew,
                                     ),
                                   ],

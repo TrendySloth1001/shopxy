@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, Search, TrendingUp } from "lucide-react";
+import { Clock, Search, TrendingUp } from "@/shared/icons";
 import type { AutocompleteSuggestions } from "../types";
 
 type Props = {

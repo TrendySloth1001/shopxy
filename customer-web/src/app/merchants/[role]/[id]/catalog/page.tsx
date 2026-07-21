@@ -19,7 +19,7 @@ import {
   type CatalogCategory,
   type CatalogProduct,
 } from "@/features/merchants/types";
-import { Search, Package, ReceiptText, FileText, X } from "lucide-react";
+import { Search, Package, ReceiptText, FileText, X } from "@/shared/icons";
 import { Divider } from "@/shared/ui/divider";
 
 // ─── Nav strip ──────────────────────────────────────────────────────────────

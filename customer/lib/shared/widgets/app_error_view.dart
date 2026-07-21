@@ -3,6 +3,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/widgets/app_button.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Centered error message with optional retry action.
 class AppErrorView extends StatelessWidget {
@@ -29,7 +30,7 @@ class AppErrorView extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(
-              Icons.error_outline_rounded,
+              AppIcons.errorOutlineRounded,
               size: AppSizes.iconXl,
               color: AppColors.error,
             ),
@@ -52,7 +53,7 @@ class AppErrorView extends StatelessWidget {
               AppButton.secondary(
                 label: retryLabel,
                 onPressed: onRetry,
-                icon: Icons.refresh_rounded,
+                icon: AppIcons.refreshRounded,
               ),
             ],
           ],

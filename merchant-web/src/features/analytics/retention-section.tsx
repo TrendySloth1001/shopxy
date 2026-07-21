@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Percent, Repeat, UserPlus, Users, type LucideIcon } from "lucide-react";
+import { Percent, Repeat, UserPlus, Users, type LucideIcon } from "@/shared/icons";
 import { formatINR } from "@/shared/money";
 import { getCustomerRetention } from "./api";
 import type { Retention } from "./schema";

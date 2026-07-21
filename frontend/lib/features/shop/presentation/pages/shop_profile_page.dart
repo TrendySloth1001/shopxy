@@ -12,6 +12,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Merchant-side editor for the marketplace shop profile. Distinct from
 /// the legal/GST shop details on EditProfilePage — those drive invoice
@@ -383,8 +384,8 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
                         children: [
                           Icon(
                             shop.isPublished
-                                ? Icons.public
-                                : Icons.public_off_outlined,
+                                ? AppIcons.public
+                                : AppIcons.publicOffOutlined,
                             size: AppSizes.iconSm,
                             color: shop.isPublished
                                 ? AppColors.brand
@@ -871,14 +872,14 @@ class _BannerEditor extends StatelessWidget {
                   children: [
                     if (onRemove != null) ...[
                       _ImageActionChip(
-                        icon: Icons.delete_outline,
+                        icon: AppIcons.deleteOutline,
                         label: l10n.shopRemove,
                         onTap: onRemove!,
                       ),
                       const SizedBox(width: AppSizes.sm),
                     ],
                     _ImageActionChip(
-                      icon: Icons.camera_alt_outlined,
+                      icon: AppIcons.cameraAltOutlined,
                       label: url == null ? l10n.shopAddBanner : l10n.shopReplace,
                       onTap: onPick,
                     ),
@@ -902,7 +903,7 @@ class _BannerPlaceholder extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              Icons.image_outlined,
+              AppIcons.imageOutlined,
               size: AppSizes.iconXl,
               color: AppColors.muted,
             ),
@@ -952,12 +953,12 @@ class _LogoEditor extends StatelessWidget {
                     resolveImageUrl(url!),
                     fit: BoxFit.cover,
                     errorBuilder: (_, _, _) => Icon(
-                      Icons.storefront_outlined,
+                      AppIcons.storefrontOutlined,
                       color: AppColors.muted,
                     ),
                   )
                 : Icon(
-                    Icons.add_a_photo_outlined,
+                    AppIcons.addAPhotoOutlined,
                     color: AppColors.muted,
                   ),
           ),
@@ -991,7 +992,7 @@ class _LogoEditor extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    Icons.close,
+                    AppIcons.close,
                     size: AppSizes.iconSm,
                     color: AppColors.onInverse,
                   ),
@@ -1070,7 +1071,7 @@ class _PublishCard extends StatelessWidget {
         child: Row(
           children: [
             Icon(
-              shop.isPublished ? Icons.public : Icons.public_off_outlined,
+              shop.isPublished ? AppIcons.public : AppIcons.publicOffOutlined,
               color: color,
             ),
             const SizedBox(width: AppSizes.md),

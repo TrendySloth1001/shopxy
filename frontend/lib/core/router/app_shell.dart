@@ -11,6 +11,7 @@ import 'package:shopxy/features/pos/presentation/pages/pos_page.dart';
 import 'package:shopxy/features/products/presentation/pages/products_page.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -61,34 +62,34 @@ const _kOrdersDestinationId = 'orders';
 final _destinations = <_Destination>[
   _Destination(
     label: (l10n) => l10n.navMenu,
-    icon: Icons.apps_outlined,
-    selectedIcon: Icons.apps,
+    icon: AppIcons.appsOutlined,
+    selectedIcon: AppIcons.apps,
     pageBuilder: MenuPage.new,
   ),
   _Destination(
     label: (l10n) => l10n.navProducts,
-    icon: Icons.inventory_2_outlined,
-    selectedIcon: Icons.inventory_2_rounded,
+    icon: AppIcons.inventory2Outlined,
+    selectedIcon: AppIcons.inventory2Rounded,
     pageBuilder: ProductsPage.new,
   ),
   _Destination(
     label: (l10n) => l10n.navHome,
-    icon: Icons.home_outlined,
-    selectedIcon: Icons.home_rounded,
+    icon: AppIcons.homeOutlined,
+    selectedIcon: AppIcons.homeRounded,
     pageBuilder: DashboardPage.new,
     isHome: true,
   ),
   _Destination(
     label: (l10n) => l10n.navOrders,
-    icon: Icons.inbox_outlined,
-    selectedIcon: Icons.inbox_rounded,
+    icon: AppIcons.inboxOutlined,
+    selectedIcon: AppIcons.inboxRounded,
     pageBuilder: OrdersInboxPage.new,
     id: _kOrdersDestinationId,
   ),
   _Destination(
     label: (l10n) => l10n.navInvoices,
-    icon: Icons.receipt_long_outlined,
-    selectedIcon: Icons.receipt_long,
+    icon: AppIcons.receiptLongOutlined,
+    selectedIcon: AppIcons.receiptLong,
     pageBuilder: InvoicesPage.new,
   ),
 ];

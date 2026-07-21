@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ArrowDown, ArrowUp, ChevronRight } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronRight } from "@/shared/icons";
 import { Modal } from "@/shared/ui/modal";
 import { qty as fmtQty } from "@/features/products/format";
 import { unitLabel } from "@/features/products/units";

@@ -12,6 +12,7 @@ import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Merchant-facing list of coupons attached to the caller's shop.
 /// Tapping a row opens the editor sheet; the FAB opens the same sheet
@@ -114,7 +115,7 @@ class _MerchantCouponsPageState extends State<MerchantCouponsPage> {
       appBar: FloatingAppBar(title: l10n.couponsTitle),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openEditor(),
-        icon: const Icon(Icons.add),
+        icon: const Icon(AppIcons.add),
         label: Text(l10n.couponsNewCoupon),
       ),
       body: _loading
@@ -258,7 +259,7 @@ class _CouponRow extends StatelessWidget {
                     alignment: Alignment.centerRight,
                     child: TextButton.icon(
                       onPressed: onDeactivate,
-                      icon: const Icon(Icons.power_settings_new,
+                      icon: const Icon(AppIcons.powerSettingsNew,
                           size: AppSizes.iconSm),
                       label: Text(l10n.couponsDeactivate),
                       style: TextButton.styleFrom(
@@ -363,7 +364,7 @@ class _EmptyBlock extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.local_offer_outlined,
+            Icon(AppIcons.localOfferOutlined,
                 size: AppSizes.iconHuge, color: AppColors.subtle),
             const SizedBox(height: AppSizes.md),
             Text(

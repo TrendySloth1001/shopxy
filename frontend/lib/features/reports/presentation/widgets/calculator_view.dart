@@ -18,6 +18,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Pricing & profit calculator — a multi-product quote builder. Add products,
 /// set quantities and per-product GST + discount, plus an overall discount,
@@ -635,19 +636,19 @@ class _CalculatorViewState extends State<CalculatorView> {
           children: [
             OutlinedButton.icon(
               onPressed: _sending ? null : _pickQuotation,
-              icon: const Icon(Icons.description_outlined, size: AppSizes.iconSm),
+              icon: const Icon(AppIcons.descriptionOutlined, size: AppSizes.iconSm),
               label: Text(l10n.reportsCalcLoadQuotation),
             ),
             if (_quote?.status != 'REQUESTED')
               OutlinedButton.icon(
                 onPressed: _sending ? null : _pickParty,
-                icon: const Icon(Icons.person_add_alt_1_outlined,
+                icon: const Icon(AppIcons.personAddAlt1Outlined,
                     size: AppSizes.iconSm),
                 label: Text(_party?.name ?? l10n.reportsCalcChooseCustomer),
               ),
             OutlinedButton.icon(
               onPressed: (_sending || _lines.isEmpty) ? null : _download,
-              icon: const Icon(Icons.download_rounded, size: AppSizes.iconSm),
+              icon: const Icon(AppIcons.downloadRounded, size: AppSizes.iconSm),
               label: Text(l10n.reportsCalcDownload),
             ),
             FilledButton.icon(
@@ -658,7 +659,7 @@ class _CalculatorViewState extends State<CalculatorView> {
                       height: AppSizes.iconSm,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Icon(Icons.send_rounded, size: AppSizes.iconSm),
+                  : const Icon(AppIcons.sendRounded, size: AppSizes.iconSm),
               label: Text(_sending
                   ? l10n.reportsCalcSending
                   : _quote?.status == 'REQUESTED'
@@ -722,7 +723,7 @@ class _CalculatorViewState extends State<CalculatorView> {
           onChanged: _onSearchChanged,
           decoration: InputDecoration(
             hintText: l10n.reportsCalcSearchByNameOrSku,
-            prefixIcon: const Icon(Icons.search_rounded, size: AppSizes.iconMd),
+            prefixIcon: const Icon(AppIcons.searchRounded, size: AppSizes.iconMd),
             isDense: true,
             border: OutlineInputBorder(
               borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
@@ -828,7 +829,7 @@ class _LineRow extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.close_rounded, size: AppSizes.iconMd),
+                icon: const Icon(AppIcons.closeRounded, size: AppSizes.iconMd),
                 color: AppColors.subtle,
                 visualDensity: VisualDensity.compact,
                 onPressed: onRemove,
@@ -1210,7 +1211,7 @@ class _ProductTile extends StatelessWidget {
                           color: added ? AppColors.brand : AppColors.hairline),
                     ),
                   ),
-                  child: Icon(added ? Icons.check_rounded : Icons.add_rounded,
+                  child: Icon(added ? AppIcons.checkRounded : AppIcons.addRounded,
                       size: AppSizes.iconSm,
                       color: added ? AppColors.white : AppColors.subtle),
                 ),
@@ -1311,7 +1312,7 @@ class _QuotationPickerSheetState extends State<_QuotationPickerSheet> {
                 onChanged: (v) => setState(() => _query = v),
                 decoration: InputDecoration(
                   hintText: l10n.reportsCalcSearchByNumberOrCustomer,
-                  prefixIcon: const Icon(Icons.search_rounded),
+                  prefixIcon: const Icon(AppIcons.searchRounded),
                 ),
               ),
             ),

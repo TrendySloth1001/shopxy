@@ -16,6 +16,7 @@ import 'package:shopxy_customer/shared/widgets/app_button.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/shared/widgets/app_text_field.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Lets the user change their display name and reach the change-password
 /// flow. Email stays read-only — backend doesn't expose an email-change
@@ -64,18 +65,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.camera_alt_outlined),
+              leading: const Icon(AppIcons.cameraAltOutlined),
               title: const Text('Take a photo'),
               onTap: () => Navigator.of(ctx).pop(ImageSource.camera),
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library_outlined),
+              leading: const Icon(AppIcons.photoLibraryOutlined),
               title: const Text('Pick from gallery'),
               onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
             ),
             if (context.read<AuthProvider>().user?.avatarUrl != null)
               ListTile(
-                leading: const Icon(Icons.delete_outline,
+                leading: const Icon(AppIcons.deleteOutline,
                     color: AppColors.error),
                 title: const Text('Remove photo',
                     style: TextStyle(color: AppColors.error)),
@@ -227,7 +228,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                     ),
                                   )
                                 : const Icon(
-                                    Icons.camera_alt_outlined,
+                                    AppIcons.cameraAltOutlined,
                                     color: AppColors.white,
                                     size: AppSizes.iconSm,
                                   ),
@@ -278,7 +279,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               const SizedBox(height: AppSizes.md),
               AppButton.secondary(
                 label: AppStrings.changePassword,
-                icon: Icons.lock_outline_rounded,
+                icon: AppIcons.lockOutlineRounded,
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => const ChangePasswordPage(),

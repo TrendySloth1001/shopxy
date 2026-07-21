@@ -19,6 +19,7 @@ import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/contact_changes_section.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 class VendorDetailPage extends StatefulWidget {
   const VendorDetailPage({super.key, required this.vendorId});
@@ -95,7 +96,7 @@ class _VendorDetailPageState extends State<VendorDetailPage> {
       floatingActionButton: canRecord
           ? FloatingActionButton.extended(
               onPressed: _openRecordPayment,
-              icon: const Icon(Icons.payments_outlined),
+              icon: const Icon(AppIcons.paymentsOutlined),
               label: Text(l10n.vendorsRecordPayment),
             )
           : null,
@@ -233,21 +234,21 @@ class _Header extends StatelessWidget {
               if (vendor.linkedUser != null)
                 AppStatusBadge(
                   label: l10n.vendorsLinked,
-                  icon: Icons.verified_outlined,
+                  icon: AppIcons.verifiedOutlined,
                   tone: AppStatusTone.success,
                 ),
             ],
           ),
           const SizedBox(height: AppSizes.md),
           if (vendor.phone != null && vendor.phone!.isNotEmpty)
-            _ContactLine(icon: Icons.phone_outlined, value: vendor.phone!),
+            _ContactLine(icon: AppIcons.phoneOutlined, value: vendor.phone!),
           if (vendor.email != null && vendor.email!.isNotEmpty)
-            _ContactLine(icon: Icons.email_outlined, value: vendor.email!),
+            _ContactLine(icon: AppIcons.emailOutlined, value: vendor.email!),
           if (vendor.address != null && vendor.address!.isNotEmpty)
-            _ContactLine(icon: Icons.place_outlined, value: vendor.address!),
+            _ContactLine(icon: AppIcons.placeOutlined, value: vendor.address!),
           if (vendor.gstin != null && vendor.gstin!.isNotEmpty)
             _ContactLine(
-                icon: Icons.badge_outlined,
+                icon: AppIcons.badgeOutlined,
                 value: '${l10n.vendorsGstin} ${vendor.gstin}'),
         ],
       ),
@@ -527,10 +528,10 @@ class _BalanceTile extends StatelessWidget {
           children: [
             Icon(
               positive
-                  ? Icons.arrow_upward_rounded
+                  ? AppIcons.arrowUpwardRounded
                   : settled
-                      ? Icons.check_circle_outline_rounded
-                      : Icons.arrow_downward_rounded,
+                      ? AppIcons.checkCircleOutlineRounded
+                      : AppIcons.arrowDownwardRounded,
               color: color,
             ),
             const SizedBox(width: AppSizes.md),
@@ -794,8 +795,8 @@ class _LedgerRow extends StatelessWidget {
         children: [
           Icon(
             isInvoice
-                ? Icons.receipt_long_outlined
-                : Icons.payments_outlined,
+                ? AppIcons.receiptLongOutlined
+                : AppIcons.paymentsOutlined,
             color: isInvoice ? AppColors.error : AppColors.success,
             size: AppSizes.iconMd,
           ),

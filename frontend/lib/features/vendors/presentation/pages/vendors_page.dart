@@ -25,6 +25,7 @@ import 'package:shopxy/shared/widgets/empty_state.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 class VendorsPage extends StatefulWidget {
   const VendorsPage({super.key});
@@ -75,7 +76,7 @@ class _VendorsPageState extends State<VendorsPage> {
               onReload: () => provider.loadVendors(refresh: true)),
           LockedIconButton(
             allowed: canManage,
-            icon: Icons.add_rounded,
+            icon: AppIcons.addRounded,
             tooltip: l10n.vendorsAddVendor,
             what: 'add vendors',
             onPressed: () => _showVendorSheet(context),
@@ -119,7 +120,7 @@ class _VendorsPageState extends State<VendorsPage> {
                               what: 'add vendors',
                               child: AppButton.primary(
                                 label: l10n.vendorsAddVendor,
-                                icon: Icons.add_rounded,
+                                icon: AppIcons.addRounded,
                                 onPressed: () => _showVendorSheet(context),
                               ),
                             ),
@@ -320,12 +321,12 @@ class _VendorTile extends StatelessWidget {
                       children: [
                         AppStatusBadge(
                           label: '${vendor.transactionCount} ${l10n.vendorsTxnsUnit}',
-                          icon: Icons.swap_vert_rounded,
+                          icon: AppIcons.swapVertRounded,
                           dense: true,
                         ),
                         AppStatusBadge(
                           label: '${vendor.invoiceCount} ${l10n.vendorsInvoicesUnit}',
-                          icon: Icons.receipt_outlined,
+                          icon: AppIcons.receiptOutlined,
                           dense: true,
                         ),
                         if (invite != null) _InviteChip(invite: invite!),
@@ -335,7 +336,7 @@ class _VendorTile extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: Icon(Icons.more_vert_rounded, color: AppColors.muted),
+                icon: Icon(AppIcons.moreVertRounded, color: AppColors.muted),
                 onPressed: () => _showMenu(context),
               ),
             ],
@@ -358,7 +359,7 @@ class _VendorTile extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.edit_outlined),
+              leading: const Icon(AppIcons.editOutlined),
               title: Text(l10n.vendorsEdit),
               onTap: () {
                 Navigator.pop(context);
@@ -371,7 +372,7 @@ class _VendorTile extends StatelessWidget {
             if (invite?.isAccepted == true)
               ListTile(
                 leading: Icon(
-                  Icons.verified_rounded,
+                  AppIcons.verifiedRounded,
                   color: AppColors.success,
                 ),
                 title: Text(
@@ -388,7 +389,7 @@ class _VendorTile extends StatelessWidget {
             else if (invite == null || !invite!.isPending) ...[
               ListTile(
                 leading: Icon(
-                  Icons.person_add_alt_1_outlined,
+                  AppIcons.personAddAlt1Outlined,
                   color: AppColors.brandStrong,
                 ),
                 enabled: _canInvite,
@@ -410,7 +411,7 @@ class _VendorTile extends StatelessWidget {
               ),
             ] else
               ListTile(
-                leading: Icon(Icons.cancel_schedule_send_outlined,
+                leading: Icon(AppIcons.cancelScheduleSendOutlined,
                     color: AppColors.warning),
                 title: Text(
                   l10n.vendorsCancelInvitation,
@@ -426,7 +427,7 @@ class _VendorTile extends StatelessWidget {
               ),
             ListTile(
               leading: Icon(
-                Icons.delete_outline_rounded,
+                AppIcons.deleteOutlineRounded,
                 color: AppColors.error,
               ),
               title: Text(
@@ -458,31 +459,31 @@ class _InviteChip extends StatelessWidget {
     final (label, icon, fg, bg) = switch (invite.status) {
       InviteStatus.pending => (
           l10n.vendorsInviteStatusInvited,
-          Icons.mark_email_unread_outlined,
+          AppIcons.markEmailUnreadOutlined,
           AppColors.brandStrong,
           AppColors.brandSoft,
         ),
       InviteStatus.accepted => (
           l10n.vendorsInviteStatusLinked,
-          Icons.verified_rounded,
+          AppIcons.verifiedRounded,
           AppColors.success,
           AppColors.successSoft,
         ),
       InviteStatus.declined => (
           l10n.vendorsInviteStatusDeclined,
-          Icons.cancel_outlined,
+          AppIcons.cancelOutlined,
           AppColors.muted,
           AppColors.heroPanel,
         ),
       InviteStatus.cancelled => (
           l10n.vendorsInviteStatusCancelled,
-          Icons.cancel_schedule_send_outlined,
+          AppIcons.cancelScheduleSendOutlined,
           AppColors.muted,
           AppColors.heroPanel,
         ),
       InviteStatus.expired => (
           l10n.vendorsInviteStatusExpired,
-          Icons.timer_off_outlined,
+          AppIcons.timerOffOutlined,
           AppColors.error,
           AppColors.errorSoft,
         ),

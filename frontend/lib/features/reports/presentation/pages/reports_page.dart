@@ -12,6 +12,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// The reports workspace: four date-ranged reports (Sales, Purchases, GST, P&L)
 /// plus a live Calculator tool — a faithful port of merchant-web's
@@ -95,7 +96,7 @@ class _ReportsPageState extends State<ReportsPage> {
           if (!isCalculator)
             IconButton(
               tooltip: l10n.reportsRefresh,
-              icon: const Icon(Icons.refresh_rounded),
+              icon: const Icon(AppIcons.refreshRounded),
               onPressed: p.refresh,
             ),
         ],
@@ -146,7 +147,7 @@ class _ReportsPageState extends State<ReportsPage> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.calendar_today_outlined,
+                          const Icon(AppIcons.calendarTodayOutlined,
                               size: AppSizes.iconMd),
                           const SizedBox(width: AppSizes.sm),
                           Expanded(
@@ -158,7 +159,7 @@ class _ReportsPageState extends State<ReportsPage> {
                                   ?.copyWith(fontWeight: FontWeight.w600),
                             ),
                           ),
-                          const Icon(Icons.expand_more_rounded,
+                          const Icon(AppIcons.expandMoreRounded,
                               size: AppSizes.iconMd),
                         ],
                       ),
@@ -285,7 +286,7 @@ class _ErrorBlock extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.error_outline_rounded, color: AppColors.error, size: AppSizes.iconXl),
+          Icon(AppIcons.errorOutlineRounded, color: AppColors.error, size: AppSizes.iconXl),
           const SizedBox(height: AppSizes.sm),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSizes.xxl),

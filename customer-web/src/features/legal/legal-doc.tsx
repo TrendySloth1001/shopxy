@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "@/shared/icons";
 
 /**
  * Shared reading layout for the public consumer legal pages (/legal/*).

@@ -1,4 +1,4 @@
-import { BadgeCheck, RotateCcw, ShieldCheck, Tag } from "lucide-react";
+import { BadgeCheck, RotateCcw, ShieldCheck, Tag } from "@/shared/icons";
 
 /**
  * Trust promises — port of `HomeTrustStrip`. A compact, evenly-spaced row of

@@ -10,6 +10,7 @@ import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 enum _Tone { brand, amber, error }
 
@@ -33,19 +34,19 @@ class ActionCenter extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final items = <_Item>[
       _Item(queue.orders, l10n.dashboardOrdersToConfirm,
-          Icons.shopping_bag_outlined, _Tone.brand,
+          AppIcons.shoppingBagOutlined, _Tone.brand,
           () => const OrdersInboxPage()),
-      _Item(queue.returns, l10n.dashboardReturnsToReview, Icons.replay_rounded,
+      _Item(queue.returns, l10n.dashboardReturnsToReview, AppIcons.replayRounded,
           _Tone.amber, () => const MerchantReturnsPage()),
       _Item(queue.quotations, l10n.dashboardQuotesToPrice,
-          Icons.description_outlined, _Tone.brand,
+          AppIcons.descriptionOutlined, _Tone.brand,
           () => const QuotationsPage()),
       _Item(queue.drafts, l10n.dashboardDraftsToConfirm,
-          Icons.assignment_outlined, _Tone.brand, () => const InvoicesPage()),
+          AppIcons.assignmentOutlined, _Tone.brand, () => const InvoicesPage()),
       _Item(queue.outOfStock, l10n.dashboardOutOfStock,
-          Icons.inventory_2_outlined, _Tone.error,
+          AppIcons.inventory2Outlined, _Tone.error,
           () => const ProductsPage()),
-      _Item(queue.lowStock, l10n.dashboardLowStock, Icons.inventory_outlined,
+      _Item(queue.lowStock, l10n.dashboardLowStock, AppIcons.inventoryOutlined,
           _Tone.amber, () => const ProductsPage()),
     ].where((it) => it.count > 0).toList();
 
@@ -57,7 +58,7 @@ class ActionCenter extends StatelessWidget {
                   horizontal: AppSizes.md, vertical: AppSizes.lg),
               child: Row(
                 children: [
-                  Icon(Icons.check_circle_rounded,
+                  Icon(AppIcons.checkCircleRounded,
                       size: AppSizes.iconMd, color: AppColors.success),
                   const SizedBox(width: AppSizes.md),
                   Expanded(

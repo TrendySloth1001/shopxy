@@ -13,6 +13,7 @@ import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/format/app_format.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Customer-side "Merchants" tab (index 1 once the user is linked).
 /// Single screen, three layers stacked vertically:
@@ -269,7 +270,7 @@ class _InvitesBanner extends StatelessWidget {
               ),
               alignment: Alignment.center,
               child: const Icon(
-                Icons.mark_email_unread_rounded,
+                AppIcons.markEmailUnreadRounded,
                 color: AppColors.white,
                 size: AppSizes.iconSm,
               ),
@@ -288,7 +289,7 @@ class _InvitesBanner extends StatelessWidget {
               ),
             ),
             const Icon(
-              Icons.chevron_right_rounded,
+              AppIcons.chevronRightRounded,
               color: AppColors.brandStrong,
               size: AppSizes.iconMd,
             ),
@@ -561,7 +562,7 @@ class _CardBanner extends StatelessWidget {
               alignment: Alignment.centerRight,
               padding: const EdgeInsets.only(right: AppSizes.lg),
               child: const Icon(
-                Icons.storefront_rounded,
+                AppIcons.storefrontRounded,
                 color: AppColors.brand,
                 size: AppSizes.iconXl,
               ),
@@ -650,8 +651,8 @@ class _ActivityRow extends StatelessWidget {
             children: [
               Icon(
                 hasActivity
-                    ? Icons.receipt_long_rounded
-                    : Icons.access_time_rounded,
+                    ? AppIcons.receiptLongRounded
+                    : AppIcons.accessTimeRounded,
                 size: AppSizes.iconSm,
                 color: AppColors.muted,
               ),
@@ -682,7 +683,7 @@ class _ActivityRow extends StatelessWidget {
           ),
           alignment: Alignment.center,
           child: const Icon(
-            Icons.arrow_forward_rounded,
+            AppIcons.arrowForwardRounded,
             color: AppColors.black,
             size: AppSizes.iconSm,
           ),
@@ -805,7 +806,7 @@ class _EmptyShops extends StatelessWidget {
             ),
             alignment: Alignment.center,
             child: const Icon(
-              Icons.storefront_outlined,
+              AppIcons.storefrontOutlined,
               size: AppSizes.iconXl,
               color: AppColors.brand,
             ),
@@ -833,7 +834,7 @@ class _EmptyShops extends StatelessWidget {
           const SizedBox(height: AppSizes.lg),
           _PrimaryCta(
             label: 'View invitations',
-            icon: Icons.mark_email_unread_rounded,
+            icon: AppIcons.markEmailUnreadRounded,
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const InvitationsPage()),
             ),
@@ -915,7 +916,7 @@ class _ErrorBlock extends StatelessWidget {
             ),
             alignment: Alignment.center,
             child: const Icon(
-              Icons.cloud_off_outlined,
+              AppIcons.cloudOffOutlined,
               color: AppColors.error,
               size: AppSizes.iconXl,
             ),
@@ -941,7 +942,7 @@ class _ErrorBlock extends StatelessWidget {
           const SizedBox(height: AppSizes.lg),
           _PrimaryCta(
             label: AppStrings.retry,
-            icon: Icons.refresh_rounded,
+            icon: AppIcons.refreshRounded,
             onTap: onRetry,
           ),
         ],

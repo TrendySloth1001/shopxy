@@ -11,6 +11,7 @@ import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// The P&L "Products sold" drill-down: an aggregated table with ONE row per
 /// product over the range (its number of sales, total qty, total revenue).
@@ -169,10 +170,10 @@ class _SoldProductsTableState extends State<SoldProductsTable> {
             onChanged: _onSearchChanged,
             decoration: InputDecoration(
               hintText: l10n.reportsSearchByProductOrSku,
-              prefixIcon: const Icon(Icons.search_rounded, size: AppSizes.iconMd),
+              prefixIcon: const Icon(AppIcons.searchRounded, size: AppSizes.iconMd),
               suffixIcon: _searchCtrl.text.isNotEmpty
                   ? IconButton(
-                      icon: const Icon(Icons.close_rounded, size: AppSizes.iconMd),
+                      icon: const Icon(AppIcons.closeRounded, size: AppSizes.iconMd),
                       onPressed: () {
                         _searchCtrl.clear();
                         _search = '';
@@ -357,7 +358,7 @@ class _ProductRow extends StatelessWidget {
                       AnimatedRotation(
                         turns: expanded ? 0.25 : 0,
                         duration: const Duration(milliseconds: 150),
-                        child: Icon(Icons.chevron_right_rounded,
+                        child: Icon(AppIcons.chevronRightRounded,
                             size: AppSizes.iconMd, color: AppColors.muted),
                       ),
                       const SizedBox(width: AppSizes.xs),
@@ -369,7 +370,7 @@ class _ProductRow extends StatelessWidget {
                           color: AppColors.tileBg(tone.$2),
                           shape: AppShapes.squircle(AppSizes.radiusSm),
                         ),
-                        child: Icon(Icons.inventory_2_outlined,
+                        child: Icon(AppIcons.inventory2Outlined,
                             size: AppSizes.iconSm, color: tone.$1),
                       ),
                       const SizedBox(width: AppSizes.sm),
@@ -610,7 +611,7 @@ class _TimelineRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
       child: Row(
         children: [
-          Icon(Icons.schedule_rounded,
+          Icon(AppIcons.scheduleRounded,
               size: AppSizes.iconSm, color: _recencyColor(when)),
           const SizedBox(width: AppSizes.sm),
           Expanded(

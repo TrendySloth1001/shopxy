@@ -4,6 +4,7 @@ import 'package:shopxy_customer/features/home/presentation/widgets/network_image
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Immersive auth layout: a full-bleed photo hero with the brand mark +
 /// tagline overlaid, and a white rounded sheet floating up over it that
@@ -152,7 +153,7 @@ class _HeroArt extends StatelessWidget {
                       shape: AppShapes.squircle(AppSizes.radiusSm),
                     ),
                     alignment: Alignment.center,
-                    child: const Icon(Icons.storefront_rounded,
+                    child: const Icon(AppIcons.storefrontRounded,
                         color: AppColors.white, size: AppSizes.iconMd),
                   ),
                   const SizedBox(width: AppSizes.sm),
@@ -271,8 +272,8 @@ class AuthField extends StatelessWidget {
         suffixIcon: onToggleObscure != null
             ? IconButton(
                 icon: Icon(obscure
-                    ? Icons.visibility_outlined
-                    : Icons.visibility_off_outlined),
+                    ? AppIcons.visibilityOutlined
+                    : AppIcons.visibilityOffOutlined),
                 onPressed: onToggleObscure,
               )
             : null,
@@ -298,7 +299,7 @@ class AuthErrorBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline_rounded,
+          const Icon(AppIcons.errorOutlineRounded,
               color: AppColors.error, size: AppSizes.iconSm),
           const SizedBox(width: AppSizes.sm),
           Expanded(

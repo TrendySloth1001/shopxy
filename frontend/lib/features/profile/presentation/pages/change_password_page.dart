@@ -6,6 +6,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 class ChangePasswordPage extends StatefulWidget {
   const ChangePasswordPage({super.key});
@@ -88,8 +89,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                 labelText: l10n.profileCurrentPassword,
                 suffixIcon: IconButton(
                   icon: Icon(_showCurrent
-                      ? Icons.visibility_off_outlined
-                      : Icons.visibility_outlined),
+                      ? AppIcons.visibilityOffOutlined
+                      : AppIcons.visibilityOutlined),
                   onPressed: () => setState(() => _showCurrent = !_showCurrent),
                 ),
               ),
@@ -104,8 +105,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                 helperText: l10n.profilePasswordHelper,
                 suffixIcon: IconButton(
                   icon: Icon(_showNext
-                      ? Icons.visibility_off_outlined
-                      : Icons.visibility_outlined),
+                      ? AppIcons.visibilityOffOutlined
+                      : AppIcons.visibilityOutlined),
                   onPressed: () => setState(() => _showNext = !_showNext),
                 ),
               ),

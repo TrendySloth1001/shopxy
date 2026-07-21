@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CloudOff, Loader2 } from "lucide-react";
+import { CloudOff, Loader2 } from "@/shared/icons";
 import { ImageBox } from "@/features/home/components/image-box";
 import { CatalogProductCard } from "@/features/catalog/components/catalog-product-card";
 import type { CatalogProduct } from "@/features/catalog/types";

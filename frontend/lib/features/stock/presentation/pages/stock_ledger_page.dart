@@ -19,6 +19,7 @@ import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Full chronological stock ledger for a single product.
 ///
@@ -333,8 +334,8 @@ class _LedgerEntryCard extends StatelessWidget {
                 alignment: Alignment.center,
                 child: Icon(
                   entry.isStockIn
-                      ? Icons.arrow_downward_rounded
-                      : Icons.arrow_upward_rounded,
+                      ? AppIcons.arrowDownwardRounded
+                      : AppIcons.arrowUpwardRounded,
                   color: accent,
                   size: AppSizes.iconMd,
                 ),
@@ -453,7 +454,7 @@ class _LedgerEntryCard extends StatelessWidget {
                     ),
                   ),
                   Icon(
-                    Icons.arrow_forward_rounded,
+                    AppIcons.arrowForwardRounded,
                     color: AppColors.black,
                     size: AppSizes.iconSm,
                   ),

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, X } from "@/shared/icons";
 import { ComboSelect, type ComboOption } from "./combo-select";
 
 /**

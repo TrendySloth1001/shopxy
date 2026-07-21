@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef, startTransition } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { AlertCircle, Download, Package } from "lucide-react";
+import { AlertCircle, Download, Package } from "@/shared/icons";
 import { RequireAuth } from "@/features/auth/components/require-auth";
 import { AppHeader } from "@/features/auth/components/app-header";
 import {

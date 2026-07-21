@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ArrowRight, CheckCircle2, Circle } from "lucide-react";
+import { ArrowRight, CheckCircle2, Circle } from "@/shared/icons";
 import type { DashboardOnboarding } from "../stats";
 
 /**

@@ -11,7 +11,7 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { LayoutGrid, List, Plus, Search } from "lucide-react";
+import { LayoutGrid, List, Plus, Search } from "@/shared/icons";
 import { Divider } from "@/shared/ui/divider";
 import {
   listCategories,
