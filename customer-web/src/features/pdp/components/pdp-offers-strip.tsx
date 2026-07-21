@@ -1,6 +1,6 @@
 "use client";
 
-import { Tag, CreditCard } from "lucide-react";
+import { Tag, CreditCard } from "@/shared/icons";
 import type { ProductOffer, BankOffer } from "../types";
 
 interface Props {

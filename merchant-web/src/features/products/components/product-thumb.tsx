@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Package } from "lucide-react";
+import { Package } from "@/shared/icons";
 
 /** Resolve a stored relative image URL (`/images/...`) to the media proxy. */
 export function mediaSrc(url?: string | null): string | null {

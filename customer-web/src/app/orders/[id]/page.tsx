@@ -2,7 +2,7 @@
 
 import { use, useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ArrowLeft, MapPin, Store, Download, Info, RotateCcw, X, Package, FileText } from "lucide-react";
+import { ArrowLeft, MapPin, Store, Download, Info, RotateCcw, X, Package, FileText } from "@/shared/icons";
 import { AppHeader } from "@/features/auth/components/app-header";
 import { RequireAuth } from "@/features/auth/components/require-auth";
 import { OrderTimeline } from "@/features/orders/components/order-timeline";

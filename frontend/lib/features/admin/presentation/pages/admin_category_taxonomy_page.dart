@@ -10,6 +10,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Platform-admin editor for the marketplace taxonomy tree. Each node
 /// is rendered as an expandable tile; tapping it opens an inline editor
@@ -178,14 +179,14 @@ class _AdminCategoryTaxonomyPageState extends State<AdminCategoryTaxonomyPage> {
         actions: [
           IconButton(
             tooltip: l10n.adminRefresh,
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(AppIcons.refresh),
             onPressed: _loading ? null : _load,
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _createRoot,
-        icon: const Icon(Icons.add),
+        icon: const Icon(AppIcons.add),
         label: Text(l10n.adminCategoryRoot),
       ),
       body: _loading && _tree.isEmpty
@@ -377,9 +378,9 @@ class _CategoryTreeTile extends StatelessWidget {
                       icon: Icon(
                         hasChildren
                             ? (isExpanded
-                                ? Icons.expand_more_rounded
-                                : Icons.chevron_right_rounded)
-                            : Icons.circle,
+                                ? AppIcons.expandMoreRounded
+                                : AppIcons.chevronRightRounded)
+                            : AppIcons.circle,
                         color: hasChildren ? AppColors.muted : AppColors.disabled,
                       ),
                       onPressed: hasChildren ? () => onToggle(c.id) : null,
@@ -396,8 +397,8 @@ class _CategoryTreeTile extends StatelessWidget {
                       alignment: Alignment.center,
                       child: Icon(
                         c.iconName != null
-                            ? Icons.label_outline
-                            : Icons.folder_outlined,
+                            ? AppIcons.labelOutline
+                            : AppIcons.folderOutlined,
                         size: AppSizes.iconMd,
                         color: c.isActive ? AppColors.brand : AppColors.muted,
                       ),
@@ -430,12 +431,12 @@ class _CategoryTreeTile extends StatelessWidget {
                     ),
                     IconButton(
                       tooltip: AppLocalizations.of(context).adminCategoryAddChild,
-                      icon: const Icon(Icons.add),
+                      icon: const Icon(AppIcons.add),
                       onPressed: () => onAddChild(c.id),
                     ),
                     IconButton(
                       tooltip: AppLocalizations.of(context).adminDelete,
-                      icon: const Icon(Icons.delete_outline),
+                      icon: const Icon(AppIcons.deleteOutline),
                       onPressed: () => onDelete(c),
                     ),
                   ],
@@ -590,7 +591,7 @@ class _CategoryEditorSheetState extends State<_CategoryEditorSheet> {
               ),
               const Spacer(),
               IconButton(
-                icon: const Icon(Icons.close),
+                icon: const Icon(AppIcons.close),
                 onPressed: () => Navigator.of(context).pop(false),
               ),
             ],

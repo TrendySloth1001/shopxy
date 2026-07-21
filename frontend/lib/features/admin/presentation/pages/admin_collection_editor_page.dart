@@ -15,6 +15,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Single-page editor for an editorial collection. Two states:
 ///   * new      — title/slug/etc, can't manage items until saved once
@@ -229,7 +230,7 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
           if (isEdit)
             IconButton(
               tooltip: l10n.adminCollectionAddProduct,
-              icon: const Icon(Icons.add),
+              icon: const Icon(AppIcons.add),
               onPressed: _addProduct,
             ),
         ],
@@ -367,18 +368,18 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
           ),
           clipBehavior: Clip.antiAlias,
           child: _coverImageUrl == null
-              ? Icon(Icons.image_outlined, color: AppColors.muted)
+              ? Icon(AppIcons.imageOutlined, color: AppColors.muted)
               : Image.network(
                   resolveImageUrl(_coverImageUrl!),
                   fit: BoxFit.cover,
                   errorBuilder: (_, _, _) =>
-                      const Icon(Icons.broken_image_outlined),
+                      const Icon(AppIcons.brokenImageOutlined),
                 ),
         ),
         const SizedBox(width: AppSizes.md),
         Expanded(
           child: OutlinedButton.icon(
-            icon: const Icon(Icons.upload_outlined),
+            icon: const Icon(AppIcons.uploadOutlined),
             label: Text(_coverImageUrl == null
                 ? AppLocalizations.of(context).adminCollectionCoverImage
                 : AppLocalizations.of(context).adminCollectionReplaceCover),
@@ -425,7 +426,7 @@ class _ItemRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.drag_handle, color: AppColors.muted),
+          Icon(AppIcons.dragHandle, color: AppColors.muted),
           const SizedBox(width: AppSizes.sm),
           Container(
             width: AppSizes.avatarSm,
@@ -436,12 +437,12 @@ class _ItemRow extends StatelessWidget {
               shape: AppShapes.squircle(AppSizes.radiusSm),
             ),
             child: item.product.imageUrl == null
-                ? Icon(Icons.image_outlined, color: AppColors.muted)
+                ? Icon(AppIcons.imageOutlined, color: AppColors.muted)
                 : Image.network(
                     resolveImageUrl(item.product.imageUrl!),
                     fit: BoxFit.cover,
                     errorBuilder: (_, _, _) =>
-                        const Icon(Icons.broken_image_outlined),
+                        const Icon(AppIcons.brokenImageOutlined),
                   ),
           ),
           const SizedBox(width: AppSizes.sm),
@@ -461,7 +462,7 @@ class _ItemRow extends StatelessWidget {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.close, size: AppSizes.iconMd),
+            icon: const Icon(AppIcons.close, size: AppSizes.iconMd),
             onPressed: onRemove,
           ),
         ],
@@ -630,7 +631,7 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
             autofocus: true,
             decoration: InputDecoration(
               labelText: l10n.adminCollectionProductSearchLabel,
-              prefixIcon: const Icon(Icons.search),
+              prefixIcon: const Icon(AppIcons.search),
             ),
             onChanged: _onChanged,
           ),
@@ -676,13 +677,13 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                                 shape: AppShapes.squircle(AppSizes.radiusSm),
                               ),
                               child: p.imageUrl == null
-                                  ? Icon(Icons.image_outlined,
+                                  ? Icon(AppIcons.imageOutlined,
                                       color: AppColors.muted)
                                   : Image.network(
                                       resolveImageUrl(p.imageUrl!),
                                       fit: BoxFit.cover,
                                       errorBuilder: (_, _, _) =>
-                                          const Icon(Icons.broken_image_outlined),
+                                          const Icon(AppIcons.brokenImageOutlined),
                                     ),
                             ),
                             const SizedBox(width: AppSizes.sm),

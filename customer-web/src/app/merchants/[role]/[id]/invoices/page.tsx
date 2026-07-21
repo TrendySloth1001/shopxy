@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, startTransition } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronRight, ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import { ChevronRight, ArrowDownLeft, ArrowUpRight } from "@/shared/icons";
 import { RequireAuth } from "@/features/auth/components/require-auth";
 import { AppHeader } from "@/features/auth/components/app-header";
 import { fetchInvoices } from "@/features/merchant-ledger/api";

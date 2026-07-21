@@ -15,6 +15,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Merchant-side quotation detail: who it went to, status, line items, totals,
 /// the invoice it spawned (if accepted), and a Cancel action while pending.
@@ -209,7 +210,7 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
                       width: AppSizes.iconSm,
                       height: AppSizes.iconSm,
                       child: CircularProgressIndicator(strokeWidth: 2))
-                  : Icon(Icons.share_rounded,
+                  : Icon(AppIcons.shareRounded,
                       size: AppSizes.iconSm, color: AppColors.brand),
               label: Text('Share',
                   style: theme.textTheme.labelLarge?.copyWith(
@@ -333,7 +334,7 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
                             width: AppSizes.iconSm,
                             height: AppSizes.iconSm,
                             child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Icon(Icons.close_rounded, size: AppSizes.iconMd),
+                        : const Icon(AppIcons.closeRounded, size: AppSizes.iconMd),
                     label: const Text('Cancel quotation'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.error,

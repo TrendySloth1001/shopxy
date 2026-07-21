@@ -1,5 +1,5 @@
 import { createElement } from "react";
-import { resolveCategoryIcon } from "./icon-catalog";
+import { resolveCategoryIcon } from "./category-icons";
 
 /**
  * Renders the lucide icon for a stored category `iconName`. Using

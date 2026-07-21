@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Receipt, Wallet } from "lucide-react";
+import { Receipt, Wallet } from "@/shared/icons";
 import { formatDateTime } from "@/shared/datetime";
 import { formatINR2 } from "@/shared/money";
 import type { LedgerEntry } from "@/shared/ledger";

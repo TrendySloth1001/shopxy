@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
-import { Lock } from "lucide-react";
+import { Lock } from "@/shared/icons";
 import { useAuth } from "../auth-context";
 import { canManage, canView } from "../capabilities";
 import type { Area } from "@/features/team/permissions";

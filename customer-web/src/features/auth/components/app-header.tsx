@@ -11,7 +11,7 @@ import {
   ShoppingCart,
   Store,
   User,
-} from "lucide-react";
+} from "@/shared/icons";
 import { useAuth } from "../auth-context";
 import { useNotifications } from "@/features/notifications/notifications-context";
 import { useCart } from "@/features/cart/cart-context";

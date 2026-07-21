@@ -6,6 +6,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// The app-wide **floating app bar** — the single source of truth for every
 /// screen's top bar. Replace `AppBar(...)` with `FloatingAppBar(...)`.
@@ -296,7 +297,7 @@ class _LeadingIsland extends StatelessWidget {
                 width: FloatingAppBar._islandHeight,
                 height: FloatingAppBar._islandHeight,
                 child: Icon(
-                  Icons.arrow_back_ios_new_rounded,
+                  AppIcons.arrowBackIosNewRounded,
                   size: AppSizes.iconSm,
                   color: AppColors.black,
                 ),

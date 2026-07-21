@@ -13,6 +13,7 @@ import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_button.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// "My reviews" — every review the caller has written, newest first.
 /// Tap a row → PDP. Cursor-paginated; loads next page when the user
@@ -324,7 +325,7 @@ class _ProductThumb extends StatelessWidget {
           shape: shape,
         ),
         alignment: Alignment.center,
-        child: const Icon(Icons.image_outlined, color: AppColors.subtle),
+        child: const Icon(AppIcons.imageOutlined, color: AppColors.subtle),
       );
     }
     return ClipPath(
@@ -339,7 +340,7 @@ class _ProductThumb extends StatelessWidget {
           height: AppSizes.avatarMd,
           color: AppColors.heroPanel,
           alignment: Alignment.center,
-          child: const Icon(Icons.image_outlined, color: AppColors.subtle),
+          child: const Icon(AppIcons.imageOutlined, color: AppColors.subtle),
         ),
       ),
     );
@@ -364,7 +365,7 @@ class _EmptyState extends StatelessWidget {
             shape: AppShapes.squircle(AppSizes.radiusLg),
           ),
           child: const Icon(
-            Icons.rate_review_outlined,
+            AppIcons.rateReviewOutlined,
             size: AppSizes.iconXl,
             color: AppColors.warning,
           ),
@@ -403,14 +404,14 @@ class _ErrorBlock extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline_rounded,
+            const Icon(AppIcons.errorOutlineRounded,
                 size: AppSizes.iconHuge, color: AppColors.error),
             const SizedBox(height: AppSizes.md),
             Text(message, textAlign: TextAlign.center),
             const SizedBox(height: AppSizes.md),
             AppButton.secondary(
               label: 'Try again',
-              icon: Icons.refresh_rounded,
+              icon: AppIcons.refreshRounded,
               onPressed: () => onRetry(),
             ),
           ],

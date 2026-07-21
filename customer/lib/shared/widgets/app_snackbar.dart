@@ -3,6 +3,7 @@ import 'package:shopxy_customer/shared/constants/app_durations.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Snackbar variants. Maps to the four status colors in [AppColors] so
 /// the visual treatment matches the message intent.
@@ -106,25 +107,25 @@ void showAppSnackbar(
   switch (tone) {
     case AppSnackbarTone.success:
       return (
-        Icons.check_circle_rounded,
+        AppIcons.checkCircleRounded,
         AppColors.success,
         AppColors.successSoft,
       );
     case AppSnackbarTone.error:
       return (
-        Icons.error_outline_rounded,
+        AppIcons.errorOutlineRounded,
         AppColors.error,
         AppColors.errorSoft,
       );
     case AppSnackbarTone.info:
       return (
-        Icons.info_outline_rounded,
+        AppIcons.infoOutlineRounded,
         AppColors.info,
         AppColors.infoSoft,
       );
     case AppSnackbarTone.neutral:
       return (
-        Icons.notifications_none_rounded,
+        AppIcons.notificationsNoneRounded,
         AppColors.black,
         AppColors.white,
       );

@@ -11,6 +11,7 @@ import 'package:shopxy/shared/widgets/app_card.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_section_header.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Audit trail of edits to a Party's or Vendor's contact details.
 /// Fetches `<endpoint>/changes` and renders a timeline of
@@ -226,25 +227,25 @@ class _ChangeRow extends StatelessWidget {
   static IconData _iconFor(String field) {
     switch (field) {
       case 'phone':
-        return Icons.phone_rounded;
+        return AppIcons.phoneRounded;
       case 'email':
-        return Icons.email_rounded;
+        return AppIcons.emailRounded;
       case 'address':
       case 'city':
       case 'state':
       case 'stateCode':
       case 'pinCode':
-        return Icons.place_rounded;
+        return AppIcons.placeRounded;
       case 'gstin':
       case 'panNumber':
-        return Icons.badge_rounded;
+        return AppIcons.badgeRounded;
       case 'name':
       case 'contactName':
-        return Icons.person_rounded;
+        return AppIcons.personRounded;
       case 'isActive':
-        return Icons.toggle_on_rounded;
+        return AppIcons.toggleOnRounded;
       default:
-        return Icons.edit_rounded;
+        return AppIcons.editRounded;
     }
   }
 }

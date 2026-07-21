@@ -1,4 +1,4 @@
-import { Truck, RotateCcw, ShieldCheck } from "lucide-react";
+import { Truck, RotateCcw, ShieldCheck } from "@/shared/icons";
 import { formatINR } from "@/shared/format";
 import { type ProductDetail, type Variant } from "../types";
 

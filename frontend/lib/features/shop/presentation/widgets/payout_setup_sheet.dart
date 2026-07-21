@@ -4,6 +4,7 @@ import 'package:shopxy/features/shop/presentation/pages/shop_payouts_page.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// One-time startup nudge that prompts the owner to finish payout onboarding.
 ///
@@ -61,7 +62,7 @@ class _PayoutSetupSheet extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
-              child: Icon(Icons.account_balance_outlined,
+              child: Icon(AppIcons.accountBalanceOutlined,
                   color: AppColors.info, size: AppSizes.iconLg),
             ),
             const SizedBox(height: AppSizes.md),

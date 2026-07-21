@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "@/shared/icons";
 import type { ProductCard } from "../types";
 import { ProductTile } from "./product-tile";
 import { SectionHeader } from "./section-header";

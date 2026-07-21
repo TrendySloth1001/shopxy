@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Package } from "lucide-react";
+import { Package } from "@/shared/icons";
 import { useTranslations } from "next-intl";
 import type { Product } from "../schema";
 import { money } from "../format";

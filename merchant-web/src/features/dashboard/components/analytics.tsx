@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Maximize2, Minimize2 } from "lucide-react";
+import { Maximize2, Minimize2 } from "@/shared/icons";
 import type { DashboardInsights } from "../stats";
 import { inr } from "./ui";
 import { InfographicPie, PIE_PALETTE_A, PIE_PALETTE_B, PIE_PALETTE_C } from "./infographic-pie";

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "@/shared/icons";
 import { ComplianceNav } from "@/features/legal/compliance-nav";
 
 /**

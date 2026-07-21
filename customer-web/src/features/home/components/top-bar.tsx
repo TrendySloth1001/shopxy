@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, ChevronDown, MapPin, Search, ShoppingCart, Store } from "lucide-react";
+import { Bell, ChevronDown, MapPin, Search, ShoppingCart, Store } from "@/shared/icons";
 import { useAuth } from "@/features/auth/auth-context";
 import { useNotifications } from "@/features/notifications/notifications-context";
 import { useCart } from "@/features/cart/cart-context";

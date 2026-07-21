@@ -25,6 +25,7 @@ import 'package:shopxy/shared/widgets/empty_state.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 class PartiesPage extends StatefulWidget {
   const PartiesPage({super.key});
@@ -72,7 +73,7 @@ class _PartiesPageState extends State<PartiesPage> {
               onReload: () => provider.loadParties(refresh: true)),
           LockedIconButton(
             allowed: canManage,
-            icon: Icons.add_rounded,
+            icon: AppIcons.addRounded,
             tooltip: l10n.partiesAddParty,
             what: 'add customers',
             onPressed: () => _showPartySheet(context),
@@ -116,7 +117,7 @@ class _PartiesPageState extends State<PartiesPage> {
                               what: 'add customers',
                               child: AppButton.primary(
                                 label: l10n.partiesAddParty,
-                                icon: Icons.add_rounded,
+                                icon: AppIcons.addRounded,
                                 onPressed: () => _showPartySheet(context),
                               ),
                             ),
@@ -408,12 +409,12 @@ class _PartyTile extends StatelessWidget {
                       children: [
                         AppStatusBadge(
                           label: '${party.challanCount} ${l10n.partiesChallansUnit}',
-                          icon: Icons.description_outlined,
+                          icon: AppIcons.descriptionOutlined,
                           dense: true,
                         ),
                         AppStatusBadge(
                           label: '${party.invoiceCount} ${l10n.partiesInvoicesUnit}',
-                          icon: Icons.receipt_outlined,
+                          icon: AppIcons.receiptOutlined,
                           dense: true,
                         ),
                         if (invite != null) _InviteChip(invite: invite!),
@@ -423,7 +424,7 @@ class _PartyTile extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: Icon(Icons.more_vert_rounded, color: AppColors.muted),
+                icon: Icon(AppIcons.moreVertRounded, color: AppColors.muted),
                 onPressed: () => _showMenu(context),
               ),
             ],
@@ -446,7 +447,7 @@ class _PartyTile extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.edit_outlined),
+              leading: const Icon(AppIcons.editOutlined),
               title: Text(l10n.partiesEdit),
               onTap: () {
                 Navigator.pop(context);
@@ -459,7 +460,7 @@ class _PartyTile extends StatelessWidget {
             if (invite?.isAccepted == true)
               ListTile(
                 leading: Icon(
-                  Icons.verified_rounded,
+                  AppIcons.verifiedRounded,
                   color: AppColors.success,
                 ),
                 title: Text(
@@ -477,7 +478,7 @@ class _PartyTile extends StatelessWidget {
             else if (invite == null || !invite!.isPending) ...[
               ListTile(
                 leading: Icon(
-                  Icons.person_add_alt_1_outlined,
+                  AppIcons.personAddAlt1Outlined,
                   color: AppColors.brandStrong,
                 ),
                 enabled: _canInvite,
@@ -501,7 +502,7 @@ class _PartyTile extends StatelessWidget {
             ] else
               ListTile(
                 leading: Icon(
-                  Icons.cancel_schedule_send_outlined,
+                  AppIcons.cancelScheduleSendOutlined,
                   color: AppColors.warning,
                 ),
                 title: Text(
@@ -519,7 +520,7 @@ class _PartyTile extends StatelessWidget {
               ),
             ListTile(
               leading: Icon(
-                Icons.delete_outline_rounded,
+                AppIcons.deleteOutlineRounded,
                 color: AppColors.error,
               ),
               title: Text(
@@ -551,31 +552,31 @@ class _InviteChip extends StatelessWidget {
     final (label, icon, fg, bg) = switch (invite.status) {
       InviteStatus.pending => (
           l10n.partiesInviteStatusInvited,
-          Icons.mark_email_unread_outlined,
+          AppIcons.markEmailUnreadOutlined,
           AppColors.brandStrong,
           AppColors.brandSoft,
         ),
       InviteStatus.accepted => (
           l10n.partiesInviteStatusLinked,
-          Icons.verified_rounded,
+          AppIcons.verifiedRounded,
           AppColors.success,
           AppColors.successSoft,
         ),
       InviteStatus.declined => (
           l10n.partiesInviteStatusDeclined,
-          Icons.cancel_outlined,
+          AppIcons.cancelOutlined,
           AppColors.muted,
           AppColors.heroPanel,
         ),
       InviteStatus.cancelled => (
           l10n.partiesInviteStatusCancelled,
-          Icons.cancel_schedule_send_outlined,
+          AppIcons.cancelScheduleSendOutlined,
           AppColors.muted,
           AppColors.heroPanel,
         ),
       InviteStatus.expired => (
           l10n.partiesInviteStatusExpired,
-          Icons.timer_off_outlined,
+          AppIcons.timerOffOutlined,
           AppColors.error,
           AppColors.errorSoft,
         ),

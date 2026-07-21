@@ -9,6 +9,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Merchant-facing analytics dashboard. One scroll: date range, KPI
 /// strip, per-product table. All sorting + range manipulation lives in
@@ -57,7 +58,7 @@ class _MerchantAnalyticsPageState extends State<MerchantAnalyticsPage> {
         actions: [
           IconButton(
             tooltip: l10n.analyticsRefresh,
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(AppIcons.refresh),
             onPressed: provider.isLoading ? null : provider.load,
           ),
         ],
@@ -126,10 +127,10 @@ class _RangeBar extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(Icons.calendar_today_outlined, size: AppSizes.iconMd),
+            const Icon(AppIcons.calendarTodayOutlined, size: AppSizes.iconMd),
             const SizedBox(width: AppSizes.sm),
             Expanded(child: Text(label)),
-            const Icon(Icons.tune, size: AppSizes.iconMd),
+            const Icon(AppIcons.tune, size: AppSizes.iconMd),
           ],
         ),
       ),

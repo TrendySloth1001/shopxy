@@ -21,6 +21,7 @@ import 'package:shopxy_customer/features/shops/presentation/providers/shops_prov
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 class HomeTopBar extends StatelessWidget {
   const HomeTopBar({super.key, this.shrink = 0.0});
@@ -76,7 +77,7 @@ class HomeTopBar extends StatelessWidget {
                   return Padding(
                     padding: const EdgeInsets.only(right: AppSizes.xs),
                     child: _TopBarIcon(
-                      icon: Icons.account_balance_wallet_outlined,
+                      icon: AppIcons.accountBalanceWalletOutlined,
                       count: pending,
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute(
@@ -90,7 +91,7 @@ class HomeTopBar extends StatelessWidget {
               Selector<NotificationsProvider, int>(
                 selector: (_, p) => p.unread,
                 builder: (_, unread, _) => _TopBarIcon(
-                  icon: Icons.notifications_none_rounded,
+                  icon: AppIcons.notificationsNoneRounded,
                   count: unread,
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const NotificationsPage()),
@@ -221,7 +222,7 @@ class _CollapsedSearchFieldState extends State<_CollapsedSearchField> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.search_rounded,
+                  const Icon(AppIcons.searchRounded,
                       color: AppColors.muted, size: 18),
                   const SizedBox(width: AppSizes.sm),
                   Expanded(
@@ -283,7 +284,7 @@ class _BrandWordmark extends StatelessWidget {
           alignment: Alignment.center,
           // Placeholder mark — to be replaced with the real logo later.
           child: const Icon(
-            Icons.storefront_rounded,
+            AppIcons.storefrontRounded,
             color: AppColors.white,
             size: 18,
           ),
@@ -375,8 +376,8 @@ class _LocationPill extends StatelessWidget {
           children: [
             Icon(
               hasAddress
-                  ? Icons.location_on_rounded
-                  : Icons.add_location_alt_outlined,
+                  ? AppIcons.locationOnRounded
+                  : AppIcons.addLocationAltOutlined,
               color: AppColors.brand,
               size: 16,
             ),
@@ -431,7 +432,7 @@ class _LocationPill extends StatelessWidget {
               ),
             const SizedBox(width: 2),
             const Icon(
-              Icons.keyboard_arrow_down_rounded,
+              AppIcons.keyboardArrowDownRounded,
               color: AppColors.muted,
               size: 18,
             ),
@@ -559,7 +560,7 @@ class _AddressSheet extends StatelessWidget {
               children: [
                 Expanded(
                   child: _SheetButton(
-                    icon: Icons.add_location_alt_outlined,
+                    icon: AppIcons.addLocationAltOutlined,
                     label: 'Add new',
                     onTap: () async {
                       Navigator.of(context).pop();
@@ -574,7 +575,7 @@ class _AddressSheet extends StatelessWidget {
                 const SizedBox(width: AppSizes.sm),
                 Expanded(
                   child: _SheetButton(
-                    icon: Icons.tune_rounded,
+                    icon: AppIcons.tuneRounded,
                     label: 'Manage',
                     onTap: () {
                       Navigator.of(context).pop();
@@ -625,8 +626,8 @@ class _AddressRow extends StatelessWidget {
           children: [
             Icon(
               selected
-                  ? Icons.radio_button_checked
-                  : Icons.radio_button_unchecked,
+                  ? AppIcons.radioButtonChecked
+                  : AppIcons.radioButtonUnchecked,
               color: selected ? AppColors.brand : AppColors.muted,
               size: 20,
             ),

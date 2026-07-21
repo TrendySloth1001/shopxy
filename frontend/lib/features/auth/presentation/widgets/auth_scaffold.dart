@@ -6,6 +6,7 @@ import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Below this width the illustration panel is dropped and the form takes the
 /// full width — mirrors the merchant-web auth shell.
@@ -269,13 +270,13 @@ class _AuthHeader extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             _HeaderChip(
-              icon: Icons.login_rounded,
+              icon: AppIcons.loginRounded,
               label: l10n.authSignIn,
               onTap: onSignIn,
             ),
             const SizedBox(width: AppSizes.sm),
             _HeaderChip(
-              icon: Icons.person_add_alt_1_rounded,
+              icon: AppIcons.personAddAlt1Rounded,
               label: l10n.authCreateAccount,
               filled: true,
               onTap: onCreateAccount,
@@ -616,7 +617,7 @@ class AuthErrorBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.error_outline_rounded,
+          Icon(AppIcons.errorOutlineRounded,
               color: AppColors.error, size: AppSizes.iconSm),
           const SizedBox(width: AppSizes.sm),
           Expanded(

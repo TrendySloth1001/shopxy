@@ -8,6 +8,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Dedicated screen for invitations addressed to the current user. Two
 /// tabs — Pending (actionable) and History — both read from
@@ -139,7 +140,7 @@ class _InvitationList extends StatelessWidget {
               child: Column(
                 children: [
                   const Icon(
-                    Icons.mark_email_unread_outlined,
+                    AppIcons.markEmailUnreadOutlined,
                     size: AppSizes.iconHuge,
                     color: AppColors.muted,
                   ),

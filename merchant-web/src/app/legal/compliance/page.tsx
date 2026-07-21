@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight } from "@/shared/icons";
 import { GrievanceOfficerSection } from "@/features/legal/grievance-officer";
 import { SECTIONS } from "@/features/legal/compliance-content";
 

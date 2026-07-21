@@ -10,6 +10,7 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_button.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Manage delivery addresses. Reached from the home top-bar
 /// location chip and from the profile screen. The default flag
@@ -105,7 +106,7 @@ class _AddressesPageState extends State<AddressesPage> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _add(context),
-        icon: const Icon(Icons.add),
+        icon: const Icon(AppIcons.add),
         label: const Text('Add address'),
       ),
     );
@@ -242,13 +243,13 @@ class _AddressTile extends StatelessWidget {
               if (!address.isDefault)
                 TextButton.icon(
                   onPressed: onDefault,
-                  icon: const Icon(Icons.check_circle_outline, size: AppSizes.iconSm),
+                  icon: const Icon(AppIcons.checkCircleOutline, size: AppSizes.iconSm),
                   label: const Text('Set as default'),
                 ),
               const Spacer(),
               IconButton(
                 tooltip: 'Delete',
-                icon: const Icon(Icons.delete_outline, color: AppColors.error),
+                icon: const Icon(AppIcons.deleteOutline, color: AppColors.error),
                 onPressed: onDelete,
               ),
             ],
@@ -267,7 +268,7 @@ class _Empty extends StatelessWidget {
     return ListView(
       children: [
         const SizedBox(height: 120),
-        const Center(child: Icon(Icons.location_off_outlined, size: AppSizes.iconHuge, color: AppColors.muted)),
+        const Center(child: Icon(AppIcons.locationOffOutlined, size: AppSizes.iconHuge, color: AppColors.muted)),
         const SizedBox(height: AppSizes.md),
         Center(
           child: Text(
@@ -285,7 +286,7 @@ class _Empty extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSizes.lg),
-        Center(child: AppButton.primary(label: 'Add address', onPressed: onAdd, icon: Icons.add)),
+        Center(child: AppButton.primary(label: 'Add address', onPressed: onAdd, icon: AppIcons.add)),
       ],
     );
   }

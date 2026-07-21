@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Minus, Plus } from "lucide-react";
+import { X, Minus, Plus } from "@/shared/icons";
 import { RETURN_REASONS, reasonLabel, type ReturnReason } from "../types";
 import { submitReturn } from "../api";
 import { formatINR } from "@/shared/format";

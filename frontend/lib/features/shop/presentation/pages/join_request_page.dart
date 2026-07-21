@@ -11,6 +11,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Shown right after login/registration when the account has been
 /// invited onto a shop's team but isn't a member yet. Lays out the
@@ -117,7 +118,7 @@ class _JoinRequestPageState extends State<JoinRequestPage> {
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
-              child: Icon(Icons.groups_rounded,
+              child: Icon(AppIcons.groupsRounded,
                   color: AppColors.brandStrong, size: AppSizes.iconXl),
             ),
             const SizedBox(height: AppSizes.lg),
@@ -238,7 +239,7 @@ class _ResponsibilityRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
-            denied ? Icons.block_rounded : Icons.check_circle_rounded,
+            denied ? AppIcons.blockRounded : AppIcons.checkCircleRounded,
             size: 18,
             color: denied ? AppColors.subtle : AppColors.success,
           ),

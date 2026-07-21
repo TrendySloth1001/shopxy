@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { Images, ImageOff, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { Images, ImageOff, Pencil, Plus, RefreshCw, Trash2 } from "@/shared/icons";
 import { PageHeader } from "@/shared/ui/page-header";
 import { Divider } from "@/shared/ui/divider";
 import { mediaSrc } from "@/features/products/components/product-thumb";

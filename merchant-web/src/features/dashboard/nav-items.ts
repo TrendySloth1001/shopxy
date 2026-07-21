@@ -26,7 +26,7 @@ import {
   ShieldCheck,
   UserCog,
   type LucideIcon,
-} from "lucide-react";
+} from "@/shared/icons";
 
 export type NavItem = {
   /** Stable key used for active state. */

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { ArrowDown, ArrowUp, Search } from "lucide-react";
+import { ArrowDown, ArrowUp, Search } from "@/shared/icons";
 import { Divider } from "@/shared/ui/divider";
 import { CardsSkeleton, ListRowsSkeleton } from "@/shared/ui/skeleton";
 import { getProductAnalytics } from "@/features/analytics/api";

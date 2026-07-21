@@ -11,6 +11,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 enum _MissingProductAction { add, retry }
 
@@ -110,7 +111,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
               ),
               const SizedBox(height: AppSizes.xl),
               Icon(
-                Icons.qr_code_rounded,
+                AppIcons.qrCodeRounded,
                 size: AppSizes.iconHuge,
                 color: AppColors.black,
               ),
@@ -153,7 +154,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
               const SizedBox(height: AppSizes.xl),
               AppButton.primary(
                 label: l10n.productsAddProduct,
-                icon: Icons.add_rounded,
+                icon: AppIcons.addRounded,
                 onPressed: () => Navigator.pop(ctx, _MissingProductAction.add),
                 fullWidth: true,
               ),

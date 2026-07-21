@@ -19,6 +19,7 @@ import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 class ChallansPage extends StatefulWidget {
   const ChallansPage({super.key});
@@ -160,7 +161,7 @@ class _ChallansPageState extends State<ChallansPage> {
         what: 'create challans',
         child: FloatingActionButton.extended(
           onPressed: _openCreate,
-          icon: const Icon(Icons.add_rounded),
+          icon: const Icon(AppIcons.addRounded),
           label: Text(l10n.challansCreate),
         ),
       ),
@@ -259,7 +260,7 @@ class _ChallanTile extends StatelessWidget {
           ),
           child: Row(
             children: [
-              const AppIconAvatar.outlined(icon: Icons.receipt_long_rounded),
+              const AppIconAvatar.outlined(icon: AppIcons.receiptLongRounded),
               const SizedBox(width: AppSizes.md),
               Expanded(
                 child: Column(

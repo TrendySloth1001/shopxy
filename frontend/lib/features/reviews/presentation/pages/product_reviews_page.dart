@@ -10,6 +10,7 @@ import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Merchant-facing read-only listing of reviews for one of their
 /// products. Reply / moderation deferred to a later phase.
@@ -179,7 +180,7 @@ class _Summary extends StatelessWidget {
                       ),
                 ),
                 const SizedBox(width: AppSizes.xs),
-                Icon(Icons.star_rounded, color: AppColors.brandStrong),
+                Icon(AppIcons.starRounded, color: AppColors.brandStrong),
               ],
             ),
           ),
@@ -218,7 +219,7 @@ class _ReviewTile extends StatelessWidget {
               Row(
                 children: List.generate(5, (i) {
                   return Icon(
-                    i < review.rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                    i < review.rating ? AppIcons.starRounded : AppIcons.starOutlineRounded,
                     size: AppSizes.iconSm,
                     color: i < review.rating ? AppColors.brand : AppColors.disabled,
                   );

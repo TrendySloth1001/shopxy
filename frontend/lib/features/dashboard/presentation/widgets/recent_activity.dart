@@ -8,6 +8,7 @@ import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Recent stock movements feed, each row linking to its source document.
 /// Mirrors `components/recent-activity.tsx`.
@@ -25,7 +26,7 @@ class RecentActivity extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: AppSizes.lg),
               child: Row(
                 children: [
-                  Icon(Icons.timer_outlined,
+                  Icon(AppIcons.timerOutlined,
                       size: AppSizes.iconMd, color: AppColors.subtle),
                   const SizedBox(width: AppSizes.md),
                   Expanded(
@@ -74,10 +75,10 @@ class _ActivityRow extends StatelessWidget {
             ? AppColors.errorSoft
             : AppColors.accentIndigoSoft;
     final icon = isIn
-        ? Icons.south_west_rounded
+        ? AppIcons.southWestRounded
         : isOut
-            ? Icons.north_east_rounded
-            : Icons.swap_horiz_rounded;
+            ? AppIcons.northEastRounded
+            : AppIcons.swapHorizRounded;
     final sign = isIn ? '+' : (isOut ? '−' : '');
     final time = DateFormat('d MMM · hh:mm a').format(tx.createdAt.toLocal());
     final actionable = tx.hasSourceDocument;

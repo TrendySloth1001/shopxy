@@ -7,7 +7,7 @@ import {
   ImageOff, Minus, Plus, ScanBarcode, Trash2, Wifi, WifiOff, Loader2, CheckCircle2,
   Banknote, CreditCard, Smartphone, Pause, ListRestart, X, IndianRupee,
   Calculator, Undo2, LockOpen, Lock, Search, Printer, Percent, Clock, UserRound, ShieldCheck,
-} from "lucide-react";
+} from "@/shared/icons";
 import { mediaSrc } from "@/features/products/components/product-thumb";
 import { formatINR2, parseAmount } from "@/shared/money";
 import { usePosSale } from "./use-pos-sale";

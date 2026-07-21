@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Curated palette of Material icons available for custom-field
 /// sections and individual fields. We deliberately don't ship the
@@ -11,62 +12,62 @@ import 'package:flutter/material.dart';
 /// back to [kFallbackCustomFieldIcon].
 const Map<String, IconData> kCustomFieldIcons = {
   // General
-  'inventory_2': Icons.inventory_2_rounded,
-  'tag': Icons.tag_rounded,
-  'label': Icons.label_rounded,
-  'description': Icons.description_rounded,
-  'category': Icons.category_rounded,
-  'star': Icons.star_rounded,
-  'info': Icons.info_rounded,
-  'tune': Icons.tune_rounded,
-  'settings': Icons.settings_rounded,
-  'build': Icons.build_rounded,
+  'inventory_2': AppIcons.inventory2Rounded,
+  'tag': AppIcons.tagRounded,
+  'label': AppIcons.labelRounded,
+  'description': AppIcons.descriptionRounded,
+  'category': AppIcons.categoryRounded,
+  'star': AppIcons.starRounded,
+  'info': AppIcons.infoRounded,
+  'tune': AppIcons.tuneRounded,
+  'settings': AppIcons.settingsRounded,
+  'build': AppIcons.buildRounded,
 
   // Warranty / certification
-  'verified': Icons.verified_rounded,
-  'verified_user': Icons.verified_user_rounded,
-  'fact_check': Icons.fact_check_rounded,
-  'shield': Icons.shield_rounded,
+  'verified': AppIcons.verifiedRounded,
+  'verified_user': AppIcons.verifiedUserRounded,
+  'fact_check': AppIcons.factCheckRounded,
+  'shield': AppIcons.shieldRounded,
 
   // Electronics
-  'memory': Icons.memory_rounded,
-  'bolt': Icons.bolt_rounded,
-  'flash_on': Icons.flash_on_rounded,
-  'power': Icons.power_rounded,
-  'devices': Icons.devices_rounded,
-  'battery_full': Icons.battery_full_rounded,
+  'memory': AppIcons.memoryRounded,
+  'bolt': AppIcons.boltRounded,
+  'flash_on': AppIcons.flashOnRounded,
+  'power': AppIcons.powerRounded,
+  'devices': AppIcons.devicesRounded,
+  'battery_full': AppIcons.batteryFullRounded,
 
   // Logistics / packaging
-  'local_shipping': Icons.local_shipping_rounded,
-  'scale': Icons.scale_rounded,
-  'straighten': Icons.straighten_rounded,
-  'warning': Icons.warning_amber_rounded,
-  'inventory': Icons.inventory_rounded,
+  'local_shipping': AppIcons.localShippingRounded,
+  'scale': AppIcons.scaleRounded,
+  'straighten': AppIcons.straightenRounded,
+  'warning': AppIcons.warningAmberRounded,
+  'inventory': AppIcons.inventoryRounded,
 
   // Apparel
-  'checkroom': Icons.checkroom_rounded,
-  'palette': Icons.palette_rounded,
-  'texture': Icons.texture_rounded,
-  'people': Icons.people_rounded,
+  'checkroom': AppIcons.checkroomRounded,
+  'palette': AppIcons.paletteRounded,
+  'texture': AppIcons.textureRounded,
+  'people': AppIcons.peopleRounded,
 
   // Food / consumables
-  'restaurant': Icons.restaurant_rounded,
-  'eco': Icons.eco_rounded,
-  'factory': Icons.factory_rounded,
-  'event': Icons.event_rounded,
-  'event_busy': Icons.event_busy_rounded,
+  'restaurant': AppIcons.restaurantRounded,
+  'eco': AppIcons.ecoRounded,
+  'factory': AppIcons.factoryRounded,
+  'event': AppIcons.eventRounded,
+  'event_busy': AppIcons.eventBusyRounded,
 
   // Misc
-  'qr_code_2': Icons.qr_code_2_rounded,
-  'calendar_today': Icons.calendar_today_rounded,
-  'attach_money': Icons.currency_rupee_rounded,
-  'place': Icons.place_rounded,
+  'qr_code_2': AppIcons.qrCode2Rounded,
+  'calendar_today': AppIcons.calendarTodayRounded,
+  'attach_money': AppIcons.currencyRupeeRounded,
+  'place': AppIcons.placeRounded,
 };
 
 /// Used when a row references an icon name that's no longer in the
 /// palette. Picked a quiet generic glyph so the cell still looks
 /// intentional.
-const IconData kFallbackCustomFieldIcon = Icons.label_outline_rounded;
+const IconData kFallbackCustomFieldIcon = AppIcons.labelOutlineRounded;
 
 /// Resolve a stored icon name to an actual [IconData]. Falls back to
 /// the generic label if the name is unknown or null.

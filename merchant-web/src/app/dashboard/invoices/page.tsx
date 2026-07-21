@@ -13,7 +13,7 @@ import {
   RefreshCw,
   Search,
   X,
-} from "lucide-react";
+} from "@/shared/icons";
 import { PageHeader } from "@/shared/ui/page-header";
 import { SelectField } from "@/shared/ui/form";
 import { formatDateTime } from "@/shared/datetime";

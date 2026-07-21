@@ -11,6 +11,7 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_list_section.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/format/app_format.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Clean list of quotations the shop sent the customer. Tapping a row opens the
 /// full detail page (line items, totals, Accept / Decline).
@@ -55,7 +56,7 @@ class _ShopQuotationsPageState extends State<ShopQuotationsPage> {
         },
         backgroundColor: AppColors.brand,
         foregroundColor: AppColors.white,
-        icon: const Icon(Icons.add_rounded),
+        icon: const Icon(AppIcons.addRounded),
         label: Text('Request a quote',
             style: Theme.of(context)
                 .textTheme
@@ -71,7 +72,7 @@ class _ShopQuotationsPageState extends State<ShopQuotationsPage> {
                 ? ListView(
                     children: [
                       const SizedBox(height: 120),
-                      const Icon(Icons.request_quote_outlined,
+                      const Icon(AppIcons.requestQuoteOutlined,
                           size: AppSizes.iconHuge, color: AppColors.muted),
                       const SizedBox(height: AppSizes.md),
                       Center(
@@ -254,7 +255,7 @@ class _QuotationRow extends StatelessWidget {
                 style: theme.textTheme.bodyLarge
                     ?.copyWith(fontWeight: FontWeight.w800)),
             const SizedBox(width: AppSizes.xs),
-            const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+            const Icon(AppIcons.chevronRightRounded, color: AppColors.muted),
           ],
         ),
       ),

@@ -18,6 +18,7 @@ import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 class OrdersInboxPage extends StatefulWidget {
   const OrdersInboxPage({super.key});
@@ -166,11 +167,11 @@ class _OrdersInboxPageState extends State<OrdersInboxPage> {
                       isDense: true,
                       hintText: l10n.ordersSearchHint,
                       prefixIcon:
-                          const Icon(Icons.search_rounded, size: AppSizes.iconMd),
+                          const Icon(AppIcons.searchRounded, size: AppSizes.iconMd),
                       suffixIcon: p.search.isEmpty
                           ? null
                           : IconButton(
-                              icon: const Icon(Icons.close_rounded,
+                              icon: const Icon(AppIcons.closeRounded,
                                   size: AppSizes.iconMd),
                               onPressed: () {
                                 _searchCtrl.clear();
@@ -328,7 +329,7 @@ class _DateFilterChip extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                Icons.event_rounded,
+                AppIcons.eventRounded,
                 size: AppSizes.iconSm,
                 color: active ? AppColors.onInverse : AppColors.black,
               ),
@@ -346,7 +347,7 @@ class _DateFilterChip extends StatelessWidget {
                   onTap: onClear,
                   customBorder: const CircleBorder(),
                   child: Icon(
-                    Icons.close_rounded,
+                    AppIcons.closeRounded,
                     size: AppSizes.iconSm,
                     color: AppColors.onInverse,
                   ),
@@ -504,10 +505,10 @@ class _EmptyInbox extends StatelessWidget {
             alignment: Alignment.center,
             child: Icon(
               isAllCaughtUp
-                  ? Icons.check_circle_outline_rounded
+                  ? AppIcons.checkCircleOutlineRounded
                   : hasFilters
-                      ? Icons.search_off_rounded
-                      : Icons.inbox_outlined,
+                      ? AppIcons.searchOffRounded
+                      : AppIcons.inboxOutlined,
               size: AppSizes.iconHuge,
               color: AppColors.muted,
             ),
@@ -656,7 +657,7 @@ class _ErrorState extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
         const SizedBox(height: AppSizes.massive),
-        Icon(Icons.cloud_off_rounded,
+        Icon(AppIcons.cloudOffRounded,
             size: AppSizes.iconHuge, color: AppColors.muted),
         const SizedBox(height: AppSizes.md),
         Text(
@@ -678,7 +679,7 @@ class _ErrorState extends StatelessWidget {
         Center(
           child: FilledButton.icon(
             onPressed: onRetry,
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const Icon(AppIcons.refreshRounded),
             label: Text(l10n.ordersRetry),
           ),
         ),

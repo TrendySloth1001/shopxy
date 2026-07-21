@@ -1,5 +1,6 @@
 "use client";
 
+import { StarSolidIcon } from "@/shared/icons";
 import Link from "next/link";
 import type { CatalogProduct } from "../types";
 import { ImageBox } from "@/features/home/components/image-box";
@@ -53,9 +54,7 @@ export function CatalogProductCard({ product }: { product: CatalogProduct }) {
             <span className="mb-[2px] inline-flex items-center gap-[3px]">
               <span className="inline-flex items-center gap-[3px] rounded-sm bg-success px-[6px] py-[2px] text-[11px] font-bold text-white">
                 {p.ratingAvg.toFixed(1)}
-                <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" aria-hidden className="shrink-0">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                </svg>
+                <StarSolidIcon size={9} className="shrink-0" />
               </span>
               <span className="text-[10px] text-muted">
                 ({p.ratingCount > 999 ? `${(p.ratingCount / 1000).toFixed(1)}k` : p.ratingCount})

@@ -5,6 +5,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_bottom_sheet.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// One reassurance promise: the short [label] shown in the strip, plus
 /// the [title]/[detail] shown when a shopper taps through to learn more.
@@ -30,28 +31,28 @@ class TrustItem {
 /// windows) so it never contradicts what a specific order actually shows.
 const List<TrustItem> kDefaultTrustItems = [
   TrustItem(
-    icon: Icons.local_shipping_outlined,
+    icon: AppIcons.localShippingOutlined,
     label: 'Free delivery',
     title: 'Free delivery',
     detail:
         'Enjoy free delivery on eligible orders. Any delivery charge or minimum is always shown clearly before you pay.',
   ),
   TrustItem(
-    icon: Icons.replay_outlined,
+    icon: AppIcons.replayOutlined,
     label: '7-day returns',
     title: 'Easy 7-day returns',
     detail:
         'Changed your mind? Most items can be returned within 7 days of delivery. The exact window and refund method are shown on each order.',
   ),
   TrustItem(
-    icon: Icons.verified_outlined,
+    icon: AppIcons.verifiedOutlined,
     label: '100% authentic',
     title: '100% authentic',
     detail:
         'Every product comes from a verified shop on Shopxy. If something isn’t as described, report it from the order and we’ll step in.',
   ),
   TrustItem(
-    icon: Icons.sell_outlined,
+    icon: AppIcons.sellOutlined,
     label: 'Best prices',
     title: 'Great prices',
     detail:

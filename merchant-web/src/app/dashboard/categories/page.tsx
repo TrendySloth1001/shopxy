@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { FolderTree, RefreshCw } from "lucide-react";
+import { FolderTree, RefreshCw } from "@/shared/icons";
 import { PageHeader } from "@/shared/ui/page-header";
 import { getCategoryTree } from "@/features/categories/api";
 import { CategoryCard } from "@/features/categories/category-card";

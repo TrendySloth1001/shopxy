@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { AlertTriangle, Lightbulb, Sparkles, type LucideIcon } from "lucide-react";
+import { AlertTriangle, Lightbulb, Sparkles, type LucideIcon } from "@/shared/icons";
 import { Divider } from "@/shared/ui/divider";
 import { LineChart } from "@/shared/ui/charts";
 import { LazySection } from "@/shared/ui/lazy-section";

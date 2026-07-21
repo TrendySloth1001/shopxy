@@ -7,6 +7,7 @@ import 'package:shopxy_customer/features/search/presentation/pages/search_page.d
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 class HomeProductCarousel extends StatelessWidget {
   const HomeProductCarousel({
@@ -84,7 +85,7 @@ class HomeProductCarousel extends StatelessWidget {
                     shape: AppShapes.squircle(AppSizes.radiusFull),
                   ),
                   child: const Icon(
-                    Icons.arrow_forward_rounded,
+                    AppIcons.arrowForwardRounded,
                     color: AppColors.white,
                     size: 18,
                   ),
@@ -228,7 +229,7 @@ class HomeProductTile extends StatelessWidget {
                           children: [
                             if (product.freeDelivery) ...[
                               const Icon(
-                                Icons.local_shipping_outlined,
+                                AppIcons.localShippingOutlined,
                                 size: 10,
                                 color: AppColors.success,
                               ),
@@ -443,7 +444,7 @@ class _WishHeart extends StatelessWidget {
         ],
       ),
       child: const Icon(
-        Icons.favorite_border_rounded,
+        AppIcons.favoriteBorderRounded,
         size: 15,
         color: AppColors.black,
       ),
@@ -483,7 +484,7 @@ class _RatingPill extends StatelessWidget {
           ),
           const SizedBox(width: 2),
           const Icon(
-            Icons.star_rounded,
+            AppIcons.starRounded,
             color: AppColors.success,
             size: 12,
           ),

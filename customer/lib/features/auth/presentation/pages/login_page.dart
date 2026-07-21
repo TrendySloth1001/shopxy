@@ -9,6 +9,7 @@ import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/widgets/app_pill_button.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -90,7 +91,7 @@ class _LoginPageState extends State<LoginPage> {
             AuthField(
               controller: _email,
               label: 'Email',
-              icon: Icons.mail_outline_rounded,
+              icon: AppIcons.mailOutlineRounded,
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
               autocorrect: false,
@@ -104,7 +105,7 @@ class _LoginPageState extends State<LoginPage> {
             AuthField(
               controller: _password,
               label: 'Password',
-              icon: Icons.lock_outline_rounded,
+              icon: AppIcons.lockOutlineRounded,
               obscure: _obscure,
               onToggleObscure: () => setState(() => _obscure = !_obscure),
               textInputAction: TextInputAction.done,
@@ -115,7 +116,7 @@ class _LoginPageState extends State<LoginPage> {
             const SizedBox(height: AppSizes.xl),
             AppPillButton(
               label: AppStrings.login,
-              icon: Icons.arrow_forward_rounded,
+              icon: AppIcons.arrowForwardRounded,
               loading: _isLoading,
               onPressed: _submit,
             ),

@@ -5,6 +5,7 @@ import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Shared dashboard primitives — formatters, responsive breakpoints, the
 /// editorial card chrome, section headers and the delta chip. Mirrors
@@ -271,7 +272,7 @@ class DeltaChip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (!flat)
-            Icon(up ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+            Icon(up ? AppIcons.arrowUpwardRounded : AppIcons.arrowDownwardRounded,
                 size: 12, color: fg),
           Text(
             '${up ? '+' : flat ? '' : '−'}${v.abs()}%',

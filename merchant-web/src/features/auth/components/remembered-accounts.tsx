@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ChevronRight, X } from "lucide-react";
+import { ChevronRight, X } from "@/shared/icons";
 import { useAuth } from "../auth-context";
 import {
   forgetAccount,

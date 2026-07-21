@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { History } from "lucide-react";
+import { History } from "@/shared/icons";
 import { formatRelativeTime } from "@/shared/datetime";
 import {
   contactFieldKey,

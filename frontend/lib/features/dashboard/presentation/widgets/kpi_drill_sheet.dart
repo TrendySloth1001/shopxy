@@ -14,6 +14,7 @@ import 'package:shopxy/features/vendors/presentation/pages/vendors_page.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Which KPI card was tapped — mirrors the web `KpiDrawerKind`.
 enum KpiDrillKind { sales, profit, receivables, payables }
@@ -105,7 +106,7 @@ class _KpiDrillSheet extends StatelessWidget {
                       child: Text(_title(l10n), style: DashText.titleMd),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close_rounded),
+                      icon: const Icon(AppIcons.closeRounded),
                       color: AppColors.muted,
                       onPressed: () => Navigator.of(context).pop(),
                     ),
@@ -225,7 +226,7 @@ class _SalesBodyState extends State<_SalesBody> {
             onChanged: _onSearchChanged,
             decoration: InputDecoration(
               isDense: true,
-              prefixIcon: const Icon(Icons.search_rounded, size: AppSizes.iconMd),
+              prefixIcon: const Icon(AppIcons.searchRounded, size: AppSizes.iconMd),
               hintText: l10n.kpiDrawerSalesFilterHint,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppSizes.radiusMd),
@@ -572,7 +573,7 @@ class _CounterpartyTile extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 2),
               child: Row(
                 children: [
-                  Icon(Icons.description_outlined,
+                  Icon(AppIcons.descriptionOutlined,
                       size: AppSizes.iconSm, color: AppColors.subtle),
                   const SizedBox(width: AppSizes.sm),
                   Expanded(
@@ -695,7 +696,7 @@ class _MoreLink extends StatelessWidget {
                       color: AppColors.brandStrong,
                       fontWeight: FontWeight.w600)),
               const SizedBox(width: AppSizes.xs),
-              Icon(Icons.open_in_new_rounded,
+              Icon(AppIcons.openInNewRounded,
                   size: 14, color: AppColors.brandStrong),
             ],
           ),

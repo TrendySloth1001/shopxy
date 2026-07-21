@@ -8,6 +8,7 @@ import 'package:shopxy/features/stock_adjustments/presentation/pages/stock_adjus
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Compact operations strip: open till (if the viewer has one), GST liability
 /// month-to-date, and current inventory value. Mirrors `components/operations.tsx`.
@@ -22,7 +23,7 @@ class Operations extends StatelessWidget {
       if (operations.till != null) _TillTile(till: operations.till!),
       if (operations.gstMtd != null)
         _Tile(
-          icon: Icons.receipt_long_outlined,
+          icon: AppIcons.receiptLongOutlined,
           iconColor: AppColors.accentIndigo,
           label: l10n.dashboardGstThisMonth,
           value: inr.format(operations.gstMtd!.netPayable),
@@ -31,7 +32,7 @@ class Operations extends StatelessWidget {
           onTap: () => dashPush(context, const ReportsPage()),
         ),
       _Tile(
-        icon: Icons.inventory_2_outlined,
+        icon: AppIcons.inventory2Outlined,
         iconColor: AppColors.brandStrong,
         label: l10n.dashboardInventoryValue,
         value: inr.format(operations.inventoryValue),
@@ -129,7 +130,7 @@ class _TillTile extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.storefront_outlined,
+              Icon(AppIcons.storefrontOutlined,
                   size: AppSizes.iconSm, color: AppColors.success),
               const SizedBox(width: AppSizes.sm),
               Flexible(

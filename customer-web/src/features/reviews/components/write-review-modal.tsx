@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Star } from "lucide-react";
+import { X, Star } from "@/shared/icons";
 import { submitReview, deleteReview } from "../api";
 import type { Review } from "../types";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState, type ReactNode } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown } from "@/shared/icons";
 import { ComboSelect } from "@/shared/ui/combo-select";
 
 const inputClass =

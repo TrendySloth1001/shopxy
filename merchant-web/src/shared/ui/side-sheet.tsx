@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { X } from "lucide-react";
+import { X } from "@/shared/icons";
 
 /**
  * Left/right-anchored slide-over panel — full height, fixed width, scrollable

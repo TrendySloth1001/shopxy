@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ArrowDownLeft, ArrowUpRight, Package, Plus, Trash2, X } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Package, Plus, Trash2, X } from "@/shared/icons";
 import { BackLink } from "@/shared/ui/page-header";
 import { SelectField, TextAreaField, TextField } from "@/shared/ui/form";
 import { PickerModal } from "@/shared/ui/picker-modal";

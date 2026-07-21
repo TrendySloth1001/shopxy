@@ -17,7 +17,7 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   Eye,
-} from "lucide-react";
+} from "@/shared/icons";
 import { Divider } from "@/shared/ui/divider";
 import {
   deleteProduct,

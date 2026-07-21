@@ -16,6 +16,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
@@ -74,7 +75,7 @@ class _NotificationsPageState extends State<NotificationsPage>
         actions: [
           IconButton(
             tooltip: l10n.notificationsMarkAllRead,
-            icon: const Icon(Icons.done_all_rounded),
+            icon: const Icon(AppIcons.doneAllRounded),
             onPressed: p.unread == 0 ? null : p.markAllRead,
           ),
         ],
@@ -84,7 +85,7 @@ class _NotificationsPageState extends State<NotificationsPage>
           context,
           MaterialPageRoute(builder: (_) => const SendInvitePage()),
         ),
-        icon: const Icon(Icons.person_add_alt_1_rounded),
+        icon: const Icon(AppIcons.personAddAlt1Rounded),
         label: Text(l10n.notificationsInviteButton),
       ),
       body: TabBarView(
@@ -115,7 +116,7 @@ class _InboxTab extends StatelessWidget {
     }
     if (p.items.isEmpty) {
       return _EmptyHint(
-        icon: Icons.notifications_none_rounded,
+        icon: AppIcons.notificationsNoneRounded,
         title: l10n.notificationsInboxEmptyTitle,
         body: l10n.notificationsInboxEmptyBody,
       );
@@ -253,21 +254,21 @@ class _NotificationTile extends StatelessWidget {
   (Color fg, Color bg, IconData icon) _accentFor(String kind) {
     switch (kind) {
       case 'INVITE_RECEIVED':
-        return (AppColors.brandStrong, AppColors.brandSoft, Icons.mail_outline_rounded);
+        return (AppColors.brandStrong, AppColors.brandSoft, AppIcons.mailOutlineRounded);
       case 'INVITE_ACCEPTED':
-        return (AppColors.success, AppColors.successSoft, Icons.check_circle_outline_rounded);
+        return (AppColors.success, AppColors.successSoft, AppIcons.checkCircleOutlineRounded);
       case 'INVITE_DECLINED':
-        return (AppColors.warning, AppColors.warningSoft, Icons.cancel_outlined);
+        return (AppColors.warning, AppColors.warningSoft, AppIcons.cancelOutlined);
       case 'INVITE_CANCELLED':
-        return (AppColors.muted, AppColors.heroPanel, Icons.cancel_schedule_send_outlined);
+        return (AppColors.muted, AppColors.heroPanel, AppIcons.cancelScheduleSendOutlined);
       case 'QUOTATION_REQUESTED':
-        return (AppColors.brandStrong, AppColors.brandSoft, Icons.request_quote_outlined);
+        return (AppColors.brandStrong, AppColors.brandSoft, AppIcons.requestQuoteOutlined);
       case 'QUOTATION_ACCEPTED':
-        return (AppColors.success, AppColors.successSoft, Icons.request_quote_outlined);
+        return (AppColors.success, AppColors.successSoft, AppIcons.requestQuoteOutlined);
       case 'QUOTATION_DECLINED':
-        return (AppColors.warning, AppColors.warningSoft, Icons.request_quote_outlined);
+        return (AppColors.warning, AppColors.warningSoft, AppIcons.requestQuoteOutlined);
       default:
-        return (AppColors.accentIndigo, AppColors.accentIndigoSoft, Icons.notifications_none_rounded);
+        return (AppColors.accentIndigo, AppColors.accentIndigoSoft, AppIcons.notificationsNoneRounded);
     }
   }
 }
@@ -349,7 +350,7 @@ class _IncomingTab extends StatelessWidget {
     final p = context.watch<NotificationsProvider>();
     if (p.incoming.isEmpty) {
       return _EmptyHint(
-        icon: Icons.mark_email_unread_outlined,
+        icon: AppIcons.markEmailUnreadOutlined,
         title: l10n.notificationsIncomingEmptyTitle,
         body: l10n.notificationsIncomingEmptyBody,
       );
@@ -408,7 +409,7 @@ class _IncomingInviteTile extends StatelessWidget {
                 ),
                 alignment: Alignment.center,
                 child: Icon(
-                  invite.isParty ? Icons.groups_outlined : Icons.storefront_outlined,
+                  invite.isParty ? AppIcons.groupsOutlined : AppIcons.storefrontOutlined,
                   color: invite.isParty
                       ? AppColors.accentRose
                       : AppColors.accentIndigo,
@@ -463,7 +464,7 @@ class _IncomingInviteTile extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () => _decline(context, p),
-                    icon: const Icon(Icons.close_rounded, size: AppSizes.iconMd),
+                    icon: const Icon(AppIcons.closeRounded, size: AppSizes.iconMd),
                     label: Text(l10n.notificationsDecline),
                   ),
                 ),
@@ -471,7 +472,7 @@ class _IncomingInviteTile extends StatelessWidget {
                 Expanded(
                   child: FilledButton.icon(
                     onPressed: () => _accept(context, p),
-                    icon: const Icon(Icons.check_rounded, size: AppSizes.iconMd),
+                    icon: const Icon(AppIcons.checkRounded, size: AppSizes.iconMd),
                     label: Text(l10n.notificationsAccept),
                   ),
                 ),
@@ -529,7 +530,7 @@ class _OutgoingTab extends StatelessWidget {
     final p = context.watch<NotificationsProvider>();
     if (p.outgoing.isEmpty) {
       return _EmptyHint(
-        icon: Icons.outbox_outlined,
+        icon: AppIcons.outboxOutlined,
         title: l10n.notificationsOutgoingEmptyTitle,
         body: l10n.notificationsOutgoingEmptyBody,
       );
@@ -581,7 +582,7 @@ class _OutgoingInviteTile extends StatelessWidget {
             ),
             alignment: Alignment.center,
             child: Icon(
-              invite.isParty ? Icons.groups_outlined : Icons.storefront_outlined,
+              invite.isParty ? AppIcons.groupsOutlined : AppIcons.storefrontOutlined,
               color: invite.isParty
                   ? AppColors.accentRose
                   : AppColors.accentIndigo,
@@ -616,7 +617,7 @@ class _OutgoingInviteTile extends StatelessWidget {
           if (invite.isPending)
             IconButton(
               tooltip: l10n.notificationsCancel,
-              icon: const Icon(Icons.close_rounded, size: AppSizes.iconMd),
+              icon: const Icon(AppIcons.closeRounded, size: AppSizes.iconMd),
               onPressed: () async {
                 try {
                   await p.cancel(invite.id);

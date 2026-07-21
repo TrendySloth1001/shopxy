@@ -7,7 +7,7 @@ import {
   Ban,
   HelpCircle,
   Hourglass,
-} from "lucide-react";
+} from "@/shared/icons";
 import type { ShopOrderPreview } from "../types";
 import { isChildConfirmed, isChildRejected, isChildCancelled, isChildPending } from "../types";
 

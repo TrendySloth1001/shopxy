@@ -13,7 +13,7 @@ import {
   Search,
   Trash2,
   Users,
-} from "lucide-react";
+} from "@/shared/icons";
 import { PageHeader } from "@/shared/ui/page-header";
 import { Monogram } from "@/shared/ui/monogram";
 import { Modal, ModalActions } from "@/shared/ui/modal";

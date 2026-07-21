@@ -11,6 +11,7 @@ import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Opens a modal search sheet to pick an existing Vendor or create a new
 /// one. Mirrors [showPartyPicker] for the purchase-invoice flow so the
@@ -118,7 +119,7 @@ class _VendorPickerSheetState extends State<_VendorPickerSheet> {
                   const Spacer(),
                   AppButton.ghost(
                     label: l10n.vendorsNewVendor,
-                    icon: Icons.add_rounded,
+                    icon: AppIcons.addRounded,
                     onPressed: _addNew,
                     size: AppButtonSize.sm,
                   ),
@@ -132,7 +133,7 @@ class _VendorPickerSheetState extends State<_VendorPickerSheet> {
                 autofocus: true,
                 decoration: InputDecoration(
                   hintText: l10n.vendorsSearchHint,
-                  prefixIcon: const Icon(Icons.search_rounded),
+                  prefixIcon: const Icon(AppIcons.searchRounded),
                 ),
                 onChanged: _load,
               ),
@@ -151,7 +152,7 @@ class _VendorPickerSheetState extends State<_VendorPickerSheet> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(
-                                      Icons.local_shipping_outlined,
+                                      AppIcons.localShippingOutlined,
                                       size: AppSizes.iconXl,
                                       color: AppColors.muted,
                                     ),
@@ -163,7 +164,7 @@ class _VendorPickerSheetState extends State<_VendorPickerSheet> {
                                     const SizedBox(height: AppSizes.md),
                                     AppButton.primary(
                                       label: l10n.vendorsAddVendor,
-                                      icon: Icons.add_rounded,
+                                      icon: AppIcons.addRounded,
                                       onPressed: _addNew,
                                     ),
                                   ],

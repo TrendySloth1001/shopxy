@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, startTransition } from "react";
 import { useParams } from "next/navigation";
-import { AlertCircle, CalendarDays, StickyNote, Store, User } from "lucide-react";
+import { AlertCircle, CalendarDays, StickyNote, Store, User } from "@/shared/icons";
 import { RequireAuth } from "@/features/auth/components/require-auth";
 import { AppHeader } from "@/features/auth/components/app-header";
 import { fetchInvoiceDetail } from "@/features/merchant-ledger/api";

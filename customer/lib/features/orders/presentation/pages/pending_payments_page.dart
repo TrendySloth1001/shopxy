@@ -13,6 +13,7 @@ import 'package:shopxy_customer/shared/widgets/app_button.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/shared/format/app_format.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Indian-grouped rupee formatter — "₹3,84,580.00". Shared by this
 /// page and the home top-bar badge so the two read identically.
@@ -251,7 +252,7 @@ class _AllSettled extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.verified_outlined,
+            const Icon(AppIcons.verifiedOutlined,
                 size: 56, color: AppColors.success),
             const SizedBox(height: AppSizes.md),
             Text(

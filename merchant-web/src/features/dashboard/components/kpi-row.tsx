@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { ArrowDownLeft, ArrowUpRight, IndianRupee, TrendingUp } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, IndianRupee, TrendingUp } from "@/shared/icons";
 import type { Range } from "@/features/reports/api";
 import type { DashboardKpis, DashboardPeriod } from "../stats";
 import { DeltaChip, inr } from "./ui";

@@ -24,6 +24,7 @@ import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 class MerchantOrderDetailPage extends StatefulWidget {
   const MerchantOrderDetailPage({super.key, required this.orderId});
@@ -407,7 +408,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
           if (order != null)
             IconButton(
               tooltip: l10n.ordersActionShare,
-              icon: const Icon(Icons.ios_share_rounded),
+              icon: const Icon(AppIcons.iosShareRounded),
               onPressed: _shareSummary,
             ),
         ],
@@ -463,7 +464,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
                         what: l10n.ordersManageWhat,
                         child: OutlinedButton.icon(
                           onPressed: _busy ? null : _reject,
-                          icon: Icon(Icons.close_rounded,
+                          icon: Icon(AppIcons.closeRounded,
                               color: AppColors.error),
                           label: Text(
                             l10n.ordersDecline,
@@ -484,7 +485,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
                         what: l10n.ordersManageWhat,
                         child: FilledButton.icon(
                           onPressed: _busy ? null : _confirm,
-                          icon: const Icon(Icons.check_rounded),
+                          icon: const Icon(AppIcons.checkRounded),
                           label: Text(l10n.ordersConfirmAndCreateInvoice),
                           style: FilledButton.styleFrom(
                             backgroundColor: AppColors.brand,
@@ -643,7 +644,7 @@ class _Body extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(top: 2),
                   child: Icon(
-                    Icons.location_on_outlined,
+                    AppIcons.locationOnOutlined,
                     size: AppSizes.iconSm,
                     color: AppColors.muted,
                   ),
@@ -721,7 +722,7 @@ class _Body extends StatelessWidget {
                   builder: (_) => InvoiceDetailPage(invoiceId: order.invoiceId!),
                 ),
               ),
-              icon: const Icon(Icons.receipt_long_outlined),
+              icon: const Icon(AppIcons.receiptLongOutlined),
               label: Text(l10n.ordersOpenInvoice(order.linkedInvoiceNo!)),
               style: FilledButton.styleFrom(
                 minimumSize: const Size.fromHeight(AppSizes.huge),
@@ -945,7 +946,7 @@ class _ShortfallBanner extends StatelessWidget {
               children: [
                 Padding(
                   padding: const EdgeInsets.only(top: 2),
-                  child: Icon(Icons.warning_amber_rounded,
+                  child: Icon(AppIcons.warningAmberRounded,
                       color: AppColors.warning, size: AppSizes.iconMd),
                 ),
                 const SizedBox(width: AppSizes.sm),
@@ -977,7 +978,7 @@ class _ShortfallBanner extends StatelessWidget {
               children: [
                 FilledButton.icon(
                   onPressed: onRestock,
-                  icon: const Icon(Icons.add_box_outlined, size: AppSizes.iconSm),
+                  icon: const Icon(AppIcons.addBoxOutlined, size: AppSizes.iconSm),
                   label: Text(l10n.ordersRestock),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.warning,
@@ -1069,7 +1070,7 @@ class _CustomerCard extends StatelessWidget {
               if (order.isLinkedCustomer)
                 AppStatusBadge(
                   label: l10n.ordersLinkedParty,
-                  icon: Icons.verified_outlined,
+                  icon: AppIcons.verifiedOutlined,
                   tone: AppStatusTone.success,
                 ),
             ],
@@ -1080,21 +1081,21 @@ class _CustomerCard extends StatelessWidget {
               children: [
                 if (canCall)
                   _ReachButton(
-                    icon: Icons.call_rounded,
+                    icon: AppIcons.callRounded,
                     label: l10n.ordersCall,
                     onTap: onCall,
                   ),
                 if (canCall) const SizedBox(width: AppSizes.sm),
                 if (canCall)
                   _ReachButton(
-                    icon: Icons.chat_rounded,
+                    icon: AppIcons.chatRounded,
                     label: l10n.ordersWhatsapp,
                     onTap: onWhatsapp,
                   ),
                 if (canEmail) const SizedBox(width: AppSizes.sm),
                 if (canEmail)
                   _ReachButton(
-                    icon: Icons.email_outlined,
+                    icon: AppIcons.emailOutlined,
                     label: l10n.ordersEmail,
                     onTap: onEmail,
                   ),
@@ -1175,7 +1176,7 @@ class _CustomerNote extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.format_quote_rounded,
+                Icon(AppIcons.formatQuoteRounded,
                     size: AppSizes.iconSm, color: AppColors.muted),
                 const SizedBox(width: AppSizes.xs),
                 Text(
@@ -1287,7 +1288,7 @@ class _JourneyDot extends StatelessWidget {
             border: Border.all(color: color, width: 1.4),
           ),
           child: step.done && !step.failed
-              ? Icon(Icons.check, size: 8, color: AppColors.white)
+              ? Icon(AppIcons.check, size: 8, color: AppColors.white)
               : null,
         ),
         const SizedBox(height: AppSizes.xs),
@@ -1401,7 +1402,7 @@ class _ProductThumb extends StatelessWidget {
       decoration: ShapeDecoration(color: AppColors.heroPanel, shape: shape),
       alignment: Alignment.center,
       child: Icon(
-        Icons.inventory_2_outlined,
+        AppIcons.inventory2Outlined,
         size: AppSizes.iconMd,
         color: AppColors.muted,
       ),
@@ -1434,7 +1435,7 @@ class _StockChip extends StatelessWidget {
         label: l10n.ordersInactiveProduct,
         color: AppColors.error,
         soft: AppColors.errorSoft,
-        icon: Icons.block_rounded,
+        icon: AppIcons.blockRounded,
       );
     }
     if (stock == null) {
@@ -1442,7 +1443,7 @@ class _StockChip extends StatelessWidget {
         label: l10n.ordersStockUnknown,
         color: AppColors.muted,
         soft: AppColors.surfaceTint,
-        icon: Icons.help_outline_rounded,
+        icon: AppIcons.helpOutlineRounded,
       );
     }
     final ask = _qtyLabel(item.quantity);
@@ -1452,7 +1453,7 @@ class _StockChip extends StatelessWidget {
         label: l10n.ordersStockOk(ask, have, item.unit),
         color: AppColors.success,
         soft: AppColors.successSoft,
-        icon: Icons.check_circle_outline_rounded,
+        icon: AppIcons.checkCircleOutlineRounded,
       );
     }
     final short = _qtyLabel(item.shortfall);
@@ -1460,7 +1461,7 @@ class _StockChip extends StatelessWidget {
       label: l10n.ordersStockShort(ask, have, short),
       color: AppColors.warning,
       soft: AppColors.warningSoft,
-      icon: Icons.warning_amber_rounded,
+      icon: AppIcons.warningAmberRounded,
     );
   }
 }
@@ -1656,7 +1657,7 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.cloud_off_rounded,
+            Icon(AppIcons.cloudOffRounded,
                 size: AppSizes.iconHuge, color: AppColors.muted),
             const SizedBox(height: AppSizes.md),
             Text(
@@ -1674,7 +1675,7 @@ class _ErrorState extends StatelessWidget {
             const SizedBox(height: AppSizes.lg),
             FilledButton.icon(
               onPressed: onRetry,
-              icon: const Icon(Icons.refresh_rounded),
+              icon: const Icon(AppIcons.refreshRounded),
               label: Text(l10n.ordersRetry),
             ),
           ],
@@ -1755,7 +1756,7 @@ class _ConfirmOrderSheet extends StatelessWidget {
                   children: [
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
-                      child: Icon(Icons.warning_amber_rounded,
+                      child: Icon(AppIcons.warningAmberRounded,
                           color: AppColors.warning, size: AppSizes.iconMd),
                     ),
                     const SizedBox(width: AppSizes.sm),
@@ -1993,7 +1994,7 @@ class _ShippingSection extends StatelessWidget {
                   what: l10n.ordersManageWhat,
                   child: OutlinedButton.icon(
                     onPressed: busy ? null : onUpdateShipping,
-                    icon: const Icon(Icons.local_shipping_outlined,
+                    icon: const Icon(AppIcons.localShippingOutlined,
                         size: AppSizes.iconSm),
                     label: Text(l10n.ordersUpdateShipping),
                     style: OutlinedButton.styleFrom(
@@ -2230,7 +2231,7 @@ class _ShippingUpdateSheetState extends State<_ShippingUpdateSheet> {
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: _pickEta,
-                        icon: const Icon(Icons.schedule_rounded,
+                        icon: const Icon(AppIcons.scheduleRounded,
                             size: AppSizes.iconSm),
                         label: Text(
                           _eta == null
@@ -2249,7 +2250,7 @@ class _ShippingUpdateSheetState extends State<_ShippingUpdateSheet> {
                       IconButton(
                         tooltip: l10n.ordersClearEta,
                         onPressed: () => setState(() => _eta = null),
-                        icon: const Icon(Icons.close_rounded,
+                        icon: const Icon(AppIcons.closeRounded,
                             size: AppSizes.iconSm),
                       ),
                   ],
@@ -2279,7 +2280,7 @@ class _ShippingUpdateSheetState extends State<_ShippingUpdateSheet> {
                     flex: 2,
                     child: FilledButton.icon(
                       onPressed: _submit,
-                      icon: const Icon(Icons.local_shipping_outlined,
+                      icon: const Icon(AppIcons.localShippingOutlined,
                           size: AppSizes.iconSm),
                       label: Text(l10n.ordersSaveUpdate),
                       style: FilledButton.styleFrom(
@@ -2732,7 +2733,7 @@ class _StockDraftCard extends StatelessWidget {
             Row(
               children: [
                 Icon(
-                  Icons.inventory_outlined,
+                  AppIcons.inventoryOutlined,
                   size: AppSizes.iconSm,
                   color: AppColors.brandStrong,
                 ),
@@ -2823,7 +2824,7 @@ class _StockDraftRow extends StatelessWidget {
                             InvoiceDetailPage(invoiceId: draft.invoiceId),
                       ),
                     ),
-            icon: const Icon(Icons.open_in_new_rounded, size: AppSizes.iconMd),
+            icon: const Icon(AppIcons.openInNewRounded, size: AppSizes.iconMd),
           ),
           const SizedBox(width: AppSizes.xs),
           FilledButton.icon(
@@ -2837,7 +2838,7 @@ class _StockDraftRow extends StatelessWidget {
                       color: AppColors.onInverse,
                     ),
                   )
-                : const Icon(Icons.check_rounded, size: AppSizes.iconSm),
+                : const Icon(AppIcons.checkRounded, size: AppSizes.iconSm),
             label: Text(l10n.ordersConfirm),
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.brand,
@@ -2848,7 +2849,7 @@ class _StockDraftRow extends StatelessWidget {
           IconButton(
             tooltip: l10n.ordersHide,
             onPressed: isConfirming ? null : onDismiss,
-            icon: const Icon(Icons.close_rounded, size: AppSizes.iconSm),
+            icon: const Icon(AppIcons.closeRounded, size: AppSizes.iconSm),
           ),
         ],
       ),

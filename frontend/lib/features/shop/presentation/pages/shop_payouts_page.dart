@@ -13,6 +13,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Payouts & settlement onboarding. Wires the shop to a Razorpay Route linked
 /// account so the shop's slice of each marketplace order can settle to its bank.
@@ -902,7 +903,7 @@ class _ResumeBanner extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.history_rounded, color: AppColors.info, size: AppSizes.iconMd),
+              Icon(AppIcons.historyRounded, color: AppColors.info, size: AppSizes.iconMd),
               const SizedBox(width: AppSizes.sm),
               Expanded(
                 child: Text(
@@ -987,17 +988,17 @@ class _StatusSection extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final activated = status!.payoutsEnabled;
     final (label, color, icon) = activated
-        ? (l10n.shopStatusActive, AppColors.success, Icons.verified_rounded)
+        ? (l10n.shopStatusActive, AppColors.success, AppIcons.verifiedRounded)
         : switch (status!.kycStatus) {
             'NEEDS_CLARIFICATION' => (
                 l10n.shopStatusNeedsClarification,
                 AppColors.error,
-                Icons.error_outline,
+                AppIcons.errorOutline,
               ),
-            'SUSPENDED' => (l10n.shopStatusSuspended, AppColors.error, Icons.block),
-            'UNDER_REVIEW' => (l10n.shopStatusUnderReview, AppColors.info, Icons.hourglass_top_rounded),
+            'SUSPENDED' => (l10n.shopStatusSuspended, AppColors.error, AppIcons.block),
+            'UNDER_REVIEW' => (l10n.shopStatusUnderReview, AppColors.info, AppIcons.hourglassTopRounded),
             // 'created' (and anything else) = not yet submitted/activated for Route.
-            _ => (l10n.shopStatusNotActivated, AppColors.warning, Icons.pending_outlined),
+            _ => (l10n.shopStatusNotActivated, AppColors.warning, AppIcons.pendingOutlined),
           };
 
     return Padding(
@@ -1041,7 +1042,7 @@ class _StatusSection extends StatelessWidget {
             child: TextButton.icon(
               onPressed: onRefresh,
               style: TextButton.styleFrom(padding: EdgeInsets.zero),
-              icon: const Icon(Icons.refresh, size: 18),
+              icon: const Icon(AppIcons.refresh, size: 18),
               label: Text(l10n.shopRefreshFromRazorpay),
             ),
           ),
@@ -1093,7 +1094,7 @@ class _ErrorLine extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.error_outline, color: AppColors.error, size: AppSizes.iconMd),
+          Icon(AppIcons.errorOutline, color: AppColors.error, size: AppSizes.iconMd),
           const SizedBox(width: AppSizes.sm),
           Expanded(
             child: Text(

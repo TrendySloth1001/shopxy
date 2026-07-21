@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { PackageX } from "lucide-react";
+import { PackageX } from "@/shared/icons";
 import { dateInputToIso, inputDateDaysAgo, todayInputDate } from "@/shared/datetime";
 import { getSalesReport } from "@/features/reports/api";
 import { listProducts } from "@/features/products/api";

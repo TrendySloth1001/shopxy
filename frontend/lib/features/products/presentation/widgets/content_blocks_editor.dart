@@ -5,6 +5,7 @@ import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Phase C — A+ content blocks editor used inside the add/edit product
 /// page. Each block is one of HERO / FEATURE / COMPARISON / GALLERY /
@@ -41,11 +42,11 @@ class _ContentBlocksEditorState extends State<ContentBlocksEditor> {
   // having to guess from an acronym. Labels/hints resolved via l10n at
   // render time; only the kind + icon are static.
   static const _kinds = <(String, IconData)>[
-    ('HERO', Icons.wallpaper_rounded),
-    ('FEATURE', Icons.view_sidebar_rounded),
-    ('COMPARISON', Icons.table_chart_rounded),
-    ('GALLERY', Icons.collections_rounded),
-    ('TEXT', Icons.notes_rounded),
+    ('HERO', AppIcons.wallpaperRounded),
+    ('FEATURE', AppIcons.viewSidebarRounded),
+    ('COMPARISON', AppIcons.tableChartRounded),
+    ('GALLERY', AppIcons.collectionsRounded),
+    ('TEXT', AppIcons.notesRounded),
   ];
 
   (String, String) _kindLabelHint(AppLocalizations l10n, String kind) =>
@@ -205,7 +206,7 @@ class _AddBlockTile extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(Icons.add_rounded, color: AppColors.muted),
+            Icon(AppIcons.addRounded, color: AppColors.muted),
           ],
         ),
       ),
@@ -282,19 +283,19 @@ class _BlockCard extends StatelessWidget {
                 tooltip: l10n.productsMoveUp,
                 visualDensity: VisualDensity.compact,
                 onPressed: index == 0 ? null : onUp,
-                icon: const Icon(Icons.keyboard_arrow_up_rounded),
+                icon: const Icon(AppIcons.keyboardArrowUpRounded),
               ),
               IconButton(
                 tooltip: l10n.productsMoveDown,
                 visualDensity: VisualDensity.compact,
                 onPressed: index == total - 1 ? null : onDown,
-                icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                icon: const Icon(AppIcons.keyboardArrowDownRounded),
               ),
               IconButton(
                 tooltip: l10n.productsRemove,
                 visualDensity: VisualDensity.compact,
                 onPressed: onRemove,
-                icon: const Icon(Icons.delete_outline),
+                icon: const Icon(AppIcons.deleteOutline),
               ),
             ],
           ),
@@ -426,7 +427,7 @@ class _BlockForm extends StatelessWidget {
             ],
             if (imgs.length < 6)
               OutlinedButton.icon(
-                icon: const Icon(Icons.add, size: 16),
+                icon: const Icon(AppIcons.add, size: 16),
                 label: Text(l10n.productsAddImageAction),
                 onPressed: () {
                   imgs.add({'url': ''});
@@ -566,7 +567,7 @@ class _ComparisonEditorState extends State<_ComparisonEditor> {
                 ),
                 if (_columns.length > _minColumns)
                   IconButton(
-                    icon: const Icon(Icons.close, size: 18),
+                    icon: const Icon(AppIcons.close, size: 18),
                     tooltip: l10n.productsRemoveColumn,
                     onPressed: () => _mutate(() => _columns.removeAt(c)),
                   ),
@@ -577,7 +578,7 @@ class _ComparisonEditorState extends State<_ComparisonEditor> {
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
-              icon: const Icon(Icons.add, size: 16),
+              icon: const Icon(AppIcons.add, size: 16),
               label: Text(l10n.productsAddColumn),
               onPressed: () => _mutate(() => _columns
                   .add(<String, dynamic>{'label': '', 'values': <String>[]})),
@@ -614,7 +615,7 @@ class _ComparisonEditorState extends State<_ComparisonEditor> {
                     ),
                     if (_rows.length > 1)
                       IconButton(
-                        icon: const Icon(Icons.delete_outline, size: 20),
+                        icon: const Icon(AppIcons.deleteOutline, size: 20),
                         tooltip: l10n.productsRemoveRow,
                         onPressed: () => _mutate(() {
                           _rows.removeAt(r);
@@ -650,7 +651,7 @@ class _ComparisonEditorState extends State<_ComparisonEditor> {
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
-              icon: const Icon(Icons.add, size: 16),
+              icon: const Icon(AppIcons.add, size: 16),
               label: Text(l10n.productsAddRow),
               onPressed: () => _mutate(() => _rows.add('')),
             ),
@@ -716,10 +717,10 @@ class _ImageFieldState extends State<_ImageField> {
                         resolveImageUrl(widget.value),
                         fit: BoxFit.cover,
                         errorBuilder: (_, _, _) => Icon(
-                            Icons.broken_image_outlined,
+                            AppIcons.brokenImageOutlined,
                             color: AppColors.muted),
                       )
-                    : Icon(Icons.image_outlined, color: AppColors.muted),
+                    : Icon(AppIcons.imageOutlined, color: AppColors.muted),
               ),
             ),
             const SizedBox(width: AppSizes.md),
@@ -743,12 +744,12 @@ class _ImageFieldState extends State<_ImageField> {
                                 height: 14,
                                 child: CircularProgressIndicator(strokeWidth: 2),
                               )
-                            : const Icon(Icons.upload_rounded, size: 16),
+                            : const Icon(AppIcons.uploadRounded, size: 16),
                         label: Text(hasImage ? l10n.productsReplace : l10n.productsUpload),
                       ),
                       if (hasImage && widget.onRemove != null)
                         IconButton(
-                          icon: const Icon(Icons.delete_outline, size: 20),
+                          icon: const Icon(AppIcons.deleteOutline, size: 20),
                           tooltip: l10n.productsRemove,
                           onPressed: widget.onRemove,
                         ),

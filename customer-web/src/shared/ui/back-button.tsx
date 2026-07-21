@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft } from "@/shared/icons";
 
 interface BackButtonProps {
   /** Fallback route when there is no in-app history (e.g. direct link). */

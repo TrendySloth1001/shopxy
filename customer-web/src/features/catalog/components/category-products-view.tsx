@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, LayoutGrid } from "lucide-react";
+import { ArrowLeft, LayoutGrid } from "@/shared/icons";
 import { fetchCategoryProducts, type CategoryDetail } from "@/features/catalog/api";
 import type { CatalogProduct, SortOption } from "@/features/catalog/types";
 import { CatalogProductCard } from "./catalog-product-card";

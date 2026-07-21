@@ -8,7 +8,7 @@ import {
   AlertCircle,
   ReceiptText,
   FileQuestion,
-} from "lucide-react";
+} from "@/shared/icons";
 
 // ─── Status chips ─────────────────────────────────────────────────────────────
 

@@ -22,7 +22,7 @@ import {
   Store,
   Ticket,
   User,
-} from "lucide-react";
+} from "@/shared/icons";
 import { RequireAuth } from "@/features/auth/components/require-auth";
 import { AppHeader } from "@/features/auth/components/app-header";
 import { Avatar } from "@/features/auth/components/avatar";

@@ -4,13 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ChevronRight, FolderTree, Package, Search } from "lucide-react";
+import { ChevronRight, FolderTree, Package, Search } from "@/shared/icons";
 import { BackLink } from "@/shared/ui/page-header";
 import { Divider } from "@/shared/ui/divider";
 import { ProductThumb } from "@/features/products/components/product-thumb";
 import { getCategory, getCategoryTree } from "@/features/categories/api";
 import { CategoryCard } from "@/features/categories/category-card";
-import { CategoryIcon } from "@/features/categories/category-icon";
+import { CategoryIcon } from "@/shared/icons";
 import {
   categoryProductCount,
   findCategoryPath,

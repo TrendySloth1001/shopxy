@@ -4,6 +4,7 @@ import 'package:shopxy/features/shop/data/team_service.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Member-access editor returns the role label + exact grant.
 typedef PermissionResult = ({String roleName, List<String> permissions});
@@ -113,7 +114,7 @@ class _AreaRow extends StatelessWidget {
           SizedBox(
             width: 52,
             child: info.viewOnly
-                ? Icon(Icons.remove, size: AppSizes.iconSm, color: AppColors.subtle)
+                ? Icon(AppIcons.remove, size: AppSizes.iconSm, color: AppColors.subtle)
                 : Checkbox(value: manage, onChanged: (v) => onManage(v ?? false)),
           ),
         ],
@@ -455,7 +456,7 @@ class _RoleChip extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (custom) ...[
-                Icon(Icons.tune_rounded, size: AppSizes.iconSm, color: AppColors.brandStrong),
+                Icon(AppIcons.tuneRounded, size: AppSizes.iconSm, color: AppColors.brandStrong),
                 const SizedBox(width: AppSizes.xs),
               ],
               Text(label,

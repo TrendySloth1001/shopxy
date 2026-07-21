@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, startTransition } from "react";
-import { Copy, Check, Tag } from "lucide-react";
+import { Copy, Check, Tag } from "@/shared/icons";
 import { RequireAuth } from "@/features/auth/components/require-auth";
 import { AppHeader } from "@/features/auth/components/app-header";
 import { Divider } from "@/shared/ui/divider";

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, AlertCircle } from "lucide-react";
+import { ChevronRight, AlertCircle } from "@/shared/icons";
 import { formatINR } from "@/shared/format";
 import { formatDateTime } from "@/shared/datetime";
 import { AggregateStatusChip } from "./status-chip";

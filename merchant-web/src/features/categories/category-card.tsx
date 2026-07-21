@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { mediaSrc } from "@/features/products/components/product-thumb";
-import { CategoryIcon } from "./category-icon";
+import { CategoryIcon } from "@/shared/icons";
 import { categoryProductCount, type CategoryNode } from "./schema";
 
 /** Square taxonomy tile — image (or icon fallback) + name + counts. Shared by

@@ -15,7 +15,7 @@ import {
   Plus,
   Package,
   CreditCard,
-} from "lucide-react";
+} from "@/shared/icons";
 import { useCart } from "@/features/cart/cart-context";
 import { useAuth } from "@/features/auth/auth-context";
 import { RequireAuth } from "@/features/auth/components/require-auth";

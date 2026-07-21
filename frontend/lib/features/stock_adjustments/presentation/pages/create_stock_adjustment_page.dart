@@ -16,6 +16,7 @@ import 'package:shopxy/shared/widgets/glass_widgets.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/constants/app_durations.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 const _kReasons = [
   (code: 'DAMAGE', label: 'Damaged', defaultDirection: 'OUT'),
@@ -303,7 +304,7 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
               controller: _searchCtrl,
               decoration: InputDecoration(
                 labelText: l10n.stockAdjSearchProducts,
-                prefixIcon: const Icon(Icons.search_rounded),
+                prefixIcon: const Icon(AppIcons.searchRounded),
                 suffixIcon: _isSearching
                     ? const Padding(
                         padding: EdgeInsets.all(AppSizes.md),
@@ -329,7 +330,7 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
                         dense: true,
                         title: Text(_searchResults[i].name),
                         subtitle: Text(_searchResults[i].sku),
-                        trailing: const Icon(Icons.add_circle_outline_rounded),
+                        trailing: const Icon(AppIcons.addCircleOutlineRounded),
                         onTap: () => _addProduct(_searchResults[i]),
                       ),
                     ],
@@ -370,7 +371,7 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
             const SizedBox(height: AppSizes.xxl),
             AppButton.primary(
               label: l10n.stockAdjPostAdjustment,
-              icon: Icons.check_circle_outline_rounded,
+              icon: AppIcons.checkCircleOutlineRounded,
               onPressed: _isSaving ? null : _save,
               isLoading: _isSaving,
               fullWidth: true,
@@ -456,7 +457,7 @@ class _ItemRow extends StatelessWidget {
           IconButton(
             onPressed: onRemove,
             icon: Icon(
-              Icons.close_rounded,
+              AppIcons.closeRounded,
               color: AppColors.error,
               size: AppSizes.iconMd,
             ),

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, ChevronRight } from "lucide-react";
+import { ArrowRight, ChevronRight } from "@/shared/icons";
 
 /**
  * Section header shared by the feed blocks — port of the `_BlockHeader`

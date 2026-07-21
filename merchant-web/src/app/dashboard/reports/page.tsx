@@ -4,7 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { LineChart, Search, Package, Clock, ChevronRight, X } from "lucide-react";
+import { LineChart, Search, Package, Clock, ChevronRight, X } from "@/shared/icons";
 import { PageHeader } from "@/shared/ui/page-header";
 import { LineChart as TrendLineChart } from "@/shared/ui/charts";
 import { CardsSkeleton, ListRowsSkeleton } from "@/shared/ui/skeleton";

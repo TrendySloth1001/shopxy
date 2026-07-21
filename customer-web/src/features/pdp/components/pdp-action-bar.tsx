@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { ShoppingCart, Zap, Minus, Plus, Trash2, ArrowRight } from "lucide-react";
+import { ShoppingCart, Zap, Minus, Plus, Trash2, ArrowRight } from "@/shared/icons";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/features/cart/cart-context";
 import type { CartProduct } from "@/features/cart/types";

@@ -29,6 +29,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_error_view.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Merchant dashboard — a 1:1 port of the merchant-web overview
 /// (`merchant-web/src/features/dashboard`): period switcher, KPI row, sales
@@ -304,7 +305,7 @@ class _SpinningRefreshState extends State<_SpinningRefresh>
   Widget build(BuildContext context) {
     return RotationTransition(
       turns: _c,
-      child: Icon(Icons.refresh_rounded,
+      child: Icon(AppIcons.refreshRounded,
           size: AppSizes.iconSm, color: AppColors.muted),
     );
   }
@@ -423,7 +424,7 @@ class _PendingInviteCallout extends StatelessWidget {
                 horizontal: AppSizes.md, vertical: AppSizes.sm),
             child: Row(
               children: [
-                Icon(Icons.mark_email_unread_outlined,
+                Icon(AppIcons.markEmailUnreadOutlined,
                     size: 18, color: AppColors.brandStrong),
                 const SizedBox(width: AppSizes.md),
                 Expanded(

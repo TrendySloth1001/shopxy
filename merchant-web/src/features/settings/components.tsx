@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ChevronRight, type LucideIcon } from "lucide-react";
+import { ChevronRight, type LucideIcon } from "@/shared/icons";
 import { useAuth } from "@/features/auth/auth-context";
 
 /** Uppercase section label. */

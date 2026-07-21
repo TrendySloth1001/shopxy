@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MapPin, Plus, Pencil, Trash2, Star, StarOff } from "lucide-react";
+import { MapPin, Plus, Pencil, Trash2, Star, StarOff } from "@/shared/icons";
 import { RequireAuth } from "@/features/auth/components/require-auth";
 import { AppHeader } from "@/features/auth/components/app-header";
 import { AddressForm } from "@/features/addresses/components/address-form";

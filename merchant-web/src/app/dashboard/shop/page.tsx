@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { BadgeCheck, Check, ChevronRight, ImagePlus, Plane, Star, Trash2, Users, Wallet } from "lucide-react";
+import { BadgeCheck, Check, ChevronRight, ImagePlus, Plane, Star, Trash2, Users, Wallet } from "@/shared/icons";
 import { mediaSrc } from "@/features/products/components/product-thumb";
 import {
   getShop,

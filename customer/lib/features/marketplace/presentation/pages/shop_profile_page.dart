@@ -14,6 +14,7 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/format/app_format.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Public shop landing page. Reached from any "brand" tap — brand
 /// spotlight cards, sponsored product rails, and the PDP "Visit shop"
@@ -186,7 +187,7 @@ class _Body extends StatelessWidget {
             Builder(builder: (ctx) {
               return IconButton(
                 tooltip: 'Share shop',
-                icon: const Icon(Icons.ios_share_rounded),
+                icon: const Icon(AppIcons.iosShareRounded),
                 onPressed: () {
                   final box = ctx.findRenderObject() as RenderBox?;
                   const ShareService().shareShop(
@@ -288,7 +289,7 @@ class _Body extends StatelessWidget {
                           if (shop.isVerified) ...[
                             const SizedBox(width: AppSizes.sm),
                             const Icon(
-                              Icons.verified_rounded,
+                              AppIcons.verifiedRounded,
                               color: AppColors.info,
                               size: AppSizes.iconSm,
                             ),
@@ -314,26 +315,26 @@ class _Body extends StatelessWidget {
                         children: [
                           if (shop.rating != null)
                             _InlineStat(
-                              icon: Icons.star_rounded,
+                              icon: AppIcons.starRounded,
                               iconColor: AppColors.success,
                               label:
                                   '${shop.rating!.toStringAsFixed(1)} (${shop.ratingCount})',
                               labelColor: AppColors.black,
                             ),
                           _InlineStat(
-                            icon: Icons.shopping_bag_outlined,
+                            icon: AppIcons.shoppingBagOutlined,
                             iconColor: AppColors.muted,
                             label: '$total products',
                           ),
                           if (shop.locationLabel != null)
                             _InlineStat(
-                              icon: Icons.place_outlined,
+                              icon: AppIcons.placeOutlined,
                               iconColor: AppColors.muted,
                               label: shop.locationLabel!,
                             ),
                           if (shop.joinedAt != null)
                             _InlineStat(
-                              icon: Icons.calendar_today_outlined,
+                              icon: AppIcons.calendarTodayOutlined,
                               iconColor: AppColors.muted,
                               label:
                                   'Since ${DateFormat.yMMM().format(shop.joinedAt!)}',
@@ -471,7 +472,7 @@ class _VacationBanner extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.beach_access_rounded, color: AppColors.warning),
+            const Icon(AppIcons.beachAccessRounded, color: AppColors.warning),
             const SizedBox(width: AppSizes.sm),
             Expanded(
               child: Column(
@@ -555,13 +556,13 @@ class _PoliciesCard extends StatelessWidget {
     final pills = <_PolicyPillSpec>[
       if (shop.returnPolicy?.isNotEmpty == true)
         const _PolicyPillSpec(
-            icon: Icons.assignment_return_outlined, label: 'Returns'),
+            icon: AppIcons.assignmentReturnOutlined, label: 'Returns'),
       if (shop.shippingPolicy?.isNotEmpty == true)
         const _PolicyPillSpec(
-            icon: Icons.local_shipping_outlined, label: 'Shipping'),
+            icon: AppIcons.localShippingOutlined, label: 'Shipping'),
       if (shop.refundPolicy?.isNotEmpty == true)
         const _PolicyPillSpec(
-            icon: Icons.currency_rupee_rounded, label: 'Refund'),
+            icon: AppIcons.currencyRupeeRounded, label: 'Refund'),
     ];
     if (pills.isEmpty) return const SizedBox.shrink();
     return Material(
@@ -577,7 +578,7 @@ class _PoliciesCard extends StatelessWidget {
           padding: const EdgeInsets.all(AppSizes.md),
           child: Row(
             children: [
-              const Icon(Icons.fact_check_outlined,
+              const Icon(AppIcons.factCheckOutlined,
                   color: AppColors.brandStrong, size: AppSizes.iconMd),
               const SizedBox(width: AppSizes.sm),
               Expanded(
@@ -628,7 +629,7 @@ class _PoliciesCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right_rounded, color: AppColors.subtle),
+              const Icon(AppIcons.chevronRightRounded, color: AppColors.subtle),
             ],
           ),
         ),
@@ -672,7 +673,7 @@ class _PoliciesSheet extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close_rounded),
+                  icon: const Icon(AppIcons.closeRounded),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
@@ -681,19 +682,19 @@ class _PoliciesSheet extends StatelessWidget {
             if (shop.returnPolicy?.isNotEmpty == true)
               _PolicyBlock(
                 title: 'Returns',
-                icon: Icons.assignment_return_outlined,
+                icon: AppIcons.assignmentReturnOutlined,
                 body: shop.returnPolicy!,
               ),
             if (shop.shippingPolicy?.isNotEmpty == true)
               _PolicyBlock(
                 title: 'Shipping',
-                icon: Icons.local_shipping_outlined,
+                icon: AppIcons.localShippingOutlined,
                 body: shop.shippingPolicy!,
               ),
             if (shop.refundPolicy?.isNotEmpty == true)
               _PolicyBlock(
                 title: 'Refunds',
-                icon: Icons.currency_rupee_rounded,
+                icon: AppIcons.currencyRupeeRounded,
                 body: shop.refundPolicy!,
               ),
           ],
@@ -774,7 +775,7 @@ class _ProductTile extends StatelessWidget {
                   shape: AppShapes.squircle(AppSizes.radiusMd),
                 ),
                 child: image.isEmpty
-                    ? const Icon(Icons.image_outlined, color: AppColors.muted)
+                    ? const Icon(AppIcons.imageOutlined, color: AppColors.muted)
                     : NetworkImageBox(url: resolveImageUrl(image)),
               ),
             ),
@@ -825,7 +826,7 @@ class _ProductTile extends StatelessWidget {
               padding: const EdgeInsets.only(top: AppSizes.xs),
               child: Row(
                 children: [
-                  const Icon(Icons.star_rounded, color: AppColors.success, size: 12),
+                  const Icon(AppIcons.starRounded, color: AppColors.success, size: 12),
                   const SizedBox(width: AppSizes.xs),
                   Text(
                     '${product.ratingAvg!.toStringAsFixed(1)} (${product.ratingCount})',
@@ -990,7 +991,7 @@ class _ErrorState extends StatelessWidget {
       padding: const EdgeInsets.all(AppSizes.xl),
       children: [
         const SizedBox(height: 80),
-        const Icon(Icons.cloud_off_rounded,
+        const Icon(AppIcons.cloudOffRounded,
             size: AppSizes.iconHuge, color: AppColors.muted),
         const SizedBox(height: AppSizes.md),
         Center(

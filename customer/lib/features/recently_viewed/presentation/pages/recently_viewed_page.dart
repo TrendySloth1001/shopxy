@@ -10,6 +10,7 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart' show AppShimmerLine;
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Per-user "recently viewed" page. Pulls the capped (≤20) list from
 /// `GET /me/recently-viewed` and renders it as a 2-col grid so the
@@ -175,7 +176,7 @@ class _ProductTile extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: AppSizes.xs),
-                      const Icon(Icons.star_rounded,
+                      const Icon(AppIcons.starRounded,
                           color: AppColors.white, size: 9),
                     ],
                   ),
@@ -235,7 +236,7 @@ class _EmptyState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(
-              Icons.history_rounded,
+              AppIcons.historyRounded,
               size: AppSizes.iconHuge,
               color: AppColors.muted,
             ),
@@ -310,7 +311,7 @@ class _ErrorBlock extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline_rounded,
+            const Icon(AppIcons.errorOutlineRounded,
                 size: 40, color: AppColors.error),
             const SizedBox(height: AppSizes.md),
             Text(

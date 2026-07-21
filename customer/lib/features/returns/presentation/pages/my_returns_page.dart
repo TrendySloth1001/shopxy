@@ -11,6 +11,7 @@ import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/format/app_format.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Customer-side list of return requests. Each row links to the
 /// return detail page.
@@ -258,7 +259,7 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.assignment_return_outlined,
+            const Icon(AppIcons.assignmentReturnOutlined,
                 size: AppSizes.iconHuge, color: AppColors.muted),
             const SizedBox(height: AppSizes.md),
             Text(

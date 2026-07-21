@@ -26,6 +26,7 @@ import 'package:shopxy_customer/shared/widgets/app_dialog.dart';
 import 'package:shopxy_customer/shared/widgets/app_price_text.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/shared/widgets/shop_chip.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Checkout page — full Amazon/Flipkart-style rebuild (May 2026,
 /// build3). Built on a Column { Header, Expanded(Body), Footer }
@@ -137,7 +138,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       ),
                     const Divider(height: 1, color: AppColors.hairline),
                     ListTile(
-                      leading: const Icon(Icons.add_location_alt_outlined,
+                      leading: const Icon(AppIcons.addLocationAltOutlined,
                           color: AppColors.brandStrong),
                       title: const Text('Add a new address',
                           style: TextStyle(fontWeight: FontWeight.w700)),
@@ -147,7 +148,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       },
                     ),
                     ListTile(
-                      leading: const Icon(Icons.settings_outlined),
+                      leading: const Icon(AppIcons.settingsOutlined),
                       title: const Text('Manage addresses'),
                       onTap: () {
                         Navigator.of(sheetCtx).pop();
@@ -430,8 +431,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
           children: [
             Icon(
               selected
-                  ? Icons.radio_button_checked_rounded
-                  : Icons.radio_button_unchecked_rounded,
+                  ? AppIcons.radioButtonCheckedRounded
+                  : AppIcons.radioButtonUncheckedRounded,
               color: selected ? AppColors.brandStrong : AppColors.muted,
               size: AppSizes.iconMd,
             ),
@@ -654,7 +655,7 @@ class _Header extends StatelessWidget {
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_rounded),
+            icon: const Icon(AppIcons.arrowBackRounded),
             onPressed: () => Navigator.of(context).maybePop(),
             tooltip: 'Back',
           ),
@@ -828,7 +829,7 @@ class _SelectedAddressCard extends StatelessWidget {
               shape: AppShapes.squircle(AppSizes.radiusSm),
             ),
             alignment: Alignment.center,
-            child: const Icon(Icons.location_on_rounded,
+            child: const Icon(AppIcons.locationOnRounded,
                 color: AppColors.brandStrong, size: AppSizes.iconMd),
           ),
           const SizedBox(width: AppSizes.md),
@@ -863,7 +864,7 @@ class _SelectedAddressCard extends StatelessWidget {
                     padding: const EdgeInsets.only(top: AppSizes.xs),
                     child: Row(
                       children: [
-                        const Icon(Icons.phone_rounded,
+                        const Icon(AppIcons.phoneRounded,
                             size: AppSizes.iconSm, color: AppColors.muted),
                         const SizedBox(width: AppSizes.xs),
                         Text(
@@ -933,7 +934,7 @@ class _AddAddressCard extends StatelessWidget {
             padding: const EdgeInsets.all(AppSizes.md),
             child: Row(
               children: [
-                const Icon(Icons.add_location_alt_outlined,
+                const Icon(AppIcons.addLocationAltOutlined,
                     color: AppColors.brandStrong),
                 const SizedBox(width: AppSizes.md),
                 Expanded(
@@ -952,7 +953,7 @@ class _AddAddressCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                const Icon(Icons.chevron_right_rounded, color: AppColors.subtle),
+                const Icon(AppIcons.chevronRightRounded, color: AppColors.subtle),
               ],
             ),
           ),
@@ -982,7 +983,7 @@ class _AddressErrorCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.cloud_off_rounded, color: AppColors.muted),
+          const Icon(AppIcons.cloudOffRounded, color: AppColors.muted),
           const SizedBox(width: AppSizes.md),
           Expanded(
             child: Text(
@@ -1028,8 +1029,8 @@ class _AddressPickerRow extends StatelessWidget {
               padding: const EdgeInsets.only(top: 2),
               child: Icon(
                 selected
-                    ? Icons.radio_button_checked_rounded
-                    : Icons.radio_button_unchecked_rounded,
+                    ? AppIcons.radioButtonCheckedRounded
+                    : AppIcons.radioButtonUncheckedRounded,
                 color: selected ? AppColors.brandStrong : AppColors.subtle,
               ),
             ),
@@ -1085,7 +1086,7 @@ class _DeliveryEstimateCard extends StatelessWidget {
               shape: AppShapes.squircle(AppSizes.radiusSm),
             ),
             alignment: Alignment.center,
-            child: const Icon(Icons.local_shipping_outlined,
+            child: const Icon(AppIcons.localShippingOutlined,
                 color: AppColors.success, size: AppSizes.iconMd),
           ),
           const SizedBox(width: AppSizes.md),
@@ -1207,7 +1208,7 @@ class _ShopGroupCard extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.storefront_outlined,
+                  const Icon(AppIcons.storefrontOutlined,
                       size: 14, color: AppColors.brand),
                   const SizedBox(width: AppSizes.xs),
                   Expanded(
@@ -1283,7 +1284,7 @@ class _MultiShopBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.storefront_outlined,
+          const Icon(AppIcons.storefrontOutlined,
               size: AppSizes.iconMd, color: AppColors.info),
           const SizedBox(width: AppSizes.sm),
           Expanded(
@@ -1324,7 +1325,7 @@ class _ItemRow extends StatelessWidget {
               height: AppSizes.productThumbSize,
               color: AppColors.heroPanel,
               child: p.imageUrl == null
-                  ? const Icon(Icons.image_outlined,
+                  ? const Icon(AppIcons.imageOutlined,
                       color: AppColors.muted, size: AppSizes.iconMd)
                   : NetworkImageBox(url: resolveImageUrl(p.imageUrl!)),
             ),
@@ -1601,7 +1602,7 @@ class _CouponCardState extends State<_CouponCard> {
       child: Row(
         children: [
           Icon(
-            Icons.local_offer_outlined,
+            AppIcons.localOfferOutlined,
             color: applied ? AppColors.brand : AppColors.muted,
             size: AppSizes.iconMd,
           ),
@@ -1803,7 +1804,7 @@ class _SavingsBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.savings_outlined,
+          const Icon(AppIcons.savingsOutlined,
               color: AppColors.success, size: AppSizes.iconMd),
           const SizedBox(width: AppSizes.sm),
           Expanded(
@@ -1854,17 +1855,17 @@ class _TrustFooter extends StatelessWidget {
             children: const [
               Expanded(
                   child: _TrustPill(
-                      icon: Icons.lock_outline_rounded,
+                      icon: AppIcons.lockOutlineRounded,
                       label: 'Secure checkout')),
               SizedBox(width: AppSizes.sm),
               Expanded(
                   child: _TrustPill(
-                      icon: Icons.replay_rounded,
+                      icon: AppIcons.replayRounded,
                       label: 'Cancel per shop policy')),
               SizedBox(width: AppSizes.sm),
               Expanded(
                   child: _TrustPill(
-                      icon: Icons.support_agent_rounded,
+                      icon: AppIcons.supportAgentRounded,
                       label: 'In-app support')),
             ],
           ),
@@ -2009,7 +2010,7 @@ class _Footer extends StatelessWidget {
                 label: 'Place order',
                 onPressed: canPlace ? onPlace : null,
                 isLoading: isPlacing,
-                trailingIcon: Icons.arrow_forward_rounded,
+                trailingIcon: AppIcons.arrowForwardRounded,
               ),
             ),
           ],

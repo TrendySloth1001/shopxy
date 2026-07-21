@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Star } from "lucide-react";
+import { Star } from "@/shared/icons";
 import { ImageBox } from "@/features/home/components/image-box";
 import { formatINR } from "@/shared/format";
 import { fetchFbt } from "../api";

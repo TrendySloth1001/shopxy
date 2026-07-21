@@ -13,6 +13,7 @@ import 'package:shopxy_customer/shared/validation/auth_validators.dart';
 import 'package:shopxy_customer/shared/widgets/app_pill_button.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/features/profile/presentation/pages/info_pages.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Multi-step, onboarding-style registration. One question per screen
 /// (name → email → password) with a progress bar, so signing up feels
@@ -188,7 +189,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     ],
                     AppPillButton(
                       label: _isLast ? AppStrings.createAccount : 'Continue',
-                      icon: _isLast ? null : Icons.arrow_forward_rounded,
+                      icon: _isLast ? null : AppIcons.arrowForwardRounded,
                       loading: _isLoading,
                       onPressed: _continue,
                     ),
@@ -234,7 +235,7 @@ class _RegisterPageState extends State<RegisterPage> {
             AuthField(
               controller: _name,
               label: AppStrings.fullName,
-              icon: Icons.person_outline_rounded,
+              icon: AppIcons.personOutlineRounded,
               autofocus: true,
               textCapitalization: TextCapitalization.words,
               textInputAction: TextInputAction.next,
@@ -256,7 +257,7 @@ class _RegisterPageState extends State<RegisterPage> {
             AuthField(
               controller: _email,
               label: AppStrings.email,
-              icon: Icons.mail_outline_rounded,
+              icon: AppIcons.mailOutlineRounded,
               autofocus: true,
               autocorrect: false,
               keyboardType: TextInputType.emailAddress,
@@ -281,7 +282,7 @@ class _RegisterPageState extends State<RegisterPage> {
             AuthField(
               controller: _password,
               label: AppStrings.password,
-              icon: Icons.lock_outline_rounded,
+              icon: AppIcons.lockOutlineRounded,
               obscure: _obscurePass,
               onToggleObscure: () =>
                   setState(() => _obscurePass = !_obscurePass),
@@ -294,7 +295,7 @@ class _RegisterPageState extends State<RegisterPage> {
             AuthField(
               controller: _confirm,
               label: AppStrings.confirmPassword,
-              icon: Icons.lock_outline_rounded,
+              icon: AppIcons.lockOutlineRounded,
               obscure: _obscureConfirm,
               onToggleObscure: () =>
                   setState(() => _obscureConfirm = !_obscureConfirm),
@@ -498,7 +499,7 @@ class _CircleBack extends StatelessWidget {
         child: const SizedBox(
           width: AppSizes.avatarSm,
           height: AppSizes.avatarSm,
-          child: Icon(Icons.arrow_back_rounded,
+          child: Icon(AppIcons.arrowBackRounded,
               color: AppColors.black, size: AppSizes.iconMd),
         ),
       ),

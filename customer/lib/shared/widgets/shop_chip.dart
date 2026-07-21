@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Small "Sold by {shop}" chip used on cart, checkout, and order
 /// detail rows so multi-shop bags read unambiguously. Renders nothing
@@ -35,7 +36,7 @@ class ShopChip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            Icons.storefront_outlined,
+            AppIcons.storefrontOutlined,
             size: iconSize,
             color: AppColors.brandStrong,
           ),

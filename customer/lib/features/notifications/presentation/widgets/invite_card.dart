@@ -5,6 +5,7 @@ import 'package:shopxy_customer/features/notifications/domain/entities/invitatio
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Single source of truth for "you've been invited" card rendering.
 /// Used both as the home-page preview (first pending invite, optional
@@ -200,7 +201,7 @@ class InviteCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Icon(
-                            Icons.format_quote_rounded,
+                            AppIcons.formatQuoteRounded,
                             size: AppSizes.iconSm,
                             color: AppColors.muted,
                           ),
@@ -353,7 +354,7 @@ class _Cover extends StatelessWidget {
                     alignment: Alignment.centerRight,
                     padding: const EdgeInsets.only(right: AppSizes.lg),
                     child: const Icon(
-                      Icons.storefront_rounded,
+                      AppIcons.storefrontRounded,
                       color: AppColors.brand,
                       size: AppSizes.iconXl,
                     ),
@@ -392,7 +393,7 @@ class _Cover extends StatelessWidget {
                   ),
                   alignment: Alignment.center,
                   child: const Icon(
-                    Icons.close_rounded,
+                    AppIcons.closeRounded,
                     color: AppColors.white,
                     size: AppSizes.iconSm,
                   ),
@@ -576,7 +577,7 @@ class _SolidButton extends StatelessWidget {
                     ),
                     const SizedBox(width: AppSizes.sm),
                     const Icon(
-                      Icons.arrow_forward_rounded,
+                      AppIcons.arrowForwardRounded,
                       color: AppColors.white,
                       size: AppSizes.iconSm,
                     ),

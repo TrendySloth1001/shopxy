@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useMemo } from "react";
-import { Store, Mail, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Store, Mail, CheckCircle, XCircle, Clock } from "@/shared/icons";
 import type { Invitation } from "../types";
 import { formatRelativeTime } from "@/shared/datetime";
 

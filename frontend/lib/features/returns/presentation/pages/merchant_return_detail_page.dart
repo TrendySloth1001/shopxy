@@ -12,6 +12,7 @@ import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Workflow-heavy detail page. Header shows the customer + refund
 /// total; each item gets a small thumbnail + reason chip; the bottom
@@ -203,7 +204,7 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
                     _NoteCard(
                       title: l10n.returnsBuyerNote,
                       body: row.note!,
-                      icon: Icons.chat_bubble_outline,
+                      icon: AppIcons.chatBubbleOutline,
                     ),
                   ],
                   if (row.decisionNote != null &&
@@ -212,7 +213,7 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
                     _NoteCard(
                       title: l10n.returnsYourNote,
                       body: row.decisionNote!,
-                      icon: Icons.assignment_outlined,
+                      icon: AppIcons.assignmentOutlined,
                     ),
                   ],
                   if (row.refundMethod != null) ...[
@@ -226,7 +227,7 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
                       child: Row(
                         children: [
                           Icon(
-                            Icons.account_balance_wallet_outlined,
+                            AppIcons.accountBalanceWalletOutlined,
                             color: AppColors.success,
                           ),
                           const SizedBox(width: AppSizes.sm),
@@ -597,7 +598,7 @@ class _HeaderCard extends StatelessWidget {
           const SizedBox(height: AppSizes.md),
           Row(
             children: [
-              Icon(Icons.account_balance_wallet_outlined,
+              Icon(AppIcons.accountBalanceWalletOutlined,
                   size: AppSizes.iconSm, color: AppColors.muted),
               const SizedBox(width: AppSizes.xs),
               Text(
@@ -757,21 +758,21 @@ class _TimelineCard extends StatelessWidget {
   static IconData _iconFor(String type) {
     switch (type) {
       case 'REQUESTED':
-        return Icons.receipt_outlined;
+        return AppIcons.receiptOutlined;
       case 'APPROVED':
-        return Icons.check_circle_outline;
+        return AppIcons.checkCircleOutline;
       case 'REJECTED':
-        return Icons.cancel_outlined;
+        return AppIcons.cancelOutlined;
       case 'CANCELLED':
-        return Icons.cancel_outlined;
+        return AppIcons.cancelOutlined;
       case 'PICKED_UP':
-        return Icons.local_shipping_outlined;
+        return AppIcons.localShippingOutlined;
       case 'RECEIVED':
-        return Icons.inventory_2_outlined;
+        return AppIcons.inventory2Outlined;
       case 'REFUNDED':
-        return Icons.account_balance_wallet_outlined;
+        return AppIcons.accountBalanceWalletOutlined;
       default:
-        return Icons.circle_outlined;
+        return AppIcons.circleOutlined;
     }
   }
 
@@ -916,7 +917,7 @@ class _ActionBar extends StatelessWidget {
             Expanded(
               child: FilledButton.icon(
                 onPressed: busy ? null : onPickedUp,
-                icon: const Icon(Icons.local_shipping_outlined),
+                icon: const Icon(AppIcons.localShippingOutlined),
                 label: Text(l10n.returnsMarkPickedUp),
               ),
             ),
@@ -924,7 +925,7 @@ class _ActionBar extends StatelessWidget {
             Expanded(
               child: FilledButton.icon(
                 onPressed: busy ? null : onReceived,
-                icon: const Icon(Icons.inventory_2_outlined),
+                icon: const Icon(AppIcons.inventory2Outlined),
                 label: Text(l10n.returnsMarkReceived),
               ),
             ),
@@ -950,7 +951,7 @@ class _ActionBar extends StatelessWidget {
             Expanded(
               child: FilledButton.icon(
                 onPressed: busy ? null : onRefund,
-                icon: const Icon(Icons.account_balance_wallet_outlined),
+                icon: const Icon(AppIcons.accountBalanceWalletOutlined),
                 label: Text(l10n.returnsRefund),
               ),
             ),

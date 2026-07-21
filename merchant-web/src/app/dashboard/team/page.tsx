@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Plus, Pencil, Trash2, Mail, ShieldCheck, Link2, Check } from "lucide-react";
+import { Plus, Pencil, Trash2, Mail, ShieldCheck, Link2, Check } from "@/shared/icons";
 import { Divider } from "@/shared/ui/divider";
 import { Modal, ModalActions } from "@/shared/ui/modal";
 import { SideSheet } from "@/shared/ui/side-sheet";

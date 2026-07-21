@@ -8,6 +8,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_divider.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// The per-shop landing for a customer. Every record the shop keeps for them —
 /// invoices, quotations — is a first-class section here, so nothing is buried
@@ -51,7 +52,7 @@ class _ShopSectionsPageState extends State<ShopSectionsPage> {
 
     final rows = <Widget>[
       _SectionRow(
-        icon: Icons.receipt_long_rounded,
+        icon: AppIcons.receiptLongRounded,
         accent: AppColors.brand,
         title: 'Invoices',
         subtitle: invoiceCount == 0
@@ -61,7 +62,7 @@ class _ShopSectionsPageState extends State<ShopSectionsPage> {
       ),
       if (_isParty) ...[
         _SectionRow(
-          icon: Icons.request_quote_rounded,
+          icon: AppIcons.requestQuoteRounded,
           accent: AppColors.accentIndigo,
           title: 'Quotations',
           subtitle: quotes.isEmpty
@@ -168,7 +169,7 @@ class _SectionRow extends StatelessWidget {
                 ),
                 const SizedBox(width: AppSizes.sm),
               ],
-              const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+              const Icon(AppIcons.chevronRightRounded, color: AppColors.muted),
             ],
           ),
         ),

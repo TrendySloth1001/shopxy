@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, startTransition } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronRight, Plus } from "lucide-react";
+import { ChevronRight, Plus } from "@/shared/icons";
 import { RequireAuth } from "@/features/auth/components/require-auth";
 import { AppHeader } from "@/features/auth/components/app-header";
 import { fetchQuotations } from "@/features/merchant-ledger/api";

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Package } from "lucide-react";
+import { Package } from "@/shared/icons";
 import type { CatalogProduct } from "../types";
 import { formatINR } from "@/shared/format";
 

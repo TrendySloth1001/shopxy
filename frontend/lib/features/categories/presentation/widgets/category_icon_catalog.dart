@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Curated set of icons offered when creating or editing a category.
 ///
@@ -21,152 +22,152 @@ class CategoryIconOption {
 const List<CategoryIconOption> kCategoryIconOptions = [
   CategoryIconOption(
     name: 'grocery',
-    icon: Icons.local_grocery_store_rounded,
+    icon: AppIcons.localGroceryStoreRounded,
     label: 'Grocery',
   ),
   CategoryIconOption(
     name: 'kirana',
-    icon: Icons.storefront_rounded,
+    icon: AppIcons.storefrontRounded,
     label: 'Kirana',
   ),
   CategoryIconOption(
     name: 'beverages',
-    icon: Icons.local_cafe_rounded,
+    icon: AppIcons.localCafeRounded,
     label: 'Beverages',
   ),
   CategoryIconOption(
     name: 'bakery',
-    icon: Icons.bakery_dining_rounded,
+    icon: AppIcons.bakeryDiningRounded,
     label: 'Bakery',
   ),
   CategoryIconOption(
     name: 'dairy',
-    icon: Icons.icecream_rounded,
+    icon: AppIcons.icecreamRounded,
     label: 'Dairy',
   ),
   CategoryIconOption(
     name: 'fruits-veg',
-    icon: Icons.eco_rounded,
+    icon: AppIcons.ecoRounded,
     label: 'Fruits & Veg',
   ),
   CategoryIconOption(
     name: 'meat',
-    icon: Icons.kebab_dining_rounded,
+    icon: AppIcons.kebabDiningRounded,
     label: 'Meat',
   ),
   CategoryIconOption(
     name: 'pharmacy',
-    icon: Icons.medication_rounded,
+    icon: AppIcons.medicationRounded,
     label: 'Pharmacy',
   ),
   CategoryIconOption(
     name: 'electronics',
-    icon: Icons.devices_other_rounded,
+    icon: AppIcons.devicesOtherRounded,
     label: 'Electronics',
   ),
   CategoryIconOption(
     name: 'mobile',
-    icon: Icons.smartphone_rounded,
+    icon: AppIcons.smartphoneRounded,
     label: 'Mobile',
   ),
   CategoryIconOption(
     name: 'computer',
-    icon: Icons.computer_rounded,
+    icon: AppIcons.computerRounded,
     label: 'Computer',
   ),
   CategoryIconOption(
     name: 'appliance',
-    icon: Icons.kitchen_rounded,
+    icon: AppIcons.kitchenRounded,
     label: 'Appliance',
   ),
   CategoryIconOption(
     name: 'fashion',
-    icon: Icons.checkroom_rounded,
+    icon: AppIcons.checkroomRounded,
     label: 'Fashion',
   ),
   CategoryIconOption(
     name: 'footwear',
-    icon: Icons.directions_walk_rounded,
+    icon: AppIcons.directionsWalkRounded,
     label: 'Footwear',
   ),
   CategoryIconOption(
     name: 'beauty',
-    icon: Icons.spa_rounded,
+    icon: AppIcons.spaRounded,
     label: 'Beauty',
   ),
   CategoryIconOption(
     name: 'jewellery',
-    icon: Icons.diamond_rounded,
+    icon: AppIcons.diamondRounded,
     label: 'Jewellery',
   ),
   CategoryIconOption(
     name: 'home',
-    icon: Icons.chair_rounded,
+    icon: AppIcons.chairRounded,
     label: 'Home',
   ),
   CategoryIconOption(
     name: 'kitchen',
-    icon: Icons.restaurant_rounded,
+    icon: AppIcons.restaurantRounded,
     label: 'Kitchen',
   ),
   CategoryIconOption(
     name: 'cleaning',
-    icon: Icons.cleaning_services_rounded,
+    icon: AppIcons.cleaningServicesRounded,
     label: 'Cleaning',
   ),
   CategoryIconOption(
     name: 'stationery',
-    icon: Icons.edit_note_rounded,
+    icon: AppIcons.editNoteRounded,
     label: 'Stationery',
   ),
   CategoryIconOption(
     name: 'books',
-    icon: Icons.menu_book_rounded,
+    icon: AppIcons.menuBookRounded,
     label: 'Books',
   ),
   CategoryIconOption(
     name: 'toys',
-    icon: Icons.toys_rounded,
+    icon: AppIcons.toysRounded,
     label: 'Toys',
   ),
   CategoryIconOption(
     name: 'sports',
-    icon: Icons.sports_cricket_rounded,
+    icon: AppIcons.sportsCricketRounded,
     label: 'Sports',
   ),
   CategoryIconOption(
     name: 'auto',
-    icon: Icons.directions_car_filled_rounded,
+    icon: AppIcons.directionsCarFilledRounded,
     label: 'Auto',
   ),
   CategoryIconOption(
     name: 'hardware',
-    icon: Icons.handyman_rounded,
+    icon: AppIcons.handymanRounded,
     label: 'Hardware',
   ),
   CategoryIconOption(
     name: 'paint',
-    icon: Icons.format_paint_rounded,
+    icon: AppIcons.formatPaintRounded,
     label: 'Paint',
   ),
   CategoryIconOption(
     name: 'plant',
-    icon: Icons.local_florist_rounded,
+    icon: AppIcons.localFloristRounded,
     label: 'Plants',
   ),
   CategoryIconOption(
     name: 'gift',
-    icon: Icons.card_giftcard_rounded,
+    icon: AppIcons.cardGiftcardRounded,
     label: 'Gift',
   ),
   CategoryIconOption(
     name: 'pet',
-    icon: Icons.pets_rounded,
+    icon: AppIcons.petsRounded,
     label: 'Pet',
   ),
   CategoryIconOption(
     name: 'service',
-    icon: Icons.miscellaneous_services_rounded,
+    icon: AppIcons.miscellaneousServicesRounded,
     label: 'Service',
   ),
 ];
@@ -175,9 +176,9 @@ const List<CategoryIconOption> kCategoryIconOptions = [
 /// neutral category glyph when the name is null or unknown — keeps
 /// legacy rows rendering without a crash.
 IconData resolveCategoryIcon(String? name) {
-  if (name == null) return Icons.category_rounded;
+  if (name == null) return AppIcons.categoryRounded;
   for (final opt in kCategoryIconOptions) {
     if (opt.name == name) return opt.icon;
   }
-  return Icons.category_rounded;
+  return AppIcons.categoryRounded;
 }

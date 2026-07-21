@@ -9,6 +9,7 @@ import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 class _Step {
   const _Step(this.done, this.title, this.desc, this.cta, this.onTap);
@@ -118,7 +119,7 @@ class _StepRow extends StatelessWidget {
       child: Row(
         children: [
           Icon(
-            step.done ? Icons.check_circle_rounded : Icons.circle_outlined,
+            step.done ? AppIcons.checkCircleRounded : AppIcons.circleOutlined,
             size: AppSizes.iconMd,
             color: step.done ? AppColors.success : AppColors.subtle,
           ),
@@ -159,7 +160,7 @@ class _StepRow extends StatelessWidget {
                       style: const TextStyle(
                           fontSize: 12, fontWeight: FontWeight.w600)),
                   const SizedBox(width: 2),
-                  const Icon(Icons.arrow_forward_rounded, size: 14),
+                  const Icon(AppIcons.arrowForwardRounded, size: 14),
                 ],
               ),
             ),

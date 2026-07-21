@@ -8,6 +8,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Bottom-sheet list of predefined custom-field bundles ("Electronics",
 /// "Apparel", "Logistics" …). Tapping a row stamps the whole section
@@ -181,7 +182,7 @@ class _TemplatesPickerSheetState extends State<TemplatesPickerSheet> {
                                   CircularProgressIndicator(strokeWidth: 2),
                             )
                           : Icon(
-                              Icons.add_rounded,
+                              AppIcons.addRounded,
                               color: AppColors.black,
                             ),
                       onTap:

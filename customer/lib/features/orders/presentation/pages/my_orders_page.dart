@@ -16,6 +16,7 @@ import 'package:shopxy_customer/shared/widgets/app_button.dart';
 import 'package:shopxy_customer/shared/widgets/app_price_text.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/widgets/empty_state.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Order status buckets used by the filter chips. Each order is placed
 /// in exactly one bucket via [_statusOf] so it shows once per filter.
@@ -95,13 +96,13 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
         backgroundColor: AppColors.canvas,
         appBar: const AppAppBar(title: AppStrings.myOrders),
         body: EmptyState(
-          icon: Icons.receipt_long_outlined,
+          icon: AppIcons.receiptLongOutlined,
           title: 'Sign in to see your orders',
           subtitle:
               'Your purchases, tracking and invoices live here once you have an account.',
           action: AppButton.primary(
             label: 'Sign in',
-            icon: Icons.login_rounded,
+            icon: AppIcons.loginRounded,
             onPressed: () => requireAuth(
               context,
               reason: 'View your orders, tracking and invoices in one place.',
@@ -400,7 +401,7 @@ class _OrderCard extends StatelessWidget {
                     )
                   else
                     const Icon(
-                      Icons.chevron_right_rounded,
+                      AppIcons.chevronRightRounded,
                       color: AppColors.subtle,
                       size: AppSizes.iconMd,
                     ),
@@ -429,7 +430,7 @@ class _OrderCard extends StatelessWidget {
     final children = o.shopOrders;
     if (children.isEmpty) {
       return (AppColors.muted, AppColors.surfaceTint,
-          Icons.help_outline_rounded);
+          AppIcons.helpOutlineRounded);
     }
     final confirmed = children.where((c) => c.isConfirmed).length;
     final pending = children.where((c) => c.isPending).length;
@@ -438,20 +439,20 @@ class _OrderCard extends StatelessWidget {
     final total = children.length;
     if (confirmed == total) {
       return (AppColors.success, AppColors.successSoft,
-          Icons.check_circle_rounded);
+          AppIcons.checkCircleRounded);
     }
     if (cancelled == total) {
       return (AppColors.muted, AppColors.surfaceTint,
-          Icons.do_disturb_alt_rounded);
+          AppIcons.doDisturbAltRounded);
     }
     if (rejected == total) {
-      return (AppColors.error, AppColors.errorSoft, Icons.cancel_rounded);
+      return (AppColors.error, AppColors.errorSoft, AppIcons.cancelRounded);
     }
     if (pending == total) {
-      return (AppColors.warning, AppColors.warningSoft, Icons.schedule_rounded);
+      return (AppColors.warning, AppColors.warningSoft, AppIcons.scheduleRounded);
     }
     return (AppColors.warning, AppColors.warningSoft,
-        Icons.hourglass_bottom_rounded);
+        AppIcons.hourglassBottomRounded);
   }
 }
 
@@ -507,7 +508,7 @@ class _FilteredEmpty extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
         const SizedBox(height: AppSizes.massive),
-        const Icon(Icons.filter_list_off_rounded,
+        const Icon(AppIcons.filterListOffRounded,
             size: AppSizes.iconHuge, color: AppColors.subtle),
         const SizedBox(height: AppSizes.md),
         Text(
@@ -605,7 +606,7 @@ class _EmptyOrders extends StatelessWidget {
             ),
             alignment: Alignment.center,
             child: const Icon(
-              Icons.receipt_long_outlined,
+              AppIcons.receiptLongOutlined,
               size: AppSizes.iconHuge,
               color: AppColors.muted,
             ),
@@ -630,7 +631,7 @@ class _EmptyOrders extends StatelessWidget {
         Center(
           child: AppButton.primary(
             label: 'Browse products',
-            icon: Icons.grid_view_rounded,
+            icon: AppIcons.gridViewRounded,
             onPressed: () => CustomerShellScope.of(context)
                 ?.select(CustomerShellTab.home.index),
           ),
@@ -652,7 +653,7 @@ class _ErrorState extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
         const SizedBox(height: AppSizes.massive),
-        const Icon(Icons.cloud_off_rounded,
+        const Icon(AppIcons.cloudOffRounded,
             size: AppSizes.iconHuge, color: AppColors.muted),
         const SizedBox(height: AppSizes.md),
         Text(
@@ -674,7 +675,7 @@ class _ErrorState extends StatelessWidget {
         Center(
           child: AppButton.secondary(
             label: AppStrings.tryAgain,
-            icon: Icons.refresh_rounded,
+            icon: AppIcons.refreshRounded,
             onPressed: () => onRetry(),
           ),
         ),

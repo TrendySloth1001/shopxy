@@ -10,6 +10,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Merchant list of quotations sent to customers. Clean divided rows; tap opens
 /// the detail page. FAB opens the catalogue → bucket → send flow.
@@ -49,7 +50,7 @@ class _QuotationsPageState extends State<QuotationsPage> {
       appBar: FloatingAppBar(title: 'Quotations'),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _create,
-        icon: const Icon(Icons.add_rounded),
+        icon: const Icon(AppIcons.addRounded),
         label: const Text('New quotation'),
       ),
       body: SafeArea(
@@ -79,7 +80,7 @@ class _QuotationsPageState extends State<QuotationsPage> {
                       ? ListView(
                           children: [
                             const SizedBox(height: AppSizes.productImageSize),
-                            Icon(Icons.request_quote_outlined,
+                            Icon(AppIcons.requestQuoteOutlined,
                                 size: AppSizes.iconHuge, color: AppColors.muted),
                             const SizedBox(height: AppSizes.md),
                             Center(
@@ -268,7 +269,7 @@ class _QuotationRow extends StatelessWidget {
                   style: theme.textTheme.titleMedium
                       ?.copyWith(fontWeight: FontWeight.w800)),
               const SizedBox(width: AppSizes.xs),
-              Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+              Icon(AppIcons.chevronRightRounded, color: AppColors.muted),
             ],
           ),
         ),

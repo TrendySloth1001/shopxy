@@ -27,6 +27,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_section_header.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 class AddEditProductPage extends StatefulWidget {
   const AddEditProductPage({super.key, this.product, this.draft});
@@ -783,7 +784,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
             if (isEditing)
               IconButton(
                 tooltip: l10n.productsReviews,
-                icon: const Icon(Icons.reviews_outlined),
+                icon: const Icon(AppIcons.reviewsOutlined),
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => ProductReviewsPage(
@@ -804,7 +805,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                       height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Icon(Icons.document_scanner_outlined),
+                  : const Icon(AppIcons.documentScannerOutlined),
             ),
             TextButton(
               onPressed: _isSaving ? null : _save,
@@ -1060,7 +1061,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
             Icon(iconData, size: 18, color: AppColors.muted),
             const SizedBox(width: AppSizes.sm),
             Expanded(child: Text(label, overflow: TextOverflow.ellipsis)),
-            Icon(Icons.unfold_more_rounded,
+            Icon(AppIcons.unfoldMoreRounded,
                 size: 18, color: AppColors.muted),
           ],
         ),
@@ -1102,7 +1103,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                         ),
                       ),
                       child: Icon(
-                        Icons.broken_image_rounded,
+                        AppIcons.brokenImageRounded,
                         color: AppColors.muted,
                       ),
                     ),
@@ -1126,7 +1127,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
-                        Icons.close_rounded,
+                        AppIcons.closeRounded,
                         size: 14,
                         color: AppColors.onInverse,
                       ),
@@ -1147,7 +1148,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
           Expanded(
             child: OutlinedButton.icon(
               onPressed: _isUploading ? null : _pickAndUploadMultiple,
-              icon: const Icon(Icons.photo_library_rounded, size: 18),
+              icon: const Icon(AppIcons.photoLibraryRounded, size: 18),
               label: Text(l10n.productsPickFromGallery),
             ),
           ),
@@ -1157,7 +1158,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
               onPressed: _isUploading
                   ? null
                   : () => _pickAndUploadImage(ImageSource.camera),
-              icon: const Icon(Icons.camera_alt_rounded, size: 18),
+              icon: const Icon(AppIcons.cameraAltRounded, size: 18),
               label: Text(l10n.productsTakePhoto),
             ),
           ),
@@ -1209,7 +1210,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                 const SizedBox(width: AppSizes.sm),
                 IconButton.filled(
                   onPressed: _addImageUrl,
-                  icon: const Icon(Icons.link_rounded),
+                  icon: const Icon(AppIcons.linkRounded),
                   tooltip: l10n.productsAddImage,
                 ),
               ],
@@ -1234,7 +1235,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
 
     final tiles = <Widget>[
       _DetailTile(
-        icon: Icons.bolt_outlined,
+        icon: AppIcons.boltOutlined,
         title: l10n.productsHighlightsTitle,
         subtitle: l10n.productsHighlightsSubtitle,
         count: _highlights.length,
@@ -1257,7 +1258,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         ),
       ),
       _DetailTile(
-        icon: Icons.fact_check_outlined,
+        icon: AppIcons.factCheckOutlined,
         title: l10n.productsSpecificationsTitle,
         subtitle: l10n.productsSpecificationsSubtitle,
         count: specRows,
@@ -1268,7 +1269,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         ),
       ),
       _DetailTile(
-        icon: Icons.local_offer_outlined,
+        icon: AppIcons.localOfferOutlined,
         title: l10n.productsOffersTitle,
         subtitle: l10n.productsOffersSubtitle,
         count: _offers.length,
@@ -1279,7 +1280,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         ),
       ),
       _DetailTile(
-        icon: Icons.article_outlined,
+        icon: AppIcons.articleOutlined,
         title: l10n.productsRichDescriptionTitle,
         subtitle: l10n.productsRichDescriptionSubtitle,
         count: _contentBlocks.length,
@@ -1294,7 +1295,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         ),
       ),
       _DetailTile(
-        icon: Icons.style_outlined,
+        icon: AppIcons.styleOutlined,
         title: l10n.productsVariantsTitle,
         subtitle: l10n.productsVariantsSubtitle,
         count: _variants.where((v) => !v.isDefault).length,
@@ -1314,7 +1315,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         ),
       ),
       _DetailTile(
-        icon: Icons.sell_outlined,
+        icon: AppIcons.sellOutlined,
         title: l10n.productsTagsTitle,
         subtitle: l10n.productsTagsSubtitle,
         count: _tags.length,
@@ -1337,7 +1338,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         ),
       ),
       _DetailTile(
-        icon: Icons.qr_code_2_outlined,
+        icon: AppIcons.qrCode2Outlined,
         title: l10n.productsCodesInventoryTitle,
         subtitle: l10n.productsCodesInventorySubtitle,
         count: codesSet,
@@ -1352,7 +1353,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         ),
       ),
       _DetailTile(
-        icon: Icons.dashboard_customize_outlined,
+        icon: AppIcons.dashboardCustomizeOutlined,
         title: l10n.productsMoreAboutTitle,
         subtitle: l10n.productsMoreAboutSubtitle,
         count: customSet,
@@ -1458,7 +1459,7 @@ class _DetailTile extends StatelessWidget {
               ),
               const SizedBox(width: AppSizes.sm),
             ],
-            Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+            Icon(AppIcons.chevronRightRounded, color: AppColors.muted),
           ],
         ),
       ),
@@ -1620,7 +1621,7 @@ class _TagsEditor extends StatelessWidget {
             labelText: l10n.productsAddTag,
             helperText: l10n.productsTagsIntro,
             suffixIcon: IconButton(
-              icon: const Icon(Icons.add_rounded),
+              icon: const Icon(AppIcons.addRounded),
               onPressed: onAdd,
             ),
           ),
@@ -1667,7 +1668,7 @@ class _HighlightsEditor extends StatelessWidget {
                         ?.copyWith(fontWeight: FontWeight.w800)),
                 Expanded(child: Text(items[i])),
                 IconButton(
-                  icon: const Icon(Icons.close_rounded, size: 18),
+                  icon: const Icon(AppIcons.closeRounded, size: 18),
                   onPressed: () => onRemove(i),
                   tooltip: l10n.productsRemove,
                 ),
@@ -1693,7 +1694,7 @@ class _HighlightsEditor extends StatelessWidget {
               const SizedBox(width: AppSizes.sm),
               IconButton.filled(
                 onPressed: onAdd,
-                icon: const Icon(Icons.add),
+                icon: const Icon(AppIcons.add),
               ),
             ],
           ),
@@ -1775,7 +1776,7 @@ class _SpecsEditorState extends State<_SpecsEditor> {
           ),
         OutlinedButton.icon(
           onPressed: widget.groups.length >= 10 ? null : _addGroup,
-          icon: const Icon(Icons.add),
+          icon: const Icon(AppIcons.add),
           label: Text(l10n.productsAddSpecGroup),
         ),
       ],
@@ -1828,7 +1829,7 @@ class _GroupCard extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.delete_outline),
+                icon: const Icon(AppIcons.deleteOutline),
                 onPressed: onRemoveGroup,
                 tooltip: l10n.productsRemoveGroup,
               ),
@@ -1879,7 +1880,7 @@ class _GroupCard extends StatelessWidget {
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close_rounded, size: 18),
+                        icon: const Icon(AppIcons.closeRounded, size: 18),
                         tooltip: l10n.productsRemoveRow,
                         onPressed: () => onRemoveRow(i),
                       ),
@@ -1907,7 +1908,7 @@ class _GroupCard extends StatelessWidget {
             ),
           TextButton.icon(
             onPressed: group.rows.length >= 20 ? null : onAddRow,
-            icon: const Icon(Icons.add, size: 18),
+            icon: const Icon(AppIcons.add, size: 18),
             label: Text(l10n.productsAddRow),
           ),
         ],
@@ -1958,7 +1959,7 @@ class _OffersEditorState extends State<_OffersEditor> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.account_balance_outlined,
+              Icon(AppIcons.accountBalanceOutlined,
                   size: AppSizes.iconSm, color: AppColors.info),
               const SizedBox(width: AppSizes.sm),
               Expanded(
@@ -1989,7 +1990,7 @@ class _OffersEditorState extends State<_OffersEditor> {
           ),
         OutlinedButton.icon(
           onPressed: widget.offers.length >= 6 ? null : _addOffer,
-          icon: const Icon(Icons.add),
+          icon: const Icon(AppIcons.add),
           label: Text(l10n.productsAddOffer),
         ),
       ],
@@ -2081,7 +2082,7 @@ class _OfferRowState extends State<_OfferRow> {
               ),
               const Spacer(),
               IconButton(
-                icon: const Icon(Icons.delete_outline),
+                icon: const Icon(AppIcons.deleteOutline),
                 onPressed: widget.onRemove,
               ),
             ],

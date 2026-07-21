@@ -8,6 +8,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Bottom-sheet editor for one PlatformBankOffer. Returns `true` to
 /// the caller iff the save succeeded so the list page can refresh.
@@ -318,7 +319,7 @@ class _BodyState extends State<_Body> {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () => _pickDate(isFrom: true),
-                    icon: const Icon(Icons.event),
+                    icon: const Icon(AppIcons.event),
                     label: Text(
                         l10n.adminBankOfferFrom(_date.format(_validFrom))),
                   ),
@@ -327,7 +328,7 @@ class _BodyState extends State<_Body> {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () => _pickDate(isFrom: false),
-                    icon: const Icon(Icons.event_available),
+                    icon: const Icon(AppIcons.eventAvailable),
                     label: Text(
                         l10n.adminBankOfferUntil(_date.format(_validUntil))),
                   ),

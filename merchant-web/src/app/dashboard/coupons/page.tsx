@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { BarChart3, Plus, Power, RefreshCw, Ticket } from "lucide-react";
+import { BarChart3, Plus, Power, RefreshCw, Ticket } from "@/shared/icons";
 import { PageHeader } from "@/shared/ui/page-header";
 import { Modal, ModalActions } from "@/shared/ui/modal";
 import { formatDateTime, formatRelativeTime } from "@/shared/datetime";

@@ -11,7 +11,7 @@ import {
   ShoppingCart,
   Target,
   type LucideIcon,
-} from "lucide-react";
+} from "@/shared/icons";
 import type { AnalyticsTotals } from "./schema";
 
 const intFmt = new Intl.NumberFormat("en-IN");

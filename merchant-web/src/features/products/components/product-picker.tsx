@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Search } from "lucide-react";
+import { Search } from "@/shared/icons";
 import { Modal } from "@/shared/ui/modal";
 import { listProducts } from "../api";
 import { money } from "../format";

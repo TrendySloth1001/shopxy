@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { ChevronLeft, ChevronRight, Image as ImageIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, Image as ImageIcon } from "@/shared/icons";
 import { resolveImageUrl } from "@/features/home/format";
 import type { ProductImage, ProductOffer } from "../types";
 

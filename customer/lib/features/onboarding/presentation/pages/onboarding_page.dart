@@ -8,6 +8,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_pill_button.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// One onboarding slide's content.
 class _Slide {
@@ -142,7 +143,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       const SizedBox(height: AppSizes.xl),
                       AppPillButton(
                         label: _isLast ? 'Get started' : 'Continue',
-                        icon: _isLast ? null : Icons.arrow_forward_rounded,
+                        icon: _isLast ? null : AppIcons.arrowForwardRounded,
                         color: AppColors.brand,
                         onPressed: _next,
                       ),

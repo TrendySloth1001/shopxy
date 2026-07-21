@@ -9,6 +9,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Image carousel for the product detail hero.
 ///
@@ -186,7 +187,7 @@ class _AddPhotosPill extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                Icons.add_a_photo_outlined,
+                AppIcons.addAPhotoOutlined,
                 size: AppSizes.iconSm,
                 color: AppColors.black,
               ),
@@ -288,7 +289,7 @@ class _ThumbnailStrip extends StatelessWidget {
                   errorWidget: (_, _, _) => Container(
                     color: AppColors.heroPanel,
                     child: Icon(
-                      Icons.image_not_supported_outlined,
+                      AppIcons.imageNotSupportedOutlined,
                       color: AppColors.muted,
                     ),
                   ),
@@ -364,7 +365,7 @@ class _ProductLightboxState extends State<_ProductLightbox> {
                   ),
                 ),
                 errorWidget: (_, _, _) => const Icon(
-                  Icons.image_not_supported_outlined,
+                  AppIcons.imageNotSupportedOutlined,
                   color: Colors.white,
                   size: 64,
                 ),

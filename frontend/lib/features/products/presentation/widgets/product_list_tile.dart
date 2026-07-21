@@ -9,6 +9,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Product row used by the merchant listing screen.
 ///
@@ -77,12 +78,12 @@ class ProductListTile extends StatelessWidget {
 
   ({Color fg, Color bg, IconData icon}) _stockPalette() {
     if (product.isOutOfStock) {
-      return (fg: AppColors.error, bg: AppColors.errorSoft, icon: Icons.error_outline_rounded);
+      return (fg: AppColors.error, bg: AppColors.errorSoft, icon: AppIcons.errorOutlineRounded);
     }
     if (product.isLowStock) {
-      return (fg: AppColors.warning, bg: AppColors.warningSoft, icon: Icons.warning_amber_rounded);
+      return (fg: AppColors.warning, bg: AppColors.warningSoft, icon: AppIcons.warningAmberRounded);
     }
-    return (fg: AppColors.success, bg: AppColors.successSoft, icon: Icons.check_circle_outline_rounded);
+    return (fg: AppColors.success, bg: AppColors.successSoft, icon: AppIcons.checkCircleOutlineRounded);
   }
 
   @override
@@ -212,7 +213,7 @@ class ProductListTile extends StatelessWidget {
                             ),
                           if (hasVendor)
                             _MetaChip(
-                              icon: Icons.storefront_outlined,
+                              icon: AppIcons.storefrontOutlined,
                               label: product.lastVendorName!,
                               fg: AppColors.muted,
                               bg: AppColors.surfaceTint,
@@ -288,7 +289,7 @@ class ProductListTile extends StatelessWidget {
 
     if (product.isOutOfStock && lastOut != null) {
       return (
-        icon: Icons.event_busy_outlined,
+        icon: AppIcons.eventBusyOutlined,
         label: '${l10n.productsOutSince} ${_relativeTime(lastOut)}',
         fg: AppColors.error,
         bg: AppColors.errorSoft,
@@ -299,7 +300,7 @@ class ProductListTile extends StatelessWidget {
     // as "Sold X ago" since the merchant cares more about the movement.
     if (lastOut != null && (lastIn == null || lastOut.isAfter(lastIn))) {
       return (
-        icon: Icons.point_of_sale_outlined,
+        icon: AppIcons.pointOfSaleOutlined,
         label: '${l10n.productsSold} ${_relativeTime(lastOut)}',
         fg: AppColors.muted,
         bg: AppColors.surfaceTint,
@@ -312,7 +313,7 @@ class ProductListTile extends StatelessWidget {
           ? '${l10n.productsStockedIn} ${_relativeTime(lastIn)}'
           : '${l10n.productsLastIn} ${_relativeTime(lastIn)}';
       return (
-        icon: Icons.south_west_rounded,
+        icon: AppIcons.southWestRounded,
         label: label,
         fg: AppColors.muted,
         bg: AppColors.surfaceTint,
@@ -465,7 +466,7 @@ class _MerchantPriceLine extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  Icons.error_outline_rounded,
+                  AppIcons.errorOutlineRounded,
                   size: 11,
                   color: AppColors.warning,
                 ),

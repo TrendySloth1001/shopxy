@@ -13,6 +13,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shadows.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Profile tab — polished snapshot of the merchant identity plus the
 /// shortcuts that don't deserve a top-level nav slot. One canonical
@@ -34,7 +35,7 @@ class ProfilePage extends StatelessWidget {
         actions: [
           IconButton(
             tooltip: l10n.profileSettings,
-            icon: const Icon(Icons.settings_outlined),
+            icon: const Icon(AppIcons.settingsOutlined),
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const SettingsPage()),
@@ -123,18 +124,18 @@ class ProfilePage extends StatelessWidget {
     final accent = AppColors.accentIndigo;
     final accentSoft = AppColors.accentIndigoSoft;
     return _DetailSection(
-      icon: Icons.person_outline,
+      icon: AppIcons.personOutline,
       title: l10n.profilePersonalDetails,
       rows: [
         _DetailRow(
-          icon: Icons.badge_outlined,
+          icon: AppIcons.badgeOutlined,
           label: l10n.profileFieldName,
           value: user.name,
           accent: accent,
           accentSoft: accentSoft,
         ),
         _DetailRow(
-          icon: Icons.alternate_email,
+          icon: AppIcons.alternateEmail,
           label: l10n.profileEmail,
           value: user.email,
           accent: accent,
@@ -142,7 +143,7 @@ class ProfilePage extends StatelessWidget {
           copyable: true,
         ),
         _DetailRow(
-          icon: Icons.call_outlined,
+          icon: AppIcons.callOutlined,
           label: l10n.profileFieldPhone,
           value: user.phoneNumber,
           accent: accent,
@@ -160,46 +161,46 @@ class ProfilePage extends StatelessWidget {
     final accent = AppColors.brandStrong;
     final accentSoft = AppColors.brandSoft;
     return _DetailSection(
-      icon: Icons.storefront_outlined,
+      icon: AppIcons.storefrontOutlined,
       title: l10n.profileShopDetails,
       rows: [
         _DetailRow(
-          icon: Icons.storefront_outlined,
+          icon: AppIcons.storefrontOutlined,
           label: l10n.profileFieldShopName,
           value: user.shopName,
           accent: accent,
           accentSoft: accentSoft,
         ),
         _DetailRow(
-          icon: Icons.location_on_outlined,
+          icon: AppIcons.locationOnOutlined,
           label: l10n.profileFieldAddress,
           value: user.shopAddress,
           accent: accent,
           accentSoft: accentSoft,
         ),
         _DetailRow(
-          icon: Icons.location_city_outlined,
+          icon: AppIcons.locationCityOutlined,
           label: l10n.profileFieldCity,
           value: user.shopCity,
           accent: accent,
           accentSoft: accentSoft,
         ),
         _DetailRow(
-          icon: Icons.map_outlined,
+          icon: AppIcons.mapOutlined,
           label: l10n.profileFieldState,
           value: _composeState(user),
           accent: accent,
           accentSoft: accentSoft,
         ),
         _DetailRow(
-          icon: Icons.markunread_mailbox_outlined,
+          icon: AppIcons.markunreadMailboxOutlined,
           label: l10n.profileFieldPinCode,
           value: user.shopPinCode,
           accent: accent,
           accentSoft: accentSoft,
         ),
         _DetailRow(
-          icon: Icons.receipt_long_outlined,
+          icon: AppIcons.receiptLongOutlined,
           label: l10n.profileFieldGstin,
           value: user.shopGstin,
           accent: accent,
@@ -207,7 +208,7 @@ class ProfilePage extends StatelessWidget {
           copyable: true,
         ),
         _DetailRow(
-          icon: Icons.credit_card_outlined,
+          icon: AppIcons.creditCardOutlined,
           label: l10n.profileFieldPan,
           value: user.shopPan,
           accent: accent,
@@ -215,7 +216,7 @@ class ProfilePage extends StatelessWidget {
           copyable: true,
         ),
         _DetailRow(
-          icon: Icons.account_balance_wallet_outlined,
+          icon: AppIcons.accountBalanceWalletOutlined,
           label: l10n.profileFieldUpiId,
           value: user.upiVpa,
           accent: accent,
@@ -283,7 +284,7 @@ class ProfilePage extends StatelessWidget {
                 ),
                 alignment: Alignment.center,
                 child: Icon(
-                  Icons.logout_rounded,
+                  AppIcons.logoutRounded,
                   color: AppColors.error,
                   size: AppSizes.iconLg,
                 ),
@@ -308,7 +309,7 @@ class ProfilePage extends StatelessWidget {
                 width: double.infinity,
                 child: FilledButton.icon(
                   onPressed: () => Navigator.of(sheetContext).pop(true),
-                  icon: const Icon(Icons.logout_rounded, size: AppSizes.iconSm),
+                  icon: const Icon(AppIcons.logoutRounded, size: AppSizes.iconSm),
                   label: Text(l10n.profileLogout),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.error,
@@ -452,7 +453,7 @@ class _ProfileHero extends StatelessWidget {
                         _RoleChip(shopRole: shopRole),
                         if (memberSince != null)
                           _MetaChip(
-                            icon: Icons.calendar_today_outlined,
+                            icon: AppIcons.calendarTodayOutlined,
                             label:
                                 '${l10n.profileMemberSince} ${MaterialLocalizations.of(context).formatMonthYear(memberSince)}',
                           ),
@@ -474,7 +475,7 @@ class _ProfileHero extends StatelessWidget {
                 context,
                 MaterialPageRoute(builder: (_) => const EditProfilePage()),
               ),
-              icon: const Icon(Icons.edit_outlined, size: AppSizes.iconSm),
+              icon: const Icon(AppIcons.editOutlined, size: AppSizes.iconSm),
               label: Text(l10n.profileEditProfile),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.brandStrong,
@@ -528,7 +529,7 @@ class _ShopSetupCallout extends StatelessWidget {
                 ),
                 alignment: Alignment.center,
                 child: Icon(
-                  Icons.storefront_rounded,
+                  AppIcons.storefrontRounded,
                   size: AppSizes.iconMd,
                   color: AppColors.accentAmber,
                 ),
@@ -556,7 +557,7 @@ class _ShopSetupCallout extends StatelessWidget {
                 ),
               ),
               Icon(
-                Icons.chevron_right_rounded,
+                AppIcons.chevronRightRounded,
                 color: AppColors.accentAmber,
               ),
             ],
@@ -708,7 +709,7 @@ class _ProfileCompletion extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              Icons.add_rounded,
+                              AppIcons.addRounded,
                               size: AppSizes.iconSm,
                               color: AppColors.brandStrong,
                             ),
@@ -889,7 +890,7 @@ class _DetailRow extends StatelessWidget {
           if (canCopy) ...[
             const SizedBox(width: AppSizes.sm),
             Icon(
-              Icons.copy_rounded,
+              AppIcons.copyRounded,
               size: AppSizes.iconSm,
               color: AppColors.subtle,
             ),
@@ -946,7 +947,7 @@ class _LogoutTile extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  Icons.logout_rounded,
+                  AppIcons.logoutRounded,
                   color: AppColors.error,
                   size: AppSizes.iconMd,
                 ),

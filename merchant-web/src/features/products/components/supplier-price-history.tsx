@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Building2 } from "lucide-react";
+import { Building2 } from "@/shared/icons";
 import { listStockTransactions } from "@/features/stock/api";
 import {
   displaySupplier,

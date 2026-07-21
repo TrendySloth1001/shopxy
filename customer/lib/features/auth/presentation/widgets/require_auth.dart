@@ -7,6 +7,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/widgets/app_bottom_sheet.dart';
 import 'package:shopxy_customer/shared/widgets/app_button.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Single sign-in gate used by every guest-blocked action. The contract:
 ///
@@ -130,19 +131,19 @@ Future<bool?> _showSkipSheet(BuildContext context) {
             ),
             const SizedBox(height: AppSizes.sm),
             const _SkipBullet(
-              icon: Icons.local_shipping_outlined,
+              icon: AppIcons.localShippingOutlined,
               text: 'Place orders, track them and view invoices',
             ),
             const _SkipBullet(
-              icon: Icons.favorite_border_rounded,
+              icon: AppIcons.favoriteBorderRounded,
               text: 'Save items to your wishlist',
             ),
             const _SkipBullet(
-              icon: Icons.notifications_none_rounded,
+              icon: AppIcons.notificationsNoneRounded,
               text: 'Receive shop invitations and order updates',
             ),
             const _SkipBullet(
-              icon: Icons.location_on_outlined,
+              icon: AppIcons.locationOnOutlined,
               text: 'Save delivery addresses for checkout',
             ),
             const SizedBox(height: AppSizes.lg),
@@ -225,7 +226,7 @@ Future<_SignInChoice?> _showSignInSheet(
             const SizedBox(height: AppSizes.lg),
             AppButton.primary(
               label: 'Sign in',
-              icon: Icons.login_rounded,
+              icon: AppIcons.loginRounded,
               fullWidth: true,
               onPressed: () =>
                   Navigator.of(ctx).pop(_SignInChoice.login),

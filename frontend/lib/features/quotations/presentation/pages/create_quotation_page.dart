@@ -17,6 +17,7 @@ import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/constants/app_durations.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Internal mutable bucket line.
 class _Line {
@@ -236,7 +237,7 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
               padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
               child: Row(
                 children: [
-                  Icon(Icons.person_outline_rounded,
+                  Icon(AppIcons.personOutlineRounded,
                       color: AppColors.muted),
                   const SizedBox(width: AppSizes.md),
                   Expanded(
@@ -259,7 +260,7 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
                 padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
                 child: Row(
                   children: [
-                    Icon(Icons.person_outline_rounded,
+                    Icon(AppIcons.personOutlineRounded,
                         color: AppColors.muted),
                     const SizedBox(width: AppSizes.md),
                     Expanded(
@@ -271,7 +272,7 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
                         ),
                       ),
                     ),
-                    Icon(Icons.chevron_right_rounded,
+                    Icon(AppIcons.chevronRightRounded,
                         color: AppColors.muted),
                   ],
                 ),
@@ -288,7 +289,7 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
             onChanged: _onProductSearchChanged,
             decoration: InputDecoration(
               hintText: 'Search your catalogue',
-              prefixIcon: const Icon(Icons.search_rounded),
+              prefixIcon: const Icon(AppIcons.searchRounded),
               suffixIcon: _searching
                   ? const Padding(
                       padding: EdgeInsets.all(AppSizes.md),
@@ -318,7 +319,7 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
                     subtitle: Text(
                       '${_currency.format(_results[i].sellingPrice)} · ${_results[i].taxPercent.toStringAsFixed(0)}% GST · stock ${_results[i].stockQuantity.toStringAsFixed(0)}',
                     ),
-                    trailing: Icon(Icons.add_circle_outline_rounded,
+                    trailing: Icon(AppIcons.addCircleOutlineRounded,
                         color: AppColors.brand),
                     onTap: () => _addProduct(_results[i]),
                   ),
@@ -472,7 +473,7 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.remove_circle_outline_rounded),
+                    icon: const Icon(AppIcons.removeCircleOutlineRounded),
                     visualDensity: VisualDensity.compact,
                     onPressed: () => setState(() {
                       if (line.qty > 1) {
@@ -487,7 +488,7 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
                       style: theme.textTheme.titleMedium
                           ?.copyWith(fontWeight: FontWeight.w800)),
                   IconButton(
-                    icon: const Icon(Icons.add_circle_outline_rounded),
+                    icon: const Icon(AppIcons.addCircleOutlineRounded),
                     color: AppColors.brand,
                     visualDensity: VisualDensity.compact,
                     onPressed: () => setState(() => line.qty += 1),

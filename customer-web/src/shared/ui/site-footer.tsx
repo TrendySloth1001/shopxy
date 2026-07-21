@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Store, Truck, RotateCcw, ShieldCheck, BadgePercent } from "lucide-react";
+import { Store, Truck, RotateCcw, ShieldCheck, BadgePercent } from "@/shared/icons";
 
 // ── Trust promise row ─────────────────────────────────────────────────────────
 

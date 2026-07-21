@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Lock } from "lucide-react";
+import { Lock } from "@/shared/icons";
 import { useAuth } from "../auth-context";
 import { areaForPath, canManage, canView } from "../capabilities";
 import { AREA_LABELS } from "@/features/team/permissions";

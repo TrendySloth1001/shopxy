@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Ticket } from "lucide-react";
+import { Ticket } from "@/shared/icons";
 import { BackLink } from "@/shared/ui/page-header";
 import { DateTimeField, SelectField, TextAreaField, TextField, ToggleField } from "@/shared/ui/form";
 import { Divider } from "@/shared/ui/divider";

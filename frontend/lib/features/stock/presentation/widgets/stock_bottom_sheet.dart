@@ -17,6 +17,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 // Vendor model scoped to this widget (sourced from /stock/suppliers)
 typedef _SV = SupplierVendor;
@@ -329,12 +330,12 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
                   ButtonSegment(
                     value: 'STOCK_IN',
                     label: Text(l10n.stockSheetPurchase),
-                    icon: const Icon(Icons.add_rounded),
+                    icon: const Icon(AppIcons.addRounded),
                   ),
                   ButtonSegment(
                     value: 'STOCK_OUT',
                     label: Text(l10n.stockSheetSale),
-                    icon: const Icon(Icons.remove_rounded),
+                    icon: const Icon(AppIcons.removeRounded),
                   ),
                 ],
                 selected: {_type},
@@ -434,10 +435,10 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
                   controller: _partyQuery,
                   decoration: InputDecoration(
                     hintText: l10n.stockSheetSearchParties,
-                    prefixIcon: const Icon(Icons.person_search_rounded),
+                    prefixIcon: const Icon(AppIcons.personSearchRounded),
                     suffixIcon: _selectedParty != null
                         ? IconButton(
-                            icon: const Icon(Icons.close_rounded),
+                            icon: const Icon(AppIcons.closeRounded),
                             onPressed: _clearParty,
                             tooltip: l10n.stockSheetClear,
                           )
@@ -463,8 +464,8 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
                         label: Text(p.name),
                         avatar: Icon(
                           p.name == 'Walk-in Customer'
-                              ? Icons.directions_walk_rounded
-                              : Icons.person_rounded,
+                              ? AppIcons.directionsWalkRounded
+                              : AppIcons.personRounded,
                           size: AppSizes.iconSm,
                         ),
                         onPressed: () => _pickParty(p),
@@ -501,7 +502,7 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
                         onSelected: (_) =>
                             isSelected ? _clearVendor() : _selectVendor(v),
                         avatar: Icon(
-                          Icons.business_rounded,
+                          AppIcons.businessRounded,
                           size: AppSizes.iconSm,
                           color: isSelected
                               ? Theme.of(
@@ -546,7 +547,7 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
                                 ? l10n.stockSheetSupplierHint
                                 : l10n.stockSheetSupplierAutocompleteHint,
                             suffixIcon: _freeTextOptions.isNotEmpty
-                                ? const Icon(Icons.history_rounded)
+                                ? const Icon(AppIcons.historyRounded)
                                 : null,
                           ),
                           textCapitalization: TextCapitalization.words,

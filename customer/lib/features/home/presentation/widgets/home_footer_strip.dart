@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 class HomeFooterStrip extends StatelessWidget {
   const HomeFooterStrip({super.key});
@@ -30,14 +31,14 @@ class HomeFooterStrip extends StatelessWidget {
             children: const [
               Expanded(
                 child: _FooterCell(
-                  icon: Icons.verified_user_outlined,
+                  icon: AppIcons.verifiedUserOutlined,
                   title: '100% Authentic',
                   subtitle: 'Sourced direct from brands',
                 ),
               ),
               Expanded(
                 child: _FooterCell(
-                  icon: Icons.lock_outline,
+                  icon: AppIcons.lockOutline,
                   title: 'Secure payments',
                   subtitle: 'UPI · Cards · COD',
                 ),
@@ -49,14 +50,14 @@ class HomeFooterStrip extends StatelessWidget {
             children: const [
               Expanded(
                 child: _FooterCell(
-                  icon: Icons.support_agent_outlined,
+                  icon: AppIcons.supportAgentOutlined,
                   title: '24×7 support',
                   subtitle: 'We\'re here when you need',
                 ),
               ),
               Expanded(
                 child: _FooterCell(
-                  icon: Icons.assignment_return_outlined,
+                  icon: AppIcons.assignmentReturnOutlined,
                   title: 'Easy returns',
                   subtitle: '7-day no-questions',
                 ),

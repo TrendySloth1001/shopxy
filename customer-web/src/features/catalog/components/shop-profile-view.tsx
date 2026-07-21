@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ShoppingBag, Star } from "lucide-react";
+import { ArrowLeft, ShoppingBag, Star } from "@/shared/icons";
 import { fetchShopProducts } from "@/features/catalog/api";
 import type { CatalogProduct, ShopProfile, SortOption } from "@/features/catalog/types";
 import { CatalogProductCard } from "./catalog-product-card";

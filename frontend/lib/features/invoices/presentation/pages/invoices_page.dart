@@ -28,6 +28,7 @@ import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 class InvoicesPage extends StatefulWidget {
   const InvoicesPage({super.key});
@@ -117,7 +118,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
             clipBehavior: Clip.none,
             children: [
               IconButton(
-                icon: const Icon(Icons.tune_rounded),
+                icon: const Icon(AppIcons.tuneRounded),
                 tooltip: l10n.invoicesFiltersTooltip,
                 onPressed: () => _openFilterSheet(provider),
               ),
@@ -140,7 +141,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
               onReload: () => provider.loadInvoices(refresh: true)),
           LockedIconButton(
             allowed: canManage,
-            icon: Icons.add_rounded,
+            icon: AppIcons.addRounded,
             tooltip: l10n.invoicesCreateTitle,
             what: 'create invoices',
             onPressed: _openCreate,
@@ -178,7 +179,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
               ),
               AppFilterPill(
                 label: l10n.invoicesFilterSales,
-                icon: Icons.arrow_upward_rounded,
+                icon: AppIcons.arrowUpwardRounded,
                 selected: provider.typeFilter == 'SALE',
                 onTap: () => provider.setTypeFilter(
                   provider.typeFilter == 'SALE' ? null : 'SALE',
@@ -186,7 +187,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
               ),
               AppFilterPill(
                 label: l10n.invoicesFilterPurchases,
-                icon: Icons.arrow_downward_rounded,
+                icon: AppIcons.arrowDownwardRounded,
                 selected: provider.typeFilter == 'PURCHASE',
                 onTap: () => provider.setTypeFilter(
                   provider.typeFilter == 'PURCHASE' ? null : 'PURCHASE',
@@ -225,7 +226,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
                               what: 'create invoices',
                               child: AppButton.primary(
                                 label: l10n.invoicesCreateTitle,
-                                icon: Icons.add_rounded,
+                                icon: AppIcons.addRounded,
                                 onPressed: _openCreate,
                               ),
                             ),
@@ -369,7 +370,7 @@ class _ActiveSecondaryFiltersRow extends StatelessWidget {
               const SizedBox(width: AppSizes.xs),
               Padding(
                 padding: const EdgeInsets.all(AppSizes.xs),
-                child: Icon(Icons.close_rounded, size: AppSizes.iconSm, color: c),
+                child: Icon(AppIcons.closeRounded, size: AppSizes.iconSm, color: c),
               ),
             ],
           ),
@@ -424,13 +425,13 @@ class _InvoiceFilterSheetState extends State<_InvoiceFilterSheet> {
   late String? _status = widget.status;
 
   static const _documentOptions = <(String?, IconData)>[
-    (null, Icons.layers_outlined),
-    ('TAX_INVOICE', Icons.receipt_long_rounded),
-    ('BILL_OF_SUPPLY', Icons.description_outlined),
-    ('ESTIMATE', Icons.request_quote_outlined),
-    ('PROFORMA', Icons.article_outlined),
-    ('CREDIT_NOTE', Icons.undo_rounded),
-    ('DEBIT_NOTE', Icons.redo_rounded),
+    (null, AppIcons.layersOutlined),
+    ('TAX_INVOICE', AppIcons.receiptLongRounded),
+    ('BILL_OF_SUPPLY', AppIcons.descriptionOutlined),
+    ('ESTIMATE', AppIcons.requestQuoteOutlined),
+    ('PROFORMA', AppIcons.articleOutlined),
+    ('CREDIT_NOTE', AppIcons.undoRounded),
+    ('DEBIT_NOTE', AppIcons.redoRounded),
   ];
 
   // Getter, not `static final`: the status colours are theme-aware getters, so
@@ -746,8 +747,8 @@ class _InvoiceTile extends StatelessWidget {
             children: [
               AppIconAvatar(
                 icon: invoice.isSale
-                    ? Icons.arrow_upward_rounded
-                    : Icons.arrow_downward_rounded,
+                    ? AppIcons.arrowUpwardRounded
+                    : AppIcons.arrowDownwardRounded,
                 size: AppSizes.iconHuge,
                 filled: invoice.isSale,
               ),
@@ -808,7 +809,7 @@ class _InvoiceTile extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.download_rounded, size: AppSizes.iconMd),
+                    icon: const Icon(AppIcons.downloadRounded, size: AppSizes.iconMd),
                     onPressed: onDownload,
                     tooltip: l10n.invoicesDownloadTooltip,
                     visualDensity: VisualDensity.compact,

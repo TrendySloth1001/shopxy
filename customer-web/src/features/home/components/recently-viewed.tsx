@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "@/shared/icons";
 import type { ProductCard } from "../types";
 import { ImageBox } from "./image-box";
 import { productHref } from "./product-tile";

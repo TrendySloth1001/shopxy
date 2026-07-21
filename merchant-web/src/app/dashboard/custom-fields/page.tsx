@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Plus, Pencil, Trash2, Sparkles, Tag } from "lucide-react";
+import { Plus, Pencil, Trash2, Sparkles, Tag } from "@/shared/icons";
 import { Divider } from "@/shared/ui/divider";
 import {
   applyTemplate,

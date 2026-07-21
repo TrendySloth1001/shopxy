@@ -11,6 +11,7 @@ import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// "My coupons" — read-only list of redeemable promo codes. Customers
 /// copy a code here and paste it into the checkout sheet. Exhausted
@@ -266,7 +267,7 @@ class _CouponCard extends StatelessWidget {
                 const SizedBox(width: AppSizes.sm),
                 TextButton.icon(
                   onPressed: exhausted ? null : () => _copy(context),
-                  icon: const Icon(Icons.copy_rounded, size: AppSizes.iconSm),
+                  icon: const Icon(AppIcons.copyRounded, size: AppSizes.iconSm),
                   label: const Text('Copy'),
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.brand,
@@ -335,7 +336,7 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.local_offer_outlined,
+            const Icon(AppIcons.localOfferOutlined,
                 size: AppSizes.iconHuge, color: AppColors.muted),
             const SizedBox(height: AppSizes.md),
             Text(

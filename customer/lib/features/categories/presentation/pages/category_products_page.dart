@@ -10,6 +10,7 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/shared/format/app_format.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Paginated product feed for a single canonical category. Backend
 /// rolls children up under the parent slug, so picking "Electronics"
@@ -103,7 +104,7 @@ class _CategoryProductsPageState extends State<CategoryProductsPage> {
         actions: [
           PopupMenuButton<String>(
             tooltip: 'Sort',
-            icon: const Icon(Icons.sort_rounded),
+            icon: const Icon(AppIcons.sortRounded),
             onSelected: (v) {
               setState(() => _sort = v);
               _load(reset: true);

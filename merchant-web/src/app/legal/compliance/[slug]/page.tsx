@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "@/shared/icons";
 import { getSection, SECTIONS } from "@/features/legal/compliance-content";
 import { ComplianceSectionBody } from "@/features/legal/compliance-section";
 

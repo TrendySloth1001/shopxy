@@ -5,6 +5,7 @@ import 'package:shopxy/features/notifications/presentation/providers/notificatio
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// AppBar action that opens the notifications inbox and surfaces a
 /// small unread badge on the bell glyph.
@@ -27,7 +28,7 @@ class NotificationBell extends StatelessWidget {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            const Center(child: Icon(Icons.notifications_none_rounded)),
+            const Center(child: Icon(AppIcons.notificationsNoneRounded)),
             if (unread > 0)
               Positioned(
                 right: -AppSizes.xs,

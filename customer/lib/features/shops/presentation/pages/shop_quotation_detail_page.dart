@@ -13,6 +13,7 @@ import 'package:shopxy_customer/shared/widgets/app_divider.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/shared/format/app_format.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Full quotation detail for the customer: line items, totals, status timeline
 /// and Accept / Decline. Accepting turns it into a confirmed invoice.
@@ -218,7 +219,7 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
                       width: AppSizes.iconSm,
                       height: AppSizes.iconSm,
                       child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Icon(Icons.share_rounded,
+                  : const Icon(AppIcons.shareRounded,
                       size: AppSizes.iconSm, color: AppColors.brand),
               label: Text('Share',
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
@@ -409,7 +410,7 @@ class _ItemRow extends StatelessWidget {
                 shape: AppShapes.squircle(AppSizes.radiusSm),
               ),
               alignment: Alignment.center,
-              child: const Icon(Icons.inventory_2_outlined,
+              child: const Icon(AppIcons.inventory2Outlined,
                   size: AppSizes.iconMd, color: AppColors.brand),
             )
           else

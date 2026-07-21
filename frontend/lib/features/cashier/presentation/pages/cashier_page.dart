@@ -8,6 +8,7 @@ import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Cashier control center: open/close a till shift, manage the cash drawer,
 /// reconcile (X/Z report), and process returns. Reaches /me/cashier over HTTP.
@@ -100,7 +101,7 @@ class _CashierPageState extends State<CashierPage> {
       backgroundColor: AppColors.canvas,
       appBar: FloatingAppBar(
         title: l10n.cashierTitle,
-        actions: [IconButton(onPressed: _loading ? null : _load, icon: const Icon(Icons.refresh_rounded))],
+        actions: [IconButton(onPressed: _loading ? null : _load, icon: const Icon(AppIcons.refreshRounded))],
       ),
       body: _loading
           ? const SafeArea(
@@ -179,7 +180,7 @@ class _ShiftOwnerBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.account_circle_outlined, color: AppColors.brand),
+          Icon(AppIcons.accountCircleOutlined, color: AppColors.brand),
           const SizedBox(width: AppSizes.sm),
           Expanded(
             child: Column(
@@ -191,7 +192,7 @@ class _ShiftOwnerBanner extends StatelessWidget {
             ),
           ),
           Row(children: [
-            Icon(Icons.timer_outlined, size: AppSizes.iconSm, color: AppColors.muted),
+            Icon(AppIcons.timerOutlined, size: AppSizes.iconSm, color: AppColors.muted),
             const SizedBox(width: AppSizes.xs),
             Text(_elapsed(shift['openedAt']), style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700, fontFeatures: const [])),
           ]),
@@ -251,7 +252,7 @@ class _ShiftHistoryCardState extends State<_ShiftHistoryCard> {
     final theme = Theme.of(context);
     return _Card(
       title: l10n.cashierPastShiftsTitle,
-      icon: Icons.history_rounded,
+      icon: AppIcons.historyRounded,
       child: _shifts == null
           ? Padding(padding: const EdgeInsets.symmetric(vertical: AppSizes.md), child: Text(l10n.cashierLoading))
           : _shifts!.isEmpty
@@ -267,7 +268,7 @@ class _ShiftHistoryCardState extends State<_ShiftHistoryCard> {
                           '${s['variance'] != null ? ' · ${l10n.cashierVarianceLabel(_money(_d(s['variance'])))}' : ''}',
                           style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
                         ),
-                        trailing: const Icon(Icons.chevron_right_rounded),
+                        trailing: const Icon(AppIcons.chevronRightRounded),
                         onTap: () => _view(_i(s['id'])),
                       ),
                   ],
@@ -341,7 +342,7 @@ class _ReportCard extends StatelessWidget {
     final sales = (report['sales'] as Map?)?.cast<String, dynamic>() ?? {};
     return _Card(
       title: l10n.cashierShiftReportTitle,
-      icon: Icons.summarize_outlined,
+      icon: AppIcons.summarizeOutlined,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -399,7 +400,7 @@ class _OpenShiftFormState extends State<_OpenShiftForm> {
       padding: const EdgeInsets.all(AppSizes.lg),
       child: _Card(
         title: l10n.cashierOpenShiftTitle,
-        icon: Icons.lock_open_rounded,
+        icon: AppIcons.lockOpenRounded,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -414,7 +415,7 @@ class _OpenShiftFormState extends State<_OpenShiftForm> {
             const SizedBox(height: AppSizes.md),
             FilledButton.icon(
               onPressed: widget.busy ? null : () => widget.onOpen(_parseAmount(_ctrl.text) ?? 0),
-              icon: const Icon(Icons.lock_open_rounded),
+              icon: const Icon(AppIcons.lockOpenRounded),
               label: Text(l10n.cashierOpenShiftButton),
             ),
           ],
@@ -448,7 +449,7 @@ class _CashDrawerCardState extends State<_CashDrawerCard> {
     final l10n = AppLocalizations.of(context);
     return _Card(
       title: l10n.cashierCashDrawerTitle,
-      icon: Icons.savings_outlined,
+      icon: AppIcons.savingsOutlined,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -505,7 +506,7 @@ class _CloseShiftCardState extends State<_CloseShiftCard> {
     final variance = counted == null ? null : counted - widget.expected;
     return _Card(
       title: l10n.cashierCloseShiftTitle,
-      icon: Icons.lock_outline_rounded,
+      icon: AppIcons.lockOutlineRounded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -534,7 +535,7 @@ class _CloseShiftCardState extends State<_CloseShiftCard> {
           const SizedBox(height: AppSizes.sm),
           FilledButton.icon(
             onPressed: widget.busy || counted == null ? null : () => widget.onClose(counted, _note.text.trim()),
-            icon: const Icon(Icons.lock_outline_rounded),
+            icon: const Icon(AppIcons.lockOutlineRounded),
             label: Text(l10n.cashierCloseZReportButton),
           ),
         ],
@@ -574,7 +575,7 @@ class _ReturnsCardState extends State<_ReturnsCard> {
     final lines = (_returnable?['lines'] as List?)?.cast<Map>() ?? const [];
     return _Card(
       title: l10n.cashierReturnsTitle,
-      icon: Icons.assignment_return_outlined,
+      icon: AppIcons.assignmentReturnOutlined,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -656,7 +657,7 @@ class _ReturnsCardState extends State<_ReturnsCard> {
                         setState(() => _returnable = null);
                         await widget.onChanged();
                       }),
-              icon: const Icon(Icons.assignment_return_outlined),
+              icon: const Icon(AppIcons.assignmentReturnOutlined),
               label: Text(l10n.cashierProcessReturnButton),
             ),
           ],

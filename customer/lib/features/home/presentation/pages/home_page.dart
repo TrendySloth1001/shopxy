@@ -19,6 +19,7 @@ import 'package:shopxy_customer/features/home/presentation/widgets/home_top_bar.
 import 'package:shopxy_customer/features/home/presentation/widgets/home_trust_strip.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -510,7 +511,7 @@ class _ErrorRetry extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(
-              Icons.cloud_off_outlined,
+              AppIcons.cloudOffOutlined,
               size: 56,
               color: AppColors.muted,
             ),
@@ -532,7 +533,7 @@ class _ErrorRetry extends StatelessWidget {
             const SizedBox(height: AppSizes.lg),
             FilledButton.icon(
               onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
+              icon: const Icon(AppIcons.refresh),
               label: const Text('Try again'),
             ),
           ],

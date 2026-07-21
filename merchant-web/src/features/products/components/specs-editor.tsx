@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Plus, X } from "lucide-react";
+import { Plus, X } from "@/shared/icons";
 import type { SpecGroup } from "../schema";
 import { MiniButton } from "./form-controls";
 

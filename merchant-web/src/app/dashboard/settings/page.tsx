@@ -19,7 +19,7 @@ import {
   UserPen,
   Users,
   Wallet,
-} from "lucide-react";
+} from "@/shared/icons";
 import { useAuth } from "@/features/auth/auth-context";
 import { SecuritySection } from "@/features/auth/components/security-section";
 import { DangerZone } from "@/features/auth/components/danger-zone";

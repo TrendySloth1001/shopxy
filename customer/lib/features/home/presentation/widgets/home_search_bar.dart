@@ -6,6 +6,7 @@ import 'package:shopxy_customer/features/search/presentation/pages/search_page.d
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 class HomeSearchBar extends StatefulWidget {
   const HomeSearchBar({super.key, this.shrink = 0.0});
@@ -95,7 +96,7 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
                 ),
                 alignment: Alignment.center,
                 child: const Icon(
-                  Icons.search_rounded,
+                  AppIcons.searchRounded,
                   color: AppColors.white,
                   size: 18,
                 ),
@@ -151,12 +152,12 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
               ),
               const SizedBox(width: AppSizes.xs),
               const _SearchAction(
-                icon: Icons.mic_none_rounded,
+                icon: AppIcons.micNoneRounded,
                 filled: false,
               ),
               const SizedBox(width: 2),
               const _SearchAction(
-                icon: Icons.qr_code_scanner_rounded,
+                icon: AppIcons.qrCodeScannerRounded,
                 filled: true,
               ),
             ],

@@ -10,6 +10,7 @@ import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Admin-only listing of marketplace shops with a verified toggle.
 /// Gated by the `isPlatformAdmin` drawer entry. No bulk actions yet —
@@ -91,7 +92,7 @@ class _AdminShopsPageState extends State<AdminShopsPage> {
         actions: [
           IconButton(
             tooltip: l10n.adminRefresh,
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(AppIcons.refresh),
             onPressed: _loading ? null : _load,
           ),
         ],
@@ -109,11 +110,11 @@ class _AdminShopsPageState extends State<AdminShopsPage> {
               controller: _searchCtrl,
               decoration: InputDecoration(
                 hintText: l10n.adminShopsSearchHint,
-                prefixIcon: const Icon(Icons.search),
+                prefixIcon: const Icon(AppIcons.search),
                 suffixIcon: _searchCtrl.text.isEmpty
                     ? null
                     : IconButton(
-                        icon: const Icon(Icons.close),
+                        icon: const Icon(AppIcons.close),
                         onPressed: () {
                           _searchCtrl.clear();
                           _load();
@@ -183,7 +184,7 @@ class _Row extends StatelessWidget {
                       ? Container(
                           color: AppColors.heroPanel,
                           alignment: Alignment.center,
-                          child: Icon(Icons.storefront_outlined,
+                          child: Icon(AppIcons.storefrontOutlined,
                               color: AppColors.muted),
                         )
                       : Image.network(
@@ -319,7 +320,7 @@ class _EmptyBlock extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.storefront_outlined,
+              Icon(AppIcons.storefrontOutlined,
                   size: AppSizes.iconHuge, color: AppColors.subtle),
               const SizedBox(height: AppSizes.md),
               Text(

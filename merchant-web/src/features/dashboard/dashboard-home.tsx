@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Mail, RefreshCw } from "lucide-react";
+import { Mail, RefreshCw } from "@/shared/icons";
 import { useAuth } from "@/features/auth/auth-context";
 import { listIncomingInvitations } from "@/features/invitations/api";
 import { getPayoutStatus } from "@/features/shop/api";

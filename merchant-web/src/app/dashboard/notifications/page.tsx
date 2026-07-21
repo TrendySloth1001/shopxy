@@ -21,7 +21,7 @@ import {
   X,
   XCircle,
   type LucideIcon,
-} from "lucide-react";
+} from "@/shared/icons";
 import { PageHeader } from "@/shared/ui/page-header";
 import { ListRowsSkeleton } from "@/shared/ui/skeleton";
 import { formatRelativeTime } from "@/shared/datetime";

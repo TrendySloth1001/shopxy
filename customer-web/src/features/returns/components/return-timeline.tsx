@@ -7,7 +7,7 @@ import {
   Package,
   PackageCheck,
   BadgeIndianRupee,
-} from "lucide-react";
+} from "@/shared/icons";
 import { formatDateTime } from "@/shared/datetime";
 import type { ReturnEvent } from "../types";
 

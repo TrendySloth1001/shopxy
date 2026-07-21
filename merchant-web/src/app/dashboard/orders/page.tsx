@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Search } from "lucide-react";
+import { Search } from "@/shared/icons";
 import { Divider } from "@/shared/ui/divider";
 import { DatePicker } from "@/shared/ui/date-picker";
 import { listOrders, pendingOrderCount } from "@/features/orders/api";

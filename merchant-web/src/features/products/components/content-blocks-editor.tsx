@@ -2,7 +2,7 @@
 
 import { useRef, useState, type ChangeEvent } from "react";
 import { useTranslations } from "next-intl";
-import { ArrowDown, ArrowUp, Plus, X, Upload } from "lucide-react";
+import { ArrowDown, ArrowUp, Plus, X, Upload } from "@/shared/icons";
 import { uploadImage } from "../api";
 import { ProductThumb } from "./product-thumb";
 import { MiniButton, SelectField } from "./form-controls";

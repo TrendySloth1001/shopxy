@@ -16,7 +16,7 @@ import {
   Phone,
   Trash2,
   Wallet,
-} from "lucide-react";
+} from "@/shared/icons";
 import { BackLink } from "@/shared/ui/page-header";
 import { Divider } from "@/shared/ui/divider";
 import { Modal, ModalActions } from "@/shared/ui/modal";

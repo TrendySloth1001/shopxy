@@ -12,6 +12,7 @@ import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Merchant returns inbox. Tabs filter by status; each row is tappable
 /// → `MerchantReturnDetailPage`. The inbox doesn't paginate beyond the
@@ -337,7 +338,7 @@ class _EmptyBlock extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.assignment_return_outlined,
+            Icon(AppIcons.assignmentReturnOutlined,
                 size: AppSizes.iconHuge, color: AppColors.subtle),
             const SizedBox(height: AppSizes.md),
             Text(

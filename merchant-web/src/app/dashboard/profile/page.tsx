@@ -15,7 +15,7 @@ import {
   Wallet,
   X,
   type LucideIcon,
-} from "lucide-react";
+} from "@/shared/icons";
 import { useAuth } from "@/features/auth/auth-context";
 import { Avatar } from "@/features/auth/components/avatar";
 import { ProfileForm } from "@/features/auth/components/profile-form";

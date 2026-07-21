@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Mic, QrCode, Search } from "lucide-react";
+import { Mic, QrCode, Search } from "@/shared/icons";
 
 /** Rotating search hints — ported from the Flutter `HomeStaticData.searchHints`. */
 export const SEARCH_HINTS = [

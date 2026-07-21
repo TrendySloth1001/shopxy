@@ -6,6 +6,7 @@ import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Phase E — merchant variant editor. Lets the merchant declare one or
 /// more axes (Colour, Size, …) and edit the per-variant grid. Stores
@@ -140,7 +141,7 @@ class _VariantsEditorState extends State<VariantsEditor> {
           Align(
             alignment: Alignment.centerLeft,
             child: OutlinedButton.icon(
-              icon: const Icon(Icons.add, size: 16),
+              icon: const Icon(AppIcons.add, size: 16),
               label: Text(l10n.productsAddAxis),
               onPressed: _addAxis,
             ),
@@ -164,7 +165,7 @@ class _VariantsEditorState extends State<VariantsEditor> {
           Align(
             alignment: Alignment.centerLeft,
             child: OutlinedButton.icon(
-              icon: const Icon(Icons.add, size: 16),
+              icon: const Icon(AppIcons.add, size: 16),
               label: Text(l10n.productsAddVariant),
               onPressed: _addVariant,
             ),
@@ -220,7 +221,7 @@ class _AxisCard extends StatelessWidget {
               ),
               IconButton(
                 onPressed: onRemove,
-                icon: const Icon(Icons.delete_outline),
+                icon: const Icon(AppIcons.deleteOutline),
               ),
             ],
           ),
@@ -243,7 +244,7 @@ class _AxisCard extends StatelessWidget {
                   ),
                   IconButton(
                     onPressed: () => onRemoveValue(i),
-                    icon: const Icon(Icons.close, size: 18),
+                    icon: const Icon(AppIcons.close, size: 18),
                   ),
                 ],
               ),
@@ -251,7 +252,7 @@ class _AxisCard extends StatelessWidget {
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
-              icon: const Icon(Icons.add, size: 16),
+              icon: const Icon(AppIcons.add, size: 16),
               label: Text(l10n.productsAddValue),
               onPressed: onAddValue,
             ),
@@ -325,7 +326,7 @@ class _VariantCard extends StatelessWidget {
               if (!variant.isDefault)
                 IconButton(
                   onPressed: onRemove,
-                  icon: const Icon(Icons.delete_outline),
+                  icon: const Icon(AppIcons.deleteOutline),
                 ),
             ],
           ),
@@ -474,7 +475,7 @@ class _VariantImagesRow extends StatelessWidget {
                           shape: AppShapes.squircle(AppSizes.radiusSm),
                         ),
                         child: Icon(
-                          Icons.broken_image_outlined,
+                          AppIcons.brokenImageOutlined,
                           color: AppColors.muted,
                         ),
                       ),
@@ -492,7 +493,7 @@ class _VariantImagesRow extends StatelessWidget {
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
-                          Icons.close_rounded,
+                          AppIcons.closeRounded,
                           size: 12,
                           color: AppColors.onInverse,
                         ),
@@ -532,7 +533,7 @@ class _AddVariantImageTile extends StatelessWidget {
           value: ImageSource.gallery,
           child: Row(
             children: [
-              const Icon(Icons.photo_library_outlined, size: 18),
+              const Icon(AppIcons.photoLibraryOutlined, size: 18),
               const SizedBox(width: 8),
               Text(l10n.productsFromGallery),
             ],
@@ -542,7 +543,7 @@ class _AddVariantImageTile extends StatelessWidget {
           value: ImageSource.camera,
           child: Row(
             children: [
-              const Icon(Icons.photo_camera_outlined, size: 18),
+              const Icon(AppIcons.photoCameraOutlined, size: 18),
               const SizedBox(width: 8),
               Text(l10n.productsTakePhotoMenu),
             ],
@@ -562,7 +563,7 @@ class _AddVariantImageTile extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.add_a_photo_outlined, color: AppColors.muted),
+            Icon(AppIcons.addAPhotoOutlined, color: AppColors.muted),
             const SizedBox(height: 2),
             Text(
               l10n.productsAddShort,

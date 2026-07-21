@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CloudOff, Loader2, RefreshCw } from "lucide-react";
+import { CloudOff, Loader2, RefreshCw } from "@/shared/icons";
 import { fetchEndlessPage, fetchFeed, fetchPersonalized } from "../api";
 import { recordImpression } from "../tracking";
 import { EMPTY_FEED, type HeroSlide, type HomeFeed, type ProductCard } from "../types";

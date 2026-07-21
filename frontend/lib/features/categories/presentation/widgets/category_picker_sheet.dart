@@ -8,6 +8,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Two-level tree picker over the canonical taxonomy. Replaces the
 /// flat searchable list — categories are fixed and curated now, so the
@@ -124,7 +125,7 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
                     ),
                     IconButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(Icons.close_rounded),
+                      icon: const Icon(AppIcons.closeRounded),
                       tooltip: l10n.categoriesCancel,
                     ),
                   ],
@@ -136,7 +137,7 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
                 Divider(color: AppColors.hairline, height: 1),
                 TextButton.icon(
                   onPressed: () => _pick(null),
-                  icon: const Icon(Icons.close_rounded, size: AppSizes.iconSm),
+                  icon: const Icon(AppIcons.closeRounded, size: AppSizes.iconSm),
                   label: Text(l10n.categoriesClearSelection),
                   style: TextButton.styleFrom(foregroundColor: AppColors.error),
                 ),
@@ -267,15 +268,15 @@ class _ParentRow extends StatelessWidget {
                 if (parent.children.isEmpty)
                   Icon(
                     isSelected
-                        ? Icons.check_circle_rounded
-                        : Icons.chevron_right_rounded,
+                        ? AppIcons.checkCircleRounded
+                        : AppIcons.chevronRightRounded,
                     color: isSelected ? AppColors.brand : AppColors.muted,
                   )
                 else
                   Icon(
                     expanded
-                        ? Icons.keyboard_arrow_up_rounded
-                        : Icons.keyboard_arrow_down_rounded,
+                        ? AppIcons.keyboardArrowUpRounded
+                        : AppIcons.keyboardArrowDownRounded,
                     color: AppColors.muted,
                   ),
               ],
@@ -349,7 +350,7 @@ class _ChildChip extends StatelessWidget {
             if (isSelected) ...[
               const SizedBox(width: AppSizes.xs),
               Icon(
-                Icons.check_rounded,
+                AppIcons.checkRounded,
                 size: AppSizes.iconSm,
                 color: AppColors.onInverse,
               ),

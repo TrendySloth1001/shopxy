@@ -13,6 +13,7 @@ import 'package:shopxy/shared/constants/indian.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// A field the caller can ask [EditProfilePage] to open focused on — lets
 /// the completion meter deep-link straight to the field a user still needs
@@ -133,18 +134,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.camera_alt_outlined),
+              leading: const Icon(AppIcons.cameraAltOutlined),
               title: Text(l10n.profileTakePhoto),
               onTap: () => Navigator.of(ctx).pop(_PhotoAction.camera),
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library_outlined),
+              leading: const Icon(AppIcons.photoLibraryOutlined),
               title: Text(l10n.profilePickFromGallery),
               onTap: () => Navigator.of(ctx).pop(_PhotoAction.gallery),
             ),
             if (hasAvatar)
               ListTile(
-                leading: Icon(Icons.delete_outline,
+                leading: Icon(AppIcons.deleteOutline,
                     color: AppColors.error),
                 title: Text(l10n.profileRemovePhoto,
                     style: TextStyle(color: AppColors.error)),
@@ -331,7 +332,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                   ),
                                 )
                               : Icon(
-                                  Icons.camera_alt_outlined,
+                                  AppIcons.cameraAltOutlined,
                                   color: AppColors.onInverse,
                                   size: AppSizes.iconSm,
                                 ),
@@ -362,7 +363,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               decoration: InputDecoration(
                 labelText: l10n.profileFieldPhone,
                 hintText: '9876543210',
-                prefixIcon: const Icon(Icons.call_outlined),
+                prefixIcon: const Icon(AppIcons.callOutlined),
               ),
               keyboardType: TextInputType.phone,
               validator: (v) {

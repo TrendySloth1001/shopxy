@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ChevronRight, ClipboardList, Plus, RefreshCw, Search } from "lucide-react";
+import { ChevronRight, ClipboardList, Plus, RefreshCw, Search } from "@/shared/icons";
 import { PageHeader } from "@/shared/ui/page-header";
 import { formatDateTime } from "@/shared/datetime";
 import { listChallans } from "@/features/challans/api";

@@ -16,6 +16,7 @@ import 'package:shopxy_customer/shared/widgets/app_price_text.dart';
 import 'package:shopxy_customer/shared/widgets/app_quantity_stepper.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/shared/widgets/shop_chip.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Cart page. Rewritten from zero (May 2026, build3) because earlier
 /// iterations collapsed on certain devices — the AppBar disappeared and
@@ -118,7 +119,7 @@ class _Header extends StatelessWidget {
         children: [
           if (showBack)
             IconButton(
-              icon: const Icon(Icons.arrow_back_rounded),
+              icon: const Icon(AppIcons.arrowBackRounded),
               onPressed: () => Navigator.of(context).maybePop(),
               tooltip: 'Back',
             )
@@ -226,7 +227,7 @@ class _SavingsBanner extends StatelessWidget {
       child: Row(
         children: [
           const Icon(
-            Icons.savings_outlined,
+            AppIcons.savingsOutlined,
             color: AppColors.success,
             size: AppSizes.iconMd,
           ),
@@ -317,7 +318,7 @@ class _CartLineRow extends StatelessWidget {
                 color: AppColors.heroPanel,
                 child: product.imageUrl == null
                     ? const Icon(
-                        Icons.image_outlined,
+                        AppIcons.imageOutlined,
                         color: AppColors.muted,
                         size: AppSizes.iconMd,
                       )
@@ -599,7 +600,7 @@ class _ReassuranceCard extends StatelessWidget {
             ),
             alignment: Alignment.center,
             child: const Icon(
-              Icons.verified_user_outlined,
+              AppIcons.verifiedUserOutlined,
               color: AppColors.brandStrong,
               size: AppSizes.iconMd,
             ),
@@ -650,7 +651,7 @@ class _EmptyCart extends StatelessWidget {
               ),
               alignment: Alignment.center,
               child: const Icon(
-                Icons.shopping_cart_outlined,
+                AppIcons.shoppingCartOutlined,
                 size: AppSizes.iconHuge,
                 color: AppColors.muted,
               ),
@@ -763,7 +764,7 @@ class _Footer extends StatelessWidget {
                 label: 'Proceed to checkout',
                 onPressed: isPlacing ? null : onProceed,
                 isLoading: isPlacing,
-                trailingIcon: Icons.arrow_forward_rounded,
+                trailingIcon: AppIcons.arrowForwardRounded,
               ),
             ),
           ],

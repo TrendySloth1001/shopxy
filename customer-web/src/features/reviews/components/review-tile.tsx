@@ -1,5 +1,5 @@
 import { formatRelativeTime } from "@/shared/datetime";
-import { Star } from "lucide-react";
+import { Star } from "@/shared/icons";
 import type { Review } from "../types";
 
 interface Props {

@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { ImagePlus, Trash2, Upload } from "lucide-react";
+import { ImagePlus, Trash2, Upload } from "@/shared/icons";
 import { mediaSrc } from "@/features/products/components/product-thumb";
 import { uploadImage } from "@/features/products/api";
 

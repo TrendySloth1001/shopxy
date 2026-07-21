@@ -20,7 +20,7 @@ import {
   TrendingDown,
   TrendingUp,
   Wallet,
-} from "lucide-react";
+} from "@/shared/icons";
 import { BackLink } from "@/shared/ui/page-header";
 import { Monogram } from "@/shared/ui/monogram";
 import { Divider } from "@/shared/ui/divider";

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Search, X } from "lucide-react";
+import { Search, X } from "@/shared/icons";
 
 /** What each result row renders — derived from the picked entity. */
 export type PickerRow = { title: string; subtitle?: string; meta?: string };

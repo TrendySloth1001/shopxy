@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, startTransition } from "react";
-import { Pencil, ChevronRight, MessageSquare, Loader2 } from "lucide-react";
+import { Pencil, ChevronRight, MessageSquare, Loader2 } from "@/shared/icons";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/features/auth/auth-context";
 import { fetchReviewSummary, fetchReviews } from "../api";

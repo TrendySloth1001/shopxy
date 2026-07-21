@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ListTodo } from "lucide-react";
+import { ListTodo } from "@/shared/icons";
 import type { SpecGroup } from "../types";
 
 interface Props {

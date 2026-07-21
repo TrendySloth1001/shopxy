@@ -9,6 +9,7 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/format/app_format.dart';
+import 'package:shopxy_customer/core/icons/app_icons.dart';
 
 /// Phase G — "Frequently bought together" rail. Sits between the offers
 /// strip and the tab bar in the PDP. Self-loads its own cohort on
@@ -158,7 +159,7 @@ class _Card extends StatelessWidget {
                         padding: const EdgeInsets.only(top: AppSizes.xs),
                         child: Row(
                           children: [
-                            const Icon(Icons.star_rounded,
+                            const Icon(AppIcons.starRounded,
                                 color: Color(0xFFE05A2A), size: 12),
                             const SizedBox(width: AppSizes.xs),
                             Text(

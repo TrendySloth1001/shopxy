@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, useTransition, startTransition } from "react";
 import Link from "next/link";
-import { Heart, ShoppingCart } from "lucide-react";
+import { Heart, ShoppingCart } from "@/shared/icons";
 import { RequireAuth } from "@/features/auth/components/require-auth";
 import { AppHeader } from "@/features/auth/components/app-header";
 import { Divider } from "@/shared/ui/divider";

@@ -12,6 +12,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -399,7 +400,7 @@ class _AccountCard extends StatelessWidget {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     else
-                      Icon(Icons.chevron_right_rounded,
+                      Icon(AppIcons.chevronRightRounded,
                           color: AppColors.subtle),
                   ],
                 ),
@@ -408,7 +409,7 @@ class _AccountCard extends StatelessWidget {
           ),
           IconButton(
             onPressed: busy ? null : onForget,
-            icon: Icon(Icons.close_rounded,
+            icon: Icon(AppIcons.closeRounded,
                 size: AppSizes.iconSm, color: AppColors.muted),
             tooltip: l10n.authRemoveThisAccount,
           ),

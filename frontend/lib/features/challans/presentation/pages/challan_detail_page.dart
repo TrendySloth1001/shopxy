@@ -20,6 +20,7 @@ import 'package:shopxy/shared/widgets/glass_widgets.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 class ChallanDetailPage extends StatefulWidget {
   const ChallanDetailPage({super.key, required this.challanId});
@@ -271,7 +272,7 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
                 padding: const EdgeInsets.all(AppSizes.lg),
                 child: AppButton.primary(
                   label: l10n.challansConvertToInvoice,
-                  icon: Icons.receipt_long_rounded,
+                  icon: AppIcons.receiptLongRounded,
                   onPressed: _convertToInvoice,
                   isLoading: _isConverting,
                   size: AppButtonSize.lg,

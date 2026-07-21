@@ -19,6 +19,7 @@ import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Modal sheet for creating or editing a merchant banner. A banner is just
 /// an image + placement + optional link + optional schedule, so the editor
@@ -282,7 +283,7 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
               ),
               const Spacer(),
               IconButton(
-                icon: const Icon(Icons.close),
+                icon: const Icon(AppIcons.close),
                 onPressed: () => Navigator.of(context).pop(false),
               ),
             ],
@@ -371,17 +372,17 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
           ),
           clipBehavior: Clip.antiAlias,
           child: _imageUrl == null
-              ? Icon(Icons.image_outlined, color: AppColors.muted)
+              ? Icon(AppIcons.imageOutlined, color: AppColors.muted)
               : Image.network(
                   resolveImageUrl(_imageUrl!),
                   fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => const Icon(Icons.broken_image_outlined),
+                  errorBuilder: (_, _, _) => const Icon(AppIcons.brokenImageOutlined),
                 ),
         ),
         const SizedBox(width: AppSizes.md),
         Expanded(
           child: OutlinedButton.icon(
-            icon: const Icon(Icons.upload_outlined),
+            icon: const Icon(AppIcons.uploadOutlined),
             label: Text(
                 _imageUrl == null ? l10n.bannersUploadImage : l10n.bannersReplaceImage),
             onPressed: _busy ? null : _pickImage,
@@ -436,7 +437,7 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
             if (_isEdit)
               TextButton.icon(
                 onPressed: _busy ? null : _addProduct,
-                icon: const Icon(Icons.add),
+                icon: const Icon(AppIcons.add),
                 label: Text(l10n.bannersAdd),
               ),
           ],
@@ -512,10 +513,10 @@ class _DateField extends StatelessWidget {
           labelText: label,
           suffixIcon: onClear != null
               ? IconButton(
-                  icon: const Icon(Icons.close, size: AppSizes.iconMd),
+                  icon: const Icon(AppIcons.close, size: AppSizes.iconMd),
                   onPressed: onClear,
                 )
-              : const Icon(Icons.calendar_today_outlined,
+              : const Icon(AppIcons.calendarTodayOutlined,
                   size: AppSizes.iconMd),
         ),
         child: Text(
@@ -654,12 +655,12 @@ class _ProductRow extends StatelessWidget {
                   shape: AppShapes.squircle(AppSizes.radiusSm),
                 ),
                 child: draft.product.imageUrl == null
-                    ? Icon(Icons.image_outlined, color: AppColors.muted)
+                    ? Icon(AppIcons.imageOutlined, color: AppColors.muted)
                     : Image.network(
                         resolveImageUrl(draft.product.imageUrl!),
                         fit: BoxFit.cover,
                         errorBuilder: (_, _, _) =>
-                            const Icon(Icons.broken_image_outlined),
+                            const Icon(AppIcons.brokenImageOutlined),
                       ),
               ),
               const SizedBox(width: AppSizes.sm),
@@ -683,7 +684,7 @@ class _ProductRow extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.close, size: AppSizes.iconMd),
+                icon: const Icon(AppIcons.close, size: AppSizes.iconMd),
                 onPressed: onRemove,
               ),
             ],
@@ -804,7 +805,7 @@ class _BannerProductPickerSheetState extends State<_BannerProductPickerSheet> {
             autofocus: true,
             decoration: InputDecoration(
               labelText: l10n.bannersSearchProduct,
-              prefixIcon: const Icon(Icons.search),
+              prefixIcon: const Icon(AppIcons.search),
             ),
             onChanged: _onChanged,
           ),
@@ -859,13 +860,13 @@ class _BannerProductPickerSheetState extends State<_BannerProductPickerSheet> {
                                 shape: AppShapes.squircle(AppSizes.radiusSm),
                               ),
                               child: img == null
-                                  ? Icon(Icons.image_outlined,
+                                  ? Icon(AppIcons.imageOutlined,
                                       color: AppColors.muted)
                                   : Image.network(
                                       resolveImageUrl(img),
                                       fit: BoxFit.cover,
                                       errorBuilder: (_, _, _) => const Icon(
-                                          Icons.broken_image_outlined),
+                                          AppIcons.brokenImageOutlined),
                                     ),
                             ),
                             const SizedBox(width: AppSizes.sm),

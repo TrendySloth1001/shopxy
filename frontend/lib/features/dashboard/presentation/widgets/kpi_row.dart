@@ -5,6 +5,7 @@ import 'package:shopxy/features/dashboard/presentation/widgets/kpi_drill_sheet.d
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 
 /// Hero KPI row — what you sold, kept, are owed, and owe. 2 columns on
 /// phones, 4 on wide screens. Mirrors `components/kpi-row.tsx`. Each card
@@ -25,7 +26,7 @@ class KpiRow extends StatelessWidget {
           columns: cols,
           children: [
             _KpiCard(
-              icon: Icons.currency_rupee_rounded,
+              icon: AppIcons.currencyRupeeRounded,
               iconColor: AppColors.brandStrong,
               label: l10n.dashboardSales,
               value: inr.format(kpis.sales.value),
@@ -34,7 +35,7 @@ class KpiRow extends StatelessWidget {
                   kind: KpiDrillKind.sales, period: period),
             ),
             _KpiCard(
-              icon: Icons.trending_up_rounded,
+              icon: AppIcons.trendingUpRounded,
               iconColor: AppColors.success,
               label: l10n.dashboardNetProfit,
               value: inr.format(kpis.profit.value),
@@ -55,7 +56,7 @@ class KpiRow extends StatelessWidget {
                   kind: KpiDrillKind.profit, period: period),
             ),
             _KpiCard(
-              icon: Icons.south_west_rounded,
+              icon: AppIcons.southWestRounded,
               iconColor: AppColors.accentIndigo,
               label: l10n.dashboardReceivables,
               value: inr.format(kpis.receivables.outstanding),
@@ -70,7 +71,7 @@ class KpiRow extends StatelessWidget {
                   kind: KpiDrillKind.receivables, period: period),
             ),
             _KpiCard(
-              icon: Icons.north_east_rounded,
+              icon: AppIcons.northEastRounded,
               iconColor: AppColors.accentAmber,
               label: l10n.dashboardPayables,
               value: inr.format(kpis.payables.outstanding),

@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState, type InputHTMLAttributes } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "@/shared/icons";
 
 type FieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "id" | "type"> & {
   label: string;

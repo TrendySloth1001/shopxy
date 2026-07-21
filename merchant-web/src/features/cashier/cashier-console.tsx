@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Calculator, RefreshCw, LockOpen, Lock, ArrowDownToLine, ArrowUpFromLine, Banknote, Undo2, History, Printer, X } from "lucide-react";
+import { Calculator, RefreshCw, LockOpen, Lock, ArrowDownToLine, ArrowUpFromLine, Banknote, Undo2, History, Printer, X } from "@/shared/icons";
 import { PageHeader } from "@/shared/ui/page-header";
 import { Divider } from "@/shared/ui/divider";
 import { formatINR2, parseAmount } from "@/shared/money";
