@@ -164,7 +164,7 @@ class _Card extends StatelessWidget {
                           children: [
                             const AppIcon(
                               AppIcons.starRounded,
-                              color: Color(0xFFE05A2A),
+                              color: AppColors.flashAccent,
                               size: 12,
                             ),
                             const SizedBox(width: AppSizes.xs),

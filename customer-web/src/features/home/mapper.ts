@@ -9,6 +9,7 @@
  */
 
 import { color } from "@/shared/ui/tokens";
+import { CATEGORY_TINTS } from "@/shared/ui/category-tints";
 import { rupees } from "./format";
 import {
   type CategoryPuck,
@@ -44,18 +45,7 @@ function asStrOrNull(v: unknown): string | null {
   return typeof v === "string" ? v : null;
 }
 
-const PUCK_TINTS = [
-  "#E3E8F4",
-  "#F3E4D6",
-  "#F9E1EA",
-  "#E6F2EC",
-  "#EFE9DD",
-  "#E0E1E6",
-  "#E7DFD4",
-  "#E4DECF",
-  "#E6F2DA",
-  "#DEEAF1",
-];
+const PUCK_TINTS = CATEGORY_TINTS;
 
 function firstImage(product: Json): string {
   const imgs = product["images"];

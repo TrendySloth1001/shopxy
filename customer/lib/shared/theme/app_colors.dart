@@ -85,4 +85,26 @@ class AppColors {
 
   static const Color accentRose = Color(0xFFB83A6F);
   static const Color accentRoseSoft = Color(0xFFFADFEB);
+
+  // ── Rating / flash accent ────────────────────────────
+  /// Warm accent for rating stars and flash highlights.
+  /// Mirrors customer-web `--color-flash-accent`.
+  static const Color flashAccent = Color(0xFFE05A2A);
+
+  // ── Category tints ───────────────────────────────────
+  /// Rotating soft background tints for letter-monogram fallbacks
+  /// (category pucks, tiles, headers). Single source so those surfaces
+  /// stay in sync — mirrors customer-web `CATEGORY_TINTS`.
+  static const List<Color> categoryTints = [
+    Color(0xFFE3E8F4),
+    Color(0xFFF3E4D6),
+    Color(0xFFF9E1EA),
+    Color(0xFFE6F2EC),
+    Color(0xFFEFE9DD),
+    Color(0xFFE0E1E6),
+    Color(0xFFE7DFD4),
+    Color(0xFFE4DECF),
+    Color(0xFFE6F2DA),
+    Color(0xFFDEEAF1),
+  ];
 }
