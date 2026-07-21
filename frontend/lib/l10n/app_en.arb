@@ -1419,6 +1419,66 @@
       }
     }
   },
+  "kpiDrawerRetry": "Retry",
+  "kpiDrawerLoadError": "Could not load. Please try again.",
+  "kpiDrawerSalesFilterHint": "Filter by product name or SKU",
+  "kpiDrawerNoSales": "No sales in this period.",
+  "kpiDrawerNoMatch": "No products match your filter.",
+  "kpiDrawerProductCount": "{count} products",
+  "@kpiDrawerProductCount": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "kpiDrawerRevenue": "Revenue {value}",
+  "@kpiDrawerRevenue": {
+    "placeholders": {
+      "value": {
+        "type": "Object"
+      }
+    }
+  },
+  "kpiDrawerQtySold": "{qty} {unit} sold",
+  "@kpiDrawerQtySold": {
+    "placeholders": {
+      "qty": {
+        "type": "Object"
+      },
+      "unit": {
+        "type": "Object"
+      }
+    }
+  },
+  "kpiDrawerShowingTop": "Showing top {count}",
+  "@kpiDrawerShowingTop": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "kpiDrawerUnnamedProduct": "Unnamed product",
+  "kpiDrawerUnits": "units",
+  "kpiDrawerViewFullReports": "View full reports",
+  "kpiDrawerViewAllParties": "View all parties",
+  "kpiDrawerViewAllVendors": "View all vendors",
+  "kpiDrawerNoReceivables": "No one owes you right now.",
+  "kpiDrawerNoPayables": "You don't owe anyone right now.",
+  "kpiDrawerBilled": "Billed",
+  "kpiDrawerReceived": "Received",
+  "kpiDrawerPaid": "Paid",
+  "kpiDrawerOutstanding": "Outstanding",
+  "kpiDrawerDocCount": "{count, plural, =1{1 document} other{{count} documents}}",
+  "@kpiDrawerDocCount": {
+    "placeholders": {
+      "count": {
+        "type": "num",
+        "format": "compact"
+      }
+    }
+  },
   "dashboardSalesTrend": "Sales trend",
   "dashboardPrevious": "Previous",
   "dashboardPurchases": "Purchases",

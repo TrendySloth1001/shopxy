@@ -3137,6 +3137,90 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String get kpiDrawerRetry => 'पुनः प्रयास करें';
+
+  @override
+  String get kpiDrawerLoadError => 'लोड नहीं हो सका। कृपया पुनः प्रयास करें।';
+
+  @override
+  String get kpiDrawerSalesFilterHint => 'उत्पाद नाम या SKU से फ़िल्टर करें';
+
+  @override
+  String get kpiDrawerNoSales => 'इस अवधि में कोई बिक्री नहीं।';
+
+  @override
+  String get kpiDrawerNoMatch => 'आपके फ़िल्टर से कोई उत्पाद मेल नहीं खाता।';
+
+  @override
+  String kpiDrawerProductCount(Object count) {
+    return '$count उत्पाद';
+  }
+
+  @override
+  String kpiDrawerRevenue(Object value) {
+    return 'राजस्व $value';
+  }
+
+  @override
+  String kpiDrawerQtySold(Object qty, Object unit) {
+    return '$qty $unit बिके';
+  }
+
+  @override
+  String kpiDrawerShowingTop(Object count) {
+    return 'शीर्ष $count दिखाए जा रहे हैं';
+  }
+
+  @override
+  String get kpiDrawerUnnamedProduct => 'अनाम उत्पाद';
+
+  @override
+  String get kpiDrawerUnits => 'इकाइयाँ';
+
+  @override
+  String get kpiDrawerViewFullReports => 'पूरी रिपोर्ट देखें';
+
+  @override
+  String get kpiDrawerViewAllParties => 'सभी पार्टियाँ देखें';
+
+  @override
+  String get kpiDrawerViewAllVendors => 'सभी विक्रेता देखें';
+
+  @override
+  String get kpiDrawerNoReceivables => 'अभी आपका किसी पर बकाया नहीं है।';
+
+  @override
+  String get kpiDrawerNoPayables => 'अभी आप पर किसी का बकाया नहीं है।';
+
+  @override
+  String get kpiDrawerBilled => 'बिल किया गया';
+
+  @override
+  String get kpiDrawerReceived => 'प्राप्त';
+
+  @override
+  String get kpiDrawerPaid => 'भुगतान किया';
+
+  @override
+  String get kpiDrawerOutstanding => 'बकाया';
+
+  @override
+  String kpiDrawerDocCount(num count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.compact(
+      locale: localeName,
+    );
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString दस्तावेज़',
+      one: '1 दस्तावेज़',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get dashboardSalesTrend => 'बिक्री रुझान';
 
   @override
