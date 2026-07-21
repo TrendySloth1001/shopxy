@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { useAuth } from "../auth-context";
 import { updateProfileSchema } from "../schema";
@@ -8,6 +8,7 @@ import { Field } from "./field";
 import { SubmitButton } from "./submit-button";
 import { Banner } from "./banner";
 import { AvatarPicker } from "./avatar-picker";
+import { ComboSelect } from "@/shared/ui/combo-select";
 
 const REGISTRATION_TYPES = ["REGULAR", "COMPOSITION", "UNREGISTERED"] as const;
 
@@ -37,7 +38,6 @@ export function ProfileForm({ onSaved }: { onSaved?: () => void } = {}) {
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const regId = useId();
 
   function set(key: keyof typeof values, value: string) {
     setValues((v) => ({ ...v, [key]: value }));
@@ -141,24 +141,19 @@ export function ProfileForm({ onSaved }: { onSaved?: () => void } = {}) {
         onChange={(e) => set("shopGstin", e.target.value)}
         error={fieldErrors.shopGstin}
       />
-      <div className="flex flex-col gap-xs">
-        <label htmlFor={regId} className="text-label-md text-muted">
-          {t("field.gstRegistration")}
-        </label>
-        <select
-          id={regId}
-          value={values.registrationType}
-          onChange={(e) => set("registrationType", e.target.value)}
-          className="w-full rounded-input border border-hairline bg-field px-md py-sm text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
-        >
-          <option value="">{t("common.notSet")}</option>
-          {REGISTRATION_TYPES.map((rt) => (
-            <option key={rt} value={rt}>
-              {t(`regType.${rt}`)}
-            </option>
-          ))}
-        </select>
-      </div>
+      <ComboSelect
+        label={t("field.gstRegistration")}
+        value={values.registrationType}
+        onChange={(v) => set("registrationType", v)}
+        options={[
+          { value: "", label: t("common.notSet") },
+          ...REGISTRATION_TYPES.map((rt) => ({
+            value: rt,
+            label: t(`regType.${rt}`),
+          })),
+        ]}
+        className="w-full"
+      />
       <div className="grid grid-cols-2 gap-lg">
         <Field
           label={t("field.pan")}

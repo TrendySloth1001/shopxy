@@ -127,7 +127,12 @@
       "noAccessHint": "You don't have access. Ask the shop owner.",
       "saving": "Saving…",
       "published": "Published",
-      "draft": "Draft"
+      "draft": "Draft",
+      "gridView": "Grid view",
+      "listView": "List view",
+      "gridViewAria": "Switch to grid view",
+      "listViewAria": "Switch to list view",
+      "sortBy": "Sort by"
     },
     "detail": {
       "loadError": "Could not load the product.",
@@ -347,6 +352,7 @@
       "explainer": "Prices include GST. CGST + SGST shown for a sale within your state; a sale to another state is charged the same total as IGST."
     },
     "offers": {
+      "kindLabel": "Offer type",
       "headlinePlaceholder": "Headline",
       "codePlaceholder": "Code (optional)",
       "removeOffer": "Remove offer",
@@ -3425,6 +3431,17 @@
     },
     "colorField": {
       "swatchLabel": "{label} swatch"
+    },
+    "datePicker": {
+      "placeholder": "Select date",
+      "clear": "Clear",
+      "prevMonth": "Previous month",
+      "nextMonth": "Next month",
+      "today": "Today"
+    },
+    "timeSelect": {
+      "hour": "Hour",
+      "minute": "Minute"
     }
   },
   "dashboard": {

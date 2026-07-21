@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { Plus, X } from "lucide-react";
 import type { ProductVariant, VariantAxis } from "../schema";
+import { ComboSelect } from "@/shared/ui/combo-select";
 import { MiniButton } from "./form-controls";
 import { StringListEditor } from "./string-list-editor";
 
@@ -131,21 +132,19 @@ export function VariantsEditor({
           {variants.map((v, vi) => (
             <div key={vi} className="flex flex-wrap items-center gap-sm rounded-md border border-hairline p-sm">
               {namedAxes.map((axis) => (
-                <select
+                <ComboSelect
                   key={axis.name}
-                  className={`${cell} w-28`}
+                  ariaLabel={axis.name}
+                  placeholder={axis.name}
+                  className="w-28"
                   value={v.attributes[axis.name] ?? ""}
-                  onChange={(e) =>
-                    patchVariant(vi, { attributes: { ...v.attributes, [axis.name]: e.target.value } })
+                  onChange={(val) =>
+                    patchVariant(vi, { attributes: { ...v.attributes, [axis.name]: val } })
                   }
-                >
-                  <option value="">{axis.name}</option>
-                  {axis.values.filter(Boolean).map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
-                    </option>
-                  ))}
-                </select>
+                  options={axis.values
+                    .filter(Boolean)
+                    .map((opt) => ({ value: opt, label: opt }))}
+                />
               ))}
               <input
                 className={`${cell} w-28 ${duplicateSkus.has(v.sku.trim().toLowerCase()) ? "border-error" : ""}`}

@@ -1,10 +1,17 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Plus, Search } from "lucide-react";
+import { LayoutGrid, List, Plus, Search } from "lucide-react";
 import { Divider } from "@/shared/ui/divider";
 import {
   listCategories,
@@ -14,7 +21,27 @@ import {
 import type { Category, Product, ProductList } from "@/features/products/schema";
 import { money } from "@/features/products/format";
 import { ProductThumb } from "@/features/products/components/product-thumb";
+import { ProductGridCard } from "@/features/products/components/product-grid-card";
 import { StockBadge } from "@/features/products/components/stock-badge";
+import { ComboSelect } from "@/shared/ui/combo-select";
+
+type ViewMode = "grid" | "list";
+const VIEW_KEY = "sx_products_view";
+const VIEW_EVENT = "sx:products-view";
+
+// Read the persisted view mode as an external store so there is no
+// setState-in-effect and no SSR/hydration mismatch (server snapshot = grid).
+function subscribeView(cb: () => void) {
+  window.addEventListener("storage", cb);
+  window.addEventListener(VIEW_EVENT, cb);
+  return () => {
+    window.removeEventListener("storage", cb);
+    window.removeEventListener(VIEW_EVENT, cb);
+  };
+}
+function readView(): ViewMode {
+  return window.localStorage.getItem(VIEW_KEY) === "list" ? "list" : "grid";
+}
 import { MaybeLocked } from "@/features/auth/components/maybe-locked";
 import { useCanManage } from "@/features/auth/use-can";
 
@@ -68,6 +95,18 @@ function ProductsListInner() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [togglingId, setTogglingId] = useState<number | null>(null);
   const [toggleError, setToggleError] = useState<string | null>(null);
+
+  // Grid (masonry) vs list. Grid is the default (matches the Flutter app);
+  // the choice is remembered per browser and shared across tabs.
+  const view = useSyncExternalStore(subscribeView, readView, () => "grid");
+  const setViewMode = useCallback((next: ViewMode) => {
+    try {
+      window.localStorage.setItem(VIEW_KEY, next);
+    } catch {
+      /* persistence is best-effort */
+    }
+    window.dispatchEvent(new Event(VIEW_EVENT));
+  }, []);
 
   // Debounce the search box (setState in a timeout — not synchronous).
   useEffect(() => {
@@ -205,32 +244,27 @@ function ProductsListInner() {
             className="h-10 w-full rounded-input border border-hairline bg-field pl-massive pr-md text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
           />
         </div>
-        <select
+        <ComboSelect
+          ariaLabel={t("list.allCategories")}
           value={categoryId}
-          onChange={(e) => {
-            setCategoryId(e.target.value);
+          onChange={(v) => {
+            setCategoryId(v);
             setPage(1);
           }}
-          className="h-10 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
-        >
-          <option value="">{t("list.allCategories")}</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-        <select
-          value={sortIdx}
-          onChange={(e) => setSortIdx(Number(e.target.value))}
-          className="h-10 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
-        >
-          {SORTS.map((s, i) => (
-            <option key={s.key} value={i}>
-              {t(`list.sort.${s.key}`)}
-            </option>
-          ))}
-        </select>
+          options={[
+            { value: "", label: t("list.allCategories") },
+            ...categories.map((c) => ({ value: String(c.id), label: c.name })),
+          ]}
+          searchable
+          className="w-full sm:w-56"
+        />
+        <ComboSelect
+          ariaLabel={t("list.sortBy")}
+          value={String(sortIdx)}
+          onChange={(v) => setSortIdx(Number(v))}
+          options={SORTS.map((s, i) => ({ value: String(i), label: t(`list.sort.${s.key}`) }))}
+          className="w-full sm:w-52"
+        />
         <FilterChip
           active={lowStock}
           onClick={() => {
@@ -249,6 +283,26 @@ function ProductsListInner() {
         >
           {t("list.outOfStock")}
         </FilterChip>
+
+        {/* Grid / list view toggle — pushed to the end of the toolbar. */}
+        <div className="ml-auto inline-flex overflow-hidden rounded-button border border-hairline">
+          <ViewToggleButton
+            active={view === "grid"}
+            label={t("list.gridView")}
+            ariaLabel={t("list.gridViewAria")}
+            onClick={() => setViewMode("grid")}
+          >
+            <LayoutGrid size={18} />
+          </ViewToggleButton>
+          <ViewToggleButton
+            active={view === "list"}
+            label={t("list.listView")}
+            ariaLabel={t("list.listViewAria")}
+            onClick={() => setViewMode("list")}
+          >
+            <List size={18} />
+          </ViewToggleButton>
+        </div>
       </div>
 
       <Divider className="mt-lg" />
@@ -259,9 +313,9 @@ function ProductsListInner() {
         </p>
       ) : null}
 
-      {/* List */}
+      {/* Results — grid (masonry) or list, per the toggle. */}
       {loading && !data ? (
-        <ListSkeleton />
+        view === "grid" ? <GridSkeleton /> : <ListSkeleton />
       ) : error && !data ? (
         <div className="flex flex-col items-start gap-md py-xxxl">
           <p className="text-body-md text-muted">{error}</p>
@@ -277,6 +331,22 @@ function ProductsListInner() {
         <p className="py-xxxl text-body-md text-muted">
           {t("list.empty")}
         </p>
+      ) : view === "grid" ? (
+        // CSS multi-column masonry: the browser fits as many ~16rem columns
+        // as the width allows, and cards flow with their natural height.
+        <div className="mt-lg gap-lg [column-gap:1rem] [column-width:16rem]">
+          {products.map((p) => (
+            <div key={p.id} className="mb-lg break-inside-avoid">
+              <ProductGridCard
+                product={p}
+                categoryName={categoryName(p)}
+                canEdit={canEdit}
+                toggling={togglingId === p.id}
+                onTogglePublish={() => togglePublish(p)}
+              />
+            </div>
+          ))}
+        </div>
       ) : (
         <ul>
           {products.map((p) => (
@@ -430,6 +500,37 @@ function ProductRow({
   );
 }
 
+function ViewToggleButton({
+  active,
+  label,
+  ariaLabel,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  label: string;
+  ariaLabel: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      aria-label={ariaLabel}
+      title={label}
+      className={`inline-flex h-10 w-10 items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-soft ${
+        active
+          ? "bg-brand-soft text-brand-strong"
+          : "text-muted hover:bg-surface-tint hover:text-ink"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
 function ListSkeleton() {
   return (
     <ul className="animate-pulse">
@@ -444,5 +545,22 @@ function ListSkeleton() {
         </li>
       ))}
     </ul>
+  );
+}
+
+function GridSkeleton() {
+  // Varied heights so the placeholder reads as a masonry, not a table.
+  const heights = [220, 260, 240, 280, 230, 300, 250, 270];
+  return (
+    <div className="mt-lg animate-pulse [column-gap:1rem] [column-width:16rem]">
+      {heights.map((h, i) => (
+        <div key={i} className="mb-lg break-inside-avoid">
+          <div
+            className="rounded-lg border border-hairline bg-hairline/40"
+            style={{ height: h }}
+          />
+        </div>
+      ))}
+    </div>
   );
 }

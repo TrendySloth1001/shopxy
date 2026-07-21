@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Search } from "lucide-react";
 import { Divider } from "@/shared/ui/divider";
+import { DatePicker } from "@/shared/ui/date-picker";
 import { listOrders, pendingOrderCount } from "@/features/orders/api";
 import type { OrderList, OrderListRow } from "@/features/orders/schema";
 import { money, formatDateTime } from "@/features/orders/format";
@@ -268,17 +269,17 @@ function DateField({
   onChange: (v: string) => void;
 }) {
   return (
-    <label className="inline-flex h-10 items-center gap-sm rounded-input border border-hairline bg-field px-md text-body-sm text-muted focus-within:border-brand focus-within:ring-2 focus-within:ring-brand-soft">
+    <div className="inline-flex items-center gap-sm">
       <span className="text-label-md text-subtle">{label}</span>
-      <input
-        type="date"
+      <DatePicker
         value={value}
         min={min}
         max={max}
-        onChange={(e) => onChange(e.target.value)}
-        className="bg-transparent text-body-md text-ink outline-none"
+        onChange={onChange}
+        ariaLabel={label}
+        className="w-full sm:w-44"
       />
-    </label>
+    </div>
   );
 }
 
