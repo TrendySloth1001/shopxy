@@ -1,8 +1,9 @@
 "use client";
 
-import { useId } from "react";
 import { useTranslations } from "next-intl";
 import { isoToLocalInput, localInputToIso } from "@/shared/datetime";
+import { ComboSelect } from "./combo-select";
+import { DatePicker, TimeSelect } from "./date-picker";
 
 const inputBase =
   "h-10 w-full rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-field-tint disabled:text-disabled";
@@ -113,23 +114,17 @@ export function SelectField<T extends string>({
   helper?: string;
   disabled?: boolean;
 }) {
-  const id = useId();
+  // Custom dropdown (no native <select>). ComboSelect renders its own label +
+  // helper in the same style as FieldShell, so we hand them straight to it.
   return (
-    <FieldShell label={label} helper={helper} htmlFor={id}>
-      <select
-        id={id}
-        value={value}
-        disabled={disabled}
-        onChange={(e) => onChange(e.target.value as T)}
-        className={inputBase}
-      >
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-    </FieldShell>
+    <ComboSelect
+      label={label}
+      value={value}
+      onChange={(v) => onChange(v as T)}
+      options={options.map((o) => ({ value: o.value, label: o.label }))}
+      helper={helper}
+      disabled={disabled}
+    />
   );
 }
 
@@ -147,15 +142,33 @@ export function DateTimeField({
   helper?: string;
   error?: string | null;
 }) {
+  // Custom date + time (no native datetime-local). Split the local input
+  // string into date/time, edit each with our own controls, recombine to UTC.
+  const local = isoToLocalInput(value); // "YYYY-MM-DDTHH:mm" or ""
+  const date = local ? local.slice(0, 10) : "";
+  const time = local ? local.slice(11, 16) : "";
+  const emit = (d: string, tm: string) =>
+    onChange(d ? localInputToIso(`${d}T${tm || "00:00"}`) : null);
+
   return (
-    <FieldShell label={label} helper={helper} error={error}>
-      <input
-        type="datetime-local"
-        value={isoToLocalInput(value)}
-        onChange={(e) => onChange(localInputToIso(e.target.value))}
-        className={inputBase}
-      />
-    </FieldShell>
+    <div className="flex flex-col gap-xs">
+      <span className="text-label-md text-muted">{label}</span>
+      <div className="flex flex-wrap items-center gap-sm">
+        <DatePicker
+          ariaLabel={label}
+          value={date}
+          onChange={(d) => emit(d, time)}
+          clearable
+          className="min-w-0 flex-1"
+        />
+        <TimeSelect value={time} onChange={(tm) => emit(date, tm)} disabled={!date} />
+      </div>
+      {error ? (
+        <span className="text-body-sm text-error">{error}</span>
+      ) : helper ? (
+        <span className="text-body-sm text-subtle">{helper}</span>
+      ) : null}
+    </div>
   );
 }
 

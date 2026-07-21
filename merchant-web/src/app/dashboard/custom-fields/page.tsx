@@ -27,6 +27,7 @@ import {
 } from "@/features/custom-fields/schema";
 import { CardsSkeleton } from "@/shared/ui/skeleton";
 import { useCanManage } from "@/features/auth/use-can";
+import { ComboSelect } from "@/shared/ui/combo-select";
 
 type FieldEditor =
   | { mode: "create"; sectionId: number | null }
@@ -460,20 +461,16 @@ function FieldEditorPanel({
         />
       </label>
 
-      <label className="flex flex-col gap-xs">
-        <span className="text-label-md text-muted">{t("fieldForm.typeLabel")}</span>
-        <select
-          value={type}
-          onChange={(e) => setType(e.target.value as CustomFieldType)}
-          className="h-10 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
-        >
-          {CUSTOM_FIELD_TYPES.map((ft) => (
-            <option key={ft} value={ft}>
-              {t(CUSTOM_FIELD_TYPE_LABEL_KEYS[ft])}
-            </option>
-          ))}
-        </select>
-      </label>
+      <ComboSelect
+        label={t("fieldForm.typeLabel")}
+        value={type}
+        onChange={(v) => setType(v as CustomFieldType)}
+        options={CUSTOM_FIELD_TYPES.map((ft) => ({
+          value: ft,
+          label: t(CUSTOM_FIELD_TYPE_LABEL_KEYS[ft]),
+        }))}
+        className="w-full"
+      />
 
       {type === "NUMBER" ? (
         <label className="flex flex-col gap-xs">
@@ -500,21 +497,16 @@ function FieldEditorPanel({
         </label>
       ) : null}
 
-      <label className="flex flex-col gap-xs">
-        <span className="text-label-md text-muted">{t("fieldForm.sectionLabel")}</span>
-        <select
-          value={sectionId}
-          onChange={(e) => setSectionId(e.target.value)}
-          className="h-10 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
-        >
-          <option value="">{t("group.ungrouped")}</option>
-          {sections.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
-      </label>
+      <ComboSelect
+        label={t("fieldForm.sectionLabel")}
+        value={sectionId}
+        onChange={setSectionId}
+        options={[
+          { value: "", label: t("group.ungrouped") },
+          ...sections.map((s) => ({ value: String(s.id), label: s.name })),
+        ]}
+        className="w-full"
+      />
 
       <ModalActions
         busy={busy}

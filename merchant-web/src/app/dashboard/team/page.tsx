@@ -28,6 +28,7 @@ import {
 import { PermissionMatrix } from "@/features/team/permission-matrix";
 import { useCanManage, useGrantCeiling } from "@/features/auth/use-can";
 import { ListRowsSkeleton } from "@/shared/ui/skeleton";
+import { ComboSelect } from "@/shared/ui/combo-select";
 
 /** Translated, comma-joined access summary, e.g. "Products, Orders +2". */
 function useSummary() {
@@ -429,19 +430,17 @@ function InviteModal({
           className="h-10 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
         />
       </label>
-      <label className="flex flex-col gap-xs">
-        <span className="text-label-md text-muted">{t("invite.roleLabel")}</span>
-        <select
+      <div className="flex flex-col gap-xs">
+        <ComboSelect
+          label={t("invite.roleLabel")}
           value={custom ? "__custom__" : roleName}
-          onChange={(e) => onPickRole(e.target.value)}
-          className="h-10 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
-        >
-          <option value="" disabled>{t("invite.roleChoose")}</option>
-          {roles.map((r) => (
-            <option key={r.id} value={r.name}>{r.name}</option>
-          ))}
-          <option value="__custom__">{t("invite.roleCustom")}</option>
-        </select>
+          onChange={onPickRole}
+          options={[
+            ...roles.map((r) => ({ value: r.name, label: r.name })),
+            { value: "__custom__", label: t("invite.roleCustom") },
+          ]}
+          placeholder={t("invite.roleChoose")}
+        />
         {custom ? (
           <input
             value={roleName}
@@ -451,7 +450,7 @@ function InviteModal({
           />
         ) : null}
         <span className="text-body-sm text-subtle">{t("invite.roleHint")}</span>
-      </label>
+      </div>
       <div className="flex flex-col gap-xs">
         <span className="text-label-md text-muted">{t("invite.accessLabel")}</span>
         <p className="rounded-md bg-surface-tint px-md py-sm text-body-sm text-muted">

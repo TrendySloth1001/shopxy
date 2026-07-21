@@ -24,6 +24,8 @@ import {
   type Shop,
 } from "@/features/shop/schema";
 import { CardsSkeleton } from "@/shared/ui/skeleton";
+import { ComboSelect } from "@/shared/ui/combo-select";
+import { TimeSelect } from "@/shared/ui/date-picker";
 
 type DayHours = { open: boolean; from: string; to: string };
 
@@ -614,21 +616,14 @@ function SelectField<T extends string>({
   hint?: string;
 }) {
   return (
-    <label className="flex flex-col gap-xs">
-      <span className="text-label-md text-muted">{label}</span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value as T)}
-        className="h-10 cursor-pointer rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
-      >
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-      {hint ? <span className="text-body-sm text-subtle">{hint}</span> : null}
-    </label>
+    <ComboSelect
+      label={label}
+      value={value}
+      onChange={(v) => onChange(v as T)}
+      options={options}
+      helper={hint}
+      className="w-full"
+    />
   );
 }
 
@@ -692,18 +687,14 @@ function HoursRow({
       </label>
       {value.open ? (
         <div className="flex items-center gap-sm">
-          <input
-            type="time"
+          <TimeSelect
             value={value.from}
-            onChange={(e) => onChange({ ...value, from: e.target.value })}
-            className="h-9 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+            onChange={(tm) => onChange({ ...value, from: tm })}
           />
           <span className="text-body-sm text-muted">{t("hours.to")}</span>
-          <input
-            type="time"
+          <TimeSelect
             value={value.to}
-            onChange={(e) => onChange({ ...value, to: e.target.value })}
-            className="h-9 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft"
+            onChange={(tm) => onChange({ ...value, to: tm })}
           />
         </div>
       ) : (

@@ -8,6 +8,7 @@ import {
   saveProductCustomFields,
 } from "../api";
 import type { CustomFieldDef } from "../schema";
+import { ComboSelect } from "@/shared/ui/combo-select";
 
 const cell =
   "h-10 w-full rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft";
@@ -94,14 +95,16 @@ export function CustomFieldsEditor({ productId }: { productId: number }) {
           <div key={d.id} className="flex flex-col gap-xs">
             <label className="text-label-md text-muted">{label}</label>
             {d.options.length > 0 ? (
-              <select className={cell} value={value} onChange={(e) => set(e.target.value)}>
-                <option value="">—</option>
-                {d.options.map((o) => (
-                  <option key={o} value={o}>
-                    {o}
-                  </option>
-                ))}
-              </select>
+              <ComboSelect
+                ariaLabel={label}
+                className="w-full"
+                value={value}
+                onChange={set}
+                options={[
+                  { value: "", label: "—" },
+                  ...d.options.map((o) => ({ value: o, label: o })),
+                ]}
+              />
             ) : (
               <input
                 className={cell}

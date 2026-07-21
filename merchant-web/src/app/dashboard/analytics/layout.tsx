@@ -8,6 +8,7 @@ import { BarChart3 } from "lucide-react";
 import { PageHeader } from "@/shared/ui/page-header";
 import { todayInputDate } from "@/shared/datetime";
 import { AnalyticsRangeProvider, useAnalyticsRange } from "@/features/analytics/range-context";
+import { DatePicker } from "@/shared/ui/date-picker";
 
 export default function AnalyticsLayout({ children }: { children: ReactNode }) {
   return (
@@ -70,9 +71,6 @@ function Tab({ href, label, active }: { href: string; label: string; active: boo
   );
 }
 
-const dateInput =
-  "h-10 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft";
-
 function DateField({
   label,
   value,
@@ -86,12 +84,7 @@ function DateField({
   max?: string;
   onChange: (v: string) => void;
 }) {
-  return (
-    <label className="flex flex-col gap-xs">
-      <span className="text-label-md text-muted">{label}</span>
-      <input type="date" value={value} min={min} max={max} onChange={(e) => onChange(e.target.value)} className={dateInput} />
-    </label>
-  );
+  return <DatePicker label={label} value={value} min={min} max={max} onChange={onChange} />;
 }
 
 function PresetChip({ label, onClick }: { label: string; onClick: () => void }) {
