@@ -2,6 +2,7 @@ import { createHash } from 'crypto';
 import prisma from '../../infra/db/prisma.js';
 import { logger } from '../../shared/logging/logger.js';
 import { notificationsService } from '../notifications/notifications.service.js';
+import { sendMail } from '../../infra/mailer.js';
 
 /**
  * Login history + new-device alerting.
@@ -11,11 +12,10 @@ import { notificationsService } from '../notifications/notifications.service.js'
  * before — and it isn't their very first login — we raise a security alert so
  * the real owner notices an unfamiliar sign-in.
  *
- * Delivery is **channel-agnostic**: today it writes an in-app notification.
- * Out-of-band delivery (email / push) is the stronger signal for account
- * takeover but needs a mail/push transport that doesn't exist yet — it slots
- * into {@link deliverOutOfBand} without touching detection, so it's a drop-in
- * once that transport lands.
+ * Delivery is **channel-agnostic**: an in-app notification, plus an out-of-band
+ * email via {@link deliverOutOfBand} (the stronger signal for account takeover,
+ * since it reaches the owner even if the attacker is the one in the app). The
+ * email is best-effort and no-ops when SMTP isn't configured.
  */
 
 export interface LoginContext {
@@ -37,10 +37,21 @@ function fingerprint(userAgent?: string | null): string {
   return createHash('sha256').update(userAgent ?? 'unknown').digest('hex');
 }
 
-// Placeholder for a future mail/push transport. Intentionally a no-op today.
-async function deliverOutOfBand(_ctx: LoginContext, _ipMasked: string | null): Promise<void> {
-  // TODO: send email/push here once a transport exists — same call site,
-  // no change to detection.
+/** Out-of-band new-device alert (email). Best-effort — the mailer no-ops if SMTP isn't set. */
+async function deliverOutOfBand(email: string, ipMasked: string | null): Promise<void> {
+  const where = ipMasked ? ` (around ${ipMasked})` : '';
+  await sendMail({
+    to: email,
+    subject: 'New sign-in to your ShopXY account',
+    text:
+      `A new device just signed in to your ShopXY account${where}.\n\n` +
+      `If this was you, you can ignore this email. If not, change your ` +
+      `password and sign out of all devices immediately.`,
+    html:
+      `<p>A new device just signed in to your <b>ShopXY</b> account${where}.</p>` +
+      `<p>If this was you, you can ignore this email. If not, ` +
+      `<b>change your password and sign out of all devices</b> immediately.</p>`,
+  });
 }
 
 export const loginAlertsService = {
@@ -83,7 +94,11 @@ export const loginAlertsService = {
             : 'A new device just signed in. If this wasn’t you, change your password and sign out everywhere.',
           data: { event: 'new_device_login', ipMasked },
         });
-        await deliverOutOfBand(ctx, ipMasked);
+        const owner = await prisma.user.findUnique({
+          where: { id: ctx.userId },
+          select: { email: true },
+        });
+        if (owner?.email) await deliverOutOfBand(owner.email, ipMasked);
       }
     } catch (err) {
       logger.warn({ err: (err as Error).message, userId: ctx.userId }, 'login-alerts: record failed');
