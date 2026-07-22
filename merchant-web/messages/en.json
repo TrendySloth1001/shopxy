@@ -2065,7 +2065,7 @@
       "email": "Email",
       "password": "Password",
       "confirmPassword": "Confirm password",
-      "passwordHelper": "At least 8 characters, with a letter and a number.",
+      "passwordHelper": "At least 10 characters, with a letter and a number.",
       "yourName": "Your name",
       "yourNameOptional": "Your name (optional)",
       "name": "Name",

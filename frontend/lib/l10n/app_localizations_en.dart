@@ -2976,8 +2976,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Shown to customers in the marketplace. You can rename it later.';
 
   @override
+  String get onboardingShopTitle => 'Set up your shop';
+
+  @override
+  String get onboardingShopSubtitle =>
+      'Give your shop a name to get started. You can change it later in settings.';
+
+  @override
+  String get onboardingShopCta => 'Continue';
+
+  @override
   String get authPasswordHelper =>
-      'At least 8 characters, with a letter and a number.';
+      'At least 10 characters, with a letter and a number.';
 
   @override
   String get authConfirmPassword => 'Confirm Password';

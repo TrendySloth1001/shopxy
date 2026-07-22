@@ -375,7 +375,7 @@ class AppStrings {
 
   // Auth validation
   static const String invalidEmail = 'Enter a valid email address';
-  static const String passwordTooShort = 'Password must be at least 8 characters';
+  static const String passwordTooShort = 'Password must be at least 10 characters';
   static const String passwordNeedsLetter = 'Password must contain at least one letter';
   static const String passwordNeedsNumber = 'Password must contain at least one number';
   static const String passwordsDoNotMatch = 'Passwords do not match';

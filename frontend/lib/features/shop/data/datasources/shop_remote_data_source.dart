@@ -17,6 +17,19 @@ class ShopRemoteDataSource {
     return Shop.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
+  /// Create the caller's first shop during onboarding (a shopless OWNER names
+  /// their shop after signup). POST /me/onboarding/shop → 201 with the shop.
+  Future<Shop> createMyShop(String name) async {
+    final res = await _client.post(
+      '/me/onboarding/shop',
+      body: {'name': name.trim()},
+    );
+    if (res.statusCode != 201 && res.statusCode != 200) {
+      throw Exception('Failed to create shop: ${res.body}');
+    }
+    return Shop.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+  }
+
   /// Patches only the supplied fields. Pass `null` for fields that
   /// should be cleared on the server (matches the PUT contract; the
   /// service interprets explicit-null vs. absent as clear vs. ignore).

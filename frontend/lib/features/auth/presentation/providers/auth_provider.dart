@@ -81,7 +81,7 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
     String name,
     String email,
     String password, {
-    required String shopName,
+    String? shopName,
   }) async {
     final result = await _dataSource.register(
       name,

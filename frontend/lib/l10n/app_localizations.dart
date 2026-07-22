@@ -5684,10 +5684,28 @@ abstract class AppLocalizations {
   /// **'Shown to customers in the marketplace. You can rename it later.'**
   String get authShopNameHelper;
 
+  /// No description provided for @onboardingShopTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up your shop'**
+  String get onboardingShopTitle;
+
+  /// No description provided for @onboardingShopSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Give your shop a name to get started. You can change it later in settings.'**
+  String get onboardingShopSubtitle;
+
+  /// No description provided for @onboardingShopCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get onboardingShopCta;
+
   /// No description provided for @authPasswordHelper.
   ///
   /// In en, this message translates to:
-  /// **'At least 8 characters, with a letter and a number.'**
+  /// **'At least 10 characters, with a letter and a number.'**
   String get authPasswordHelper;
 
   /// No description provided for @authConfirmPassword.

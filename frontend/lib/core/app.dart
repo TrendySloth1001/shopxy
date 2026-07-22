@@ -11,6 +11,7 @@ import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/notifications/data/datasources/notifications_remote_data_source.dart';
 import 'package:shopxy/features/notifications/domain/entities/invitation.dart';
 import 'package:shopxy/features/shop/presentation/pages/join_request_page.dart';
+import 'package:shopxy/features/shop/presentation/pages/onboarding_shop_page.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
@@ -88,10 +89,13 @@ class _AuthGate extends StatelessWidget {
     if (auth.isLoading) return const _SplashScreen();
     if (!auth.isAuthenticated) return const LoginPage();
     // A member (owner or staff) has a shopRole → straight into the app.
-    // An authenticated account with no shopRole isn't on any team yet:
-    // it's either an invited staffer who must accept first, or a stray
-    // shopless account. The JoinGate sorts that out.
     if (auth.user?.shopRole != null) return const AppShell();
+    // A brand-new OWNER signs up shopless (the register form no longer asks
+    // for a shop name) → send them to onboarding to name their shop, which
+    // gives them a ShopMember(OWNER) and advances the gate above.
+    if (auth.user?.role == 'OWNER') return const OnboardingShopPage();
+    // Otherwise: an invited staffer who must accept first, or a stray shopless
+    // account. The JoinGate sorts that out.
     return const _JoinGate();
   }
 }

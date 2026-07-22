@@ -29,6 +29,25 @@ class ShopProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Onboarding: create the caller's first shop (name-your-shop step). Returns
+  /// true on success; the caller then refreshes the auth user so the app gate
+  /// advances from onboarding into the dashboard.
+  Future<bool> createFirstShop(String name) async {
+    _isSaving = true;
+    _error = null;
+    notifyListeners();
+    try {
+      _shop = await _ds.createMyShop(name);
+      return true;
+    } catch (e) {
+      _error = friendlyError(e);
+      return false;
+    } finally {
+      _isSaving = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> load() async {
     _isLoading = true;
     _error = null;

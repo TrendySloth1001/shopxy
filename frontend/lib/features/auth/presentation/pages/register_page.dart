@@ -23,7 +23,6 @@ class _RegisterPageState extends State<RegisterPage> {
   // package is a dependency yet — needs a package decision before wiring.
   final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
-  final _shopName = TextEditingController();
   final _email = TextEditingController();
   final _password = TextEditingController();
   final _confirm = TextEditingController();
@@ -38,7 +37,6 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   void dispose() {
     _name.dispose();
-    _shopName.dispose();
     _email.dispose();
     _password.dispose();
     _confirm.dispose();
@@ -57,12 +55,17 @@ class _RegisterPageState extends State<RegisterPage> {
       _error = null;
     });
     try {
+      // Shop name is collected in onboarding (name-your-shop) after signup —
+      // mirrors merchant-web, which creates the owner shopless here.
       await context.read<AuthProvider>().register(
-            _name.text.trim(),
-            _email.text.trim(),
-            _password.text,
-            shopName: _shopName.text.trim(),
-          );
+        _name.text.trim(),
+        _email.text.trim(),
+        _password.text,
+      );
+      // Success: this screen was PUSHED on top of the auth gate, which has now
+      // rebuilt underneath (→ onboarding). Pop back to it, otherwise the user
+      // is stranded on the create-account form even though signup succeeded.
+      if (mounted) Navigator.of(context).popUntil((r) => r.isFirst);
     } catch (e) {
       if (mounted) setState(() => _error = friendlyError(e));
     } finally {
@@ -92,19 +95,6 @@ class _RegisterPageState extends State<RegisterPage> {
           AuthField(
             label: l10n.authYourName,
             controller: _name,
-            textCapitalization: TextCapitalization.words,
-            textInputAction: TextInputAction.next,
-            validator: (v) {
-              if (v == null || v.trim().isEmpty) return l10n.authFieldRequired;
-              if (v.trim().length < 2) return l10n.authNameTooShort;
-              return null;
-            },
-          ),
-          const SizedBox(height: AppSizes.lg),
-          AuthField(
-            label: l10n.authShopName,
-            controller: _shopName,
-            helper: l10n.authShopNameHelper,
             textCapitalization: TextCapitalization.words,
             textInputAction: TextInputAction.next,
             validator: (v) {
@@ -219,8 +209,9 @@ class _ConsentCheckbox extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: AppColors.muted),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppColors.muted,
+                ),
               ),
               TextButton(
                 onPressed: onLinkTap,

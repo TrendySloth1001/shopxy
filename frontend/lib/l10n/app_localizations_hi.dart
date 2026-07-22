@@ -2974,8 +2974,18 @@ class AppLocalizationsHi extends AppLocalizations {
       'मार्केटप्लेस में ग्राहकों को दिखाया जाता है। आप इसे बाद में बदल सकते हैं।';
 
   @override
+  String get onboardingShopTitle => 'अपनी दुकान सेट करें';
+
+  @override
+  String get onboardingShopSubtitle =>
+      'शुरू करने के लिए अपनी दुकान को एक नाम दें। आप इसे बाद में सेटिंग में बदल सकते हैं।';
+
+  @override
+  String get onboardingShopCta => 'जारी रखें';
+
+  @override
   String get authPasswordHelper =>
-      'कम से कम 8 अक्षर, जिनमें एक अक्षर और एक संख्या हो।';
+      'कम से कम 10 अक्षर, जिनमें एक अक्षर और एक संख्या हो।';
 
   @override
   String get authConfirmPassword => 'पासवर्ड की पुष्टि करें';

@@ -34,7 +34,7 @@ class AuthRemoteDataSource {
     String name,
     String email,
     String password, {
-    required String shopName,
+    String? shopName,
   }) async {
     final res = await _client.post(
       '/auth/register',
@@ -42,10 +42,11 @@ class AuthRemoteDataSource {
         'name': name,
         'email': email,
         'password': password,
-        // Merchant app — every signup creates an OWNER + their Shop on
-        // the backend, atomically. The customer app sends 'CUSTOMER'.
+        // Merchant app — signup creates an OWNER. The shop is named in
+        // onboarding (name-your-shop) unless a shopName is supplied here,
+        // mirroring merchant-web. The customer app sends 'CUSTOMER'.
         'role': 'OWNER',
-        'shopName': shopName,
+        if (shopName != null && shopName.isNotEmpty) 'shopName': shopName,
         // DPDP consent gate — both literals required by the backend
         // schema. The register page disables submit until the user
         // ticks both boxes, so reaching this line implies acceptance.
@@ -108,7 +109,10 @@ class AuthRemoteDataSource {
 
   /// Revoke a device-remember credential ("Remove this account").
   Future<void> forgetRemember(String rememberToken) async {
-    await _client.post('/auth/remember/forget', body: {'rememberToken': rememberToken});
+    await _client.post(
+      '/auth/remember/forget',
+      body: {'rememberToken': rememberToken},
+    );
   }
 
   Future<AuthUser> updateProfile({
@@ -205,7 +209,10 @@ class AuthRemoteDataSource {
     throw Exception(_extractError(body));
   }
 
-  Future<void> changePassword(String currentPassword, String newPassword) async {
+  Future<void> changePassword(
+    String currentPassword,
+    String newPassword,
+  ) async {
     final res = await _client.post(
       '/auth/change-password',
       body: {'currentPassword': currentPassword, 'newPassword': newPassword},
