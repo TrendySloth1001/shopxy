@@ -32,8 +32,8 @@ class NotificationBell extends StatelessWidget {
             const Center(child: AppIcon(AppIcons.notificationsNoneRounded)),
             if (unread > 0)
               Positioned(
-                right: -AppSizes.xs,
-                top: -AppSizes.xs,
+                right: -AppSizes.xxs,
+                top: -AppSizes.xxs,
                 child: Container(
                   constraints: const BoxConstraints(
                     minWidth: AppSizes.iconSm,

@@ -77,21 +77,46 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
-  Future<void> register(
+  /// Start registration. Returns [RegisterPending] when the backend emailed an
+  /// OTP (the UI must collect it via [verifyEmail]), or [RegisterSignedIn] when
+  /// the account was created directly (OTP infra unavailable) and the session
+  /// is already applied.
+  Future<RegisterResult> register(
     String name,
     String email,
     String password, {
     String? shopName,
   }) async {
-    final result = await _dataSource.register(
+    final res = await _dataSource.register(
       name,
       email,
       password,
       shopName: shopName,
     );
+    if (res.pending) return RegisterPending(res.email);
+    await _applySession(res.session!);
+    return const RegisterSignedIn();
+  }
+
+  /// Confirm the signup OTP → creates the account server-side and signs in.
+  Future<void> verifyEmail(String email, String otp) async {
+    await _applySession(await _dataSource.verifyEmail(email, otp));
+  }
+
+  /// Re-send the signup verification code.
+  Future<void> resendOtp(String email) => _dataSource.resendOtp(email);
+
+  // ── Sessions / devices ──────────────────────────────────────────────
+  Future<List<SessionInfo>> listSessions() => _dataSource.listSessions();
+  Future<void> revokeSession(int id) => _dataSource.revokeSession(id);
+  Future<int> revokeOtherSessions() => _dataSource.revokeOtherSessions();
+
+  /// Persist a fresh session and load the user — shared by register-fallback,
+  /// OTP verification and (implicitly) the login paths.
+  Future<void> _applySession(AuthResult session) async {
     await _tokenManager.saveTokens(
-      accessToken: result.accessToken,
-      refreshToken: result.refreshToken,
+      accessToken: session.accessToken,
+      refreshToken: session.refreshToken,
     );
     _user = await _dataSource.getMe();
     await _rememberThisDevice();
@@ -110,7 +135,12 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
         label: '${defaultTargetPlatform.name} merchant',
       );
       await _rememberStore.save(
-        RememberedAccount(id: u.id, name: u.name, email: u.email, avatarUrl: u.avatarUrl),
+        RememberedAccount(
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          avatarUrl: u.avatarUrl,
+        ),
         token,
       );
     } catch (_) {
@@ -345,4 +375,20 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
     }
     notifyListeners();
   }
+}
+
+/// Outcome of [AuthProvider.register]: either the backend emailed a
+/// verification code (collect it via [AuthProvider.verifyEmail]) or, when the
+/// OTP infra is down, it created the account and applied the session directly.
+sealed class RegisterResult {
+  const RegisterResult();
+}
+
+class RegisterPending extends RegisterResult {
+  const RegisterPending(this.email);
+  final String email;
+}
+
+class RegisterSignedIn extends RegisterResult {
+  const RegisterSignedIn();
 }

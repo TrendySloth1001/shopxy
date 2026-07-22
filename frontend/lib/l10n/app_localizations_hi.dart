@@ -2984,6 +2984,34 @@ class AppLocalizationsHi extends AppLocalizations {
   String get onboardingShopCta => 'जारी रखें';
 
   @override
+  String get otpVerifyTitle => 'अपना ईमेल सत्यापित करें';
+
+  @override
+  String otpVerifySubtitle(String email) {
+    return 'हमने $email पर भेजा गया 6-अंकों का कोड दर्ज करें।';
+  }
+
+  @override
+  String get otpCodeLabel => 'सत्यापन कोड';
+
+  @override
+  String get otpVerifyCta => 'सत्यापित करें और जारी रखें';
+
+  @override
+  String get otpResend => 'कोड फिर से भेजें';
+
+  @override
+  String otpResendIn(int seconds) {
+    return '$seconds सेकंड में फिर से भेजें';
+  }
+
+  @override
+  String get otpNoCodePrompt => 'कोड नहीं मिला?';
+
+  @override
+  String get otpResent => 'एक नया कोड भेजा जा रहा है।';
+
+  @override
   String get authPasswordHelper =>
       'कम से कम 10 अक्षर, जिनमें एक अक्षर और एक संख्या हो।';
 
@@ -6690,4 +6718,54 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get menuDescSettings => 'मुद्रा, थीम और भाषा';
+
+  @override
+  String get profileDevicesSessions => 'डिवाइस और सत्र';
+
+  @override
+  String get profileDevicesSessionsSubtitle =>
+      'देखें कि आप कहाँ साइन इन हैं और डिवाइस साइन आउट करें';
+
+  @override
+  String get sessionsThisDevice => 'यह डिवाइस';
+
+  @override
+  String get sessionsSignOut => 'साइन आउट';
+
+  @override
+  String get sessionsSignOutOthers => 'अन्य सभी डिवाइस साइन आउट करें';
+
+  @override
+  String get sessionsSignedOut => 'साइन आउट किया गया।';
+
+  @override
+  String sessionsLastActive(String time) {
+    return 'अंतिम सक्रिय $time';
+  }
+
+  @override
+  String sessionsSignedInOn(String time) {
+    return '$time को साइन इन किया';
+  }
+
+  @override
+  String get sessionsEmpty => 'कोई सक्रिय सत्र नहीं।';
+
+  @override
+  String get timeJustNow => 'अभी';
+
+  @override
+  String timeMinutesAgo(int n) {
+    return '$n मिनट पहले';
+  }
+
+  @override
+  String timeHoursAgo(int n) {
+    return '$n घंटे पहले';
+  }
+
+  @override
+  String timeDaysAgo(int n) {
+    return '$n दिन पहले';
+  }
 }

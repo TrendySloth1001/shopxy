@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/app.dart';
 import 'package:shopxy/core/auth/token_manager.dart';
+import 'dart:async';
+
 import 'package:shopxy/core/config/app_config.dart';
 import 'package:shopxy/core/network/api_client.dart';
+import 'package:shopxy/core/utils/device_info_helper.dart';
 import 'package:shopxy/core/prefs/navigation_prefs.dart';
 import 'package:shopxy/core/prefs/prefs_storage.dart';
 import 'package:shopxy/core/prefs/theme_prefs.dart';
@@ -79,6 +82,12 @@ void main() async {
   await themePrefs.load();
 
   final apiClient = ApiClient(tokenManager);
+  // Resolve the device name once (async, non-blocking) so requests carry
+  // `X-Device-Name` for the sessions list. Auth calls are user-triggered
+  // seconds later, well after this fast native lookup resolves.
+  unawaited(
+    DeviceInfoHelper.deviceName().then((n) => apiClient.deviceName = n),
+  );
 
   // Data sources
   final authDs = AuthRemoteDataSource(apiClient);
@@ -111,7 +120,10 @@ void main() async {
   final couponsDs = MerchantCouponsRemoteDataSource(apiClient);
   final returnsDs = MerchantReturnsRemoteDataSource(apiClient);
 
-  final notificationsProvider = NotificationsProvider(notificationsDs, invitationsDs);
+  final notificationsProvider = NotificationsProvider(
+    notificationsDs,
+    invitationsDs,
+  );
 
   // Auth provider (created before runApp so we can wire the callback)
   final authProvider = AuthProvider(authDs, tokenManager);
@@ -126,8 +138,9 @@ void main() async {
   final partiesProvider = PartiesProvider(partiesDs);
   final challansProvider = ChallansProvider(challansDs);
   final shopProvider = ShopProvider(shopDs);
-  final linkedAccountProvider =
-      LinkedAccountProvider(LinkedAccountRemoteDataSource(apiClient));
+  final linkedAccountProvider = LinkedAccountProvider(
+    LinkedAccountRemoteDataSource(apiClient),
+  );
 
   authProvider.registerOnClear(notificationsProvider.reset);
   authProvider.registerOnClear(productsProvider.reset);
@@ -193,7 +206,9 @@ void main() async {
         Provider<QuotationsRemoteDataSource>.value(value: quotationsDs),
         Provider<ReportsRemoteDataSource>.value(value: reportsDs),
         Provider<ChallansRemoteDataSource>.value(value: challansDs),
-        Provider<StockAdjustmentsRemoteDataSource>.value(value: stockAdjustmentsDs),
+        Provider<StockAdjustmentsRemoteDataSource>.value(
+          value: stockAdjustmentsDs,
+        ),
         Provider<CategoriesRemoteDataSource>.value(value: categoriesDs),
         Provider<CustomFieldsRemoteDataSource>.value(value: customFieldsDs),
         Provider<ReviewsRemoteDataSource>.value(value: reviewsDs),
@@ -214,16 +229,26 @@ void main() async {
         ChangeNotifierProvider(create: (_) => PaymentsProvider(paymentsDs)),
         ChangeNotifierProvider(create: (_) => QuotationsProvider(quotationsDs)),
         ChangeNotifierProvider<ChallansProvider>.value(value: challansProvider),
-        ChangeNotifierProvider<NotificationsProvider>.value(value: notificationsProvider),
+        ChangeNotifierProvider<NotificationsProvider>.value(
+          value: notificationsProvider,
+        ),
         ChangeNotifierProvider(create: (_) => ReportsProvider(reportsDs)),
         ChangeNotifierProvider<ShopProvider>.value(value: shopProvider),
         ChangeNotifierProvider<LinkedAccountProvider>.value(
-            value: linkedAccountProvider),
-        ChangeNotifierProvider(create: (_) => AdminBannersProvider(adminBannersDs)),
+          value: linkedAccountProvider,
+        ),
+        ChangeNotifierProvider(
+          create: (_) => AdminBannersProvider(adminBannersDs),
+        ),
         ChangeNotifierProvider<MerchantBannersProvider>.value(
-            value: merchantBannersProvider),
-        ChangeNotifierProvider(create: (_) => AdminCollectionsProvider(adminCollectionsDs)),
-        ChangeNotifierProvider(create: (_) => AdminBankOffersProvider(adminBankOffersDs)),
+          value: merchantBannersProvider,
+        ),
+        ChangeNotifierProvider(
+          create: (_) => AdminCollectionsProvider(adminCollectionsDs),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => AdminBankOffersProvider(adminBankOffersDs),
+        ),
         Provider<AdminShopsRemoteDataSource>.value(value: adminShopsDs),
         ChangeNotifierProvider(create: (_) => AnalyticsProvider(analyticsDs)),
         ChangeNotifierProvider<OrdersProvider>.value(value: ordersProvider),

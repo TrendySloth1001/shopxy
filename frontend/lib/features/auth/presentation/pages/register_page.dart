@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/features/auth/presentation/pages/otp_verify_page.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/auth/presentation/widgets/auth_scaffold.dart';
 import 'package:shopxy/features/profile/presentation/pages/legal_page.dart';
@@ -57,15 +58,23 @@ class _RegisterPageState extends State<RegisterPage> {
     try {
       // Shop name is collected in onboarding (name-your-shop) after signup —
       // mirrors merchant-web, which creates the owner shopless here.
-      await context.read<AuthProvider>().register(
+      final result = await context.read<AuthProvider>().register(
         _name.text.trim(),
         _email.text.trim(),
         _password.text,
       );
-      // Success: this screen was PUSHED on top of the auth gate, which has now
-      // rebuilt underneath (→ onboarding). Pop back to it, otherwise the user
-      // is stranded on the create-account form even though signup succeeded.
-      if (mounted) Navigator.of(context).popUntil((r) => r.isFirst);
+      if (!mounted) return;
+      switch (result) {
+        case RegisterPending(:final email):
+          // Verify the email before the account is created — collect the OTP.
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => OtpVerifyPage(email: email)),
+          );
+        case RegisterSignedIn():
+          // OTP infra was down → account created + signed in directly. The auth
+          // gate rebuilt underneath (→ onboarding); pop back to reveal it.
+          Navigator.of(context).popUntil((r) => r.isFirst);
+      }
     } catch (e) {
       if (mounted) setState(() => _error = friendlyError(e));
     } finally {

@@ -5702,6 +5702,54 @@ abstract class AppLocalizations {
   /// **'Continue'**
   String get onboardingShopCta;
 
+  /// No description provided for @otpVerifyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your email'**
+  String get otpVerifyTitle;
+
+  /// No description provided for @otpVerifySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the 6-digit code we sent to {email}.'**
+  String otpVerifySubtitle(String email);
+
+  /// No description provided for @otpCodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification code'**
+  String get otpCodeLabel;
+
+  /// No description provided for @otpVerifyCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify & continue'**
+  String get otpVerifyCta;
+
+  /// No description provided for @otpResend.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend code'**
+  String get otpResend;
+
+  /// No description provided for @otpResendIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend in {seconds}s'**
+  String otpResendIn(int seconds);
+
+  /// No description provided for @otpNoCodePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Didn\'t get the code?'**
+  String get otpNoCodePrompt;
+
+  /// No description provided for @otpResent.
+  ///
+  /// In en, this message translates to:
+  /// **'A new code is on its way.'**
+  String get otpResent;
+
   /// No description provided for @authPasswordHelper.
   ///
   /// In en, this message translates to:
@@ -12346,6 +12394,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Currency, theme and language'**
   String get menuDescSettings;
+
+  /// No description provided for @profileDevicesSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Devices & sessions'**
+  String get profileDevicesSessions;
+
+  /// No description provided for @profileDevicesSessionsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'See where you\'re signed in and sign out devices'**
+  String get profileDevicesSessionsSubtitle;
+
+  /// No description provided for @sessionsThisDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'This device'**
+  String get sessionsThisDevice;
+
+  /// No description provided for @sessionsSignOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get sessionsSignOut;
+
+  /// No description provided for @sessionsSignOutOthers.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out all other devices'**
+  String get sessionsSignOutOthers;
+
+  /// No description provided for @sessionsSignedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed out.'**
+  String get sessionsSignedOut;
+
+  /// No description provided for @sessionsLastActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Last active {time}'**
+  String sessionsLastActive(String time);
+
+  /// No description provided for @sessionsSignedInOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in {time}'**
+  String sessionsSignedInOn(String time);
+
+  /// No description provided for @sessionsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No active sessions.'**
+  String get sessionsEmpty;
+
+  /// No description provided for @timeJustNow.
+  ///
+  /// In en, this message translates to:
+  /// **'just now'**
+  String get timeJustNow;
+
+  /// No description provided for @timeMinutesAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{n}m ago'**
+  String timeMinutesAgo(int n);
+
+  /// No description provided for @timeHoursAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{n}h ago'**
+  String timeHoursAgo(int n);
+
+  /// No description provided for @timeDaysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{n}d ago'**
+  String timeDaysAgo(int n);
 }
 
 class _AppLocalizationsDelegate

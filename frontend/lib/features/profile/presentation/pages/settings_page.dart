@@ -12,6 +12,7 @@ import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/auth/presentation/widgets/logout_confirm_sheet.dart';
 import 'package:shopxy/features/custom_fields/presentation/pages/custom_fields_settings_page.dart';
+import 'package:shopxy/features/auth/presentation/pages/sessions_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/change_password_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/edit_profile_page.dart';
 import 'package:shopxy/features/shop/presentation/pages/shop_operations_page.dart';
@@ -166,6 +167,19 @@ class _SettingsPageState extends State<SettingsPage> {
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const ChangePasswordPage()),
+            ),
+          ),
+          _SettingRow(
+            icon: AppIcons.shieldOutlined,
+            title: l10n.profileDevicesSessions,
+            subtitle: l10n.profileDevicesSessionsSubtitle,
+            trailing: AppIcon(
+              AppIcons.chevronRightRounded,
+              color: AppColors.subtle,
+            ),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SessionsPage()),
             ),
           ),
           _SettingRow(

@@ -3,12 +3,47 @@ import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/features/auth/domain/entities/auth_user.dart';
 
 typedef AuthResult = ({AuthUser user, String accessToken, String refreshToken});
+
+/// Register can either (a) require email-OTP verification — `pending` is true
+/// and no session is issued yet, or (b) sign the user straight in when the OTP
+/// infra is unavailable — `pending` is false and `session` carries the tokens.
+typedef RegisterResponse = ({bool pending, String email, AuthResult? session});
 typedef RememberLoginResult = ({
   AuthUser user,
   String accessToken,
   String refreshToken,
   String rememberToken,
 });
+
+/// One active session behind the account (a device where you're signed in).
+class SessionInfo {
+  const SessionInfo({
+    required this.id,
+    required this.device,
+    required this.where,
+    required this.createdAt,
+    required this.lastUsedAt,
+    required this.current,
+  });
+
+  final int id;
+  final String device; // friendly label ("Chrome on Windows", "ShopXY app")
+  final String? where; // masked IP
+  final DateTime createdAt;
+  final DateTime? lastUsedAt;
+  final bool current; // the session making this request
+
+  factory SessionInfo.fromJson(Map<String, dynamic> j) => SessionInfo(
+    id: j['id'] as int,
+    device: (j['device'] as String?) ?? 'Unknown device',
+    where: j['where'] as String?,
+    createdAt: DateTime.parse(j['createdAt'] as String),
+    lastUsedAt: j['lastUsedAt'] != null
+        ? DateTime.parse(j['lastUsedAt'] as String)
+        : null,
+    current: (j['current'] as bool?) ?? false,
+  );
+}
 
 class AuthRemoteDataSource {
   const AuthRemoteDataSource(this._client);
@@ -30,7 +65,7 @@ class AuthRemoteDataSource {
     );
   }
 
-  Future<AuthResult> register(
+  Future<RegisterResponse> register(
     String name,
     String email,
     String password, {
@@ -55,6 +90,37 @@ class AuthRemoteDataSource {
       },
     );
     final body = jsonDecode(res.body) as Map<String, dynamic>;
+    // OTP gate: 200 + pending → an email code was sent, no account yet.
+    if (res.statusCode == 200 && body['pending'] == true) {
+      return (
+        pending: true,
+        email: body['email'] as String? ?? email,
+        session: null,
+      );
+    }
+    if (res.statusCode != 201) {
+      throw Exception(_extractError(body));
+    }
+    // Fallback path (OTP infra down): signed in directly.
+    return (
+      pending: false,
+      email: email,
+      session: (
+        user: AuthUser.fromJson(body['user'] as Map<String, dynamic>),
+        accessToken: body['accessToken'] as String,
+        refreshToken: body['refreshToken'] as String,
+      ),
+    );
+  }
+
+  /// Confirm the signup OTP → the backend creates the account and returns a
+  /// session (same shape as login).
+  Future<AuthResult> verifyEmail(String email, String otp) async {
+    final res = await _client.post(
+      '/auth/verify-email',
+      body: {'email': email, 'otp': otp},
+    );
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
     if (res.statusCode != 201) {
       throw Exception(_extractError(body));
     }
@@ -63,6 +129,46 @@ class AuthRemoteDataSource {
       accessToken: body['accessToken'] as String,
       refreshToken: body['refreshToken'] as String,
     );
+  }
+
+  /// Re-send the signup verification code (rate-limited server-side).
+  Future<void> resendOtp(String email) async {
+    final res = await _client.post('/auth/resend-otp', body: {'email': email});
+    if (res.statusCode != 204) {
+      throw Exception(
+        _extractError(jsonDecode(res.body) as Map<String, dynamic>),
+      );
+    }
+  }
+
+  // ── Sessions / devices ────────────────────────────────────────────────
+
+  /// Active sessions for the signed-in user (device / where / when).
+  Future<List<SessionInfo>> listSessions() async {
+    final res = await _client.get('/auth/sessions');
+    if (res.statusCode != 200) throw Exception('Could not load your devices.');
+    final list = jsonDecode(res.body) as List<dynamic>;
+    return list
+        .map((e) => SessionInfo.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Revoke one session — signs that device out immediately.
+  Future<void> revokeSession(int id) async {
+    final res = await _client.delete('/auth/sessions/$id');
+    if (res.statusCode != 204) {
+      throw Exception('Could not sign out that device.');
+    }
+  }
+
+  /// Sign out every device except the current one. Returns how many were revoked.
+  Future<int> revokeOtherSessions() async {
+    final res = await _client.post('/auth/sessions/revoke-others');
+    if (res.statusCode != 200) {
+      throw Exception('Could not sign out other devices.');
+    }
+    return (jsonDecode(res.body) as Map<String, dynamic>)['revoked'] as int? ??
+        0;
   }
 
   Future<AuthUser> getMe() async {

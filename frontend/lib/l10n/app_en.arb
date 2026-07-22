@@ -1309,6 +1309,28 @@
   "onboardingShopTitle": "Set up your shop",
   "onboardingShopSubtitle": "Give your shop a name to get started. You can change it later in settings.",
   "onboardingShopCta": "Continue",
+  "otpVerifyTitle": "Verify your email",
+  "otpVerifySubtitle": "Enter the 6-digit code we sent to {email}.",
+  "@otpVerifySubtitle": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "otpCodeLabel": "Verification code",
+  "otpVerifyCta": "Verify & continue",
+  "otpResend": "Resend code",
+  "otpResendIn": "Resend in {seconds}s",
+  "@otpResendIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "otpNoCodePrompt": "Didn't get the code?",
+  "otpResent": "A new code is on its way.",
   "authPasswordHelper": "At least 10 characters, with a letter and a number.",
   "authConfirmPassword": "Confirm Password",
   "authPasswordsDoNotMatch": "Passwords do not match",
@@ -3406,5 +3428,53 @@
   "menuDescBankOffers": "Card and bank discounts",
   "menuDescShopVerification": "Review and verify shops",
   "menuDescProfile": "Your account and shop",
-  "menuDescSettings": "Currency, theme and language"
+  "menuDescSettings": "Currency, theme and language",
+  "profileDevicesSessions": "Devices & sessions",
+  "profileDevicesSessionsSubtitle": "See where you're signed in and sign out devices",
+  "sessionsThisDevice": "This device",
+  "sessionsSignOut": "Sign out",
+  "sessionsSignOutOthers": "Sign out all other devices",
+  "sessionsSignedOut": "Signed out.",
+  "sessionsLastActive": "Last active {time}",
+  "@sessionsLastActive": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "sessionsSignedInOn": "Signed in {time}",
+  "@sessionsSignedInOn": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "sessionsEmpty": "No active sessions.",
+  "timeJustNow": "just now",
+  "timeMinutesAgo": "{n}m ago",
+  "@timeMinutesAgo": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "timeHoursAgo": "{n}h ago",
+  "@timeHoursAgo": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "timeDaysAgo": "{n}d ago",
+  "@timeDaysAgo": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  }
 }

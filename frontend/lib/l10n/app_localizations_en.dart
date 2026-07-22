@@ -2986,6 +2986,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboardingShopCta => 'Continue';
 
   @override
+  String get otpVerifyTitle => 'Verify your email';
+
+  @override
+  String otpVerifySubtitle(String email) {
+    return 'Enter the 6-digit code we sent to $email.';
+  }
+
+  @override
+  String get otpCodeLabel => 'Verification code';
+
+  @override
+  String get otpVerifyCta => 'Verify & continue';
+
+  @override
+  String get otpResend => 'Resend code';
+
+  @override
+  String otpResendIn(int seconds) {
+    return 'Resend in ${seconds}s';
+  }
+
+  @override
+  String get otpNoCodePrompt => 'Didn\'t get the code?';
+
+  @override
+  String get otpResent => 'A new code is on its way.';
+
+  @override
   String get authPasswordHelper =>
       'At least 10 characters, with a letter and a number.';
 
@@ -6687,4 +6715,54 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get menuDescSettings => 'Currency, theme and language';
+
+  @override
+  String get profileDevicesSessions => 'Devices & sessions';
+
+  @override
+  String get profileDevicesSessionsSubtitle =>
+      'See where you\'re signed in and sign out devices';
+
+  @override
+  String get sessionsThisDevice => 'This device';
+
+  @override
+  String get sessionsSignOut => 'Sign out';
+
+  @override
+  String get sessionsSignOutOthers => 'Sign out all other devices';
+
+  @override
+  String get sessionsSignedOut => 'Signed out.';
+
+  @override
+  String sessionsLastActive(String time) {
+    return 'Last active $time';
+  }
+
+  @override
+  String sessionsSignedInOn(String time) {
+    return 'Signed in $time';
+  }
+
+  @override
+  String get sessionsEmpty => 'No active sessions.';
+
+  @override
+  String get timeJustNow => 'just now';
+
+  @override
+  String timeMinutesAgo(int n) {
+    return '${n}m ago';
+  }
+
+  @override
+  String timeHoursAgo(int n) {
+    return '${n}h ago';
+  }
+
+  @override
+  String timeDaysAgo(int n) {
+    return '${n}d ago';
+  }
 }

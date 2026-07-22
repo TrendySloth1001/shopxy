@@ -962,6 +962,28 @@
   "onboardingShopTitle": "अपनी दुकान सेट करें",
   "onboardingShopSubtitle": "शुरू करने के लिए अपनी दुकान को एक नाम दें। आप इसे बाद में सेटिंग में बदल सकते हैं।",
   "onboardingShopCta": "जारी रखें",
+  "otpVerifyTitle": "अपना ईमेल सत्यापित करें",
+  "otpVerifySubtitle": "हमने {email} पर भेजा गया 6-अंकों का कोड दर्ज करें।",
+  "@otpVerifySubtitle": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "otpCodeLabel": "सत्यापन कोड",
+  "otpVerifyCta": "सत्यापित करें और जारी रखें",
+  "otpResend": "कोड फिर से भेजें",
+  "otpResendIn": "{seconds} सेकंड में फिर से भेजें",
+  "@otpResendIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "otpNoCodePrompt": "कोड नहीं मिला?",
+  "otpResent": "एक नया कोड भेजा जा रहा है।",
   "authPasswordHelper": "कम से कम 10 अक्षर, जिनमें एक अक्षर और एक संख्या हो।",
   "authConfirmPassword": "पासवर्ड की पुष्टि करें",
   "authPasswordsDoNotMatch": "पासवर्ड मेल नहीं खाते",
@@ -2067,5 +2089,53 @@
   "menuDescBankOffers": "कार्ड और बैंक छूट",
   "menuDescShopVerification": "दुकानों की समीक्षा और सत्यापन",
   "menuDescProfile": "आपका खाता और दुकान",
-  "menuDescSettings": "मुद्रा, थीम और भाषा"
+  "menuDescSettings": "मुद्रा, थीम और भाषा",
+  "profileDevicesSessions": "डिवाइस और सत्र",
+  "profileDevicesSessionsSubtitle": "देखें कि आप कहाँ साइन इन हैं और डिवाइस साइन आउट करें",
+  "sessionsThisDevice": "यह डिवाइस",
+  "sessionsSignOut": "साइन आउट",
+  "sessionsSignOutOthers": "अन्य सभी डिवाइस साइन आउट करें",
+  "sessionsSignedOut": "साइन आउट किया गया।",
+  "sessionsLastActive": "अंतिम सक्रिय {time}",
+  "@sessionsLastActive": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "sessionsSignedInOn": "{time} को साइन इन किया",
+  "@sessionsSignedInOn": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "sessionsEmpty": "कोई सक्रिय सत्र नहीं।",
+  "timeJustNow": "अभी",
+  "timeMinutesAgo": "{n} मिनट पहले",
+  "@timeMinutesAgo": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "timeHoursAgo": "{n} घंटे पहले",
+  "@timeHoursAgo": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "timeDaysAgo": "{n} दिन पहले",
+  "@timeDaysAgo": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  }
 }
