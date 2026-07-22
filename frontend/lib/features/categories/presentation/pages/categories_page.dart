@@ -99,30 +99,51 @@ class _CategoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final labelStyle = theme.textTheme.bodyMedium?.semibold;
     return InkWell(
       onTap: onTap,
       borderRadius: AppShapes.squircleRadius(AppSizes.radiusButton),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AspectRatio(
-            aspectRatio: 1,
+          // The image *flexes* to fill whatever the label leaves, so a name
+          // that wraps to two lines can never overflow the fixed grid cell
+          // (the old square AspectRatio forced a fixed height → 17px overflow).
+          Expanded(
             child: ClipRRect(
               borderRadius: AppShapes.squircleRadius(AppSizes.radiusButton),
-              child: _CategoryImage(category: category),
+              child: SizedBox(
+                width: double.infinity,
+                child: _CategoryImage(category: category),
+              ),
             ),
           ),
           const SizedBox(height: AppSizes.xs),
-          Text(
-            category.name,
-            style: theme.textTheme.bodyMedium?.semibold,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+          // A fixed two-line slot keeps every tile's image the same height
+          // regardless of whether the name is one or two lines.
+          SizedBox(
+            height: _twoLineHeight(context, labelStyle),
+            child: Text(
+              category.name,
+              style: labelStyle,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),
     );
   }
+}
+
+/// Height of exactly two lines of [style], honouring the user's text-scale and
+/// the active font's line height (Devanagari runs taller than Latin). Used to
+/// reserve a uniform label slot so category tiles align and never overflow.
+double _twoLineHeight(BuildContext context, TextStyle? style) {
+  final fontSize = style?.fontSize ?? 14;
+  final lineHeight = style?.height ?? 1.3;
+  final scaled = MediaQuery.textScalerOf(context).scale(fontSize);
+  return scaled * lineHeight * 2;
 }
 
 // ---------------------------------------------------------------------------
@@ -159,8 +180,9 @@ class _CategoryCardSkeleton extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AspectRatio(
-          aspectRatio: 1,
+        // Flex the shimmer block the same way the real image does, so the
+        // skeleton matches the loaded layout and can't overflow the cell.
+        Expanded(
           child: AppShimmerBox(
             width: double.infinity,
             height: double.infinity,

@@ -13,8 +13,12 @@ import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
 class _Step {
-  const _Step(this.done, this.title, this.desc, this.cta, this.onTap);
+  const _Step(this.done, this.icon, this.title, this.desc, this.cta, this.onTap);
   final bool done;
+
+  /// A step-specific glyph (box / receipt / customer / wallet) so each row
+  /// reads at a glance instead of four identical circles.
+  final AppIconData icon;
   final String title;
   final String desc;
   final String cta;
@@ -39,6 +43,7 @@ class OnboardingChecklist extends StatelessWidget {
     final steps = <_Step>[
       _Step(
         onboarding.totalProducts > 0,
+        AppIcons.inventory2Rounded,
         l10n.dashboardAddFirstProductTitle,
         l10n.dashboardAddFirstProductDesc,
         l10n.dashboardAddProduct,
@@ -46,6 +51,7 @@ class OnboardingChecklist extends StatelessWidget {
       ),
       _Step(
         onboarding.hasInvoices,
+        AppIcons.receiptLongRounded,
         l10n.dashboardCreateFirstInvoiceTitle,
         l10n.dashboardCreateFirstInvoiceDesc,
         l10n.dashboardNewInvoice,
@@ -53,6 +59,7 @@ class OnboardingChecklist extends StatelessWidget {
       ),
       _Step(
         onboarding.hasParties,
+        AppIcons.personAddAlt1Rounded,
         l10n.dashboardAddCustomerTitle,
         l10n.dashboardAddCustomerDesc,
         l10n.dashboardAddCustomer,
@@ -60,6 +67,7 @@ class OnboardingChecklist extends StatelessWidget {
       ),
       _Step(
         payoutsEnabled,
+        AppIcons.accountBalanceWalletRounded,
         l10n.dashboardSetUpPayoutsTitle,
         l10n.dashboardSetUpPayoutsDesc,
         l10n.dashboardSetUp,
@@ -93,19 +101,85 @@ class OnboardingChecklist extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSizes.md),
-              Text(
-                l10n.dashboardStepsDone('$completed', '${steps.length}'),
-                style: DashText.labelMd.copyWith(fontFeatures: tabularFigures),
-              ),
+              _ProgressRing(completed: completed, total: steps.length),
             ],
           ),
           const SizedBox(height: AppSizes.lg),
+          _ProgressBar(completed: completed, total: steps.length),
+          const SizedBox(height: AppSizes.xs),
+          Text(
+            l10n.dashboardStepsDone('$completed', '${steps.length}'),
+            style: DashText.bodySm.copyWith(fontFeatures: tabularFigures),
+          ),
+          const SizedBox(height: AppSizes.md),
           for (var i = 0; i < steps.length; i++) ...[
-            if (i > 0)
-              Divider(height: 1, thickness: 1, color: AppColors.hairline),
+            if (i > 0) const SizedBox(height: AppSizes.xs),
             _StepRow(step: steps[i]),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// A compact completion ring for the header — a stronger visual anchor than a
+/// bare "1/4" and reinforces the progress bar below it.
+class _ProgressRing extends StatelessWidget {
+  const _ProgressRing({required this.completed, required this.total});
+  final int completed;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    final pct = total == 0 ? 0.0 : completed / total;
+    return SizedBox(
+      width: 48,
+      height: 48,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          SizedBox(
+            width: 48,
+            height: 48,
+            child: CircularProgressIndicator(
+              value: pct,
+              strokeWidth: 4,
+              backgroundColor: AppColors.surfaceTint,
+              valueColor: AlwaysStoppedAnimation(AppColors.brand),
+              strokeCap: StrokeCap.round,
+            ),
+          ),
+          Text(
+            '${(pct * 100).round()}%',
+            style: DashText.labelMd.copyWith(
+              color: AppColors.black,
+              fontSize: 11,
+              letterSpacing: 0,
+              fontFeatures: tabularFigures,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Full-width rounded progress track — fills as steps complete.
+class _ProgressBar extends StatelessWidget {
+  const _ProgressBar({required this.completed, required this.total});
+  final int completed;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    final pct = total == 0 ? 0.0 : completed / total;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppSizes.radiusFull),
+      child: LinearProgressIndicator(
+        value: pct,
+        minHeight: 8,
+        backgroundColor: AppColors.surfaceTint,
+        valueColor: AlwaysStoppedAnimation(AppColors.brand),
       ),
     );
   }
@@ -117,14 +191,26 @@ class _StepRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final done = step.done;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
       child: Row(
         children: [
-          AppIcon(
-            step.done ? AppIcons.checkCircleRounded : AppIcons.circleOutlined,
-            size: AppSizes.iconMd,
-            color: step.done ? AppColors.success : AppColors.subtle,
+          // Leading: the step's own icon in a tinted squircle. Done steps flip
+          // to a success tint + check so completion is obvious without reading.
+          Container(
+            width: AppSizes.huge,
+            height: AppSizes.huge,
+            decoration: ShapeDecoration(
+              color: done ? AppColors.successSoft : AppColors.brandSoft,
+              shape: AppShapes.squircle(AppSizes.radiusMd),
+            ),
+            alignment: Alignment.center,
+            child: AppIcon(
+              done ? AppIcons.checkCircleRounded : step.icon,
+              size: AppSizes.iconMd,
+              color: done ? AppColors.success : AppColors.brandStrong,
+            ),
           ),
           const SizedBox(width: AppSizes.md),
           Expanded(
@@ -134,15 +220,19 @@ class _StepRow extends StatelessWidget {
                 Text(
                   step.title,
                   style: DashText.bodyMd.copyWith(
-                    color: step.done ? AppColors.muted : AppColors.black,
-                    decoration: step.done ? TextDecoration.lineThrough : null,
+                    color: done ? AppColors.muted : AppColors.black,
+                    fontWeight: FontWeight.w600,
+                    decoration: done ? TextDecoration.lineThrough : null,
                   ),
                 ),
-                if (!step.done) Text(step.desc, style: DashText.bodySm),
+                if (!done) ...[
+                  const SizedBox(height: 1),
+                  Text(step.desc, style: DashText.bodySm),
+                ],
               ],
             ),
           ),
-          if (!step.done) ...[
+          if (!done) ...[
             const SizedBox(width: AppSizes.sm),
             OutlinedButton(
               onPressed: step.onTap,

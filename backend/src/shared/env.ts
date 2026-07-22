@@ -18,6 +18,17 @@ export function envOr(name: string, fallback: string): string {
 }
 
 /**
+ * Read a boolean env flag. Truthy values: `1`, `true`, `yes`, `on` (any case).
+ * Everything else — including unset — is `false`, so a feature gated on this is
+ * off unless explicitly switched on. `fallback` applies only when unset/empty.
+ */
+export function envBool(name: string, fallback = false): boolean {
+  const v = process.env[name];
+  if (v === undefined || !v.trim()) return fallback;
+  return ['1', 'true', 'yes', 'on'].includes(v.trim().toLowerCase());
+}
+
+/**
  * Read a required *secret* — like {@link requireEnv}, but also refuses to start
  * if the value is too short to be safe. HS256 signing is only as strong as the
  * key; a short/guessable `JWT_*_SECRET` undermines every token. Enforce at least

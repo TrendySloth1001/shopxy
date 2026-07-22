@@ -48,6 +48,9 @@ export function canVerifyEmail(): boolean {
 /** Send the code. Returns false if it couldn't be delivered. */
 export async function sendOtpEmail(email: string, name: string, otp: string): Promise<boolean> {
   return sendMail({
+    // The one mail that always sends (subject to the mailer being configured),
+    // regardless of MAIL_NOTIFICATIONS_ENABLED — signup can't complete without it.
+    category: 'otp',
     to: email,
     subject: `${otp} is your ShopXY verification code`,
     text:

@@ -1,5 +1,5 @@
 import nodemailer, { type Transporter } from 'nodemailer';
-import { envOr } from '../shared/env.js';
+import { envOr, envBool } from '../shared/env.js';
 import { logger } from '../shared/logging/logger.js';
 
 /**
@@ -74,15 +74,42 @@ function getTransport(): Transporter | null {
   return transporter;
 }
 
+/**
+ * Which class of mail this is. Only `otp` is sent by default; every other
+ * category (login alerts, and any future transactional/marketing mail) is
+ * suppressed unless `MAIL_NOTIFICATIONS_ENABLED` is switched on. Callers that
+ * don't set it are treated as `notification` — i.e. off by default. This keeps
+ * the deliverability/spam surface to the one email users must receive to sign
+ * up, while the rest can be enabled later once a proper sending domain is set.
+ */
+export type MailCategory = 'otp' | 'notification';
+
 export interface Mail {
   to: string;
   subject: string;
   text: string;
   html?: string;
+  /** Defaults to `notification` (off by default). Set `otp` for signup codes. */
+  category?: MailCategory;
+}
+
+/** True when non-OTP mail (login alerts, etc.) is explicitly enabled. */
+export function notificationsEnabled(): boolean {
+  return envBool('MAIL_NOTIFICATIONS_ENABLED', false);
 }
 
 /** Best-effort send. Returns true when handed to the mail server. Never throws. */
 export async function sendMail(mail: Mail): Promise<boolean> {
+  const category: MailCategory = mail.category ?? 'notification';
+  // Default posture: OTP only. All other mail stays off until a sending
+  // domain is configured and MAIL_NOTIFICATIONS_ENABLED is turned on.
+  if (category !== 'otp' && !notificationsEnabled()) {
+    logger.debug(
+      { to: mail.to, subject: mail.subject },
+      'mailer: non-OTP mail suppressed (MAIL_NOTIFICATIONS_ENABLED off)',
+    );
+    return false;
+  }
   const t = getTransport();
   if (!t) {
     logger.warn('mailer: no provider configured — skipping send');
