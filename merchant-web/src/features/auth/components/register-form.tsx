@@ -68,15 +68,20 @@ export function RegisterForm() {
     setFieldErrors({});
     setSubmitting(true);
     try {
-      await register({
+      const result = await register({
         name: parsed.data.name,
         email: parsed.data.email,
         password: parsed.data.password,
         acceptedTerms: true,
         acceptedPrivacy: true,
       });
-      // Next step: name the shop (or skip if they joined a team via invite).
-      router.replace("/onboarding");
+      if (result.pending) {
+        // Verify the emailed code before the account exists.
+        router.replace(`/verify-email?email=${encodeURIComponent(result.email)}`);
+      } else {
+        // Fallback (OTP infra down): signed in → name the shop next.
+        router.replace("/onboarding");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : t("register.failed"));
     } finally {

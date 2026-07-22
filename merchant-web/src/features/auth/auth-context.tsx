@@ -32,11 +32,21 @@ export type AcceptInvitePayload = {
 
 type Status = "loading" | "authed" | "guest";
 
+/** Register either emails a verification code (collect it via `verifyEmail`)
+ *  or, if the OTP infra is down, signs the user in directly. */
+export type RegisterResult =
+  | { pending: true; email: string }
+  | { pending: false };
+
 type AuthContextValue = {
   user: AuthUser | null;
   status: Status;
   login: (email: string, password: string) => Promise<void>;
-  register: (payload: RegisterPayload) => Promise<void>;
+  register: (payload: RegisterPayload) => Promise<RegisterResult>;
+  /** Confirm the signup OTP → creates the account server-side + signs in. */
+  verifyEmail: (email: string, otp: string) => Promise<void>;
+  /** Re-send the signup verification code. */
+  resendOtp: (email: string) => Promise<void>;
   acceptInvite: (payload: AcceptInvitePayload) => Promise<void>;
   logout: () => Promise<void>;
   /** Revoke every session (this device included). */
@@ -119,17 +129,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void rememberCurrentAccount();
   }, []);
 
-  const register = useCallback(async (payload: RegisterPayload) => {
-    const res = await fetch("/api/auth/register", {
+  const register = useCallback(
+    async (payload: RegisterPayload): Promise<RegisterResult> => {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) await throwApiError(res, "Could not create your account.");
+      const body = (await res.json()) as
+        | { pending: true; email: string }
+        | { user: AuthUser };
+      // OTP gate — no session yet; the caller collects the code.
+      if ("pending" in body && body.pending) {
+        return { pending: true, email: body.email };
+      }
+      // Fallback path (OTP infra down): signed in directly.
+      setUser((body as { user: AuthUser }).user);
+      setStatus("authed");
+      void rememberCurrentAccount();
+      return { pending: false };
+    },
+    [],
+  );
+
+  const verifyEmail = useCallback(async (email: string, otp: string) => {
+    const res = await fetch("/api/auth/verify-email", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ email, otp }),
     });
-    if (!res.ok) await throwApiError(res, "Could not create your account.");
+    if (!res.ok) await throwApiError(res, "That code didn't work.");
     const body = (await res.json()) as { user: AuthUser };
     setUser(body.user);
     setStatus("authed");
     void rememberCurrentAccount();
+  }, []);
+
+  const resendOtp = useCallback(async (email: string) => {
+    const res = await fetch("/api/auth/resend-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    if (!res.ok) await throwApiError(res, "Could not send a new code.");
   }, []);
 
   const acceptInvite = useCallback(async (payload: AcceptInvitePayload) => {
@@ -232,6 +275,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       status,
       login,
       register,
+      verifyEmail,
+      resendOtp,
       acceptInvite,
       logout,
       logoutEverywhere,
@@ -248,6 +293,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       status,
       login,
       register,
+      verifyEmail,
+      resendOtp,
       acceptInvite,
       logout,
       logoutEverywhere,

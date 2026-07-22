@@ -41,7 +41,23 @@ export async function POST(req: Request) {
     );
   }
 
-  const result = authResultSchema.safeParse(await res.json());
+  const payload: unknown = await res.json();
+  // Email-OTP gate: the backend emailed a code and created no account yet.
+  // Forward the pending state so the client collects the OTP (no cookies set).
+  if (
+    payload &&
+    typeof payload === "object" &&
+    (payload as { pending?: unknown }).pending === true
+  ) {
+    const email = (payload as { email?: unknown }).email;
+    return NextResponse.json(
+      { pending: true, email: typeof email === "string" ? email : parsed.data.email },
+      { status: 200 },
+    );
+  }
+
+  // Fallback path (OTP infra down): the backend signed the user in directly.
+  const result = authResultSchema.safeParse(payload);
   if (!result.success) {
     return NextResponse.json(
       { error: "Unexpected response from the server." },
