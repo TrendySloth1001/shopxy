@@ -21,6 +21,7 @@ import {
   twoFactorSetup,
   twoFactorEnable,
   twoFactorDisable,
+  recentLogins,
 } from './auth.controller.js';
 
 const router = Router();
@@ -51,6 +52,9 @@ router.get('/2fa/status', requireAuth, asyncHandler(twoFactorStatus));
 router.post('/2fa/setup', requireAuth, asyncHandler(twoFactorSetup));
 router.post('/2fa/enable', requireAuth, asyncHandler(twoFactorEnable));
 router.post('/2fa/disable', requireAuth, asyncHandler(twoFactorDisable));
+
+// Security activity — recent sign-ins (powers new-device awareness in the UI).
+router.get('/security/logins', requireAuth, asyncHandler(recentLogins));
 
 // DPDP §11/§12 — data portability + erasure.
 router.get('/me/export', requireAuth, asyncHandler(exportData));

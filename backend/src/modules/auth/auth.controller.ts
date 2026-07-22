@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { z } from 'zod';
 import { authService } from './auth.service.js';
 import { totpService } from './totp.service.js';
+import { loginAlertsService } from './loginAlerts.service.js';
 import {
   GSTIN_REGEX,
   PAN_REGEX,
@@ -233,6 +234,15 @@ export async function login(req: Request, res: Response) {
     res.status(401).json({ error: result.error });
     return;
   }
+  // Record the sign-in + alert on a new device. Best-effort, fire-and-forget:
+  // it must never add latency to (or fail) the login response.
+  if (result.user?.id) {
+    void loginAlertsService.recordLogin({
+      userId: result.user.id,
+      ip: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+  }
   res.json(result);
 }
 
@@ -439,4 +449,10 @@ export async function twoFactorDisable(req: Request, res: Response) {
     return;
   }
   res.status(204).end();
+}
+
+/// GET /auth/security/logins — the caller's recent sign-ins for a "where
+/// you're signed in" / security-activity screen.
+export async function recentLogins(req: Request, res: Response) {
+  res.json(await loginAlertsService.recentLogins(req.user!.sub));
 }

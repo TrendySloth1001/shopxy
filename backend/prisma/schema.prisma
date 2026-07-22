@@ -73,6 +73,7 @@ model User {
   updatedAt          DateTime           @updatedAt @map("updated_at")
   refreshTokens      RefreshToken[]
   rememberTokens     RememberToken[]
+  loginEvents        LoginEvent[]
   stockTransactions  StockTransaction[]
   stockAdjustments   StockAdjustment[]
 
@@ -268,6 +269,27 @@ model RememberToken {
 
   @@index([userId])
   @@map("remember_tokens")
+}
+
+/// One row per successful login. Powers a "recent sign-ins" list and
+/// new-device detection: a login whose `fingerprint` hasn't been seen for
+/// the user before triggers a security alert. `ipMasked` keeps only a coarse
+/// prefix (not the full address) so the list is recognisable without holding
+/// precise-location PII.
+model LoginEvent {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// SHA-256 of the device signature (user-agent). Identifies the device
+  /// without storing the raw UA as the lookup key.
+  fingerprint String
+  ipMasked    String?  @map("ip_masked")
+  userAgent   String?  @map("user_agent")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([userId, fingerprint])
+  @@index([userId, createdAt])
+  @@map("login_events")
 }
 
 model Category {
