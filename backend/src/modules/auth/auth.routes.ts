@@ -22,6 +22,9 @@ import {
   twoFactorEnable,
   twoFactorDisable,
   recentLogins,
+  listSessions,
+  revokeSessionById,
+  revokeOtherSessions,
 } from './auth.controller.js';
 
 const router = Router();
@@ -55,6 +58,11 @@ router.post('/2fa/disable', requireAuth, asyncHandler(twoFactorDisable));
 
 // Security activity — recent sign-ins (powers new-device awareness in the UI).
 router.get('/security/logins', requireAuth, asyncHandler(recentLogins));
+
+// Sessions / devices — see + revoke where the account is signed in.
+router.get('/sessions', requireAuth, asyncHandler(listSessions));
+router.post('/sessions/revoke-others', requireAuth, asyncHandler(revokeOtherSessions));
+router.delete('/sessions/:id', requireAuth, asyncHandler(revokeSessionById));
 
 // DPDP §11/§12 — data portability + erasure.
 router.get('/me/export', requireAuth, asyncHandler(exportData));

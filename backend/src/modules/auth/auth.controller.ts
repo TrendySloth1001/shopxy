@@ -3,12 +3,19 @@ import { z } from 'zod';
 import { authService } from './auth.service.js';
 import { totpService } from './totp.service.js';
 import { loginAlertsService } from './loginAlerts.service.js';
+import { sessionsService } from './sessions.service.js';
+import type { DeviceContext } from './deviceContext.js';
 import {
   GSTIN_REGEX,
   PAN_REGEX,
   PINCODE_REGEX,
   UPI_VPA_REGEX,
 } from '../../shared/validation/indian.js';
+
+/** Pull the device context (IP + user-agent) off the request for session records. */
+function deviceFromReq(req: Request): DeviceContext {
+  return { ip: req.ip, userAgent: req.get('user-agent') };
+}
 
 /**
  * The one password-strength rule, reused by register + change-password so the
@@ -155,7 +162,7 @@ export async function register(req: Request, res: Response) {
   // Drop the consent literals before handing to the service — they
   // exist only to gate the request, they're not persisted as flags.
   const { acceptedTerms: _t, acceptedPrivacy: _p, ...registerData } = parsed.data;
-  const result = await authService.register(registerData);
+  const result = await authService.register(registerData, deviceFromReq(req));
   if ('error' in result) {
     if (handlePasswordBreached(res, result.error)) return;
     res.status(409).json({ error: result.error });
@@ -191,7 +198,7 @@ export async function acceptTeamInvite(req: Request, res: Response) {
     res.status(400).json({ error: parsed.error.flatten() });
     return;
   }
-  const result = await authService.acceptTeamInvite(parsed.data);
+  const result = await authService.acceptTeamInvite(parsed.data, deviceFromReq(req));
   if ('error' in result) {
     if (handlePasswordBreached(res, result.error)) return;
     res.status(400).json({ error: result.error });
@@ -210,6 +217,7 @@ export async function login(req: Request, res: Response) {
     parsed.data.email,
     parsed.data.password,
     parsed.data.totpCode,
+    deviceFromReq(req),
   );
   if ('error' in result) {
     if (result.error === 'locked') {
@@ -252,7 +260,7 @@ export async function refresh(req: Request, res: Response) {
     res.status(400).json({ error: 'refreshToken required' });
     return;
   }
-  const result = await authService.refresh(parsed.data.refreshToken);
+  const result = await authService.refresh(parsed.data.refreshToken, deviceFromReq(req));
   if ('error' in result) {
     res.status(401).json({ error: result.error });
     return;
@@ -296,7 +304,7 @@ export async function rememberLogin(req: Request, res: Response) {
     res.status(400).json({ error: 'rememberToken required' });
     return;
   }
-  const result = await authService.rememberLogin(parsed.data.rememberToken);
+  const result = await authService.rememberLogin(parsed.data.rememberToken, deviceFromReq(req));
   if ('error' in result) {
     res.status(401).json({ error: result.error });
     return;
@@ -455,4 +463,32 @@ export async function twoFactorDisable(req: Request, res: Response) {
 /// you're signed in" / security-activity screen.
 export async function recentLogins(req: Request, res: Response) {
   res.json(await loginAlertsService.recentLogins(req.user!.sub));
+}
+
+// ── Sessions / devices ────────────────────────────────────────────────
+
+/// GET /auth/sessions — active sessions (device, where, when), current flagged.
+export async function listSessions(req: Request, res: Response) {
+  res.json(await sessionsService.list(req.user!.sub, req.user!.sid));
+}
+
+/// DELETE /auth/sessions/:id — revoke one session (signs that device out now).
+export async function revokeSessionById(req: Request, res: Response) {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    res.status(400).json({ error: 'Invalid session id' });
+    return;
+  }
+  const ok = await sessionsService.revoke(req.user!.sub, id);
+  if (!ok) {
+    res.status(404).json({ error: 'Session not found' });
+    return;
+  }
+  res.status(204).end();
+}
+
+/// POST /auth/sessions/revoke-others — sign out every device except this one.
+export async function revokeOtherSessions(req: Request, res: Response) {
+  const revoked = await sessionsService.revokeOthers(req.user!.sub, req.user!.sid);
+  res.json({ revoked });
 }

@@ -21,6 +21,7 @@ import {
 import { isPasswordBreached } from './passwordBreach.js';
 import { revokeSession } from '../../shared/sessionRevocation.js';
 import { totpService } from './totp.service.js';
+import { maskIp, type DeviceContext } from './deviceContext.js';
 
 const REFRESH_EXPIRES_MS = 7 * 24 * 60 * 60 * 1000;
 // Device-remember credential lifetime (sliding — renewed on each use).
@@ -88,10 +89,11 @@ async function signAccess(
 async function issueSession(
   user: { id: number; email: string; role: Role; isPlatformAdmin: boolean },
   family?: string,
+  device?: DeviceContext,
 ): Promise<{ accessToken: string; refreshToken: string }> {
   const sid = family ?? crypto.randomUUID();
   const accessToken = await signAccess(user.id, user.email, user.role, user.isPlatformAdmin, sid);
-  const refreshToken = await createRefreshToken(user.id, sid);
+  const refreshToken = await createRefreshToken(user.id, sid, device);
   return { accessToken, refreshToken };
 }
 
@@ -108,7 +110,11 @@ function hashToken(token: string): string {
 /// to a rotation lineage: a fresh login starts a new family; a rotation
 /// keeps the parent's family so reuse of an already-rotated token can be
 /// traced back and the whole family revoked (B-AUTH-2).
-async function createRefreshToken(userId: number, family?: string): Promise<string> {
+async function createRefreshToken(
+  userId: number,
+  family?: string,
+  device?: DeviceContext,
+): Promise<string> {
   const jti = crypto.randomUUID();
   const fam = family ?? crypto.randomUUID();
   const token = jwt.sign({ sub: userId, jti, family: fam }, REFRESH_SECRET, {
@@ -116,7 +122,15 @@ async function createRefreshToken(userId: number, family?: string): Promise<stri
   });
   const expiresAt = new Date(Date.now() + REFRESH_EXPIRES_MS);
   await prisma.refreshToken.create({
-    data: { token: hashToken(token), family: fam, userId, expiresAt },
+    data: {
+      token: hashToken(token),
+      family: fam,
+      userId,
+      expiresAt,
+      userAgent: device?.userAgent?.slice(0, 400) ?? null,
+      ipMasked: maskIp(device?.ip),
+      lastUsedAt: new Date(),
+    },
   });
 
   // Cap the number of active sessions per user. If we're now over the limit,
@@ -175,13 +189,16 @@ class InviteAlreadyUsedError extends Error {
 }
 
 export class AuthService {
-  async register(data: {
-    email: string;
-    name: string;
-    password: string;
-    role: Role;
-    shopName?: string;
-  }) {
+  async register(
+    data: {
+      email: string;
+      name: string;
+      password: string;
+      role: Role;
+      shopName?: string;
+    },
+    device?: DeviceContext,
+  ) {
     const email = data.email.toLowerCase().trim();
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) return { error: 'Email already registered' as const };
@@ -309,7 +326,7 @@ export class AuthService {
       logger.error({ event: 'invitation_claim_failed', userId: user.id, err }, 'invitation claim failed');
     }
 
-    const { accessToken, refreshToken } = await issueSession(user);
+    const { accessToken, refreshToken } = await issueSession(user, undefined, device);
     return { user, accessToken, refreshToken };
   }
 
@@ -354,7 +371,10 @@ export class AuthService {
   /// bump (there are no prior sessions to revoke), so the freshly-minted
   /// access token isn't immediately invalidated. Existing accounts use
   /// the in-app notification accept flow instead.
-  async acceptTeamInvite(data: { token: string; name?: string; password: string }) {
+  async acceptTeamInvite(
+    data: { token: string; name?: string; password: string },
+    device?: DeviceContext,
+  ) {
     const invite = await prisma.invitation.findUnique({
       where: { token: data.token },
       select: {
@@ -447,11 +467,11 @@ export class AuthService {
       throw err;
     }
 
-    const { accessToken, refreshToken } = await issueSession(user);
+    const { accessToken, refreshToken } = await issueSession(user, undefined, device);
     return { user, accessToken, refreshToken };
   }
 
-  async login(email: string, password: string, totpCode?: string) {
+  async login(email: string, password: string, totpCode?: string, device?: DeviceContext) {
     const normEmail = email.toLowerCase().trim();
 
     // Per-account throttle: refuse before touching the DB or bcrypt once this
@@ -499,7 +519,7 @@ export class AuthService {
     // Genuine success — wipe the failure/escalation state for this account.
     await clearLoginFailures(normEmail);
 
-    const { accessToken, refreshToken } = await issueSession(user);
+    const { accessToken, refreshToken } = await issueSession(user, undefined, device);
     const safeUser = await prisma.user.findUnique({
       where: { id: user.id },
       select: safeUserSelect,
@@ -507,7 +527,7 @@ export class AuthService {
     return { user: safeUser, accessToken, refreshToken };
   }
 
-  async refresh(token: string) {
+  async refresh(token: string, device?: DeviceContext) {
     let payload: { sub: number; family?: string };
     try {
       // Pin the algorithm (AUTH-2): without `algorithms`, jsonwebtoken accepts
@@ -556,7 +576,7 @@ export class AuthService {
 
     // Rotate within the same family: delete old token, issue new pair.
     await prisma.refreshToken.delete({ where: { id: stored.id } });
-    const { accessToken, refreshToken } = await issueSession(user, stored.family);
+    const { accessToken, refreshToken } = await issueSession(user, stored.family, device);
     return { accessToken, refreshToken };
   }
 
@@ -618,7 +638,7 @@ export class AuthService {
   /// Exchange a device-remember credential for a fresh session — no password.
   /// Rotates the credential (single-use) and mints a new access+refresh pair.
   /// A bad/expired token, or a deactivated account, is rejected and cleaned up.
-  async rememberLogin(raw: string) {
+  async rememberLogin(raw: string, device?: DeviceContext) {
     const stored = await prisma.rememberToken.findUnique({
       where: { tokenHash: hashToken(raw) },
       select: { id: true, userId: true, label: true, expiresAt: true },
@@ -647,7 +667,7 @@ export class AuthService {
       }),
     ]);
     const { isActive: _isActive, ...safeUser } = user;
-    const { accessToken, refreshToken } = await issueSession(safeUser);
+    const { accessToken, refreshToken } = await issueSession(safeUser, undefined, device);
     return { user: safeUser, accessToken, refreshToken, rememberToken: newRaw, rememberExpiresAt };
   }
 

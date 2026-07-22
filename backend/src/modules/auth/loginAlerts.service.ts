@@ -3,6 +3,7 @@ import prisma from '../../infra/db/prisma.js';
 import { logger } from '../../shared/logging/logger.js';
 import { notificationsService } from '../notifications/notifications.service.js';
 import { sendMail } from '../../infra/mailer.js';
+import { maskIp, type DeviceContext } from './deviceContext.js';
 
 /**
  * Login history + new-device alerting.
@@ -18,19 +19,8 @@ import { sendMail } from '../../infra/mailer.js';
  * email is best-effort and no-ops when SMTP isn't configured.
  */
 
-export interface LoginContext {
+export interface LoginContext extends DeviceContext {
   userId: number;
-  ip?: string | null;
-  userAgent?: string | null;
-}
-
-/** Coarse IP for a recognisable-but-not-precise history entry (drops the last octet / IPv6 tail). */
-function maskIp(ip?: string | null): string | null {
-  if (!ip) return null;
-  const v = ip.replace(/^::ffff:/, '');
-  if (v.includes('.')) return v.split('.').slice(0, 3).join('.') + '.x';
-  if (v.includes(':')) return v.split(':').slice(0, 3).join(':') + ':…';
-  return null;
 }
 
 function fingerprint(userAgent?: string | null): string {
