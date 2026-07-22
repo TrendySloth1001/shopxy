@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import prisma from '../../infra/db/prisma.js';
-import { requireEnv } from '../../shared/env.js';
+import { JWT_ACCESS_SECRET as ACCESS_SECRET } from '../../shared/authSecrets.js';
 import { resolveMembershipForUser } from '../../shared/http/requireAuth.js';
 import { hasRight, POS_OVERRIDE_RIGHT } from '../../shared/http/permissions.js';
 
@@ -19,7 +19,6 @@ import { hasRight, POS_OVERRIDE_RIGHT } from '../../shared/http/permissions.js';
 /// a DB row, not Redis, because the single-use guard must NOT degrade open on a
 /// cache outage (that would re-open the replay hole).
 
-const ACCESS_SECRET = requireEnv('JWT_ACCESS_SECRET');
 const OVERRIDE_TTL_SECONDS = 120; // 2m
 const PURPOSE = 'pos-override';
 

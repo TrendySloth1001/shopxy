@@ -6,13 +6,22 @@ import prisma from '../../infra/db/prisma.js';
 import { invitationsService } from '../invitations/invitations.service.js';
 import { notificationsService } from '../notifications/notifications.service.js';
 import { logger } from '../../shared/logging/logger.js';
-import { requireEnv } from '../../shared/env.js';
+import {
+  JWT_ACCESS_SECRET as ACCESS_SECRET,
+  JWT_REFRESH_SECRET as REFRESH_SECRET,
+} from '../../shared/authSecrets.js';
 import { bumpTokensValidFromCache } from '../../shared/http/requireAuth.js';
 import { normalizeRights } from '../../shared/http/permissions.js';
 import { seedDefaultRoles } from '../team/team.service.js';
+import {
+  loginLockRemainingMs,
+  recordLoginFailure,
+  clearLoginFailures,
+} from './loginThrottle.js';
+import { isPasswordBreached } from './passwordBreach.js';
+import { revokeSession } from '../../shared/sessionRevocation.js';
+import { totpService } from './totp.service.js';
 
-const ACCESS_SECRET = requireEnv('JWT_ACCESS_SECRET');
-const REFRESH_SECRET = requireEnv('JWT_REFRESH_SECRET');
 const REFRESH_EXPIRES_MS = 7 * 24 * 60 * 60 * 1000;
 // Device-remember credential lifetime (sliding — renewed on each use).
 const REMEMBER_EXPIRES_MS = 30 * 24 * 60 * 60 * 1000;
@@ -53,18 +62,37 @@ async function signAccess(
   email: string,
   role: Role,
   isPlatformAdmin: boolean,
+  sid: string,
 ): Promise<string> {
   // shopId/shopRole are NOT baked into the JWT: requireAuth always
   // re-resolves membership for OWNER accounts (so a role change takes
   // effect within the cache TTL without re-login), which means a baked
   // value would only ever be overwritten. Dropping the sign-time
   // ShopMember lookup removes a wasted query on every token mint
-  // (B-AUTH-7).
+  // (B-AUTH-7). `sid` ties this token to its refresh-token family so a
+  // single-device logout can revoke it (see sessionRevocation.ts).
   return jwt.sign(
-    { sub: userId, email, role, isPlatformAdmin },
+    { sub: userId, email, role, isPlatformAdmin, sid },
     ACCESS_SECRET,
     { expiresIn: '15m' },
   );
+}
+
+/**
+ * Mint an access+refresh pair for one device session. Single source of truth
+ * for the `signAccess` + `createRefreshToken` pairing that every login path
+ * (login/register/accept-invite/remember) and the rotation path share. The
+ * `family` is the session id: omitted starts a fresh session, passed keeps the
+ * caller's lineage (used by `refresh` so `sid` is stable across rotation).
+ */
+async function issueSession(
+  user: { id: number; email: string; role: Role; isPlatformAdmin: boolean },
+  family?: string,
+): Promise<{ accessToken: string; refreshToken: string }> {
+  const sid = family ?? crypto.randomUUID();
+  const accessToken = await signAccess(user.id, user.email, user.role, user.isPlatformAdmin, sid);
+  const refreshToken = await createRefreshToken(user.id, sid);
+  return { accessToken, refreshToken };
 }
 
 const MAX_ACTIVE_REFRESH_TOKENS_PER_USER = 5;
@@ -157,6 +185,9 @@ export class AuthService {
     const email = data.email.toLowerCase().trim();
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) return { error: 'Email already registered' as const };
+    if (await isPasswordBreached(data.password)) {
+      return { error: 'password_breached' as const };
+    }
 
     const passwordHash = await bcrypt.hash(data.password, 12);
     // App-origin signup: merchant app sends role=OWNER + a shopName so
@@ -278,8 +309,7 @@ export class AuthService {
       logger.error({ event: 'invitation_claim_failed', userId: user.id, err }, 'invitation claim failed');
     }
 
-    const accessToken = await signAccess(user.id, user.email, user.role, user.isPlatformAdmin);
-    const refreshToken = await createRefreshToken(user.id);
+    const { accessToken, refreshToken } = await issueSession(user);
     return { user, accessToken, refreshToken };
   }
 
@@ -356,6 +386,9 @@ export class AuthService {
           'An account with this email already exists. Sign in and accept from your notifications.' as const,
       };
     }
+    if (await isPasswordBreached(data.password)) {
+      return { error: 'password_breached' as const };
+    }
 
     const passwordHash = await bcrypt.hash(data.password, 12);
     const teamRoleName = invite.teamRoleName;
@@ -414,18 +447,26 @@ export class AuthService {
       throw err;
     }
 
-    const accessToken = await signAccess(user.id, user.email, user.role, user.isPlatformAdmin);
-    const refreshToken = await createRefreshToken(user.id);
+    const { accessToken, refreshToken } = await issueSession(user);
     return { user, accessToken, refreshToken };
   }
 
-  async login(email: string, password: string) {
+  async login(email: string, password: string, totpCode?: string) {
+    const normEmail = email.toLowerCase().trim();
+
+    // Per-account throttle: refuse before touching the DB or bcrypt once this
+    // account has failed too many times recently (see loginThrottle.ts).
+    const lockedMs = await loginLockRemainingMs(normEmail);
+    if (lockedMs > 0) {
+      return { error: 'locked' as const, retryAfterMs: lockedMs };
+    }
+
     // Read the full row (incl. passwordHash + isActive) for the credential
     // check, but only ever return the `safeUserSelect` projection so the
     // wire response matches register/getMe and can't leak internal columns
     // like tokensValidFrom (B-AUTH-5).
     const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase().trim() },
+      where: { email: normEmail },
     });
     // Constant-time compare even for missing users (prevent user enumeration)
     const dummyHash = '$2b$12$invalidhashpadding000000000000000000000000000000000000';
@@ -434,11 +475,31 @@ export class AuthService {
       : await bcrypt.compare(password, dummyHash).then(() => false);
 
     if (!user || !user.isActive || !valid) {
+      // Count the miss (may escalate into a lock) before returning the same
+      // opaque error — the throttle key is enumeration-neutral.
+      await recordLoginFailure(normEmail);
       return { error: 'Invalid email or password' as const };
     }
 
-    const accessToken = await signAccess(user.id, user.email, user.role, user.isPlatformAdmin);
-    const refreshToken = await createRefreshToken(user.id);
+    // Password is correct — now enforce 2FA if this account has it enabled.
+    if (user.totpEnabledAt) {
+      if (!totpCode) {
+        // Don't clear the throttle yet and don't issue tokens: the client must
+        // come back with a code. Password was right, so this isn't a failure.
+        return { error: '2fa_required' as const };
+      }
+      const okTotp = await totpService.verifyForLogin(user.id, totpCode);
+      if (!okTotp) {
+        // A wrong second factor counts as a failed attempt (brute-force guard).
+        await recordLoginFailure(normEmail);
+        return { error: '2fa_invalid' as const };
+      }
+    }
+
+    // Genuine success — wipe the failure/escalation state for this account.
+    await clearLoginFailures(normEmail);
+
+    const { accessToken, refreshToken } = await issueSession(user);
     const safeUser = await prisma.user.findUnique({
       where: { id: user.id },
       select: safeUserSelect,
@@ -495,13 +556,21 @@ export class AuthService {
 
     // Rotate within the same family: delete old token, issue new pair.
     await prisma.refreshToken.delete({ where: { id: stored.id } });
-    const accessToken = await signAccess(user.id, user.email, user.role, user.isPlatformAdmin);
-    const refreshToken = await createRefreshToken(user.id, stored.family);
+    const { accessToken, refreshToken } = await issueSession(user, stored.family);
     return { accessToken, refreshToken };
   }
 
   async logout(token: string) {
-    await prisma.refreshToken.deleteMany({ where: { token: hashToken(token) } });
+    // Drop the refresh token AND revoke its session id so the paired access
+    // token stops working immediately, not just at its 15-min TTL. Look the
+    // row up first (indexed unique) to learn the family = session id.
+    const stored = await prisma.refreshToken.findUnique({
+      where: { token: hashToken(token) },
+      select: { id: true, family: true },
+    });
+    if (!stored) return;
+    await prisma.refreshToken.delete({ where: { id: stored.id } });
+    await revokeSession(stored.family);
   }
 
   /// Revoke every refresh token for this user — drops other-device
@@ -578,8 +647,7 @@ export class AuthService {
       }),
     ]);
     const { isActive: _isActive, ...safeUser } = user;
-    const accessToken = await signAccess(safeUser.id, safeUser.email, safeUser.role, safeUser.isPlatformAdmin);
-    const refreshToken = await createRefreshToken(safeUser.id);
+    const { accessToken, refreshToken } = await issueSession(safeUser);
     return { user: safeUser, accessToken, refreshToken, rememberToken: newRaw, rememberExpiresAt };
   }
 
@@ -692,6 +760,9 @@ export class AuthService {
 
     const valid = await bcrypt.compare(currentPassword, user.passwordHash);
     if (!valid) return { error: 'Current password is incorrect' as const };
+    if (await isPasswordBreached(newPassword)) {
+      return { error: 'password_breached' as const };
+    }
 
     const passwordHash = await bcrypt.hash(newPassword, 12);
     const stamp = new Date();

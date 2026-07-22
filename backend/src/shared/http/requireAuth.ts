@@ -2,7 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { Role, ShopRole } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
-import { requireEnv } from '../env.js';
+import { JWT_ACCESS_SECRET as ACCESS_SECRET } from '../authSecrets.js';
+import { isSessionRevoked } from '../sessionRevocation.js';
 
 /// JWT payload as signed at login / refresh. `shopId` is included for
 /// merchant accounts so per-request DB lookup is avoided; for customer
@@ -31,6 +32,10 @@ export interface AuthPayload {
   /// by this server; declared optional so older tokens (if any) parse
   /// without breaking. Used to compare against `User.tokensValidFrom`.
   iat?: number;
+  /// Session id — the access token's refresh-token *family*. Lets a
+  /// single-device logout revoke just this session's access token via
+  /// the session-revocation set. Optional so pre-`sid` tokens still parse.
+  sid?: string;
 }
 
 declare global {
@@ -42,7 +47,6 @@ declare global {
   }
 }
 
-const ACCESS_SECRET = requireEnv('JWT_ACCESS_SECRET');
 
 /// Tiny in-process cache so we don't re-query `ShopMember` for every
 /// request when a JWT lacks `shopId`/`shopRole` (old tokens, or a member
@@ -186,6 +190,13 @@ export async function requireAuth(
       res.status(401).json({ error: 'Token expired or invalid' });
       return;
     }
+  }
+
+  // Instant per-session logout: reject a token whose session was revoked by a
+  // single-device logout, before its TTL runs out. In-memory O(1) check.
+  if (payload.sid && isSessionRevoked(payload.sid)) {
+    res.status(401).json({ error: 'Token expired or invalid' });
+    return;
   }
 
   // Hydrate shopId + shopRole from the cache/DB. shopPermissions aren't

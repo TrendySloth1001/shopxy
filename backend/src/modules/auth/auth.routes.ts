@@ -17,6 +17,10 @@ import {
   issueRemember,
   rememberLogin,
   forgetRemember,
+  twoFactorStatus,
+  twoFactorSetup,
+  twoFactorEnable,
+  twoFactorDisable,
 } from './auth.controller.js';
 
 const router = Router();
@@ -41,6 +45,12 @@ router.get('/me', requireAuth, asyncHandler(getMe));
 router.patch('/me', requireAuth, asyncHandler(updateProfile));
 router.post('/change-password', requireAuth, asyncHandler(changePassword));
 router.post('/remember', requireAuth, asyncHandler(issueRemember));
+
+// Two-factor auth (TOTP) — all require an active session.
+router.get('/2fa/status', requireAuth, asyncHandler(twoFactorStatus));
+router.post('/2fa/setup', requireAuth, asyncHandler(twoFactorSetup));
+router.post('/2fa/enable', requireAuth, asyncHandler(twoFactorEnable));
+router.post('/2fa/disable', requireAuth, asyncHandler(twoFactorDisable));
 
 // DPDP §11/§12 — data portability + erasure.
 router.get('/me/export', requireAuth, asyncHandler(exportData));

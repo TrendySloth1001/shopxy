@@ -50,6 +50,11 @@ export function buildLimiters(): AppLimiters {
     auth: rateLimit({
       windowMs: 60_000,
       max: 10,
+      // Only count failures (4xx/5xx): a legit client logging in and then
+      // refreshing shouldn't burn the budget, but a brute-force/credential-
+      // stuffing run — which is all failures — trips it fast. Pairs with the
+      // per-account throttle (loginThrottle.ts) for defence in depth.
+      skipSuccessfulRequests: true,
       standardHeaders: true,
       legacyHeaders: false,
     }),

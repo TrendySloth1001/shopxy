@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { authService } from './auth.service.js';
+import { totpService } from './totp.service.js';
 import {
   GSTIN_REGEX,
   PAN_REGEX,
@@ -8,16 +9,34 @@ import {
   UPI_VPA_REGEX,
 } from '../../shared/validation/indian.js';
 
+/**
+ * The one password-strength rule, reused by register + change-password so the
+ * policy stays single-sourced. Min 10 + a letter + a number; the breach check
+ * (HIBP) runs in the service on top of this.
+ */
+const passwordSchema = z
+  .string()
+  .min(10, 'Password must be at least 10 characters')
+  .max(128)
+  .regex(/[A-Za-z]/, 'Password must contain at least one letter')
+  .regex(/[0-9]/, 'Password must contain at least one number');
+
+/** Friendly copy for the service's `password_breached` sentinel — one place. */
+const PASSWORD_BREACHED_MSG =
+  'This password has appeared in a known data breach. Please choose a different one.';
+
+/** Translate the breach sentinel to a 400; returns true when it handled it. */
+function handlePasswordBreached(res: Response, error: string | undefined): boolean {
+  if (error !== 'password_breached') return false;
+  res.status(400).json({ error: PASSWORD_BREACHED_MSG });
+  return true;
+}
+
 const registerSchema = z
   .object({
     name: z.string().trim().min(2).max(80),
     email: z.string().trim().email(),
-    password: z
-      .string()
-      .min(8, 'Password must be at least 8 characters')
-      .max(128)
-      .regex(/[A-Za-z]/, 'Password must contain at least one letter')
-      .regex(/[0-9]/, 'Password must contain at least one number'),
+    password: passwordSchema,
     // App-origin role. Merchant app sends OWNER (and a shopName);
     // customer app sends CUSTOMER. Defaults to CUSTOMER so any
     // pre-existing client that omits the field stays on the safer side.
@@ -44,6 +63,9 @@ const deleteAccountSchema = z.object({
 const loginSchema = z.object({
   email: z.string().trim().email(),
   password: z.string().min(1),
+  // Optional second factor: a 6-digit TOTP code or an 8-char recovery code.
+  // Absent on the first attempt; supplied on the retry after `2fa_required`.
+  totpCode: z.string().trim().min(6).max(16).optional(),
 });
 
 const refreshSchema = z.object({
@@ -52,12 +74,7 @@ const refreshSchema = z.object({
 
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1),
-  newPassword: z
-    .string()
-    .min(8)
-    .max(128)
-    .regex(/[A-Za-z]/)
-    .regex(/[0-9]/),
+  newPassword: passwordSchema,
 });
 
 // `.nullable()` on each shop field so the settings screen can clear a value
@@ -139,6 +156,7 @@ export async function register(req: Request, res: Response) {
   const { acceptedTerms: _t, acceptedPrivacy: _p, ...registerData } = parsed.data;
   const result = await authService.register(registerData);
   if ('error' in result) {
+    if (handlePasswordBreached(res, result.error)) return;
     res.status(409).json({ error: result.error });
     return;
   }
@@ -161,12 +179,7 @@ const acceptInviteSchema = z.object({
   // Optional — the service defaults it from the email when not given, so
   // an account that isn't set up on either app still has a usable name.
   name: z.string().trim().min(2).max(80).optional(),
-  password: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .max(128)
-    .regex(/[A-Za-z]/, 'Password must contain at least one letter')
-    .regex(/[0-9]/, 'Password must contain at least one number'),
+  password: passwordSchema,
 });
 
 /// POST /auth/accept-invite — brand-new staffer sets up their account
@@ -179,6 +192,7 @@ export async function acceptTeamInvite(req: Request, res: Response) {
   }
   const result = await authService.acceptTeamInvite(parsed.data);
   if ('error' in result) {
+    if (handlePasswordBreached(res, result.error)) return;
     res.status(400).json({ error: result.error });
     return;
   }
@@ -191,8 +205,31 @@ export async function login(req: Request, res: Response) {
     res.status(400).json({ error: parsed.error.flatten() });
     return;
   }
-  const result = await authService.login(parsed.data.email, parsed.data.password);
+  const result = await authService.login(
+    parsed.data.email,
+    parsed.data.password,
+    parsed.data.totpCode,
+  );
   if ('error' in result) {
+    if (result.error === 'locked') {
+      const seconds = Math.ceil(result.retryAfterMs / 1000);
+      res.setHeader('Retry-After', String(seconds));
+      res.status(429).json({
+        error: `Too many failed attempts. Try again in ${Math.ceil(seconds / 60)} minute(s).`,
+      });
+      return;
+    }
+    // Password was right but the account has 2FA on — tell the client to
+    // collect a code and retry with `totpCode`. A flag (not just the string)
+    // so clients branch on a stable field.
+    if (result.error === '2fa_required') {
+      res.status(401).json({ error: '2fa_required', twoFactorRequired: true });
+      return;
+    }
+    if (result.error === '2fa_invalid') {
+      res.status(401).json({ error: 'Invalid two-factor code', twoFactorRequired: true });
+      return;
+    }
     res.status(401).json({ error: result.error });
     return;
   }
@@ -344,6 +381,59 @@ export async function changePassword(req: Request, res: Response) {
     parsed.data.currentPassword,
     parsed.data.newPassword,
   );
+  if ('error' in result) {
+    if (handlePasswordBreached(res, result.error)) return;
+    res.status(400).json({ error: result.error });
+    return;
+  }
+  res.status(204).end();
+}
+
+// ── Two-factor auth (TOTP) ────────────────────────────────────────────
+
+const twoFactorCodeSchema = z.object({
+  // 6-digit TOTP code or an 8-char recovery code.
+  code: z.string().trim().min(6).max(16),
+});
+
+/// GET /auth/2fa/status — is 2FA enabled (or mid-enrollment) for the caller.
+export async function twoFactorStatus(req: Request, res: Response) {
+  res.json(await totpService.status(req.user!.sub));
+}
+
+/// POST /auth/2fa/setup — mint a pending secret; returns the QR + otpauth URL.
+export async function twoFactorSetup(req: Request, res: Response) {
+  const result = await totpService.beginEnrollment(req.user!.sub);
+  if ('error' in result) {
+    res.status(400).json({ error: result.error });
+    return;
+  }
+  res.json(result);
+}
+
+/// POST /auth/2fa/enable — confirm a code, turn 2FA on, return recovery codes.
+export async function twoFactorEnable(req: Request, res: Response) {
+  const parsed = twoFactorCodeSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten() });
+    return;
+  }
+  const result = await totpService.confirmEnrollment(req.user!.sub, parsed.data.code);
+  if ('error' in result) {
+    res.status(400).json({ error: result.error });
+    return;
+  }
+  res.json(result);
+}
+
+/// POST /auth/2fa/disable — turn 2FA off after re-verifying a current code.
+export async function twoFactorDisable(req: Request, res: Response) {
+  const parsed = twoFactorCodeSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten() });
+    return;
+  }
+  const result = await totpService.disable(req.user!.sub, parsed.data.code);
   if ('error' in result) {
     res.status(400).json({ error: result.error });
     return;

@@ -16,3 +16,20 @@ export function envOr(name: string, fallback: string): string {
   const v = process.env[name];
   return v && v.trim() ? v : fallback;
 }
+
+/**
+ * Read a required *secret* — like {@link requireEnv}, but also refuses to start
+ * if the value is too short to be safe. HS256 signing is only as strong as the
+ * key; a short/guessable `JWT_*_SECRET` undermines every token. Enforce at least
+ * `minChars` (default 32 ≈ 256 bits) so a weak secret can never reach prod.
+ */
+export function requireSecret(name: string, minChars = 32): string {
+  const v = requireEnv(name);
+  if (v.trim().length < minChars) {
+    throw new Error(
+      `${name} is too weak — must be at least ${minChars} characters ` +
+        `(got ${v.trim().length}). Generate one with \`openssl rand -base64 48\`.`,
+    );
+  }
+  return v;
+}

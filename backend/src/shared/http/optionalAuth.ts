@@ -1,9 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { AuthPayload } from './requireAuth.js';
-import { requireEnv } from '../env.js';
-
-const ACCESS_SECRET = requireEnv('JWT_ACCESS_SECRET');
+import { JWT_ACCESS_SECRET as ACCESS_SECRET } from '../authSecrets.js';
 
 /// Hydrates `req.user` when a valid Bearer token is present, otherwise
 /// leaves it undefined and continues. Use on PUBLIC marketplace

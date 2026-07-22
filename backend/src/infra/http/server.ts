@@ -7,6 +7,7 @@ import { startScheduler, stopScheduler } from '../scheduler.js';
 import { seedCanonicalCategories } from '../../modules/categories/categories.seed.js';
 import { attachScanConsoleWs, registerWsCommandHandler } from '../../modules/scan-console/scan-console.service.js';
 import { saleBus } from '../../modules/pos/pos.bus.js';
+import { sessionRevocationBus } from '../../shared/sessionRevocation.js';
 import { handlePosCommand } from '../../modules/pos/pos.ws.js';
 import { logger } from '../../shared/logging/logger.js';
 import { buildApp } from './app.js';
@@ -32,6 +33,9 @@ async function startServer(): Promise<void> {
     // POS live-cart bus: use Redis pub/sub for cross-instance fan-out when Redis
     // is up, else stay in-memory (single instance). Must run after the ping.
     saleBus.init();
+    // Per-session logout revocation: seed from Redis + subscribe for peer
+    // revocations (multi-instance). Local-only if Redis is down. After the ping.
+    await sessionRevocationBus.init();
     // Canonical category taxonomy — idempotent upsert from the
     // checked-in manifest. Best-effort: the server still boots if the
     // seed fails so we don't lock ourselves out of fixing a bad row.
@@ -57,6 +61,7 @@ startServer();
 async function shutdown(): Promise<void> {
   stopScheduler();
   await saleBus.close();
+  await sessionRevocationBus.close();
   await prisma.$disconnect();
   await closeRedis();
   process.exit(0);

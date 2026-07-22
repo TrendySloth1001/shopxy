@@ -62,6 +62,13 @@ model User {
   /// change + logout-all so a stolen pre-change token can't survive
   /// the 15-minute TTL window. Nullable = no floor (legacy users).
   tokensValidFrom    DateTime?          @map("tokens_valid_from")
+  /// Two-factor auth (TOTP). `totpSecret` holds the base32 shared secret
+  /// only after enrollment is confirmed; null = 2FA off. `totpEnabledAt`
+  /// stamps activation. `totpRecoveryCodes` are one-time SHA-256 hashes
+  /// (never the plaintext) consumed when the authenticator is lost.
+  totpSecret         String?            @map("totp_secret")
+  totpEnabledAt      DateTime?          @map("totp_enabled_at")
+  totpRecoveryCodes  String[]           @default([]) @map("totp_recovery_codes")
   createdAt          DateTime           @default(now()) @map("created_at")
   updatedAt          DateTime           @updatedAt @map("updated_at")
   refreshTokens      RefreshToken[]
