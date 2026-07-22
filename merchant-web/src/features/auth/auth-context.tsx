@@ -76,9 +76,17 @@ async function throwApiError(res: Response, fallback: string): Promise<never> {
   throw new Error(message);
 }
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [status, setStatus] = useState<Status>("loading");
+export function AuthProvider({
+  children,
+  initialUser = null,
+}: {
+  children: ReactNode;
+  /** Session resolved server-side (read-only) in the root layout. When set, the
+   *  provider starts authed and skips the mount bootstrap fetch. */
+  initialUser?: AuthUser | null;
+}) {
+  const [user, setUser] = useState<AuthUser | null>(initialUser);
+  const [status, setStatus] = useState<Status>(initialUser ? "authed" : "loading");
 
   const refresh = useCallback(async () => {
     const res = await fetch("/api/auth/me", { cache: "no-store" });
@@ -92,10 +100,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Bootstrap the session from the httpOnly cookie on mount. State is only
-  // set after the await (never synchronously) and is guarded against an
-  // unmount race — this is external-system sync, not derived state.
+  // Bootstrap the session from the httpOnly cookie on mount — but ONLY when the
+  // server couldn't already resolve it (no fresh access cookie). When
+  // `initialUser` is set we trust the server render and skip this round-trip;
+  // `refresh()` stays available for explicit revalidation. State is only set
+  // after the await (never synchronously) and is guarded against an unmount
+  // race — this is external-system sync, not derived state.
   useEffect(() => {
+    if (initialUser) return;
     let active = true;
     void (async () => {
       const res = await fetch("/api/auth/me", { cache: "no-store" });
@@ -113,7 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       active = false;
     };
-  }, []);
+  }, [initialUser]);
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await fetch("/api/auth/login", {

@@ -24,10 +24,10 @@ type Status = "loading" | "ready" | "error";
 const COLLAPSE_AT = 96;
 const EXPAND_AT = 24;
 
-export function HomeFeed() {
-  const [status, setStatus] = useState<Status>("loading");
+export function HomeFeed({ initialFeed }: { initialFeed?: HomeFeed }) {
+  const [status, setStatus] = useState<Status>(initialFeed ? "ready" : "loading");
   const [error, setError] = useState<string | null>(null);
-  const [feed, setFeed] = useState<HomeFeed>(EMPTY_FEED);
+  const [feed, setFeed] = useState<HomeFeed>(initialFeed ?? EMPTY_FEED);
   const [products, setProducts] = useState<ProductCard[]>([]);
   const [collapsed, setCollapsed] = useState(false);
 
@@ -41,7 +41,7 @@ export function HomeFeed() {
   const failureStreak = useRef(0);
   const loadingMoreRef = useRef(false);
   const exhaustedRef = useRef(false);
-  const statusRef = useRef<Status>("loading");
+  const statusRef = useRef<Status>(initialFeed ? "ready" : "loading");
   const booted = useRef(false);
 
   const appendProducts = useCallback((incoming: ProductCard[]) => {
@@ -112,11 +112,29 @@ export function HomeFeed() {
     }
   }, [loadMore]);
 
+  // First-mount entry point. When SSR delivered the base feed (see app/page.tsx)
+  // status already starts "ready", so skip the initial fetch — just layer
+  // personalization on top and prime the first endless page so the first scroll
+  // doesn't hit a loader. Otherwise do the full client boot. Manual retry (the
+  // error state) always goes through boot().
+  const start = useCallback(async () => {
+    if (initialFeed) {
+      void fetchPersonalized()
+        .then((p) => {
+          setFeed((prev) => ({ ...prev, recommended: p.recommended, recentlyViewed: p.recentlyViewed }));
+        })
+        .catch(() => {});
+      await loadMore();
+    } else {
+      await boot();
+    }
+  }, [initialFeed, loadMore, boot]);
+
   useEffect(() => {
     if (booted.current) return;
     booted.current = true;
-    void boot();
-  }, [boot]);
+    void start();
+  }, [start]);
 
   // Header collapse + endless prefetch on window scroll. rAF-throttled, with
   // hysteresis (COLLAPSE_AT / EXPAND_AT) so the height change it triggers can't
@@ -226,8 +244,10 @@ function Feed({
       {products.length > 0 ? (
         <section>
           <div className="mt-md grid grid-cols-2 gap-md px-lg md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {products.map((p) => (
-              <ProductTile key={p.productId} product={p} source="home" />
+            {products.map((p, i) => (
+              // First row (≤5 cols at xl) loads eagerly as the LCP candidate;
+              // the rest stay lazy.
+              <ProductTile key={p.productId} product={p} source="home" priority={i < 5} />
             ))}
           </div>
         </section>

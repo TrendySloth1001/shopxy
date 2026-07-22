@@ -44,8 +44,16 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   // Icons funnel through the `@/shared/icons` barrel (Hugeicons wrappers).
   // Register it here so Next rewrites barrel imports to direct member imports —
-  // keeping the icon set fully tree-shaken despite the barrel.
-  experimental: { optimizePackageImports: ["@/shared/icons"] },
+  // keeping the icon set fully tree-shaken despite the barrel. The underlying
+  // Hugeicons packages are also listed: `core-free-icons` is ~90 MB of icon-data
+  // exports, so this is a safety net against a stray import pulling the whole set.
+  experimental: {
+    optimizePackageImports: [
+      "@/shared/icons",
+      "@hugeicons/react",
+      "@hugeicons/core-free-icons",
+    ],
+  },
   env: { NEXT_PUBLIC_APP_VERSION: version },
   // `next build` writes to a separate dir (set by the build/start scripts) so a
   // production build never clobbers the live `next dev` Turbopack cache in

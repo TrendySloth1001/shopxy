@@ -24,7 +24,16 @@ export function productHref(id: number): string {
  *   rating     bg-success text-white rounded-sm chip
  *   price      bold selling price, muted line-through MRP, green % off
  */
-export function ProductTile({ product, source = "home" }: { product: ProductCard; source?: string }) {
+export function ProductTile({
+  product,
+  source = "home",
+  priority = false,
+}: {
+  product: ProductCard;
+  source?: string;
+  /** Set for the first above-the-fold tiles so their image is the eager LCP. */
+  priority?: boolean;
+}) {
   const p = product;
   const discounted = p.discountPct > 0;
   const hasImage = !!p.imageUrl;
@@ -40,7 +49,7 @@ export function ProductTile({ product, source = "home" }: { product: ProductCard
       <span className="relative block aspect-square w-full overflow-hidden bg-canvas">
         {hasImage ? (
           <span className="block size-full transition-transform duration-300 group-hover:scale-[1.04]">
-            <ImageBox url={p.imageUrl} alt={p.name} placeholderColor={p.bgColor} />
+            <ImageBox url={p.imageUrl} alt={p.name} placeholderColor={p.bgColor} priority={priority} />
           </span>
         ) : (
           /* Brand-soft placeholder with first-letter monogram */

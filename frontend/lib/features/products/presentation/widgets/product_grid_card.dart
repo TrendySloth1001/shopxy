@@ -362,9 +362,17 @@ class _ProductImage extends StatelessWidget {
       ),
     );
     if (raw.isEmpty) return monogram();
+    // Decode to roughly the card's physical width (2-col grid ≈ half the
+    // screen) instead of the full source resolution — dozens of oversized
+    // textures in the masonry grid are the main scroll-jank + memory source.
+    final decodeWidth =
+        (MediaQuery.sizeOf(context).width / 2 *
+                MediaQuery.devicePixelRatioOf(context))
+            .round();
     return CachedNetworkImage(
       imageUrl: resolveImageUrl(raw),
       fit: BoxFit.cover,
+      memCacheWidth: decodeWidth,
       placeholder: (_, _) => ColoredBox(color: AppColors.heroPanel),
       errorWidget: (_, _, _) => monogram(),
     );

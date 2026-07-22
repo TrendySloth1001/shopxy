@@ -193,23 +193,30 @@ class _Island extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(AppSizes.radiusFull),
-      child: BackdropFilter(
-        // Frosted glass: blur whatever scrolls behind the island so its
-        // text/icons stay legible, while the page still shows through.
-        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-        child: Container(
-          height: FloatingAppBar._islandHeight,
-          padding: padding,
-          decoration: ShapeDecoration(
-            color: AppColors.surface.withValues(alpha: 0.55),
-            shape: AppShapes.squircle(
-              AppSizes.radiusFull,
-              side: BorderSide(color: AppColors.hairline),
+    // RepaintBoundary isolates the island so page repaints behind it don't also
+    // repaint the bar chrome. The blur sigma is kept moderate (12, not 18): a
+    // BackdropFilter re-blurs the live content behind it every scrolled frame
+    // and the kernel cost scales with the radius, so this shaves the per-frame
+    // GPU cost on the ~60 pages that carry this bar while staying frosted.
+    return RepaintBoundary(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppSizes.radiusFull),
+        child: BackdropFilter(
+          // Frosted glass: blur whatever scrolls behind the island so its
+          // text/icons stay legible, while the page still shows through.
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            height: FloatingAppBar._islandHeight,
+            padding: padding,
+            decoration: ShapeDecoration(
+              color: AppColors.surface.withValues(alpha: 0.55),
+              shape: AppShapes.squircle(
+                AppSizes.radiusFull,
+                side: BorderSide(color: AppColors.hairline),
+              ),
             ),
+            child: child,
           ),
-          child: child,
         ),
       ),
     );

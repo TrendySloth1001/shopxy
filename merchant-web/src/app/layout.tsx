@@ -3,6 +3,7 @@ import { Inter, Noto_Sans_Devanagari, Plus_Jakarta_Sans } from "next/font/google
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { AuthProvider } from "@/features/auth/auth-context";
+import { peekSessionUser } from "@/server/auth/session";
 import { ThemeProvider } from "@/features/theme/theme-context";
 import { THEME_INIT_SCRIPT } from "@/features/theme/theme";
 import "./globals.css";
@@ -53,6 +54,11 @@ export default async function RootLayout({
   // and the messages handed to the client provider.
   const locale = await getLocale();
   const messages = await getMessages();
+  // Resolve the session server-side (read-only) so a logged-in merchant renders
+  // authed immediately, skipping the blocking client /api/auth/me bootstrap on
+  // every navigation. Null → the client bootstraps as before (guest, or an
+  // expired access token that needs a cookie-rotating refresh).
+  const initialUser = await peekSessionUser();
 
   return (
     <html
@@ -68,7 +74,7 @@ export default async function RootLayout({
       <body className="min-h-full bg-canvas text-ink antialiased">
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider>
-            <AuthProvider>{children}</AuthProvider>
+            <AuthProvider initialUser={initialUser}>{children}</AuthProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>

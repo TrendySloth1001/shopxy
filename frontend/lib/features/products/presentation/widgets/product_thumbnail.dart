@@ -72,6 +72,12 @@ class ProductThumbnail extends StatelessWidget {
               child: CachedNetworkImage(
                 imageUrl: resolved,
                 fit: BoxFit.cover,
+                // Decode to the physical pixel size of this thumb, not the
+                // source resolution — a 1500² product photo otherwise decodes
+                // to ~9 MB in RAM for a ≤64px slot. Rounds up a touch so a
+                // hero-sized thumb still stays crisp.
+                memCacheWidth: (size * MediaQuery.devicePixelRatioOf(context))
+                    .round(),
                 placeholder: (_, _) => Container(
                   color: AppColors.heroPanel,
                   alignment: Alignment.center,

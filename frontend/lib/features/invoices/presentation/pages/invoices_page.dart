@@ -751,6 +751,10 @@ class _InvoiceTile extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onDownload;
 
+  // Hoisted: DateFormat parses its pattern on construction, so building it per
+  // row on every rebuild was needless work for every visible invoice.
+  static final DateFormat _df = DateFormat('dd MMM yyyy');
+
   AppStatusTone get _statusTone {
     switch (invoice.status) {
       case 'CONFIRMED':
@@ -766,7 +770,7 @@ class _InvoiceTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final df = DateFormat('dd MMM yyyy');
+    final df = _df;
     final count = invoice.itemCount ?? invoice.items.length;
 
     return Material(

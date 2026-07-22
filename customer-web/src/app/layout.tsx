@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { AuthProvider } from "@/features/auth/auth-context";
+import { peekSessionUser } from "@/server/auth/session";
 import { NotificationsProvider } from "@/features/notifications/notifications-context";
 import { CartProvider } from "@/features/cart/cart-context";
 import { SiteFooter } from "@/shared/ui/site-footer";
@@ -19,15 +20,19 @@ export const metadata: Metadata = {
   description: "Your shops, invitations and invoice ledgers in one place.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Resolve the session server-side (read-only) so a signed-in shopper renders
+  // authed immediately, skipping the blocking client /api/auth/me bootstrap on
+  // every navigation. Null → the client bootstraps as before.
+  const initialUser = await peekSessionUser();
   return (
     <html lang="en" className={`${inter.variable} h-full`}>
       <body className="min-h-full bg-canvas text-ink antialiased">
-        <AuthProvider>
+        <AuthProvider initialUser={initialUser}>
           <NotificationsProvider>
             <CartProvider>
               {children}

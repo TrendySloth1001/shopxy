@@ -23,12 +23,20 @@ export function ImageBox({
   fit = "cover",
   placeholderColor = color.surface.heroPanel,
   className = "",
+  priority = false,
 }: {
   url?: string | null;
   alt?: string;
   fit?: "cover" | "contain";
   placeholderColor?: string;
   className?: string;
+  /**
+   * Above-the-fold images (the hero / first row of the feed) should set this so
+   * the browser loads them eagerly at high priority and skips the fade-in —
+   * otherwise the LCP image is lazy-loaded and held invisible behind the fade,
+   * which directly inflates LCP. Everything else stays lazy.
+   */
+  priority?: boolean;
 }) {
   const resolved = resolveImageUrl(url);
   const [errored, setErrored] = useState(false);
@@ -60,17 +68,19 @@ export function ImageBox({
           ref={imgRef}
           src={resolved}
           alt={alt}
-          loading="lazy"
+          loading={priority ? "eager" : "lazy"}
+          fetchPriority={priority ? "high" : undefined}
           decoding="async"
           onLoad={() => setLoaded(true)}
           onError={() => {
             if (imgRef.current) imgRef.current.dataset.errored = "1";
             setErrored(true);
           }}
-          className="size-full transition-opacity duration-300"
+          className={priority ? "size-full" : "size-full transition-opacity duration-300"}
           style={{
             objectFit: fit,
-            opacity: loaded ? 1 : 0,
+            // Priority (LCP) images paint immediately; only lazy ones fade in.
+            opacity: priority || loaded ? 1 : 0,
           }}
         />
       ) : errored ? (

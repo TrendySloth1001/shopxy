@@ -109,8 +109,17 @@ final _homeIndex = _destinations.indexWhere((d) => d.isHome);
 class AppShellState extends State<AppShell> {
   int _currentIndex = _homeIndex < 0 ? 0 : _homeIndex;
 
+  /// Tabs the user has actually opened this session. Only these get a real
+  /// page built in the IndexedStack; the rest render an empty placeholder, so
+  /// a tab's `initState` (and its cold-start network load) fires the first time
+  /// it's shown — not for all five at boot. Seeded with the landing tab.
+  late final Set<int> _visited = {_currentIndex};
+
   void _select(int index) {
-    setState(() => _currentIndex = index);
+    setState(() {
+      _currentIndex = index;
+      _visited.add(index);
+    });
   }
 
   @override
@@ -127,9 +136,13 @@ class AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     // Cashier kiosk lock: a plain Cashier gets the till only (with log-out),
-    // not the full shell — a locked-down register.
-    final user = context.watch<AuthProvider>().user;
-    if (user?.shopRole == 'CASHIER') {
+    // not the full shell — a locked-down register. Select only the field we
+    // branch on so an unrelated AuthProvider notify (e.g. the live perms-version
+    // refetch of /auth/me) doesn't rebuild the shell — and with it all tabs.
+    final shopRole = context.select<AuthProvider, String?>(
+      (a) => a.user?.shopRole,
+    );
+    if (shopRole == 'CASHIER') {
       return const PosPage(kiosk: true);
     }
 
@@ -138,10 +151,16 @@ class AppShellState extends State<AppShell> {
     // AppColors until an app restart.
     context.watch<ThemePrefsProvider>();
     final l10n = AppLocalizations.of(context);
-    // Fresh page instances each build (see [_Destination.pageBuilder]).
-    final pages = _destinations
-        .map((d) => d.pageBuilder())
-        .toList(growable: false);
+    // Fresh page instances each build (see [_Destination.pageBuilder]), but
+    // only for tabs the user has opened — unvisited tabs stay a zero-cost
+    // placeholder until first selected (see [_visited]).
+    final pages = <Widget>[
+      for (var i = 0; i < _destinations.length; i++)
+        if (_visited.contains(i))
+          _destinations[i].pageBuilder()
+        else
+          const SizedBox.shrink(),
+    ];
 
     return Scaffold(
       // Let the page scroll BEHIND the floating nav so its frosted islands
@@ -286,24 +305,31 @@ class _NavIsland extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(AppSizes.radiusFull),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-        child: AnimatedContainer(
-          duration: AppDurations.short,
-          curve: AppCurves.standard,
-          height: height,
-          padding: padding,
-          alignment: Alignment.center,
-          decoration: ShapeDecoration(
-            color: AppColors.surface.withValues(alpha: subdued ? 0 : 0.55),
-            shape: AppShapes.squircle(
-              AppSizes.radiusFull,
-              side: BorderSide(color: AppColors.hairline),
+    // RepaintBoundary isolates the island's own repaints (the badge count, the
+    // select colour tween) from the rest of the shell, and vice-versa. The blur
+    // sigma is kept moderate: a BackdropFilter re-blurs the live content behind
+    // it every scrolled frame, and cost scales with the kernel radius, so 12 is
+    // visually frosted but markedly cheaper per frame than 18.
+    return RepaintBoundary(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppSizes.radiusFull),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: AnimatedContainer(
+            duration: AppDurations.short,
+            curve: AppCurves.standard,
+            height: height,
+            padding: padding,
+            alignment: Alignment.center,
+            decoration: ShapeDecoration(
+              color: AppColors.surface.withValues(alpha: subdued ? 0 : 0.55),
+              shape: AppShapes.squircle(
+                AppSizes.radiusFull,
+                side: BorderSide(color: AppColors.hairline),
+              ),
             ),
+            child: child,
           ),
-          child: child,
         ),
       ),
     );

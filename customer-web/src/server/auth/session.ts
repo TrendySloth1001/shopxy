@@ -147,6 +147,28 @@ export async function fetchMeUser(accessToken: string): Promise<AuthUser | null>
   return parsed.success ? parsed.data : null;
 }
 
+/**
+ * Read-only session peek, safe to call from a **Server Component** (layout).
+ *
+ * Unlike {@link getCurrentUser}, this never refreshes or mutates cookies —
+ * Server Components cannot set cookies, so this only trusts a still-valid access
+ * cookie. Returns the user when the 15-min access token is present and good;
+ * returns null (no backend call) when it's absent or expired, leaving the client
+ * `AuthProvider` to bootstrap via the route handler (which *can* rotate cookies).
+ *
+ * Passing the result as `initialUser` lets a signed-in shopper render authed on
+ * the server for the common hot path, skipping the blocking client
+ * `/api/auth/me` round-trip on every navigation.
+ */
+export async function peekSessionUser(): Promise<AuthUser | null> {
+  const store = await cookies();
+  const access = store.get(ACCESS_COOKIE)?.value ?? null;
+  if (!access) return null;
+  const user = await fetchMeUser(access);
+  if (!user || user.role !== ALLOWED_ROLE) return null;
+  return user;
+}
+
 async function currentAccessToken(): Promise<string | null> {
   const store = await cookies();
   return store.get(ACCESS_COOKIE)?.value ?? null;
