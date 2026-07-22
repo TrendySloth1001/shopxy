@@ -30,6 +30,7 @@ export const sessionsService = {
         id: true,
         family: true,
         userAgent: true,
+        deviceName: true,
         ipMasked: true,
         createdAt: true,
         lastUsedAt: true,
@@ -37,7 +38,9 @@ export const sessionsService = {
     });
     return rows.map((r) => ({
       id: r.id,
-      device: deviceLabel(r.userAgent),
+      // Prefer the client-supplied device name (native apps); fall back to
+      // parsing the user-agent (web browsers).
+      device: r.deviceName ?? deviceLabel(r.userAgent),
       where: r.ipMasked,
       createdAt: r.createdAt,
       lastUsedAt: r.lastUsedAt,

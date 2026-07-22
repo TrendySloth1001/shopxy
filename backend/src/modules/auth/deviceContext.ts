@@ -7,6 +7,9 @@
 export interface DeviceContext {
   ip?: string | null;
   userAgent?: string | null;
+  /// Explicit, human device name from the client (X-Device-Name header), e.g.
+  /// "Nikhil's iPhone" / "Pixel 7". Preferred over the UA-parsed label.
+  deviceName?: string | null;
 }
 
 /** Coarse IP for a recognisable history entry — drops the last octet / v6 tail. */

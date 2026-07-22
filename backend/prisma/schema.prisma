@@ -245,6 +245,10 @@ model RefreshToken {
   /// can see + revoke sessions from a "your devices" screen. `ipMasked` keeps
   /// only a coarse prefix — recognisable, not precise-location PII.
   userAgent  String?   @map("user_agent")
+  /// Explicit device name from the client (X-Device-Name header) — e.g.
+  /// "Nikhil's iPhone", "Pixel 7". Preferred over the UA-parsed label in the
+  /// sessions list; null for web (where the UA is parsed instead).
+  deviceName String?   @map("device_name")
   ipMasked   String?   @map("ip_masked")
   lastUsedAt DateTime? @map("last_used_at")
   createdAt  DateTime  @default(now()) @map("created_at")

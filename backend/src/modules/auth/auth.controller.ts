@@ -12,9 +12,13 @@ import {
   UPI_VPA_REGEX,
 } from '../../shared/validation/indian.js';
 
-/** Pull the device context (IP + user-agent) off the request for session records. */
+/** Pull the device context (IP + UA + explicit device name) off the request. */
 function deviceFromReq(req: Request): DeviceContext {
-  return { ip: req.ip, userAgent: req.get('user-agent') };
+  return {
+    ip: req.ip,
+    userAgent: req.get('user-agent'),
+    deviceName: req.get('x-device-name'),
+  };
 }
 
 /**
@@ -168,7 +172,84 @@ export async function register(req: Request, res: Response) {
     res.status(409).json({ error: result.error });
     return;
   }
+  // OTP gate: a verification code was emailed and no account exists yet — the
+  // client should collect the code and POST /auth/verify-email.
+  if ('pending' in result) {
+    res.status(200).json({ pending: true, email: result.email });
+    return;
+  }
+  // Fallback path (OTP infra down): the account was created directly.
+  if (result.user?.id) {
+    void loginAlertsService.recordLogin({
+      userId: result.user.id,
+      ip: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+  }
   res.status(201).json(result);
+}
+
+const verifyEmailSchema = z.object({
+  email: z.string().trim().email(),
+  otp: z.string().trim().regex(/^\d{6}$/, 'Enter the 6-digit code'),
+});
+
+/// POST /auth/verify-email — confirm the signup OTP → create the account + sign in.
+export async function verifyEmail(req: Request, res: Response) {
+  const parsed = verifyEmailSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten() });
+    return;
+  }
+  const result = await authService.verifyEmailOtp(
+    parsed.data.email,
+    parsed.data.otp,
+    deviceFromReq(req),
+  );
+  if ('error' in result) {
+    const msg: Record<string, string> = {
+      expired: 'This code has expired. Please sign up again.',
+      invalid: 'That code is incorrect. Try again.',
+      too_many: 'Too many wrong attempts. Please sign up again.',
+    };
+    const code = result.error === 'invalid' ? 401 : 400;
+    res.status(code).json({ error: msg[result.error] ?? result.error });
+    return;
+  }
+  if (result.user?.id) {
+    void loginAlertsService.recordLogin({
+      userId: result.user.id,
+      ip: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+  }
+  res.status(201).json(result);
+}
+
+const resendOtpSchema = z.object({ email: z.string().trim().email() });
+
+/// POST /auth/resend-otp — re-send the signup verification code (rate-limited).
+export async function resendOtp(req: Request, res: Response) {
+  const parsed = resendOtpSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten() });
+    return;
+  }
+  const result = await authService.resendEmailOtp(parsed.data.email);
+  if ('error' in result) {
+    if (result.error === 'cooldown') {
+      res.setHeader('Retry-After', String(result.retryAfterS));
+      res.status(429).json({ error: `Please wait ${result.retryAfterS}s before requesting a new code.` });
+      return;
+    }
+    if (result.error === 'expired') {
+      res.status(400).json({ error: 'Your signup session expired. Please sign up again.' });
+      return;
+    }
+    res.status(400).json({ error: 'Could not send a new code. Try again.' });
+    return;
+  }
+  res.status(204).end();
 }
 
 /// GET /auth/team-invite/:token — read-only preview for the staff

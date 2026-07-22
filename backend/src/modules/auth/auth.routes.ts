@@ -3,6 +3,8 @@ import asyncHandler from '../../shared/http/asyncHandler.js';
 import { requireAuth } from '../../shared/http/requireAuth.js';
 import {
   register,
+  verifyEmail,
+  resendOtp,
   login,
   refresh,
   logout,
@@ -31,6 +33,9 @@ const router = Router();
 
 // Public — no token needed
 router.post('/register', asyncHandler(register));
+// Email-OTP verification for first-time signup (public — no session yet).
+router.post('/verify-email', asyncHandler(verifyEmail));
+router.post('/resend-otp', asyncHandler(resendOtp));
 router.post('/login', asyncHandler(login));
 router.post('/refresh', asyncHandler(refresh));
 router.post('/logout', asyncHandler(logout));

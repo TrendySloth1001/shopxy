@@ -22,6 +22,17 @@ import { isPasswordBreached } from './passwordBreach.js';
 import { revokeSession } from '../../shared/sessionRevocation.js';
 import { totpService } from './totp.service.js';
 import { maskIp, type DeviceContext } from './deviceContext.js';
+import {
+  canVerifyEmail,
+  generateOtp,
+  sendOtpEmail,
+  putPending,
+  getPending,
+  dropPending,
+  verifyOtp,
+  resendCooldownRemaining,
+  markResent,
+} from './emailVerification.js';
 
 const REFRESH_EXPIRES_MS = 7 * 24 * 60 * 60 * 1000;
 // Device-remember credential lifetime (sliding — renewed on each use).
@@ -128,6 +139,7 @@ async function createRefreshToken(
       userId,
       expiresAt,
       userAgent: device?.userAgent?.slice(0, 400) ?? null,
+      deviceName: device?.deviceName?.slice(0, 120) ?? null,
       ipMasked: maskIp(device?.ip),
       lastUsedAt: new Date(),
     },
@@ -189,6 +201,17 @@ class InviteAlreadyUsedError extends Error {
 }
 
 export class AuthService {
+  /**
+   * Start registration. Validates the email + password, then **gates on an
+   * emailed OTP**: the signup is held in Redis (no `User` row yet) and a code
+   * is emailed; the account is only created by {@link verifyEmailOtp}. This is
+   * what stops unverified/stale accounts from piling up in the DB.
+   *
+   * If the OTP infra (Redis + mailer) is down we fall back to creating the
+   * account directly so signups aren't blocked by an outage — the caller can
+   * tell which happened: a `{ pending: true }` result means "collect the OTP",
+   * a `{ user, accessToken, … }` result means "already signed in".
+   */
   async register(
     data: {
       email: string;
@@ -207,14 +230,82 @@ export class AuthService {
     }
 
     const passwordHash = await bcrypt.hash(data.password, 12);
-    // App-origin signup: merchant app sends role=OWNER + a shopName so
-    // we can create the User and their Shop in one transaction; the
-    // customer app sends role=CUSTOMER. The legacy "OWNER must be
-    // created out-of-band" stance (audit C1) is intentionally relaxed
-    // here — the merchant app is the primary OWNER signup surface, and
-    // ownership only gains anything when paired with a Shop, which we
-    // create atomically below.
     const name = data.name.trim();
+    const role: Role = data.role === 'OWNER' ? 'OWNER' : 'CUSTOMER';
+    const shopName = (data.shopName ?? '').trim() || undefined;
+
+    // Email-OTP gate. Hold the signup + code in Redis and email it; the User
+    // row is minted only on verify. Fall back to direct creation if the OTP
+    // infra is unavailable (never block signups on an outage).
+    if (canVerifyEmail()) {
+      const otp = generateOtp();
+      const sent = await sendOtpEmail(email, name, otp);
+      if (sent) {
+        await putPending({ name, email, passwordHash, role, shopName }, otp);
+        return { pending: true as const, email };
+      }
+      logger.warn({ event: 'otp_send_failed', email }, 'OTP email failed — creating account directly');
+    }
+
+    return this._finalizeRegistration({ email, name, passwordHash, role, shopName }, device);
+  }
+
+  /** Confirm the emailed OTP → create the account + sign in. */
+  async verifyEmailOtp(email: string, otp: string, device?: DeviceContext) {
+    const norm = email.toLowerCase().trim();
+    const res = await verifyOtp(norm, otp);
+    if (!res.ok) return { error: res.reason };
+    // Race guard: the email could have been registered by another attempt
+    // while this one was pending.
+    const existing = await prisma.user.findUnique({ where: { email: norm } });
+    if (existing) {
+      await dropPending(norm);
+      return { error: 'Email already registered' as const };
+    }
+    const p = res.pending;
+    const result = await this._finalizeRegistration(
+      { email: p.email, name: p.name, passwordHash: p.passwordHash, role: p.role, shopName: p.shopName },
+      device,
+    );
+    await dropPending(norm);
+    return result;
+  }
+
+  /** Re-send the verification code for a still-pending signup (rate-limited). */
+  async resendEmailOtp(email: string) {
+    const norm = email.toLowerCase().trim();
+    const pending = await getPending(norm);
+    if (!pending) return { error: 'expired' as const };
+    const cd = await resendCooldownRemaining(norm);
+    if (cd > 0) return { error: 'cooldown' as const, retryAfterS: cd };
+    const otp = generateOtp();
+    if (!(await sendOtpEmail(norm, pending.name, otp))) {
+      return { error: 'send_failed' as const };
+    }
+    await putPending(
+      {
+        name: pending.name,
+        email: pending.email,
+        passwordHash: pending.passwordHash,
+        role: pending.role,
+        shopName: pending.shopName,
+      },
+      otp,
+    );
+    await markResent(norm);
+    return { ok: true as const };
+  }
+
+  /**
+   * Create the User (+ Shop/team for a named-shop OWNER), claim pending
+   * invites and mint a session. Shared by direct signup and OTP-verified
+   * signup — the single place account creation actually happens.
+   */
+  private async _finalizeRegistration(
+    data: { email: string; name: string; passwordHash: string; role: Role; shopName?: string },
+    device?: DeviceContext,
+  ) {
+    const { email, name, passwordHash } = data;
     const acceptedAt = new Date();
 
     // A pending TEAM invite for this email takes precedence over creating a
