@@ -248,6 +248,18 @@ abstract class AppLocalizations {
   /// **'Sign out'**
   String get commonSignOut;
 
+  /// No description provided for @offlineBannerMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'No network — showing saved data'**
+  String get offlineBannerMessage;
+
+  /// No description provided for @offlineSyncingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing {count} change(s)…'**
+  String offlineSyncingMessage(int count);
+
   /// No description provided for @noShopTitle.
   ///
   /// In en, this message translates to:

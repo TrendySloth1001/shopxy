@@ -5,6 +5,8 @@ import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/constants/app_curves.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 
 /// One input row.
 class PieRow {
@@ -124,7 +126,7 @@ class _InfographicPieState extends State<InfographicPie> {
     final slices = _collapse(widget.rows, widget.palette.length, otherLabel);
     final total = slices.fold<double>(0, (s, r) => s + r.value);
     if (total <= 0) {
-      return Text(l10n.dashboardNoDataInPeriod, style: DashText.bodySm);
+      return _EmptyPie(message: l10n.dashboardNoDataInPeriod);
     }
     final maxVal = slices.map((s) => s.value).reduce(math.max);
     final single = slices.length == 1;
@@ -247,6 +249,49 @@ class _InfographicPieState extends State<InfographicPie> {
       }
     }
     setState(() => _active = null);
+  }
+}
+
+/// Placeholder shown when a chart has no positive data for the period. A soft
+/// icon medallion + message, sized so the card keeps a stable height instead of
+/// collapsing to a bare line of text.
+class _EmptyPie extends StatelessWidget {
+  const _EmptyPie({required this.message});
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.xl),
+      alignment: Alignment.center,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceTint,
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: AppIcon(
+                AppIcons.barChartOutlined,
+                size: 24,
+                color: AppColors.subtle,
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSizes.md),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: DashText.bodySm.copyWith(color: AppColors.muted),
+          ),
+        ],
+      ),
+    );
   }
 }
 

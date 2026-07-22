@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/network/api_client.dart';
+import 'package:shopxy/core/network/offline/offline_banner.dart';
 import 'package:shopxy/core/prefs/locale_prefs.dart';
 import 'package:shopxy/core/prefs/prefs_storage.dart';
 import 'package:shopxy/core/prefs/theme_prefs.dart';
@@ -43,6 +44,11 @@ class ShopxyApp extends StatelessWidget {
 
           return MaterialApp(
             title: AppStrings.appName,
+            // Mount the single app-wide offline banner above every gate branch
+            // (splash/login/onboarding/shell). The app has no root Scaffold, so
+            // MaterialApp.builder is the one place that covers them all.
+            builder: (context, child) =>
+                OfflineBannerHost(child: child ?? const SizedBox.shrink()),
             // No scrollbars anywhere: the default MaterialScrollBehavior paints
             // a scrollbar on desktop/web (and drag surfaces), which clashes
             // with the floating-glass design. Suppress it app-wide.

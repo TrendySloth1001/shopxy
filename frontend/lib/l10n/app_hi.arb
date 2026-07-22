@@ -25,6 +25,11 @@
   "commonSave": "सहेजें",
   "commonCancel": "रद्द करें",
   "commonSignOut": "साइन आउट",
+  "offlineBannerMessage": "नेटवर्क नहीं — सहेजा गया डेटा दिख रहा है",
+  "offlineSyncingMessage": "{count} बदलाव सिंक हो रहे हैं…",
+  "@offlineSyncingMessage": {
+    "placeholders": { "count": { "type": "int" } }
+  },
   "noShopTitle": "अभी तक कोई दुकान लिंक नहीं है",
   "noShopBody": "किसी दुकान मालिक से अपनी टीम में आमंत्रित करने को कहें, फिर स्वीकार करने के लिए दोबारा साइन इन करें।",
   "productsTitle": "उत्पाद",

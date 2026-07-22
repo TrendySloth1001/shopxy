@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -28,6 +29,27 @@ class TokenManager {
 
   /// In-memory access token — fast, no async needed for request headers.
   String? get accessToken => _accessToken;
+
+  /// The signed-in user's id, read from the access token's `sub` claim. This is
+  /// the single source of truth for the per-user namespace of the offline
+  /// cache + outbox (both `ApiClient` and `OutboxProcessor` read it here, so
+  /// they can never disagree). No signature check — it only scopes on-device
+  /// storage, never authorizes anything. `'anon'` when signed out.
+  String get currentUserId {
+    final token = _accessToken;
+    if (token == null) return 'anon';
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return 'anon';
+      final payload =
+          jsonDecode(utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))))
+              as Map<String, dynamic>;
+      final sub = payload['sub'];
+      return sub == null ? 'anon' : '$sub';
+    } catch (_) {
+      return 'anon';
+    }
+  }
 
   /// Called when a 401 can't be recovered (refresh failed / no token).
   VoidCallback? onUnauthorized;

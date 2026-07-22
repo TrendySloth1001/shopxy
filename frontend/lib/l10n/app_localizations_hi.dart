@@ -84,6 +84,14 @@ class AppLocalizationsHi extends AppLocalizations {
   String get commonSignOut => 'साइन आउट';
 
   @override
+  String get offlineBannerMessage => 'नेटवर्क नहीं — सहेजा गया डेटा दिख रहा है';
+
+  @override
+  String offlineSyncingMessage(int count) {
+    return '$count बदलाव सिंक हो रहे हैं…';
+  }
+
+  @override
   String get noShopTitle => 'अभी तक कोई दुकान लिंक नहीं है';
 
   @override

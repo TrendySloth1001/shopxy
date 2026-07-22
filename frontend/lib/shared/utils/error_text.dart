@@ -1,7 +1,6 @@
 import 'dart:async';
-import 'dart:io';
 
-import 'package:http/http.dart' as http;
+import 'package:shopxy/core/network/offline/offline_errors.dart';
 
 /// Turns any thrown error into a short, user-presentable message.
 ///
@@ -12,13 +11,21 @@ import 'package:http/http.dart' as http;
 /// carry a useful message, so they're mapped to plain language instead
 /// of leaking `SocketException: Failed host lookup: ...` into SnackBars.
 String friendlyError(Object e) {
+  // Offline write outcomes — a queued update is a *success* ("we've got it,
+  // it'll sync"); a blocked one needs the user back online.
+  if (e is OfflineWriteQueuedException) {
+    return 'Saved offline — this will sync when you\'re back online.';
+  }
+  if (e is OfflineWriteBlockedException) {
+    return 'You\'re offline. Reconnect to complete this.';
+  }
   // Transport-level failures — the raw text is useless to a shopkeeper.
   if (e is TimeoutException) {
     return 'The server is taking too long to respond. Please try again.';
   }
-  if (e is SocketException ||
-      e is HandshakeException ||
-      e is http.ClientException) {
+  // Any other transport error (socket / TLS / client) — Timeout is handled
+  // above, so this covers the rest via the shared classifier.
+  if (isTransportError(e)) {
     return 'Couldn\'t reach the server. Check your connection.';
   }
   // A response that wasn't the JSON we expected.

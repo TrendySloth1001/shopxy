@@ -84,6 +84,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonSignOut => 'Sign out';
 
   @override
+  String get offlineBannerMessage => 'No network — showing saved data';
+
+  @override
+  String offlineSyncingMessage(int count) {
+    return 'Syncing $count change(s)…';
+  }
+
+  @override
   String get noShopTitle => 'No shop linked yet';
 
   @override

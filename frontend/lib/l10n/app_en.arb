@@ -28,6 +28,11 @@
   "commonSave": "Save",
   "commonCancel": "Cancel",
   "commonSignOut": "Sign out",
+  "offlineBannerMessage": "No network — showing saved data",
+  "offlineSyncingMessage": "Syncing {count} change(s)…",
+  "@offlineSyncingMessage": {
+    "placeholders": { "count": { "type": "int" } }
+  },
   "noShopTitle": "No shop linked yet",
   "noShopBody": "Ask a shop owner to invite you to their team, then sign in again to accept.",
   "productsTitle": "Products",

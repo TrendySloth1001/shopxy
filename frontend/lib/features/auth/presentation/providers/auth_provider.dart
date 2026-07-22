@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shopxy/core/auth/remembered_accounts.dart';
 import 'package:shopxy/core/auth/token_manager.dart';
+import 'package:shopxy/core/network/offline/offline_errors.dart';
 import 'package:shopxy/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:shopxy/features/auth/domain/entities/auth_user.dart';
 import 'package:shopxy/shared/constants/app_durations.dart';
@@ -41,6 +42,8 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
       return;
     }
     try {
+      // /auth/me is cached, so offline this returns the last-known profile and
+      // the app boots into the shell instead of the login screen.
       final me = await _dataSource.getMe();
       if (!me.isOwner) {
         // Cross-app session: a customer account's tokens must not
@@ -49,9 +52,14 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
       } else {
         _user = me;
       }
-    } catch (_) {
-      // Token invalid/expired and refresh also failed → force login
-      await _tokenManager.clear();
+    } catch (e) {
+      // A transport/offline failure must NOT end the session — keep the tokens
+      // so a later online launch restores it (this launch just shows login if
+      // there's no cached identity yet). Only a definitive rejection — the
+      // server actually said no — clears the session.
+      if (!isTransportError(e)) {
+        await _tokenManager.clear();
+      }
     }
     _isLoading = false;
     notifyListeners();

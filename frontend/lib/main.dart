@@ -6,6 +6,10 @@ import 'dart:async';
 
 import 'package:shopxy/core/config/app_config.dart';
 import 'package:shopxy/core/network/api_client.dart';
+import 'package:shopxy/core/network/offline/http_cache.dart';
+import 'package:shopxy/core/network/offline/network_status.dart';
+import 'package:shopxy/core/network/offline/outbox.dart';
+import 'package:shopxy/core/network/offline/outbox_processor.dart';
 import 'package:shopxy/core/utils/device_info_helper.dart';
 import 'package:shopxy/core/prefs/navigation_prefs.dart';
 import 'package:shopxy/core/prefs/prefs_storage.dart';
@@ -81,7 +85,22 @@ void main() async {
   final themePrefs = ThemePrefsProvider(appPrefsStorage);
   await themePrefs.load();
 
-  final apiClient = ApiClient(tokenManager);
+  // Offline layer (SSOT): one connectivity signal + one device response cache,
+  // both injected into the single ApiClient so every read gets offline support
+  // without touching data sources. Cache init is awaited so the first request
+  // can already hit it.
+  final networkStatus = NetworkStatus();
+  final httpCache = HttpCache();
+  final outbox = Outbox();
+  await httpCache.init();
+  await outbox.init();
+
+  final apiClient = ApiClient(
+    tokenManager,
+    cache: httpCache,
+    networkStatus: networkStatus,
+    outbox: outbox,
+  );
   // Resolve the device name once (async, non-blocking) so requests carry
   // `X-Device-Name` for the sessions list. Auth calls are user-triggered
   // seconds later, well after this fast native lookup resolves.
@@ -141,6 +160,9 @@ void main() async {
   final linkedAccountProvider = LinkedAccountProvider(
     LinkedAccountRemoteDataSource(apiClient),
   );
+  // Hoisted to a local (was inline in the MultiProvider) so the cache-
+  // revalidation listener below can reload it when the dashboard changes.
+  final dashboardProvider = DashboardProvider(dashboardDs);
 
   authProvider.registerOnClear(notificationsProvider.reset);
   authProvider.registerOnClear(productsProvider.reset);
@@ -152,6 +174,26 @@ void main() async {
   authProvider.registerOnClear(linkedAccountProvider.reset);
   authProvider.registerOnClear(ordersProvider.reset);
   authProvider.registerOnClear(merchantBannersProvider.reset);
+  // Purge the device response cache on logout / 401 / account-delete so the
+  // next account can't see the previous user's cached business data.
+  authProvider.registerOnClear(httpCache.wipe);
+  // Drop any un-synced offline writes on logout too (they belong to the account
+  // that's leaving).
+  authProvider.registerOnClear(outbox.wipe);
+
+  // Replays queued offline writes when the network returns (and once now, for
+  // anything left from a previous offline session). `currentUserId` comes from
+  // the same source as the cache/outbox namespace (TokenManager), so they can't
+  // disagree, and it's available at boot — before AuthProvider loads the user.
+  // This is an app-lifetime singleton: its NetworkStatus listener keeps it
+  // alive, and `dispose()` exists for teardown/tests.
+  OutboxProcessor(
+    outbox: outbox,
+    networkStatus: networkStatus,
+    currentUserId: () => tokenManager.currentUserId,
+    replay: (e) =>
+        apiClient.sendRaw(e.method, e.path, body: e.body, headers: e.headers),
+  ).start();
 
   // When ApiClient can't recover a 401 (refresh failed), force re-login
   // — the registered callbacks fan out via clearAuth().
@@ -170,6 +212,26 @@ void main() async {
     if (authProvider.isAuthenticated) {
       ordersProvider.refreshPendingCount();
     }
+  });
+
+  // Stale-while-revalidate repaint: a cache-first GET paints instantly, then a
+  // background revalidation fires this event if the server copy changed (incl.
+  // a change made in another session, e.g. web). We reload the matching
+  // provider so the screen refreshes in place. Single central listener → no
+  // per-provider wiring. Errors are swallowed (background refresh).
+  apiClient.cacheEvents.listen((tag) {
+    final Future<void>? reload = switch (tag) {
+      'products' => productsProvider.loadProducts(),
+      'invoices' => invoicesProvider.loadInvoices(refresh: true),
+      'parties' => partiesProvider.loadParties(refresh: true),
+      'vendors' => vendorsProvider.loadVendors(refresh: true),
+      'challans' => challansProvider.loadChallans(refresh: true),
+      'orders' => ordersProvider.load(),
+      'dashboard' => dashboardProvider.loadStats(),
+      'notifications' => notificationsProvider.loadInbox(),
+      _ => null,
+    };
+    if (reload != null) unawaited(reload.catchError((_) {}));
   });
 
   // Whenever the session changes (login or logout), refresh the bell
@@ -191,6 +253,11 @@ void main() async {
         ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
         ChangeNotifierProvider<NavigationPrefsProvider>.value(value: navPrefs),
         ChangeNotifierProvider<ThemePrefsProvider>.value(value: themePrefs),
+        // Offline connectivity signal — watched by the app-wide offline banner.
+        ChangeNotifierProvider<NetworkStatus>.value(value: networkStatus),
+        // Outbox exposed so the banner can show "syncing N changes" from its
+        // pendingCount. Provided as nullable so a lookup never throws.
+        Provider<Outbox?>.value(value: outbox),
 
         // Raw HTTP client — surfaced for widgets that hit small endpoints
         // (e.g. ContactChangesSection) without their own data-source layer.
@@ -216,7 +283,9 @@ void main() async {
         Provider<MerchantReturnsRemoteDataSource>.value(value: returnsDs),
 
         // Feature state providers
-        ChangeNotifierProvider(create: (_) => DashboardProvider(dashboardDs)),
+        ChangeNotifierProvider<DashboardProvider>.value(
+          value: dashboardProvider,
+        ),
         ChangeNotifierProvider(create: (_) => CategoriesProvider(categoriesDs)),
         ChangeNotifierProvider(
           create: (_) => CustomFieldsProvider(customFieldsDs),
