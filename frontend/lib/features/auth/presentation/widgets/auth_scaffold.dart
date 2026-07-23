@@ -4,6 +4,7 @@ import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
+import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
@@ -257,14 +258,28 @@ class _AuthHeader extends StatelessWidget {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('🏪', style: TextStyle(fontSize: 26)),
+            Image.asset('assets/shopxy-icon.png', width: 34, height: 34),
             const SizedBox(width: AppSizes.sm),
-            Text(
-              'ShopXY',
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: AppColors.black,
-                fontWeight: FontWeight.w700,
-              ),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  AppStrings.appName,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: AppColors.black,
+                    fontWeight: FontWeight.w800,
+                    height: 1.1,
+                  ),
+                ),
+                Text(
+                  AppStrings.appBy,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: AppColors.muted,
+                    height: 1.1,
+                  ),
+                ),
+              ],
             ),
           ],
         ),

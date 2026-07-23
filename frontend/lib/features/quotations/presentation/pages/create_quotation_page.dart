@@ -19,6 +19,7 @@ import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/widgets/app_search_bar.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Internal mutable bucket line.
@@ -306,26 +307,19 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
           // Product search.
           _SectionLabel('Add products'),
           const SizedBox(height: AppSizes.xs),
-          TextField(
+          AppSearchBar(
+            hint: 'Search your catalogue',
             controller: _searchCtrl,
             onChanged: _onProductSearchChanged,
-            decoration: InputDecoration(
-              hintText: 'Search your catalogue',
-              prefixIcon: const AppIcon(AppIcons.searchRounded),
-              suffixIcon: _searching
-                  ? const Padding(
-                      padding: EdgeInsets.all(AppSizes.md),
-                      child: SizedBox(
-                        width: AppSizes.iconSm,
-                        height: AppSizes.iconSm,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    )
-                  : null,
-              border: OutlineInputBorder(
-                borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
-              ),
-            ),
+            // _onProductSearchChanged runs its own debounce.
+            debounce: Duration.zero,
+            trailing: _searching
+                ? const SizedBox(
+                    width: AppSizes.iconSm,
+                    height: AppSizes.iconSm,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : null,
           ),
           if (_results.isNotEmpty)
             Column(

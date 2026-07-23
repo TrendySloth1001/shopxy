@@ -1,7 +1,11 @@
 class AppStrings {
   // App
-  static const String appName = 'Shopxy';
+  static const String appName = 'ShopXY';
   static const String appTagline = 'Smart Inventory Management';
+
+  /// Vendor attribution shown under the app name (splash, auth header).
+  /// Note the capital N in "CloudNSofts".
+  static const String appBy = 'by CloudNSofts';
 
   // Navigation
   static const String navDashboard = 'Dashboard';

@@ -22,6 +22,7 @@ import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/widgets/app_search_bar.dart';
 
 /// Drill-down view from CategoriesPage. Loads the products for a single
 /// category directly (own state — not coupled to the global
@@ -471,36 +472,12 @@ class _SearchField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Material(
-      color: AppColors.surface,
-      shape: AppShapes.squircle(
-        AppSizes.radiusFull,
-        side: BorderSide(color: AppColors.hairline),
-      ),
-      child: TextField(
-        controller: controller,
-        onChanged: onChanged,
-        decoration: InputDecoration(
-          hintText: l10n.categoriesSearchProductsHint,
-          prefixIcon: AppIcon(AppIcons.searchRounded, color: AppColors.subtle),
-          suffixIcon: controller.text.isEmpty
-              ? null
-              : IconButton(
-                  icon: AppIcon(AppIcons.closeRounded, color: AppColors.subtle),
-                  onPressed: () {
-                    controller.clear();
-                    onChanged('');
-                  },
-                ),
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            vertical: AppSizes.md,
-            horizontal: AppSizes.md,
-          ),
-        ),
-      ),
+    return AppSearchBar(
+      hint: l10n.categoriesSearchProductsHint,
+      controller: controller,
+      onChanged: onChanged,
+      // The page debounces its own reload (_searchDebounce).
+      debounce: Duration.zero,
     );
   }
 }

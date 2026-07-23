@@ -13,6 +13,7 @@ import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/widgets/app_search_bar.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Opens a modal search sheet to pick an existing Party or create a new one.
@@ -127,14 +128,11 @@ class _PartyPickerSheetState extends State<_PartyPickerSheet> {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
-              child: TextField(
+              child: AppSearchBar(
+                hint: l10n.partiesSearchParties,
                 controller: _search,
-                autofocus: true,
-                decoration: InputDecoration(
-                  hintText: l10n.partiesSearchParties,
-                  prefixIcon: const AppIcon(AppIcons.searchRounded),
-                ),
                 onChanged: _load,
+                autofocus: true,
               ),
             ),
             const SizedBox(height: AppSizes.sm),

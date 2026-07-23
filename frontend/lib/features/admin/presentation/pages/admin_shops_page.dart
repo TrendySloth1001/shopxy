@@ -12,6 +12,7 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/widgets/app_search_bar.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Admin-only listing of marketplace shops with a verified toggle.
@@ -112,23 +113,10 @@ class _AdminShopsPageState extends State<AdminShopsPage> {
                 AppSizes.lg,
                 AppSizes.sm,
               ),
-              child: TextField(
+              child: AppSearchBar(
+                hint: l10n.adminShopsSearchHint,
                 controller: _searchCtrl,
-                decoration: InputDecoration(
-                  hintText: l10n.adminShopsSearchHint,
-                  prefixIcon: const AppIcon(AppIcons.search),
-                  suffixIcon: _searchCtrl.text.isEmpty
-                      ? null
-                      : IconButton(
-                          icon: const AppIcon(AppIcons.close),
-                          onPressed: () {
-                            _searchCtrl.clear();
-                            _load();
-                          },
-                        ),
-                ),
-                onSubmitted: (_) => _load(),
-                textInputAction: TextInputAction.search,
+                onChanged: (_) => _load(),
               ),
             ),
             Expanded(

@@ -275,18 +275,13 @@ class _LeadingIsland extends StatelessWidget {
       );
     }
 
-    // Brand lockup: logo tile + wordmark in a single chip.
+    // Brand lockup: logo tile + wordmark in a single chip. The asset is the
+    // self-contained CloudNSofts badge (its own orange ground), clipped to a
+    // circle here so it echoes the round launcher icon. It reads on any theme.
     if (brand) {
       return titleChip(
-        leading: Container(
-          width: 30,
-          height: 30,
-          decoration: ShapeDecoration(
-            color: AppColors.surfaceTint,
-            shape: AppShapes.squircle(AppSizes.radiusSm),
-          ),
-          alignment: Alignment.center,
-          child: Image.asset('assets/shopxy-icon.png', width: 20, height: 20),
+        leading: ClipOval(
+          child: Image.asset('assets/shopxy-icon.png', width: 30, height: 30),
         ),
       );
     }

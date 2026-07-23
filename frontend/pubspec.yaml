@@ -76,6 +76,25 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
 
+  # Generates the platform launcher icons from a single source. Run after
+  # editing the config below or the source PNGs:  dart run flutter_launcher_icons
+  flutter_launcher_icons: ^0.14.4
+
+# App launcher icon — the CloudNSofts cloud-storefront mark: a white cutout
+# storefront on the brand orange, the designer's intended app-icon variant.
+# Sources live in `app_icon/` (outside `assets/`, so they aren't bundled into
+# the app). iOS flattens the master onto orange (no alpha allowed); Android gets
+# an orange adaptive background with a safe-zone-margined foreground. The
+# generated adaptive `inset` is then zeroed (the foreground carries its margin).
+flutter_launcher_icons:
+  image_path: "app_icon/app_icon.png"
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  background_color_ios: "#F26A1B"
+  adaptive_icon_background: "#F26A1B"
+  adaptive_icon_foreground: "app_icon/app_icon_foreground.png"
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 

@@ -15,6 +15,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
+import 'package:shopxy/shared/widgets/app_search_bar.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/core/router/app_shell.dart';
@@ -171,34 +172,13 @@ class _OrdersInboxPageState extends State<OrdersInboxPage> {
                   child: Row(
                     children: [
                       Expanded(
-                        child: TextField(
+                        child: AppSearchBar(
+                          hint: l10n.ordersSearchHint,
                           controller: _searchCtrl,
                           onChanged: _onSearchChanged,
-                          decoration: InputDecoration(
-                            isDense: true,
-                            hintText: l10n.ordersSearchHint,
-                            prefixIcon: const AppIcon(
-                              AppIcons.searchRounded,
-                              size: AppSizes.iconMd,
-                            ),
-                            suffixIcon: p.search.isEmpty
-                                ? null
-                                : IconButton(
-                                    icon: const AppIcon(
-                                      AppIcons.closeRounded,
-                                      size: AppSizes.iconMd,
-                                    ),
-                                    onPressed: () {
-                                      _searchCtrl.clear();
-                                      _onSearchChanged('');
-                                    },
-                                  ),
-                            border: OutlineInputBorder(
-                              borderRadius: AppShapes.squircleRadius(
-                                AppSizes.radiusMd,
-                              ),
-                            ),
-                          ),
+                          // The inbox runs its own debounce (_searchDebounce),
+                          // so the shared bar must not debounce again.
+                          debounce: Duration.zero,
                         ),
                       ),
                       const SizedBox(width: AppSizes.sm),
@@ -347,11 +327,11 @@ class _DateFilterChip extends StatelessWidget {
       child: InkWell(
         customBorder: AppShapes.squircle(AppSizes.radiusFull),
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSizes.md,
-            vertical: AppSizes.sm,
-          ),
+        child: Container(
+          // Match the search pill's height so the two sit level on the row.
+          height: AppSizes.huge,
+          padding: const EdgeInsets.symmetric(horizontal: AppSizes.md),
+          alignment: Alignment.center,
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [

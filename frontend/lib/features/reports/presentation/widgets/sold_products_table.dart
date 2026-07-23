@@ -13,6 +13,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/widgets/app_search_bar.dart';
 
 /// The P&L "Products sold" drill-down: an aggregated table with ONE row per
 /// product over the range (its number of sales, total qty, total revenue).
@@ -188,33 +189,12 @@ class _SoldProductsTableState extends State<SoldProductsTable> {
         // Search — filters server-side across the whole range.
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
-          child: TextField(
+          child: AppSearchBar(
+            hint: l10n.reportsSearchByProductOrSku,
             controller: _searchCtrl,
             onChanged: _onSearchChanged,
-            decoration: InputDecoration(
-              hintText: l10n.reportsSearchByProductOrSku,
-              prefixIcon: const AppIcon(
-                AppIcons.searchRounded,
-                size: AppSizes.iconMd,
-              ),
-              suffixIcon: _searchCtrl.text.isNotEmpty
-                  ? IconButton(
-                      icon: const AppIcon(
-                        AppIcons.closeRounded,
-                        size: AppSizes.iconMd,
-                      ),
-                      onPressed: () {
-                        _searchCtrl.clear();
-                        _search = '';
-                        _load();
-                      },
-                    )
-                  : null,
-              isDense: true,
-              border: OutlineInputBorder(
-                borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
-              ),
-            ),
+            // _onSearchChanged runs its own debounce.
+            debounce: Duration.zero,
           ),
         ),
         const SizedBox(height: AppSizes.md),

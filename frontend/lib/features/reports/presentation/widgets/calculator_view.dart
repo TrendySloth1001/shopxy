@@ -20,6 +20,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/shared/widgets/app_search_bar.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 /// Pricing & profit calculator — a multi-product quote builder. Add products,
@@ -835,20 +836,12 @@ class _CalculatorViewState extends State<CalculatorView> {
           ],
         ),
         const SizedBox(height: AppSizes.sm),
-        TextField(
+        AppSearchBar(
+          hint: l10n.reportsCalcSearchByNameOrSku,
           controller: _searchCtrl,
           onChanged: _onSearchChanged,
-          decoration: InputDecoration(
-            hintText: l10n.reportsCalcSearchByNameOrSku,
-            prefixIcon: const AppIcon(
-              AppIcons.searchRounded,
-              size: AppSizes.iconMd,
-            ),
-            isDense: true,
-            border: OutlineInputBorder(
-              borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
-            ),
-          ),
+          // _onSearchChanged runs its own debounce.
+          debounce: Duration.zero,
         ),
         const SizedBox(height: AppSizes.md),
         if (_listLoading && _products.isEmpty)

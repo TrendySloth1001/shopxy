@@ -17,7 +17,6 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_palette.dart';
-import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/theme/app_theme.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
@@ -218,23 +217,18 @@ class _SplashScreen extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: ShapeDecoration(
-                color: AppColors.inverseSurface,
-                shape: AppShapes.squircle(AppSizes.radiusXl),
-              ),
-              child: AppIcon(
-                AppIcons.inventory2Rounded,
-                size: AppSizes.iconXl,
-                color: AppColors.onInverse,
-              ),
-            ),
+            Image.asset('assets/shopxy-icon.png', width: 72, height: 72),
             const SizedBox(height: AppSizes.xl),
             Text(
               AppStrings.appName,
               style: theme.textTheme.headlineSmall?.bold,
+            ),
+            const SizedBox(height: AppSizes.xxs),
+            Text(
+              AppStrings.appBy,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: AppColors.muted,
+              ),
             ),
             const SizedBox(height: AppSizes.xxl),
             const SizedBox(
