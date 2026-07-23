@@ -1,6 +1,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Barcode scanning + taking product photos (image_picker/mobile_scanner). -->
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Declaring CAMERA otherwise makes a camera implicitly REQUIRED on Play,
+         excluding camera-less tablets. Mark it optional so the app still installs
+         (gallery picker + manual entry remain available without a camera). -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
     <application
         android:label="shopxy"
         android:name="${applicationName}"

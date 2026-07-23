@@ -124,7 +124,7 @@ class AppTheme {
             horizontal: AppSizes.xl,
             vertical: AppSizes.md,
           ),
-          shape: AppShapes.squircle(AppSizes.radiusButton),
+          shape: AppShapes.squircle(AppSizes.radiusFull),
           textStyle: textTheme.labelLarge,
           elevation: 0,
           shadowColor: Colors.transparent,
@@ -141,7 +141,7 @@ class AppTheme {
             horizontal: AppSizes.xl,
             vertical: AppSizes.md,
           ),
-          shape: AppShapes.squircle(AppSizes.radiusButton),
+          shape: AppShapes.squircle(AppSizes.radiusFull),
           textStyle: textTheme.labelLarge,
         ),
       ),
@@ -155,7 +155,7 @@ class AppTheme {
             vertical: AppSizes.md,
           ),
           shape: AppShapes.squircle(
-            AppSizes.radiusButton,
+            AppSizes.radiusFull,
             side: BorderSide(color: p.ink, width: 1),
           ),
           textStyle: textTheme.labelLarge,
@@ -169,7 +169,7 @@ class AppTheme {
             horizontal: AppSizes.md,
             vertical: AppSizes.sm,
           ),
-          shape: AppShapes.squircle(AppSizes.radiusButton),
+          shape: AppShapes.squircle(AppSizes.radiusFull),
         ),
       ),
       iconButtonTheme: IconButtonThemeData(
@@ -252,6 +252,15 @@ class AppTheme {
         backgroundColor: p.surface,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
+        // Full-width dialogs: Material's default insets are 40px per side
+        // (narrow, floating-in-the-middle). Pull them in to the app's `lg`
+        // content gutter so every dialog spans the screen and lines up with
+        // the page content and the floating app bar. AlertDialog leaves
+        // insetPadding null by default, so this theme value applies app-wide.
+        insetPadding: const EdgeInsets.symmetric(
+          horizontal: AppSizes.lg,
+          vertical: AppSizes.xxl,
+        ),
         shape: AppShapes.squircle(
           AppSizes.radiusDialog,
           side: BorderSide(color: p.hairline, width: 1),

@@ -46,6 +46,8 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>Scan product labels to autofill details.</string>
+	<string>ShopXY uses the camera to scan product barcodes and take product photos.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>ShopXY needs access to your photos so you can add pictures to your products.</string>
 </dict>
 </plist>

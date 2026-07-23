@@ -152,10 +152,10 @@ class AppButton extends StatelessWidget {
 
     final btn = Material(
       color: bg,
-      shape: AppShapes.squircle(AppSizes.radiusButton, side: border),
+      shape: AppShapes.squircle(AppSizes.radiusFull, side: border),
       child: InkWell(
         onTap: effectiveOnPressed,
-        customBorder: AppShapes.squircle(AppSizes.radiusButton, side: border),
+        customBorder: AppShapes.squircle(AppSizes.radiusFull, side: border),
         splashColor: fg.withValues(alpha: 0.06),
         highlightColor: fg.withValues(alpha: 0.04),
         child: Padding(

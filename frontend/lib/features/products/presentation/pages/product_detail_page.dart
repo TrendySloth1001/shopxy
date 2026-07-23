@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -534,6 +536,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         });
 
     return Scaffold(
+      // Let the page scroll behind the floating stock pills, mirroring the
+      // floating app bar at the top — the buttons float over the content.
+      extendBody: true,
       appBar: FloatingAppBar(
         title: l10n.productsDetailsTitle,
         actions: [
@@ -598,11 +603,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               onAddPhotos: canWriteProducts ? _openEdit : null,
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(
+              // Extra bottom room so the last card clears the floating stock
+              // pills, which now overlay the content (extendBody: true) rather
+              // than reserving their own slot.
+              padding: EdgeInsets.fromLTRB(
                 AppSizes.lg,
                 AppSizes.lg,
                 AppSizes.lg,
-                AppSizes.huge,
+                canStock ? AppSizes.huge + 52 + AppSizes.xl : AppSizes.huge,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2558,45 +2566,132 @@ class _StockActionBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return SafeArea(
-      top: false,
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          border: Border(top: BorderSide(color: AppColors.hairline)),
+    // No solid bar — the buttons float as frosted pills over the scrolling
+    // content, echoing the floating app bar. A short gradient scrim fades the
+    // canvas up from the bottom edge so the pills stay legible over any
+    // content (and the OS gesture bar has a clean backdrop), mirroring the
+    // app bar's top status-bar scrim.
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
+          colors: [
+            AppColors.canvas,
+            AppColors.canvas,
+            AppColors.canvas.withValues(alpha: 0),
+          ],
+          stops: const [0.0, 0.55, 1.0],
         ),
-        padding: const EdgeInsets.fromLTRB(
-          AppSizes.lg,
-          AppSizes.sm,
-          AppSizes.lg,
-          AppSizes.sm,
-        ),
-        // Bounded height — AppButton's inner `Center` would otherwise
-        // expand to fill the bottomNavigationBar slot vertically, the
-        // result being two giant rectangles instead of buttons.
-        child: SizedBox(
-          height: 52,
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSizes.lg,
+            AppSizes.md,
+            AppSizes.lg,
+            AppSizes.md,
+          ),
           child: Row(
             children: [
               Expanded(
-                child: AppButton.secondary(
+                child: _StockPill(
                   label: l10n.productsStockIn,
                   icon: AppIcons.addRounded,
-                  onPressed: onStockIn,
-                  fullWidth: true,
+                  onTap: onStockIn,
+                  frosted: true,
                 ),
               ),
               const SizedBox(width: AppSizes.md),
               Expanded(
-                child: AppButton.primary(
+                child: _StockPill(
                   label: l10n.productsStockOut,
                   icon: AppIcons.removeRounded,
-                  onPressed: onStockOut,
-                  fullWidth: true,
+                  onTap: onStockOut,
+                  frosted: false,
                 ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A single floating stock action, styled like a floating-app-bar island.
+///
+/// - [frosted] (Stock In / secondary): a translucent, blurred pill with a
+///   hairline border — the exact frosted-island look of the app bar.
+/// - solid (Stock Out / primary): the high-contrast neutral fill, so the
+///   destructive-leaning action still reads as the primary CTA.
+class _StockPill extends StatelessWidget {
+  const _StockPill({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+    required this.frosted,
+  });
+
+  final String label;
+  final AppIconData icon;
+  final VoidCallback onTap;
+  final bool frosted;
+
+  static const double _height = 52;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final fg = frosted ? AppColors.black : AppColors.onInverse;
+
+    final shape = AppShapes.squircle(
+      AppSizes.radiusFull,
+      side: frosted ? BorderSide(color: AppColors.hairline) : BorderSide.none,
+    );
+
+    final content = SizedBox(
+      height: _height,
+      child: Material(
+        color: frosted
+            ? AppColors.surface.withValues(alpha: 0.55)
+            : AppColors.inverseSurface,
+        shape: shape,
+        child: InkWell(
+          onTap: onTap,
+          customBorder: shape,
+          splashColor: fg.withValues(alpha: 0.06),
+          highlightColor: fg.withValues(alpha: 0.04),
+          child: Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AppIcon(icon, size: AppSizes.iconMd, color: fg),
+                const SizedBox(width: AppSizes.sm),
+                Flexible(
+                  child: Text(
+                    label,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelLarge?.copyWith(color: fg),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    // RepaintBoundary + ClipRRect isolate the blur so the page repaint behind
+    // the pill doesn't re-blur every frame off this subtree unnecessarily.
+    if (!frosted) return content;
+    return RepaintBoundary(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppSizes.radiusFull),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: content,
         ),
       ),
     );

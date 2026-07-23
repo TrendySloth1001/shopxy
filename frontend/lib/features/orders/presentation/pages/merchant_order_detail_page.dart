@@ -2722,7 +2722,7 @@ class _InvoiceButtonSkeleton extends StatelessWidget {
       child: AppShimmerBox(
         width: double.infinity,
         height: AppSizes.huge,
-        radius: AppSizes.radiusButton,
+        radius: AppSizes.radiusFull,
       ),
     );
   }

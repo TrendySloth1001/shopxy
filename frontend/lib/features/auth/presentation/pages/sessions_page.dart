@@ -161,7 +161,7 @@ class _SessionsPageState extends State<SessionsPage> {
                         padding: const EdgeInsets.symmetric(
                           vertical: AppSizes.md,
                         ),
-                        shape: AppShapes.squircle(AppSizes.radiusButton),
+                        shape: AppShapes.squircle(AppSizes.radiusFull),
                       ),
                     ),
                   ),

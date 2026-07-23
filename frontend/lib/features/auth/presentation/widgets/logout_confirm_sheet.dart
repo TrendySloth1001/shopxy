@@ -76,7 +76,7 @@ Future<bool?> showLogoutConfirmSheet(BuildContext context) {
                   backgroundColor: AppColors.error,
                   foregroundColor: AppColors.white,
                   padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
-                  shape: AppShapes.squircle(AppSizes.radiusButton),
+                  shape: AppShapes.squircle(AppSizes.radiusFull),
                   textStyle: theme.textTheme.labelLarge?.bold,
                 ),
               ),

@@ -242,7 +242,7 @@ class _StepRow extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: AppSizes.md),
                 minimumSize: const Size(0, 36),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                shape: AppShapes.squircle(AppSizes.radiusButton),
+                shape: AppShapes.squircle(AppSizes.radiusFull),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,

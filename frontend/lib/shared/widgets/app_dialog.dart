@@ -44,30 +44,44 @@ class AppConfirmDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final confirm = danger
+        ? AppButton.danger(
+            label: confirmLabel,
+            onPressed: () => Navigator.of(context).pop(true),
+            fullWidth: true,
+          )
+        : AppButton.primary(
+            label: confirmLabel,
+            onPressed: () => Navigator.of(context).pop(true),
+            fullWidth: true,
+          );
+
+    // Buttons live inside `content` (not `actions`) so they can be full-width
+    // Expanded halves of a single row — AlertDialog's `actions` OverflowBar
+    // can't bound Expanded children, and would otherwise stack them.
     return AlertDialog(
       title: Text(title),
-      content: Text(message, style: theme.textTheme.bodyMedium),
-      actionsPadding: const EdgeInsets.fromLTRB(
-        AppSizes.lg,
-        0,
-        AppSizes.lg,
-        AppSizes.lg,
-      ),
-      actions: [
-        AppButton.ghost(
-          label: cancelLabel,
-          onPressed: () => Navigator.of(context).pop(false),
-        ),
-        danger
-            ? AppButton.danger(
-                label: confirmLabel,
-                onPressed: () => Navigator.of(context).pop(true),
-              )
-            : AppButton.primary(
-                label: confirmLabel,
-                onPressed: () => Navigator.of(context).pop(true),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(message, style: theme.textTheme.bodyMedium),
+          const SizedBox(height: AppSizes.xl),
+          Row(
+            children: [
+              Expanded(
+                child: AppButton.secondary(
+                  label: cancelLabel,
+                  onPressed: () => Navigator.of(context).pop(false),
+                  fullWidth: true,
+                ),
               ),
-      ],
+              const SizedBox(width: AppSizes.md),
+              Expanded(child: confirm),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
