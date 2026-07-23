@@ -7,6 +7,12 @@ class AppStrings {
   /// Note the capital N in "CloudNSofts".
   static const String appBy = 'by CloudNSofts';
 
+  /// CloudNSofts house tagline, from the brand lockup.
+  static const String brandTagline = 'SOFTWARE, ALWAYS OPEN';
+
+  /// Copyright line shown on the About page.
+  static const String copyright = '© 2026 CloudNSofts';
+
   // Navigation
   static const String navDashboard = 'Dashboard';
   static const String navProducts = 'Products';

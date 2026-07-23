@@ -16,8 +16,10 @@ import 'package:shopxy/features/auth/presentation/pages/sessions_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/change_password_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/edit_profile_page.dart';
 import 'package:shopxy/features/shop/presentation/pages/shop_operations_page.dart';
+import 'package:shopxy/features/profile/presentation/pages/about_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/legal_page.dart';
 import 'package:shopxy/shared/constants/app_durations.dart';
+import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
@@ -273,8 +275,16 @@ class _SettingsPageState extends State<SettingsPage> {
           const SizedBox(height: AppSizes.sm),
           _SettingRow(
             icon: AppIcons.infoOutlineRounded,
-            title: l10n.profileAppVersion,
-            subtitle: '1.0.0',
+            title: AppStrings.appName,
+            subtitle: AppStrings.appBy,
+            trailing: AppIcon(
+              AppIcons.chevronRightRounded,
+              color: AppColors.subtle,
+            ),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AboutPage()),
+            ),
           ),
           _SettingRow(
             icon: AppIcons.shieldOutlined,
