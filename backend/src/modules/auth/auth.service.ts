@@ -1062,26 +1062,28 @@ export class AuthService {
     if (!valid) return { error: 'invalid_password' as const };
 
     if (user.role === 'OWNER') {
-      // Companies Act §128 + GST §36: books of account must be kept
-      // for 8 financial years. The check MUST be scoped to this user's
-      // own shop — otherwise one merchant's retained invoices would
-      // block every other merchant's account deletion.
+      // A hard delete of the User cascades to their Shop (Shop.ownerUserId is
+      // onDelete: Cascade). That cascade is unsafe for a shop with any data:
+      //   1. Product.shop is onDelete: Restrict, so the cascade hits a foreign-
+      //      key violation and the whole delete fails (the bug this fixes).
+      //   2. Invoice.shop is onDelete: Cascade, so it would silently erase
+      //      invoices that are statutory books of account (Companies Act §128 +
+      //      GST §36 — 8 financial years).
+      // So whenever the owner's shop holds ANY business records, we keep the
+      // records and pseudonymise the identity instead of hard-deleting. The
+      // check is scoped to this user's own shop. Only a genuinely empty shop
+      // (no products, no invoices) is safe to let the cascade remove.
       const ownedShop = await prisma.shop.findUnique({
         where: { ownerUserId: userId },
         select: { id: true },
       });
       if (ownedShop) {
-        const cutoff = new Date();
-        cutoff.setFullYear(cutoff.getFullYear() - 8);
-        const protectedInvoices = await prisma.invoice.count({
-          where: {
-            shopId: ownedShop.id,
-            status: 'CONFIRMED',
-            invoiceDate: { gte: cutoff },
-          },
-        });
-        if (protectedInvoices > 0) {
-          // PII-4 — can't hard-delete (legal retention), so pseudonymise.
+        const [productCount, invoiceCount] = await Promise.all([
+          prisma.product.count({ where: { shopId: ownedShop.id } }),
+          prisma.invoice.count({ where: { shopId: ownedShop.id } }),
+        ]);
+        if (productCount > 0 || invoiceCount > 0) {
+          // PII-4 — can't safely hard-delete, so pseudonymise.
           return this.pseudonymiseAccount(userId);
         }
       }
