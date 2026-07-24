@@ -180,10 +180,10 @@ class ThemePreset {
 
 /// The predefined configs. Edit / add here — nothing downstream changes.
 const List<ThemePreset> kThemePresets = [
-  ThemePreset(id: 'whatsapp', label: 'WhatsApp', palette: AppThemeMode.light),
+  ThemePreset(id: 'classic', label: 'Classic', palette: AppThemeMode.light),
   ThemePreset(
-    id: 'whatsapp_dark',
-    label: 'WhatsApp Dark',
+    id: 'classic_dark',
+    label: 'Classic Dark',
     palette: AppThemeMode.dark,
   ),
   ThemePreset(

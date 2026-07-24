@@ -20,6 +20,18 @@ class AppTypography {
     AppFont font = AppFont.system,
   }) => _build(ink, devanagari: devanagari, font: font);
 
+  /// A single [TextStyle] in [font] — lets a preview render a font choice
+  /// without building (and activating) a whole theme.
+  static TextStyle sampleStyle(
+    AppFont font, {
+    Color? color,
+    double fontSize = 15,
+    FontWeight weight = FontWeight.w600,
+  }) {
+    final base = _baseFor(font).titleMedium ?? const TextStyle();
+    return base.copyWith(color: color, fontSize: fontSize, fontWeight: weight);
+  }
+
   /// Resolve the base (un-tinted) type scale for a font choice.
   static TextTheme _baseFor(AppFont font) {
     switch (font) {
@@ -42,7 +54,7 @@ class AppTypography {
       case AppFont.mono:
         return GoogleFonts.jetBrainsMonoTextTheme();
       case AppFont.system:
-        // Platform system font — SF Pro on iOS, Roboto on Android (WhatsApp).
+        // Platform system font — SF Pro on iOS, Roboto on Android.
         return Typography.material2021(platform: defaultTargetPlatform).black;
     }
   }
@@ -57,7 +69,7 @@ class AppTypography {
     // only the family + weights change.
     final base =
         devanagari ? GoogleFonts.notoSansDevanagariTextTheme() : _baseFor(font);
-    // Lighter, WhatsApp-like weights: headings sit at w600 (not w700) and
+    // Lighter, Lighter weights: headings sit at w600 (not w700) and
     // tracking is near-0 because the system faces are already optically spaced —
     // Inter's tight negative tracking made large text feel dense. Explicit
     // emphasis (.bold/.extraBold) at call sites is unaffected.
