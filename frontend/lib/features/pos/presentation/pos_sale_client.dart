@@ -231,6 +231,14 @@ class PosSaleClient extends ChangeNotifier {
   }
 
   // ── actions ──
+
+  /// Transport-level failures produced by [_send] / [_onDone] — the ONLY cases
+  /// where a scan genuinely never reached the server and must be queued for
+  /// replay on reconnect. A server that *replies* `ok:false` (no open shift,
+  /// override required, a business error, …) is NOT offline — its message must
+  /// surface as-is instead of a misleading "queued, will sync" banner.
+  static const _transportErrors = {'offline', 'disconnected', 'timeout'};
+
   Future<void> scan(String code) async {
     final c = code.trim();
     if (_saleId == null || c.isEmpty) return;
@@ -238,19 +246,28 @@ class PosSaleClient extends ChangeNotifier {
     final opId = _newId();
     final res = await _send('scan', {'saleId': _saleId, 'code': c, 'opId': opId});
     if (_disposed) return;
-    if (res['ok'] != true) {
-      _outbox.add(_QueuedScan(opId, c));
-      _error = 'Offline — scan queued, will sync on reconnect.';
-      notifyListeners();
+    if (res['ok'] == true) {
+      final dataMap = res['data'] as Map<String, dynamic>;
+      if (dataMap['unknown'] == true) {
+        _unknownCode = dataMap['code'] as String?;
+        notifyListeners();
+      } else {
+        _apply(dataMap);
+      }
+      // Drain anything queued during a transient blip now that we're through.
+      if (_outbox.isNotEmpty) unawaited(_flushOutbox());
       return;
     }
-    final dataMap = res['data'] as Map<String, dynamic>;
-    if (dataMap['unknown'] == true) {
-      _unknownCode = dataMap['code'] as String?;
-      notifyListeners();
+    // ok:false — only queue when the socket actually couldn't carry the command.
+    if (_transportErrors.contains(res['error'])) {
+      _outbox.add(_QueuedScan(opId, c));
+      _error = 'Offline — scan queued, will sync on reconnect.';
     } else {
-      _apply(dataMap);
+      // A live server rejection (e.g. "Open a shift before you can scan or
+      // sell.", override required). Show the real reason, don't queue it.
+      _error = _human(res['error']);
     }
+    notifyListeners();
   }
 
   Future<void> _flushOutbox() async {
