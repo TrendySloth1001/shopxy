@@ -14,20 +14,31 @@ import 'package:shopxy/shared/theme/app_palette.dart';
 /// Font personality. Maps to a concrete family in `AppTypography`. (Hindi always
 /// overrides to Noto regardless.)
 enum AppFont {
-  system('System'),
-  rounded('Rounded'),
-  serif('Serif');
+  system('System'), //  SF Pro / Roboto (platform)
+  inter('Inter'), //     clean neutral UI sans
+  rounded('Rounded'), // Nunito — soft, friendly
+  grotesk('Grotesk'), // Space Grotesk — modern geometric
+  dmSans('DM Sans'), //  low-contrast humanist
+  jakarta('Jakarta'), // Plus Jakarta Sans
+  outfit('Outfit'), //   rounded-geometric display sans
+  serif('Serif'), //     Lora — editorial serif
+  slab('Slab'), //       Roboto Slab
+  mono('Mono'); //       JetBrains Mono — techy monospace
 
   const AppFont(this.label);
   final String label;
 }
 
 // ── Axis: icon style ──────────────────────────────────────────────────────────
-/// Icon glyph style. Hugeicons 1.1.7 ships ONLY `strokeRounded`, so [rounded] is
-/// the only value that resolves to real glyphs today; the axis is plumbed
-/// (spec → `AppIcon`) so a second pack drops in behind a new value.
+/// Icon glyph style. `hugeicons` is the app's default (Hugeicons strokeRounded);
+/// the three `material*` styles render Flutter's Material Icons via the codegen
+/// map (`app_icons_material.g.dart`) — any glyph not in the map falls back to
+/// Hugeicons. See `AppIcon`.
 enum AppIconStyle {
-  rounded('Rounded');
+  hugeicons('Default'),
+  materialOutlined('Outlined'),
+  materialRounded('Rounded'),
+  materialSharp('Sharp');
 
   const AppIconStyle(this.label);
   final String label;
@@ -121,7 +132,7 @@ class AppThemeSpec {
   const AppThemeSpec({
     required this.palette,
     this.font = AppFont.system,
-    this.iconStyle = AppIconStyle.rounded,
+    this.iconStyle = AppIconStyle.hugeicons,
     this.radiusScale = 1.0,
     this.density = VisualDensity.standard,
     this.motion = AppMotion.calm,
@@ -151,6 +162,7 @@ class ThemePreset {
     required this.label,
     required this.palette,
     this.font = AppFont.system,
+    this.iconStyle = AppIconStyle.hugeicons,
     this.shape = AppShape.standard,
     this.density = AppDensityChoice.standard,
     this.motion = AppMotionChoice.calm,
@@ -160,6 +172,7 @@ class ThemePreset {
   final String label;
   final AppThemeMode palette;
   final AppFont font;
+  final AppIconStyle iconStyle;
   final AppShape shape;
   final AppDensityChoice density;
   final AppMotionChoice motion;
@@ -186,6 +199,7 @@ const List<ThemePreset> kThemePresets = [
     id: 'sharp',
     label: 'Sharp',
     palette: AppThemeMode.oled,
+    iconStyle: AppIconStyle.materialSharp,
     shape: AppShape.sharp,
     density: AppDensityChoice.compact,
     motion: AppMotionChoice.snappy,

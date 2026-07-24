@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/prefs/theme_prefs.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
@@ -62,6 +64,17 @@ class ThemePage extends StatelessWidget {
                   label: f.label,
                   selected: prefs.font == f,
                   onTap: () => prefs.setFont(f),
+                ),
+            ],
+          ),
+          const _Eyebrow('Icons'),
+          _Wrap(
+            children: [
+              for (final s in AppIconStyle.values)
+                _Pill(
+                  label: s.label,
+                  selected: prefs.iconStyle == s,
+                  onTap: () => prefs.setIconStyle(s),
                 ),
             ],
           ),
@@ -134,9 +147,27 @@ class _PreviewCard extends StatelessWidget {
             Text('The quick brown fox', style: theme.textTheme.headlineSmall),
             const SizedBox(height: AppSizes.xs),
             Text(
-              'A preview of your theme — colour, font, corners, density and '
-              'motion applied live across the app.',
+              'A preview of your theme — colour, font, icons, corners, density '
+              'and motion applied live across the app.',
               style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+            ),
+            const SizedBox(height: AppSizes.md),
+            // Sample icons — reflect the Icons axis live.
+            Row(
+              children: [
+                for (final g in const [
+                  AppIcons.homeOutlined,
+                  AppIcons.receiptLongOutlined,
+                  AppIcons.personOutline,
+                  AppIcons.settingsOutlined,
+                  AppIcons.searchRounded,
+                  AppIcons.deleteOutline,
+                ])
+                  Padding(
+                    padding: const EdgeInsets.only(right: AppSizes.md),
+                    child: AppIcon(g, size: AppSizes.iconLg, color: AppColors.black),
+                  ),
+              ],
             ),
             const SizedBox(height: AppSizes.md),
             Wrap(
