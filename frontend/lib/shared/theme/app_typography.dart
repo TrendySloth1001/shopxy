@@ -23,10 +23,24 @@ class AppTypography {
   /// Resolve the base (un-tinted) type scale for a font choice.
   static TextTheme _baseFor(AppFont font) {
     switch (font) {
+      case AppFont.inter:
+        return GoogleFonts.interTextTheme();
       case AppFont.rounded:
         return GoogleFonts.nunitoTextTheme();
+      case AppFont.grotesk:
+        return GoogleFonts.spaceGroteskTextTheme();
+      case AppFont.dmSans:
+        return GoogleFonts.dmSansTextTheme();
+      case AppFont.jakarta:
+        return GoogleFonts.plusJakartaSansTextTheme();
+      case AppFont.outfit:
+        return GoogleFonts.outfitTextTheme();
       case AppFont.serif:
         return GoogleFonts.loraTextTheme();
+      case AppFont.slab:
+        return GoogleFonts.robotoSlabTextTheme();
+      case AppFont.mono:
+        return GoogleFonts.jetBrainsMonoTextTheme();
       case AppFont.system:
         // Platform system font — SF Pro on iOS, Roboto on Android (WhatsApp).
         return Typography.material2021(platform: defaultTargetPlatform).black;
