@@ -22,7 +22,7 @@ import 'package:shopxy/shared/theme/app_text_styles.dart';
 /// status (approve/reject → picked up → received → refund).
 class MerchantReturnDetailPage extends StatefulWidget {
   const MerchantReturnDetailPage({super.key, required this.returnId});
-  final int returnId;
+  final String returnId;
 
   @override
   State<MerchantReturnDetailPage> createState() =>

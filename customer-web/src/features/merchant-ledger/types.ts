@@ -19,7 +19,7 @@ export const pageMetaSchema = z.object({
 // ─── Invoices ────────────────────────────────────────────────────────────────
 
 export const invoiceListItemSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   invoiceNo: z.string(),
   type: z.string().optional(),
   status: z.string().optional(),
@@ -34,7 +34,7 @@ export const invoiceListItemSchema = z.object({
 export type InvoiceListItem = z.infer<typeof invoiceListItemSchema>;
 
 export const partyRowSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   name: z.string(),
   email: z.string().nullable().optional(),
   phone: z.string().nullable().optional(),
@@ -49,7 +49,7 @@ export const invoicesPageSchema = pageMetaSchema.extend({
 export type InvoicesPage = z.infer<typeof invoicesPageSchema>;
 
 export const invoiceItemSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   productName: z.string(),
   productSku: z.string().nullable().optional(),
   hsn: z.string().nullable().optional(),
@@ -63,7 +63,7 @@ export const invoiceItemSchema = z.object({
 export type InvoiceItem = z.infer<typeof invoiceItemSchema>;
 
 export const invoiceDetailSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   invoiceNo: z.string(),
   type: z.string().optional(),
   status: z.string(),
@@ -87,7 +87,7 @@ export type InvoiceDetail = z.infer<typeof invoiceDetailSchema>;
 // ─── Quotations ──────────────────────────────────────────────────────────────
 
 export const quotationLineSchema = z.object({
-  productId: z.number().nullable().optional(),
+  productId: z.coerce.string().nullable().optional(),
   name: z.string(),
   sku: z.string().nullable().optional(),
   quantity: z.coerce.number(),
@@ -101,9 +101,9 @@ export const quotationLineSchema = z.object({
 export type QuotationLine = z.infer<typeof quotationLineSchema>;
 
 export const quotationSchema = z.object({
-  id: z.number(),
-  shopId: z.number(),
-  partyId: z.number(),
+  id: z.coerce.string(),
+  shopId: z.coerce.string(),
+  partyId: z.coerce.string(),
   quotationNo: z.string(),
   status: z.string(), // REQUESTED | PENDING | ACCEPTED | DECLINED | CANCELLED | EXPIRED
   items: z.array(quotationLineSchema),
@@ -113,13 +113,13 @@ export const quotationSchema = z.object({
   note: z.string().nullable().optional(),
   placeOfSupplyStateCode: z.string().nullable().optional(),
   declineNote: z.string().nullable().optional(),
-  requestedById: z.number().nullable().optional(),
+  requestedById: z.coerce.string().nullable().optional(),
   respondedAt: z.string().nullable().optional(),
-  invoiceId: z.number().nullable().optional(),
+  invoiceId: z.coerce.string().nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string().optional(),
-  party: z.object({ id: z.number(), name: z.string() }).optional(),
-  invoice: z.object({ id: z.number(), invoiceNo: z.string() }).nullable().optional(),
+  party: z.object({ id: z.coerce.string(), name: z.string() }).optional(),
+  invoice: z.object({ id: z.coerce.string(), invoiceNo: z.string() }).nullable().optional(),
 });
 export type Quotation = z.infer<typeof quotationSchema>;
 
@@ -131,7 +131,7 @@ export type QuotationsPage = z.infer<typeof quotationsPageSchema>;
 // ─── Catalog (for request-quote page) ───────────────────────────────────────
 
 export const catalogProductSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   name: z.string(),
   description: z.string().nullable().optional(),
   sku: z.string(),
@@ -140,9 +140,9 @@ export const catalogProductSchema = z.object({
   sellingPrice: z.coerce.number(),
   taxPercent: z.coerce.number().default(0),
   stockQuantity: z.coerce.number().nullable().optional(),
-  categoryId: z.number().nullable().optional(),
-  category: z.object({ id: z.number(), name: z.string(), iconName: z.string().nullable().optional() }).nullable().optional(),
-  images: z.array(z.object({ id: z.number(), url: z.string() })).optional(),
+  categoryId: z.coerce.string().nullable().optional(),
+  category: z.object({ id: z.coerce.string(), name: z.string(), iconName: z.string().nullable().optional() }).nullable().optional(),
+  images: z.array(z.object({ id: z.coerce.string(), url: z.string() })).optional(),
 });
 export type CatalogProduct = z.infer<typeof catalogProductSchema>;
 
@@ -158,7 +158,7 @@ export const catalogPageSchema = z.object({
 export type CatalogPage = z.infer<typeof catalogPageSchema>;
 
 export const catalogCategorySchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   name: z.string(),
   imageUrl: z.string().nullable().optional(),
   iconName: z.string().nullable().optional(),
@@ -169,7 +169,7 @@ export type CatalogCategory = z.infer<typeof catalogCategorySchema>;
 // ─── Basket item (for request-quote submit) ──────────────────────────────────
 
 export interface BasketItem {
-  productId: number;
+  productId: string;
   name: string;
   sku?: string;
   quantity: number;

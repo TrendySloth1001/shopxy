@@ -266,7 +266,7 @@ class _ShiftHistoryCardState extends State<_ShiftHistoryCard> {
     }
   }
 
-  Future<void> _view(int id) async {
+  Future<void> _view(String id) async {
     try {
       final rep = await widget.ds.shiftReport(id);
       if (!mounted) return;
@@ -327,7 +327,7 @@ class _ShiftHistoryCardState extends State<_ShiftHistoryCard> {
                       ),
                     ),
                     trailing: const AppIcon(AppIcons.chevronRightRounded),
-                    onTap: () => _view(_i(s['id'])),
+                    onTap: () => _view(s['id'].toString()),
                   ),
               ],
             ),
@@ -704,7 +704,7 @@ class _ReturnsCard extends StatefulWidget {
 class _ReturnsCardState extends State<_ReturnsCard> {
   final _invoiceId = TextEditingController();
   Map<String, dynamic>? _returnable;
-  final Map<int, TextEditingController> _qty = {};
+  final Map<String, TextEditingController> _qty = {};
   String _refundMode = 'CASH';
 
   @override
@@ -743,8 +743,8 @@ class _ReturnsCardState extends State<_ReturnsCard> {
                 onPressed: widget.busy
                     ? null
                     : () => widget.run(() async {
-                        final id = int.tryParse(_invoiceId.text.trim());
-                        if (id == null) return;
+                        final id = _invoiceId.text.trim();
+                        if (id.isEmpty) return;
                         final r = await widget.ds.returnable(id);
                         if (!mounted) return;
                         setState(() {
@@ -787,7 +787,7 @@ class _ReturnsCardState extends State<_ReturnsCard> {
                       width: 64,
                       child: TextField(
                         controller: _qty.putIfAbsent(
-                          _i(l['productId']),
+                          l['productId'].toString(),
                           () => TextEditingController(),
                         ),
                         keyboardType: TextInputType.number,
@@ -832,7 +832,7 @@ class _ReturnsCardState extends State<_ReturnsCard> {
                       }
                       final messenger = ScaffoldMessenger.of(context);
                       final res = await widget.ds.processReturn(
-                        originalInvoiceId: _i(_returnable!['invoiceId']),
+                        originalInvoiceId: _returnable!['invoiceId'].toString(),
                         refundMode: _refundMode,
                         lines: reqLines,
                       );

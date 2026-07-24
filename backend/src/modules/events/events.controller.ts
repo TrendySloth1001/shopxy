@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { zPublicId } from '../../shared/ids/zPublicId.js';
 import { ProductEventType } from '@prisma/client';
 import { z } from 'zod';
 import { eventsService, IncomingEvent } from './events.service.js';
@@ -17,7 +18,7 @@ const MAX_BATCH = 100;
 const eventSchema = z.object({
   clientUuid: z.string().min(8).max(80),
   eventType: z.enum(EVENT_TYPES),
-  productId: z.number().int().positive(),
+  productId: zPublicId,
   sessionId: z.string().max(80).nullable().optional(),
   source: z.string().max(40).nullable().optional(),
   meta: z.unknown().optional(),

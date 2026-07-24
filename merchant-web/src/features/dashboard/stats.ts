@@ -19,13 +19,13 @@ export const PERIOD_LABEL: Record<DashboardPeriod, string> = {
 
 const transactionSchema = z
   .object({
-    id: z.number(),
-    productId: z.number(),
+    id: z.coerce.string(),
+    productId: z.coerce.string(),
     type: z.string().optional(),
     direction: z.string().optional(),
     quantity: z.coerce.number().default(0),
     sourceType: z.string().nullable().optional(),
-    sourceId: z.number().nullable().optional(),
+    sourceId: z.coerce.string().nullable().optional(),
     createdAt: z.string(),
     product: z.object({ name: z.string().nullable().optional() }).nullable().optional(),
   })
@@ -39,7 +39,7 @@ const kpiMoneySchema = z.object({
 
 const tillSchema = z
   .object({
-    shiftId: z.number(),
+    shiftId: z.coerce.string(),
     openedAt: z.string(),
     salesCount: z.coerce.number().default(0),
     salesGross: z.coerce.number().default(0),

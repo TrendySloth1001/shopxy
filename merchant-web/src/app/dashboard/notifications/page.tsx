@@ -300,7 +300,7 @@ function InvitesTab() {
   const [items, setItems] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [busyId, setBusyId] = useState<number | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = useCallback(() => {
     void (async () => {
@@ -402,7 +402,7 @@ function SentTab() {
   const [items, setItems] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [busyId, setBusyId] = useState<number | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = useCallback(() => {
     void (async () => {

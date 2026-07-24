@@ -16,7 +16,7 @@ class AdminCollectionSummary {
     required this.itemCount,
   });
 
-  final int id;
+  final String id;
   final String slug;
   final String title;
   final String? eyebrow;
@@ -32,7 +32,7 @@ class AdminCollectionSummary {
         ? (j['_count'] as Map)['items'] as int? ?? 0
         : 0;
     return AdminCollectionSummary(
-      id: j['id'] as int,
+      id: j['id'].toString(),
       slug: j['slug'] as String,
       title: j['title'] as String,
       eyebrow: j['eyebrow'] as String?,
@@ -62,7 +62,7 @@ class AdminCollection {
     required this.items,
   });
 
-  final int id;
+  final String id;
   final String slug;
   final String title;
   final String? eyebrow;
@@ -76,7 +76,7 @@ class AdminCollection {
   final List<AdminCollectionItem> items;
 
   factory AdminCollection.fromJson(Map<String, dynamic> j) => AdminCollection(
-        id: j['id'] as int,
+        id: j['id'].toString(),
         slug: j['slug'] as String,
         title: j['title'] as String,
         eyebrow: j['eyebrow'] as String?,
@@ -100,13 +100,13 @@ class AdminCollectionItem {
     required this.product,
   });
 
-  final int id;
+  final String id;
   final int position;
   final AdminCollectionProduct product;
 
   factory AdminCollectionItem.fromJson(Map<String, dynamic> j) =>
       AdminCollectionItem(
-        id: j['id'] as int? ?? 0,
+        id: j['id']?.toString() ?? '',
         position: j['position'] as int? ?? 0,
         product:
             AdminCollectionProduct.fromJson(j['product'] as Map<String, dynamic>),
@@ -122,7 +122,7 @@ class AdminCollectionProduct {
     this.shopName,
   });
 
-  final int id;
+  final String id;
   final String name;
   final String sku;
   final String? imageUrl;
@@ -133,7 +133,7 @@ class AdminCollectionProduct {
     final firstImg = imgs.isEmpty ? null : (imgs.first as Map)['url'] as String?;
     final shop = j['shop'] as Map<String, dynamic>?;
     return AdminCollectionProduct(
-      id: j['id'] as int,
+      id: j['id'].toString(),
       name: j['name'] as String,
       sku: j['sku'] as String,
       imageUrl: firstImg,

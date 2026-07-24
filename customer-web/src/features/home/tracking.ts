@@ -13,7 +13,7 @@ type EventType = "IMPRESSION" | "TAP";
 interface QueuedEvent {
   clientUuid: string;
   eventType: EventType;
-  productId: number;
+  productId: string;
   source: string;
   occurredAt: string;
 }
@@ -52,8 +52,8 @@ function flush(): void {
   });
 }
 
-function enqueue(eventType: EventType, productId: number, source: string): void {
-  if (!Number.isInteger(productId) || productId <= 0) return;
+function enqueue(eventType: EventType, productId: string, source: string): void {
+  if (!productId) return;
   const key = `${eventType}:${productId}`;
   if (eventType === "IMPRESSION") {
     if (seen.has(key)) return;
@@ -67,11 +67,11 @@ function enqueue(eventType: EventType, productId: number, source: string): void 
   }
 }
 
-export function recordImpression(productId: number, source = "home"): void {
+export function recordImpression(productId: string, source = "home"): void {
   enqueue("IMPRESSION", productId, source);
 }
 
-export function recordTap(productId: number, source = "home"): void {
+export function recordTap(productId: string, source = "home"): void {
   enqueue("TAP", productId, source);
 }
 

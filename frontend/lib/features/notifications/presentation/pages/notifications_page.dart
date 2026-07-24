@@ -247,9 +247,7 @@ class _NotificationTile extends StatelessWidget {
     final navigator = Navigator.of(context);
     final quotationsProvider = context.read<QuotationsProvider>();
     final raw = notification.data['quotationId'];
-    final quotationId = raw is int
-        ? raw
-        : (raw == null ? null : int.tryParse('$raw'));
+    final quotationId = raw?.toString();
 
     navigator.push(MaterialPageRoute(builder: (_) => const QuotationsPage()));
     if (quotationId == null) return;

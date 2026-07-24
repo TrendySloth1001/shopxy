@@ -174,7 +174,9 @@ export function ProductForm({ product }: { product?: Product }) {
         ...(o.code?.trim() ? { code: o.code.trim() } : {}),
       }))
       .filter((o) => o.headline);
-    const catNum = categoryId ? Number(categoryId) : undefined;
+    // categoryId is an opaque id (string) — pass it through, never Number() it
+    // (a token isn't numeric; Number(token) would be NaN).
+    const catId = categoryId || undefined;
 
     const base: ProductWritePayload = {
       name: name.trim(),
@@ -224,14 +226,14 @@ export function ProductForm({ product }: { product?: Product }) {
       base.brand = brand.trim() || null;
       base.barcode = barcode.trim() || null;
       base.hsnCode = hsnCode.trim() || null;
-      base.categoryId = catNum ?? null;
+      base.categoryId = catId ?? null;
       base.isActive = isActive;
     } else {
       if (description.trim()) base.description = description.trim();
       if (brand.trim()) base.brand = brand.trim();
       if (barcode.trim()) base.barcode = barcode.trim();
       if (hsnCode.trim()) base.hsnCode = hsnCode.trim();
-      if (catNum) base.categoryId = catNum;
+      if (catId) base.categoryId = catId;
       base.stockQuantity = num(stockQuantity) ?? 0;
       if (imageUrls.length > 0) base.imageUrls = imageUrls;
     }

@@ -30,7 +30,7 @@ class RecentlyViewedMapper {
         : 0;
 
     return ProductCard(
-      productId: _asInt(product['id']) ?? 0,
+      productId: product['id']?.toString() ?? '',
       name: (product['name'] ?? '') as String,
       price: _money(selling),
       originalPrice: mrp != null && mrp > selling ? _money(mrp) : '',

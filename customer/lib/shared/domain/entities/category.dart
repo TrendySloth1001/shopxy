@@ -11,12 +11,12 @@ class Category {
     this.parentId,
   });
 
-  final int id;
+  final String id;
   final String slug;
   final String name;
   final String? imageUrl;
   final String? iconName;
-  final int? parentId;
+  final String? parentId;
 }
 
 /// Tree shape returned by `GET /categories/tree`. Each node carries

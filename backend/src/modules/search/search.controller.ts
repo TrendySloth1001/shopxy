@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { zPublicId } from '../../shared/ids/zPublicId.js';
 import { z } from 'zod';
 import { searchService } from './search.service.js';
 
@@ -6,8 +7,8 @@ const searchSchema = z.object({
   q: z.string().min(1).max(80),
   filters: z
     .object({
-      categoryId: z.number().int().positive().nullable().optional(),
-      shopId: z.number().int().positive().nullable().optional(),
+      categoryId: zPublicId.nullable().optional(),
+      shopId: zPublicId.nullable().optional(),
     })
     .optional(),
   sessionId: z.string().max(80).optional(),

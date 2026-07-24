@@ -10,7 +10,7 @@ import { ProductThumb } from "./product-thumb";
 
 /** Minimal product shape the marketing editors need from the picker. */
 export type PickedProduct = {
-  id: number;
+  id: string;
   name: string;
   sku: string;
   mrp: number;

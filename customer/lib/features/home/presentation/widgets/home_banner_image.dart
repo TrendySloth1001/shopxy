@@ -23,7 +23,7 @@ class HomeBannerImage extends StatelessWidget {
   });
 
   final String url;
-  final int bannerId;
+  final String bannerId;
   final String? linkUrl;
   final int productCount;
   final BorderRadius? borderRadius;

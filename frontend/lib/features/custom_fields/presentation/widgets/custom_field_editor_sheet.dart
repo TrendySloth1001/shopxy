@@ -31,12 +31,12 @@ class CustomFieldEditorSheet extends StatefulWidget {
   });
 
   final CustomFieldDefinition? existing;
-  final int? defaultSectionId;
+  final String? defaultSectionId;
 
   static Future<CustomFieldDefinition?> show(
     BuildContext context, {
     CustomFieldDefinition? existing,
-    int? defaultSectionId,
+    String? defaultSectionId,
   }) {
     return showModalBottomSheet<CustomFieldDefinition>(
       context: context,
@@ -67,7 +67,7 @@ class _CustomFieldEditorSheetState extends State<CustomFieldEditorSheet> {
   );
   late CustomFieldType _type = widget.existing?.type ?? CustomFieldType.TEXT;
   late String? _iconName = widget.existing?.icon;
-  late int? _sectionId = widget.existing?.sectionId ?? widget.defaultSectionId;
+  late String? _sectionId = widget.existing?.sectionId ?? widget.defaultSectionId;
   bool _isSaving = false;
   bool _showIconPalette = false;
 
@@ -256,19 +256,19 @@ class _CustomFieldEditorSheetState extends State<CustomFieldEditorSheet> {
                 ),
                 if (activeSections.isNotEmpty) ...[
                   const SizedBox(height: AppSizes.md),
-                  DropdownButtonFormField<int?>(
+                  DropdownButtonFormField<String?>(
                     initialValue: dropdownSectionValue,
                     decoration: InputDecoration(
                       labelText: l10n.customFieldsSectionOptional,
                       border: const OutlineInputBorder(),
                     ),
                     items: [
-                      DropdownMenuItem<int?>(
+                      DropdownMenuItem<String?>(
                         value: null,
                         child: Text(l10n.customFieldsNoSection),
                       ),
                       for (final s in activeSections)
-                        DropdownMenuItem<int?>(
+                        DropdownMenuItem<String?>(
                           value: s.id,
                           child: Text(s.name),
                         ),

@@ -9,8 +9,8 @@ class ProductImage {
     required this.createdAt,
   });
 
-  final int id;
-  final int productId;
+  final String id;
+  final String productId;
   final String url;
   final int sortOrder;
   final DateTime createdAt;
@@ -57,7 +57,7 @@ class Product {
     this.variants = const [],
   });
 
-  final int id;
+  final String id;
   final String name;
   final String? description;
   final String sku;
@@ -73,7 +73,7 @@ class Product {
   final double stockQuantity;
   final double lowStockThreshold;
   final String unit;
-  final int? categoryId;
+  final String? categoryId;
   final Category? category;
   final bool isActive;
   final DateTime createdAt;
@@ -90,7 +90,7 @@ class Product {
 
   /// Vendor id for the supplier of the most recent STOCK_IN, when the
   /// transaction recorded a real vendor (not a free-text supplier).
-  final int? lastVendorId;
+  final String? lastVendorId;
 
   /// Vendor display name paired with [lastVendorId].
   final String? lastVendorName;
@@ -280,7 +280,7 @@ class ProductVariant {
   });
 
   /// Null for a not-yet-saved variant; the backend assigns on first save.
-  final int? id;
+  final String? id;
   final String sku;
   final String? barcode;
   final Map<String, String> attributes;
@@ -294,7 +294,7 @@ class ProductVariant {
   final int sortOrder;
 
   ProductVariant copyWith({
-    int? id,
+    String? id,
     String? sku,
     String? barcode,
     Map<String, String>? attributes,
@@ -339,7 +339,7 @@ class ProductVariant {
   factory ProductVariant.fromJson(Map<String, dynamic> j) {
     final attrs = (j['attributes'] as Map?) ?? const {};
     return ProductVariant(
-      id: (j['id'] as num?)?.toInt(),
+      id: j['id']?.toString(),
       sku: (j['sku'] as String?) ?? '',
       barcode: j['barcode'] as String?,
       attributes: <String, String>{

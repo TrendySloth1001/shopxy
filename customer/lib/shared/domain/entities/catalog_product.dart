@@ -20,7 +20,7 @@ class CatalogProduct {
     this.shopSlug,
   });
 
-  final int id;
+  final String id;
   final String name;
   final String sku;
   final String unit;
@@ -31,13 +31,13 @@ class CatalogProduct {
   final String? imageUrl;
   final String? description;
   final String? hsnCode;
-  final int? categoryId;
+  final String? categoryId;
   final String? categoryName;
   final String? categoryIconName;
   /// Owning shop id — required for cart-splits-on-checkout. Nullable
   /// because legacy payloads from before the multi-tenant migration
   /// don't carry it; the cart guards against that at placeOrder time.
-  final int? shopId;
+  final String? shopId;
   final String? shopName;
   final String? shopSlug;
 
@@ -84,7 +84,7 @@ class CatalogProduct {
     final shop = j['shop'] as Map<String, dynamic>?;
 
     return CatalogProduct(
-      id: j['id'] as int,
+      id: j['id'].toString(),
       name: j['name'] as String,
       sku: j['sku'] as String,
       unit: j['unit'] as String? ?? 'PCS',
@@ -95,10 +95,10 @@ class CatalogProduct {
       imageUrl: firstImage,
       description: j['description'] as String?,
       hsnCode: j['hsnCode'] as String?,
-      categoryId: j['categoryId'] as int?,
+      categoryId: j['categoryId']?.toString(),
       categoryName: category?['name'] as String?,
       categoryIconName: category?['iconName'] as String?,
-      shopId: (shop?['id'] as int?) ?? (j['shopId'] as int?),
+      shopId: (shop?['id']?.toString()) ?? (j['shopId']?.toString()),
       shopName: shop?['name'] as String?,
       shopSlug: shop?['slug'] as String?,
     );
@@ -113,7 +113,7 @@ class CatalogCategory {
     this.iconName,
     this.productCount = 0,
   });
-  final int id;
+  final String id;
   final String name;
   final String? imageUrl;
   final String? iconName;
@@ -121,7 +121,7 @@ class CatalogCategory {
 
   factory CatalogCategory.fromJson(Map<String, dynamic> j) {
     return CatalogCategory(
-      id: j['id'] as int,
+      id: j['id'].toString(),
       name: j['name'] as String,
       imageUrl: j['imageUrl'] as String?,
       iconName: j['iconName'] as String?,

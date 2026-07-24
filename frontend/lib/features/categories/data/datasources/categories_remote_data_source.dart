@@ -61,7 +61,7 @@ class CategoriesRemoteDataSource {
         .toList();
   }
 
-  Future<Category> getCategory(int id) async {
+  Future<Category> getCategory(String id) async {
     final response = await _client.get('/categories/$id');
     return CategoryDto.fromJson(
       jsonDecode(response.body) as Map<String, dynamic>,
@@ -75,14 +75,14 @@ class CategoriesRemoteDataSource {
     );
   }
 
-  Future<Category> updateCategory(int id, Map<String, dynamic> data) async {
+  Future<Category> updateCategory(String id, Map<String, dynamic> data) async {
     final response = await _client.patch('/categories/$id', body: data);
     return CategoryDto.fromJson(
       jsonDecode(response.body) as Map<String, dynamic>,
     );
   }
 
-  Future<void> deleteCategory(int id) async {
+  Future<void> deleteCategory(String id) async {
     await _client.delete('/categories/$id');
   }
 }

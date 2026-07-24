@@ -1,12 +1,13 @@
 import { Request, Response } from 'express';
+import { zPublicId } from '../../shared/ids/zPublicId.js';
+import { decodeId } from '../../shared/ids/publicId.js';
 import { z } from 'zod';
 import { parsePagination, paginatedResponse } from '../../shared/http/pagination.js';
 import { meService } from './me.service.js';
 import { quotationsService, QuotationStatus } from '../quotations/quotations.service.js';
 
 function parseId(raw: string): number | null {
-  const id = Number(raw);
-  return Number.isInteger(id) && id > 0 ? id : null;
+  return decodeId(raw);
 }
 
 const quotationStatusSchema = z
@@ -20,7 +21,7 @@ const declineQuotationSchema = z.object({
 /// One line in a customer-built quote request (advisory catalogue prices; the
 /// merchant re-prices before sending the quotation back).
 const quoteRequestItemSchema = z.object({
-  productId: z.number().int().positive(),
+  productId: zPublicId,
   name: z.string().max(200),
   sku: z.string().max(120).nullable().optional(),
   quantity: z.number().positive(),

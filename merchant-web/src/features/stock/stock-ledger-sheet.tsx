@@ -28,7 +28,7 @@ export function StockLedgerSheet({
   productUnit,
   onClose,
 }: {
-  productId: number;
+  productId: string;
   productName: string;
   productUnit?: string | null;
   onClose: () => void;

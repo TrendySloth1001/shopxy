@@ -28,13 +28,13 @@ class PartiesRemoteDataSource {
     return data.map((e) => PartyDto.fromJson(e as Map<String, dynamic>)).toList();
   }
 
-  Future<Party> getPartyById(int id) async {
+  Future<Party> getPartyById(String id) async {
     final res = await _client.get('/parties/$id');
     if (res.statusCode != 200) throw Exception('Party not found');
     return PartyDto.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  Future<PartyOverview> getPartyOverview(int id) async {
+  Future<PartyOverview> getPartyOverview(String id) async {
     final res = await _client.get('/parties/$id/overview');
     if (res.statusCode != 200) throw Exception('Party not found');
     return PartyOverviewDto.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
@@ -76,7 +76,7 @@ class PartiesRemoteDataSource {
     return PartyDto.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  Future<Party> updateParty(int id, Map<String, dynamic> data) async {
+  Future<Party> updateParty(String id, Map<String, dynamic> data) async {
     final res = await _client.patch('/parties/$id', body: data);
     if (res.statusCode != 200) {
       final body = jsonDecode(res.body) as Map<String, dynamic>;
@@ -85,7 +85,7 @@ class PartiesRemoteDataSource {
     return PartyDto.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  Future<void> deleteParty(int id) async {
+  Future<void> deleteParty(String id) async {
     final res = await _client.delete('/parties/$id');
     if (res.statusCode != 204) {
       final body = jsonDecode(res.body) as Map<String, dynamic>;

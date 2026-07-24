@@ -37,7 +37,7 @@ class AdminBannersRemoteDataSource {
     return AdminBanner.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  Future<AdminBanner> update(int id, Map<String, dynamic> body) async {
+  Future<AdminBanner> update(String id, Map<String, dynamic> body) async {
     final res = await _client.patch('/admin/banners/$id', body: body);
     if (res.statusCode != 200) {
       throw Exception('Update failed: ${res.body}');
@@ -45,7 +45,7 @@ class AdminBannersRemoteDataSource {
     return AdminBanner.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  Future<void> delete(int id) async {
+  Future<void> delete(String id) async {
     final res = await _client.delete('/admin/banners/$id');
     if (res.statusCode != 204) {
       throw Exception('Delete failed: ${res.body}');

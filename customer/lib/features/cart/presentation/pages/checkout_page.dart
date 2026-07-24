@@ -48,7 +48,7 @@ class CheckoutPage extends StatefulWidget {
 enum _PayAttemptOutcome { paid, pendingConfirmation, dismissed, failed }
 
 class _CheckoutPageState extends State<CheckoutPage> {
-  int? _selectedAddressId;
+  String? _selectedAddressId;
   static const double _deliveryStandard = 0;
 
   /// Validated coupon currently applied — null when no code has been
@@ -99,7 +99,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       await _addAddress();
       return;
     }
-    final picked = await showModalBottomSheet<int>(
+    final picked = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: AppColors.white,
       isScrollControlled: true,
@@ -360,7 +360,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   /// Initiate the gateway payment for [orderId] and open the Razorpay sheet.
   /// A `paid` result is still only the client-side handshake — the backend
   /// webhook is what authoritatively flips the order to PAID.
-  Future<_PayAttemptOutcome> _startOnlinePayment(int orderId) async {
+  Future<_PayAttemptOutcome> _startOnlinePayment(String orderId) async {
     try {
       final cart = context.read<CartProvider>();
       final checkout = await cart.payForOrder(orderId);
@@ -1180,10 +1180,10 @@ class _ItemsByShop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final groups = <int, List<CartItem>>{};
-    final order = <int>[];
+    final groups = <String, List<CartItem>>{};
+    final order = <String>[];
     for (final line in lines) {
-      final shopId = line.product.shopId ?? 0;
+      final shopId = line.product.shopId ?? '';
       if (!groups.containsKey(shopId)) order.add(shopId);
       (groups[shopId] ??= []).add(line);
     }

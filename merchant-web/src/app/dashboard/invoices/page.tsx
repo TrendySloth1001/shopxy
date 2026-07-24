@@ -262,10 +262,10 @@ function InvoicesPageInner() {
   );
 }
 
-/** Parse a positive integer id from a query param, else undefined. */
-function toId(raw: string | null): number | undefined {
-  const n = Number(raw);
-  return Number.isInteger(n) && n > 0 ? n : undefined;
+/** Take an opaque id token from a query param, else undefined. */
+function toId(raw: string | null): string | undefined {
+  const trimmed = raw?.trim();
+  return trimmed ? trimmed : undefined;
 }
 
 /** Only SALE / PURCHASE are valid type filters; anything else means "All". */

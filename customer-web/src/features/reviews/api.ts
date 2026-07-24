@@ -22,13 +22,13 @@ async function jsonOrThrow<T>(
   return parse(await res.json());
 }
 
-export async function fetchReviewSummary(productId: number): Promise<ReviewSummary> {
+export async function fetchReviewSummary(productId: string): Promise<ReviewSummary> {
   const res = await fetch(`/api/products/${productId}/reviews/summary`);
   return jsonOrThrow(res, (raw) => reviewSummarySchema.parse(raw), "Could not load review summary.");
 }
 
 export async function fetchReviews(
-  productId: number,
+  productId: string,
   opts?: { cursor?: number; limit?: number },
 ): Promise<ReviewPage> {
   const qs = new URLSearchParams({ limit: String(opts?.limit ?? 20) });
@@ -38,7 +38,7 @@ export async function fetchReviews(
 }
 
 export async function submitReview(
-  productId: number,
+  productId: string,
   payload: { rating: number; title?: string; body?: string },
 ): Promise<Review> {
   const res = await fetch(`/api/products/${productId}/reviews`, {
@@ -49,7 +49,7 @@ export async function submitReview(
   return jsonOrThrow(res, (raw) => reviewSchema.parse(raw), "Could not submit review.");
 }
 
-export async function deleteReview(productId: number): Promise<void> {
+export async function deleteReview(productId: string): Promise<void> {
   const res = await fetch(`/api/products/${productId}/reviews/mine`, {
     method: "DELETE",
   });

@@ -22,7 +22,7 @@ export function listAdjustments(opts?: { reasonCode?: string }): Promise<Adjustm
   );
 }
 
-export function getAdjustment(id: number): Promise<Adjustment> {
+export function getAdjustment(id: string): Promise<Adjustment> {
   return fetch(`/api/stock-adjustments/${id}`, { cache: "no-store" }).then((r) =>
     jsonOrThrow(r, (raw) => adjustmentSchema.parse(raw), "Could not load the adjustment."),
   );
@@ -32,7 +32,7 @@ export function createAdjustment(input: {
   reasonCode: string;
   direction: "IN" | "OUT";
   note?: string;
-  items: { productId: number; quantity: number }[];
+  items: { productId: string; quantity: number }[];
 }): Promise<Adjustment> {
   return fetch("/api/stock-adjustments", {
     method: "POST",
@@ -41,7 +41,7 @@ export function createAdjustment(input: {
   }).then((r) => jsonOrThrow(r, (raw) => adjustmentSchema.parse(raw), "Could not post the adjustment."));
 }
 
-export async function reverseAdjustment(id: number, note?: string): Promise<void> {
+export async function reverseAdjustment(id: string, note?: string): Promise<void> {
   const res = await fetch(`/api/stock-adjustments/${id}/reverse`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

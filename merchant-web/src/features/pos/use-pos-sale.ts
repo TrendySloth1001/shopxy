@@ -48,7 +48,7 @@ export function usePosSale() {
   const [error, setError] = useState<string | null>(null);
   const [unknownCode, setUnknownCode] = useState<string | null>(null);
   const [checkout, setCheckout] = useState<CheckoutResult | null>(null);
-  const [onlinePaid, setOnlinePaid] = useState<{ amount: number; invoiceId: number | null } | null>(null);
+  const [onlinePaid, setOnlinePaid] = useState<{ amount: number; invoiceId: string | null } | null>(null);
   const [paying, setPaying] = useState(false);
   const [pending, setPending] = useState(0);
   // Amount of an in-flight online payment (set while Razorpay Checkout is open).
@@ -59,7 +59,7 @@ export function usePosSale() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const connectRef = useRef<() => void>(() => {});
   const startedRef = useRef(false);
-  const saleIdRef = useRef<number | null>(null);
+  const saleIdRef = useRef<string | null>(null);
   const versionRef = useRef(-1);
   const pendingCmds = useRef<Map<string, Pending>>(new Map());
   // Scans that failed while disconnected — replayed on reconnect (opId-deduped).
@@ -153,7 +153,7 @@ export function usePosSale() {
           return;
         }
         if (typeof msg !== "object" || msg === null) return;
-        const m = msg as { t?: string; reqId?: string; type?: string; saleId?: number; invoiceId?: number };
+        const m = msg as { t?: string; reqId?: string; type?: string; saleId?: string; invoiceId?: string };
         if (m.t === "res" && typeof m.reqId === "string") {
           const p = pendingCmds.current.get(m.reqId);
           if (p) {
@@ -165,7 +165,7 @@ export function usePosSale() {
         }
         // An online payment settled (webhook → pos.checkout) → flip to paid.
         if (m.type === "pos.checkout" && m.saleId === saleIdRef.current && onlineRef.current != null) {
-          setOnlinePaid({ amount: onlineRef.current, invoiceId: typeof m.invoiceId === "number" ? m.invoiceId : null });
+          setOnlinePaid({ amount: onlineRef.current, invoiceId: typeof m.invoiceId === "string" ? m.invoiceId : null });
           onlineRef.current = null;
         }
         // Version-nudge events for our sale → re-fetch.
@@ -248,7 +248,7 @@ export function usePosSale() {
     [sendCmd, applySnapshot, t],
   );
 
-  const addItem = useCallback((productId: number, quantity = 1) => runSnap("addItem", { productId, quantity }), [runSnap]);
+  const addItem = useCallback((productId: string, quantity = 1) => runSnap("addItem", { productId, quantity }), [runSnap]);
   const searchProducts = useCallback(
     async (term: string): Promise<ProductSearchResult[]> => {
       const r = await sendCmd("search", { term });
@@ -259,8 +259,8 @@ export function usePosSale() {
     [sendCmd],
   );
 
-  const setQty = useCallback((productId: number, quantity: number) => runSnap("setQty", { productId, quantity }), [runSnap]);
-  const removeItem = useCallback((productId: number) => runSnap("removeLine", { productId }), [runSnap]);
+  const setQty = useCallback((productId: string, quantity: number) => runSnap("setQty", { productId, quantity }), [runSnap]);
+  const removeItem = useCallback((productId: string) => runSnap("removeLine", { productId }), [runSnap]);
 
   // Privileged actions (discounts) — return overrideRequired so the till can
   // prompt for a manager grant and retry with the `override` token.
@@ -282,7 +282,7 @@ export function usePosSale() {
     },
     [sendCmd, applySnapshot, t],
   );
-  const setLineDiscount = useCallback((productId: number, discount: number, override?: string) => runPrivileged("setLineDiscount", { productId, discount, override }), [runPrivileged]);
+  const setLineDiscount = useCallback((productId: string, discount: number, override?: string) => runPrivileged("setLineDiscount", { productId, discount, override }), [runPrivileged]);
   const setHeaderDiscount = useCallback((discount: number, override?: string) => runPrivileged("setHeaderDiscount", { discount, override }), [runPrivileged]);
 
   const quickAdd = useCallback(
@@ -371,7 +371,7 @@ export function usePosSale() {
 
   // Recall a parked bill by id (make it the active cart).
   const recall = useCallback(
-    async (saleId: number) => {
+    async (saleId: string) => {
       setError(null);
       versionRef.current = -1;
       const r = await sendCmd("snapshot", { saleId });

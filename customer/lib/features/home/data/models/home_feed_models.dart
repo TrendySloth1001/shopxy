@@ -24,7 +24,7 @@ class HeroSlide {
     this.productCount = 0,
   });
 
-  final int id;
+  final String id;
 
   /// Server-relative or absolute. Rendered through `NetworkImageBox`.
   final String imageUrl;
@@ -47,7 +47,7 @@ class CategoryPuck {
     required this.imageUrl,
     required this.tint,
   });
-  final int categoryId;
+  final String categoryId;
   final String slug;
   final String label;
 
@@ -78,7 +78,7 @@ class ProductCard {
     this.freeDelivery = true,
   });
 
-  final int productId;
+  final String productId;
   final String name;
   final String price;
   final String originalPrice;

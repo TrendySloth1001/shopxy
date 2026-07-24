@@ -28,7 +28,7 @@ const PAGE_SIZE = 20;
 export default function CategoryProductsPage() {
   const t = useTranslations("categories");
   const params = useParams<{ id: string }>();
-  const id = Number(params.id);
+  const id = params.id;
 
   const [node, setNode] = useState<CategoryNode | null>(null);
   const [ancestors, setAncestors] = useState<CategoryNode[]>([]);

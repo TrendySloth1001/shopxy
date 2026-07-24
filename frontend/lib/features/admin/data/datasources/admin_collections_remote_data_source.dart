@@ -22,7 +22,7 @@ class AdminCollectionsRemoteDataSource {
         .toList();
   }
 
-  Future<AdminCollection> getOne(int id) async {
+  Future<AdminCollection> getOne(String id) async {
     final res = await _client.get('/admin/collections/$id');
     if (res.statusCode != 200) {
       throw Exception('Failed to load collection: ${res.body}');
@@ -40,7 +40,7 @@ class AdminCollectionsRemoteDataSource {
     );
   }
 
-  Future<AdminCollectionSummary> update(int id, Map<String, dynamic> body) async {
+  Future<AdminCollectionSummary> update(String id, Map<String, dynamic> body) async {
     final res = await _client.patch('/admin/collections/$id', body: body);
     if (res.statusCode != 200) {
       throw Exception('Update failed: ${res.body}');
@@ -50,7 +50,7 @@ class AdminCollectionsRemoteDataSource {
     );
   }
 
-  Future<void> delete(int id) async {
+  Future<void> delete(String id) async {
     final res = await _client.delete('/admin/collections/$id');
     if (res.statusCode != 204) {
       throw Exception('Delete failed: ${res.body}');
@@ -61,8 +61,8 @@ class AdminCollectionsRemoteDataSource {
   /// on the client. See backend collections.service.replaceItems for
   /// the transactional guarantees.
   Future<List<AdminCollectionItem>> replaceItems(
-    int id,
-    List<({int productId, int position})> items,
+    String id,
+    List<({String productId, int position})> items,
   ) async {
     final res = await _client.put(
       '/admin/collections/$id/items',

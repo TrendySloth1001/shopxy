@@ -50,7 +50,7 @@ import 'package:shopxy_customer/shared/constants/app_curves.dart';
 /// rather than living inline at the top.
 class OrderDetailPage extends StatefulWidget {
   const OrderDetailPage({super.key, required this.orderId});
-  final int orderId;
+  final String orderId;
 
   @override
   State<OrderDetailPage> createState() => _OrderDetailPageState();
@@ -63,11 +63,11 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
 
   /// Tracks which child id is mid-cancel so the right button shows the
   /// spinner — multiple shops can be cancelled in sequence.
-  int? _cancellingChildId;
+  String? _cancellingChildId;
 
   /// Tracks which child id is mid-download so the right invoice icon
   /// can render a spinner.
-  int? _downloadingChildId;
+  String? _downloadingChildId;
 
   /// In-flight reorder request — disables the "Buy again" button to
   /// avoid double-submission.
@@ -379,8 +379,8 @@ class _Body extends StatelessWidget {
     required this.onReturnSubmitted,
   });
   final CustomerOrderDetail order;
-  final int? cancellingChildId;
-  final int? downloadingChildId;
+  final String? cancellingChildId;
+  final String? downloadingChildId;
   final bool reordering;
   final Future<void> Function(ShopOrderDetail child) onCancelShop;
   final Future<void> Function(ShopOrderDetail child) onDownloadInvoice;
@@ -878,7 +878,7 @@ class _ShopOrderCard extends StatelessWidget {
   final bool downloading;
   final VoidCallback onCancel;
   final VoidCallback onDownloadInvoice;
-  final int parentOrderId;
+  final String parentOrderId;
   final VoidCallback onReturnSubmitted;
 
   /// 1-based package number when the order has multiple vendors. Null
@@ -1203,7 +1203,7 @@ class _InvoiceFooter extends StatelessWidget {
     required this.onDownload,
   });
   final OrderInvoiceRef invoice;
-  final int? linkedPartyId;
+  final String? linkedPartyId;
   final String? shopName;
   final bool downloading;
   final VoidCallback onDownload;

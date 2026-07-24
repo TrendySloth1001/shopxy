@@ -41,8 +41,8 @@ class PosSaleClient extends ChangeNotifier {
   String? _checkoutInvoiceNo;
   String? get checkoutInvoiceNo => _checkoutInvoiceNo;
 
-  int? _checkoutInvoiceId;
-  int? get checkoutInvoiceId => _checkoutInvoiceId;
+  String? _checkoutInvoiceId;
+  String? get checkoutInvoiceId => _checkoutInvoiceId;
 
   // Amount of an in-flight online payment (set while Razorpay Checkout is open).
   double? _onlineAmount;
@@ -59,7 +59,7 @@ class PosSaleClient extends ChangeNotifier {
   Timer? _retry;
   bool _disposed = false;
   bool _flushing = false;
-  int? _saleId;
+  String? _saleId;
   int _appliedVersion = -1;
   int _seq = 0;
 
@@ -147,12 +147,12 @@ class PosSaleClient extends ChangeNotifier {
     }
     final type = msg['type'];
     // An online payment settled (webhook → pos.checkout) → mark paid.
-    if (type == 'pos.checkout' && msg['saleId'] == _saleId && _onlineAmount != null) {
+    if (type == 'pos.checkout' && msg['saleId']?.toString() == _saleId && _onlineAmount != null) {
       _onlinePaidAmount = _onlineAmount;
       _onlineAmount = null;
       notifyListeners();
     }
-    if ((type == 'pos.sale' || type == 'pos.checkout' || type == 'pos.void') && msg['saleId'] == _saleId) {
+    if ((type == 'pos.sale' || type == 'pos.checkout' || type == 'pos.void') && msg['saleId']?.toString() == _saleId) {
       unawaited(_refresh());
     }
   }
@@ -194,7 +194,7 @@ class PosSaleClient extends ChangeNotifier {
   }
 
   /// Recall a parked bill by id (make it the active cart).
-  Future<void> recall(int saleId) async {
+  Future<void> recall(String saleId) async {
     _appliedVersion = -1;
     final res = await _send('snapshot', {'saleId': saleId});
     if (res['ok'] == true && !_disposed) _apply(res['data'] as Map<String, dynamic>);
@@ -209,7 +209,7 @@ class PosSaleClient extends ChangeNotifier {
   }
 
   /// Add a product by id (from search), bumping its line quantity.
-  Future<void> addItem(int productId, {double quantity = 1}) async {
+  Future<void> addItem(String productId, {double quantity = 1}) async {
     if (_saleId == null) return;
     _error = null;
     final res = await _send('addItem', {'saleId': _saleId, 'productId': productId, 'quantity': quantity});
@@ -284,8 +284,8 @@ class PosSaleClient extends ChangeNotifier {
     }
   }
 
-  Future<void> setQty(int productId, double quantity) => _runSnap('setQty', {'productId': productId, 'quantity': quantity});
-  Future<void> removeItem(int productId) => _runSnap('removeLine', {'productId': productId});
+  Future<void> setQty(String productId, double quantity) => _runSnap('setQty', {'productId': productId, 'quantity': quantity});
+  Future<void> removeItem(String productId) => _runSnap('removeLine', {'productId': productId});
 
   Future<void> quickAdd({
     required String code,
@@ -314,7 +314,7 @@ class PosSaleClient extends ChangeNotifier {
     }
   }
 
-  Future<void> setLineDiscount(int productId, double discount) =>
+  Future<void> setLineDiscount(String productId, double discount) =>
       _runSnap('setLineDiscount', {'productId': productId, 'discount': discount});
   Future<void> setHeaderDiscount(double discount) =>
       _runSnap('setHeaderDiscount', {'discount': discount});
@@ -332,7 +332,7 @@ class PosSaleClient extends ChangeNotifier {
     if (res['ok'] == true) {
       final data = res['data'] as Map<String, dynamic>;
       _checkoutInvoiceNo = data['invoiceNo'] as String? ?? '—';
-      _checkoutInvoiceId = data['invoiceId'] as int?;
+      _checkoutInvoiceId = data['invoiceId']?.toString();
       notifyListeners();
     } else {
       _error = _human(res['error']);

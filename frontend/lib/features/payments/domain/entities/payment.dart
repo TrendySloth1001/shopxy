@@ -20,7 +20,7 @@ class Payment {
     required this.updatedAt,
   });
 
-  final int id;
+  final String id;
 
   /// 'RECEIPT' (money in) or 'PAYMENT' (money out).
   final String type;
@@ -31,11 +31,11 @@ class Payment {
   final String mode;
   final String? modeReference;
   final DateTime paymentDate;
-  final int? partyId;
+  final String? partyId;
   final String? partyName;
-  final int? vendorId;
+  final String? vendorId;
   final String? vendorName;
-  final int? invoiceId;
+  final String? invoiceId;
   final String? invoiceNo;
   final String? note;
   final DateTime createdAt;
@@ -67,7 +67,7 @@ class LedgerEntry {
 
   /// 'invoice' or 'payment'.
   final String kind;
-  final int id;
+  final String id;
   final DateTime date;
   final String label;
   final double debit;
@@ -78,7 +78,7 @@ class LedgerEntry {
   final String? mode;
   final String? modeReference;
   final String? note;
-  final int? invoiceId;
+  final String? invoiceId;
 
   // Invoice-only fields.
   final String? documentType;

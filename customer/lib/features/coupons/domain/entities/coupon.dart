@@ -9,11 +9,11 @@ double _d(dynamic v) {
 
 class CouponShop {
   const CouponShop({required this.id, required this.name, required this.slug});
-  final int id;
+  final String id;
   final String name;
   final String slug;
   factory CouponShop.fromJson(Map<String, dynamic> j) => CouponShop(
-        id: j['id'] as int,
+        id: j['id'].toString(),
         name: (j['name'] as String?) ?? '',
         slug: (j['slug'] as String?) ?? '',
       );
@@ -37,7 +37,7 @@ class Coupon {
     this.shop,
   });
 
-  final int id;
+  final String id;
   final String code;
   final String title;
   final String? description;
@@ -79,7 +79,7 @@ class Coupon {
       minOrderAmount > 0 ? 'Min cart ${AppFormat.rupees(minOrderAmount)}' : '';
 
   factory Coupon.fromJson(Map<String, dynamic> j) => Coupon(
-        id: j['id'] as int,
+        id: j['id'].toString(),
         code: j['code'] as String,
         title: (j['title'] as String?) ?? '',
         description: j['description'] as String?,
@@ -119,7 +119,7 @@ class CouponPreview {
   });
 
   final bool ok;
-  final int? couponId;
+  final String? couponId;
   final String? code;
   final String? title;
   final String? discountType;
@@ -147,7 +147,7 @@ class CouponPreview {
       final c = j['coupon'] as Map<String, dynamic>;
       return CouponPreview(
         ok: true,
-        couponId: c['id'] as int,
+        couponId: c['id'].toString(),
         code: c['code'] as String,
         title: c['title'] as String,
         discountType: c['discountType'] as String,

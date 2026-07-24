@@ -32,7 +32,7 @@ function MyReviewsBody() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Editing state
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const load = useCallback((reset: boolean, cursor?: number) => {
     if (reset) setLoading(true);
@@ -72,7 +72,7 @@ function MyReviewsBody() {
     return () => window.removeEventListener("scroll", onScroll);
   }, [nextCursor, loadingMore, load]);
 
-  function handleDelete(productId: number) {
+  function handleDelete(productId: string) {
     setRows((prev) => prev.filter((r) => r.productId !== productId));
     deleteReview(productId).catch(() => load(true));
   }

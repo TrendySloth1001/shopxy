@@ -19,7 +19,7 @@ import 'package:shopxy_customer/core/icons/app_icon.dart';
 /// nothing (no rail when there's no cohort).
 class PdpFbtRail extends StatefulWidget {
   const PdpFbtRail({super.key, required this.productId});
-  final int productId;
+  final String productId;
 
   @override
   State<PdpFbtRail> createState() => _PdpFbtRailState();

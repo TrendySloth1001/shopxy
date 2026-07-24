@@ -13,7 +13,7 @@ export type PickerRow = { title: string; subtitle?: string; meta?: string };
  * on each query; `rowOf` maps a result to its display row; `onPick` returns the
  * full entity so the caller keeps every field it needs.
  */
-export function PickerModal<T extends { id: number }>({
+export function PickerModal<T extends { id: string }>({
   title,
   placeholder,
   load,

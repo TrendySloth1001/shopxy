@@ -53,7 +53,7 @@ export interface RazorpayClientParams {
 
 /** Pay-session envelope returned by the `payOnline` POS command. */
 export interface PaySession {
-  intentId: number;
+  intentId: string;
   provider: string;
   providerOrderRef: string;
   /** Rupees (major units). */

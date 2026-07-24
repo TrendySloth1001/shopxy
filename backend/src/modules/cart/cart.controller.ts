@@ -1,11 +1,10 @@
 import type { Request, Response } from 'express';
+import { decodeId } from '../../shared/ids/publicId.js';
 import { cartService } from './cart.service.js';
 
 function parseId(value: unknown): number | null {
   if (typeof value !== 'string') return null;
-  const n = Number(value);
-  if (!Number.isFinite(n) || n <= 0 || !Number.isInteger(n)) return null;
-  return n;
+  return decodeId(value);
 }
 
 function parseQuantity(value: unknown): number | null {

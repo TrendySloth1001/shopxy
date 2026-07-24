@@ -27,7 +27,7 @@ class MerchantCoupon {
     this.maxDiscount,
   });
 
-  final int id;
+  final String id;
   final String code;
   final String title;
   final String? description;
@@ -57,7 +57,7 @@ class MerchantCoupon {
 
   factory MerchantCoupon.fromJson(Map<String, dynamic> j) {
     return MerchantCoupon(
-      id: (j['id'] as num).toInt(),
+      id: j['id'].toString(),
       code: j['code'] as String,
       title: j['title'] as String,
       description: j['description'] as String?,

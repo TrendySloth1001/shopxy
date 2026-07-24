@@ -13,7 +13,7 @@ class BannerDetailRemoteDataSource {
   const BannerDetailRemoteDataSource(this._client);
   final ApiClient _client;
 
-  Future<BannerDetail> fetchBannerDetail(int id) async {
+  Future<BannerDetail> fetchBannerDetail(String id) async {
     final res = await _client.get('/banners/$id');
     if (res.statusCode == 404) {
       throw Exception('Banner not found');

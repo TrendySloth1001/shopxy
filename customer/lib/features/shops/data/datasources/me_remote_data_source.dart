@@ -62,7 +62,7 @@ class MeRemoteDataSource {
 
   Future<ShopInvoiceDetail> invoiceDetail(
     LinkedShop shop,
-    int invoiceId,
+    String invoiceId,
   ) async {
     final path = shop.role == ShopRole.party
         ? '/me/parties/${shop.id}/invoices/$invoiceId'
@@ -96,7 +96,7 @@ class MeRemoteDataSource {
   }
 
   /// Accept a quotation → the shop turns it into a confirmed invoice.
-  Future<ShopQuotation> acceptQuotation(LinkedShop shop, int quotationId) async {
+  Future<ShopQuotation> acceptQuotation(LinkedShop shop, String quotationId) async {
     final res = await _client.post(
       '/me/parties/${shop.id}/quotations/$quotationId/accept',
     );
@@ -108,7 +108,7 @@ class MeRemoteDataSource {
 
   Future<ShopQuotation> declineQuotation(
     LinkedShop shop,
-    int quotationId, {
+    String quotationId, {
     String? declineNote,
   }) async {
     final res = await _client.post(
@@ -144,7 +144,7 @@ class MeRemoteDataSource {
   }
 
   /// Download a quotation as PDF bytes (shop-sent or customer-requested).
-  Future<Uint8List> downloadQuotationPdf(LinkedShop shop, int quotationId) async {
+  Future<Uint8List> downloadQuotationPdf(LinkedShop shop, String quotationId) async {
     final res = await _client
         .get('/me/parties/${shop.id}/quotations/$quotationId/pdf');
     if (res.statusCode != 200) {
@@ -154,7 +154,7 @@ class MeRemoteDataSource {
   }
 
   /// Withdraw a quote request that's still awaiting the shop.
-  Future<ShopQuotation> cancelQuotation(LinkedShop shop, int quotationId) async {
+  Future<ShopQuotation> cancelQuotation(LinkedShop shop, String quotationId) async {
     final res = await _client.post(
       '/me/parties/${shop.id}/quotations/$quotationId/cancel',
     );

@@ -58,7 +58,7 @@ export default function ProductDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const productId = Number(id);
+  const productId = id;
   const router = useRouter();
   const { user } = useAuth();
   const t = useTranslations("products");
@@ -74,7 +74,7 @@ export default function ProductDetailPage({
   const [stockSheet, setStockSheet] = useState<StockType | null>(null);
   const [ledgerOpen, setLedgerOpen] = useState(false);
   // The just-created draft (this session) — used to highlight + scroll its row.
-  const [draftId, setDraftId] = useState<number | null>(null);
+  const [draftId, setDraftId] = useState<string | null>(null);
   // All unconfirmed drafts touching this product. Server-backed, so they
   // persist across reloads instead of vanishing with the in-session banner.
   const [drafts, setDrafts] = useState<Invoice[]>([]);

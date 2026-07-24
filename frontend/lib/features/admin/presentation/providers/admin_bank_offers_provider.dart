@@ -34,12 +34,12 @@ class AdminBankOffersProvider extends ChangeNotifier {
     await load();
   }
 
-  Future<void> update(int id, Map<String, dynamic> body) async {
+  Future<void> update(String id, Map<String, dynamic> body) async {
     await _ds.update(id, body);
     await load();
   }
 
-  Future<void> deactivate(int id) async {
+  Future<void> deactivate(String id) async {
     await _ds.deactivate(id);
     await load();
   }

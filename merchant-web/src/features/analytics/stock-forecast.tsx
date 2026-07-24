@@ -10,7 +10,7 @@ import { listProducts } from "@/features/products/api";
 const VELOCITY_DAYS = 30;
 
 type Forecast = {
-  id: number;
+  id: string;
   name: string;
   sku?: string;
   stock: number;

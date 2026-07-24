@@ -18,7 +18,7 @@ class CreateInvoiceResult {
   final Invoice invoice;
   final bool confirmed;
   final String? confirmError;
-  final int? shortfallProductId;
+  final String? shortfallProductId;
 }
 
 /// One page of the invoice list plus enough pagination context for the
@@ -40,8 +40,8 @@ class InvoicesRemoteDataSource {
     String? type,
     String? status,
     String? documentType,
-    int? vendorId,
-    int? productId,
+    String? vendorId,
+    String? productId,
     String? search,
     int page = 1,
     int limit = 20,
@@ -50,8 +50,8 @@ class InvoicesRemoteDataSource {
     if (type != null) params['type'] = type;
     if (status != null) params['status'] = status;
     if (documentType != null) params['documentType'] = documentType;
-    if (vendorId != null) params['vendorId'] = '$vendorId';
-    if (productId != null) params['productId'] = '$productId';
+    if (vendorId != null) params['vendorId'] = vendorId;
+    if (productId != null) params['productId'] = productId;
     if (search != null && search.isNotEmpty) params['search'] = search;
     final res = await _client.get('/invoices', queryParameters: params);
     if (res.statusCode != 200) {
@@ -75,8 +75,8 @@ class InvoicesRemoteDataSource {
     String? type,
     String? status,
     String? documentType,
-    int? vendorId,
-    int? productId,
+    String? vendorId,
+    String? productId,
     String? search,
     int page = 1,
     int limit = 20,
@@ -94,7 +94,7 @@ class InvoicesRemoteDataSource {
     return result.items;
   }
 
-  Future<Invoice> getInvoiceById(int id) async {
+  Future<Invoice> getInvoiceById(String id) async {
     final res = await _client.get('/invoices/$id');
     if (res.statusCode != 200) throw Exception('Invoice not found');
     return InvoiceDto.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
@@ -107,8 +107,8 @@ class InvoicesRemoteDataSource {
   /// landed as a draft but the confirm step failed.
   Future<CreateInvoiceResult> createInvoice({
     required String type,
-    int? vendorId,
-    int? partyId,
+    String? vendorId,
+    String? partyId,
     String? customerName,
     String? customerPhone,
     String? customerGstin,
@@ -148,7 +148,7 @@ class InvoicesRemoteDataSource {
       invoice: invoice,
       confirmed: confirmed,
       confirmError: errMap?['error'] as String?,
-      shortfallProductId: errMap?['productId'] as int?,
+      shortfallProductId: errMap?['productId']?.toString(),
     );
   }
 
@@ -156,10 +156,10 @@ class InvoicesRemoteDataSource {
   /// invoices; reuses the create payload shape so the only call-site
   /// difference is the HTTP verb.
   Future<Invoice> updateInvoice({
-    required int id,
+    required String id,
     required String type,
-    int? vendorId,
-    int? partyId,
+    String? vendorId,
+    String? partyId,
     String? customerName,
     String? customerPhone,
     String? customerGstin,
@@ -192,7 +192,7 @@ class InvoicesRemoteDataSource {
     return InvoiceDto.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  Future<Invoice> updateStatus(int id, String status) async {
+  Future<Invoice> updateStatus(String id, String status) async {
     final res = await _client.patch(
       '/invoices/$id/status',
       body: {'status': status},
@@ -207,7 +207,7 @@ class InvoicesRemoteDataSource {
   /// Convert an ESTIMATE / PROFORMA quotation into a real TAX_INVOICE.
   /// Backend mints a brand new invoice (new number, new id) from the
   /// source's items; the source row is left untouched.
-  Future<Invoice> convertEstimate(int id) async {
+  Future<Invoice> convertEstimate(String id) async {
     final res = await _client.post('/invoices/$id/convert');
     if (res.statusCode != 201) {
       final body = jsonDecode(res.body) as Map<String, dynamic>;
@@ -222,8 +222,8 @@ class InvoicesRemoteDataSource {
   /// credit note reverses the original price and — unless [restock] is false —
   /// puts the goods back on the shelf; a debit note adds value only. Returns
   /// the freshly-minted note's id / number / total for the confirmation toast.
-  Future<({int id, String invoiceNo, double total})> issueNote(
-    int originalInvoiceId, {
+  Future<({String id, String invoiceNo, double total})> issueNote(
+    String originalInvoiceId, {
     required String documentType,
     String? reason,
     bool? restock,
@@ -244,13 +244,13 @@ class InvoicesRemoteDataSource {
     }
     final j = jsonDecode(res.body) as Map<String, dynamic>;
     return (
-      id: j['id'] as int,
+      id: j['id'].toString(),
       invoiceNo: j['invoiceNo'] as String,
       total: double.tryParse('${j['total']}') ?? 0,
     );
   }
 
-  Future<void> deleteInvoice(int id) async {
+  Future<void> deleteInvoice(String id) async {
     final res = await _client.delete('/invoices/$id');
     if (res.statusCode != 204) {
       final body = jsonDecode(res.body) as Map<String, dynamic>;
@@ -263,7 +263,7 @@ class InvoicesRemoteDataSource {
   /// attached — calling [http.get] directly here hit the `ownerOnly`
   /// middleware and returned 401, which surfaced as "Failed to generate
   /// PDF" in the UI.
-  Future<http.Response> downloadPdf(int id) {
+  Future<http.Response> downloadPdf(String id) {
     return _client.get('/invoices/$id/pdf');
   }
 }

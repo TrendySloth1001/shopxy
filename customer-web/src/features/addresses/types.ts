@@ -3,7 +3,7 @@ import { z } from "zod";
 // ── UserAddress ───────────────────────────────────────────────────────────────
 
 export const userAddressSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   label: z.string().nullable().optional(),
   fullName: z.string(),
   phone: z.string(),

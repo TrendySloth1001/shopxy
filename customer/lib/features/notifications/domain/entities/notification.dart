@@ -11,7 +11,7 @@ class AppNotification {
     required this.createdAt,
   });
 
-  final int id;
+  final String id;
   final String kind;
   final String title;
   final String? body;
@@ -26,15 +26,14 @@ class AppNotification {
       kind == 'INVITE_DECLINED' ||
       kind == 'INVITE_CANCELLED';
 
-  int? get invitationId {
+  String? get invitationId {
     final v = data['invitationId'];
-    if (v is int) return v;
-    if (v is num) return v.toInt();
-    return null;
+    if (v == null) return null;
+    return v.toString();
   }
 
   factory AppNotification.fromJson(Map<String, dynamic> j) => AppNotification(
-        id: j['id'] as int,
+        id: j['id'].toString(),
         kind: j['kind'] as String,
         title: j['title'] as String,
         body: j['body'] as String?,

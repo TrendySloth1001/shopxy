@@ -9,7 +9,7 @@
 /** A home banner — a merchant/admin-uploaded image and where it links to. */
 export interface HeroSlide {
   /** Server-side Banner id. */
-  bannerId: number;
+  bannerId: string;
   imageUrl: string;
   /** Optional click-through: a relative app path or absolute URL. */
   linkUrl: string | null;
@@ -18,7 +18,7 @@ export interface HeroSlide {
 }
 
 export interface CategoryPuck {
-  categoryId: number;
+  categoryId: string;
   slug: string;
   label: string;
   imageUrl?: string | null;
@@ -27,7 +27,7 @@ export interface CategoryPuck {
 }
 
 export interface ProductCard {
-  productId: number;
+  productId: string;
   name: string;
   price: string;
   /** Empty string when there's no MRP above the selling price. */

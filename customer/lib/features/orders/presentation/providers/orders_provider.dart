@@ -33,15 +33,15 @@ class OrdersProvider extends ChangeNotifier {
     }
   }
 
-  Future<CustomerOrderDetail> loadDetail(int id) => _ds.detail(id);
+  Future<CustomerOrderDetail> loadDetail(String id) => _ds.detail(id);
 
   /// Fetch the invoice PDF for one shop-order child. Token is passed
   /// from the page (it lives in TokenManager, which the provider
   /// shouldn't take as a dependency) so the page → provider → DS
   /// boundary stays intact without the page reading the DS directly.
   Future<Uint8List> downloadInvoicePdf({
-    required int parentId,
-    required int childId,
+    required String parentId,
+    required String childId,
     required String accessToken,
   }) {
     return _ds.downloadInvoicePdf(
@@ -57,8 +57,8 @@ class OrdersProvider extends ChangeNotifier {
   Future<
       ({
         List<({CatalogProduct product, double quantity})> items,
-        List<({int productId, String productName, String reason})> skipped,
-      })> reorder(int parentId) {
+        List<({String productId, String productName, String reason})> skipped,
+      })> reorder(String parentId) {
     return _ds.reorder(parentId);
   }
 
@@ -67,8 +67,8 @@ class OrdersProvider extends ChangeNotifier {
   /// [CancelOrderException] when the backend rejects so the page can
   /// show targeted copy.
   Future<void> cancelShopOrder({
-    required int parentId,
-    required int childId,
+    required String parentId,
+    required String childId,
   }) async {
     await _ds.cancelShopOrder(parentId: parentId, childId: childId);
     // Server is the source of truth for `decidedAt`. The cancel endpoint

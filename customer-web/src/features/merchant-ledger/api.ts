@@ -99,7 +99,7 @@ export async function fetchQuotationDetail(partyId: string, quotationId: string)
   return jsonOrThrow(res, (raw) => quotationSchema.parse(raw), "Could not load quotation.");
 }
 
-export async function acceptQuotation(partyId: string, quotationId: number): Promise<Quotation> {
+export async function acceptQuotation(partyId: string, quotationId: string): Promise<Quotation> {
   const res = await fetch(
     `/api/me/parties/${encodeURIComponent(partyId)}/quotations/${encodeURIComponent(String(quotationId))}/accept`,
     { method: "POST" },
@@ -109,7 +109,7 @@ export async function acceptQuotation(partyId: string, quotationId: number): Pro
 
 export async function declineQuotation(
   partyId: string,
-  quotationId: number,
+  quotationId: string,
   payload?: { declineNote?: string },
 ): Promise<Quotation> {
   const res = await fetch(
@@ -123,7 +123,7 @@ export async function declineQuotation(
   return jsonOrThrow(res, (raw) => quotationSchema.parse(raw), "Could not decline quotation.");
 }
 
-export async function cancelQuotation(partyId: string, quotationId: number): Promise<Quotation> {
+export async function cancelQuotation(partyId: string, quotationId: string): Promise<Quotation> {
   const res = await fetch(
     `/api/me/parties/${encodeURIComponent(partyId)}/quotations/${encodeURIComponent(String(quotationId))}/cancel`,
     { method: "POST" },
@@ -147,14 +147,14 @@ export async function requestQuotation(
 }
 
 /** Returns a BFF URL for quotation PDF download */
-export function quotationPdfUrl(partyId: string, quotationId: number): string {
+export function quotationPdfUrl(partyId: string, quotationId: string): string {
   return `/api/me/parties/${encodeURIComponent(partyId)}/quotations/${encodeURIComponent(String(quotationId))}/pdf`;
 }
 
 // ─── Catalog (for request-quote page) ────────────────────────────────────────
 
 export async function fetchCatalogProducts(
-  opts?: { search?: string; categoryId?: number; page?: number; limit?: number },
+  opts?: { search?: string; categoryId?: string; page?: number; limit?: number },
 ): Promise<CatalogPage> {
   const qs = new URLSearchParams({ page: String(opts?.page ?? 1), limit: String(opts?.limit ?? 100) });
   if (opts?.search) qs.set("search", opts.search);

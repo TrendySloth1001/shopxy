@@ -4,7 +4,7 @@ import { zNum } from "@/shared/zod";
 // ─── Shared sub-schemas ───────────────────────────────────────────────────────
 
 export const shopSummarySchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   name: z.string(),
   shopName: z.string().nullable().optional(),
   returnsEnabled: z.boolean().default(false),
@@ -15,11 +15,11 @@ export const shopSummarySchema = z.object({
 export type ShopSummary = z.infer<typeof shopSummarySchema>;
 
 export const shopOrderPreviewSchema = z.object({
-  id: z.number(),
-  shopId: z.number(),
+  id: z.coerce.string(),
+  shopId: z.coerce.string(),
   status: z.string(),
   estimatedTotal: z.coerce.number(),
-  invoiceId: z.number().nullable().optional(),
+  invoiceId: z.coerce.string().nullable().optional(),
   decidedAt: z.string().nullable().optional(),
   shop: shopSummarySchema.nullable().optional(),
   _count: z.object({ items: z.number() }).optional(),
@@ -30,7 +30,7 @@ export const shopOrderPreviewSchema = z.object({
 export type ShopOrderPreview = z.infer<typeof shopOrderPreviewSchema>;
 
 export const customerOrderSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   customerName: z.string().default(""),
   customerPhone: z.string().nullable().optional(),
   customerAddress: z.string().nullable().optional(),
@@ -52,7 +52,7 @@ export type CustomerOrder = z.infer<typeof customerOrderSchema>;
 // ─── Order detail ────────────────────────────────────────────────────────────
 
 export const orderEventSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   type: z.string(),
   occurredAt: z.string(),
   courier: z.string().nullable().optional(),
@@ -63,7 +63,7 @@ export const orderEventSchema = z.object({
 export type OrderEvent = z.infer<typeof orderEventSchema>;
 
 export const orderInvoiceRefSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   invoiceNo: z.string(),
   type: z.string().optional(),
   status: z.string().optional(),
@@ -76,8 +76,8 @@ export const orderInvoiceRefSchema = z.object({
 export type OrderInvoiceRef = z.infer<typeof orderInvoiceRefSchema>;
 
 export const orderItemSchema = z.object({
-  id: z.number(),
-  productId: z.number(),
+  id: z.coerce.string(),
+  productId: z.coerce.string(),
   productName: z.string(),
   productSku: z.string().optional(),
   unit: z.string(),
@@ -95,11 +95,11 @@ export const orderItemSchema = z.object({
 export type OrderItem = z.infer<typeof orderItemSchema>;
 
 export const shopOrderDetailSchema = z.object({
-  id: z.number(),
-  shopId: z.number(),
+  id: z.coerce.string(),
+  shopId: z.coerce.string(),
   status: z.string(),
   estimatedTotal: z.coerce.number(),
-  invoiceId: z.number().nullable().optional(),
+  invoiceId: z.coerce.string().nullable().optional(),
   customerAddress: z.string().nullable().optional(),
   note: z.string().nullable().optional(),
   createdAt: z.string(),
@@ -113,7 +113,7 @@ export const shopOrderDetailSchema = z.object({
   canReturn: z.boolean(),
   cancellationPolicy: z.string().nullable().optional(),
   deliveredAt: z.string().nullable().optional(),
-  linkedPartyId: z.number().nullable().optional(),
+  linkedPartyId: z.coerce.string().nullable().optional(),
 });
 export type ShopOrderDetail = z.infer<typeof shopOrderDetailSchema>;
 
@@ -138,10 +138,10 @@ export type OrdersPage = z.infer<typeof ordersPageSchema>;
 // ─── Reorder response ────────────────────────────────────────────────────────
 
 export const reorderItemSchema = z.object({
-  productId: z.number(),
+  productId: z.coerce.string(),
   quantity: z.coerce.number(),
   product: z.object({
-    id: z.number(),
+    id: z.coerce.string(),
     name: z.string(),
     sku: z.string().optional(),
     unit: z.string().optional(),
@@ -154,7 +154,7 @@ export const reorderResultSchema = z.object({
   items: z.array(reorderItemSchema),
   skipped: z.array(
     z.object({
-      productId: z.number(),
+      productId: z.coerce.string(),
       productName: z.string(),
       reason: z.enum(["UNAVAILABLE", "OWN_SHOP"]),
     }),
@@ -165,7 +165,7 @@ export type ReorderResult = z.infer<typeof reorderResultSchema>;
 // ─── Pay session ─────────────────────────────────────────────────────────────
 
 export const paySessionSchema = z.object({
-  intentId: z.number(),
+  intentId: z.coerce.string(),
   provider: z.literal("RAZORPAY"),
   providerOrderRef: z.string(),
   amount: z.coerce.number(),

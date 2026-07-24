@@ -47,7 +47,7 @@ class _SoldProductsTableState extends State<SoldProductsTable> {
   bool _loading = true;
   bool _loadingMore = false;
   String? _error;
-  int? _expanded;
+  String? _expanded;
 
   @override
   void initState() {
@@ -371,7 +371,7 @@ class _ProductRow extends StatelessWidget {
     final theme = Theme.of(context);
     final unit = product.unit ?? '';
     final tone = _toneFor(
-      product.productSku ?? product.productName ?? '${product.productId}',
+      product.productSku ?? product.productName ?? product.productId,
     );
     return Container(
       decoration: BoxDecoration(

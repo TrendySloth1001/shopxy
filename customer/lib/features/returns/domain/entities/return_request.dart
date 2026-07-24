@@ -46,13 +46,13 @@ class ReturnEvent {
     required this.occurredAt,
     this.note,
   });
-  final int id;
+  final String id;
   final String type;
   final DateTime occurredAt;
   final String? note;
 
   factory ReturnEvent.fromJson(Map<String, dynamic> j) => ReturnEvent(
-        id: j['id'] as int,
+        id: j['id'].toString(),
         type: j['type'] as String,
         occurredAt: parseDate(j['occurredAt']),
         note: j['note'] as String?,
@@ -73,9 +73,9 @@ class ReturnItem {
     required this.originalQuantity,
     this.imageUrl,
   });
-  final int id;
-  final int purchaseRequestItemId;
-  final int productId;
+  final String id;
+  final String purchaseRequestItemId;
+  final String productId;
   final String productName;
   final String unit;
   final double unitPrice;
@@ -92,9 +92,9 @@ class ReturnItem {
         ? (imgs.first as Map<String, dynamic>)['url'] as String?
         : null;
     return ReturnItem(
-      id: j['id'] as int,
-      purchaseRequestItemId: pri['id'] as int,
-      productId: pri['productId'] as int,
+      id: j['id'].toString(),
+      purchaseRequestItemId: pri['id'].toString(),
+      productId: pri['productId'].toString(),
       productName: pri['productName'] as String,
       unit: (pri['unit'] as String?) ?? 'PCS',
       unitPrice: _d(pri['unitPrice']),
@@ -109,11 +109,11 @@ class ReturnItem {
 
 class ReturnShop {
   const ReturnShop({required this.id, required this.name, required this.slug});
-  final int id;
+  final String id;
   final String name;
   final String slug;
   factory ReturnShop.fromJson(Map<String, dynamic> j) => ReturnShop(
-        id: j['id'] as int,
+        id: j['id'].toString(),
         name: (j['name'] as String?) ?? '',
         slug: (j['slug'] as String?) ?? '',
       );
@@ -137,7 +137,7 @@ class ReturnRequest {
     this.walletEntryId,
   });
 
-  final int id;
+  final String id;
   /// REQUESTED / APPROVED / REJECTED / CANCELLED / PICKED_UP /
   /// RECEIVED / REFUNDED.
   final String status;
@@ -147,14 +147,14 @@ class ReturnRequest {
   final DateTime updatedAt;
   final ReturnShop shop;
   /// Parent CustomerOrder id — useful for "back to order" navigation.
-  final int parentOrderId;
+  final String parentOrderId;
   /// Underlying PurchaseRequest id.
-  final int shopOrderId;
+  final String shopOrderId;
   final List<ReturnItem> items;
   final List<ReturnEvent> events;
   final String? note;
   final String? decisionNote;
-  final int? walletEntryId;
+  final String? walletEntryId;
 
   bool get isOpen =>
       status == 'REQUESTED' ||
@@ -169,15 +169,15 @@ class ReturnRequest {
   factory ReturnRequest.fromJson(Map<String, dynamic> j) {
     final request = j['request'] as Map<String, dynamic>;
     return ReturnRequest(
-      id: j['id'] as int,
+      id: j['id'].toString(),
       status: j['status'] as String,
       refundAmount: _d(j['refundAmount']),
       refundMethod: j['refundMethod'] as String?,
       createdAt: parseDate(j['createdAt']),
       updatedAt: parseDate(j['updatedAt']),
       shop: ReturnShop.fromJson(j['shop'] as Map<String, dynamic>),
-      parentOrderId: (request['customerOrderId'] as num).toInt(),
-      shopOrderId: (request['id'] as num).toInt(),
+      parentOrderId: request['customerOrderId'].toString(),
+      shopOrderId: request['id'].toString(),
       items: ((j['items'] as List?) ?? const [])
           .whereType<Map<String, dynamic>>()
           .map(ReturnItem.fromJson)
@@ -188,7 +188,7 @@ class ReturnRequest {
           .toList(),
       note: j['note'] as String?,
       decisionNote: j['decisionNote'] as String?,
-      walletEntryId: j['walletEntryId'] as int?,
+      walletEntryId: j['walletEntryId']?.toString(),
     );
   }
 }

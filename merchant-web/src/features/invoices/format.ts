@@ -20,7 +20,7 @@ export function gstTypeLabel(inv: Invoice): string {
 
 /** A line in the create/edit editor — the merchant edits qty/price/tax only. */
 export type InvoiceLineDraft = {
-  productId: number;
+  productId: string;
   productName: string;
   productSku: string;
   hsn: string | null;

@@ -101,7 +101,7 @@ class CustomFieldsProvider extends ChangeNotifier {
   }
 
   Future<void> updateSection(
-    int id, {
+    String id, {
     String? name,
     String? icon,
     int? sortOrder,
@@ -117,12 +117,12 @@ class CustomFieldsProvider extends ChangeNotifier {
     await _refreshTree();
   }
 
-  Future<void> deleteSection(int id) async {
+  Future<void> deleteSection(String id) async {
     await _ds.deleteSection(id);
     await _refreshTree();
   }
 
-  Future<void> reorderSections(List<int> orderedIds) async {
+  Future<void> reorderSections(List<String> orderedIds) async {
     await _ds.reorderSections(orderedIds);
     await _refreshTree();
   }
@@ -135,7 +135,7 @@ class CustomFieldsProvider extends ChangeNotifier {
     List<String>? options,
     String? unitSuffix,
     String? icon,
-    int? sectionId,
+    String? sectionId,
   }) async {
     final created = await _ds.createDefinition(
       name: name,
@@ -150,7 +150,7 @@ class CustomFieldsProvider extends ChangeNotifier {
   }
 
   Future<void> updateDefinition(
-    int id, {
+    String id, {
     String? name,
     CustomFieldType? type,
     List<String>? options,
@@ -172,12 +172,12 @@ class CustomFieldsProvider extends ChangeNotifier {
     await _refreshTree();
   }
 
-  Future<void> assignToSection(int definitionId, int? sectionId) async {
+  Future<void> assignToSection(String definitionId, String? sectionId) async {
     await _ds.assignSection(definitionId, sectionId: sectionId);
     await _refreshTree();
   }
 
-  Future<void> deleteDefinition(int id) async {
+  Future<void> deleteDefinition(String id) async {
     await _ds.deleteDefinition(id);
     await _refreshTree();
   }
@@ -186,7 +186,7 @@ class CustomFieldsProvider extends ChangeNotifier {
   /// of ids). The settings page uses this to drag fields within a
   /// section — we compute the final globally-ordered list from the
   /// section's local order and submit that.
-  Future<void> reorderDefinitions(List<int> orderedIds) async {
+  Future<void> reorderDefinitions(List<String> orderedIds) async {
     await _ds.reorderDefinitions(orderedIds);
     await _refreshTree();
   }

@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { decodeId } from '../../shared/ids/publicId.js';
 import { marketplaceService } from './marketplace.service.js';
 
 /// Returns the parsed number, undefined when the value is absent, or
@@ -33,8 +34,8 @@ function parseShopIds(raw: unknown): number[] | undefined | null {
 
 export class MarketplaceController {
   async getProduct(req: Request, res: Response): Promise<void> {
-    const id = Number(req.params.id);
-    if (!Number.isInteger(id) || id <= 0) {
+    const id = decodeId(req.params.id);
+    if (id === null) {
       res.status(400).json({ error: 'Invalid product id' });
       return;
     }
@@ -50,8 +51,8 @@ export class MarketplaceController {
   /// Returns up to 5 slim product cards. Empty array (not 404) when no
   /// cohort exists — the rail's empty state just renders nothing.
   async getFbt(req: Request, res: Response): Promise<void> {
-    const id = Number(req.params.id);
-    if (!Number.isInteger(id) || id <= 0) {
+    const id = decodeId(req.params.id);
+    if (id === null) {
       res.status(400).json({ error: 'Invalid product id' });
       return;
     }

@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { decodeId } from '../../shared/ids/publicId.js';
 import { z } from 'zod';
 import { reviewsService } from './reviews.service.js';
 
@@ -9,8 +10,7 @@ const upsertReviewSchema = z.object({
 });
 
 function parseId(raw: string): number | null {
-  const id = Number(raw);
-  return Number.isInteger(id) && id > 0 ? id : null;
+  return decodeId(raw);
 }
 
 export class ReviewsController {

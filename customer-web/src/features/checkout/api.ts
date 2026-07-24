@@ -65,7 +65,7 @@ export async function placeOrder(
 export async function validateCoupon(
   code: string,
   subtotal: number,
-  shopIds: number[],
+  shopIds: string[],
 ): Promise<CouponValidateResponse> {
   const res = await fetch("/api/me/coupons/validate", {
     method: "POST",
@@ -94,7 +94,7 @@ export async function validateCoupon(
 /** POST /api/me/coupons/auto-apply — find the best auto-applicable coupon. */
 export async function autoApplyCoupon(
   subtotal: number,
-  shopIds: number[],
+  shopIds: string[],
 ): Promise<AutoApplyResponse> {
   const res = await fetch("/api/me/coupons/auto-apply", {
     method: "POST",
@@ -109,7 +109,7 @@ export async function autoApplyCoupon(
 }
 
 /** POST /api/me/orders/:id/pay — initiate Razorpay payment. */
-export async function initiatePayment(orderId: number): Promise<PaySessionResponse> {
+export async function initiatePayment(orderId: string): Promise<PaySessionResponse> {
   const res = await fetch(`/api/me/orders/${orderId}/pay`, { method: "POST" });
   return jsonOrThrow(
     res,
@@ -119,7 +119,7 @@ export async function initiatePayment(orderId: number): Promise<PaySessionRespon
 }
 
 /** POST /api/me/orders/:id/payment/sync — confirm payment status after gateway. */
-export async function syncPayment(orderId: number): Promise<PaySyncResponse> {
+export async function syncPayment(orderId: string): Promise<PaySyncResponse> {
   const res = await fetch(`/api/me/orders/${orderId}/payment/sync`, {
     method: "POST",
   });

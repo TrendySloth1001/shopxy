@@ -1,4 +1,6 @@
 import { Request, Response } from 'express';
+import { decodeId } from '../../shared/ids/publicId.js';
+import { zPublicId } from '../../shared/ids/zPublicId.js';
 import { z } from 'zod';
 import { challansService } from './challans.service.js';
 
@@ -8,7 +10,7 @@ import { challansService } from './challans.service.js';
 // hits the stock ledger. Fractional quantities stay allowed (some units are
 // sold by weight/length), but capped to the column's 3-decimal resolution.
 const challanItemSchema = z.object({
-  productId: z.number().int().positive(),
+  productId: zPublicId,
   quantity: z
     .number()
     .positive()
@@ -20,7 +22,7 @@ const challanItemSchema = z.object({
 
 const createChallanSchema = z
   .object({
-    partyId: z.number().int().positive().optional(),
+    partyId: zPublicId.optional(),
     partyName: z.string().min(1).optional(),
     partyPhone: z.string().optional(),
     note: z.string().optional(),
@@ -87,7 +89,11 @@ export async function listChallans(req: Request, res: Response) {
 export async function getChallan(req: Request, res: Response) {
   const shopId = requireShopId(req, res);
   if (!shopId) return;
-  const id = Number(req.params.id);
+  const id = decodeId(req.params.id);
+  if (id === null) {
+    res.status(404).json({ error: 'Challan not found' });
+    return;
+  }
   const challan = await challansService.getChallanById(shopId, id);
   if (!challan) {
     res.status(404).json({ error: 'Challan not found' });
@@ -99,7 +105,11 @@ export async function getChallan(req: Request, res: Response) {
 export async function cancelChallan(req: Request, res: Response) {
   const shopId = requireShopId(req, res);
   if (!shopId) return;
-  const id = Number(req.params.id);
+  const id = decodeId(req.params.id);
+  if (id === null) {
+    res.status(404).json({ error: 'Challan not found' });
+    return;
+  }
   const result = await challansService.cancelChallan(shopId, id, req.user?.sub);
   if ('error' in result) {
     res.status(400).json({ error: result.error });
@@ -111,8 +121,8 @@ export async function cancelChallan(req: Request, res: Response) {
 export async function downloadChallanPdf(req: Request, res: Response) {
   const shopId = requireShopId(req, res);
   if (!shopId) return;
-  const id = Number(req.params.id);
-  if (!Number.isInteger(id) || id <= 0) {
+  const id = decodeId(req.params.id);
+  if (id === null) {
     res.status(400).json({ error: 'Invalid id' });
     return;
   }
@@ -143,7 +153,11 @@ export async function downloadChallanPdf(req: Request, res: Response) {
 export async function convertToInvoice(req: Request, res: Response) {
   const shopId = requireShopId(req, res);
   if (!shopId) return;
-  const id = Number(req.params.id);
+  const id = decodeId(req.params.id);
+  if (id === null) {
+    res.status(404).json({ error: 'Challan not found' });
+    return;
+  }
   const parsed = convertSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.flatten() });

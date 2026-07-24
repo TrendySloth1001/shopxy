@@ -18,7 +18,7 @@ import {
 const BACK = "/dashboard/stock-adjustments";
 const loadProducts = (s: string) => listProducts({ search: s, limit: "20" }).then((r) => r.data);
 
-type Line = { productId: number; productName: string; productSku: string; unit: string; quantity: number };
+type Line = { productId: string; productName: string; productSku: string; unit: string; quantity: number };
 
 export function AdjustmentEditor() {
   const router = useRouter();

@@ -14,7 +14,7 @@ import { zNum } from "@/shared/zod";
 // ── Product card (list-select shape from /marketplace/shops/:slug/products) ──
 
 export const CatalogProductSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   name: z.string(),
   sku: z.string().optional(),
   unit: z.string().optional().nullable(),
@@ -31,14 +31,14 @@ export const CatalogProductSchema = z.object({
     .default([]),
   shop: z
     .object({
-      id: z.number(),
+      id: z.coerce.string(),
       name: z.string(),
       slug: z.string(),
     })
     .optional()
     .nullable(),
   category: z
-    .object({ id: z.number(), name: z.string(), slug: z.string() })
+    .object({ id: z.coerce.string(), name: z.string(), slug: z.string() })
     .optional()
     .nullable(),
 });
@@ -48,7 +48,7 @@ export type CatalogProduct = z.infer<typeof CatalogProductSchema>;
 // ── Shop shape from /marketplace/shops/:slug/products ──────────────────────
 
 export const ShopProfileSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   name: z.string(),
   slug: z.string(),
   tagline: z.string().nullable().optional(),
@@ -67,13 +67,13 @@ export type ShopProfile = z.infer<typeof ShopProfileSchema>;
 // ── Category (recursive tree node) ─────────────────────────────────────────
 
 export interface CategoryNode {
-  id: number;
+  id: string;
   name: string;
   slug: string;
   imageUrl: string | null;
   iconName: string | null;
   description: string | null;
-  parentId: number | null;
+  parentId: string | null;
   isActive: boolean;
   _count: { products: number };
   children: CategoryNode[];
@@ -81,13 +81,13 @@ export interface CategoryNode {
 
 // Intermediate wire shape (before transform); input allows optional fields.
 interface CategoryNodeWire {
-  id: number;
+  id: string;
   name: string;
   slug: string;
   imageUrl?: string | null;
   iconName?: string | null;
   description?: string | null;
-  parentId?: number | null;
+  parentId?: string | null;
   isActive?: boolean;
   _count?: { products: number };
   children?: CategoryNodeWire[];
@@ -110,13 +110,13 @@ function parseCategoryNode(raw: CategoryNodeWire): CategoryNode {
 
 const CategoryNodeWireSchema: z.ZodType<CategoryNodeWire> = z.lazy(() =>
   z.object({
-    id: z.number(),
+    id: z.coerce.string(),
     name: z.string(),
     slug: z.string(),
     imageUrl: z.string().nullable().optional(),
     iconName: z.string().nullable().optional(),
     description: z.string().nullable().optional(),
-    parentId: z.number().nullable().optional(),
+    parentId: z.coerce.string().nullable().optional(),
     isActive: z.boolean().optional(),
     _count: z.object({ products: z.number() }).optional(),
     children: z.array(CategoryNodeWireSchema).optional(),

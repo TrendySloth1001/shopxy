@@ -78,7 +78,7 @@ class VendorsProvider extends ChangeNotifier {
     return vendor;
   }
 
-  Future<Vendor> updateVendor(int id, {
+  Future<Vendor> updateVendor(String id, {
     String? name,
     String? contactName,
     String? phone,
@@ -114,7 +114,7 @@ class VendorsProvider extends ChangeNotifier {
     return vendor;
   }
 
-  Future<void> deleteVendor(int id) async {
+  Future<void> deleteVendor(String id) async {
     await _ds.deleteVendor(id);
     _vendors = _vendors.where((v) => v.id != id).toList();
     notifyListeners();

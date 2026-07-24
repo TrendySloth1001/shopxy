@@ -11,9 +11,9 @@ class ProductReview {
     this.userName,
   });
 
-  final int id;
-  final int productId;
-  final int userId;
+  final String id;
+  final String productId;
+  final String userId;
   final int rating;
   final String? title;
   final String? body;
@@ -24,9 +24,9 @@ class ProductReview {
   factory ProductReview.fromJson(Map<String, dynamic> json) {
     final user = json['user'] as Map<String, dynamic>?;
     return ProductReview(
-      id: json['id'] as int,
-      productId: json['productId'] as int,
-      userId: json['userId'] as int,
+      id: json['id'].toString(),
+      productId: json['productId'].toString(),
+      userId: json['userId'].toString(),
       rating: json['rating'] as int,
       title: json['title'] as String?,
       body: json['body'] as String?,

@@ -55,13 +55,13 @@ class Invitation {
     this.fromUserEmail,
   });
 
-  final int id;
-  final int fromUserId;
+  final String id;
+  final String fromUserId;
   final String toEmail;
-  final int? toUserId;
+  final String? toUserId;
   final InviteLinkType linkType;
-  final int? partyId;
-  final int? vendorId;
+  final String? partyId;
+  final String? vendorId;
   /// Set only for TEAM invites — the role label + the exact rights
   /// granted on accept. Used by the join-request screen.
   final String? teamRole;
@@ -85,13 +85,13 @@ class Invitation {
   factory Invitation.fromJson(Map<String, dynamic> j) {
     final fromUser = j['fromUser'] as Map<String, dynamic>?;
     return Invitation(
-      id: j['id'] as int,
-      fromUserId: j['fromUserId'] as int,
+      id: j['id'].toString(),
+      fromUserId: j['fromUserId'].toString(),
       toEmail: j['toEmail'] as String,
-      toUserId: j['toUserId'] as int?,
+      toUserId: j['toUserId']?.toString(),
       linkType: _typeFrom(j['linkType'] as String),
-      partyId: j['partyId'] as int?,
-      vendorId: j['vendorId'] as int?,
+      partyId: j['partyId']?.toString(),
+      vendorId: j['vendorId']?.toString(),
       teamRole: j['teamRole'] as String?,
       teamRoleName: j['teamRoleName'] as String?,
       teamPermissions:

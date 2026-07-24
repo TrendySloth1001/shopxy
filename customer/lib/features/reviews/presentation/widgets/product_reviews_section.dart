@@ -25,7 +25,7 @@ class ProductReviewsSection extends StatefulWidget {
     required this.productId,
     required this.productName,
   });
-  final int productId;
+  final String productId;
   final String productName;
 
   @override

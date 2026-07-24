@@ -38,7 +38,7 @@ class MerchantReturnsRemoteDataSource {
     return (data: rows, total: total);
   }
 
-  Future<MerchantReturn> getById(int id) async {
+  Future<MerchantReturn> getById(String id) async {
     final res = await _client.get('/orders/returns/$id');
     if (res.statusCode != 200) throw Exception('Return not found');
     return MerchantReturn.fromJson(
@@ -48,7 +48,7 @@ class MerchantReturnsRemoteDataSource {
 
   /// Generic transition POST — all four state-flip endpoints share the
   /// same `{ note?: string }` body and 204 / 409 shape.
-  Future<void> _transition(int id, String action, {String? note}) async {
+  Future<void> _transition(String id, String action, {String? note}) async {
     final res = await _client.post(
       '/orders/returns/$id/$action',
       body: {
@@ -59,11 +59,11 @@ class MerchantReturnsRemoteDataSource {
     throw Exception(_decodeError(res.body));
   }
 
-  Future<void> approve(int id, {String? note}) => _transition(id, 'approve', note: note);
-  Future<void> reject(int id, {String? note}) => _transition(id, 'reject', note: note);
-  Future<void> markPickedUp(int id, {String? note}) =>
+  Future<void> approve(String id, {String? note}) => _transition(id, 'approve', note: note);
+  Future<void> reject(String id, {String? note}) => _transition(id, 'reject', note: note);
+  Future<void> markPickedUp(String id, {String? note}) =>
       _transition(id, 'picked-up', note: note);
-  Future<void> markReceived(int id, {String? note}) =>
+  Future<void> markReceived(String id, {String? note}) =>
       _transition(id, 'received', note: note);
 
   /// Refund returns `{ ok, refundAmount, refundStatus }`. The money goes back
@@ -72,7 +72,7 @@ class MerchantReturnsRemoteDataSource {
   /// NO_PAYMENT (COD/never captured — merchant settles offline) | FAILED |
   /// NOTHING_TO_REFUND.
   Future<({double refundAmount, String refundStatus})> refund(
-    int id, {
+    String id, {
     String? note,
   }) async {
     final res = await _client.post(

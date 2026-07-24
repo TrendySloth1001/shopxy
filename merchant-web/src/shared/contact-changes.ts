@@ -5,12 +5,12 @@ import { z } from "zod";
  * (shared shape for both). One row per changed field.
  */
 export const contactChangeSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   field: z.string(),
   oldValue: z.string().nullable(),
   newValue: z.string().nullable(),
   changedAt: z.string(),
-  changedBy: z.object({ id: z.number(), name: z.string(), email: z.string() }).nullable(),
+  changedBy: z.object({ id: z.coerce.string(), name: z.string(), email: z.string() }).nullable(),
 });
 export type ContactChange = z.infer<typeof contactChangeSchema>;
 
@@ -43,7 +43,7 @@ export function contactFieldKey(field: string): string | null {
   return CONTACT_FIELD_KEYS[field] ?? null;
 }
 
-export function listContactChanges(kind: "parties" | "vendors", id: number): Promise<ContactChange[]> {
+export function listContactChanges(kind: "parties" | "vendors", id: string): Promise<ContactChange[]> {
   return fetch(`/api/${kind}/${id}/changes?limit=50`, { cache: "no-store" }).then(async (r) => {
     if (!r.ok) throw new Error("Could not load history.");
     return listSchema.parse(await r.json()).data;

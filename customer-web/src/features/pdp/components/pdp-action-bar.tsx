@@ -39,7 +39,7 @@ function toCartProduct(product: ProductDetail, variant: Variant | null): CartPro
       : null,
     images: imageUrl ? [{ url: imageUrl, sortOrder: 0 }] : [],
     shop: {
-      id: product.shop?.id ?? 0,
+      id: product.shop?.id ?? "",
       name: product.shop?.name ?? "",
       slug: product.shop?.slug ?? "",
     },

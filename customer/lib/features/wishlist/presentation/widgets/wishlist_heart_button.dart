@@ -31,7 +31,7 @@ class WishlistHeartButton extends StatelessWidget {
     : size = AppSizes.iconHuge,
       flat = true;
 
-  final int productId;
+  final String productId;
   final double size;
   final bool flat;
 

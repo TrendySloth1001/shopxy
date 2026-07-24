@@ -19,8 +19,8 @@ class MarketplaceSearchRemoteDataSource {
 
   Future<MarketplaceSearchResult> search(
     String query, {
-    int? categoryId,
-    int? shopId,
+    String? categoryId,
+    String? shopId,
     ListingFilters filters = ListingFilters.none,
     bool includeFacets = false,
     String? sessionId,
@@ -128,7 +128,7 @@ class MarketplaceSearchHit {
     this.ftsScore,
   });
 
-  final int id;
+  final String id;
   final String name;
   final String sku;
   final double sellingPrice;
@@ -152,7 +152,7 @@ class MarketplaceSearchHit {
   /// returns `{id, name}`. All other fields are nulled/zeroed.
   factory MarketplaceSearchHit.minimal(Map<String, dynamic> j) =>
       MarketplaceSearchHit(
-        id: j['id'] as int,
+        id: j['id'].toString(),
         name: j['name'] as String,
         sku: '',
         sellingPrice: 0,
@@ -167,7 +167,7 @@ class MarketplaceSearchHit {
   factory MarketplaceSearchHit.fromJson(Map<String, dynamic> j) {
     final shop = (j['shop'] as Map<String, dynamic>?) ?? const {};
     return MarketplaceSearchHit(
-      id: j['id'] as int,
+      id: j['id'].toString(),
       name: j['name'] as String,
       sku: j['sku'] as String? ?? '',
       sellingPrice: _asDouble(j['sellingPrice']) ?? 0,

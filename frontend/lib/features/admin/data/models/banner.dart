@@ -56,7 +56,7 @@ class AdminBanner {
     this.productCount = 0,
   });
 
-  final int id;
+  final String id;
   final BannerPlacement placement;
   final String imageUrl;
   final String? linkUrl;
@@ -70,7 +70,7 @@ class AdminBanner {
   final int productCount;
 
   factory AdminBanner.fromJson(Map<String, dynamic> j) => AdminBanner(
-        id: j['id'] as int,
+        id: j['id'].toString(),
         placement: bannerPlacementFromWire(j['placement'] as String),
         imageUrl: j['imageUrl'] as String,
         linkUrl: j['linkUrl'] as String?,

@@ -14,7 +14,7 @@ class WishlistProvider extends ChangeNotifier {
   final WishlistRemoteDataSource _ds;
 
   List<WishlistEntry> _entries = const [];
-  final Set<int> _ids = <int>{};
+  final Set<String> _ids = <String>{};
   bool _loaded = false;
   bool _loading = false;
   String? _error;
@@ -24,7 +24,7 @@ class WishlistProvider extends ChangeNotifier {
   bool get isLoaded => _loaded;
   String? get error => _error;
 
-  bool contains(int productId) => _ids.contains(productId);
+  bool contains(String productId) => _ids.contains(productId);
 
   /// Loads the full list. Safe to call repeatedly — no-ops while
   /// already loading. Pages that just need [contains] can call
@@ -57,7 +57,7 @@ class WishlistProvider extends ChangeNotifier {
 
   /// Optimistic add. The icon flips immediately; on server failure we
   /// restore state and surface an error string the caller can show.
-  Future<bool> add(int productId) async {
+  Future<bool> add(String productId) async {
     if (_ids.contains(productId)) return true;
     _ids.add(productId);
     notifyListeners();
@@ -77,7 +77,7 @@ class WishlistProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> remove(int productId) async {
+  Future<bool> remove(String productId) async {
     if (!_ids.contains(productId)) return true;
     _ids.remove(productId);
     _entries = _entries.where((e) => e.product.id != productId).toList();
@@ -95,7 +95,7 @@ class WishlistProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> toggle(int productId) async {
+  Future<bool> toggle(String productId) async {
     return _ids.contains(productId) ? remove(productId) : add(productId);
   }
 

@@ -38,7 +38,7 @@ export function listBanners(): Promise<Banner[]> {
   );
 }
 
-export function getBanner(id: number): Promise<Banner> {
+export function getBanner(id: string): Promise<Banner> {
   return fetch(`/api/banners/${id}`, { cache: "no-store" }).then((r) =>
     jsonOrThrow(r, (raw) => bannerSchema.parse(raw), "Could not load the banner."),
   );
@@ -52,7 +52,7 @@ export function createBanner(input: BannerInput): Promise<Banner> {
   }).then((r) => jsonOrThrow(r, (raw) => bannerSchema.parse(raw), "Could not create the banner."));
 }
 
-export function updateBanner(id: number, input: Partial<BannerInput>): Promise<Banner> {
+export function updateBanner(id: string, input: Partial<BannerInput>): Promise<Banner> {
   return fetch(`/api/banners/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -60,7 +60,7 @@ export function updateBanner(id: number, input: Partial<BannerInput>): Promise<B
   }).then((r) => jsonOrThrow(r, (raw) => bannerSchema.parse(raw), "Could not update the banner."));
 }
 
-export async function deleteBanner(id: number): Promise<void> {
+export async function deleteBanner(id: string): Promise<void> {
   const res = await fetch(`/api/banners/${id}`, { method: "DELETE" });
   if (!res.ok && res.status !== 204) {
     await jsonOrThrow(res, () => null, "Could not delete the banner.");
@@ -70,20 +70,20 @@ export async function deleteBanner(id: number): Promise<void> {
 // ── Pinned products ────────────────────────────────────────────────────────
 
 export type BannerProductInput = {
-  productId: number;
+  productId: string;
   discountType: DiscountType;
   discountValue: number;
   position: number;
 };
 
-export function listBannerProducts(bannerId: number): Promise<BannerProductRow[]> {
+export function listBannerProducts(bannerId: string): Promise<BannerProductRow[]> {
   return fetch(`/api/banners/${bannerId}/products`, { cache: "no-store" }).then((r) =>
     jsonOrThrow(r, (raw) => bannerProductListSchema.parse(raw).data, "Could not load banner products."),
   );
 }
 
 export function replaceBannerProducts(
-  bannerId: number,
+  bannerId: string,
   items: BannerProductInput[],
 ): Promise<BannerProductRow[]> {
   return fetch(`/api/banners/${bannerId}/products`, {

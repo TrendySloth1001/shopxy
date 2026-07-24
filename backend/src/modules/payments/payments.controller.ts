@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
+import { zPublicId } from '../../shared/ids/zPublicId.js';
 import { z } from 'zod';
+import { decodeId } from '../../shared/ids/publicId.js';
 import {
   parsePagination,
   paginatedResponse,
@@ -33,9 +35,9 @@ const createPaymentSchema = z
       .or(z.string().datetime({ local: true }))
       .or(z.string().date())
       .optional(),
-    partyId: z.number().int().positive().nullable().optional(),
-    vendorId: z.number().int().positive().nullable().optional(),
-    invoiceId: z.number().int().positive().nullable().optional(),
+    partyId: zPublicId.nullable().optional(),
+    vendorId: zPublicId.nullable().optional(),
+    invoiceId: zPublicId.nullable().optional(),
     note: z.string().max(500).nullable().optional(),
   })
   .refine(
@@ -53,14 +55,13 @@ const createPaymentSchema = z
   );
 
 const listPaymentsSchema = z.object({
-  partyId: z.coerce.number().int().positive().optional(),
-  vendorId: z.coerce.number().int().positive().optional(),
-  invoiceId: z.coerce.number().int().positive().optional(),
+  partyId: zPublicId.optional(),
+  vendorId: zPublicId.optional(),
+  invoiceId: zPublicId.optional(),
 });
 
 function parseId(raw: string): number | null {
-  const id = Number(raw);
-  return Number.isInteger(id) && id > 0 ? id : null;
+  return decodeId(raw);
 }
 
 function requireShopId(req: Request, res: Response): number | null {

@@ -8,7 +8,7 @@
  * receive display profiles + ok/err.
  */
 export type DesktopAccount = {
-  id: number;
+  id: string;
   name: string;
   email: string;
   avatarUrl: string | null;
@@ -21,8 +21,8 @@ type DesktopBridge = {
   platform: string;
   listRememberedAccounts: () => Promise<DesktopAccount[]>;
   rememberCurrentAccount: () => Promise<{ ok: boolean }>;
-  resumeAccount: (id: number) => Promise<ResumeResult>;
-  forgetAccount: (id: number) => Promise<{ ok: boolean }>;
+  resumeAccount: (id: string) => Promise<ResumeResult>;
+  forgetAccount: (id: string) => Promise<{ ok: boolean }>;
   /** Persist the chosen theme so the native window background matches on the
    *  next cold start, and re-tint the live Electron chrome. Optional: older
    *  desktop builds won't expose it. */
@@ -58,13 +58,13 @@ export async function rememberCurrentAccount(): Promise<void> {
   }
 }
 
-export async function resumeAccount(id: number): Promise<ResumeResult> {
+export async function resumeAccount(id: string): Promise<ResumeResult> {
   const b = bridge();
   if (!b) return { ok: false, error: "Not available." };
   return b.resumeAccount(id);
 }
 
-export async function forgetAccount(id: number): Promise<void> {
+export async function forgetAccount(id: string): Promise<void> {
   const b = bridge();
   if (!b) return;
   try {

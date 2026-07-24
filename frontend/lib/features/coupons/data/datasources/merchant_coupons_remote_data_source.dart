@@ -22,7 +22,7 @@ class MerchantCouponsRemoteDataSource {
         .toList();
   }
 
-  Future<int> create({
+  Future<String> create({
     required String code,
     required String title,
     String? description,
@@ -56,13 +56,13 @@ class MerchantCouponsRemoteDataSource {
       'isActive': isActive,
     });
     if (res.statusCode == 201) {
-      return (jsonDecode(res.body)['id'] as num).toInt();
+      return jsonDecode(res.body)['id'].toString();
     }
     throw Exception(_decodeError(res.body));
   }
 
   Future<void> update(
-    int id, {
+    String id, {
     String? code,
     String? title,
     String? description,
@@ -99,7 +99,7 @@ class MerchantCouponsRemoteDataSource {
     throw Exception(_decodeError(res.body));
   }
 
-  Future<void> deactivate(int id) async {
+  Future<void> deactivate(String id) async {
     final res = await _client.delete('/me/coupons-admin/$id');
     if (res.statusCode == 204) return;
     throw Exception(_decodeError(res.body));

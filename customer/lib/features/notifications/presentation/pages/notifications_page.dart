@@ -386,8 +386,8 @@ class _NotificationTile extends StatelessWidget {
     final shopsProvider = context.read<ShopsProvider>();
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
-    final partyId = _asInt(item.data['partyId']);
-    final quotationId = _asInt(item.data['quotationId']);
+    final partyId = item.data['partyId']?.toString();
+    final quotationId = item.data['quotationId']?.toString();
 
     if (shopsProvider.shops.isEmpty) {
       await shopsProvider.loadShops();
@@ -425,9 +425,6 @@ class _NotificationTile extends StatelessWidget {
       }
     }
   }
-
-  static int? _asInt(dynamic v) =>
-      v is int ? v : (v == null ? null : int.tryParse('$v'));
 
   static String _formatTime(DateTime t) {
     final now = DateTime.now();

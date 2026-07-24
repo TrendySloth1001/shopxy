@@ -26,7 +26,7 @@ class CartRemoteDataSource {
   /// PUT /me/cart/:productId — sets the absolute quantity. Returns the
   /// updated line, or null when quantity = 0 cleared the row. Throws
   /// when the product is out-of-stock or not purchasable.
-  Future<CartLineDto?> setQuantity(int productId, double quantity) async {
+  Future<CartLineDto?> setQuantity(String productId, double quantity) async {
     final res = await _client.put(
       '/me/cart/$productId',
       body: {'quantity': quantity},
@@ -47,7 +47,7 @@ class CartRemoteDataSource {
     throw Exception('Failed to update cart (${res.statusCode})');
   }
 
-  Future<void> remove(int productId) async {
+  Future<void> remove(String productId) async {
     final res = await _client.delete('/me/cart/$productId');
     if (res.statusCode != 204 && res.statusCode != 200) {
       throw Exception('Failed to remove from cart (${res.statusCode})');
@@ -65,7 +65,7 @@ class CartRemoteDataSource {
   /// cart (capped by stock). Used once on first login to roll a guest
   /// cart into the user's persistent one.
   Future<List<CartLineDto>> merge(
-    List<({int productId, double quantity})> items,
+    List<({String productId, double quantity})> items,
   ) async {
     final res = await _client.post(
       '/me/cart/merge',

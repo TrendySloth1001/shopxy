@@ -42,7 +42,7 @@ export async function fetchWishlist(): Promise<WishlistItem[]> {
   return data.data;
 }
 
-export async function removeFromWishlist(productId: number): Promise<void> {
+export async function removeFromWishlist(productId: string): Promise<void> {
   const res = await fetch(`/api/me/wishlist/${productId}`, { method: "DELETE" });
   if (!res.ok && res.status !== 204) {
     let message = "Could not remove from wishlist.";
@@ -56,7 +56,7 @@ export async function removeFromWishlist(productId: number): Promise<void> {
   }
 }
 
-export async function addToWishlist(productId: number): Promise<void> {
+export async function addToWishlist(productId: string): Promise<void> {
   const res = await fetch(`/api/me/wishlist/${productId}`, { method: "POST" });
   if (!res.ok) {
     let message = "Could not add to wishlist.";
@@ -84,7 +84,7 @@ export async function fetchMyReviews(opts?: {
   return jsonOrThrow(res, (raw) => myReviewsResponseSchema.parse(raw), "Could not load your reviews.");
 }
 
-export async function deleteReview(productId: number): Promise<void> {
+export async function deleteReview(productId: string): Promise<void> {
   const res = await fetch(`/api/products/${productId}/reviews/mine`, {
     method: "DELETE",
   });
@@ -101,7 +101,7 @@ export async function deleteReview(productId: number): Promise<void> {
 }
 
 export async function upsertReview(
-  productId: number,
+  productId: string,
   payload: { rating: number; title?: string; body?: string },
 ): Promise<MyReview> {
   const res = await fetch(`/api/products/${productId}/reviews`, {

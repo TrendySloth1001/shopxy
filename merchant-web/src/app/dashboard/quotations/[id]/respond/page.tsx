@@ -12,7 +12,7 @@ import { FormSkeleton } from "@/shared/ui/skeleton";
 export default function RespondQuotationPage() {
   const t = useTranslations("quotations");
   const params = useParams<{ id: string }>();
-  const id = Number(params.id);
+  const id = params.id;
   const [quote, setQuote] = useState<Quotation | null>(null);
   const [error, setError] = useState<string | null>(null);
 

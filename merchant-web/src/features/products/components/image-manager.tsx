@@ -11,7 +11,7 @@ import {
 } from "../api";
 import { ProductThumb } from "./product-thumb";
 
-type Item = { id?: number; url: string };
+type Item = { id?: string; url: string };
 
 /**
  * Product image manager.
@@ -24,7 +24,7 @@ export function ImageManager({
   initial,
   onChange,
 }: {
-  productId?: number;
+  productId?: string;
   initial: Item[];
   onChange?: (urls: string[]) => void;
 }) {
@@ -89,7 +89,7 @@ export function ImageManager({
     setError(null);
     try {
       if (productId && next.every((i) => i.id)) {
-        await reorderImages(productId, next.map((i) => i.id as number));
+        await reorderImages(productId, next.map((i) => i.id as string));
       }
       commit(next);
     } catch (e) {

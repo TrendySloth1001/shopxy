@@ -12,7 +12,7 @@ import { authedFetch } from "@/server/auth/session";
 const eventSchema = z.object({
   clientUuid: z.string().min(8).max(80),
   eventType: z.enum(["IMPRESSION", "TAP", "VIEW", "ADD_TO_CART", "PURCHASE", "WISHLIST_ADD"]),
-  productId: z.number().int().positive(),
+  productId: z.union([z.string().min(1), z.number().int().positive()]),
   sessionId: z.string().max(80).nullable().optional(),
   source: z.string().max(40).nullable().optional(),
   occurredAt: z.string().datetime(),

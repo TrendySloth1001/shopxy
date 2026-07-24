@@ -1,10 +1,12 @@
 import { Request, Response } from 'express';
+import { zPublicId } from '../../shared/ids/zPublicId.js';
+import { decodeId } from '../../shared/ids/publicId.js';
 import { z } from 'zod';
 import { parsePagination, paginatedResponse } from '../../shared/http/pagination.js';
 import { quotationsService, QuotationStatus } from './quotations.service.js';
 
 const itemSchema = z.object({
-  productId: z.number().int().positive(),
+  productId: zPublicId,
   name: z.string().max(200),
   sku: z.string().max(120).nullable().optional(),
   quantity: z.number().positive(),
@@ -16,7 +18,7 @@ const itemSchema = z.object({
 });
 
 const createSchema = z.object({
-  partyId: z.number().int().positive(),
+  partyId: zPublicId,
   items: z.array(itemSchema).min(1).max(100),
   note: z.string().max(500).nullable().optional(),
   placeOfSupplyStateCode: z.string().max(2).nullable().optional(),
@@ -37,8 +39,7 @@ const declineRequestSchema = z.object({
 });
 
 function parseId(raw: string): number | null {
-  const id = Number(raw);
-  return Number.isInteger(id) && id > 0 ? id : null;
+  return decodeId(raw);
 }
 
 function requireShopId(req: Request, res: Response): number | null {

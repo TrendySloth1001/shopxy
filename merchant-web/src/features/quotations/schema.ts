@@ -38,7 +38,7 @@ export const QUOTATION_STATUS_CLASSES: Record<string, string> = {
 
 export const quotationLineSchema = z
   .object({
-    productId: z.number(),
+    productId: z.coerce.string(),
     name: z.string().nullish(),
     sku: z.string().nullish(),
     quantity: z.coerce.number().default(0),
@@ -54,11 +54,11 @@ export type QuotationLine = z.infer<typeof quotationLineSchema>;
 
 export const quotationSchema = z
   .object({
-    id: z.number(),
+    id: z.coerce.string(),
     quotationNo: z.string(),
     status: z.string(),
-    partyId: z.number().nullish(),
-    party: z.object({ id: z.number(), name: z.string() }).nullish(),
+    partyId: z.coerce.string().nullish(),
+    party: z.object({ id: z.coerce.string(), name: z.string() }).nullish(),
     items: z
       .array(quotationLineSchema)
       .nullish()
@@ -69,9 +69,9 @@ export const quotationSchema = z
     note: z.string().nullish(),
     declineNote: z.string().nullish(),
     placeOfSupplyStateCode: z.string().nullish(),
-    invoiceId: z.number().nullish(),
-    invoice: z.object({ id: z.number(), invoiceNo: z.string() }).nullish(),
-    requestedById: z.number().nullish(),
+    invoiceId: z.coerce.string().nullish(),
+    invoice: z.object({ id: z.coerce.string(), invoiceNo: z.string() }).nullish(),
+    requestedById: z.coerce.string().nullish(),
     respondedAt: z.string().nullish(),
     createdAt: z.string(),
     updatedAt: z.string().optional(),

@@ -1,4 +1,6 @@
 import { Request, Response } from 'express';
+import { zPublicId } from '../../shared/ids/zPublicId.js';
+import { decodeId } from '../../shared/ids/publicId.js';
 import { z } from 'zod';
 import { parsePagination, paginatedResponse } from '../../shared/http/pagination.js';
 import {
@@ -9,12 +11,12 @@ import {
 import { notificationsService } from '../notifications/notifications.service.js';
 
 const submitSchema = z.object({
-  childId: z.number().int().positive(),
+  childId: zPublicId,
   note: z.string().max(500).optional(),
   items: z
     .array(
       z.object({
-        purchaseRequestItemId: z.number().int().positive(),
+        purchaseRequestItemId: zPublicId,
         quantity: z.number().positive(),
         reason: z.enum(RETURN_REASONS as unknown as [ReturnReason, ...ReturnReason[]]),
       }),
@@ -47,8 +49,7 @@ const listQuerySchema = z.object({
 });
 
 function parseId(raw: string): number | null {
-  const id = Number(raw);
-  return Number.isInteger(id) && id > 0 ? id : null;
+  return decodeId(raw);
 }
 
 export class ReturnsController {

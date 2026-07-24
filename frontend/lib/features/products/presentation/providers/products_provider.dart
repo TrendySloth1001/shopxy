@@ -18,7 +18,7 @@ class ProductsProvider extends ChangeNotifier {
   int _total = 0;
   int _page = 1;
   String _search = '';
-  int? _categoryFilter;
+  String? _categoryFilter;
   bool _lowStockOnly = false;
   bool _outOfStockOnly = false;
 
@@ -28,7 +28,7 @@ class ProductsProvider extends ChangeNotifier {
   int get total => _total;
   int get page => _page;
   String get search => _search;
-  int? get categoryFilter => _categoryFilter;
+  String? get categoryFilter => _categoryFilter;
   bool get lowStockOnly => _lowStockOnly;
   bool get outOfStockOnly => _outOfStockOnly;
   bool get hasMore => _products.length < _total;
@@ -58,7 +58,7 @@ class ProductsProvider extends ChangeNotifier {
     loadProducts();
   }
 
-  void setCategoryFilter(int? categoryId) {
+  void setCategoryFilter(String? categoryId) {
     _categoryFilter = categoryId;
     _page = 1;
     loadProducts();
@@ -146,7 +146,7 @@ class ProductsProvider extends ChangeNotifier {
     double? stockQuantity,
     double? lowStockThreshold,
     String? unit,
-    int? categoryId,
+    String? categoryId,
     List<String>? tags,
     List<String>? highlights,
     List<SpecGroup>? specs,
@@ -184,13 +184,13 @@ class ProductsProvider extends ChangeNotifier {
     return product;
   }
 
-  Future<Product> updateProduct(int id, Map<String, dynamic> data) async {
+  Future<Product> updateProduct(String id, Map<String, dynamic> data) async {
     final product = await _dataSource.updateProduct(id, data);
     await loadProducts();
     return product;
   }
 
-  Future<void> deleteProduct(int id) async {
+  Future<void> deleteProduct(String id) async {
     await _dataSource.deleteProduct(id);
     await loadProducts();
   }

@@ -11,7 +11,7 @@ import { z } from "zod";
 // photo, shown as the vendor's avatar. All fields kept optional so a partial
 // projection never fails the whole parse.
 const linkedUserSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   name: z.string(),
   email: z.string().nullish(),
   avatarUrl: z.string().nullish(),
@@ -19,7 +19,7 @@ const linkedUserSchema = z.object({
 
 export const vendorSchema = z
   .object({
-    id: z.number(),
+    id: z.coerce.string(),
     name: z.string(),
     contactName: z.string().nullish(),
     phone: z.string().nullish(),
@@ -32,7 +32,7 @@ export const vendorSchema = z
     panNumber: z.string().nullish(),
     gstin: z.string().nullish(),
     isActive: z.boolean().default(true),
-    linkedUserId: z.number().nullish(),
+    linkedUserId: z.coerce.string().nullish(),
     linkedUser: linkedUserSchema.nullish(),
     createdAt: z.string().optional(),
     updatedAt: z.string().optional(),
@@ -64,7 +64,7 @@ const vendorTotalSchema = z.object({
 
 const vendorInvoiceRefSchema = z
   .object({
-    id: z.number(),
+    id: z.coerce.string(),
     invoiceNo: z.string(),
     type: z.string(),
     status: z.string(),
@@ -77,7 +77,7 @@ export type VendorInvoiceRef = z.infer<typeof vendorInvoiceRefSchema>;
 
 const vendorStockInRefSchema = z
   .object({
-    id: z.number(),
+    id: z.coerce.string(),
     quantity: z.coerce.number().default(0),
     unitCost: z.coerce.number().nullish(),
     totalValue: z.coerce.number().nullish(),
@@ -86,7 +86,7 @@ const vendorStockInRefSchema = z
     sourceType: z.string().nullish(),
     product: z
       .object({
-        id: z.number(),
+        id: z.coerce.string(),
         name: z.string(),
         sku: z.string().nullish(),
         unit: z.string().nullish(),
@@ -99,7 +99,7 @@ export type VendorStockInRef = z.infer<typeof vendorStockInRefSchema>;
 export const vendorOverviewSchema = z.object({
   vendor: z
     .object({
-      id: z.number(),
+      id: z.coerce.string(),
       name: z.string(),
       contactName: z.string().nullish(),
       phone: z.string().nullish(),
@@ -114,7 +114,7 @@ export const vendorOverviewSchema = z.object({
       isActive: z.boolean().default(true),
       createdAt: z.string().optional(),
       updatedAt: z.string().optional(),
-      linkedUserId: z.number().nullish(),
+      linkedUserId: z.coerce.string().nullish(),
       linkedUser: linkedUserSchema.nullish(),
     })
     .passthrough(),

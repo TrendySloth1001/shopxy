@@ -44,7 +44,7 @@ function WishlistBody() {
     startTransition(load);
   }, [load]);
 
-  function handleRemove(productId: number) {
+  function handleRemove(productId: string) {
     setItems((prev) => prev.filter((i) => i.productId !== productId));
     removeFromWishlist(productId).catch(() => {
       // If removal fails silently reload

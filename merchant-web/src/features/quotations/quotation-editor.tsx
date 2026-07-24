@@ -20,7 +20,7 @@ const loadProducts = (s: string) => listProducts({ search: s, limit: "20" }).the
 const loadParties = (s: string) => listParties(s ? { search: s } : undefined);
 
 type QuoteLine = {
-  productId: number;
+  productId: string;
   name: string;
   sku: string | null;
   quantity: number;
@@ -29,7 +29,7 @@ type QuoteLine = {
   imageUrl: string | null;
 };
 
-type PartyRef = { id: number; name: string; stateCode?: string | null };
+type PartyRef = { id: string; name: string; stateCode?: string | null };
 
 export function QuotationEditor({ existing }: { existing?: Quotation }) {
   const t = useTranslations("quotations");

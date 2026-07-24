@@ -64,7 +64,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   late final TextEditingController _lowStockThreshold;
 
   String _selectedUnit = 'PCS';
-  int? _selectedCategoryId;
+  String? _selectedCategoryId;
   final List<String> _imageUrls = [];
   final List<String> _tags = [];
   final _tagController = TextEditingController();
@@ -88,8 +88,8 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   final List<VariantAxis> _variantAxes = [];
   final List<ProductVariant> _variants = [];
   // For edit mode: maps url → existing image ID so we can call deleteImage
-  final Map<String, int> _existingImageIdByUrl = {};
-  final Set<int> _removedImageIds = {};
+  final Map<String, String> _existingImageIdByUrl = {};
+  final Set<String> _removedImageIds = {};
   final _imageUrlController = TextEditingController();
 
   bool _isUploading = false;
@@ -97,7 +97,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   // Custom field values, keyed by definition id. Loaded on init for
   // edit mode; written in one bulk call after product create/update
   // so the existing _save's success/error semantics still apply.
-  final Map<int, String> _customFieldValues = {};
+  final Map<String, String> _customFieldValues = {};
 
   bool get isEditing => widget.product != null;
 
@@ -342,7 +342,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       );
     }
     try {
-      int productId;
+      String productId;
       if (isEditing) {
         productId = widget.product!.id;
         final data = ProductDto.toUpdateJson(

@@ -40,7 +40,7 @@ void main() {
   testWidgets('renders party shop with role chip and invoice count',
       (tester) async {
     final shop = fakeShop(
-      id: 7,
+      id: '7',
       name: 'Bharat Traders',
       role: ShopRole.party,
       invoiceCount: 4,
@@ -58,7 +58,7 @@ void main() {
 
   testWidgets('vendor role displays the Supplier chip', (tester) async {
     final shop = fakeShop(
-      id: 12,
+      id: '12',
       name: 'Mehta Industries',
       role: ShopRole.vendor,
       invoiceCount: 1,
@@ -79,7 +79,7 @@ void main() {
     // The redesigned callout lives in the has-shops list (not the empty state),
     // so seed a shop alongside the pending invitation.
     await tester.pumpWidget(_wrap(
-      shops: FakeShopsProvider(seedShops: [fakeShop(id: 1, name: 'Bharat Traders')]),
+      shops: FakeShopsProvider(seedShops: [fakeShop(id: '1', name: 'Bharat Traders')]),
       notifs: FakeNotificationsProvider(
         seedPending: [fakePendingInvitation(fromShopName: 'Acme Stores')],
       ),
@@ -94,12 +94,12 @@ void main() {
   testWidgets('pluralises the pending callout when there are several',
       (tester) async {
     await tester.pumpWidget(_wrap(
-      shops: FakeShopsProvider(seedShops: [fakeShop(id: 5, name: 'Bharat Traders')]),
+      shops: FakeShopsProvider(seedShops: [fakeShop(id: '5', name: 'Bharat Traders')]),
       notifs: FakeNotificationsProvider(
         seedPending: [
-          fakePendingInvitation(id: 1, fromShopName: 'Acme Stores'),
-          fakePendingInvitation(id: 2, fromShopName: 'Bharat Traders'),
-          fakePendingInvitation(id: 3, fromShopName: 'Mehta Industries'),
+          fakePendingInvitation(id: '1', fromShopName: 'Acme Stores'),
+          fakePendingInvitation(id: '2', fromShopName: 'Bharat Traders'),
+          fakePendingInvitation(id: '3', fromShopName: 'Mehta Industries'),
         ],
       ),
     ));

@@ -8,21 +8,21 @@ import { formatINR } from "@/shared/format";
 import type { ShopOrderDetail, OrderItem } from "@/features/orders/types";
 
 type ItemPick = {
-  purchaseRequestItemId: number;
+  purchaseRequestItemId: string;
   quantity: number;
   unitPrice: number;
   maxQuantity: number;
 };
 
 type Props = {
-  parentOrderId: number;
+  parentOrderId: string;
   shopOrder: ShopOrderDetail;
   onClose: () => void;
-  onSubmitted: (returnId: number) => void;
+  onSubmitted: (returnId: string) => void;
 };
 
 export function RequestReturnDialog({ parentOrderId, shopOrder, onClose, onSubmitted }: Props) {
-  const [picks, setPicks] = useState<Map<number, ItemPick>>(new Map());
+  const [picks, setPicks] = useState<Map<string, ItemPick>>(new Map());
   const [reason, setReason] = useState<ReturnReason>("DAMAGED");
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -53,7 +53,7 @@ export function RequestReturnDialog({ parentOrderId, shopOrder, onClose, onSubmi
     });
   }
 
-  function adjustQty(itemId: number, delta: number) {
+  function adjustQty(itemId: string, delta: number) {
     setPicks((prev) => {
       const pick = prev.get(itemId);
       if (!pick) return prev;

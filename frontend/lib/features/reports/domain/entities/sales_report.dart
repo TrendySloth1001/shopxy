@@ -88,21 +88,21 @@ class TopProduct {
     required this.quantity,
     required this.amount,
   });
-  final int productId;
+  final String productId;
   final String productName;
   final String productSku;
   final double quantity;
   final double amount;
 
   factory TopProduct.sales(Map<String, dynamic> j) => TopProduct(
-        productId: _i(j['productId']),
+        productId: j['productId'].toString(),
         productName: (j['productName'] as String?) ?? 'Product',
         productSku: (j['productSku'] as String?) ?? '',
         quantity: _d(j['quantity']),
         amount: _d(j['revenue']),
       );
   factory TopProduct.purchases(Map<String, dynamic> j) => TopProduct(
-        productId: _i(j['productId']),
+        productId: j['productId'].toString(),
         productName: (j['productName'] as String?) ?? 'Product',
         productSku: (j['productSku'] as String?) ?? '',
         quantity: _d(j['quantity']),
@@ -117,20 +117,20 @@ class TopCounterparty {
     required this.amount,
     required this.invoices,
   });
-  final int? id;
+  final String? id;
   final String name;
   final double amount;
   final int invoices;
 
   factory TopCounterparty.customer(Map<String, dynamic> j) => TopCounterparty(
-        id: (j['partyId'] as num?)?.toInt(),
+        id: j['partyId']?.toString(),
         name: (j['name'] as String?) ?? 'Customer',
         amount: _d(j['revenue']),
         invoices: _i(j['invoices']),
       );
 
   factory TopCounterparty.vendor(Map<String, dynamic> j) => TopCounterparty(
-        id: (j['vendorId'] as num?)?.toInt(),
+        id: j['vendorId']?.toString(),
         name: (j['name'] as String?) ?? 'Vendor',
         amount: _d(j['spend']),
         invoices: _i(j['invoices']),
@@ -379,7 +379,7 @@ class SoldProduct {
     required this.totalAmount,
     required this.lastSoldAt,
   });
-  final int productId;
+  final String productId;
   final String? productName;
   final String? productSku;
   final String? unit;
@@ -389,7 +389,7 @@ class SoldProduct {
   final DateTime? lastSoldAt;
 
   factory SoldProduct.fromJson(Map<String, dynamic> j) => SoldProduct(
-        productId: _i(j['productId']),
+        productId: j['productId'].toString(),
         productName: j['productName'] as String?,
         productSku: j['productSku'] as String?,
         unit: j['unit'] as String?,
@@ -457,7 +457,7 @@ class SoldItem {
   final String? unit;
   final double quantity;
   final double total;
-  final int? invoiceId;
+  final String? invoiceId;
   final String? invoiceNo;
   final DateTime? soldAt;
 
@@ -467,7 +467,7 @@ class SoldItem {
         unit: j['unit'] as String?,
         quantity: _d(j['quantity']),
         total: _d(j['total']),
-        invoiceId: (j['invoiceId'] as num?)?.toInt(),
+        invoiceId: j['invoiceId']?.toString(),
         invoiceNo: j['invoiceNo'] as String?,
         soldAt: DateTime.tryParse((j['soldAt'] as String?) ?? ''),
       );

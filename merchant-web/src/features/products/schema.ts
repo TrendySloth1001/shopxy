@@ -15,8 +15,8 @@ const arr = <T extends z.ZodTypeAny>(s: T) =>
     .transform((v) => v ?? []);
 
 export const productImageSchema = z.object({
-  id: z.number(),
-  productId: z.number().optional(),
+  id: z.coerce.string(),
+  productId: z.coerce.string().optional(),
   url: z.string(),
   sortOrder: z.coerce.number().default(0),
   createdAt: z.string().optional(),
@@ -25,9 +25,9 @@ export type ProductImage = z.infer<typeof productImageSchema>;
 
 export const categorySchema = z
   .object({
-    id: z.number(),
+    id: z.coerce.string(),
     name: z.string(),
-    parentId: z.number().nullish(),
+    parentId: z.coerce.string().nullish(),
     slug: z.string().nullish(),
     imageUrl: z.string().nullish(),
     iconName: z.string().nullish(),
@@ -59,7 +59,7 @@ export const variantAxisSchema = z.object({
 export type VariantAxis = z.infer<typeof variantAxisSchema>;
 
 export const variantSchema = z.object({
-  id: z.number().optional(),
+  id: z.coerce.string().optional(),
   sku: z.string(),
   barcode: z.string().nullish(),
   attributes: z.record(z.string(), z.string()).default({}),
@@ -80,7 +80,7 @@ export type ContentBlock = z.infer<typeof contentBlockSchema>;
 
 export const productSchema = z
   .object({
-    id: z.number(),
+    id: z.coerce.string(),
     name: z.string(),
     description: z.string().nullish(),
     sku: z.string(),
@@ -94,7 +94,7 @@ export const productSchema = z
     stockQuantity: z.coerce.number().default(0),
     lowStockThreshold: z.coerce.number().default(0),
     unit: z.string().default("PCS"),
-    categoryId: z.number().nullish(),
+    categoryId: z.coerce.string().nullish(),
     category: categorySchema.nullish(),
     isActive: z.boolean().default(true),
     isPublished: z.boolean().default(false),
@@ -135,7 +135,7 @@ export type ProductList = z.infer<typeof productListSchema>;
 /** Custom-field definition (shop-wide) + per-product value. */
 export const customFieldDefSchema = z
   .object({
-    id: z.number(),
+    id: z.coerce.string(),
     label: z.string().nullish(),
     name: z.string().nullish(),
     type: z.string().default("TEXT"),
@@ -146,7 +146,7 @@ export type CustomFieldDef = z.infer<typeof customFieldDefSchema>;
 
 export const customFieldValueSchema = z
   .object({
-    definitionId: z.number(),
+    definitionId: z.coerce.string(),
     value: z.string().nullish(),
   })
   .passthrough();

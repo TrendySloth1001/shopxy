@@ -28,18 +28,18 @@ export function listChallans(opts?: { status?: string; search?: string }): Promi
   );
 }
 
-export function getChallan(id: number): Promise<Challan> {
+export function getChallan(id: string): Promise<Challan> {
   return fetch(`/api/challans/${id}`, { cache: "no-store" }).then((r) =>
     jsonOrThrow(r, (raw) => challanSchema.parse(raw), "Could not load the challan."),
   );
 }
 
 export function createChallan(input: {
-  partyId?: number;
+  partyId?: string;
   partyName?: string;
   partyPhone?: string;
   note?: string;
-  items: { productId: number; quantity: number }[];
+  items: { productId: string; quantity: number }[];
 }): Promise<Challan> {
   return fetch("/api/challans", {
     method: "POST",
@@ -48,16 +48,16 @@ export function createChallan(input: {
   }).then((r) => jsonOrThrow(r, (raw) => challanSchema.parse(raw), "Could not create the challan."));
 }
 
-export async function cancelChallan(id: number): Promise<void> {
+export async function cancelChallan(id: string): Promise<void> {
   const res = await fetch(`/api/challans/${id}/cancel`, { method: "PATCH" });
   await okOrThrow(res, "Could not cancel the challan.");
 }
 
 /** Convert a PENDING challan into a draft SALE invoice; returns the new id. */
 export function convertChallan(
-  id: number,
+  id: string,
   input?: { customerName?: string; customerGstin?: string; discount?: number; note?: string },
-): Promise<{ id: number }> {
+): Promise<{ id: string }> {
   return fetch(`/api/challans/${id}/convert`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -66,7 +66,7 @@ export function convertChallan(
     jsonOrThrow(
       r,
       (raw) => {
-        const obj = raw as { id?: number };
+        const obj = raw as { id?: string };
         if (typeof obj?.id !== "number") throw new Error("Could not convert the challan.");
         return { id: obj.id };
       },

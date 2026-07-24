@@ -38,7 +38,7 @@ const fmtPct = (n: number): string =>
   Number.isFinite(n) ? `${Number.parseFloat(n.toFixed(2))}%` : "—";
 const round2 = (n: number): number => Math.round(n * 100) / 100;
 
-type PartyRef = { id: number; name: string };
+type PartyRef = { id: string; name: string };
 
 type Tone = "ink" | "success" | "error";
 const toneText = (t?: Tone) =>
@@ -64,7 +64,7 @@ function discountOf(base: number, value: string, unit: Unit): number {
   return unit === "pct" ? (base * Math.min(100, v)) / 100 : Math.min(base, v);
 }
 
-export function CalculatorSuite({ quotationId }: { quotationId?: number } = {}) {
+export function CalculatorSuite({ quotationId }: { quotationId?: string } = {}) {
   const t = useTranslations("reports");
   const topRef = useRef<HTMLDivElement>(null);
   const autoLoaded = useRef(false);
@@ -101,7 +101,7 @@ export function CalculatorSuite({ quotationId }: { quotationId?: number } = {}) 
     };
   }, [search]);
 
-  const has = (id: number) => lines.some((l) => l.product.id === id);
+  const has = (id: string) => lines.some((l) => l.product.id === id);
 
   async function toggleLine(p: Product) {
     if (has(p.id)) {
@@ -116,7 +116,7 @@ export function CalculatorSuite({ quotationId }: { quotationId?: number } = {}) 
     }
   }
 
-  function patch(id: number, key: "priceStr" | "qtyStr" | "rateStr" | "discStr", v: string) {
+  function patch(id: string, key: "priceStr" | "qtyStr" | "rateStr" | "discStr", v: string) {
     setLines((ls) => ls.map((l) => (l.product.id === id ? { ...l, [key]: onlyNum(v) } : l)));
   }
 
@@ -158,7 +158,7 @@ export function CalculatorSuite({ quotationId }: { quotationId?: number } = {}) 
     setSendMsg(null);
   }
 
-  async function loadQuotationById(id: number) {
+  async function loadQuotationById(id: string) {
     try {
       await importQuotation(await getQuotation(id));
     } catch (e) {

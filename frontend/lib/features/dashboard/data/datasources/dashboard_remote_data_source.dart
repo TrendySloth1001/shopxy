@@ -117,13 +117,13 @@ class DashboardRemoteDataSource {
   static DashboardTransaction _transaction(Map<String, dynamic> j) {
     final product = j['product'] as Map<String, dynamic>?;
     return DashboardTransaction(
-      id: _int(j['id']),
-      productId: _int(j['productId']),
+      id: j['id'].toString(),
+      productId: j['productId'].toString(),
       type: j['type'] as String?,
       direction: j['direction'] as String?,
       quantity: _double(j['quantity']),
       sourceType: j['sourceType'] as String?,
-      sourceId: j['sourceId'] as int?,
+      sourceId: j['sourceId']?.toString(),
       createdAt: DateTime.parse(j['createdAt'] as String),
       productName: product?['name'] as String?,
     );

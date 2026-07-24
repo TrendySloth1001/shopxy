@@ -27,13 +27,13 @@ export function listReturns(opts?: { status?: string }): Promise<MerchantReturn[
   );
 }
 
-export function getReturn(id: number): Promise<MerchantReturn> {
+export function getReturn(id: string): Promise<MerchantReturn> {
   return fetch(`/api/returns/${id}`, { cache: "no-store" }).then((r) =>
     jsonOrThrow(r, (raw) => returnSchema.parse(raw), "Could not load the return."),
   );
 }
 
-async function postAction(id: number, action: string, body: Record<string, unknown>, fallback: string): Promise<void> {
+async function postAction(id: string, action: string, body: Record<string, unknown>, fallback: string): Promise<void> {
   const res = await fetch(`/api/returns/${id}/${action}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -42,16 +42,16 @@ async function postAction(id: number, action: string, body: Record<string, unkno
   await okOrThrow(res, fallback);
 }
 
-export function approveReturn(id: number, note?: string): Promise<void> {
+export function approveReturn(id: string, note?: string): Promise<void> {
   return postAction(id, "approve", { note }, "Could not approve the return.");
 }
-export function rejectReturn(id: number, note: string): Promise<void> {
+export function rejectReturn(id: string, note: string): Promise<void> {
   return postAction(id, "reject", { note }, "Could not reject the return.");
 }
-export function markPickedUp(id: number): Promise<void> {
+export function markPickedUp(id: string): Promise<void> {
   return postAction(id, "picked-up", {}, "Could not update the return.");
 }
-export function markReceived(id: number): Promise<void> {
+export function markReceived(id: string): Promise<void> {
   return postAction(id, "received", {}, "Could not update the return.");
 }
 /**
@@ -59,7 +59,7 @@ export function markReceived(id: number): Promise<void> {
  * method (gateway refund-to-source) — never a wallet — and replies with
  * `{ ok, refundAmount, refundStatus }`.
  */
-export async function refundReturn(id: number, note?: string): Promise<RefundResult> {
+export async function refundReturn(id: string, note?: string): Promise<RefundResult> {
   const res = await fetch(`/api/returns/${id}/refund`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

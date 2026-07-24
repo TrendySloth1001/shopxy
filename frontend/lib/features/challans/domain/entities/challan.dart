@@ -9,9 +9,9 @@ class ChallanItem {
     required this.quantity,
   });
 
-  final int id;
-  final int challanId;
-  final int productId;
+  final String id;
+  final String challanId;
+  final String productId;
   final String productName;
   final String productSku;
   final String unit;
@@ -25,7 +25,7 @@ class ChallanInvoiceRef {
     required this.status,
   });
 
-  final int id;
+  final String id;
   final String invoiceNo;
   final String status;
 }
@@ -46,14 +46,14 @@ class Challan {
     required this.createdAt,
   });
 
-  final int id;
+  final String id;
   final String challanNo;
   final String status;
-  final int? partyId;
+  final String? partyId;
   final String partyName;
   final String? partyPhone;
   final String? note;
-  final int? invoiceId;
+  final String? invoiceId;
   final ChallanInvoiceRef? invoice;
   final List<ChallanItem> items;
   final int itemCount;
@@ -73,7 +73,7 @@ class ChallanItemDraft {
     this.quantity = 1.0,
   });
 
-  final int productId;
+  final String productId;
   final String productName;
   final String productSku;
   final String unit;

@@ -11,7 +11,7 @@ import { FormSkeleton } from "@/shared/ui/skeleton";
 export default function EditCouponPage() {
   const t = useTranslations("coupons");
   const params = useParams<{ id: string }>();
-  const id = Number(params.id);
+  const id = params.id;
   const [coupon, setCoupon] = useState<Coupon | null>(null);
   const [error, setError] = useState<string | null>(null);
 

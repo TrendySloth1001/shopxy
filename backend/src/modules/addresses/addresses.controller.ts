@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
+import { decodeId } from '../../shared/ids/publicId.js';
 import { addressesService } from './addresses.service.js';
 
 // PII-7 — normalise a contact phone toward E.164: strip spaces, dashes,
@@ -62,8 +63,8 @@ export class AddressesController {
 
   async update(req: Request, res: Response): Promise<void> {
     const userId = req.user!.sub;
-    const id = Number(req.params.id);
-    if (!Number.isInteger(id) || id <= 0) {
+    const id = decodeId(req.params.id);
+    if (id === null) {
       res.status(400).json({ error: 'Invalid address id' });
       return;
     }
@@ -78,8 +79,8 @@ export class AddressesController {
 
   async setDefault(req: Request, res: Response): Promise<void> {
     const userId = req.user!.sub;
-    const id = Number(req.params.id);
-    if (!Number.isInteger(id) || id <= 0) {
+    const id = decodeId(req.params.id);
+    if (id === null) {
       res.status(400).json({ error: 'Invalid address id' });
       return;
     }
@@ -93,8 +94,8 @@ export class AddressesController {
 
   async delete(req: Request, res: Response): Promise<void> {
     const userId = req.user!.sub;
-    const id = Number(req.params.id);
-    if (!Number.isInteger(id) || id <= 0) {
+    const id = decodeId(req.params.id);
+    if (id === null) {
       res.status(400).json({ error: 'Invalid address id' });
       return;
     }

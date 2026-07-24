@@ -38,7 +38,7 @@ class QuotationsRemoteDataSource {
   /// [items] is a list of {productId, name, sku?, quantity, unitPrice,
   /// taxPercent?, discount?}.
   Future<Quotation> create({
-    required int partyId,
+    required String partyId,
     required List<Map<String, dynamic>> items,
     String? note,
     String? placeOfSupplyStateCode,
@@ -58,7 +58,7 @@ class QuotationsRemoteDataSource {
 
   /// Full detail (with line items) for one quotation — used by the pricing
   /// calculator to load a saved quote back into the basket.
-  Future<Quotation> get(int id) async {
+  Future<Quotation> get(String id) async {
     final res = await _client.get('/quotations/$id');
     if (res.statusCode != 200) {
       throw Exception(_err(res.body, 'Failed to load quotation'));
@@ -66,7 +66,7 @@ class QuotationsRemoteDataSource {
     return Quotation.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  Future<Quotation> cancel(int id) async {
+  Future<Quotation> cancel(String id) async {
     final res = await _client.post('/quotations/$id/cancel');
     if (res.statusCode != 200) {
       throw Exception(_err(res.body, 'Failed to cancel quotation'));
@@ -76,7 +76,7 @@ class QuotationsRemoteDataSource {
 
   /// Price a customer's REQUESTED quote and send it back (→ PENDING).
   Future<Quotation> respond(
-    int id, {
+    String id, {
     required List<Map<String, dynamic>> items,
     String? note,
     String? placeOfSupplyStateCode,
@@ -94,12 +94,12 @@ class QuotationsRemoteDataSource {
   }
 
   /// Raw PDF response for a quotation (caller uses `response.bodyBytes`).
-  Future<http.Response> downloadPdf(int id) {
+  Future<http.Response> downloadPdf(String id) {
     return _client.get('/quotations/$id/pdf');
   }
 
   /// Decline a customer's REQUESTED quote.
-  Future<Quotation> declineRequest(int id, {String? declineNote}) async {
+  Future<Quotation> declineRequest(String id, {String? declineNote}) async {
     final res = await _client.post('/quotations/$id/decline-request', body: {
       if (declineNote != null && declineNote.isNotEmpty)
         'declineNote': declineNote,

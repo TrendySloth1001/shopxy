@@ -22,7 +22,7 @@ class PdpGallery extends StatefulWidget {
     required this.urls,
     required this.offers,
   });
-  final int productId;
+  final String productId;
   final List<String> urls;
   final List<ProductOffer> offers;
 

@@ -10,10 +10,10 @@ class SaleSnapshot {
     required this.totals,
   });
 
-  final int saleId;
+  final String saleId;
   final String status;
   final int version;
-  final int? invoiceId;
+  final String? invoiceId;
   final double headerDiscount;
   final List<SaleLine> lines;
   final SaleTotals totals;
@@ -21,10 +21,10 @@ class SaleSnapshot {
   factory SaleSnapshot.fromJson(Map<String, dynamic> json) {
     final sale = json['sale'] as Map<String, dynamic>;
     return SaleSnapshot(
-      saleId: sale['id'] as int,
+      saleId: sale['id'].toString(),
       status: sale['status'] as String,
       version: sale['version'] as int,
-      invoiceId: sale['invoiceId'] as int?,
+      invoiceId: sale['invoiceId']?.toString(),
       headerDiscount: _d(sale['headerDiscount']),
       lines: (json['lines'] as List)
           .map((e) => SaleLine.fromJson(e as Map<String, dynamic>))
@@ -48,7 +48,7 @@ class SaleLine {
     required this.total,
   });
 
-  final int productId;
+  final String productId;
   final String name;
   final String sku;
   final String? imageUrl;
@@ -58,7 +58,7 @@ class SaleLine {
   final double total;
 
   factory SaleLine.fromJson(Map<String, dynamic> json) => SaleLine(
-        productId: json['productId'] as int,
+        productId: json['productId'].toString(),
         name: json['name'] as String,
         sku: json['sku'] as String,
         imageUrl: json['imageUrl'] as String?,

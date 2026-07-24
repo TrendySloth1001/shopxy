@@ -58,7 +58,7 @@ export interface RazorpayClientParams {
 
 /** Full pay-session envelope as returned by the BFF pay endpoint. */
 export interface PaySession {
-  intentId: number;
+  intentId: string;
   provider: "RAZORPAY";
   providerOrderRef: string;
   /** Rupees (major units). */

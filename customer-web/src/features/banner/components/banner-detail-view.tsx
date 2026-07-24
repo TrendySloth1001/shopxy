@@ -25,7 +25,7 @@ function toCard(p: BannerProduct): CatalogProduct {
   };
 }
 
-export function BannerDetailView({ id }: { id: number }) {
+export function BannerDetailView({ id }: { id: string }) {
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [data, setData] = useState<BannerDetail | null>(null);
 

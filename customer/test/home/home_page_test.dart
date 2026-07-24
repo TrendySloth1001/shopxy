@@ -61,15 +61,15 @@ class _FakeHomeFeedProvider extends HomeFeedProvider {
 
 class _NoopTracking implements TrackingService {
   @override
-  void recordImpression(int productId, {String source = 'home', String? sessionId}) {}
+  void recordImpression(String productId, {String source = 'home', String? sessionId}) {}
   @override
-  void recordTap(int productId, {String source = 'home', String? sessionId}) {}
+  void recordTap(String productId, {String source = 'home', String? sessionId}) {}
   @override
-  void recordView(int productId, {String source = 'pdp', String? sessionId}) {}
+  void recordView(String productId, {String source = 'pdp', String? sessionId}) {}
   @override
-  void recordWishlistAdd(int productId, {String source = 'pdp'}) {}
+  void recordWishlistAdd(String productId, {String source = 'pdp'}) {}
   @override
-  void recordAddToCart(int productId, {String source = 'pdp'}) {}
+  void recordAddToCart(String productId, {String source = 'pdp'}) {}
   @override
   Future<void> flush() async {}
   @override

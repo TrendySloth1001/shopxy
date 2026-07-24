@@ -57,7 +57,7 @@ export async function fetchIncomingInvitations(opts?: {
   );
 }
 
-export async function acceptInvitation(id: number): Promise<Invitation> {
+export async function acceptInvitation(id: string): Promise<Invitation> {
   const res = await fetch(`/api/invitations/${id}/accept`, { method: "POST" });
   return jsonOrThrow(
     res,
@@ -66,7 +66,7 @@ export async function acceptInvitation(id: number): Promise<Invitation> {
   );
 }
 
-export async function declineInvitation(id: number): Promise<Invitation> {
+export async function declineInvitation(id: string): Promise<Invitation> {
   const res = await fetch(`/api/invitations/${id}/decline`, { method: "POST" });
   return jsonOrThrow(
     res,
@@ -108,7 +108,7 @@ export async function fetchCatalogCategories(): Promise<CatalogCategory[]> {
 
 export async function fetchCatalogProducts(opts?: {
   search?: string;
-  categoryId?: number;
+  categoryId?: string;
   page?: number;
   limit?: number;
 }): Promise<CatalogProductsPage> {

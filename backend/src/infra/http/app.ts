@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import { buildLimiters } from './limiters.js';
+import { encodeIdsDeep } from '../../shared/ids/publicId.js';
 import prisma from '../db/prisma.js';
 import authRouter from '../../modules/auth/auth.routes.js';
 import categoriesRouter from '../../modules/categories/categories.routes.js';
@@ -159,6 +160,22 @@ export function buildApp(): express.Express {
   app.use('/payment-gateway', webhookLimiter, paymentGatewayPublicRouter);
 
   app.use(express.json({ limit: '2mb' }));
+
+  // OUTPUT side of opaque public IDs — the single source of truth for the whole
+  // API. Controllers serialise raw Prisma rows (no DTO layer), so rather than
+  // wrap every `res.json` in 25 modules, we override it once here to run every
+  // JSON body through `encodeIdsDeep`, which tokenises `id`/`*Id` fields (money
+  // Decimals, Dates and string ids left intact). Mounted AFTER the payment
+  // gateway webhooks (line above) so provider-facing responses stay raw, and
+  // gated by the PUBLIC_IDS flag inside `encodeIdsDeep` (off ⇒ identity ⇒ no
+  // cost, no change). This closes the sequential-id leak across every endpoint
+  // at once; per-route INPUT decoding is wired module-by-module (products first)
+  // and only bites once the flag is flipped.
+  app.use((_req: Request, res: Response, next) => {
+    const originalJson = res.json.bind(res);
+    res.json = (body: unknown) => originalJson(encodeIdsDeep(body));
+    next();
+  });
 
   app.get('/health', async (_req, res) => {
     try {

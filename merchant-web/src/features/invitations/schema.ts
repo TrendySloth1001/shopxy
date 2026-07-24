@@ -19,11 +19,11 @@ export const INVITE_STATUS_META: Record<string, { labelKey: string; classes: str
 
 export const invitationSchema = z
   .object({
-    id: z.number(),
+    id: z.coerce.string(),
     toEmail: z.string(),
     linkType: z.string(),
-    partyId: z.number().nullish(),
-    vendorId: z.number().nullish(),
+    partyId: z.coerce.string().nullish(),
+    vendorId: z.coerce.string().nullish(),
     status: z.string(),
     displayName: z.string().nullish(),
     message: z.string().nullish(),
@@ -31,7 +31,7 @@ export const invitationSchema = z
     fromShopName: z.string().nullish(),
     fromUser: z
       .object({
-        id: z.number(),
+        id: z.coerce.string(),
         name: z.string(),
         email: z.string(),
         avatarUrl: z.string().nullish(),

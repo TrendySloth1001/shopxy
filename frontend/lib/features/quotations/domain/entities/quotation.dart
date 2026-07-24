@@ -12,7 +12,7 @@ class QuotationLine {
     this.imageUrl,
   });
 
-  final int productId;
+  final String productId;
   final String name;
   final String? sku;
   final double quantity;
@@ -30,7 +30,7 @@ class QuotationLine {
   }
 
   factory QuotationLine.fromJson(Map<String, dynamic> j) => QuotationLine(
-        productId: j['productId'] as int,
+        productId: j['productId'].toString(),
         name: (j['name'] as String?) ?? 'Item',
         sku: j['sku'] as String?,
         quantity: _d(j['quantity']),
@@ -64,14 +64,14 @@ class Quotation {
     this.invoiceNo,
   });
 
-  final int id;
+  final String id;
   final String quotationNo;
   final String status; // REQUESTED | PENDING | ACCEPTED | DECLINED | CANCELLED | EXPIRED
   final String partyName;
 
   /// The linked customer's id — needed to spawn a *new* quotation from a loaded
   /// one (the pricing calculator's round-trip). Null for legacy payloads.
-  final int? partyId;
+  final String? partyId;
 
   /// Place-of-supply state code carried through when re-pricing a request.
   final String? placeOfSupplyStateCode;
@@ -82,7 +82,7 @@ class Quotation {
   final DateTime createdAt;
   final String? note;
   final String? declineNote;
-  final int? invoiceId;
+  final String? invoiceId;
   final String? invoiceNo;
 
   bool get isPending => status == 'PENDING';
@@ -105,11 +105,11 @@ class Quotation {
         .map(QuotationLine.fromJson)
         .toList();
     return Quotation(
-      id: j['id'] as int,
+      id: j['id'].toString(),
       quotationNo: j['quotationNo'] as String,
       status: j['status'] as String,
       partyName: (party?['name'] as String?) ?? 'Customer',
-      partyId: (party?['id'] as num?)?.toInt(),
+      partyId: party?['id']?.toString(),
       placeOfSupplyStateCode: j['placeOfSupplyStateCode'] as String?,
       subtotal: _d(j['subtotal']),
       taxAmount: _d(j['taxAmount']),
@@ -118,7 +118,7 @@ class Quotation {
       createdAt: DateTime.parse(j['createdAt'] as String),
       note: j['note'] as String?,
       declineNote: j['declineNote'] as String?,
-      invoiceId: invoice?['id'] as int?,
+      invoiceId: invoice?['id']?.toString(),
       invoiceNo: invoice?['invoiceNo'] as String?,
     );
   }

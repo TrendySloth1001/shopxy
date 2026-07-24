@@ -4,7 +4,7 @@ class VendorDto {
   static Vendor fromJson(Map<String, dynamic> json) {
     final count = json['_count'] as Map<String, dynamic>?;
     return Vendor(
-      id: json['id'] as int,
+      id: json['id'].toString(),
       name: json['name'] as String,
       contactName: json['contactName'] as String?,
       phone: json['phone'] as String?,

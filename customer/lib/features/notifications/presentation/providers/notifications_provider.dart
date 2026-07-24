@@ -35,9 +35,9 @@ class NotificationsProvider extends ChangeNotifier {
   /// the card without calling decline — the invite stays pending on the
   /// server and the user can still find it on the Invitations page.
   /// Cleared on logout / app cold start.
-  final Set<int> _dismissedFromHome = <int>{};
-  bool isDismissedFromHome(int id) => _dismissedFromHome.contains(id);
-  void dismissFromHome(int id) {
+  final Set<String> _dismissedFromHome = <String>{};
+  bool isDismissedFromHome(String id) => _dismissedFromHome.contains(id);
+  void dismissFromHome(String id) {
     if (_dismissedFromHome.add(id)) notifyListeners();
   }
 
@@ -107,7 +107,7 @@ class NotificationsProvider extends ChangeNotifier {
 
   // ── Mutations ───────────────────────────────────────────────────
 
-  Future<void> markRead(int id) async {
+  Future<void> markRead(String id) async {
     final idx = _items.indexWhere((n) => n.id == id);
     if (idx == -1) return;
     final current = _items[idx];
@@ -161,8 +161,8 @@ class NotificationsProvider extends ChangeNotifier {
   Future<Invitation> sendInvite({
     required String toEmail,
     required String linkType,
-    int? partyId,
-    int? vendorId,
+    String? partyId,
+    String? vendorId,
     String? message,
   }) async {
     final invite = await _invitesDs.send(
@@ -177,19 +177,19 @@ class NotificationsProvider extends ChangeNotifier {
     return invite;
   }
 
-  Future<Invitation> accept(int id) async {
+  Future<Invitation> accept(String id) async {
     final updated = await _invitesDs.accept(id);
     _replaceIncoming(updated);
     return updated;
   }
 
-  Future<Invitation> decline(int id) async {
+  Future<Invitation> decline(String id) async {
     final updated = await _invitesDs.decline(id);
     _replaceIncoming(updated);
     return updated;
   }
 
-  Future<void> cancel(int id) async {
+  Future<void> cancel(String id) async {
     await _invitesDs.cancel(id);
     _outgoing = _outgoing.where((i) => i.id != id).toList();
     notifyListeners();

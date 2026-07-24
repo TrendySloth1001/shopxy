@@ -267,8 +267,8 @@ function RequestQuotePageContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [categoryId, setCategoryId] = useState<number | null>(null);
-  const [basket, setBasket] = useState<Map<number, { product: CatalogProduct; qty: number }>>(
+  const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [basket, setBasket] = useState<Map<string, { product: CatalogProduct; qty: number }>>(
     new Map(),
   );
   const [showConfirm, setShowConfirm] = useState(false);
@@ -307,7 +307,7 @@ function RequestQuotePageContent() {
 
   // Derived: categories
   const categories = (() => {
-    const byId = new Map<number, { cat: CatalogProduct["category"]; count: number }>();
+    const byId = new Map<string, { cat: CatalogProduct["category"]; count: number }>();
     for (const p of products) {
       if (!p.category) continue;
       const existing = byId.get(p.category.id);

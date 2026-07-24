@@ -24,7 +24,7 @@ export function RememberedAccounts() {
   const { refresh } = useAuth();
   const t = useTranslations("auth");
   const [accounts, setAccounts] = useState<DesktopAccount[] | null>(null);
-  const [busyId, setBusyId] = useState<number | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -39,7 +39,7 @@ export function RememberedAccounts() {
 
   if (!accounts || accounts.length === 0) return null;
 
-  const resume = async (id: number) => {
+  const resume = async (id: string) => {
     setBusyId(id);
     setError(null);
     const r = await resumeAccount(id);
@@ -53,7 +53,7 @@ export function RememberedAccounts() {
     setBusyId(null);
   };
 
-  const forget = async (id: number) => {
+  const forget = async (id: string) => {
     await forgetAccount(id);
     setAccounts((prev) => prev?.filter((a) => a.id !== id) ?? null);
   };

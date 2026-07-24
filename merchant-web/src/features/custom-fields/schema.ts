@@ -37,13 +37,13 @@ const arr = <T extends z.ZodTypeAny>(s: T) =>
 
 export const definitionSchema = z
   .object({
-    id: z.number(),
+    id: z.coerce.string(),
     name: z.string(),
     type: z.string(),
     options: arr(z.string()),
     unitSuffix: z.string().nullish(),
     icon: z.string().nullish(),
-    sectionId: z.number().nullish(),
+    sectionId: z.coerce.string().nullish(),
     sortOrder: z.coerce.number().default(0),
     isActive: z.boolean().default(true),
   })
@@ -52,7 +52,7 @@ export type Definition = z.infer<typeof definitionSchema>;
 
 export const sectionSchema = z
   .object({
-    id: z.number(),
+    id: z.coerce.string(),
     name: z.string(),
     icon: z.string().nullish(),
     sortOrder: z.coerce.number().default(0),

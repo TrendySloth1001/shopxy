@@ -26,7 +26,7 @@ import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 class PartyDetailPage extends StatefulWidget {
   const PartyDetailPage({super.key, required this.partyId});
-  final int partyId;
+  final String partyId;
 
   @override
   State<PartyDetailPage> createState() => _PartyDetailPageState();

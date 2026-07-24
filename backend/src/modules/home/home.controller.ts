@@ -1,10 +1,9 @@
 import { Request, Response } from 'express';
+import { decodeId } from '../../shared/ids/publicId.js';
 import { homeService } from './home.service.js';
 
 function parseId(raw: string | undefined): number | null {
-  if (!raw) return null;
-  const id = Number(raw);
-  return Number.isInteger(id) && id > 0 ? id : null;
+  return decodeId(raw);
 }
 
 export class HomeController {

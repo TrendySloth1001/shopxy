@@ -14,7 +14,7 @@ import {
  * Collapsible "Activity / history" panel for a party/vendor detail page.
  * Lazy-loads the field-level change log on first expand.
  */
-export function ContactChangesSection({ kind, id }: { kind: "parties" | "vendors"; id: number }) {
+export function ContactChangesSection({ kind, id }: { kind: "parties" | "vendors"; id: string }) {
   const t = useTranslations("common");
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<ContactChange[] | null>(null);

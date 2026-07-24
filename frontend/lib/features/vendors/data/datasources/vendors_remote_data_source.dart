@@ -28,13 +28,13 @@ class VendorsRemoteDataSource {
     return data.map((e) => VendorDto.fromJson(e as Map<String, dynamic>)).toList();
   }
 
-  Future<Vendor> getVendorById(int id) async {
+  Future<Vendor> getVendorById(String id) async {
     final res = await _client.get('/vendors/$id');
     if (res.statusCode != 200) throw Exception('Vendor not found');
     return VendorDto.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  Future<VendorOverview> getVendorOverview(int id) async {
+  Future<VendorOverview> getVendorOverview(String id) async {
     final res = await _client.get('/vendors/$id/overview');
     if (res.statusCode != 200) throw Exception('Vendor not found');
     return VendorOverviewDto.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
@@ -76,7 +76,7 @@ class VendorsRemoteDataSource {
     return VendorDto.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  Future<Vendor> updateVendor(int id, Map<String, dynamic> data) async {
+  Future<Vendor> updateVendor(String id, Map<String, dynamic> data) async {
     final res = await _client.patch('/vendors/$id', body: data);
     if (res.statusCode != 200) {
       final body = jsonDecode(res.body) as Map<String, dynamic>;
@@ -85,7 +85,7 @@ class VendorsRemoteDataSource {
     return VendorDto.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  Future<void> deleteVendor(int id) async {
+  Future<void> deleteVendor(String id) async {
     final res = await _client.delete('/vendors/$id');
     if (res.statusCode != 204) {
       final body = jsonDecode(res.body) as Map<String, dynamic>;

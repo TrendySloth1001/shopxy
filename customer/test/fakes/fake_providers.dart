@@ -25,7 +25,7 @@ class FakeShopsProvider extends ShopsProvider {
   }) : super(_inertMeDs);
 
   final List<LinkedShop> seedShops;
-  final Map<int, List<ShopInvoice>> seedInvoices;
+  final Map<String, List<ShopInvoice>> seedInvoices;
   final bool seedIsLoading;
   final String? seedError;
 
@@ -71,7 +71,7 @@ class FakeNotificationsProvider extends NotificationsProvider {
 // ─────────────────────────────────────────────────────────────────────
 
 LinkedShop fakeShop({
-  int id = 1,
+  String id = '1',
   String name = 'Acme Stores',
   ShopRole role = ShopRole.party,
   int invoiceCount = 0,
@@ -87,7 +87,7 @@ LinkedShop fakeShop({
     );
 
 ShopInvoice fakeInvoice({
-  int id = 100,
+  String id = '100',
   String invoiceNo = 'INV-001',
   double total = 1500,
   String type = 'SALE',
@@ -107,18 +107,18 @@ ShopInvoice fakeInvoice({
     );
 
 Invitation fakePendingInvitation({
-  int id = 1,
+  String id = '1',
   String fromShopName = 'Acme Stores',
   bool isParty = true,
 }) =>
     Invitation(
       id: id,
-      fromUserId: 1,
+      fromUserId: '1',
       toEmail: 'me@example.com',
-      toUserId: 2,
+      toUserId: '2',
       linkType: isParty ? InviteLinkType.party : InviteLinkType.vendor,
-      partyId: isParty ? 99 : null,
-      vendorId: isParty ? null : 99,
+      partyId: isParty ? '99' : null,
+      vendorId: isParty ? null : '99',
       status: InviteStatus.pending,
       message: null,
       fromShopName: fromShopName,
@@ -129,7 +129,7 @@ Invitation fakePendingInvitation({
     );
 
 ShopInvoiceDetail fakeInvoiceDetail({
-  int id = 100,
+  String id = '100',
   String invoiceNo = 'INV-001',
   double subtotal = 1000,
   double tax = 100,
@@ -152,7 +152,7 @@ ShopInvoiceDetail fakeInvoiceDetail({
       shopGstin: null,
       items: [
         ShopInvoiceItem(
-          id: 1,
+          id: '1',
           productName: 'Widget',
           productSku: 'W-1',
           hsn: null,

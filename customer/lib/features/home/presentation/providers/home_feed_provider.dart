@@ -27,7 +27,7 @@ class HomeFeedProvider extends ChangeNotifier {
   // each page from `/home/feed/page` appends mapped products (deduped
   // by id) to a flat list the widget renders as a grid.
   final List<ProductCard> _products = [];
-  final Set<int> _productIds = {};
+  final Set<String> _productIds = {};
   int? _endlessSeed;
   int _endlessPage = 0;
   bool _endlessLoading = false;

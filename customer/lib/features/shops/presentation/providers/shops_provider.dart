@@ -115,7 +115,7 @@ class ShopsProvider extends ChangeNotifier {
     }
   }
 
-  Future<ShopInvoiceDetail> loadInvoiceDetail(LinkedShop s, int id) {
+  Future<ShopInvoiceDetail> loadInvoiceDetail(LinkedShop s, String id) {
     return _ds.invoiceDetail(s, id);
   }
 
@@ -151,7 +151,7 @@ class ShopsProvider extends ChangeNotifier {
 
   /// Accept a quotation → it becomes a confirmed invoice. Refreshes the
   /// quotation list + the invoice ledger. Throws on failure.
-  Future<void> acceptQuotation(LinkedShop s, int quotationId) async {
+  Future<void> acceptQuotation(LinkedShop s, String quotationId) async {
     await _ds.acceptQuotation(s, quotationId);
     await loadQuotations(s);
     await loadInvoices(s);
@@ -159,7 +159,7 @@ class ShopsProvider extends ChangeNotifier {
 
   Future<void> declineQuotation(
     LinkedShop s,
-    int quotationId, {
+    String quotationId, {
     String? declineNote,
   }) async {
     await _ds.declineQuotation(s, quotationId, declineNote: declineNote);
@@ -177,13 +177,13 @@ class ShopsProvider extends ChangeNotifier {
   }
 
   /// Withdraw a still-pending quote request. Refreshes the list. Throws.
-  Future<void> cancelQuotation(LinkedShop s, int quotationId) async {
+  Future<void> cancelQuotation(LinkedShop s, String quotationId) async {
     await _ds.cancelQuotation(s, quotationId);
     await loadQuotations(s);
   }
 
   /// Raw PDF bytes for a quotation (for the share/save sheet). Throws.
-  Future<Uint8List> downloadQuotationPdf(LinkedShop s, int quotationId) =>
+  Future<Uint8List> downloadQuotationPdf(LinkedShop s, String quotationId) =>
       _ds.downloadQuotationPdf(s, quotationId);
 
   void reset() {

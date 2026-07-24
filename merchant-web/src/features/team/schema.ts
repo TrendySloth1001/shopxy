@@ -10,7 +10,7 @@ const arr = <T extends z.ZodTypeAny>(s: T) =>
 
 export const memberSchema = z
   .object({
-    id: z.number(),
+    id: z.coerce.string(),
     role: z.string(),
     roleName: z.string().nullish(),
     permissions: arr(z.string()),
@@ -18,7 +18,7 @@ export const memberSchema = z
     isOwner: z.boolean().default(false),
     user: z
       .object({
-        id: z.number(),
+        id: z.coerce.string(),
         name: z.string(),
         email: z.string(),
         avatarUrl: z.string().nullish(),
@@ -30,7 +30,7 @@ export type Member = z.infer<typeof memberSchema>;
 
 export const inviteSchema = z
   .object({
-    id: z.number(),
+    id: z.coerce.string(),
     toEmail: z.string(),
     teamRoleName: z.string().nullish(),
     teamPermissions: arr(z.string()),
@@ -45,7 +45,7 @@ export type Invite = z.infer<typeof inviteSchema>;
 
 export const roleSchema = z
   .object({
-    id: z.number(),
+    id: z.coerce.string(),
     name: z.string(),
     permissions: arr(z.string()),
     builtin: z.boolean().default(false),

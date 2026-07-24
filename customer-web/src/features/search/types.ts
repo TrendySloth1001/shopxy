@@ -7,7 +7,7 @@
  */
 
 export interface SearchHit {
-  id: number;
+  id: string;
   name: string;
   sku: string;
   sellingPrice: number;
@@ -15,7 +15,7 @@ export interface SearchHit {
   ratingCount: number;
   /** Relative backend path (/images/…) or absolute URL, or null. */
   imageUrl: string | null;
-  shopId: number;
+  shopId: string;
   shopName: string;
   shopSlug: string;
   rank: number;
@@ -38,8 +38,8 @@ export interface SearchFacets {
 }
 
 export interface SearchFilters {
-  categoryId?: number | null;
-  shopId?: number | null;
+  categoryId?: string | null;
+  shopId?: string | null;
   priceMin?: number | null;
   priceMax?: number | null;
   ratingMin?: number | null;
@@ -68,7 +68,7 @@ export interface SearchResult {
 
 /** Minimal shape returned by /api/search/autocomplete. */
 export interface AutocompleteHit {
-  id: number;
+  id: string;
   name: string;
 }
 

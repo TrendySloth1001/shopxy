@@ -9,7 +9,7 @@ import { z } from "zod";
 
 export const categoryBaseSchema = z
   .object({
-    id: z.number(),
+    id: z.coerce.string(),
     name: z.string(),
     slug: z.string().nullish(),
     description: z.string().nullish(),
@@ -17,7 +17,7 @@ export const categoryBaseSchema = z
     iconName: z.string().nullish(),
     sortOrder: z.coerce.number().default(0),
     isActive: z.boolean().default(true),
-    parentId: z.number().nullish(),
+    parentId: z.coerce.string().nullish(),
     // Backend returns `_count: { products }`; surface a flat count too.
     _count: z.object({ products: z.coerce.number().default(0) }).nullish(),
     productCount: z.coerce.number().nullish(),
@@ -52,7 +52,7 @@ export function categoryProductCount(c: CategoryBase): number {
  * (and including) the matched node — or null if not present. Used to render the
  * breadcrumb and resolve a category's children on its detail page.
  */
-export function findCategoryPath(nodes: CategoryNode[], id: number): CategoryNode[] | null {
+export function findCategoryPath(nodes: CategoryNode[], id: string): CategoryNode[] | null {
   for (const node of nodes) {
     if (node.id === id) return [node];
     const childPath = findCategoryPath(node.children ?? [], id);

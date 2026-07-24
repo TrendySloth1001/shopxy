@@ -79,7 +79,7 @@ class PartiesProvider extends ChangeNotifier {
     return party;
   }
 
-  Future<Party> updateParty(int id, {
+  Future<Party> updateParty(String id, {
     String? name,
     String? contactName,
     String? phone,
@@ -115,7 +115,7 @@ class PartiesProvider extends ChangeNotifier {
     return party;
   }
 
-  Future<void> deleteParty(int id) async {
+  Future<void> deleteParty(String id) async {
     await _ds.deleteParty(id);
     _parties = _parties.where((p) => p.id != id).toList();
     notifyListeners();

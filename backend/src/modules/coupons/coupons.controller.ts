@@ -1,11 +1,13 @@
 import { Request, Response } from 'express';
+import { decodeId } from '../../shared/ids/publicId.js';
+import { zPublicId } from '../../shared/ids/zPublicId.js';
 import { z } from 'zod';
 import { couponsService, type DiscountType } from './coupons.service.js';
 
 const validateSchema = z.object({
   code: z.string().min(1).max(40),
   subtotal: z.number().nonnegative(),
-  shopIds: z.array(z.number().int().positive()).max(40).default([]),
+  shopIds: z.array(zPublicId).max(40).default([]),
 });
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -85,8 +87,8 @@ export class CouponsController {
       res.status(403).json({ error: 'This account has no shop linked.' });
       return;
     }
-    const id = Number(req.params.id);
-    if (!Number.isInteger(id) || id < 1) {
+    const id = decodeId(req.params.id);
+    if (id === null) {
       res.status(400).json({ error: 'Invalid id' });
       return;
     }
@@ -104,8 +106,8 @@ export class CouponsController {
       res.status(403).json({ error: 'This account has no shop linked.' });
       return;
     }
-    const id = Number(req.params.id);
-    if (!Number.isInteger(id) || id < 1) {
+    const id = decodeId(req.params.id);
+    if (id === null) {
       res.status(400).json({ error: 'Invalid id' });
       return;
     }
@@ -143,8 +145,8 @@ export class CouponsController {
       res.status(403).json({ error: 'This account has no shop linked.' });
       return;
     }
-    const id = Number(req.params.id);
-    if (!Number.isInteger(id) || id < 1) {
+    const id = decodeId(req.params.id);
+    if (id === null) {
       res.status(400).json({ error: 'Invalid id' });
       return;
     }
@@ -170,8 +172,8 @@ export class CouponsController {
       res.status(403).json({ error: 'This account has no shop linked.' });
       return;
     }
-    const id = Number(req.params.id);
-    if (!Number.isInteger(id) || id < 1) {
+    const id = decodeId(req.params.id);
+    if (id === null) {
       res.status(400).json({ error: 'Invalid id' });
       return;
     }
@@ -204,7 +206,7 @@ const patchSchema = writeSchema.partial();
 
 const autoApplySchema = z.object({
   subtotal: z.number().nonnegative(),
-  shopIds: z.array(z.number().int().positive()).max(40).default([]),
+  shopIds: z.array(zPublicId).max(40).default([]),
 });
 
 export const couponsController = new CouponsController();

@@ -52,7 +52,7 @@ class _VendorsPageState extends State<VendorsPage> {
   /// Most recent invitation we've sent for this vendor, if any. PENDING
   /// beats ACCEPTED beats DECLINED — first match wins because outgoing
   /// is already createdAt DESC.
-  Invitation? _inviteFor(int vendorId, List<Invitation> outgoing) {
+  Invitation? _inviteFor(String vendorId, List<Invitation> outgoing) {
     for (final i in outgoing) {
       if (i.linkType == InviteLinkType.vendor && i.vendorId == vendorId) {
         return i;
@@ -199,7 +199,7 @@ class _VendorsPageState extends State<VendorsPage> {
     if (mounted) notifs.loadOutgoing();
   }
 
-  Future<void> _cancelInvite(BuildContext context, int invitationId) async {
+  Future<void> _cancelInvite(BuildContext context, String invitationId) async {
     final l10n = AppLocalizations.of(context);
     final confirmed = await AppConfirmDialog.show(
       context,
@@ -268,7 +268,7 @@ class _VendorTile extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onInvite;
-  final ValueChanged<int> onCancelInvite;
+  final ValueChanged<String> onCancelInvite;
 
   @override
   Widget build(BuildContext context) {

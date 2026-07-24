@@ -19,7 +19,7 @@ export const DISCOUNT_TYPE_LABELS: Record<DiscountType, string> = {
 
 export const couponSchema = z
   .object({
-    id: z.number(),
+    id: z.coerce.string(),
     code: z.string(),
     title: z.string(),
     description: z.string().nullish(),
@@ -51,12 +51,12 @@ export const couponListSchema = z.object({
 
 /** A single redemption row from `/me/coupons-admin/:id/redemptions`. */
 export const couponRedemptionSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   discountAmount: z.coerce.number().default(0),
   redeemedAt: z.string(),
-  orderId: z.number().nullish(),
+  orderId: z.coerce.string().nullish(),
   user: z
-    .object({ id: z.number(), name: z.string(), email: z.string() })
+    .object({ id: z.coerce.string(), name: z.string(), email: z.string() })
     .nullish(),
 });
 export type CouponRedemption = z.infer<typeof couponRedemptionSchema>;

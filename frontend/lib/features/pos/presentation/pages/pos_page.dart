@@ -280,7 +280,7 @@ class _PosPageState extends State<PosPage> {
   }
 
   /// Fetch the invoice PDF (authed) and open it in the device viewer (print/share).
-  Future<void> _printReceipt(int invoiceId, String invoiceNo) async {
+  Future<void> _printReceipt(String invoiceId, String invoiceNo) async {
     final messenger = ScaffoldMessenger.of(context);
     final l10n = AppLocalizations.of(context);
     try {
@@ -577,7 +577,7 @@ class _PosPageState extends State<PosPage> {
                       trailing: const AppIcon(AppIcons.chevronRightRounded),
                       onTap: () {
                         Navigator.pop(ctx);
-                        _client.recall(b['id'] as int);
+                        _client.recall(b['id'].toString());
                       },
                     ),
                 ],
@@ -1053,7 +1053,7 @@ class _ProductSearchSheetState extends State<_ProductSearchSheet> {
                             style: theme.textTheme.titleSmall?.bold,
                           ),
                           onTap: () {
-                            widget.client.addItem(_i(p['id']));
+                            widget.client.addItem(p['id'].toString());
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(

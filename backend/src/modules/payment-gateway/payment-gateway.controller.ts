@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
+import { decodeId } from '../../shared/ids/publicId.js';
 import { paymentGatewayService, listEnabledProviders } from './index.js';
 
 /**
@@ -22,8 +23,7 @@ function requireUserId(req: Request, res: Response): number | null {
 }
 
 function parseId(raw: string): number | null {
-  const id = Number(raw);
-  return Number.isInteger(id) && id > 0 ? id : null;
+  return decodeId(raw);
 }
 
 export class PaymentGatewayController {

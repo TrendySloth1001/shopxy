@@ -6,7 +6,7 @@ import { z } from "zod";
  */
 export const notificationSchema = z
   .object({
-    id: z.number(),
+    id: z.coerce.string(),
     kind: z.string(),
     title: z.string(),
     body: z.string().nullish(),

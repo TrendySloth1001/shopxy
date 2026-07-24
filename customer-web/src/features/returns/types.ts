@@ -25,13 +25,13 @@ export function reasonLabel(reason: string): string {
 }
 
 export const returnShopSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   name: z.string(),
   shopName: z.string().nullable().optional(),
 });
 
 export const returnEventSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   type: z.string(),
   note: z.string().nullable().optional(),
   occurredAt: z.string(),
@@ -39,13 +39,13 @@ export const returnEventSchema = z.object({
 export type ReturnEvent = z.infer<typeof returnEventSchema>;
 
 export const returnItemSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   quantity: z.coerce.number(),
   refundAmount: z.coerce.number(),
   reason: z.string(),
   purchaseRequestItem: z.object({
-    id: z.number(),
-    productId: z.number(),
+    id: z.coerce.string(),
+    productId: z.coerce.string(),
     productName: z.string(),
     productSku: z.string().optional(),
     unit: z.string(),
@@ -61,23 +61,23 @@ export const returnItemSchema = z.object({
 export type ReturnItem = z.infer<typeof returnItemSchema>;
 
 export const returnRequestSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   status: z.string(),
   refundAmount: z.coerce.number(),
   refundMethod: z.string().nullable().optional(),
   note: z.string().nullable().optional(),
   decisionNote: z.string().nullable().optional(),
-  walletEntryId: z.number().nullable().optional(),
+  walletEntryId: z.coerce.string().nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
-  shopId: z.number(),
-  customerUserId: z.number().optional(),
-  requestId: z.number().optional(),
+  shopId: z.coerce.string(),
+  customerUserId: z.coerce.string().optional(),
+  requestId: z.coerce.string().optional(),
   shop: returnShopSchema,
   request: z
     .object({
-      id: z.number(),
-      customerOrderId: z.number(),
+      id: z.coerce.string(),
+      customerOrderId: z.coerce.string(),
       status: z.string().optional(),
       customerName: z.string().optional(),
       customerAddress: z.string().nullable().optional(),

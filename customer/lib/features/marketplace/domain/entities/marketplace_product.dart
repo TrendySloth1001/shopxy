@@ -36,7 +36,7 @@ class MarketplaceProduct {
     this.bankOffers = const [],
   });
 
-  final int id;
+  final String id;
   final String name;
   final String sku;
   final String unit;
@@ -135,7 +135,7 @@ class MarketplaceProduct {
     final specRaw = j['specs'];
     final offersRaw = j['offers'];
     return MarketplaceProduct(
-      id: j['id'] as int,
+      id: j['id'].toString(),
       name: j['name'] as String,
       sku: j['sku'] as String,
       unit: j['unit'] as String? ?? 'PCS',
@@ -221,7 +221,7 @@ class PlatformBankOffer {
     this.terms,
   });
 
-  final int id;
+  final String id;
   /// Short code matching the PDP renderer's bank set (HDFC, ICICI,
   /// SBI, AXIS, KOTAK, AMEX, YES, HSBC, SC, IDFC, BOB, RBL).
   final String bank;
@@ -306,7 +306,7 @@ class PlatformBankOffer {
 
   factory PlatformBankOffer.fromJson(Map<String, dynamic> j) =>
       PlatformBankOffer(
-        id: (j['id'] as num).toInt(),
+        id: j['id'].toString(),
         bank: (j['bank'] as String?) ?? '',
         cardType: (j['cardType'] as String?) ?? 'ANY',
         discountType: (j['discountType'] as String?) ?? 'PERCENT',
@@ -347,7 +347,7 @@ class MarketplaceVariant {
     required this.isDefault,
   });
 
-  final int id;
+  final String id;
   final String sku;
   final Map<String, String> attributes;
   final double mrp;
@@ -373,7 +373,7 @@ class MarketplaceVariant {
   factory MarketplaceVariant.fromJson(Map<String, dynamic> j) {
     final attrs = (j['attributes'] as Map?) ?? const {};
     return MarketplaceVariant(
-      id: (j['id'] as num).toInt(),
+      id: j['id'].toString(),
       sku: (j['sku'] as String?) ?? '',
       attributes: <String, String>{
         for (final e in attrs.entries)
@@ -403,7 +403,7 @@ class MarketplaceFbtCard {
     this.ratingCount = 0,
   });
 
-  final int id;
+  final String id;
   final String name;
   final double sellingPrice;
   final double mrp;
@@ -426,7 +426,7 @@ class MarketplaceFbtCard {
         ? null
         : (imgs.first as Map<String, dynamic>)['url'] as String?;
     return MarketplaceFbtCard(
-      id: j['id'] as int,
+      id: j['id'].toString(),
       name: j['name'] as String,
       sellingPrice: _asDouble(j['sellingPrice']),
       mrp: _asDouble(j['mrp']),
@@ -515,9 +515,9 @@ class ProductOffer {
 
 class ProductCategoryRef {
   const ProductCategoryRef({required this.id, required this.name, required this.slug});
-  final int id;
+  final String id;
   final String name;
   final String slug;
   factory ProductCategoryRef.fromJson(Map<String, dynamic> j) =>
-      ProductCategoryRef(id: j['id'] as int, name: j['name'] as String, slug: j['slug'] as String);
+      ProductCategoryRef(id: j['id'].toString(), name: j['name'] as String, slug: j['slug'] as String);
 }

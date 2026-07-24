@@ -44,6 +44,12 @@ function asStr(v: unknown): string {
 function asStrOrNull(v: unknown): string | null {
   return typeof v === "string" ? v : null;
 }
+/** Resource ids may arrive as a numeric id or an opaque string token. */
+function asId(v: unknown): string {
+  if (typeof v === "string") return v;
+  if (typeof v === "number" && Number.isFinite(v)) return String(v);
+  return "";
+}
 
 const PUCK_TINTS = CATEGORY_TINTS;
 
@@ -60,7 +66,7 @@ function firstImage(product: Json): string {
 function heroFromBanner(raw: unknown): HeroSlide {
   const m = isObj(raw) ? raw : {};
   return {
-    bannerId: asInt(m["id"]) ?? 0,
+    bannerId: asId(m["id"]),
     imageUrl: asStr(m["imageUrl"]),
     linkUrl: asStrOrNull(m["linkUrl"]),
     productCount: asInt(m["productCount"]) ?? 0,
@@ -78,7 +84,7 @@ function productCardFromProduct(p: Json): ProductCard | null {
   const discountPct =
     mrp !== null && mrp > selling ? Math.round(Math.min(99, Math.max(0, (1 - selling / mrp) * 100))) : 0;
   return {
-    productId: asInt(p["id"]) ?? 0,
+    productId: asId(p["id"]),
     name: asStr(p["name"]),
     price: rupees(selling),
     originalPrice: mrp !== null && mrp > selling ? rupees(mrp) : "",
@@ -128,7 +134,7 @@ function mapMaybeWrapped(rows: unknown[]): ProductCard[] {
 function categoryPuck(raw: unknown, index: number): CategoryPuck {
   const m = isObj(raw) ? raw : {};
   return {
-    categoryId: asInt(m["id"]) ?? 0,
+    categoryId: asId(m["id"]),
     slug: asStr(m["slug"]),
     label: asStr(m["name"]),
     imageUrl: asStrOrNull(m["imageUrl"]),

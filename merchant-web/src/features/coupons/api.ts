@@ -49,30 +49,30 @@ export function listCoupons(): Promise<Coupon[]> {
   );
 }
 
-export function getCoupon(id: number): Promise<Coupon> {
+export function getCoupon(id: string): Promise<Coupon> {
   return fetch(`/api/coupons/${id}`, { cache: "no-store" }).then((r) =>
     jsonOrThrow(r, (raw) => couponSchema.parse(raw), "Could not load the coupon."),
   );
 }
 
 /** Recent redemptions for a coupon (admin analytics). */
-export function listCouponRedemptions(id: number): Promise<CouponRedemption[]> {
+export function listCouponRedemptions(id: string): Promise<CouponRedemption[]> {
   return fetch(`/api/coupons/${id}/redemptions`, { cache: "no-store" }).then((r) =>
     jsonOrThrow(r, (raw) => couponRedemptionListSchema.parse(raw).data, "Could not load redemptions."),
   );
 }
 
-export function createCoupon(input: CouponWrite): Promise<{ id: number }> {
+export function createCoupon(input: CouponWrite): Promise<{ id: string }> {
   return fetch("/api/coupons", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   }).then((r) =>
-    jsonOrThrow(r, (raw) => ({ id: Number((raw as { id?: number }).id) }), "Could not create the coupon."),
+    jsonOrThrow(r, (raw) => ({ id: String((raw as { id?: string }).id) }), "Could not create the coupon."),
   );
 }
 
-export async function updateCoupon(id: number, input: Partial<CouponWrite>): Promise<void> {
+export async function updateCoupon(id: string, input: Partial<CouponWrite>): Promise<void> {
   const res = await fetch(`/api/coupons/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -81,7 +81,7 @@ export async function updateCoupon(id: number, input: Partial<CouponWrite>): Pro
   await okOrThrow(res, "Could not update the coupon.");
 }
 
-export async function deactivateCoupon(id: number): Promise<void> {
+export async function deactivateCoupon(id: string): Promise<void> {
   const res = await fetch(`/api/coupons/${id}`, { method: "DELETE" });
   await okOrThrow(res, "Could not deactivate the coupon.");
 }

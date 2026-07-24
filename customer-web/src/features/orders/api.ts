@@ -47,7 +47,7 @@ export async function fetchOrders(opts?: {
   );
 }
 
-export async function fetchOrderDetail(id: number): Promise<CustomerOrderDetail> {
+export async function fetchOrderDetail(id: string): Promise<CustomerOrderDetail> {
   const res = await fetch(`/api/me/orders/${id}`, { cache: "no-store" });
   return jsonOrThrow(
     res,
@@ -56,7 +56,7 @@ export async function fetchOrderDetail(id: number): Promise<CustomerOrderDetail>
   );
 }
 
-export async function cancelShopOrder(parentId: number, childId: number): Promise<void> {
+export async function cancelShopOrder(parentId: string, childId: string): Promise<void> {
   const res = await fetch(`/api/me/orders/${parentId}/shops/${childId}/cancel`, {
     method: "POST",
   });
@@ -76,7 +76,7 @@ export async function cancelShopOrder(parentId: number, childId: number): Promis
   }
 }
 
-export async function reorderOrder(id: number): Promise<ReorderResult> {
+export async function reorderOrder(id: string): Promise<ReorderResult> {
   const res = await fetch(`/api/me/orders/${id}/reorder`, { method: "POST" });
   return jsonOrThrow(
     res,
@@ -85,7 +85,7 @@ export async function reorderOrder(id: number): Promise<ReorderResult> {
   );
 }
 
-export async function payForOrder(id: number): Promise<PaySession> {
+export async function payForOrder(id: string): Promise<PaySession> {
   const res = await fetch(`/api/me/orders/${id}/pay`, { method: "POST" });
   return jsonOrThrow(
     res,
@@ -94,7 +94,7 @@ export async function payForOrder(id: number): Promise<PaySession> {
   );
 }
 
-export async function syncOrderPayment(id: number): Promise<string | null> {
+export async function syncOrderPayment(id: string): Promise<string | null> {
   const res = await fetch(`/api/me/orders/${id}/payment/sync`, { method: "POST" });
   if (!res.ok) return null;
   const body = (await res.json().catch(() => null)) as { paymentStatus?: string } | null;
@@ -102,6 +102,6 @@ export async function syncOrderPayment(id: number): Promise<string | null> {
 }
 
 /** Returns the PDF BFF URL for browser `<a href>` / window.open */
-export function invoicePdfUrl(parentId: number, childId: number): string {
+export function invoicePdfUrl(parentId: string, childId: string): string {
   return `/api/me/orders/${parentId}/shops/${childId}/invoice.pdf`;
 }

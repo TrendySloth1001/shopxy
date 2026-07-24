@@ -116,7 +116,7 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   // ── Sessions / devices ──────────────────────────────────────────────
   Future<List<SessionInfo>> listSessions() => _dataSource.listSessions();
-  Future<void> revokeSession(int id) => _dataSource.revokeSession(id);
+  Future<void> revokeSession(String id) => _dataSource.revokeSession(id);
   Future<int> revokeOtherSessions() => _dataSource.revokeOtherSessions();
 
   /// Persist a fresh session and load the user — shared by register-fallback,
@@ -161,7 +161,7 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   /// One-tap sign-in using a stored device-remember credential. On a dead
   /// credential the card is dropped and the error surfaced for a password login.
-  Future<void> loginWithRemembered(int id) async {
+  Future<void> loginWithRemembered(String id) async {
     final token = await _rememberStore.tokenFor(id);
     if (token == null) {
       await _rememberStore.remove(id);
@@ -198,7 +198,7 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   /// "Remove this account" — revoke server-side (best effort) + drop locally.
-  Future<void> forgetRemembered(int id) async {
+  Future<void> forgetRemembered(String id) async {
     final token = await _rememberStore.tokenFor(id);
     if (token != null) {
       try {

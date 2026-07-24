@@ -20,13 +20,13 @@ async function getJson(url: string): Promise<unknown> {
 }
 
 /** Fetch a single product for the PDP. */
-export async function fetchProduct(id: number): Promise<ProductDetail> {
+export async function fetchProduct(id: string): Promise<ProductDetail> {
   const raw = await getJson(`/api/marketplace/products/${id}`);
   return productDetailSchema.parse(raw);
 }
 
 /** Fetch frequently-bought-together items. Resolves to [] on any error. */
-export async function fetchFbt(productId: number): Promise<FbtCard[]> {
+export async function fetchFbt(productId: string): Promise<FbtCard[]> {
   try {
     const raw = (await getJson(
       `/api/marketplace/products/${productId}/frequently-bought-together`,
@@ -43,7 +43,7 @@ export async function fetchFbt(productId: number): Promise<FbtCard[]> {
 
 /** Add / remove wishlist item (optimistic — caller supplies direction). */
 export async function toggleWishlist(
-  productId: number,
+  productId: string,
   add: boolean,
 ): Promise<void> {
   const res = await fetch(`/api/me/wishlist/${productId}`, {
@@ -62,16 +62,16 @@ export async function toggleWishlist(
 }
 
 /** Check wishlist membership for a product. Returns null if not authenticated. */
-export async function getWishlistIds(): Promise<Set<number> | null> {
+export async function getWishlistIds(): Promise<Set<string> | null> {
   const res = await fetch("/api/me/wishlist", { cache: "no-store" });
   if (res.status === 401) return null;
   if (!res.ok) return null;
   try {
-    const body = (await res.json()) as { data?: Array<{ productId?: number }> };
-    const ids = new Set<number>();
+    const body = (await res.json()) as { data?: Array<{ productId?: number | string }> };
+    const ids = new Set<string>();
     if (Array.isArray(body?.data)) {
       for (const item of body.data) {
-        if (typeof item.productId === "number") ids.add(item.productId);
+        if (item.productId != null) ids.add(String(item.productId));
       }
     }
     return ids;
@@ -81,7 +81,7 @@ export async function getWishlistIds(): Promise<Set<number> | null> {
 }
 
 /** Fire-and-forget VIEW event for analytics. */
-export function recordView(productId: number): void {
+export function recordView(productId: string): void {
   if (typeof window === "undefined") return;
   const event = {
     clientUuid: crypto.randomUUID?.() ?? `view-${productId}-${Date.now()}`,

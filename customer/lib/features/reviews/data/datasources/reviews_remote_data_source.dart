@@ -10,7 +10,7 @@ class ReviewsRemoteDataSource {
   ReviewsRemoteDataSource(this._client);
   final ApiClient _client;
 
-  Future<ReviewSummary> getSummary(int productId) async {
+  Future<ReviewSummary> getSummary(String productId) async {
     final res = await _client.get('/products/$productId/reviews/summary');
     if (res.statusCode != 200) {
       throw Exception('Failed to load review summary: ${res.body}');
@@ -18,7 +18,7 @@ class ReviewsRemoteDataSource {
     return ReviewSummary.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  Future<ReviewsPage> list(int productId, {int? cursor, int limit = 20}) async {
+  Future<ReviewsPage> list(String productId, {int? cursor, int limit = 20}) async {
     final params = <String, String>{'limit': '$limit'};
     if (cursor != null) params['cursor'] = '$cursor';
     final res = await _client.get(
@@ -41,7 +41,7 @@ class ReviewsRemoteDataSource {
   /// on any other status. The "only buyers" 403 case carries a
   /// readable `error` string the caller surfaces directly.
   Future<Review> upsert(
-    int productId, {
+    String productId, {
     required int rating,
     String? title,
     String? body,
@@ -61,7 +61,7 @@ class ReviewsRemoteDataSource {
     return Review.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  Future<void> deleteMine(int productId) async {
+  Future<void> deleteMine(String productId) async {
     final res = await _client.delete('/products/$productId/reviews/mine');
     if (res.statusCode != 204 && res.statusCode != 404) {
       throw Exception('Delete failed: ${res.body}');

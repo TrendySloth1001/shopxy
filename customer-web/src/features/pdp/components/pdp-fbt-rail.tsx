@@ -9,7 +9,7 @@ import { fetchFbt } from "../api";
 import type { FbtCard } from "../types";
 
 interface Props {
-  productId: number;
+  productId: string;
 }
 
 export function PdpFbtRail({ productId }: Props) {

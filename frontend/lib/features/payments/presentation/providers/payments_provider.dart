@@ -19,9 +19,9 @@ class PaymentsProvider extends ChangeNotifier {
     required String mode,
     String? modeReference,
     DateTime? paymentDate,
-    int? partyId,
-    int? vendorId,
-    int? invoiceId,
+    String? partyId,
+    String? vendorId,
+    String? invoiceId,
     String? note,
   }) async {
     _isSubmitting = true;
@@ -50,7 +50,7 @@ class PaymentsProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> delete(int id) async {
+  Future<void> delete(String id) async {
     await _ds.deletePayment(id);
   }
 }

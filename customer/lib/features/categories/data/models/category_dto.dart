@@ -2,12 +2,12 @@ import 'package:shopxy_customer/shared/domain/entities/category.dart';
 
 class CategoryDto {
   static Category fromJson(Map<String, dynamic> json) => Category(
-        id: json['id'] as int,
+        id: json['id'].toString(),
         slug: json['slug'] as String,
         name: json['name'] as String,
         imageUrl: json['imageUrl'] as String?,
         iconName: json['iconName'] as String?,
-        parentId: json['parentId'] as int?,
+        parentId: json['parentId']?.toString(),
       );
 
   static CategoryNode treeNodeFromJson(Map<String, dynamic> json) {

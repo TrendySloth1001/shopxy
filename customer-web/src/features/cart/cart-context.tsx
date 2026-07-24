@@ -86,9 +86,9 @@ export type CartContextValue = {
    */
   add: (product: CartProduct, qty?: number) => Promise<void>;
   /** Set the exact quantity for a line. qty=0 removes the line. */
-  setQty: (productId: number, qty: number) => Promise<void>;
+  setQty: (productId: string, qty: number) => Promise<void>;
   /** Remove a line entirely. */
-  remove: (productId: number) => Promise<void>;
+  remove: (productId: string) => Promise<void>;
   /** Clear all lines. */
   clear: () => Promise<void>;
 };
@@ -124,7 +124,7 @@ function writeGuestCart(lines: GuestLine[]): void {
 /** Synthesise a CartItem from a GuestLine so the rest of the UI is uniform. */
 function guestToCartItem(g: GuestLine, idx: number): CartItem {
   return {
-    id: -(idx + 1), // synthetic negative id — never sent to the server
+    id: `guest-${idx + 1}`, // synthetic local id — never sent to the server
     productId: g.productId,
     quantity: g.quantity,
     updatedAt: new Date().toISOString(),
@@ -145,7 +145,7 @@ function guestToCartItem(g: GuestLine, idx: number): CartItem {
         ? [{ url: g.snapshot.imageUrl, sortOrder: 0 }]
         : [],
       shop: {
-        id: 0,
+        id: "",
         name: g.snapshot.shopName,
         slug: g.snapshot.shopSlug,
       },
@@ -286,7 +286,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           );
         } else {
           const optimisticLine: CartItem = {
-            id: -Date.now(),
+            id: `temp-${Date.now()}`,
             productId: product.id,
             quantity: newQty,
             updatedAt: new Date().toISOString(),
@@ -356,7 +356,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 
   const setQty = useCallback(
-    async (productId: number, qty: number): Promise<void> => {
+    async (productId: string, qty: number): Promise<void> => {
       if (status === "authed") {
         const prev = lines.find((l) => l.productId === productId);
         if (!prev && qty > 0) return; // line doesn't exist
@@ -415,7 +415,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 
   const remove = useCallback(
-    async (productId: number): Promise<void> => {
+    async (productId: string): Promise<void> => {
       if (status === "authed") {
         const prev = lines.find((l) => l.productId === productId);
         setLines((ls) => ls.filter((l) => l.productId !== productId));

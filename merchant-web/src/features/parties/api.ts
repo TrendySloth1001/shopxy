@@ -35,19 +35,19 @@ export function listParties(opts?: { search?: string }): Promise<Party[]> {
   );
 }
 
-export function getPartyOverview(id: number): Promise<PartyOverview> {
+export function getPartyOverview(id: string): Promise<PartyOverview> {
   return fetch(`/api/parties/${id}/overview`, { cache: "no-store" }).then((r) =>
     jsonOrThrow(r, (raw) => partyOverviewSchema.parse(raw), "Could not load the customer."),
   );
 }
 
-export function getPartyLedger(id: number): Promise<Ledger> {
+export function getPartyLedger(id: string): Promise<Ledger> {
   return fetch(`/api/parties/${id}/ledger`, { cache: "no-store" }).then((r) =>
     jsonOrThrow(r, (raw) => ledgerSchema.parse(raw), "Could not load the ledger."),
   );
 }
 
-export function getParty(id: number): Promise<Party> {
+export function getParty(id: string): Promise<Party> {
   return fetch(`/api/parties/${id}`, { cache: "no-store" }).then((r) =>
     jsonOrThrow(r, (raw) => partySchema.parse(raw), "Could not load the customer."),
   );
@@ -71,7 +71,7 @@ export function createParty(input: ContactWrite): Promise<Party> {
   }).then((r) => jsonOrThrow(r, (raw) => partySchema.parse(raw), "Could not create the customer."));
 }
 
-export async function updateParty(id: number, input: ContactWrite): Promise<void> {
+export async function updateParty(id: string, input: ContactWrite): Promise<void> {
   const res = await fetch(`/api/parties/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -80,7 +80,7 @@ export async function updateParty(id: number, input: ContactWrite): Promise<void
   await okOrThrow(res, "Could not update the customer.");
 }
 
-export async function deleteParty(id: number): Promise<void> {
+export async function deleteParty(id: string): Promise<void> {
   const res = await fetch(`/api/parties/${id}`, { method: "DELETE" });
   await okOrThrow(res, "Could not delete the customer.");
 }

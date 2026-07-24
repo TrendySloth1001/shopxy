@@ -11,7 +11,7 @@ import { z } from "zod";
 const money = z.coerce.number().default(0);
 
 const breakdownInvoiceSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   invoiceNo: z.string(),
   documentType: z.string().default("TAX_INVOICE"),
   invoiceDate: z.string(),
@@ -20,7 +20,7 @@ const breakdownInvoiceSchema = z.object({
 export type BreakdownInvoice = z.infer<typeof breakdownInvoiceSchema>;
 
 const counterpartySchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   name: z.string(),
   billed: money,
   // Named `received` on the receivables side, `paid` on the payables side.

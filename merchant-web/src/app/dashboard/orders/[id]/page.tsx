@@ -61,7 +61,7 @@ export default function OrderDetailPage({
 }) {
   const t = useTranslations("orders");
   const { id } = use(params);
-  const orderId = Number(id);
+  const orderId = id;
 
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -71,7 +71,7 @@ export default function OrderDetailPage({
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [shortfallProductId, setShortfallProductId] = useState<number | null>(null);
+  const [shortfallProductId, setShortfallProductId] = useState<string | null>(null);
   const [mode, setMode] = useState<"none" | "confirm" | "decline">("none");
   const [shippingOpen, setShippingOpen] = useState(false);
   const canManageOrders = useCanManage("orders");

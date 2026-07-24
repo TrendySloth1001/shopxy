@@ -44,7 +44,7 @@ class _AdminCollectionsPageState extends State<AdminCollectionsPage> {
     }
   }
 
-  Future<void> _openExisting(int id) async {
+  Future<void> _openExisting(String id) async {
     final changed = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => AdminCollectionEditorPage(existingId: id),
