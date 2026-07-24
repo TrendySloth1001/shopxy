@@ -153,7 +153,12 @@ export function usePosSale() {
           return;
         }
         if (typeof msg !== "object" || msg === null) return;
-        const m = msg as { t?: string; reqId?: string; type?: string; saleId?: string; invoiceId?: string };
+        // SaleBus events (pos.sale/checkout/void) travel over the WS raw — they
+        // bypass the res.json opaque-id tokeniser — so saleId/invoiceId arrive as
+        // NUMBERS, while saleIdRef holds the coerced string id. Type + compare
+        // them as strings (mirrors the Flutter till's `.toString()`), otherwise
+        // `42 === "42"` is false and the till never re-fetches on a peer's scan.
+        const m = msg as { t?: string; reqId?: string; type?: string; saleId?: string | number; invoiceId?: string | number };
         if (m.t === "res" && typeof m.reqId === "string") {
           const p = pendingCmds.current.get(m.reqId);
           if (p) {
@@ -163,13 +168,14 @@ export function usePosSale() {
           }
           return;
         }
+        const evSaleId = m.saleId != null ? String(m.saleId) : null;
         // An online payment settled (webhook → pos.checkout) → flip to paid.
-        if (m.type === "pos.checkout" && m.saleId === saleIdRef.current && onlineRef.current != null) {
-          setOnlinePaid({ amount: onlineRef.current, invoiceId: typeof m.invoiceId === "string" ? m.invoiceId : null });
+        if (m.type === "pos.checkout" && evSaleId === saleIdRef.current && onlineRef.current != null) {
+          setOnlinePaid({ amount: onlineRef.current, invoiceId: m.invoiceId != null ? String(m.invoiceId) : null });
           onlineRef.current = null;
         }
         // Version-nudge events for our sale → re-fetch.
-        if ((m.type === "pos.sale" || m.type === "pos.checkout" || m.type === "pos.void") && m.saleId === saleIdRef.current) {
+        if ((m.type === "pos.sale" || m.type === "pos.checkout" || m.type === "pos.void") && evSaleId === saleIdRef.current) {
           void refresh();
         }
       };
