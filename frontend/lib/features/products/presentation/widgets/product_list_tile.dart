@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:shopxy/core/prefs/navigation_prefs.dart';
 import 'package:shopxy/features/categories/presentation/widgets/category_icon_catalog.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/features/products/presentation/widgets/product_thumbnail.dart';
@@ -21,9 +23,10 @@ import 'package:shopxy/core/icons/app_icon.dart';
 ///   5. Loss-leader flag if sellingPrice > MRP (a price-entry mistake
 ///      worth catching at a glance)
 ///
-/// A single comfortable card layout — large thumb, name up to 2 lines,
-/// description shown when present, larger price font. (The compact list-density
-/// option was removed along with the sidebar.)
+/// Density modes are meaningfully different:
+///   • compact   — small thumb, name 1 line, no description, tight padding.
+///   • comfortable (card) — large thumb, name up to 2 lines, description shown
+///                 when present, larger price font.
 ///
 /// The whole row is tappable to the product detail page.
 class ProductListTile extends StatelessWidget {
@@ -100,14 +103,17 @@ class ProductListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
-    // Single comfortable layout — bigger thumb, breathing room, name wraps to
-    // 2 lines, description visible. (The compact list-density option was removed
-    // with the sidebar.)
-    const imageSide = 96.0;
-    const vPad = AppSizes.lg;
-    const nameMaxLines = 2;
-    final showDescription = product.description?.trim().isNotEmpty ?? false;
-    final priceStyle = theme.textTheme.titleLarge;
+    final compact = context.watch<NavigationPrefsProvider>().isCompact;
+    // Card mode (comfortable) is the richer layout — bigger thumb, more
+    // breathing room, name wraps to 2 lines, description visible.
+    final imageSide = compact ? AppSizes.avatarMd : 96.0;
+    final vPad = compact ? AppSizes.sm : AppSizes.lg;
+    final nameMaxLines = compact ? 1 : 2;
+    final showDescription =
+        !compact && (product.description?.trim().isNotEmpty ?? false);
+    final priceStyle = compact
+        ? theme.textTheme.titleMedium
+        : theme.textTheme.titleLarge;
     final margin = _marginPct;
     final stock = _stockPalette();
     final activity = _activityHint(l10n);

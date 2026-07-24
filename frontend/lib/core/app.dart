@@ -17,7 +17,6 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_palette.dart';
-import 'package:shopxy/shared/theme/app_theme_spec.dart';
 import 'package:shopxy/shared/theme/app_theme.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
@@ -41,7 +40,6 @@ class ShopxyApp extends StatelessWidget {
           // Material components agree.
           final themePrefs = context.watch<ThemePrefsProvider>();
           AppPalette.active = themePrefs.palette;
-          AppThemeSpec.active = themePrefs.spec;
 
           return MaterialApp(
             title: AppStrings.appName,
@@ -59,7 +57,6 @@ class ShopxyApp extends StatelessWidget {
             theme: AppTheme.fromPalette(
               themePrefs.palette,
               devanagari: localePrefs.isDevanagari,
-              spec: themePrefs.spec,
             ),
             themeMode: ThemeMode.light,
             debugShowCheckedModeBanner: false,

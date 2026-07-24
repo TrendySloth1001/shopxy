@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_palette.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
-import 'package:shopxy/shared/theme/app_theme_spec.dart';
 import 'package:shopxy/shared/theme/app_typography.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
@@ -28,20 +27,7 @@ class AppTheme {
   static ThemeData get midnight => fromPalette(AppPalette.midnight);
   static ThemeData get nord => fromPalette(AppPalette.nord);
 
-  static ThemeData fromPalette(
-    AppPalette p, {
-    bool devanagari = false,
-    AppThemeSpec? spec,
-  }) {
-    // Non-colour axes carried by the theme spec. Defaults reproduce the
-    // pre-spec behaviour, so callers that pass only a palette are unaffected.
-    final double rs = spec?.radiusScale ?? 1.0;
-    final VisualDensity density = spec?.density ?? VisualDensity.standard;
-    final AppFont font = spec?.font ?? AppFont.system;
-    // Scale a *finite* corner radius by the theme's shape factor. Pills
-    // (radiusFull) are never scaled — they must stay fully round.
-    double rad(double base) => base * rs;
-
+  static ThemeData fromPalette(AppPalette p, {bool devanagari = false}) {
     final scheme = ColorScheme(
       brightness: p.brightness,
       primary: p.ink,
@@ -73,16 +59,11 @@ class AppTheme {
       surfaceTint: Colors.transparent,
     );
 
-    final textTheme = AppTypography.forInk(
-      p.ink,
-      devanagari: devanagari,
-      font: font,
-    );
+    final textTheme = AppTypography.forInk(p.ink, devanagari: devanagari);
 
     return ThemeData(
       useMaterial3: true,
       brightness: p.brightness,
-      visualDensity: density,
       colorScheme: scheme,
       textTheme: textTheme,
       scaffoldBackgroundColor: p.canvas,
@@ -112,7 +93,7 @@ class AppTheme {
         shadowColor: Colors.transparent,
         elevation: 0,
         shape: AppShapes.squircle(
-          rad(AppSizes.radiusLg),
+          AppSizes.radiusLg,
           side: BorderSide(color: p.hairline, width: 1),
         ),
         margin: EdgeInsets.zero,
@@ -206,7 +187,7 @@ class AppTheme {
         highlightElevation: 0,
         disabledElevation: 0,
         splashColor: p.onInverse.withValues(alpha: 0.1),
-        shape: AppShapes.squircle(rad(AppSizes.radiusLg)),
+        shape: AppShapes.squircle(AppSizes.radiusLg),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: p.canvas,
@@ -239,23 +220,23 @@ class AppTheme {
         labelStyle: textTheme.bodyMedium?.copyWith(color: p.muted),
         floatingLabelStyle: textTheme.bodyMedium?.copyWith(color: p.ink),
         border: OutlineInputBorder(
-          borderRadius: AppShapes.squircleRadius(rad(AppSizes.radiusInput)),
+          borderRadius: AppShapes.squircleRadius(AppSizes.radiusInput),
           borderSide: BorderSide(color: p.hairline, width: 1),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: AppShapes.squircleRadius(rad(AppSizes.radiusInput)),
+          borderRadius: AppShapes.squircleRadius(AppSizes.radiusInput),
           borderSide: BorderSide(color: p.hairline, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: AppShapes.squircleRadius(rad(AppSizes.radiusInput)),
+          borderRadius: AppShapes.squircleRadius(AppSizes.radiusInput),
           borderSide: BorderSide(color: p.ink, width: 1.4),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: AppShapes.squircleRadius(rad(AppSizes.radiusInput)),
+          borderRadius: AppShapes.squircleRadius(AppSizes.radiusInput),
           borderSide: BorderSide(color: p.error, width: 1),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: AppShapes.squircleRadius(rad(AppSizes.radiusInput)),
+          borderRadius: AppShapes.squircleRadius(AppSizes.radiusInput),
           borderSide: BorderSide(color: p.error, width: 1.6),
         ),
       ),
@@ -263,7 +244,7 @@ class AppTheme {
         backgroundColor: p.inverseSurface,
         contentTextStyle: textTheme.bodyMedium?.copyWith(color: p.onInverse),
         actionTextColor: p.onInverse,
-        shape: AppShapes.squircle(rad(AppSizes.radiusMd)),
+        shape: AppShapes.squircle(AppSizes.radiusMd),
         behavior: SnackBarBehavior.floating,
         elevation: 0,
       ),
@@ -281,7 +262,7 @@ class AppTheme {
           vertical: AppSizes.xxl,
         ),
         shape: AppShapes.squircle(
-          rad(AppSizes.radiusDialog),
+          AppSizes.radiusDialog,
           side: BorderSide(color: p.hairline, width: 1),
         ),
         titleTextStyle: textTheme.titleLarge?.copyWith(color: p.ink),
@@ -297,7 +278,7 @@ class AppTheme {
         // Hairline edge keeps the sheet defined now that its fill matches the
         // page background (flat surface == canvas).
         shape: AppShapes.squircleTop(
-          rad(AppSizes.bottomSheetRadius),
+          AppSizes.bottomSheetRadius,
           side: BorderSide(color: p.hairline, width: 1),
         ),
       ),
@@ -370,7 +351,7 @@ class AppTheme {
         }),
         checkColor: WidgetStateProperty.all(p.onInverse),
         side: BorderSide(color: p.ink, width: 1.5),
-        shape: AppShapes.squircle(rad(AppSizes.radiusSm) / 2),
+        shape: AppShapes.squircle(AppSizes.radiusSm / 2),
       ),
       radioTheme: RadioThemeData(fillColor: WidgetStateProperty.all(p.ink)),
       tabBarTheme: TabBarThemeData(
@@ -384,7 +365,7 @@ class AppTheme {
       tooltipTheme: TooltipThemeData(
         decoration: ShapeDecoration(
           color: p.inverseSurface,
-          shape: AppShapes.squircle(rad(AppSizes.radiusSm)),
+          shape: AppShapes.squircle(AppSizes.radiusSm),
         ),
         textStyle: textTheme.bodySmall?.copyWith(color: p.onInverse),
       ),
@@ -393,7 +374,7 @@ class AppTheme {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         shape: AppShapes.squircle(
-          rad(AppSizes.radiusMd),
+          AppSizes.radiusMd,
           side: BorderSide(color: p.hairline, width: 1),
         ),
         textStyle: textTheme.bodyMedium?.copyWith(color: p.ink),

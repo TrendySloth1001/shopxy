@@ -1,26 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
-import 'package:shopxy/core/icons/app_icons_material.g.dart';
-import 'package:shopxy/shared/theme/app_theme_spec.dart';
-
-/// Resolve a glyph to a Material [IconData] for the active icon style, or null
-/// to render the Hugeicons default. This is the SINGLE choke point for the
-/// icon-style axis: the `material*` styles look the glyph up in the codegen'd
-/// [kMaterialIconMap] (keyed on the const [AppIcons] glyphs — const
-/// canonicalisation makes identity lookup work); anything unmapped, or the
-/// `hugeicons` default, returns null → Hugeicons renders. No call site changes.
-IconData? resolveMaterialIcon(AppIconData? glyph, AppIconStyle style) {
-  if (glyph == null || style == AppIconStyle.hugeicons) return null;
-  final set = kMaterialIconMap[glyph];
-  if (set == null) return null;
-  return switch (style) {
-    AppIconStyle.materialOutlined => set.outlined,
-    AppIconStyle.materialRounded => set.rounded,
-    AppIconStyle.materialSharp => set.sharp,
-    AppIconStyle.hugeicons => null,
-  };
-}
 
 /// Drop-in replacement for Flutter's [Icon] that renders a Hugeicons glyph.
 ///
@@ -45,20 +25,6 @@ class AppIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final iconTheme = IconTheme.of(context);
     final resolvedSize = size ?? iconTheme.size ?? 24.0;
-    final resolvedColor = color ?? iconTheme.color ?? const Color(0xFF000000);
-
-    // Icon-style axis: render a Material glyph when the active style is a
-    // `material*` one and this glyph is mapped; otherwise fall through to
-    // Hugeicons (the default, and the fallback for anything unmapped).
-    final material = resolveMaterialIcon(icon, AppThemeSpec.active.iconStyle);
-    if (material != null) {
-      return SizedBox.square(
-        dimension: resolvedSize,
-        child: Center(
-          child: Icon(material, size: resolvedSize, color: resolvedColor),
-        ),
-      );
-    }
     final glyph = icon;
     // Pin the glyph to [resolvedSize] and centre it — exactly what Material's
     // [Icon] does. Without this, a parent that imposes larger *tight*

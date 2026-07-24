@@ -13,6 +13,7 @@ import 'package:shopxy/features/products/presentation/providers/products_provide
 import 'package:shopxy/features/products/presentation/widgets/product_grid_card.dart';
 import 'package:shopxy/features/products/presentation/widgets/product_list_tile.dart';
 import 'package:shopxy/features/stock/presentation/widgets/stock_bottom_sheet.dart';
+import 'package:shopxy/core/prefs/navigation_prefs.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -601,12 +602,13 @@ class _ProductListSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final compact = context.watch<NavigationPrefsProvider>().isCompact;
     return ListView.separated(
       physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
       itemCount: 6,
       separatorBuilder: (context, index) => const AppDivider(),
-      itemBuilder: (context, index) => const _ProductRowSkeleton(),
+      itemBuilder: (context, index) => _ProductRowSkeleton(compact: compact),
     );
   }
 }
@@ -654,14 +656,15 @@ class _ProductGridSkeleton extends StatelessWidget {
   }
 }
 
-/// One skeleton row. Mirrors [ProductListTile]'s comfortable layout.
+/// One skeleton row. Mirrors [ProductListTile] for the given density.
 class _ProductRowSkeleton extends StatelessWidget {
-  const _ProductRowSkeleton();
+  const _ProductRowSkeleton({required this.compact});
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
-    const imageSide = 96.0;
-    const vPad = AppSizes.lg;
+    final imageSide = compact ? AppSizes.avatarMd : 96.0;
+    final vPad = compact ? AppSizes.sm : AppSizes.lg;
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: AppSizes.lg, vertical: vPad),
@@ -679,10 +682,12 @@ class _ProductRowSkeleton extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Name — 2 lines
+                // Name — 1 line compact, 2 lines card
                 AppShimmerLine(widthFactor: 0.75),
-                const SizedBox(height: AppSizes.xs),
-                AppShimmerLine(widthFactor: 0.55),
+                if (!compact) ...[
+                  const SizedBox(height: AppSizes.xs),
+                  AppShimmerLine(widthFactor: 0.55),
+                ],
                 const SizedBox(height: AppSizes.xs),
                 // SKU / identifier line — narrower
                 AppShimmerLine(widthFactor: 0.45, height: AppSizes.sm),

@@ -131,19 +131,19 @@ class AppPalette {
   /// [light] so colours resolve correctly before the controller loads.
   static AppPalette active = light;
 
-  /// Calm light theme — a cool, low-glare off-white frame (#F0F2F5)
-  /// with white cards, muted blue-grey secondary text and a teal-green
+  /// WhatsApp-calm light theme — a cool, low-glare off-white frame (#F0F2F5)
+  /// with white cards, muted blue-grey secondary text and WhatsApp's teal-green
   /// accent. Softer contrast than pure-white-on-near-black, so it doesn't
   /// needle the eyes on long sessions.
   static const AppPalette light = AppPalette(
     brightness: Brightness.light,
-    ink: Color(0xFF111B21), // primary text
-    muted: Color(0xFF667781), // secondary text
+    ink: Color(0xFF111B21), // WhatsApp primary text
+    muted: Color(0xFF667781), // WhatsApp secondary text
     subtle: Color(0xFF8696A0),
     disabled: Color(0xFFBFC8CE),
     hairline: Color(0x1A111B21), // softer, cool divider
     surfaceTint: Color(0x08111B21),
-    canvas: Color(0xFFF0F2F5), // app background (cool light grey)
+    canvas: Color(0xFFF0F2F5), // WhatsApp app background (cool light grey)
     pageTint: Color(0xFFF6F7F9),
     heroPanel: Color(0xFFE4E8EB),
     surface: Color(0xFFFFFFFF), // white cards float on the grey canvas
@@ -153,7 +153,7 @@ class AppPalette {
     onInverse: Color(0xFFFFFFFF),
     scrim: Color(0x66111B21),
     shadow: Color(0x14000000),
-    brand: Color(0xFF008069), // teal-green
+    brand: Color(0xFF008069), // WhatsApp teal-green
     brandStrong: Color(0xFF006E5A),
     brandSoft: Color(0xFFE7F3EF),
     success: Color(0xFF16A34A),
@@ -319,32 +319,32 @@ class AppPalette {
     whatsapp: Color(0xFF25D366),
   );
 
-  /// Calm dark — a desaturated near-black (#0B141A) that's easy
+  /// WhatsApp dark — the signature desaturated near-black (#0B141A) that's easy
   /// on the eyes (not pure black, not blue-slate), with gently raised panels
-  /// (#111B21) and a green accent. Soft status fills are low-alpha
+  /// (#111B21) and WhatsApp's green accent. Soft status fills are low-alpha
   /// tints so chips don't glow on the dark ground.
   static const AppPalette dark = AppPalette(
     brightness: Brightness.dark,
-    ink: Color(0xFFE9EDEF), // primary text
-    muted: Color(0xFF8696A0), // secondary text
+    ink: Color(0xFFE9EDEF), // WhatsApp primary text
+    muted: Color(0xFF8696A0), // WhatsApp secondary text
     subtle: Color(0xFF667781),
     disabled: Color(0xFF3B4A54),
     hairline: Color(0x1FFFFFFF),
     surfaceTint: Color(0x0DFFFFFF),
-    canvas: Color(0xFF0B141A), // background
+    canvas: Color(0xFF0B141A), // WhatsApp background
     pageTint: Color(0xFF0E181F),
     heroPanel: Color(0xFF202C33),
-    // Gently raised panel over the canvas (layered cards a step up
+    // Gently raised panel over the canvas (WhatsApp layers cards a step up
     // rather than staying dead-flat) — still defined by hairline borders.
     surface: Color(0xFF111B21),
-    // Inputs get a raised fill.
+    // Inputs get WhatsApp's raised input fill.
     field: Color(0xFF202C33),
     onAccent: Color(0xFFFFFFFF),
     inverseSurface: Color(0xFFE9EDEF),
     onInverse: Color(0xFF0B141A),
     scrim: Color(0xB3000000),
     shadow: Color(0x66000000),
-    brand: Color(0xFF00A884), // dark-mode green
+    brand: Color(0xFF00A884), // WhatsApp dark-mode green
     brandStrong: Color(0xFF25D366),
     brandSoft: Color(0x2600A884),
     success: Color(0xFF3ECF86),
