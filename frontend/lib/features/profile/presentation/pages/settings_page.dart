@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shopxy/core/auth/shop_capabilities.dart';
 import 'package:shopxy/core/prefs/locale_prefs.dart';
-import 'package:shopxy/core/prefs/navigation_prefs.dart';
 import 'package:shopxy/core/prefs/theme_prefs.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
@@ -27,7 +26,6 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
-import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 enum SettingsSection { account, appearance, notifications, about }
 
@@ -230,7 +228,6 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           // Language is live (multilingual pilot): English + हिन्दी.
           const _LanguageRow(),
-          const _DensityRow(),
 
           const _Gap(),
 
@@ -453,96 +450,6 @@ class _Gap extends StatelessWidget {
 /// Two-way picker for [ListDensity]. Drives list-row padding on the
 /// products page (and any future inventory-heavy list) so the user
 /// can opt into a compact mode that fits more rows per screen.
-class _DensityRow extends StatelessWidget {
-  const _DensityRow();
-
-  @override
-  Widget build(BuildContext context) {
-    final prefs = context.watch<NavigationPrefsProvider>();
-    final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.lg,
-        vertical: AppSizes.md,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: AppSizes.xxxl,
-            height: AppSizes.xxxl,
-            decoration: ShapeDecoration(
-              color: AppColors.heroPanel,
-              shape: AppShapes.squircle(AppSizes.radiusSm),
-            ),
-            alignment: Alignment.center,
-            child: AppIcon(
-              AppIcons.densityMediumRounded,
-              size: AppSizes.iconMd,
-              color: AppColors.black,
-            ),
-          ),
-          const SizedBox(width: AppSizes.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.profileListDensity,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: AppColors.black,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: AppSizes.xxs),
-                Text(
-                  prefs.isCompact
-                      ? l10n.profileListDensityCompactDesc
-                      : l10n.profileListDensityComfortableDesc,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: AppColors.muted,
-                  ),
-                ),
-                const SizedBox(height: AppSizes.sm),
-                SegmentedButton<ListDensity>(
-                  segments: [
-                    ButtonSegment(
-                      value: ListDensity.comfortable,
-                      icon: const AppIcon(
-                        AppIcons.formatLineSpacingRounded,
-                        size: AppSizes.iconSm,
-                      ),
-                      label: Text(l10n.profileDensityComfortable),
-                    ),
-                    ButtonSegment(
-                      value: ListDensity.compact,
-                      icon: const AppIcon(
-                        AppIcons.densitySmallRounded,
-                        size: AppSizes.iconSm,
-                      ),
-                      label: Text(l10n.profileDensityCompact),
-                    ),
-                  ],
-                  selected: {prefs.density},
-                  showSelectedIcon: false,
-                  onSelectionChanged: (set) => prefs.setDensity(set.first),
-                  style: ButtonStyle(
-                    visualDensity: VisualDensity.compact,
-                    textStyle: WidgetStatePropertyAll(
-                      theme.textTheme.labelMedium?.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 /// Three-way picker for [AppThemeMode] — Light, Dark and OLED. Mirrors the
 /// web app's theme picker. Writes through [ThemePrefsProvider], which swaps the
 /// active palette, persists the choice and rebuilds the whole app live so the
