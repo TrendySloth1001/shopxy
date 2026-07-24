@@ -31,7 +31,7 @@ class LinkedShop {
 
   /// `partyId` or `vendorId` from the merchant's database, depending on
   /// [role]. Customer-side routes use this id to fetch invoices.
-  final int id;
+  final String id;
   final ShopRole role;
   final String name;
   final String? email;
@@ -42,7 +42,7 @@ class LinkedShop {
   /// Owning shop's identity. Joined from `party.shop` / `vendor.shop`
   /// server-side so we can render real shop branding instead of an
   /// initial chip. All nullable so legacy payloads still parse.
-  final int? shopId;
+  final String? shopId;
   final String? shopName;
   final String? shopSlug;
   final String? shopLogoUrl;
@@ -61,14 +61,14 @@ class LinkedShop {
         ? invoices.first as Map<String, dynamic>
         : null;
     return LinkedShop(
-      id: j['id'] as int,
+      id: j['id'].toString(),
       role: role,
       name: j['name'] as String,
       email: j['email'] as String?,
       phone: j['phone'] as String?,
       address: j['address'] as String?,
       invoiceCount: (counts?['invoices'] as int?) ?? 0,
-      shopId: shop?['id'] as int?,
+      shopId: shop?['id']?.toString(),
       shopName: shop?['name'] as String?,
       shopSlug: shop?['slug'] as String?,
       shopLogoUrl: shop?['logoUrl'] as String?,
@@ -97,7 +97,7 @@ class ShopInvoice {
     required this.itemCount,
   });
 
-  final int id;
+  final String id;
   final String invoiceNo;
   final String type;
   final String status;
@@ -111,7 +111,7 @@ class ShopInvoice {
   bool get isSale => type == 'SALE';
 
   factory ShopInvoice.fromJson(Map<String, dynamic> j) => ShopInvoice(
-        id: j['id'] as int,
+        id: j['id'].toString(),
         invoiceNo: j['invoiceNo'] as String,
         type: j['type'] as String,
         status: j['status'] as String,
@@ -138,7 +138,7 @@ class ShopInvoiceItem {
     required this.total,
   });
 
-  final int id;
+  final String id;
   final String productName;
   final String productSku;
   final String? hsn;
@@ -150,7 +150,7 @@ class ShopInvoiceItem {
   final double total;
 
   factory ShopInvoiceItem.fromJson(Map<String, dynamic> j) => ShopInvoiceItem(
-        id: j['id'] as int,
+        id: j['id'].toString(),
         productName: j['productName'] as String,
         productSku: j['productSku'] as String,
         hsn: j['hsn'] as String?,
@@ -192,7 +192,7 @@ class ShopInvoiceDetail extends ShopInvoice {
     final type = j['type'] as String;
     final isSale = type == 'SALE';
     return ShopInvoiceDetail(
-      id: j['id'] as int,
+      id: j['id'].toString(),
       invoiceNo: j['invoiceNo'] as String,
       type: type,
       status: j['status'] as String,
@@ -267,7 +267,7 @@ class ShopQuotation {
     this.respondedAt,
   });
 
-  final int id;
+  final String id;
   final String quotationNo;
   final String status; // REQUESTED | PENDING | ACCEPTED | DECLINED | CANCELLED | EXPIRED
   final double subtotal;
@@ -291,7 +291,7 @@ class ShopQuotation {
   factory ShopQuotation.fromJson(Map<String, dynamic> j) {
     final invoice = j['invoice'] as Map<String, dynamic>?;
     return ShopQuotation(
-      id: j['id'] as int,
+      id: j['id'].toString(),
       quotationNo: j['quotationNo'] as String,
       status: j['status'] as String,
       subtotal: _asDouble(j['subtotal']),

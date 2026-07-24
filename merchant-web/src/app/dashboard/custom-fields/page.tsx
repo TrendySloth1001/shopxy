@@ -30,7 +30,7 @@ import { useCanManage } from "@/features/auth/use-can";
 import { ComboSelect } from "@/shared/ui/combo-select";
 
 type FieldEditor =
-  | { mode: "create"; sectionId: number | null }
+  | { mode: "create"; sectionId: string | null }
   | { mode: "edit"; field: Definition }
   | null;
 type SectionEditor = { mode: "create" } | { mode: "edit"; section: Section } | null;
@@ -87,7 +87,7 @@ export default function CustomFieldsPage() {
     }
   }
 
-  async function onSaveField(input: DefinitionInput, editId?: number) {
+  async function onSaveField(input: DefinitionInput, editId?: string) {
     setBusy(true);
     setActionError(null);
     try {
@@ -102,7 +102,7 @@ export default function CustomFieldsPage() {
     }
   }
 
-  async function onDeleteField(id: number) {
+  async function onDeleteField(id: string) {
     setBusy(true);
     setActionError(null);
     try {
@@ -115,7 +115,7 @@ export default function CustomFieldsPage() {
     }
   }
 
-  async function onSaveSection(name: string, editId?: number) {
+  async function onSaveSection(name: string, editId?: string) {
     setBusy(true);
     setActionError(null);
     try {
@@ -130,7 +130,7 @@ export default function CustomFieldsPage() {
     }
   }
 
-  async function onDeleteSection(id: number) {
+  async function onDeleteSection(id: string) {
     setBusy(true);
     setActionError(null);
     try {
@@ -294,7 +294,7 @@ function FieldGroup({
   fields: Definition[];
   onAddField: () => void;
   onEditField: (f: Definition) => void;
-  onDeleteField: (id: number) => void;
+  onDeleteField: (id: string) => void;
   onEditSection?: () => void;
   onDeleteSection?: () => void;
   canEdit: boolean;
@@ -409,7 +409,7 @@ function FieldEditorPanel({
   sections: Section[];
   busy: boolean;
   onCancel: () => void;
-  onSave: (input: DefinitionInput, editId?: number) => void;
+  onSave: (input: DefinitionInput, editId?: string) => void;
 }) {
   const t = useTranslations("customFields");
   const editing = editor.mode === "edit" ? editor.field : null;
@@ -433,7 +433,7 @@ function FieldEditorPanel({
     const input: DefinitionInput = {
       name: trimmed,
       type,
-      sectionId: sectionId ? Number(sectionId) : null,
+      sectionId: sectionId ? sectionId : null,
     };
     if (type === "NUMBER" && unitSuffix.trim()) input.unitSuffix = unitSuffix.trim();
     if (type === "DROPDOWN") {
@@ -528,7 +528,7 @@ function SectionEditorPanel({
   editor: NonNullable<SectionEditor>;
   busy: boolean;
   onCancel: () => void;
-  onSave: (name: string, editId?: number) => void;
+  onSave: (name: string, editId?: string) => void;
 }) {
   const t = useTranslations("customFields");
   const editing = editor.mode === "edit" ? editor.section : null;

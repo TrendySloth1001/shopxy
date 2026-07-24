@@ -32,7 +32,7 @@ const BACK = "/dashboard/banners";
 
 /** A pinned product being edited in the form. */
 type PinnedRow = {
-  productId: number;
+  productId: string;
   name: string;
   sku: string | null;
   imageUrl: string | null;
@@ -127,11 +127,11 @@ export function BannerEditor({ banner }: { banner?: Banner }) {
     setPickerOpen(false);
   }
 
-  function patchRow(productId: number, patch: Partial<PinnedRow>) {
+  function patchRow(productId: string, patch: Partial<PinnedRow>) {
     setProducts((prev) => prev.map((r) => (r.productId === productId ? { ...r, ...patch } : r)));
   }
 
-  function removeRow(productId: number) {
+  function removeRow(productId: string) {
     setProducts((prev) => prev.filter((r) => r.productId !== productId));
   }
 

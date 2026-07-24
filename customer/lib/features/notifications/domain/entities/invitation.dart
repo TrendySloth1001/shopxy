@@ -49,13 +49,13 @@ class Invitation {
     this.shopBannerUrl,
   });
 
-  final int id;
-  final int fromUserId;
+  final String id;
+  final String fromUserId;
   final String toEmail;
-  final int? toUserId;
+  final String? toUserId;
   final InviteLinkType linkType;
-  final int? partyId;
-  final int? vendorId;
+  final String? partyId;
+  final String? vendorId;
   final InviteStatus status;
   final String? message;
 
@@ -75,7 +75,7 @@ class Invitation {
   /// Inviting shop's real identity (from the joined Shop record, not
   /// the legacy [fromShopName] string). When present these drive the
   /// invite card's branding — logo, banner, and tap-through slug.
-  final int? shopId;
+  final String? shopId;
   final String? shopName;
   final String? shopSlug;
   final String? shopLogoUrl;
@@ -92,13 +92,13 @@ class Invitation {
     final fromUser = j['fromUser'] as Map<String, dynamic>?;
     final shop = j['shop'] as Map<String, dynamic>?;
     return Invitation(
-      id: j['id'] as int,
-      fromUserId: j['fromUserId'] as int,
+      id: j['id'].toString(),
+      fromUserId: j['fromUserId'].toString(),
       toEmail: j['toEmail'] as String,
-      toUserId: j['toUserId'] as int?,
+      toUserId: j['toUserId']?.toString(),
       linkType: _typeFrom(j['linkType'] as String),
-      partyId: j['partyId'] as int?,
-      vendorId: j['vendorId'] as int?,
+      partyId: j['partyId']?.toString(),
+      vendorId: j['vendorId']?.toString(),
       status: _statusFrom(j['status'] as String),
       message: j['message'] as String?,
       fromShopName: j['fromShopName'] as String?,
@@ -109,7 +109,7 @@ class Invitation {
       fromUserName: fromUser?['name'] as String?,
       fromUserEmail: fromUser?['email'] as String?,
       fromUserAvatarUrl: fromUser?['avatarUrl'] as String?,
-      shopId: shop?['id'] as int?,
+      shopId: shop?['id']?.toString(),
       shopName: shop?['name'] as String?,
       shopSlug: shop?['slug'] as String?,
       shopLogoUrl: shop?['logoUrl'] as String?,

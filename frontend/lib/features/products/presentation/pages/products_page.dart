@@ -111,7 +111,7 @@ class _ProductsPageState extends State<ProductsPage> {
   /// product row. On a successful post we kick a list reload so qty +
   /// stock state stay in sync.
   Future<void> _openStockSheet(Product product, String type) async {
-    final draftId = await showModalBottomSheet<int>(
+    final draftId = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.surface,

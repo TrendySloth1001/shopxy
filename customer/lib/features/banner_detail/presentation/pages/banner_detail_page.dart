@@ -18,7 +18,7 @@ import 'package:shopxy_customer/core/icons/app_icon.dart';
 /// prices). Reached by tapping a home banner that has `productCount > 0`.
 class BannerDetailPage extends StatefulWidget {
   const BannerDetailPage({super.key, required this.bannerId});
-  final int bannerId;
+  final String bannerId;
 
   @override
   State<BannerDetailPage> createState() => _BannerDetailPageState();

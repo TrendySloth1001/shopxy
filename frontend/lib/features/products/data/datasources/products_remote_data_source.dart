@@ -22,7 +22,7 @@ class ProductsRemoteDataSource {
 
   Future<({List<Product> products, int total})> getProducts({
     String? search,
-    int? categoryId,
+    String? categoryId,
     bool? lowStock,
     bool? outOfStock,
     int page = 1,
@@ -55,7 +55,7 @@ class ProductsRemoteDataSource {
     );
   }
 
-  Future<Product> getProduct(int id) async {
+  Future<Product> getProduct(String id) async {
     final response = await _client.get('/products/$id');
     _expectOk(response, 'Load product');
     return ProductDto.fromJson(
@@ -83,7 +83,7 @@ class ProductsRemoteDataSource {
     );
   }
 
-  Future<Product> updateProduct(int id, Map<String, dynamic> data) async {
+  Future<Product> updateProduct(String id, Map<String, dynamic> data) async {
     final response = await _client.patch('/products/$id', body: data);
     _expectOk(response, 'Update product');
     return ProductDto.fromJson(
@@ -91,7 +91,7 @@ class ProductsRemoteDataSource {
     );
   }
 
-  Future<void> deleteProduct(int id) async {
+  Future<void> deleteProduct(String id) async {
     final response = await _client.delete('/products/$id');
     _expectOk(response, 'Delete product');
   }
@@ -100,7 +100,7 @@ class ProductsRemoteDataSource {
   /// distinct endpoint (`POST /products/:id/publish`) rather than a
   /// generic patch so the action can be audit-logged separately from
   /// editorial edits.
-  Future<Product> setPublished(int id, bool isPublished) async {
+  Future<Product> setPublished(String id, bool isPublished) async {
     final response = await _client.post(
       '/products/$id/publish',
       body: {'isPublished': isPublished},
@@ -114,7 +114,7 @@ class ProductsRemoteDataSource {
   /// Returns the created image record so callers can track its id
   /// (used by the edit form to mark the image as "already persisted"
   /// and avoid double-adding it during the next save).
-  Future<ProductImage> addImage(int productId, String url) async {
+  Future<ProductImage> addImage(String productId, String url) async {
     final response =
         await _client.post('/products/$productId/images', body: {'url': url});
     _expectOk(response, 'Add image');
@@ -123,7 +123,7 @@ class ProductsRemoteDataSource {
     );
   }
 
-  Future<void> deleteImage(int productId, int imageId) async {
+  Future<void> deleteImage(String productId, String imageId) async {
     final response = await _client.delete('/products/$productId/images/$imageId');
     _expectOk(response, 'Delete image');
   }

@@ -30,8 +30,8 @@ class CustomFieldsFormSection extends StatefulWidget {
     required this.onValueChanged,
   });
 
-  final Map<int, String> values;
-  final void Function(int definitionId, String value) onValueChanged;
+  final Map<String, String> values;
+  final void Function(String definitionId, String value) onValueChanged;
 
   @override
   State<CustomFieldsFormSection> createState() =>

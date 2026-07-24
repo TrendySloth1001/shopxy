@@ -37,7 +37,7 @@ export function HomeFeed({ initialFeed }: { initialFeed?: HomeFeed }) {
   // Mutable pager state kept in refs (doesn't drive rendering).
   const seed = useRef<number | undefined>(undefined);
   const page = useRef(0);
-  const seen = useRef<Set<number>>(new Set());
+  const seen = useRef<Set<string>>(new Set());
   const failureStreak = useRef(0);
   const loadingMoreRef = useRef(false);
   const exhaustedRef = useRef(false);

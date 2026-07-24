@@ -36,8 +36,8 @@ export function directionIsEditable(reason: string): boolean {
 
 export const adjustmentItemSchema = z
   .object({
-    id: z.number().optional(),
-    productId: z.number(),
+    id: z.coerce.string().optional(),
+    productId: z.coerce.string(),
     productName: z.string().nullish(),
     productSku: z.string().nullish(),
     unit: z.string().nullish(),
@@ -50,12 +50,12 @@ export type AdjustmentItem = z.infer<typeof adjustmentItemSchema>;
 
 export const adjustmentSchema = z
   .object({
-    id: z.number(),
+    id: z.coerce.string(),
     adjustmentNo: z.string(),
     reasonCode: z.string(),
     direction: z.string(),
     note: z.string().nullish(),
-    createdBy: z.object({ id: z.number(), name: z.string() }).nullish(),
+    createdBy: z.object({ id: z.coerce.string(), name: z.string() }).nullish(),
     createdAt: z.string(),
     items: z
       .array(adjustmentItemSchema)

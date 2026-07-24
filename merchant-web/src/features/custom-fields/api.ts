@@ -61,7 +61,7 @@ export type DefinitionInput = {
   options?: string[];
   unitSuffix?: string;
   icon?: string;
-  sectionId?: number | null;
+  sectionId?: string | null;
 };
 
 export function createDefinition(input: DefinitionInput): Promise<Definition> {
@@ -73,7 +73,7 @@ export function createDefinition(input: DefinitionInput): Promise<Definition> {
 }
 
 export function updateDefinition(
-  id: number,
+  id: string,
   input: Partial<DefinitionInput> & { isActive?: boolean },
 ): Promise<Definition> {
   return fetch(`/api/custom-fields/${id}`, {
@@ -83,7 +83,7 @@ export function updateDefinition(
   }).then((r) => okJson(r, (raw) => definitionSchema.parse(raw), "Could not save the field."));
 }
 
-export function deleteDefinition(id: number): Promise<void> {
+export function deleteDefinition(id: string): Promise<void> {
   return fetch(`/api/custom-fields/${id}`, { method: "DELETE" }).then((r) =>
     okVoid(r, "Could not delete the field."),
   );
@@ -100,7 +100,7 @@ export function createSection(input: SectionInput): Promise<void> {
 }
 
 export function updateSection(
-  id: number,
+  id: string,
   input: Partial<SectionInput> & { isActive?: boolean },
 ): Promise<void> {
   return fetch(`/api/custom-fields/sections/${id}`, {
@@ -110,7 +110,7 @@ export function updateSection(
   }).then((r) => okVoid(r, "Could not save the section."));
 }
 
-export function deleteSection(id: number): Promise<void> {
+export function deleteSection(id: string): Promise<void> {
   return fetch(`/api/custom-fields/sections/${id}`, { method: "DELETE" }).then((r) =>
     okVoid(r, "Could not delete the section."),
   );

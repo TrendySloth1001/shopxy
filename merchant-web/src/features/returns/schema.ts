@@ -31,7 +31,7 @@ export const RETURN_STATUS_CLASSES: Record<string, string> = {
 
 const returnItemSchema = z
   .object({
-    id: z.number(),
+    id: z.coerce.string(),
     quantity: z.coerce.number().default(0),
     refundAmount: z.coerce.number().default(0),
     reason: z.string().nullish(),
@@ -50,7 +50,7 @@ export type ReturnItem = z.infer<typeof returnItemSchema>;
 
 const returnEventSchema = z
   .object({
-    id: z.number(),
+    id: z.coerce.string(),
     type: z.string(),
     note: z.string().nullish(),
     occurredAt: z.string(),
@@ -60,7 +60,7 @@ export type ReturnEvent = z.infer<typeof returnEventSchema>;
 
 export const returnSchema = z
   .object({
-    id: z.number(),
+    id: z.coerce.string(),
     status: z.string(),
     refundAmount: z.coerce.number().default(0),
     refundMethod: z.string().nullish(),
@@ -68,11 +68,11 @@ export const returnSchema = z
     decisionNote: z.string().nullish(),
     createdAt: z.string(),
     updatedAt: z.string().optional(),
-    requestId: z.number().nullish(),
+    requestId: z.coerce.string().nullish(),
     request: z
       .object({
-        id: z.number().nullish(),
-        customerOrderId: z.number().nullish(),
+        id: z.coerce.string().nullish(),
+        customerOrderId: z.coerce.string().nullish(),
         customerName: z.string().nullish(),
         customerAddress: z.string().nullish(),
       })

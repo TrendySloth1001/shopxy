@@ -65,14 +65,14 @@ export function sendInvite(input: {
   }).then((r) => okVoid(r, "Could not send the invite."));
 }
 
-export function cancelInvite(id: number): Promise<void> {
+export function cancelInvite(id: string): Promise<void> {
   return fetch(`/api/team/invites/${id}`, { method: "DELETE" }).then((r) =>
     okVoid(r, "Could not cancel the invite."),
   );
 }
 
 export function setMemberPermissions(
-  userId: number,
+  userId: string,
   input: { roleName: string; permissions: string[] },
 ): Promise<void> {
   return fetch(`/api/team/members/${userId}/permissions`, {
@@ -82,7 +82,7 @@ export function setMemberPermissions(
   }).then((r) => okVoid(r, "Could not update permissions."));
 }
 
-export function removeMember(userId: number): Promise<void> {
+export function removeMember(userId: string): Promise<void> {
   return fetch(`/api/team/members/${userId}`, { method: "DELETE" }).then((r) =>
     okVoid(r, "Could not remove the member."),
   );
@@ -97,7 +97,7 @@ export function createRole(input: { name: string; permissions: string[] }): Prom
 }
 
 export function updateRole(
-  id: number,
+  id: string,
   input: { name?: string; permissions?: string[] },
 ): Promise<void> {
   return fetch(`/api/team/roles/${id}`, {
@@ -107,7 +107,7 @@ export function updateRole(
   }).then((r) => okVoid(r, "Could not save the role."));
 }
 
-export function deleteRole(id: number): Promise<void> {
+export function deleteRole(id: string): Promise<void> {
   return fetch(`/api/team/roles/${id}`, { method: "DELETE" }).then((r) =>
     okVoid(r, "Could not delete the role."),
   );

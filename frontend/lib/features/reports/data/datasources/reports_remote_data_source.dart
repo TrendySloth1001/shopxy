@@ -68,7 +68,7 @@ class ReportsRemoteDataSource {
   Future<SoldItemsPage> soldItems(
     DateTime from,
     DateTime to, {
-    required int productId,
+    required String productId,
     int page = 1,
     int limit = 15,
   }) async {

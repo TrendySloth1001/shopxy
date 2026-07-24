@@ -9,13 +9,13 @@ class WishlistEntry {
     required this.savedAt,
     required this.product,
   });
-  final int id;
+  final String id;
   final DateTime savedAt;
   final CatalogProduct product;
 
   factory WishlistEntry.fromJson(Map<String, dynamic> j) {
     return WishlistEntry(
-      id: j['id'] as int,
+      id: j['id'].toString(),
       savedAt: DateTime.parse(j['savedAt'] as String),
       product: CatalogProduct.fromJson(j['product'] as Map<String, dynamic>),
     );
@@ -38,7 +38,7 @@ class WishlistRemoteDataSource {
         .toList();
   }
 
-  Future<void> add(int productId) async {
+  Future<void> add(String productId) async {
     final res = await _client.post('/me/wishlist/$productId');
     if (res.statusCode != 204) {
       final body = res.body.isEmpty
@@ -48,7 +48,7 @@ class WishlistRemoteDataSource {
     }
   }
 
-  Future<void> remove(int productId) async {
+  Future<void> remove(String productId) async {
     final res = await _client.delete('/me/wishlist/$productId');
     if (res.statusCode != 204) {
       final body = res.body.isEmpty

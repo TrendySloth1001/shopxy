@@ -3,7 +3,7 @@ import { z } from "zod";
 // ── Image ─────────────────────────────────────────────────────────────────────
 
 export const productImageSchema = z.object({
-  id: z.number().optional(),
+  id: z.coerce.string().optional(),
   url: z.string(),
   sortOrder: z.number(),
 });
@@ -12,7 +12,7 @@ export type ProductImage = z.infer<typeof productImageSchema>;
 // ── Variant ───────────────────────────────────────────────────────────────────
 
 export const variantSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   sku: z.string().nullable().optional(),
   attributes: z.record(z.string(), z.string()).default({}),
   mrp: z.coerce.number(),
@@ -58,7 +58,7 @@ export type ProductOffer = z.infer<typeof productOfferSchema>;
 // ── Bank offer ────────────────────────────────────────────────────────────────
 
 export const bankOfferSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   headline: z.string(),
   description: z.string().nullable().optional(),
   bankName: z.string().nullable().optional(),
@@ -72,7 +72,7 @@ export type BankOffer = z.infer<typeof bankOfferSchema>;
 // ── Shop summary ──────────────────────────────────────────────────────────────
 
 export const shopSummarySchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   name: z.string(),
   slug: z.string(),
   logoUrl: z.string().nullable().optional(),
@@ -99,7 +99,7 @@ export type ShopSummary = z.infer<typeof shopSummarySchema>;
 // ── Category summary ──────────────────────────────────────────────────────────
 
 export const categorySummarySchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   name: z.string(),
   slug: z.string(),
 });
@@ -107,7 +107,7 @@ export const categorySummarySchema = z.object({
 // ── Full product detail ───────────────────────────────────────────────────────
 
 export const productDetailSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   name: z.string(),
   description: z.string().nullable().optional(),
   sku: z.string().nullable().optional(),
@@ -143,7 +143,7 @@ export type ProductDetail = z.infer<typeof productDetailSchema>;
 // ── FBT card ──────────────────────────────────────────────────────────────────
 
 export const fbtCardSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   name: z.string(),
   sku: z.string().nullable().optional(),
   unit: z.string().nullable().optional(),

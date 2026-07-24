@@ -458,7 +458,7 @@ function ReturnsModal({ onClose, onNeedManager }: { onClose: () => void; onNeedM
   const t = useTranslations("pos");
   const [invoiceId, setInvoiceId] = useState("");
   const [returnable, setReturnable] = useState<Returnable | null>(null);
-  const [qty, setQty] = useState<Record<number, string>>({});
+  const [qty, setQty] = useState<Record<string, string>>({});
   const [refundMode, setRefundMode] = useState<"CASH" | "UPI" | "CARD" | "OTHER">("CASH");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -499,7 +499,7 @@ function ReturnsModal({ onClose, onNeedManager }: { onClose: () => void; onNeedM
 
         <div className="mt-md flex gap-sm">
           <input value={invoiceId} onChange={(e) => setInvoiceId(e.target.value)} inputMode="numeric" placeholder={t("returns.originalInvoicePlaceholder")} autoFocus className="h-10 flex-1 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
-          <button type="button" disabled={busy || !invoiceId} onClick={() => run(async () => { setDone(null); setReturnable(await fetchReturnable(Number(invoiceId))); setQty({}); })} className="inline-flex h-10 items-center rounded-button border border-hairline px-lg text-label-md text-ink hover:bg-surface-tint disabled:text-disabled">{t("returns.lookUp")}</button>
+          <button type="button" disabled={busy || !invoiceId} onClick={() => run(async () => { setDone(null); setReturnable(await fetchReturnable(invoiceId)); setQty({}); })} className="inline-flex h-10 items-center rounded-button border border-hairline px-lg text-label-md text-ink hover:bg-surface-tint disabled:text-disabled">{t("returns.lookUp")}</button>
         </div>
 
         {returnable ? (
@@ -648,7 +648,7 @@ function TenderModal({ total, paying, onClose, onCash, onTender, onOnline }: { t
   );
 }
 
-function HeldBillsModal({ listOpen, onRecall, onClose }: { listOpen: () => Promise<OpenSaleSummary[]>; onRecall: (id: number) => void; onClose: () => void }) {
+function HeldBillsModal({ listOpen, onRecall, onClose }: { listOpen: () => Promise<OpenSaleSummary[]>; onRecall: (id: string) => void; onClose: () => void }) {
   const t = useTranslations("pos");
   const [bills, setBills] = useState<OpenSaleSummary[] | null>(null);
   useEffect(() => {
@@ -860,7 +860,7 @@ function ConnBadge({ status }: { status: ConnStatus }) {
   return <span className={`inline-flex h-7 items-center gap-xs rounded-button px-sm text-label-sm ${cls}`}><Icon size={13} className={spin ? "animate-spin" : ""} /> {t(labelKey)}</span>;
 }
 
-function PaidScreen({ title, sub, total, invoiceId }: { title: string; sub: string; total: number; invoiceId?: number }) {
+function PaidScreen({ title, sub, total, invoiceId }: { title: string; sub: string; total: number; invoiceId?: string }) {
   const t = useTranslations("pos");
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Enter") window.location.reload(); };
@@ -913,7 +913,7 @@ function BillDiscountInput({ value, onCommit, disabled }: { value: number; onCom
 }
 
 /** Add an item without a barcode: type → pick from catalogue search. */
-function SearchModal({ search, onAdd, onClose }: { search: (term: string) => Promise<import("./types").ProductSearchResult[]>; onAdd: (productId: number) => void; onClose: () => void }) {
+function SearchModal({ search, onAdd, onClose }: { search: (term: string) => Promise<import("./types").ProductSearchResult[]>; onAdd: (productId: string) => void; onClose: () => void }) {
   const t = useTranslations("pos");
   const [term, setTerm] = useState("");
   const [results, setResults] = useState<import("./types").ProductSearchResult[]>([]);

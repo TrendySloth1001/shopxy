@@ -37,7 +37,7 @@ import 'package:shopxy_customer/core/icons/app_icon.dart';
 /// scrolling, the same way Amazon's app handles long-form PDPs.
 class ProductDetailPage extends StatefulWidget {
   const ProductDetailPage({super.key, required this.productId});
-  final int productId;
+  final String productId;
 
   @override
   State<ProductDetailPage> createState() => _ProductDetailPageState();
@@ -864,7 +864,7 @@ class _EmptySection extends StatelessWidget {
 class _ActionBar extends StatefulWidget {
   const _ActionBar({required this.catalogProduct, required this.productId});
   final CatalogProduct catalogProduct;
-  final int productId;
+  final String productId;
 
   @override
   State<_ActionBar> createState() => _ActionBarState();

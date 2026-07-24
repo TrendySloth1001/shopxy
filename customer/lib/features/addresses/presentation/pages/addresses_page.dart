@@ -51,7 +51,7 @@ class _AddressesPageState extends State<AddressesPage> {
   Future<void> _confirmDelete(
     BuildContext context,
     AddressesProvider provider,
-    int id,
+    String id,
   ) async {
     final ok = await showDialog<bool>(
       context: context,

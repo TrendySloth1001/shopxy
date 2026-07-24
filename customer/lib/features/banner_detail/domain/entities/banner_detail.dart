@@ -37,7 +37,7 @@ class BannerHeader {
     this.sortOrder = 0,
   });
 
-  final int id;
+  final String id;
 
   /// Server-relative or absolute. Rendered through `NetworkImageBox`
   /// after `resolveImageUrl(...)`.
@@ -49,7 +49,7 @@ class BannerHeader {
 
   factory BannerHeader.fromJson(Map<String, dynamic> json) {
     return BannerHeader(
-      id: _asInt(json['id']) ?? 0,
+      id: json['id'].toString(),
       imageUrl: (json['imageUrl'] ?? '') as String,
       productCount: _asInt(json['productCount']) ?? 0,
       placement: json['placement'] as String?,
@@ -80,7 +80,7 @@ class BannerProduct {
     this.shopSlug,
   });
 
-  final int id;
+  final String id;
   final String name;
 
   /// Catalogue price before any banner discount.
@@ -110,7 +110,7 @@ class BannerProduct {
     final shop = json['shop'] as Map<String, dynamic>?;
     final selling = _asDouble(json['sellingPrice']) ?? 0;
     return BannerProduct(
-      id: _asInt(json['id']) ?? 0,
+      id: json['id'].toString(),
       name: (json['name'] ?? '') as String,
       sellingPrice: selling,
       salePrice: _asDouble(json['salePrice']) ?? selling,

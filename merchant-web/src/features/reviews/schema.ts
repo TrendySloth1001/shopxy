@@ -3,16 +3,16 @@ import { z } from "zod";
 /** A single customer review, as returned by the public reviews endpoints. */
 export const reviewSchema = z
   .object({
-    id: z.number(),
-    productId: z.number(),
-    userId: z.number(),
+    id: z.coerce.string(),
+    productId: z.coerce.string(),
+    userId: z.coerce.string(),
     rating: z.coerce.number(),
     title: z.string().nullish(),
     body: z.string().nullish(),
     createdAt: z.string(),
     updatedAt: z.string().nullish(),
     user: z
-      .object({ id: z.number(), name: z.string().nullish() })
+      .object({ id: z.coerce.string(), name: z.string().nullish() })
       .nullish(),
   })
   .passthrough();

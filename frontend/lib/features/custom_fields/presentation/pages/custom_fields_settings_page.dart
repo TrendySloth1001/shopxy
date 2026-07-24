@@ -48,7 +48,7 @@ class _CustomFieldsSettingsPageState extends State<CustomFieldsSettingsPage> {
   Future<void> _addSection() => CustomSectionEditorSheet.show(context);
   Future<void> _editSection(CustomFieldSection s) =>
       CustomSectionEditorSheet.show(context, existing: s);
-  Future<void> _addFieldTo(int? sectionId) =>
+  Future<void> _addFieldTo(String? sectionId) =>
       CustomFieldEditorSheet.show(context, defaultSectionId: sectionId);
   Future<void> _editField(CustomFieldDefinition d) =>
       CustomFieldEditorSheet.show(context, existing: d);

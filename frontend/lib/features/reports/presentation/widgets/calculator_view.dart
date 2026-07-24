@@ -116,7 +116,7 @@ class _CalculatorViewState extends State<CalculatorView> {
 
   // Quotation round-trip.
   Quotation? _quote;
-  ({int id, String name, String? stateCode})? _party;
+  ({String id, String name, String? stateCode})? _party;
   bool _sending = false;
   String? _okMsg;
   String? _errMsg;
@@ -188,7 +188,7 @@ class _CalculatorViewState extends State<CalculatorView> {
     }
   }
 
-  bool _has(int id) => _lines.any((l) => l.product.id == id);
+  bool _has(String id) => _lines.any((l) => l.product.id == id);
 
   Future<void> _toggleLine(Product p) async {
     if (_has(p.id)) {
@@ -249,7 +249,7 @@ class _CalculatorViewState extends State<CalculatorView> {
     });
   }
 
-  Future<void> _loadQuotationById(int id) async {
+  Future<void> _loadQuotationById(String id) async {
     try {
       await _importQuotation(await _quotesDs.get(id));
     } catch (e) {

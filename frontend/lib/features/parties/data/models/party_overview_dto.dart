@@ -24,7 +24,7 @@ class PartyOverviewDto {
         .toList();
 
     return PartyOverview(
-      id: p['id'] as int,
+      id: p['id'].toString(),
       name: p['name'] as String,
       contactName: p['contactName'] as String?,
       phone: p['phone'] as String?,
@@ -43,7 +43,7 @@ class PartyOverviewDto {
       linkedUser: linked == null
           ? null
           : PartyLinkedUser(
-              id: linked['id'] as int,
+              id: linked['id'].toString(),
               name: linked['name'] as String,
               email: linked['email'] as String,
             ),
@@ -65,7 +65,7 @@ class PartyOverviewDto {
 
   static PartyInvoiceRef _invoiceFromJson(Map<String, dynamic> j) {
     return PartyInvoiceRef(
-      id: j['id'] as int,
+      id: j['id'].toString(),
       invoiceNo: j['invoiceNo'] as String,
       type: j['type'] as String,
       status: j['status'] as String,
@@ -77,12 +77,12 @@ class PartyOverviewDto {
 
   static PartyChallanRef _challanFromJson(Map<String, dynamic> j) {
     return PartyChallanRef(
-      id: j['id'] as int,
+      id: j['id'].toString(),
       challanNo: j['challanNo'] as String,
       status: j['status'] as String,
       createdAt: DateTime.parse(j['createdAt'] as String),
       itemCount: ((j['_count'] as Map?)?['items'] as int?) ?? 0,
-      invoiceId: j['invoiceId'] as int?,
+      invoiceId: j['invoiceId']?.toString(),
     );
   }
 }

@@ -12,7 +12,7 @@ import { FormSkeleton } from "@/shared/ui/skeleton";
 export default function EditInvoicePage() {
   const t = useTranslations("invoices");
   const params = useParams<{ id: string }>();
-  const id = Number(params.id);
+  const id = params.id;
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [error, setError] = useState<string | null>(null);
 

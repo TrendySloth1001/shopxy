@@ -9,14 +9,14 @@ class ListingFilters {
     this.priceMax,
     this.ratingMin,
     this.inStock = false,
-    this.shopIds = const <int>[],
+    this.shopIds = const <String>[],
   });
 
   final double? priceMin;
   final double? priceMax;
   final double? ratingMin;
   final bool inStock;
-  final List<int> shopIds;
+  final List<String> shopIds;
 
   static const ListingFilters none = ListingFilters();
 
@@ -42,7 +42,7 @@ class ListingFilters {
     Object? priceMax = _undefined,
     Object? ratingMin = _undefined,
     bool? inStock,
-    List<int>? shopIds,
+    List<String>? shopIds,
   }) {
     return ListingFilters(
       priceMin: identical(priceMin, _undefined) ? this.priceMin : priceMin as double?,
@@ -149,13 +149,13 @@ class BrandFacet {
     required this.count,
   });
 
-  final int shopId;
+  final String shopId;
   final String name;
   final String slug;
   final int count;
 
   factory BrandFacet.fromJson(Map<String, dynamic> j) => BrandFacet(
-        shopId: (j['shopId'] as num).toInt(),
+        shopId: j['shopId'].toString(),
         name: j['name'] as String? ?? '',
         slug: j['slug'] as String? ?? '',
         count: (j['count'] as num?)?.toInt() ?? 0,

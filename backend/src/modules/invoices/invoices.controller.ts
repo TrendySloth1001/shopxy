@@ -1,4 +1,6 @@
 import { Request, Response } from 'express';
+import { zPublicId } from '../../shared/ids/zPublicId.js';
+import { decodeId } from '../../shared/ids/publicId.js';
 import { z } from 'zod';
 import { parsePagination, paginatedResponse } from '../../shared/http/pagination.js';
 import { invoicesService } from './invoices.service.js';
@@ -16,7 +18,7 @@ const GST_SLABS = new Set([0, 0.1, 0.25, 1, 1.5, 3, 5, 12, 18, 28]);
 
 const itemSchema = z
   .object({
-    productId: z.number().int().positive(),
+    productId: zPublicId,
     quantity: z.number().positive(),
     unitPrice: z.number().nonnegative(),
     /// GST-10 — when supplied, must be one of the notified GST slabs. Omitting
@@ -129,7 +131,7 @@ const creatableDocumentTypeEnum = z.enum([
 
 /// Line of a manually-issued credit/debit note (POST /invoices/:id/notes).
 const noteLineSchema = z.object({
-  productId: z.number().int().positive(),
+  productId: zPublicId,
   quantity: z.number().positive(),
   /// Ignored for CREDIT_NOTE (reverses the original's unit price); required for
   /// DEBIT_NOTE as the supplementary amount charged per unit.
@@ -164,8 +166,8 @@ const createInvoiceSchema = z.object({
   type: z.enum(['SALE', 'PURCHASE']),
   documentType: creatableDocumentTypeEnum.optional(),
   placeOfSupplyStateCode: z.string().regex(/^\d{2}$/, 'must be 2-digit GST state code').optional(),
-  vendorId: z.number().int().positive().optional(),
-  partyId: z.number().int().positive().optional(),
+  vendorId: zPublicId.optional(),
+  partyId: zPublicId.optional(),
   customerName: z.string().max(200).optional(),
   customerPhone: z.string().max(20).optional(),
   customerGstin: z.string().max(20).optional(),
@@ -190,8 +192,8 @@ const updateInvoiceSchema = z.object({
   type: z.enum(['SALE', 'PURCHASE']),
   documentType: creatableDocumentTypeEnum.optional(),
   placeOfSupplyStateCode: z.string().regex(/^\d{2}$/, 'must be 2-digit GST state code').optional(),
-  vendorId: z.number().int().positive().nullable().optional(),
-  partyId: z.number().int().positive().nullable().optional(),
+  vendorId: zPublicId.nullable().optional(),
+  partyId: zPublicId.nullable().optional(),
   customerName: z.string().max(200).optional(),
   customerPhone: z.string().max(20).optional(),
   customerGstin: z.string().max(20).optional(),
@@ -207,15 +209,14 @@ const listQuerySchema = z.object({
   type: z.enum(['SALE', 'PURCHASE']).optional(),
   status: z.enum(['DRAFT', 'CONFIRMED', 'CANCELLED']).optional(),
   documentType: documentTypeEnum.optional(),
-  vendorId: z.coerce.number().int().positive().optional(),
-  partyId: z.coerce.number().int().positive().optional(),
-  productId: z.coerce.number().int().positive().optional(),
+  vendorId: zPublicId.optional(),
+  partyId: zPublicId.optional(),
+  productId: zPublicId.optional(),
   search: z.string().optional(),
 });
 
 function parseId(raw: string): number | null {
-  const id = Number(raw);
-  return Number.isInteger(id) && id > 0 ? id : null;
+  return decodeId(raw);
 }
 
 function requireShopId(req: Request, res: Response): number | null {

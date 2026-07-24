@@ -72,7 +72,7 @@ class AdminBannersProvider extends ChangeNotifier {
     }
   }
 
-  Future<AdminBanner?> update(int id, Map<String, dynamic> body) async {
+  Future<AdminBanner?> update(String id, Map<String, dynamic> body) async {
     try {
       final updated = await _ds.update(id, body);
       final i = _banners.indexWhere((b) => b.id == id);
@@ -86,7 +86,7 @@ class AdminBannersProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> delete(int id) async {
+  Future<bool> delete(String id) async {
     try {
       await _ds.delete(id);
       _banners.removeWhere((b) => b.id == id);

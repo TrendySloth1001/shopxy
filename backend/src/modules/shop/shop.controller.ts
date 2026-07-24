@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
+import { decodeId } from '../../shared/ids/publicId.js';
 import { shopService } from './shop.service.js';
 
 // Image fields accept either an absolute http(s) URL or a server-relative
@@ -126,8 +127,8 @@ export class ShopController {
   }
 
   async setVerified(req: Request, res: Response): Promise<void> {
-    const shopIdRaw = Number(req.params.id);
-    if (!Number.isInteger(shopIdRaw) || shopIdRaw <= 0) {
+    const shopIdRaw = decodeId(req.params.id);
+    if (shopIdRaw === null) {
       res.status(400).json({ error: 'Invalid shop id' });
       return;
     }

@@ -16,7 +16,7 @@ function PendingPaymentsContent() {
   const [orders, setOrders] = useState<CustomerOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [payingId, setPayingId] = useState<number | null>(null);
+  const [payingId, setPayingId] = useState<string | null>(null);
   const [snack, setSnack] = useState<SnackMessage | null>(null);
   const snackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 

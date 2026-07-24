@@ -17,7 +17,7 @@ class MarketplaceRemoteDataSource {
   const MarketplaceRemoteDataSource(this._client);
   final ApiClient _client;
 
-  Future<MarketplaceProduct> product(int id) async {
+  Future<MarketplaceProduct> product(String id) async {
     final res = await _client.get('/marketplace/products/$id');
     if (res.statusCode == 404) {
       throw Exception('Product not found');
@@ -34,7 +34,7 @@ class MarketplaceRemoteDataSource {
   /// list (id/name/image/price/mrp/ratingAvg). The endpoint returns
   /// an empty array (not 404) when no cohort exists, so the caller
   /// just hides the rail.
-  Future<List<MarketplaceFbtCard>> frequentlyBoughtTogether(int productId) async {
+  Future<List<MarketplaceFbtCard>> frequentlyBoughtTogether(String productId) async {
     final res = await _client.get(
       '/marketplace/products/$productId/frequently-bought-together',
     );

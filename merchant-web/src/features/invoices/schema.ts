@@ -27,8 +27,8 @@ export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
 
 export const invoiceItemSchema = z
   .object({
-    id: z.number().optional(),
-    productId: z.number(),
+    id: z.coerce.string().optional(),
+    productId: z.coerce.string(),
     productName: z.string().nullish(),
     productSku: z.string().nullish(),
     hsn: z.string().nullish(),
@@ -50,14 +50,14 @@ export type InvoiceItem = z.infer<typeof invoiceItemSchema>;
 
 export const invoiceSchema = z
   .object({
-    id: z.number(),
+    id: z.coerce.string(),
     invoiceNo: z.string(),
     type: z.string(),
     status: z.string(),
     documentType: z.string().default("TAX_INVOICE"),
     financialYear: z.string().nullish(),
-    partyId: z.number().nullish(),
-    vendorId: z.number().nullish(),
+    partyId: z.coerce.string().nullish(),
+    vendorId: z.coerce.string().nullish(),
 
     customerName: z.string().nullish(),
     customerPhone: z.string().nullish(),
@@ -95,7 +95,7 @@ export const invoiceSchema = z
     amountInWords: z.string().nullish(),
     note: z.string().nullish(),
     invoiceDate: z.string(),
-    convertedToInvoiceId: z.number().nullish(),
+    convertedToInvoiceId: z.coerce.string().nullish(),
     createdAt: z.string().optional(),
     updatedAt: z.string().optional(),
     items: z

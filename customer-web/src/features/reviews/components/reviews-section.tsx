@@ -11,7 +11,7 @@ import { WriteReviewModal } from "./write-review-modal";
 import { StarRow } from "./star-row";
 
 interface Props {
-  productId: number;
+  productId: string;
   productName: string;
 }
 

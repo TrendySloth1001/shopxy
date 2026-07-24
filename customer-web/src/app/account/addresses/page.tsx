@@ -33,7 +33,7 @@ function AddressesInner() {
   const [modal, setModal] = useState<ModalState>({ mode: "none" });
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [settingDefault, setSettingDefault] = useState<number | null>(null);
+  const [settingDefault, setSettingDefault] = useState<string | null>(null);
 
   const [loadTrigger, setLoadTrigger] = useState(0);
 
@@ -99,7 +99,7 @@ function AddressesInner() {
     }
   }
 
-  async function handleSetDefault(id: number) {
+  async function handleSetDefault(id: string) {
     setSettingDefault(id);
     try {
       await setDefaultAddress(id);

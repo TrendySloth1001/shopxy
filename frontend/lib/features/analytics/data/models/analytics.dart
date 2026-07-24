@@ -45,7 +45,7 @@ class ProductAnalyticsRow {
     required this.cvr,
   });
 
-  final int productId;
+  final String productId;
   final String productName;
   final int impressions;
   final int taps;
@@ -58,7 +58,7 @@ class ProductAnalyticsRow {
 
   factory ProductAnalyticsRow.fromJson(Map<String, dynamic> j) =>
       ProductAnalyticsRow(
-        productId: j['productId'] as int,
+        productId: j['productId'].toString(),
         productName: j['productName'] as String,
         impressions: j['impressions'] as int? ?? 0,
         taps: j['taps'] as int? ?? 0,

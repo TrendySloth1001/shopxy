@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
+import { zPublicId } from '../../shared/ids/zPublicId.js';
 import { z } from 'zod';
+import { decodeId } from '../../shared/ids/publicId.js';
 import { parsePagination, paginatedResponse } from '../../shared/http/pagination.js';
 import { categoriesService } from './categories.service.js';
 
@@ -9,7 +11,7 @@ const createCategorySchema = z.object({
   imageUrl: z.string().url().optional(),
   iconName: z.string().min(1).max(60).optional(),
   sortOrder: z.number().int().min(0).optional(),
-  parentId: z.number().int().positive().nullable().optional(),
+  parentId: zPublicId.nullable().optional(),
 });
 
 const updateCategorySchema = z
@@ -20,15 +22,14 @@ const updateCategorySchema = z
     iconName: z.string().min(1).max(60).nullable().optional(),
     sortOrder: z.number().int().min(0).optional(),
     isActive: z.boolean().optional(),
-    parentId: z.number().int().positive().nullable().optional(),
+    parentId: zPublicId.nullable().optional(),
   })
   .refine((d) => Object.keys(d).length > 0, {
     message: 'At least one field is required',
   });
 
 function parseId(raw: string): number | null {
-  const id = Number(raw);
-  return Number.isInteger(id) ? id : null;
+  return decodeId(raw);
 }
 
 export class CategoriesController {

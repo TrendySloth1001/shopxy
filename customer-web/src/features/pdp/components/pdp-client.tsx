@@ -449,7 +449,7 @@ function PdpBody({ product }: BodyProps) {
 // ── Main export — handles hydration (SSR data → client state) ─────────────────
 
 interface PdpClientProps {
-  productId: number;
+  productId: string;
   /** Server-rendered initial product data (for hydration) */
   initialData?: ProductDetail;
 }

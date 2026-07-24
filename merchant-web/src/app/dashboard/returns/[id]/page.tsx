@@ -46,7 +46,7 @@ const BACK = "/dashboard/returns";
 export default function ReturnDetailPage() {
   const t = useTranslations("returns");
   const params = useParams<{ id: string }>();
-  const id = Number(params.id);
+  const id = params.id;
 
   const [ret, setRet] = useState<MerchantReturn | null>(null);
   const [loading, setLoading] = useState(true);

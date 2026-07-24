@@ -34,7 +34,7 @@ class _Line {
   }) {
     priceCtrl = TextEditingController(text: _fmtPrice(unitPrice));
   }
-  final int productId;
+  final String productId;
   final String name;
   final String? sku;
 

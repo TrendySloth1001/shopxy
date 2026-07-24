@@ -45,7 +45,7 @@ class MerchantOrder {
     this.itemPreview = const [],
   });
 
-  final int id;
+  final String id;
   final String status;
   final String customerName;
   final String? customerPhone;
@@ -54,10 +54,10 @@ class MerchantOrder {
   final int itemCount;
   final DateTime createdAt;
   final DateTime? decidedAt;
-  final int? invoiceId;
-  final int? partyId;
+  final String? invoiceId;
+  final String? partyId;
   final String? partyName;
-  final int? partyLinkedUserId;
+  final String? partyLinkedUserId;
   /// First couple of items (max ~2 from the backend) for the inbox row.
   final List<MerchantOrderItemPreview> itemPreview;
 
@@ -73,7 +73,7 @@ class MerchantOrder {
   factory MerchantOrder.fromJson(Map<String, dynamic> j) {
     final party = j['party'] as Map<String, dynamic>?;
     return MerchantOrder(
-      id: j['id'] as int,
+      id: j['id'].toString(),
       status: j['status'] as String,
       customerName: j['customerName'] as String,
       customerPhone: j['customerPhone'] as String?,
@@ -84,10 +84,10 @@ class MerchantOrder {
       decidedAt: j['decidedAt'] == null
           ? null
           : DateTime.parse(j['decidedAt'] as String),
-      invoiceId: j['invoiceId'] as int?,
-      partyId: party?['id'] as int?,
+      invoiceId: j['invoiceId']?.toString(),
+      partyId: party?['id']?.toString(),
       partyName: party?['name'] as String?,
-      partyLinkedUserId: party?['linkedUserId'] as int?,
+      partyLinkedUserId: party?['linkedUserId']?.toString(),
       itemPreview: ((j['itemsPreview'] as List?) ?? const [])
           .map((e) =>
               MerchantOrderItemPreview.fromJson(e as Map<String, dynamic>))
@@ -111,8 +111,8 @@ class MerchantOrderItem {
     this.productImageUrl,
   });
 
-  final int id;
-  final int productId;
+  final String id;
+  final String productId;
   final String productName;
   final String productSku;
   final String unit;
@@ -148,8 +148,8 @@ class MerchantOrderItem {
       imageUrl = first['url'] as String?;
     }
     return MerchantOrderItem(
-      id: j['id'] as int,
-      productId: j['productId'] as int,
+      id: j['id'].toString(),
+      productId: j['productId'].toString(),
       productName: j['productName'] as String,
       productSku: j['productSku'] as String,
       unit: j['unit'] as String? ?? 'PCS',
@@ -178,7 +178,7 @@ class MerchantOrderEvent {
     this.note,
   });
 
-  final int id;
+  final String id;
   final String type;
   final DateTime occurredAt;
   final String? courier;
@@ -206,7 +206,7 @@ class MerchantOrderEvent {
 
   factory MerchantOrderEvent.fromJson(Map<String, dynamic> j) {
     return MerchantOrderEvent(
-      id: j['id'] as int,
+      id: j['id'].toString(),
       type: j['type'] as String,
       occurredAt: DateTime.parse(j['occurredAt'] as String),
       courier: j['courier'] as String?,

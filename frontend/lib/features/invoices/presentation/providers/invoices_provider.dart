@@ -122,8 +122,8 @@ class InvoicesProvider extends ChangeNotifier {
 
   Future<CreateInvoiceResult> createInvoice({
     required String type,
-    int? vendorId,
-    int? partyId,
+    String? vendorId,
+    String? partyId,
     String? customerName,
     String? customerPhone,
     String? customerGstin,
@@ -154,10 +154,10 @@ class InvoicesProvider extends ChangeNotifier {
   }
 
   Future<Invoice> updateInvoice({
-    required int id,
+    required String id,
     required String type,
-    int? vendorId,
-    int? partyId,
+    String? vendorId,
+    String? partyId,
     String? customerName,
     String? customerPhone,
     String? customerGstin,
@@ -186,14 +186,14 @@ class InvoicesProvider extends ChangeNotifier {
     return invoice;
   }
 
-  Future<Invoice> updateStatus(int id, String status) async {
+  Future<Invoice> updateStatus(String id, String status) async {
     final invoice = await _ds.updateStatus(id, status);
     _invoices = _invoices.map((i) => i.id == id ? invoice : i).toList();
     notifyListeners();
     return invoice;
   }
 
-  Future<void> deleteInvoice(int id) async {
+  Future<void> deleteInvoice(String id) async {
     await _ds.deleteInvoice(id);
     _invoices = _invoices.where((i) => i.id != id).toList();
     notifyListeners();

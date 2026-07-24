@@ -19,14 +19,14 @@ class WriteReviewSheet extends StatefulWidget {
     required this.productId,
     required this.productName,
   });
-  final int productId;
+  final String productId;
   final String productName;
 
   /// Returns `true` when a review was successfully posted so the
   /// caller can refresh its summary / list.
   static Future<bool?> show(
     BuildContext context, {
-    required int productId,
+    required String productId,
     required String productName,
   }) {
     return showModalBottomSheet<bool>(

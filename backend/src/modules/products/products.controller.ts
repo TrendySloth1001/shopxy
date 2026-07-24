@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { z } from 'zod';
 import { UNITS } from '../../shared/constants/index.js';
 import { parsePagination, paginatedResponse } from '../../shared/http/pagination.js';
+import { decodeId } from '../../shared/ids/publicId.js';
+import { zPublicId } from '../../shared/ids/zPublicId.js';
 import { productsService } from './products.service.js';
 
 // CAT-M5 — stock columns are Decimal(12,3): nine integer digits + three
@@ -102,7 +104,7 @@ const variantAxesSchema = z
 
 const variantSchema = z
   .object({
-    id: z.number().int().positive().optional(),
+    id: zPublicId.optional(),
     sku: z.string().min(1).max(60),
     barcode: z.string().max(60).nullable().optional(),
     attributes: z.record(z.string(), z.string()),
@@ -182,7 +184,7 @@ const createProductSchema = z.object({
     .optional(),
   lowStockThreshold: z.number().nonnegative().optional(),
   unit: z.enum(UNITS).optional(),
-  categoryId: z.number().int().positive().optional(),
+  categoryId: zPublicId.optional(),
   tags: z.array(z.string().min(1).max(40)).max(20).optional(),
   // V2 PDP descriptive fields. All optional; the customer screen
   // hides the relevant section when the array / object is empty.
@@ -232,7 +234,7 @@ const updateProductSchema = z
     cessRate: z.number().min(0).max(300).optional(),
     lowStockThreshold: z.number().nonnegative().optional(),
     unit: z.enum(UNITS).optional(),
-    categoryId: z.number().int().positive().nullable().optional(),
+    categoryId: zPublicId.nullable().optional(),
     isActive: z.boolean().optional(),
     isPublished: z.boolean().optional(),
     tags: z.array(z.string().min(1).max(40)).max(20).optional(),
@@ -273,7 +275,7 @@ const setPublishedSchema = z.object({ isPublished: z.boolean() });
 // its inputs and clients get 400s instead of weird db queries.
 const listProductsQuerySchema = z.object({
   search: z.string().max(200).optional(),
-  categoryId: z.coerce.number().int().positive().optional(),
+  categoryId: zPublicId.optional(),
   lowStock: z.enum(['true', 'false']).optional(),
   outOfStock: z.enum(['true', 'false']).optional(),
   active: z.enum(['true', 'false']).optional(),
@@ -291,12 +293,14 @@ const addImageSchema = z.object({
 });
 
 const reorderImagesSchema = z.object({
-  orderedIds: z.array(z.number().int().positive()).min(1),
+  orderedIds: z.array(zPublicId).min(1),
 });
 
+// Decode a URL path param (`:id`, `:imageId`) to its internal integer. Accepts
+// both an opaque public token and a legacy numeric id; null on anything else,
+// which callers map to 404 (never 400 — don't confirm the id space).
 function parseId(raw: string): number | null {
-  const id = Number(raw);
-  return Number.isInteger(id) && id > 0 ? id : null;
+  return decodeId(raw);
 }
 
 export class ProductsController {

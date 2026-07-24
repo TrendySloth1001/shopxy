@@ -4,7 +4,7 @@ class CustomFieldDefinitionDto {
   static CustomFieldDefinition fromJson(Map<String, dynamic> json) {
     final rawOptions = json['options'];
     return CustomFieldDefinition(
-      id: json['id'] as int,
+      id: json['id'].toString(),
       name: json['name'] as String,
       type: CustomFieldType.fromWire(json['type'] as String),
       options: rawOptions is List
@@ -12,7 +12,7 @@ class CustomFieldDefinitionDto {
           : null,
       unitSuffix: json['unitSuffix'] as String?,
       icon: json['icon'] as String?,
-      sectionId: json['sectionId'] as int?,
+      sectionId: json['sectionId']?.toString(),
       sortOrder: json['sortOrder'] as int? ?? 0,
       isActive: json['isActive'] as bool? ?? true,
       createdAt: DateTime.parse(json['createdAt'] as String),
@@ -26,7 +26,7 @@ class CustomFieldDefinitionDto {
     List<String>? options,
     String? unitSuffix,
     String? icon,
-    int? sectionId,
+    String? sectionId,
     int? sortOrder,
   }) {
     final data = <String, dynamic>{
@@ -67,7 +67,7 @@ class CustomFieldDefinitionDto {
   /// Section assignment is split off because `null` is a meaningful
   /// value here ("remove from section, render at the top") — bundling
   /// it into [toUpdateJson] would conflict with our null-strips logic.
-  static Map<String, dynamic> toAssignSectionJson({required int? sectionId}) {
+  static Map<String, dynamic> toAssignSectionJson({required String? sectionId}) {
     return {'sectionId': sectionId};
   }
 }
@@ -76,7 +76,7 @@ class CustomFieldSectionDto {
   static CustomFieldSection fromJson(Map<String, dynamic> json) {
     final fieldsRaw = json['fields'];
     return CustomFieldSection(
-      id: json['id'] as int,
+      id: json['id'].toString(),
       name: json['name'] as String,
       icon: json['icon'] as String?,
       sortOrder: json['sortOrder'] as int? ?? 0,
@@ -154,9 +154,9 @@ class CustomFieldTemplateDto {
 class ProductCustomFieldValueDto {
   static ProductCustomFieldValue fromJson(Map<String, dynamic> json) {
     return ProductCustomFieldValue(
-      id: json['id'] as int,
-      productId: json['productId'] as int,
-      definitionId: json['definitionId'] as int,
+      id: json['id'].toString(),
+      productId: json['productId'].toString(),
+      definitionId: json['definitionId'].toString(),
       definition: CustomFieldDefinitionDto.fromJson(
         json['definition'] as Map<String, dynamic>,
       ),

@@ -47,7 +47,7 @@ export default function InvoiceDetailPage() {
   const t = useTranslations("invoices");
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const id = Number(params.id);
+  const id = params.id;
 
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);

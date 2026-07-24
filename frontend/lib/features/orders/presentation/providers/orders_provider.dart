@@ -94,15 +94,15 @@ class OrdersProvider extends ChangeNotifier {
     load();
   }
 
-  Future<MerchantOrderDetail> loadDetail(int id) => _ds.detail(id);
+  Future<MerchantOrderDetail> loadDetail(String id) => _ds.detail(id);
 
-  Future<({int invoiceId, String invoiceNo})> confirm(int id, {String? note}) async {
+  Future<({String invoiceId, String invoiceNo})> confirm(String id, {String? note}) async {
     final result = await _ds.confirm(id, note: note);
     await Future.wait([load(), refreshPendingCount()]);
     return result;
   }
 
-  Future<void> reject(int id, {String? note}) async {
+  Future<void> reject(String id, {String? note}) async {
     await _ds.reject(id, note: note);
     await Future.wait([load(), refreshPendingCount()]);
   }
@@ -110,7 +110,7 @@ class OrdersProvider extends ChangeNotifier {
   /// Post a shipping milestone for a confirmed order. The caller
   /// re-pulls the detail afterwards so the events timeline refreshes.
   Future<void> addShippingEvent(
-    int id, {
+    String id, {
     required String type,
     String? courier,
     String? awb,

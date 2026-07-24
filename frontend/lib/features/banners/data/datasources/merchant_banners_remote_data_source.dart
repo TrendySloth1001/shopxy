@@ -30,7 +30,7 @@ class MerchantBannersRemoteDataSource {
     return AdminBanner.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  Future<AdminBanner> update(int id, Map<String, dynamic> body) async {
+  Future<AdminBanner> update(String id, Map<String, dynamic> body) async {
     final res = await _client.patch('/me/banners/$id', body: body);
     if (res.statusCode != 200) {
       throw Exception('Update failed: ${res.body}');
@@ -38,7 +38,7 @@ class MerchantBannersRemoteDataSource {
     return AdminBanner.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  Future<void> delete(int id) async {
+  Future<void> delete(String id) async {
     final res = await _client.delete('/me/banners/$id');
     if (res.statusCode != 204) {
       throw Exception('Delete failed: ${res.body}');
@@ -46,7 +46,7 @@ class MerchantBannersRemoteDataSource {
   }
 
   /// Curated products pinned to a banner, in display order.
-  Future<List<BannerProductRow>> listBannerProducts(int bannerId) async {
+  Future<List<BannerProductRow>> listBannerProducts(String bannerId) async {
     final res = await _client.get('/me/banners/$bannerId/products');
     if (res.statusCode != 200) {
       throw Exception('Failed to load banner products: ${res.body}');
@@ -61,7 +61,7 @@ class MerchantBannersRemoteDataSource {
   /// diffing on the client. Empty [items] clears the list. Returns the
   /// re-read rows (with server-computed sale prices).
   Future<List<BannerProductRow>> replaceBannerProducts(
-    int bannerId,
+    String bannerId,
     List<BannerProductInput> items,
   ) async {
     final res = await _client.put(
@@ -96,7 +96,7 @@ class BannerProductInput {
     required this.position,
   });
 
-  final int productId;
+  final String productId;
   final BannerDiscountType discountType;
   final double discountValue;
   final int position;

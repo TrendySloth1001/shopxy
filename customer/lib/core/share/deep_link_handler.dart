@@ -88,8 +88,8 @@ class DeepLinkHandler {
     if (navigator == null) return;
 
     if (key.startsWith('p:')) {
-      final productId = int.tryParse(key.substring(2));
-      if (productId == null) return;
+      final productId = key.substring(2);
+      if (productId.isEmpty) return;
       navigator.push(
         MaterialPageRoute(
           builder: (_) => ProductDetailPage(productId: productId),

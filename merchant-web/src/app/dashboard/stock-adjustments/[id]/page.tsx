@@ -22,7 +22,7 @@ const BACK = "/dashboard/stock-adjustments";
 export default function AdjustmentDetailPage() {
   const t = useTranslations("stockAdjustments");
   const params = useParams<{ id: string }>();
-  const id = Number(params.id);
+  const id = params.id;
 
   const [adjustment, setAdjustment] = useState<Adjustment | null>(null);
   const [loading, setLoading] = useState(true);

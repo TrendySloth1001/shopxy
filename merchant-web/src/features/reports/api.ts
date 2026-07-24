@@ -80,7 +80,7 @@ export function getSoldProducts(
 /** One page of a single product's sale timeline (newest first). */
 export function getSoldItems(
   range: Range,
-  productId: number,
+  productId: string,
   page = 1,
   limit = 25,
 ): Promise<SoldItemsPage> {

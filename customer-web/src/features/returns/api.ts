@@ -34,7 +34,7 @@ export async function fetchReturns(opts?: {
   return jsonOrThrow(res, (raw) => returnsPageSchema.parse(raw), "Could not load returns.");
 }
 
-export async function fetchReturnDetail(id: number): Promise<ReturnRequest> {
+export async function fetchReturnDetail(id: string): Promise<ReturnRequest> {
   const res = await fetch(`/api/me/returns/${id}`, { cache: "no-store" });
   return jsonOrThrow(
     res,
@@ -43,7 +43,7 @@ export async function fetchReturnDetail(id: number): Promise<ReturnRequest> {
   );
 }
 
-export async function cancelReturn(id: number): Promise<void> {
+export async function cancelReturn(id: string): Promise<void> {
   const res = await fetch(`/api/me/returns/${id}/cancel`, { method: "POST" });
   if (!res.ok) {
     let message = "Could not cancel return.";
@@ -58,13 +58,13 @@ export async function cancelReturn(id: number): Promise<void> {
 }
 
 export async function submitReturn(
-  parentOrderId: number,
+  parentOrderId: string,
   body: {
-    childId: number;
+    childId: string;
     note?: string;
-    items: Array<{ purchaseRequestItemId: number; quantity: number; reason: string }>;
+    items: Array<{ purchaseRequestItemId: string; quantity: number; reason: string }>;
   },
-): Promise<{ id: number }> {
+): Promise<{ id: string }> {
   const res = await fetch(`/api/me/orders/${parentOrderId}/returns`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -72,7 +72,7 @@ export async function submitReturn(
   });
   return jsonOrThrow(
     res,
-    (raw) => raw as { id: number },
+    (raw) => raw as { id: string },
     "Could not submit return request.",
   );
 }

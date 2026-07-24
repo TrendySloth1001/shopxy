@@ -52,7 +52,7 @@ import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 class ProductDetailPage extends StatefulWidget {
   const ProductDetailPage({super.key, required this.productId});
-  final int productId;
+  final String productId;
 
   @override
   State<ProductDetailPage> createState() => _ProductDetailPageState();
@@ -189,11 +189,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     // shipped on each value already carry sectionId, so this is
     // a cheap lookup once the tree is loaded.
     final cf = context.watch<CustomFieldsProvider>();
-    final sectionNames = <int, String>{
+    final sectionNames = <String, String>{
       for (final s in cf.sections) s.id: s.name,
     };
 
-    final Map<int?, List<ProductCustomFieldValue>> bySection = {};
+    final Map<String?, List<ProductCustomFieldValue>> bySection = {};
     for (final v in _customFieldValues.where(
       (v) => v.value.trim().isNotEmpty,
     )) {
@@ -335,7 +335,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   Future<void> _openStockSheet(String type) async {
     if (_product == null) return;
-    final draftId = await showModalBottomSheet<int>(
+    final draftId = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.surface,
@@ -359,7 +359,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     }
   }
 
-  void _openInvoice(int id) {
+  void _openInvoice(String id) {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => InvoiceDetailPage(invoiceId: id)),
@@ -2807,7 +2807,7 @@ class _PendingDraftsCard extends StatelessWidget {
 
   final List<Invoice> drafts;
   final String productUnit;
-  final void Function(int invoiceId) onTap;
+  final void Function(String invoiceId) onTap;
 
   @override
   Widget build(BuildContext context) {

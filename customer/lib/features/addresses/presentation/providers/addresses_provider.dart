@@ -71,7 +71,7 @@ class AddressesProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> setDefault(int id) async {
+  Future<bool> setDefault(String id) async {
     try {
       await _ds.setDefault(id);
       _items = [
@@ -114,7 +114,7 @@ class AddressesProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> delete(int id) async {
+  Future<bool> delete(String id) async {
     try {
       await _ds.delete(id);
       _items = _items.where((a) => a.id != id).toList();

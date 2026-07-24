@@ -26,7 +26,7 @@ class PriceDrift {
     required this.expectedUnitPrice,
     required this.actualUnitPrice,
   });
-  final int productId;
+  final String productId;
   final double expectedUnitPrice;
   final double actualUnitPrice;
 }
@@ -49,10 +49,10 @@ class PriceDriftException implements Exception {
 /// without an extra round trip.
 class PlaceOrderResponse {
   const PlaceOrderResponse({required this.orderId, required this.shopOrders});
-  final int orderId;
+  final String orderId;
   /// Per-vendor child ids + shopIds — matches the server's
   /// `shopOrders: [{ id, shopId }]` response.
-  final List<({int id, int shopId})> shopOrders;
+  final List<({String id, String shopId})> shopOrders;
 }
 
 class OrdersRemoteDataSource {
@@ -63,11 +63,11 @@ class OrdersRemoteDataSource {
   /// by shop and creates one parent CustomerOrder + N PurchaseRequest
   /// children in one transaction. Idempotent per [idempotencyKey].
   Future<PlaceOrderResponse> placeOrder({
-    required List<({int productId, double quantity, double? expectedUnitPrice})>
+    required List<({String productId, double quantity, double? expectedUnitPrice})>
         items,
     String? note,
     String? idempotencyKey,
-    int? addressId,
+    String? addressId,
     String? couponCode,
   }) async {
     final key = idempotencyKey ?? _newIdempotencyKey();
@@ -98,7 +98,7 @@ class OrdersRemoteDataSource {
             .map((e) {
               final m = e as Map<String, dynamic>;
               return PriceDrift(
-                productId: (m['productId'] as num).toInt(),
+                productId: m['productId'].toString(),
                 expectedUnitPrice: (m['expectedUnitPrice'] as num).toDouble(),
                 actualUnitPrice: (m['actualUnitPrice'] as num).toDouble(),
               );
@@ -112,11 +112,11 @@ class OrdersRemoteDataSource {
     final shopOrders = ((json['shopOrders'] as List?) ?? const [])
         .map((e) {
           final m = e as Map<String, dynamic>;
-          return (id: m['id'] as int, shopId: m['shopId'] as int);
+          return (id: m['id'].toString(), shopId: m['shopId'].toString());
         })
         .toList(growable: false);
     return PlaceOrderResponse(
-      orderId: json['id'] as int,
+      orderId: json['id'].toString(),
       shopOrders: shopOrders,
     );
   }
@@ -135,7 +135,7 @@ class OrdersRemoteDataSource {
         .toList();
   }
 
-  Future<CustomerOrderDetail> detail(int id) async {
+  Future<CustomerOrderDetail> detail(String id) async {
     final res = await _client.get('/me/orders/$id');
     if (res.statusCode != 200) throw Exception('Order not found');
     return CustomerOrderDetail.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
@@ -144,8 +144,8 @@ class OrdersRemoteDataSource {
   /// Cancel one shop's slice of a customer order. The parent and the
   /// other shops in the same checkout are unaffected.
   Future<void> cancelShopOrder({
-    required int parentId,
-    required int childId,
+    required String parentId,
+    required String childId,
   }) async {
     final res =
         await _client.post('/me/orders/$parentId/shops/$childId/cancel');
@@ -164,8 +164,8 @@ class OrdersRemoteDataSource {
   /// items (each with the full product payload) plus a `skipped` list
   /// (UNAVAILABLE / OWN_SHOP) for the client toast.
   Future<({List<({CatalogProduct product, double quantity})> items,
-          List<({int productId, String productName, String reason})> skipped})>
-      reorder(int parentId) async {
+          List<({String productId, String productName, String reason})> skipped})>
+      reorder(String parentId) async {
     final res = await _client.post('/me/orders/$parentId/reorder');
     if (res.statusCode != 200) {
       final err = jsonDecode(res.body) as Map<String, dynamic>;
@@ -184,7 +184,7 @@ class OrdersRemoteDataSource {
     final skipped = ((json['skipped'] as List?) ?? const [])
         .whereType<Map<String, dynamic>>()
         .map((m) => (
-              productId: (m['productId'] as num).toInt(),
+              productId: m['productId'].toString(),
               productName: (m['productName'] as String?) ?? '',
               reason: (m['reason'] as String?) ?? 'UNAVAILABLE',
             ))
@@ -197,8 +197,8 @@ class OrdersRemoteDataSource {
   /// open with the OS PDF viewer). Goes direct via `http.get` instead
   /// of [ApiClient.get] because we want bytes back, not a parsed body.
   Future<Uint8List> downloadInvoicePdf({
-    required int parentId,
-    required int childId,
+    required String parentId,
+    required String childId,
     required String accessToken,
   }) async {
     final base = AppConfig.apiBaseUrl;
@@ -227,7 +227,7 @@ class OrdersRemoteDataSource {
 
   /// Start an online gateway payment for an order's payable remainder.
   /// Returns the checkout session the app opens the Razorpay sheet with.
-  Future<GatewayCheckout> payForOrder(int orderId) async {
+  Future<GatewayCheckout> payForOrder(String orderId) async {
     final res = await _client.post('/me/orders/$orderId/pay');
     if (res.statusCode != 201) {
       final err = jsonDecode(res.body) as Map<String, dynamic>;
@@ -241,7 +241,7 @@ class OrdersRemoteDataSource {
   /// webhook, which can't reach a localhost dev server and may lag in prod).
   /// Returns the order's resulting paymentStatus (e.g. 'PAID'). Best-effort:
   /// the webhook is still authoritative, so a failure here is non-fatal.
-  Future<String> syncOrderPayment(int orderId) async {
+  Future<String> syncOrderPayment(String orderId) async {
     final res = await _client.post('/me/orders/$orderId/payment/sync');
     if (res.statusCode != 200) {
       final err = jsonDecode(res.body) as Map<String, dynamic>;
@@ -265,7 +265,7 @@ class GatewayCheckout {
     required this.clientParams,
   });
 
-  final int intentId;
+  final String intentId;
   final String provider;
   final String providerOrderRef;
   final double amount;
@@ -273,7 +273,7 @@ class GatewayCheckout {
   final Map<String, dynamic> clientParams;
 
   factory GatewayCheckout.fromJson(Map<String, dynamic> j) => GatewayCheckout(
-        intentId: (j['intentId'] as num).toInt(),
+        intentId: j['intentId'].toString(),
         provider: j['provider'] as String,
         providerOrderRef: j['providerOrderRef'] as String,
         amount: (j['amount'] as num).toDouble(),

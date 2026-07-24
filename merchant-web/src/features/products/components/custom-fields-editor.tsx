@@ -18,10 +18,10 @@ const cell =
  * definitions + this product's values, and saves via its own endpoint (these
  * aren't part of the product PATCH payload).
  */
-export function CustomFieldsEditor({ productId }: { productId: number }) {
+export function CustomFieldsEditor({ productId }: { productId: string }) {
   const t = useTranslations("products");
   const [defs, setDefs] = useState<CustomFieldDef[]>([]);
-  const [values, setValues] = useState<Record<number, string>>({});
+  const [values, setValues] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -37,7 +37,7 @@ export function CustomFieldsEditor({ productId }: { productId: number }) {
         ]);
         if (!active) return;
         setDefs(d);
-        const map: Record<number, string> = {};
+        const map: Record<string, string> = {};
         for (const row of v) {
           if (typeof row.value === "string") map[row.definitionId] = row.value;
         }

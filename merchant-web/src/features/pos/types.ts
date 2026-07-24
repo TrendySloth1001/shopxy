@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const saleLineSchema = z.object({
-  productId: z.number(),
+  productId: z.coerce.string(),
   name: z.string(),
   sku: z.string(),
   imageUrl: z.string().nullable(),
@@ -30,15 +30,15 @@ export const saleTotalsSchema = z.object({
 
 export const saleSnapshotSchema = z.object({
   sale: z.object({
-    id: z.number(),
+    id: z.coerce.string(),
     status: z.string(),
     version: z.number(),
-    partyId: z.number().nullable(),
+    partyId: z.coerce.string().nullable(),
     customerName: z.string().nullable(),
     customerPhone: z.string().nullable(),
     headerDiscount: z.number(),
     note: z.string().nullable(),
-    invoiceId: z.number().nullable(),
+    invoiceId: z.coerce.string().nullable(),
   }),
   lines: z.array(saleLineSchema),
   totals: saleTotalsSchema,
@@ -56,7 +56,7 @@ export const ticketSchema = z.object({
 export type Ticket = z.infer<typeof ticketSchema>;
 
 export const checkoutResultSchema = z.object({
-  invoiceId: z.number(),
+  invoiceId: z.coerce.string(),
   invoiceNo: z.string(),
   total: z.union([z.string(), z.number()]),
   paymentRef: z.string().nullable(),
@@ -70,7 +70,7 @@ export type TenderMode = (typeof TENDER_MODES)[number];
 
 /** Pay-session returned by the `payOnline` command — opens Razorpay Checkout. */
 export const posPaySessionSchema = z.object({
-  intentId: z.number(),
+  intentId: z.coerce.string(),
   provider: z.string(),
   providerOrderRef: z.string(),
   amount: z.number(),
@@ -89,7 +89,7 @@ export type ConnStatus = "connecting" | "live" | "reconnecting" | "offline";
 
 /** A catalogue search hit for the "add without a barcode" picker. */
 export const productSearchResultSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   name: z.string(),
   sku: z.string(),
   sellingPrice: z.number(),
@@ -101,7 +101,7 @@ export type ProductSearchResult = z.infer<typeof productSearchResultSchema>;
 
 /** A parked (held) bill summary from the `listOpen` command. */
 export const openSaleSummarySchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   customerName: z.string().nullable(),
   lineCount: z.number(),
   updatedAt: z.string(),

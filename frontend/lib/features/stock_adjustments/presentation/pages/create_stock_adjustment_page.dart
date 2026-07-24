@@ -36,7 +36,7 @@ class _ItemDraft {
     required this.unit,
   });
 
-  final int productId;
+  final String productId;
   final String productName;
   final String productSku;
   final String unit;

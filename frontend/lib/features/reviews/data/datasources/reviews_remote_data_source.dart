@@ -7,7 +7,7 @@ class ReviewsRemoteDataSource {
   ReviewsRemoteDataSource(this._client);
   final ApiClient _client;
 
-  Future<ReviewsPage> list(int productId, {int? cursor, int limit = 20}) async {
+  Future<ReviewsPage> list(String productId, {int? cursor, int limit = 20}) async {
     final query = <String, String>{'limit': '$limit'};
     if (cursor != null) query['cursor'] = '$cursor';
     final res = await _client.get('/products/$productId/reviews', queryParameters: query);
@@ -24,7 +24,7 @@ class ReviewsRemoteDataSource {
   /// One-shot summary for the product detail page: average, count,
   /// verified-buyer count, per-star histogram and the most recent
   /// reviews — no follow-up list call needed.
-  Future<ReviewSummary> summary(int productId) async {
+  Future<ReviewSummary> summary(String productId) async {
     final res = await _client.get('/products/$productId/reviews/summary');
     if (res.statusCode != 200) {
       throw Exception('Failed to load review summary: ${res.body}');

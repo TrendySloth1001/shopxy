@@ -7,7 +7,7 @@
 // ── Wishlist ────────────────────────────────────────────────────────────────
 
 export interface WishlistProduct {
-  id: number;
+  id: string;
   name: string;
   sku: string;
   unit: string;
@@ -17,30 +17,30 @@ export interface WishlistProduct {
   stockQuantity: number;
   isActive: boolean;
   isPublished: boolean;
-  categoryId?: number | null;
+  categoryId?: string | null;
   images: { url: string; sortOrder: number }[];
-  shop?: { id: number; name: string; slug: string } | null;
+  shop?: { id: string; name: string; slug: string } | null;
 }
 
 export interface WishlistItem {
-  id: number;
-  productId: number;
+  id: string;
+  productId: string;
   product: WishlistProduct;
 }
 
 // ── Reviews ─────────────────────────────────────────────────────────────────
 
 export interface MyReview {
-  id: number;
-  productId: number;
-  userId: number;
+  id: string;
+  productId: string;
+  userId: string;
   rating: number;
   title?: string | null;
   body?: string | null;
   createdAt: string;
   updatedAt: string;
   product: {
-    id: number;
+    id: string;
     name: string;
     sellingPrice: number;
     images: { url: string; sortOrder: number }[];
@@ -52,7 +52,7 @@ export interface MyReview {
 export type DiscountType = "PERCENT" | "FLAT";
 
 export interface Coupon {
-  id: number;
+  id: string;
   code: string;
   title: string;
   description?: string | null;
@@ -91,18 +91,18 @@ export function couponMinOrderLabel(c: Coupon, formatINR: (v: number) => string)
 // ── Recently viewed ──────────────────────────────────────────────────────────
 
 export interface RecentlyViewedProduct {
-  id: number;
+  id: string;
   name: string;
   sellingPrice: number;
   mrp: number;
   ratingAvg?: number | null;
   ratingCount: number;
   images: { url: string; sortOrder: number }[];
-  shop: { id: number; name: string; slug: string };
+  shop: { id: string; name: string; slug: string };
 }
 
 export interface RecentlyViewedItem {
-  productId: number;
+  productId: string;
   viewedAt: string;
   product: RecentlyViewedProduct;
 }

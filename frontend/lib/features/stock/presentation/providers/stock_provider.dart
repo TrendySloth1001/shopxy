@@ -16,7 +16,7 @@ class StockProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  Future<void> loadTransactions({int? productId}) async {
+  Future<void> loadTransactions({String? productId}) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -33,13 +33,13 @@ class StockProvider extends ChangeNotifier {
 
   /// Posts a manual stock-in or stock-out as a DRAFT invoice. Returns the
   /// new invoice id so the caller can navigate the user to it for review.
-  Future<int> addStock({
-    required int productId,
+  Future<String> addStock({
+    required String productId,
     required String type,
     required double quantity,
     double? unitPrice,
-    int? vendorId,
-    int? partyId,
+    String? vendorId,
+    String? partyId,
     String? note,
   }) async {
     final data = StockTransactionDto.toCreateJson(

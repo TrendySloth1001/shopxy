@@ -44,7 +44,7 @@ class BannerProductSummary {
     this.imageUrl,
   });
 
-  final int id;
+  final String id;
   final String name;
   final String sku;
   final double mrp;
@@ -61,7 +61,7 @@ class BannerProductSummary {
       if (sorted.isNotEmpty) first = sorted.first['url'] as String?;
     }
     return BannerProductSummary(
-      id: j['id'] as int,
+      id: j['id'].toString(),
       name: j['name'] as String,
       sku: j['sku'] as String,
       mrp: _toDouble(j['mrp']),
@@ -85,8 +85,8 @@ class BannerProductRow {
     required this.product,
   });
 
-  final int id;
-  final int productId;
+  final String id;
+  final String productId;
   final int position;
   final BannerDiscountType discountType;
   final double discountValue;
@@ -95,8 +95,8 @@ class BannerProductRow {
   final BannerProductSummary product;
 
   factory BannerProductRow.fromJson(Map<String, dynamic> j) => BannerProductRow(
-        id: (j['id'] as int?) ?? 0,
-        productId: j['productId'] as int,
+        id: (j['id']?.toString()) ?? '',
+        productId: j['productId'].toString(),
         position: (j['position'] as int?) ?? 0,
         discountType: bannerDiscountTypeFromWire(j['discountType'] as String?),
         discountValue: _toDouble(j['discountValue']),

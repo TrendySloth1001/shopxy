@@ -24,7 +24,7 @@ export function SupplierPriceHistory({
   productId,
   unit,
 }: {
-  productId: number;
+  productId: string;
   unit?: string | null;
 }) {
   const t = useTranslations("products");

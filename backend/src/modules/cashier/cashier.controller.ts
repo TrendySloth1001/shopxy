@@ -1,4 +1,6 @@
 import { Request, Response } from 'express';
+import { decodeId } from '../../shared/ids/publicId.js';
+import { zPublicId } from '../../shared/ids/zPublicId.js';
 import { z } from 'zod';
 import * as cashier from './cashier.service.js';
 import * as returns from './returns.service.js';
@@ -105,8 +107,8 @@ export const cashierController = {
   /// Full Z-report for a past (or open) shift. Same scope as the list: a
   /// cashier may only open their own; managers/owners may open any.
   async shiftReport(req: Request, res: Response): Promise<void> {
-    const id = Number(req.params.id);
-    if (!Number.isInteger(id) || id <= 0) {
+    const id = decodeId(req.params.id);
+    if (id === null) {
       res.status(400).json({ error: 'Invalid shift id' });
       return;
     }
@@ -123,8 +125,8 @@ export const cashierController = {
 
   /// The original sale + per-line returnable quantities, for the return screen.
   async returnable(req: Request, res: Response): Promise<void> {
-    const invoiceId = Number(req.params.invoiceId);
-    if (!Number.isInteger(invoiceId) || invoiceId <= 0) {
+    const invoiceId = decodeId(req.params.invoiceId);
+    if (invoiceId === null) {
       res.status(400).json({ error: 'Invalid invoice id' });
       return;
     }
@@ -184,10 +186,10 @@ export const cashierController = {
 };
 
 const returnSchema = z.object({
-  originalInvoiceId: z.number().int().positive(),
+  originalInvoiceId: zPublicId,
   refundMode: z.enum(['CASH', 'UPI', 'CARD', 'OTHER']),
   lines: z
-    .array(z.object({ productId: z.number().int().positive(), quantity: z.number().positive().max(100_000) }))
+    .array(z.object({ productId: zPublicId, quantity: z.number().positive().max(100_000) }))
     .min(1)
     .max(200),
   /// A manager-authorisation grant, when the cashier lacks the override right.
@@ -200,6 +202,6 @@ const authorizeSchema = z.object({
   /// CASH-2 — the grant is bound to one sale (the POS saleId, or the original
   /// invoice id for a return) + one privileged op, so it is single-use and
   /// can't be replayed against a different action.
-  saleId: z.number().int().positive(),
+  saleId: zPublicId,
   op: z.enum(['setLineDiscount', 'setUnitPrice', 'setHeaderDiscount', 'void', 'return']),
 });

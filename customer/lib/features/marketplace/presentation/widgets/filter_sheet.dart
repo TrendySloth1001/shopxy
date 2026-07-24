@@ -77,7 +77,7 @@ class _FilterSheetState extends State<_FilterSheet> {
     setState(() => _draft = _draft.copyWith(inStock: v));
   }
 
-  void _toggleBrand(int shopId) {
+  void _toggleBrand(String shopId) {
     final next = [..._draft.shopIds];
     next.remove(shopId);
     if (!_draft.shopIds.contains(shopId)) next.add(shopId);

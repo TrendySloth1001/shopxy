@@ -34,7 +34,7 @@ class AdminBankOffersRemoteDataSource {
   }
 
   Future<AdminPlatformBankOffer> update(
-    int id,
+    String id,
     Map<String, dynamic> body,
   ) async {
     final res = await _client.patch(
@@ -49,7 +49,7 @@ class AdminBankOffersRemoteDataSource {
     );
   }
 
-  Future<void> deactivate(int id) async {
+  Future<void> deactivate(String id) async {
     final res = await _client.delete('/admin/platform-bank-offers/$id');
     if (res.statusCode != 204) {
       throw Exception('Deactivate failed: ${res.body}');

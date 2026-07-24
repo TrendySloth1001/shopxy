@@ -26,7 +26,7 @@ class VendorOverview {
     this.balance = 0,
   });
 
-  final int id;
+  final String id;
   final String name;
   final String? contactName;
   final String? phone;
@@ -66,7 +66,7 @@ class VendorOverview {
 
 class VendorLinkedUser {
   const VendorLinkedUser({required this.id, required this.name, required this.email});
-  final int id;
+  final String id;
   final String name;
   final String email;
 }
@@ -89,7 +89,7 @@ class VendorInvoiceRef {
     required this.itemCount,
   });
 
-  final int id;
+  final String id;
   final String invoiceNo;
   final String type;
   final String status;
@@ -113,8 +113,8 @@ class VendorStockInRef {
     required this.sourceType,
   });
 
-  final int id;
-  final int productId;
+  final String id;
+  final String productId;
   final String productName;
   final String productSku;
   final String unit;

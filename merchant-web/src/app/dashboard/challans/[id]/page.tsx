@@ -29,7 +29,7 @@ export default function ChallanDetailPage() {
   const t = useTranslations("challans");
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const id = Number(params.id);
+  const id = params.id;
 
   const [challan, setChallan] = useState<Challan | null>(null);
   const [loading, setLoading] = useState(true);

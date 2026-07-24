@@ -7,7 +7,7 @@ const asNumber = z.union([z.number(), z.string().transform((s) => parseFloat(s))
 // ── Search hit ───────────────────────────────────────────────────────────────
 
 export const searchHitSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   name: z.string(),
   sku: z.string().default(""),
   sellingPrice: z.preprocess((v) => {
@@ -19,12 +19,12 @@ export const searchHitSchema = z.object({
   imageUrl: z.string().nullable().optional().transform((v) => v ?? null),
   shop: z
     .object({
-      id: z.number().default(0),
+      id: z.coerce.string().default("0"),
       name: z.string().default(""),
       slug: z.string().default(""),
     })
     .optional()
-    .default({ id: 0, name: "", slug: "" }),
+    .default({ id: "0", name: "", slug: "" }),
   rank: z.preprocess((v) => {
     if (typeof v === "string") return parseFloat(v);
     return v;
@@ -68,7 +68,7 @@ export const searchResultSchema = z.object({
 
 export const autocompleteSchema = z.object({
   products: z
-    .array(z.object({ id: z.number(), name: z.string() }))
+    .array(z.object({ id: z.coerce.string(), name: z.string() }))
     .default([]),
   terms: z
     .array(

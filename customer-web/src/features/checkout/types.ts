@@ -6,22 +6,22 @@ import { zNum } from "@/shared/zod";
 export const placeOrderRequestSchema = z.object({
   items: z.array(
     z.object({
-      productId: z.number(),
+      productId: z.coerce.string(),
       quantity: zNum,
       expectedUnitPrice: zNum.optional(),
     }),
   ),
   note: z.string().max(500).optional(),
-  addressId: z.number().optional(),
+  addressId: z.coerce.string().optional(),
   couponCode: z.string().max(40).optional(),
 });
 
 export type PlaceOrderRequest = z.infer<typeof placeOrderRequestSchema>;
 
 export const placeOrderResponseSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   shopOrders: z.array(
-    z.object({ id: z.number(), shopId: z.number() }),
+    z.object({ id: z.coerce.string(), shopId: z.coerce.string() }),
   ),
   couponDiscount: zNum,
   walletPaid: zNum,
@@ -32,7 +32,7 @@ export type PlaceOrderResponse = z.infer<typeof placeOrderResponseSchema>;
 // ── Coupon preview ────────────────────────────────────────────────────────────
 
 export const couponSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   code: z.string(),
   discountType: z.string(),
   discountValue: zNum,
@@ -76,7 +76,7 @@ export function computeCouponDiscount(coupon: Coupon, subtotal: number): number 
 // ── Pay session ───────────────────────────────────────────────────────────────
 
 export const paySessionSchema = z.object({
-  intentId: z.number(),
+  intentId: z.coerce.string(),
   provider: z.literal("RAZORPAY"),
   providerOrderRef: z.string(),
   amount: zNum,

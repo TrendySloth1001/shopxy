@@ -114,7 +114,7 @@ class _ActivityRow extends StatelessWidget {
                 children: [
                   Text(
                     tx.productName ??
-                        l10n.dashboardProductFallback('${tx.productId}'),
+                        l10n.dashboardProductFallback(tx.productId),
                     style: DashText.bodyMd,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

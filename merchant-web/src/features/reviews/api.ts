@@ -1,7 +1,7 @@
 import { reviewSummarySchema, type ReviewSummary } from "./schema";
 
 /** Fetch the rating summary (average, histogram, recent reviews) for a product. */
-export async function getReviewSummary(productId: number): Promise<ReviewSummary> {
+export async function getReviewSummary(productId: string): Promise<ReviewSummary> {
   const res = await fetch(`/api/products/${productId}/reviews/summary`, {
     cache: "no-store",
   });

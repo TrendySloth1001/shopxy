@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { decodeId } from '../../shared/ids/publicId.js';
 import { z } from 'zod';
 import { parsePagination, paginatedResponse } from '../../shared/http/pagination.js';
 import { partiesService } from './parties.service.js';
@@ -41,8 +42,7 @@ const updatePartySchema = z
   .refine((d) => Object.keys(d).length > 0, { message: 'At least one field required' });
 
 function parseId(raw: string): number | null {
-  const id = Number(raw);
-  return Number.isInteger(id) && id > 0 ? id : null;
+  return decodeId(raw);
 }
 
 /// Resolve the caller's shop or 401 the request. Centralised so each

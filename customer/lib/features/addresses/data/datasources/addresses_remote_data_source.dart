@@ -33,7 +33,7 @@ class AddressesRemoteDataSource {
     return UserAddress.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  Future<UserAddress> update(int id, UserAddressInput input) async {
+  Future<UserAddress> update(String id, UserAddressInput input) async {
     final res = await _client.patch('/me/addresses/$id', body: input.toJson());
     if (res.statusCode != 200) {
       throw Exception('Failed to update address: ${res.body}');
@@ -41,14 +41,14 @@ class AddressesRemoteDataSource {
     return UserAddress.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  Future<void> setDefault(int id) async {
+  Future<void> setDefault(String id) async {
     final res = await _client.post('/me/addresses/$id/default');
     if (res.statusCode != 204) {
       throw Exception('Failed to set default: ${res.statusCode}');
     }
   }
 
-  Future<void> delete(int id) async {
+  Future<void> delete(String id) async {
     final res = await _client.delete('/me/addresses/$id');
     if (res.statusCode != 204) {
       throw Exception('Failed to delete: ${res.statusCode}');

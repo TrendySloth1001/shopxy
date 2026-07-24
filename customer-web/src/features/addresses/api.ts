@@ -56,7 +56,7 @@ export async function createAddress(
 
 /** PATCH /api/me/addresses/:id — update address. */
 export async function updateAddress(
-  id: number,
+  id: string,
   values: Partial<AddressFormValues>,
 ): Promise<UserAddress> {
   const res = await fetch(`/api/me/addresses/${id}`, {
@@ -72,7 +72,7 @@ export async function updateAddress(
 }
 
 /** DELETE /api/me/addresses/:id — remove an address. */
-export async function deleteAddress(id: number): Promise<void> {
+export async function deleteAddress(id: string): Promise<void> {
   const res = await fetch(`/api/me/addresses/${id}`, { method: "DELETE" });
   if (!res.ok && res.status !== 204) {
     let message = "Could not delete address.";
@@ -87,7 +87,7 @@ export async function deleteAddress(id: number): Promise<void> {
 }
 
 /** POST /api/me/addresses/:id/default — set default address. */
-export async function setDefaultAddress(id: number): Promise<void> {
+export async function setDefaultAddress(id: string): Promise<void> {
   const res = await fetch(`/api/me/addresses/${id}/default`, {
     method: "POST",
   });

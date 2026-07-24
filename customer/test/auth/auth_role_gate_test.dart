@@ -10,7 +10,7 @@ import 'package:shopxy_customer/shared/constants/app_strings.dart';
 /// be able to sign in to — or restore a session in — the customer app.
 void main() {
   AuthUser user(String role) => AuthUser(
-        id: 1,
+        id: '1',
         email: 'x@example.com',
         name: 'X',
         role: role,

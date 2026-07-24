@@ -48,14 +48,14 @@ class CashierRemoteDataSource {
   }
 
   /// Full Z-report for a past shift.
-  Future<Map<String, dynamic>> shiftReport(int shiftId) async =>
+  Future<Map<String, dynamic>> shiftReport(String shiftId) async =>
       _ok(await _client.get('/me/cashier/shifts/$shiftId/report'));
 
-  Future<Map<String, dynamic>> returnable(int invoiceId) async =>
+  Future<Map<String, dynamic>> returnable(String invoiceId) async =>
       _ok(await _client.get('/me/cashier/returnable/$invoiceId'));
 
   Future<Map<String, dynamic>> processReturn({
-    required int originalInvoiceId,
+    required String originalInvoiceId,
     required String refundMode,
     required List<Map<String, dynamic>> lines,
   }) async =>

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
+import { decodeId } from '../../shared/ids/publicId.js';
 import { teamService } from './team.service.js';
 import { invitationsService } from '../invitations/invitations.service.js';
 import { isValidRight } from '../../shared/http/permissions.js';
@@ -61,8 +62,8 @@ export async function invite(req: Request, res: Response) {
 }
 
 export async function cancelInvite(req: Request, res: Response) {
-  const id = Number(req.params.id);
-  if (!Number.isInteger(id)) {
+  const id = decodeId(req.params.id);
+  if (id === null) {
     res.status(400).json({ error: 'Invalid invitation id' });
     return;
   }
@@ -77,8 +78,8 @@ export async function cancelInvite(req: Request, res: Response) {
 const setPermissionsSchema = z.object({ roleName: ROLE_NAME, permissions: RIGHTS });
 
 export async function updatePermissions(req: Request, res: Response) {
-  const targetUserId = Number(req.params.userId);
-  if (!Number.isInteger(targetUserId)) {
+  const targetUserId = decodeId(req.params.userId);
+  if (targetUserId === null) {
     res.status(400).json({ error: 'Invalid user id' });
     return;
   }
@@ -104,8 +105,8 @@ export async function updatePermissions(req: Request, res: Response) {
 }
 
 export async function removeMember(req: Request, res: Response) {
-  const targetUserId = Number(req.params.userId);
-  if (!Number.isInteger(targetUserId)) {
+  const targetUserId = decodeId(req.params.userId);
+  if (targetUserId === null) {
     res.status(400).json({ error: 'Invalid user id' });
     return;
   }
@@ -155,8 +156,8 @@ const roleUpdateSchema = z.object({
 });
 
 export async function updateRole(req: Request, res: Response) {
-  const id = Number(req.params.id);
-  if (!Number.isInteger(id)) {
+  const id = decodeId(req.params.id);
+  if (id === null) {
     res.status(400).json({ error: 'Invalid role id' });
     return;
   }
@@ -181,8 +182,8 @@ export async function updateRole(req: Request, res: Response) {
 }
 
 export async function deleteRole(req: Request, res: Response) {
-  const id = Number(req.params.id);
-  if (!Number.isInteger(id)) {
+  const id = decodeId(req.params.id);
+  if (id === null) {
     res.status(400).json({ error: 'Invalid role id' });
     return;
   }

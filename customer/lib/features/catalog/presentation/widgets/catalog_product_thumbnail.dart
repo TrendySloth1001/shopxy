@@ -38,7 +38,8 @@ class CatalogProductThumbnail extends StatelessWidget {
     return name[0].toUpperCase();
   }
 
-  (Color, Color) get _palette => _accents[product.id % _accents.length];
+  (Color, Color) get _palette =>
+      _accents[product.id.hashCode.abs() % _accents.length];
 
   @override
   Widget build(BuildContext context) {

@@ -64,7 +64,7 @@ class ChallansProvider extends ChangeNotifier {
   }
 
   Future<Challan> createChallan({
-    int? partyId,
+    String? partyId,
     String? partyName,
     String? partyPhone,
     String? note,
@@ -82,13 +82,13 @@ class ChallansProvider extends ChangeNotifier {
     return challan;
   }
 
-  Future<void> cancelChallan(int id) async {
+  Future<void> cancelChallan(String id) async {
     await _dataSource.cancelChallan(id);
     await loadChallans();
   }
 
   Future<Map<String, dynamic>> convertToInvoice(
-    int id, {
+    String id, {
     String? customerName,
     String? customerGstin,
     double? discount,

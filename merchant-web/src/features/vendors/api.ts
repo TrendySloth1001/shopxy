@@ -35,19 +35,19 @@ export function listVendors(opts?: { search?: string }): Promise<Vendor[]> {
   );
 }
 
-export function getVendorOverview(id: number): Promise<VendorOverview> {
+export function getVendorOverview(id: string): Promise<VendorOverview> {
   return fetch(`/api/vendors/${id}/overview`, { cache: "no-store" }).then((r) =>
     jsonOrThrow(r, (raw) => vendorOverviewSchema.parse(raw), "Could not load the vendor."),
   );
 }
 
-export function getVendorLedger(id: number): Promise<Ledger> {
+export function getVendorLedger(id: string): Promise<Ledger> {
   return fetch(`/api/vendors/${id}/ledger`, { cache: "no-store" }).then((r) =>
     jsonOrThrow(r, (raw) => ledgerSchema.parse(raw), "Could not load the ledger."),
   );
 }
 
-export function getVendor(id: number): Promise<Vendor> {
+export function getVendor(id: string): Promise<Vendor> {
   return fetch(`/api/vendors/${id}`, { cache: "no-store" }).then((r) =>
     jsonOrThrow(r, (raw) => vendorSchema.parse(raw), "Could not load the vendor."),
   );
@@ -71,7 +71,7 @@ export function createVendor(input: ContactWrite): Promise<Vendor> {
   }).then((r) => jsonOrThrow(r, (raw) => vendorSchema.parse(raw), "Could not create the vendor."));
 }
 
-export async function updateVendor(id: number, input: ContactWrite): Promise<void> {
+export async function updateVendor(id: string, input: ContactWrite): Promise<void> {
   const res = await fetch(`/api/vendors/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -80,7 +80,7 @@ export async function updateVendor(id: number, input: ContactWrite): Promise<voi
   await okOrThrow(res, "Could not update the vendor.");
 }
 
-export async function deleteVendor(id: number): Promise<void> {
+export async function deleteVendor(id: string): Promise<void> {
   const res = await fetch(`/api/vendors/${id}`, { method: "DELETE" });
   await okOrThrow(res, "Could not delete the vendor.");
 }

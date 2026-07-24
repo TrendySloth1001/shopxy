@@ -12,7 +12,7 @@ class RememberedAccount {
     this.avatarUrl,
   });
 
-  final int id;
+  final String id;
   final String name;
   final String email;
   final String? avatarUrl;
@@ -25,7 +25,7 @@ class RememberedAccount {
   };
 
   static RememberedAccount _fromJson(Map<String, dynamic> j) => RememberedAccount(
-    id: j['id'] as int,
+    id: j['id'].toString(),
     name: (j['name'] as String?) ?? '',
     email: (j['email'] as String?) ?? '',
     avatarUrl: j['avatarUrl'] as String?,
@@ -70,22 +70,25 @@ class RememberedAccountsStore {
     return rows.map(RememberedAccount._fromJson).toList();
   }
 
-  Future<String?> tokenFor(int id) async {
+  Future<String?> tokenFor(String id) async {
     for (final row in await _read()) {
-      if (row['id'] == id) return row['token'] as String?;
+      // .toString() so a row persisted by an older build (numeric id) still
+      // matches the now-String id after the opaque-id migration.
+      if (row['id']?.toString() == id) return row['token'] as String?;
     }
     return null;
   }
 
   /// Upsert (most-recent first), carrying the freshest profile + token.
   Future<void> save(RememberedAccount account, String token) async {
-    final rows = await _read()..removeWhere((r) => r['id'] == account.id);
+    final rows = await _read()
+      ..removeWhere((r) => r['id']?.toString() == account.id);
     rows.insert(0, {...account._toJson(), 'token': token});
     await _write(rows);
   }
 
-  Future<void> remove(int id) async {
-    final rows = await _read()..removeWhere((r) => r['id'] == id);
+  Future<void> remove(String id) async {
+    final rows = await _read()..removeWhere((r) => r['id']?.toString() == id);
     await _write(rows);
   }
 }

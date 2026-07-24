@@ -32,7 +32,7 @@ class AdminCollectionsProvider extends ChangeNotifier {
     }
   }
 
-  Future<AdminCollection?> getOne(int id) async {
+  Future<AdminCollection?> getOne(String id) async {
     try {
       return await _ds.getOne(id);
     } catch (e) {
@@ -55,7 +55,7 @@ class AdminCollectionsProvider extends ChangeNotifier {
     }
   }
 
-  Future<AdminCollectionSummary?> update(int id, Map<String, dynamic> body) async {
+  Future<AdminCollectionSummary?> update(String id, Map<String, dynamic> body) async {
     try {
       final updated = await _ds.update(id, body);
       final i = _list.indexWhere((c) => c.id == id);
@@ -69,7 +69,7 @@ class AdminCollectionsProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> delete(int id) async {
+  Future<bool> delete(String id) async {
     try {
       await _ds.delete(id);
       _list.removeWhere((c) => c.id == id);
@@ -83,8 +83,8 @@ class AdminCollectionsProvider extends ChangeNotifier {
   }
 
   Future<List<AdminCollectionItem>?> replaceItems(
-    int id,
-    List<({int productId, int position})> items,
+    String id,
+    List<({String productId, int position})> items,
   ) async {
     try {
       return await _ds.replaceItems(id, items);

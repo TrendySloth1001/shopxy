@@ -25,7 +25,7 @@ import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 class ChallanDetailPage extends StatefulWidget {
   const ChallanDetailPage({super.key, required this.challanId});
-  final int challanId;
+  final String challanId;
 
   @override
   State<ChallanDetailPage> createState() => _ChallanDetailPageState();
@@ -88,7 +88,7 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
     try {
       final invoice = await provider.convertToInvoice(widget.challanId);
       if (!mounted) return;
-      final invoiceId = invoice['id'] as int;
+      final invoiceId = invoice['id'].toString();
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(

@@ -1,4 +1,6 @@
 import { Request, Response } from 'express';
+import { zPublicId } from '../../shared/ids/zPublicId.js';
+import { decodeId } from '../../shared/ids/publicId.js';
 import { z } from 'zod';
 import {
   CUSTOM_FIELD_TYPES,
@@ -11,7 +13,7 @@ const createDefinitionSchema = z.object({
   options: z.array(z.string().min(1).max(60)).max(50).optional(),
   unitSuffix: z.string().max(20).optional(),
   icon: z.string().max(40).optional(),
-  sectionId: z.number().int().positive().nullable().optional(),
+  sectionId: zPublicId.nullable().optional(),
   sortOrder: z.number().int().nonnegative().optional(),
 });
 
@@ -22,7 +24,7 @@ const updateDefinitionSchema = z
     options: z.array(z.string().min(1).max(60)).max(50).nullable().optional(),
     unitSuffix: z.string().max(20).nullable().optional(),
     icon: z.string().max(40).nullable().optional(),
-    sectionId: z.number().int().positive().nullable().optional(),
+    sectionId: zPublicId.nullable().optional(),
     sortOrder: z.number().int().nonnegative().optional(),
     isActive: z.boolean().optional(),
   })
@@ -52,14 +54,14 @@ const applyTemplateSchema = z.object({
 });
 
 const reorderSchema = z.object({
-  orderedIds: z.array(z.number().int().positive()).min(1),
+  orderedIds: z.array(zPublicId).min(1),
 });
 
 const bulkValuesSchema = z.object({
   values: z
     .array(
       z.object({
-        definitionId: z.number().int().positive(),
+        definitionId: zPublicId,
         value: z.string().max(4000),
       }),
     )
@@ -71,8 +73,7 @@ const setValueSchema = z.object({
 });
 
 function parseId(raw: string): number | null {
-  const id = Number(raw);
-  return Number.isInteger(id) && id > 0 ? id : null;
+  return decodeId(raw);
 }
 
 function requireShopId(req: Request, res: Response): number | null {

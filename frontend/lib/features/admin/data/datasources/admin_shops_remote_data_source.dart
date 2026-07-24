@@ -27,7 +27,7 @@ class AdminShopsRemoteDataSource {
         .toList();
   }
 
-  Future<AdminShopRow> setVerified(int id, bool isVerified) async {
+  Future<AdminShopRow> setVerified(String id, bool isVerified) async {
     final res = await _client.post(
       '/admin/shops/$id/verified',
       body: {'isVerified': isVerified},
@@ -53,7 +53,7 @@ class AdminShopRow {
     this.ratingCount = 0,
   });
 
-  final int id;
+  final String id;
   final String name;
   final String slug;
   final bool isVerified;
@@ -65,7 +65,7 @@ class AdminShopRow {
   final int ratingCount;
 
   factory AdminShopRow.fromJson(Map<String, dynamic> j) => AdminShopRow(
-        id: (j['id'] as num).toInt(),
+        id: j['id'].toString(),
         name: (j['name'] as String?) ?? '—',
         slug: (j['slug'] as String?) ?? '',
         isVerified: (j['isVerified'] as bool?) ?? false,

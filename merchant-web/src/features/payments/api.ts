@@ -20,9 +20,9 @@ async function okOrThrow(res: Response, fallback: string): Promise<void> {
 }
 
 export function listPayments(opts: {
-  invoiceId?: number;
-  partyId?: number;
-  vendorId?: number;
+  invoiceId?: string;
+  partyId?: string;
+  vendorId?: string;
 }): Promise<Payment[]> {
   const qs = new URLSearchParams({ limit: "100" });
   if (opts.invoiceId != null) qs.set("invoiceId", String(opts.invoiceId));
@@ -39,9 +39,9 @@ export type PaymentWrite = {
   mode: string;
   modeReference?: string;
   paymentDate?: string;
-  partyId?: number;
-  vendorId?: number;
-  invoiceId?: number;
+  partyId?: string;
+  vendorId?: string;
+  invoiceId?: string;
   note?: string;
 };
 
@@ -53,7 +53,7 @@ export function createPayment(input: PaymentWrite): Promise<Payment> {
   }).then((r) => jsonOrThrow(r, (raw) => paymentSchema.parse(raw), "Could not record the payment."));
 }
 
-export async function voidPayment(id: number, reason?: string): Promise<void> {
+export async function voidPayment(id: string, reason?: string): Promise<void> {
   const qs = reason ? `?reason=${encodeURIComponent(reason)}` : "";
   const res = await fetch(`/api/payments/${id}${qs}`, { method: "DELETE" });
   await okOrThrow(res, "Could not void the payment.");

@@ -15,9 +15,9 @@ class PaymentsRemoteDataSource {
     required String mode,
     String? modeReference,
     DateTime? paymentDate,
-    int? partyId,
-    int? vendorId,
-    int? invoiceId,
+    String? partyId,
+    String? vendorId,
+    String? invoiceId,
     String? note,
   }) async {
     final body = <String, dynamic>{
@@ -41,18 +41,18 @@ class PaymentsRemoteDataSource {
   }
 
   Future<List<Payment>> listPayments({
-    int? partyId,
-    int? vendorId,
-    int? invoiceId,
+    String? partyId,
+    String? vendorId,
+    String? invoiceId,
     int page = 1,
     int limit = 50,
   }) async {
     final params = <String, String>{
       'page': '$page',
       'limit': '$limit',
-      if (partyId != null) 'partyId': '$partyId',
-      if (vendorId != null) 'vendorId': '$vendorId',
-      if (invoiceId != null) 'invoiceId': '$invoiceId',
+      'partyId': ?partyId,
+      'vendorId': ?vendorId,
+      'invoiceId': ?invoiceId,
     };
     final res = await _client.get('/payments', queryParameters: params);
     if (res.statusCode != 200) {
@@ -65,7 +65,7 @@ class PaymentsRemoteDataSource {
         .toList();
   }
 
-  Future<void> deletePayment(int id) async {
+  Future<void> deletePayment(String id) async {
     final res = await _client.delete('/payments/$id');
     if (res.statusCode != 204) {
       final body = jsonDecode(res.body) as Map<String, dynamic>;
@@ -73,7 +73,7 @@ class PaymentsRemoteDataSource {
     }
   }
 
-  Future<Ledger> getPartyLedger(int partyId) async {
+  Future<Ledger> getPartyLedger(String partyId) async {
     final res = await _client.get('/parties/$partyId/ledger');
     if (res.statusCode != 200) {
       throw Exception('Failed to load ledger');
@@ -83,7 +83,7 @@ class PaymentsRemoteDataSource {
     );
   }
 
-  Future<Ledger> getVendorLedger(int vendorId) async {
+  Future<Ledger> getVendorLedger(String vendorId) async {
     final res = await _client.get('/vendors/$vendorId/ledger');
     if (res.statusCode != 200) {
       throw Exception('Failed to load ledger');

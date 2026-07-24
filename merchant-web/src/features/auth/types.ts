@@ -8,7 +8,7 @@ import { z } from "zod";
  * `any` from the wire. (CLAUDE.md §2.)
  */
 export const authUserSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   email: z.string(),
   name: z.string(),
   role: z.enum(["OWNER", "CUSTOMER"]),
@@ -17,7 +17,7 @@ export const authUserSchema = z.object({
   createdAt: z.string(),
 
   // Team scope — only present on `/auth/me` (not on login/register).
-  shopId: z.number().nullable().optional(),
+  shopId: z.coerce.string().nullable().optional(),
   shopRole: z.string().nullable().optional(),
   shopRoleName: z.string().nullable().optional(),
   shopPermissions: z.array(z.string()).default([]),

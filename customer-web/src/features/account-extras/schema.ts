@@ -7,7 +7,7 @@ import { z } from "zod";
 // ── Wishlist ─────────────────────────────────────────────────────────────────
 
 const wishlistProductSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   name: z.string(),
   sku: z.string().default(""),
   unit: z.string().default(""),
@@ -17,13 +17,13 @@ const wishlistProductSchema = z.object({
   stockQuantity: z.coerce.number().default(0),
   isActive: z.boolean().default(true),
   isPublished: z.boolean().default(true),
-  categoryId: z.number().nullable().optional(),
+  categoryId: z.coerce.string().nullable().optional(),
   images: z
     .array(z.object({ url: z.string(), sortOrder: z.number().default(0) }))
     .default([]),
   shop: z
     .object({
-      id: z.number(),
+      id: z.coerce.string(),
       name: z.string(),
       slug: z.string(),
     })
@@ -33,7 +33,7 @@ const wishlistProductSchema = z.object({
 
 export const wishlistItemSchema = z
   .object({
-    id: z.number(),
+    id: z.coerce.string(),
     savedAt: z.string().optional(),
     product: wishlistProductSchema,
   })
@@ -48,16 +48,16 @@ export type WishlistResponseRaw = z.infer<typeof wishlistResponseSchema>;
 // ── Reviews ──────────────────────────────────────────────────────────────────
 
 export const myReviewSchema = z.object({
-  id: z.number(),
-  productId: z.number(),
-  userId: z.number(),
+  id: z.coerce.string(),
+  productId: z.coerce.string(),
+  userId: z.coerce.string(),
   rating: z.number(),
   title: z.string().nullable().optional(),
   body: z.string().nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
   product: z.object({
-    id: z.number(),
+    id: z.coerce.string(),
     name: z.string(),
     sellingPrice: z.coerce.number(),
     images: z
@@ -76,7 +76,7 @@ export type MyReviewsResponseRaw = z.infer<typeof myReviewsResponseSchema>;
 // ── Coupons ───────────────────────────────────────────────────────────────────
 
 export const couponSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   code: z.string(),
   title: z.string(),
   description: z.string().nullable().optional(),
@@ -105,7 +105,7 @@ export type CouponsResponseRaw = z.infer<typeof couponsResponseSchema>;
 // ── Recently viewed ───────────────────────────────────────────────────────────
 
 const recentlyViewedProductSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   name: z.string(),
   sellingPrice: z.coerce.number(),
   mrp: z.coerce.number(),
@@ -115,7 +115,7 @@ const recentlyViewedProductSchema = z.object({
     .array(z.object({ url: z.string(), sortOrder: z.number() }))
     .default([]),
   shop: z.object({
-    id: z.number(),
+    id: z.coerce.string(),
     name: z.string(),
     slug: z.string(),
   }),
@@ -123,7 +123,7 @@ const recentlyViewedProductSchema = z.object({
 
 export const recentlyViewedItemSchema = z
   .object({
-    id: z.number().optional(),
+    id: z.coerce.string().optional(),
     lastViewedAt: z.string().optional(),
     product: recentlyViewedProductSchema,
   })

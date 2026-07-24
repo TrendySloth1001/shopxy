@@ -51,7 +51,7 @@ class CustomFieldSection {
     this.fields = const [],
   });
 
-  final int id;
+  final String id;
   final String name;
   final String? icon;
   final int sortOrder;
@@ -96,13 +96,13 @@ class CustomFieldDefinition {
     required this.updatedAt,
   });
 
-  final int id;
+  final String id;
   final String name;
   final CustomFieldType type;
   final List<String>? options;
   final String? unitSuffix;
   final String? icon;
-  final int? sectionId;
+  final String? sectionId;
   final int sortOrder;
   final bool isActive;
   final DateTime createdAt;
@@ -114,7 +114,7 @@ class CustomFieldDefinition {
     List<String>? options,
     String? unitSuffix,
     String? icon,
-    int? sectionId,
+    String? sectionId,
     int? sortOrder,
     bool? isActive,
   }) {
@@ -179,9 +179,9 @@ class ProductCustomFieldValue {
     required this.updatedAt,
   });
 
-  final int id;
-  final int productId;
-  final int definitionId;
+  final String id;
+  final String productId;
+  final String definitionId;
   final CustomFieldDefinition definition;
   final String value;
   final DateTime createdAt;

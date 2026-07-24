@@ -1,4 +1,6 @@
 import { Request, Response } from 'express';
+import { zPublicId } from '../../shared/ids/zPublicId.js';
+import { decodeId } from '../../shared/ids/publicId.js';
 import { z } from 'zod';
 import { parsePagination, paginatedResponse } from '../../shared/http/pagination.js';
 import { invitationsService } from './invitations.service.js';
@@ -9,8 +11,8 @@ const sendSchema = z
   .object({
     toEmail: z.string().trim().email().max(200),
     linkType: z.enum(['PARTY', 'VENDOR']),
-    partyId: z.number().int().positive().optional(),
-    vendorId: z.number().int().positive().optional(),
+    partyId: zPublicId.optional(),
+    vendorId: zPublicId.optional(),
     /// Required when neither partyId nor vendorId is provided — used
     /// to name the Party/Vendor row that's created at accept time.
     displayName: z.string().trim().min(1).max(200).optional(),
@@ -27,8 +29,7 @@ const sendSchema = z
 const statusSchema = z.enum(['PENDING', 'ACCEPTED', 'DECLINED', 'CANCELLED', 'EXPIRED', 'ALL']).optional();
 
 function parseId(raw: string): number | null {
-  const id = Number(raw);
-  return Number.isInteger(id) && id > 0 ? id : null;
+  return decodeId(raw);
 }
 
 export class InvitationsController {

@@ -17,8 +17,8 @@ const BACK = "/dashboard/challans";
 const loadProducts = (s: string) => listProducts({ search: s, limit: "20" }).then((r) => r.data);
 const loadParties = (s: string) => listParties(s ? { search: s } : undefined);
 
-type Line = { productId: number; productName: string; productSku: string; unit: string; quantity: number };
-type PartyRef = { id: number; name: string; phone?: string | null };
+type Line = { productId: string; productName: string; productSku: string; unit: string; quantity: number };
+type PartyRef = { id: string; name: string; phone?: string | null };
 
 export function ChallanEditor() {
   const t = useTranslations("challans");

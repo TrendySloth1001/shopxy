@@ -20,9 +20,9 @@ class InvoiceItem {
     this.cessAmount = 0,
   });
 
-  final int id;
-  final int invoiceId;
-  final int productId;
+  final String id;
+  final String invoiceId;
+  final String productId;
   final String productName;
   final String productSku;
   final String? hsn;
@@ -45,7 +45,7 @@ class InvoiceItem {
 
 class InvoiceVendorRef {
   const InvoiceVendorRef({required this.id, required this.name});
-  final int id;
+  final String id;
   final String name;
 }
 
@@ -99,12 +99,12 @@ class Invoice {
     this.itemCount,
   });
 
-  final int id;
+  final String id;
   final String invoiceNo;
   final String type; // SALE | PURCHASE
   final String status; // DRAFT | CONFIRMED | CANCELLED
-  final int? partyId;
-  final int? vendorId;
+  final String? partyId;
+  final String? vendorId;
   final InvoiceVendorRef? vendor;
   final String? customerName;
   final String? customerPhone;
@@ -192,7 +192,7 @@ class InvoiceItemDraft {
     );
   }
 
-  final int productId;
+  final String productId;
   final String productName;
   final String productSku;
   final String? hsn;

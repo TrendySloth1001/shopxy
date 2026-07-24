@@ -4,7 +4,7 @@ import { zNum } from "@/shared/zod";
 // ── Product sub-shape inside a cart line ──────────────────────────────────────
 
 export const cartProductSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   name: z.string(),
   sku: z.string().nullable().optional(),
   unit: z.string().nullable().optional(),
@@ -14,13 +14,13 @@ export const cartProductSchema = z.object({
   stockQuantity: zNum,
   isActive: z.boolean(),
   isPublished: z.boolean(),
-  categoryId: z.number().nullable().optional(),
+  categoryId: z.coerce.string().nullable().optional(),
   category: z
-    .object({ id: z.number(), name: z.string(), iconName: z.string().nullable().optional() })
+    .object({ id: z.coerce.string(), name: z.string(), iconName: z.string().nullable().optional() })
     .nullable()
     .optional(),
   images: z.array(z.object({ url: z.string(), sortOrder: z.number() })).default([]),
-  shop: z.object({ id: z.number(), name: z.string(), slug: z.string() }),
+  shop: z.object({ id: z.coerce.string(), name: z.string(), slug: z.string() }),
 });
 
 export type CartProduct = z.infer<typeof cartProductSchema>;
@@ -28,8 +28,8 @@ export type CartProduct = z.infer<typeof cartProductSchema>;
 // ── Cart line ─────────────────────────────────────────────────────────────────
 
 export const cartItemSchema = z.object({
-  id: z.number(),
-  productId: z.number(),
+  id: z.coerce.string(),
+  productId: z.coerce.string(),
   quantity: zNum,
   updatedAt: z.string(),
   product: cartProductSchema,
@@ -58,7 +58,7 @@ export const mergeBffResponseSchema = z.object({
 // ── Local guest cart (localStorage) ──────────────────────────────────────────
 
 export interface GuestLine {
-  productId: number;
+  productId: string;
   quantity: number;
   /** Cached display data so the guest cart can render without a server round-trip. */
   snapshot: {

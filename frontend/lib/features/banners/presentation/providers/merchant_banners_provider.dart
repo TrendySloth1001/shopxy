@@ -63,7 +63,7 @@ class MerchantBannersProvider extends ChangeNotifier {
     }
   }
 
-  Future<AdminBanner?> update(int id, Map<String, dynamic> body) async {
+  Future<AdminBanner?> update(String id, Map<String, dynamic> body) async {
     try {
       final updated = await _ds.update(id, body);
       final i = _banners.indexWhere((b) => b.id == id);
@@ -77,7 +77,7 @@ class MerchantBannersProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> delete(int id) async {
+  Future<bool> delete(String id) async {
     try {
       await _ds.delete(id);
       _banners.removeWhere((b) => b.id == id);
@@ -91,13 +91,13 @@ class MerchantBannersProvider extends ChangeNotifier {
   }
 
   /// Curated products pinned to a banner, in display order.
-  Future<List<BannerProductRow>> listBannerProducts(int bannerId) =>
+  Future<List<BannerProductRow>> listBannerProducts(String bannerId) =>
       _ds.listBannerProducts(bannerId);
 
   /// Replaces the entire pinned-product list for a banner. Empty [items]
   /// clears it. Returns the re-read rows (with server-computed sale prices).
   Future<List<BannerProductRow>> replaceBannerProducts(
-    int bannerId,
+    String bannerId,
     List<BannerProductInput> items,
   ) =>
       _ds.replaceBannerProducts(bannerId, items);

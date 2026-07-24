@@ -23,7 +23,7 @@ class MarketplaceShop {
     this.operatingHours,
   });
 
-  final int id;
+  final String id;
   final String name;
   final String slug;
   final String? tagline;
@@ -69,7 +69,7 @@ class MarketplaceShop {
 
   factory MarketplaceShop.fromJson(Map<String, dynamic> j) {
     return MarketplaceShop(
-      id: j['id'] as int,
+      id: j['id'].toString(),
       name: j['name'] as String,
       slug: j['slug'] as String,
       tagline: j['tagline'] as String?,

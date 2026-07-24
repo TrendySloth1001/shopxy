@@ -129,7 +129,7 @@ class HomeFeedMapper {
   static HeroSlide _heroFromBanner(dynamic raw) {
     final m = raw as Map<String, dynamic>;
     return HeroSlide(
-      id: _asInt(m['id']) ?? 0,
+      id: m['id'].toString(),
       imageUrl: (m['imageUrl'] ?? '') as String,
       linkUrl: (m['linkUrl'] as String?)?.trim().isEmpty == false
           ? (m['linkUrl'] as String).trim()
@@ -158,7 +158,7 @@ class HomeFeedMapper {
         ? ((1 - selling / mrp) * 100).clamp(0, 99).round()
         : 0;
     return ProductCard(
-      productId: _asInt(p['id']) ?? 0,
+      productId: p['id'].toString(),
       name: (p['name'] ?? '') as String,
       price: _money(selling),
       originalPrice: mrp != null && mrp > selling ? _money(mrp) : '',
@@ -181,7 +181,7 @@ class HomeFeedMapper {
   static CategoryPuck _categoryPuck(MapEntry<int, dynamic> e) {
     final m = e.value as Map<String, dynamic>;
     return CategoryPuck(
-      categoryId: (m['id'] as num).toInt(),
+      categoryId: m['id'].toString(),
       slug: (m['slug'] ?? '') as String,
       label: (m['name'] ?? '') as String,
       imageUrl: m['imageUrl'] as String?,

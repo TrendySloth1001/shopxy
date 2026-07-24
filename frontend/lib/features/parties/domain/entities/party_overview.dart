@@ -29,7 +29,7 @@ class PartyOverview {
     this.balance = 0,
   });
 
-  final int id;
+  final String id;
   final String name;
   final String? contactName;
   final String? phone;
@@ -70,7 +70,7 @@ class PartyOverview {
 
 class PartyLinkedUser {
   const PartyLinkedUser({required this.id, required this.name, required this.email});
-  final int id;
+  final String id;
   final String name;
   final String email;
 }
@@ -93,7 +93,7 @@ class PartyInvoiceRef {
     required this.itemCount,
   });
 
-  final int id;
+  final String id;
   final String invoiceNo;
   final String type;
   final String status;
@@ -114,10 +114,10 @@ class PartyChallanRef {
     this.invoiceId,
   });
 
-  final int id;
+  final String id;
   final String challanNo;
   final String status;
   final DateTime createdAt;
   final int itemCount;
-  final int? invoiceId;
+  final String? invoiceId;
 }

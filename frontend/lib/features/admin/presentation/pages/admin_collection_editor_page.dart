@@ -26,7 +26,7 @@ import 'package:shopxy/core/icons/app_icon.dart';
 /// array. Backend replaces atomically in a transaction.
 class AdminCollectionEditorPage extends StatefulWidget {
   const AdminCollectionEditorPage({super.key, required this.existingId});
-  final int? existingId;
+  final String? existingId;
 
   @override
   State<AdminCollectionEditorPage> createState() =>
@@ -160,7 +160,7 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
     }
     setState(() => _saving = true);
     final provider = context.read<AdminCollectionsProvider>();
-    int? collectionId = _existing?.id;
+    String? collectionId = _existing?.id;
     if (collectionId == null) {
       final created = await provider.create(_buildMetaBody());
       collectionId = created?.id;
@@ -223,7 +223,7 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
     }
     setState(() {
       _items.add(
-        AdminCollectionItem(id: 0, position: _items.length, product: picked),
+        AdminCollectionItem(id: '', position: _items.length, product: picked),
       );
     });
   }

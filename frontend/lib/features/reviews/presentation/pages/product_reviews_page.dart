@@ -24,7 +24,7 @@ class ProductReviewsPage extends StatefulWidget {
     this.ratingCount = 0,
   });
 
-  final int productId;
+  final String productId;
   final String productName;
   final double? ratingAvg;
   final int ratingCount;

@@ -137,18 +137,18 @@ void main() {
           w,
           RecentActivity(transactions: [
             DashboardTransaction(
-              id: 1,
-              productId: 10,
+              id: '1',
+              productId: '10',
               direction: 'IN',
               quantity: 50,
               sourceType: 'INVOICE',
-              sourceId: 7,
+              sourceId: '7',
               createdAt: DateTime(2026, 6, 26, 14, 30),
               productName: 'Basmati Rice 5kg',
             ),
             DashboardTransaction(
-              id: 2,
-              productId: 11,
+              id: '2',
+              productId: '11',
               direction: 'OUT',
               quantity: 10,
               createdAt: DateTime(2026, 6, 26, 13, 15),

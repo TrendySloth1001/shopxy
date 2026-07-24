@@ -255,7 +255,7 @@ class _RememberedAccountsSection extends StatefulWidget {
 class _RememberedAccountsSectionState
     extends State<_RememberedAccountsSection> {
   List<RememberedAccount>? _accounts;
-  int? _busyId;
+  String? _busyId;
   String? _error;
 
   @override
@@ -269,7 +269,7 @@ class _RememberedAccountsSectionState
     if (mounted) setState(() => _accounts = list);
   }
 
-  Future<void> _resume(int id) async {
+  Future<void> _resume(String id) async {
     setState(() {
       _busyId = id;
       _error = null;
@@ -287,7 +287,7 @@ class _RememberedAccountsSectionState
     }
   }
 
-  Future<void> _forget(int id) async {
+  Future<void> _forget(String id) async {
     await context.read<AuthProvider>().forgetRemembered(id);
     await _load();
   }

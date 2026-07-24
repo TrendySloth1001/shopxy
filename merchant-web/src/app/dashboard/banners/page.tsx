@@ -43,7 +43,7 @@ export default function BannersPage() {
     };
   }, [nonce, t]);
 
-  async function onDelete(id: number) {
+  async function onDelete(id: string) {
     try {
       await deleteBanner(id);
       reload();

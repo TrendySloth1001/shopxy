@@ -18,12 +18,12 @@ import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 ///   2. Pick a reason (single, applies to the whole return).
 ///   3. Optional note.
 /// On success returns the new return id (int); null on dismiss.
-Future<int?> showRequestReturnSheet({
+Future<String?> showRequestReturnSheet({
   required BuildContext context,
-  required int parentOrderId,
+  required String parentOrderId,
   required ShopOrderDetail shopOrder,
 }) {
-  return showModalBottomSheet<int?>(
+  return showModalBottomSheet<String?>(
     context: context,
     isScrollControlled: true,
     backgroundColor: AppColors.canvas,
@@ -35,7 +35,7 @@ Future<int?> showRequestReturnSheet({
 
 class _Sheet extends StatefulWidget {
   const _Sheet({required this.parentOrderId, required this.shopOrder});
-  final int parentOrderId;
+  final String parentOrderId;
   final ShopOrderDetail shopOrder;
 
   @override
@@ -44,7 +44,7 @@ class _Sheet extends StatefulWidget {
 
 class _SheetState extends State<_Sheet> {
   /// productItemId → quantity to return. Absent means "don't return".
-  final Map<int, double> _picks = {};
+  final Map<String, double> _picks = {};
   String _reason = 'DAMAGED';
   final TextEditingController _noteCtrl = TextEditingController();
   bool _submitting = false;
@@ -472,7 +472,7 @@ class _ReasonChip extends StatelessWidget {
 /// Convenience helper for callers — opens the sheet and shows a toast.
 Future<void> openRequestReturn(
   BuildContext context, {
-  required int parentOrderId,
+  required String parentOrderId,
   required ShopOrderDetail shopOrder,
   VoidCallback? onSubmitted,
 }) async {

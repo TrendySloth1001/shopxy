@@ -50,7 +50,7 @@ const hours = z.record(
 
 export const shopSchema = z
   .object({
-    id: z.number(),
+    id: z.coerce.string(),
     name: z.string(),
     slug: z.string().nullish(),
     tagline: z.string().nullish(),
@@ -85,7 +85,7 @@ export type Shop = z.infer<typeof shopSchema>;
 /** Razorpay-Route linked account — matches the backend `LinkedAccountView`. */
 export const payoutAccountSchema = z
   .object({
-    shopId: z.number().nullish(),
+    shopId: z.coerce.string().nullish(),
     providerAccountId: z.string().nullish(),
     kycStatus: z.string().nullish(),
     payoutsEnabled: z.boolean().nullish(),

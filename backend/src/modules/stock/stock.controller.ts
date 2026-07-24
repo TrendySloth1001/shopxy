@@ -7,21 +7,23 @@ import {
   LEDGER_SOURCE_TYPES,
 } from '../../shared/constants/index.js';
 import { parsePagination, paginatedResponse } from '../../shared/http/pagination.js';
+import { decodeId } from '../../shared/ids/publicId.js';
+import { zPublicId } from '../../shared/ids/zPublicId.js';
 import { stockService } from './stock.service.js';
 
 const createTransactionSchema = z.object({
-  productId: z.number().int().positive(),
+  productId: zPublicId,
   type: z.enum(['STOCK_IN', 'STOCK_OUT']),
   quantity: z.number().positive(),
   unitPrice: z.number().nonnegative().optional(),
-  vendorId: z.number().int().positive().optional(),
-  partyId: z.number().int().positive().optional(),
+  vendorId: zPublicId.optional(),
+  partyId: zPublicId.optional(),
   note: z.string().max(500).optional(),
 });
 
 const listSuppliersQuerySchema = z.object({
   q: z.string().trim().max(120).optional(),
-  productId: z.coerce.number().int().positive().optional(),
+  productId: zPublicId.optional(),
   limit: z.coerce.number().int().min(1).max(50).optional(),
 });
 
@@ -63,12 +65,13 @@ export class StockController {
     const shopId = requireShopId(req, res);
     if (!shopId) return;
     const { page, limit, skip } = parsePagination(req);
-    const productId = req.query.productId ? Number(req.query.productId) : undefined;
+    // Dual-mode: decodeId accepts both an opaque token and a legacy numeric id.
+    const productId = decodeId(req.query.productId as string | undefined) ?? undefined;
     const type = req.query.type as string | undefined;
     const direction = req.query.direction as string | undefined;
     const reasonCode = req.query.reasonCode as string | undefined;
     const sourceType = req.query.sourceType as string | undefined;
-    const sourceId = req.query.sourceId ? Number(req.query.sourceId) : undefined;
+    const sourceId = decodeId(req.query.sourceId as string | undefined) ?? undefined;
 
     const { transactions, total } = await stockService.listTransactions(shopId, {
       productId,

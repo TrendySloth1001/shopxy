@@ -65,7 +65,7 @@ class OrderInvoiceRef {
     this.paymentStatus = 'UNPAID',
   });
 
-  final int id;
+  final String id;
   final String invoiceNo;
   final double total;
   /// Lifecycle status (DRAFT / CONFIRMED / CANCELLED) — separate from
@@ -91,7 +91,7 @@ class OrderInvoiceRef {
   static OrderInvoiceRef? fromJson(Map<String, dynamic>? j) {
     if (j == null) return null;
     return OrderInvoiceRef(
-      id: j['id'] as int,
+      id: j['id'].toString(),
       invoiceNo: j['invoiceNo'] as String,
       total: _d(j['total']),
       status: (j['status'] as String?) ?? 'DRAFT',
@@ -151,15 +151,15 @@ class ShopOrderSummary {
 
   /// Underlying PurchaseRequest id — the merchant's inbox row id.
   /// Used for per-shop cancel.
-  final int id;
-  final int shopId;
+  final String id;
+  final String shopId;
   /// PENDING / CONFIRMED / REJECTED / CANCELLED.
   final String status;
   final double estimatedTotal;
   final int itemCount;
   final List<OrderItemPreview> itemsPreview;
   final OrderShop? shop;
-  final int? invoiceId;
+  final String? invoiceId;
   final DateTime? decidedAt;
 
   bool get isPending => status == 'PENDING';
@@ -169,8 +169,8 @@ class ShopOrderSummary {
 
   factory ShopOrderSummary.fromJson(Map<String, dynamic> j) {
     return ShopOrderSummary(
-      id: j['id'] as int,
-      shopId: j['shopId'] as int,
+      id: j['id'].toString(),
+      shopId: j['shopId'].toString(),
       status: j['status'] as String,
       estimatedTotal: _toDouble(j['estimatedTotal']),
       itemCount: ((j['_count'] as Map?)?['items'] as int?) ?? 0,
@@ -178,7 +178,7 @@ class ShopOrderSummary {
           .map((e) => OrderItemPreview.fromJson(e as Map<String, dynamic>))
           .toList(),
       shop: OrderShop.fromJson(j['shop'] as Map<String, dynamic>?),
-      invoiceId: j['invoiceId'] as int?,
+      invoiceId: j['invoiceId']?.toString(),
       decidedAt: j['decidedAt'] == null
           ? null
           : DateTime.parse(j['decidedAt'] as String),
@@ -216,7 +216,7 @@ class OrderEvent {
     this.note,
   });
 
-  final int id;
+  final String id;
   /// One of CREATED / CONFIRMED / REJECTED / CANCELLED / PACKED /
   /// SHIPPED / OUT_FOR_DELIVERY / DELIVERED / RETURNED.
   final String type;
@@ -230,7 +230,7 @@ class OrderEvent {
 
   factory OrderEvent.fromJson(Map<String, dynamic> j) {
     return OrderEvent(
-      id: j['id'] as int,
+      id: j['id'].toString(),
       type: j['type'] as String,
       occurredAt: DateTime.parse(j['occurredAt'] as String),
       courier: j['courier'] as String?,
@@ -288,7 +288,7 @@ class ShopOrderDetail extends ShopOrderSummary {
   /// Server-side Party id (the customer's identity at this seller's
   /// shop) — populated when the customer is linked. Used by the
   /// invoice-viewer tap to construct `/me/parties/:id/invoices/:n`.
-  final int? linkedPartyId;
+  final String? linkedPartyId;
   /// Chronological tracking events for this slice. Empty when the
   /// backend doesn't yet include the timeline (older API versions).
   final List<OrderEvent> events;
@@ -320,13 +320,13 @@ class ShopOrderDetail extends ShopOrderSummary {
   factory ShopOrderDetail.fromJson(Map<String, dynamic> j) {
     final party = j['party'] as Map<String, dynamic>?;
     return ShopOrderDetail(
-      id: j['id'] as int,
-      shopId: j['shopId'] as int,
+      id: j['id'].toString(),
+      shopId: j['shopId'].toString(),
       status: j['status'] as String,
       estimatedTotal: _toDouble(j['estimatedTotal']),
       itemCount: ((j['_count'] as Map?)?['items'] as int?) ?? 0,
       shop: OrderShop.fromJson(j['shop'] as Map<String, dynamic>?),
-      invoiceId: j['invoiceId'] as int?,
+      invoiceId: j['invoiceId']?.toString(),
       decidedAt: j['decidedAt'] == null
           ? null
           : DateTime.parse(j['decidedAt'] as String),
@@ -336,7 +336,7 @@ class ShopOrderDetail extends ShopOrderSummary {
       decisionNote: j['decisionNote'] as String?,
       invoice:
           OrderInvoiceRef.fromJson(j['invoice'] as Map<String, dynamic>?),
-      linkedPartyId: party?['id'] as int?,
+      linkedPartyId: party?['id']?.toString(),
       events: ((j['events'] as List?) ?? const [])
           .map((e) => OrderEvent.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -396,7 +396,7 @@ class CustomerOrder {
     required this.shopOrders,
   });
 
-  final int id;
+  final String id;
   final String customerName;
   final String? customerPhone;
   final String? customerAddress;
@@ -479,7 +479,7 @@ class CustomerOrder {
 
   factory CustomerOrder.fromJson(Map<String, dynamic> j) {
     return CustomerOrder(
-      id: j['id'] as int,
+      id: j['id'].toString(),
       customerName: (j['customerName'] as String?) ?? '',
       customerPhone: j['customerPhone'] as String?,
       customerAddress: j['customerAddress'] as String?,
@@ -529,8 +529,8 @@ class CustomerOrderItem {
     this.imageUrl,
   });
 
-  final int id;
-  final int productId;
+  final String id;
+  final String productId;
   final String productName;
   final String productSku;
   final String unit;
@@ -548,8 +548,8 @@ class CustomerOrderItem {
           (images.first as Map<String, dynamic>)['url'] as String?;
     }
     return CustomerOrderItem(
-      id: j['id'] as int,
-      productId: j['productId'] as int,
+      id: j['id'].toString(),
+      productId: j['productId'].toString(),
       productName: j['productName'] as String,
       productSku: j['productSku'] as String,
       unit: j['unit'] as String? ?? 'PCS',
@@ -589,7 +589,7 @@ class CustomerOrderDetail extends CustomerOrder {
 
   factory CustomerOrderDetail.fromJson(Map<String, dynamic> j) {
     return CustomerOrderDetail(
-      id: j['id'] as int,
+      id: j['id'].toString(),
       customerName: (j['customerName'] as String?) ?? '',
       customerPhone: j['customerPhone'] as String?,
       customerEmail: j['customerEmail'] as String?,

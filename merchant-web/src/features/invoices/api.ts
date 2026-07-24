@@ -24,9 +24,9 @@ export type InvoiceListFilters = {
   status?: string;
   documentType?: string;
   search?: string;
-  vendorId?: number;
-  partyId?: number;
-  productId?: number;
+  vendorId?: string;
+  partyId?: string;
+  productId?: string;
 };
 
 export function listInvoices(filters: InvoiceListFilters): Promise<Invoice[]> {
@@ -43,7 +43,7 @@ export function listInvoices(filters: InvoiceListFilters): Promise<Invoice[]> {
   );
 }
 
-export function getInvoice(id: number): Promise<Invoice> {
+export function getInvoice(id: string): Promise<Invoice> {
   return fetch(`/api/invoices/${id}`, { cache: "no-store" }).then((r) =>
     jsonOrThrow(r, (raw) => invoiceSchema.parse(raw), "Could not load the invoice."),
   );
@@ -51,7 +51,7 @@ export function getInvoice(id: number): Promise<Invoice> {
 
 /** Line item as sent to the backend create/update schema. */
 export type InvoiceItemWrite = {
-  productId: number;
+  productId: string;
   quantity: number;
   unitPrice: number;
   taxPercent?: number;
@@ -61,8 +61,8 @@ export type InvoiceWrite = {
   type: "SALE" | "PURCHASE";
   documentType?: string;
   placeOfSupplyStateCode?: string;
-  partyId?: number;
-  vendorId?: number;
+  partyId?: string;
+  vendorId?: string;
   customerName?: string;
   customerPhone?: string;
   customerGstin?: string;
@@ -97,7 +97,7 @@ export async function createInvoice(input: InvoiceWrite): Promise<CreateInvoiceR
   };
 }
 
-export function updateInvoice(id: number, input: InvoiceWrite): Promise<Invoice> {
+export function updateInvoice(id: string, input: InvoiceWrite): Promise<Invoice> {
   return fetch(`/api/invoices/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -105,7 +105,7 @@ export function updateInvoice(id: number, input: InvoiceWrite): Promise<Invoice>
   }).then((r) => jsonOrThrow(r, (raw) => invoiceSchema.parse(raw), "Could not save the invoice."));
 }
 
-export function updateInvoiceStatus(id: number, status: "CONFIRMED" | "CANCELLED"): Promise<Invoice> {
+export function updateInvoiceStatus(id: string, status: "CONFIRMED" | "CANCELLED"): Promise<Invoice> {
   return fetch(`/api/invoices/${id}/status`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -113,18 +113,18 @@ export function updateInvoiceStatus(id: number, status: "CONFIRMED" | "CANCELLED
   }).then((r) => jsonOrThrow(r, (raw) => invoiceSchema.parse(raw), "Could not update the invoice."));
 }
 
-export function convertEstimate(id: number): Promise<Invoice> {
+export function convertEstimate(id: string): Promise<Invoice> {
   return fetch(`/api/invoices/${id}/convert`, { method: "POST" }).then((r) =>
     jsonOrThrow(r, (raw) => invoiceSchema.parse(raw), "Could not convert to an invoice."),
   );
 }
 
-export async function deleteInvoice(id: number): Promise<void> {
+export async function deleteInvoice(id: string): Promise<void> {
   const res = await fetch(`/api/invoices/${id}`, { method: "DELETE" });
   await okOrThrow(res, "Could not delete the invoice.");
 }
 
 /** Open the server-rendered PDF (download / print) in a new tab. */
-export function invoicePdfUrl(id: number): string {
+export function invoicePdfUrl(id: string): string {
   return `/api/invoices/${id}/pdf`;
 }

@@ -45,7 +45,7 @@ export async function fetchCart(): Promise<CartItem[]> {
  * Returns null when the server responds 204 (line removed).
  */
 export async function setCartQty(
-  productId: number,
+  productId: string,
   quantity: number,
 ): Promise<SetQtyResponse | null> {
   const res = await fetch(`/api/me/cart/${productId}`, {
@@ -62,7 +62,7 @@ export async function setCartQty(
 }
 
 /** DELETE /api/me/cart/:productId — remove a single line. */
-export async function removeCartLine(productId: number): Promise<void> {
+export async function removeCartLine(productId: string): Promise<void> {
   const res = await fetch(`/api/me/cart/${productId}`, { method: "DELETE" });
   if (!res.ok && res.status !== 204) throw new Error("Could not remove item.");
 }
@@ -78,7 +78,7 @@ export async function clearServerCart(): Promise<void> {
  * on first login. Returns the full post-merge cart.
  */
 export async function mergeGuestCart(
-  items: { productId: number; quantity: number }[],
+  items: { productId: string; quantity: number }[],
 ): Promise<CartItem[]> {
   const res = await fetch("/api/me/cart/merge", {
     method: "POST",

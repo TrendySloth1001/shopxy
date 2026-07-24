@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { decodeId } from '../../shared/ids/publicId.js';
 import { z } from 'zod';
 import {
   analyticsService,
@@ -31,8 +32,7 @@ function resolveRange(query: { from?: string; to?: string }): { from: Date; to: 
 }
 
 function parseId(raw: string): number | null {
-  const id = Number(raw);
-  return Number.isInteger(id) && id > 0 ? id : null;
+  return decodeId(raw);
 }
 
 export class AnalyticsController {

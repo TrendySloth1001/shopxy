@@ -35,7 +35,7 @@ import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 class InvoiceDetailPage extends StatefulWidget {
   const InvoiceDetailPage({super.key, required this.invoiceId});
-  final int invoiceId;
+  final String invoiceId;
 
   @override
   State<InvoiceDetailPage> createState() => _InvoiceDetailPageState();

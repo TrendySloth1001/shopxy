@@ -11,9 +11,9 @@ class ChallanDto {
   }
 
   static ChallanItem _itemFromJson(Map<String, dynamic> j) => ChallanItem(
-        id: j['id'] as int,
-        challanId: j['challanId'] as int,
-        productId: j['productId'] as int,
+        id: j['id'].toString(),
+        challanId: j['challanId'].toString(),
+        productId: j['productId'].toString(),
         productName: j['productName'] as String,
         productSku: j['productSku'] as String,
         unit: j['unit'] as String? ?? 'PCS',
@@ -23,7 +23,7 @@ class ChallanDto {
   static ChallanInvoiceRef? _invoiceRefFromJson(Map<String, dynamic>? j) {
     if (j == null) return null;
     return ChallanInvoiceRef(
-      id: j['id'] as int,
+      id: j['id'].toString(),
       invoiceNo: j['invoiceNo'] as String,
       status: j['status'] as String,
     );
@@ -33,14 +33,14 @@ class ChallanDto {
     final itemsList = j['items'] as List<dynamic>?;
     final count = (j['_count'] as Map<String, dynamic>?)?['items'] as int?;
     return Challan(
-      id: j['id'] as int,
+      id: j['id'].toString(),
       challanNo: j['challanNo'] as String,
       status: j['status'] as String,
-      partyId: j['partyId'] as int?,
+      partyId: j['partyId']?.toString(),
       partyName: j['partyName'] as String,
       partyPhone: j['partyPhone'] as String?,
       note: j['note'] as String?,
-      invoiceId: j['invoiceId'] as int?,
+      invoiceId: j['invoiceId']?.toString(),
       invoice: _invoiceRefFromJson(j['invoice'] as Map<String, dynamic>?),
       items: itemsList?.map((e) => _itemFromJson(e as Map<String, dynamic>)).toList() ?? [],
       itemCount: count ?? itemsList?.length ?? 0,
@@ -49,7 +49,7 @@ class ChallanDto {
   }
 
   static Map<String, dynamic> toCreateJson({
-    int? partyId,
+    String? partyId,
     String? partyName,
     String? partyPhone,
     String? note,

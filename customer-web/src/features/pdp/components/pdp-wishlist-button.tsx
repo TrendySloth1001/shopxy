@@ -7,7 +7,7 @@ import { useAuth } from "@/features/auth/auth-context";
 import { toggleWishlist, getWishlistIds } from "../api";
 
 interface Props {
-  productId: number;
+  productId: string;
 }
 
 export function PdpWishlistButton({ productId }: Props) {

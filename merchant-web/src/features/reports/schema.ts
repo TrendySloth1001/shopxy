@@ -27,7 +27,7 @@ export const salesReportSchema = z
     topProducts: z
       .array(
         z.object({
-          productId: z.number().nullish(),
+          productId: z.coerce.string().nullish(),
           productName: z.string().nullish(),
           productSku: z.string().nullish(),
           quantity: dailyNum,
@@ -151,7 +151,7 @@ export const soldItemSchema = z.object({
   unit: z.string().nullish(),
   quantity: dailyNum,
   total: dailyNum,
-  invoiceId: z.number().nullish(),
+  invoiceId: z.coerce.string().nullish(),
   invoiceNo: z.string().nullish(),
   soldAt: z.string(),
 });
@@ -179,7 +179,7 @@ export type SoldItemsPage = z.infer<typeof soldItemsPageSchema>;
 
 /** One aggregated product row in the P&L "products sold" summary. */
 export const soldProductSchema = z.object({
-  productId: z.number(),
+  productId: z.coerce.string(),
   productName: z.string().nullish(),
   productSku: z.string().nullish(),
   unit: z.string().nullish(),

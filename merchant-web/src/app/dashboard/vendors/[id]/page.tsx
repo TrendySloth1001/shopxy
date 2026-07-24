@@ -55,7 +55,7 @@ const BALANCE_PUCK: Record<"owe" | "settled" | "advance", string> = {
 export default function VendorDetailPage() {
   const t = useTranslations("vendors");
   const params = useParams<{ id: string }>();
-  const id = Number(params.id);
+  const id = params.id;
 
   const [overview, setOverview] = useState<VendorOverview | null>(null);
   const [ledger, setLedger] = useState<Ledger | null>(null);

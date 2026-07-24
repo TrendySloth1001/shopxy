@@ -13,10 +13,10 @@ class ReturnsRemoteDataSource {
   const ReturnsRemoteDataSource(this._client);
   final ApiClient _client;
 
-  Future<int> submit({
-    required int parentOrderId,
-    required int shopOrderId,
-    required List<({int purchaseRequestItemId, double quantity, String reason})> items,
+  Future<String> submit({
+    required String parentOrderId,
+    required String shopOrderId,
+    required List<({String purchaseRequestItemId, double quantity, String reason})> items,
     String? note,
   }) async {
     final res = await _client.post(
@@ -38,7 +38,7 @@ class ReturnsRemoteDataSource {
       throw Exception(body);
     }
     final json = jsonDecode(res.body) as Map<String, dynamic>;
-    return json['id'] as int;
+    return json['id'].toString();
   }
 
   Future<List<ReturnRequest>> list({int page = 1, int limit = 30}) async {
@@ -56,7 +56,7 @@ class ReturnsRemoteDataSource {
         .toList();
   }
 
-  Future<ReturnRequest> getById(int id) async {
+  Future<ReturnRequest> getById(String id) async {
     final res = await _client.get('/me/returns/$id');
     if (res.statusCode == 404) throw Exception('Return not found');
     if (res.statusCode != 200) {
@@ -67,7 +67,7 @@ class ReturnsRemoteDataSource {
     );
   }
 
-  Future<void> cancel(int id) async {
+  Future<void> cancel(String id) async {
     final res = await _client.post('/me/returns/$id/cancel');
     if (res.statusCode == 204) return;
     throw Exception(_decodeError(res.body));

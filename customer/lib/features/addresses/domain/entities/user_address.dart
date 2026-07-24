@@ -16,7 +16,7 @@ class UserAddress {
     this.landmark,
   });
 
-  final int id;
+  final String id;
   final String? label;
   final String fullName;
   final String phone;
@@ -36,7 +36,7 @@ class UserAddress {
   }
 
   factory UserAddress.fromJson(Map<String, dynamic> j) => UserAddress(
-        id: j['id'] as int,
+        id: j['id'].toString(),
         label: j['label'] as String?,
         fullName: j['fullName'] as String,
         phone: j['phone'] as String,

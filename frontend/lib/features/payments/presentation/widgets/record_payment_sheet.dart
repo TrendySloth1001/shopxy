@@ -43,23 +43,23 @@ class RecordPaymentSheet extends StatefulWidget {
        );
 
   final String type;
-  final int? partyId;
-  final int? vendorId;
+  final String? partyId;
+  final String? vendorId;
   final String? partyName;
   final String? vendorName;
   final double? initialAmount;
-  final int? lockedInvoiceId;
+  final String? lockedInvoiceId;
   final String? lockedInvoiceLabel;
 
   static Future<Payment?> show(
     BuildContext context, {
     required String type,
-    int? partyId,
-    int? vendorId,
+    String? partyId,
+    String? vendorId,
     String? partyName,
     String? vendorName,
     double? initialAmount,
-    int? lockedInvoiceId,
+    String? lockedInvoiceId,
     String? lockedInvoiceLabel,
   }) {
     return showModalBottomSheet<Payment>(
@@ -102,7 +102,7 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
   String _mode = 'CASH';
   DateTime _date = DateTime.now();
   bool _allocate = false;
-  int? _selectedInvoiceId;
+  String? _selectedInvoiceId;
   List<LedgerEntry> _openInvoices = const [];
   bool _loadingInvoices = false;
   // Shown inline inside the sheet. A snackbar via ScaffoldMessenger renders at
@@ -349,7 +349,7 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
                         ),
                       )
                     else
-                      DropdownButtonFormField<int>(
+                      DropdownButtonFormField<String>(
                         initialValue: _selectedInvoiceId,
                         decoration: InputDecoration(
                           labelText: l10n.paymentsInvoiceLabel,

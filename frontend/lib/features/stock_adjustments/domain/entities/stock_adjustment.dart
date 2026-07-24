@@ -10,8 +10,8 @@ class StockAdjustmentItem {
     this.note,
   });
 
-  final int id;
-  final int productId;
+  final String id;
+  final String productId;
   final String productName;
   final String productSku;
   final String unit;
@@ -33,7 +33,7 @@ class StockAdjustment {
     this.itemCount,
   });
 
-  final int id;
+  final String id;
   final String adjustmentNo;
   final String reasonCode;
   final String direction;

@@ -44,15 +44,15 @@ class _RequestQuotationPageState extends State<RequestQuotationPage> {
   String _query = '';
 
   /// Selected category id, or null for "All".
-  int? _categoryId;
+  String? _categoryId;
 
   /// productId → (product, qty).
-  final Map<int, ({MarketplaceProduct product, int qty})> _basket = {};
+  final Map<String, ({MarketplaceProduct product, int qty})> _basket = {};
 
   /// Distinct categories present in this shop's catalogue, with a count
   /// of how many products fall under each. Sorted by name.
   List<({ProductCategoryRef cat, int count})> get _categories {
-    final byId = <int, ({ProductCategoryRef cat, int count})>{};
+    final byId = <String, ({ProductCategoryRef cat, int count})>{};
     for (final p in _products) {
       final c = p.category;
       if (c == null) continue;
@@ -410,11 +410,11 @@ class _CatalogueBody extends StatelessWidget {
   });
 
   final List<({ProductCategoryRef cat, int count})> categories;
-  final int? categoryId;
+  final String? categoryId;
   final List<MarketplaceProduct> visible;
-  final Map<int, ({MarketplaceProduct product, int qty})> basket;
+  final Map<String, ({MarketplaceProduct product, int qty})> basket;
   final ValueChanged<String> onQuery;
-  final ValueChanged<int?> onCategory;
+  final ValueChanged<String?> onCategory;
   final void Function(MarketplaceProduct, int) onQty;
   final void Function(MarketplaceProduct) onView;
 
@@ -470,8 +470,8 @@ class _CategoryChips extends StatelessWidget {
     required this.onSelect,
   });
   final List<({ProductCategoryRef cat, int count})> categories;
-  final int? selected;
-  final ValueChanged<int?> onSelect;
+  final String? selected;
+  final ValueChanged<String?> onSelect;
 
   @override
   Widget build(BuildContext context) {

@@ -11,7 +11,7 @@ import { FormSkeleton } from "@/shared/ui/skeleton";
 export default function EditPartyPage() {
   const t = useTranslations("parties");
   const params = useParams<{ id: string }>();
-  const id = Number(params.id);
+  const id = params.id;
   const [party, setParty] = useState<Party | null>(null);
   const [error, setError] = useState<string | null>(null);
 

@@ -46,14 +46,14 @@ class MerchantReturnEvent {
     required this.occurredAt,
     this.note,
   });
-  final int id;
+  final String id;
   final String type;
   final DateTime occurredAt;
   final String? note;
 
   factory MerchantReturnEvent.fromJson(Map<String, dynamic> j) =>
       MerchantReturnEvent(
-        id: j['id'] as int,
+        id: j['id'].toString(),
         type: j['type'] as String,
         occurredAt: DateTime.parse(j['occurredAt'] as String),
         note: j['note'] as String?,
@@ -71,7 +71,7 @@ class MerchantReturnItem {
     required this.reason,
     this.imageUrl,
   });
-  final int id;
+  final String id;
   final String productName;
   final double quantity;
   final String unit;
@@ -87,7 +87,7 @@ class MerchantReturnItem {
         ? (imgs.first as Map<String, dynamic>)['url'] as String?
         : null;
     return MerchantReturnItem(
-      id: j['id'] as int,
+      id: j['id'].toString(),
       productName: pri['productName'] as String,
       quantity: _d(j['quantity']),
       unit: (pri['unit'] as String?) ?? 'PCS',
@@ -118,15 +118,15 @@ class MerchantReturn {
     this.decisionNote,
   });
 
-  final int id;
+  final String id;
   final String status;
   final double refundAmount;
   final String? refundMethod;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final int parentOrderId;
-  final int shopOrderId;
-  final int customerUserId;
+  final String parentOrderId;
+  final String shopOrderId;
+  final String customerUserId;
   final String customerName;
   final String? customerAddress;
   final List<MerchantReturnItem> items;
@@ -148,15 +148,15 @@ class MerchantReturn {
   factory MerchantReturn.fromJson(Map<String, dynamic> j) {
     final request = j['request'] as Map<String, dynamic>;
     return MerchantReturn(
-      id: j['id'] as int,
+      id: j['id'].toString(),
       status: j['status'] as String,
       refundAmount: _d(j['refundAmount']),
       refundMethod: j['refundMethod'] as String?,
       createdAt: DateTime.parse(j['createdAt'] as String),
       updatedAt: DateTime.parse(j['updatedAt'] as String),
-      parentOrderId: (request['customerOrderId'] as num).toInt(),
-      shopOrderId: (request['id'] as num).toInt(),
-      customerUserId: (j['customerUserId'] as num).toInt(),
+      parentOrderId: request['customerOrderId'].toString(),
+      shopOrderId: request['id'].toString(),
+      customerUserId: j['customerUserId'].toString(),
       customerName: (request['customerName'] as String?) ?? 'Customer',
       customerAddress: request['customerAddress'] as String?,
       items: ((j['items'] as List?) ?? const [])

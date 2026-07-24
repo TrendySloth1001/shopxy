@@ -19,7 +19,7 @@ class AdminPlatformBankOffer {
     this.updatedAt,
   });
 
-  final int id;
+  final String id;
   final String bank;
   final String cardType;
   final String discountType; // 'PERCENT' | 'FLAT'
@@ -53,7 +53,7 @@ class AdminPlatformBankOffer {
 
   factory AdminPlatformBankOffer.fromJson(Map<String, dynamic> j) =>
       AdminPlatformBankOffer(
-        id: (j['id'] as num).toInt(),
+        id: j['id'].toString(),
         bank: (j['bank'] as String?) ?? '',
         cardType: (j['cardType'] as String?) ?? 'ANY',
         discountType: (j['discountType'] as String?) ?? 'PERCENT',

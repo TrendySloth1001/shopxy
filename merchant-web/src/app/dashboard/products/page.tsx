@@ -93,7 +93,7 @@ function ProductsListInner() {
   const [error, setError] = useState<string | null>(null);
   const [nonce, setNonce] = useState(0);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [togglingId, setTogglingId] = useState<number | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
   const [toggleError, setToggleError] = useState<string | null>(null);
 
   // Grid (masonry) vs list. Grid is the default (matches the Flutter app);

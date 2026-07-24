@@ -31,7 +31,7 @@ const BACK = "/dashboard/quotations";
 export default function QuotationDetailPage() {
   const t = useTranslations("quotations");
   const params = useParams<{ id: string }>();
-  const id = Number(params.id);
+  const id = params.id;
 
   const [quote, setQuote] = useState<Quotation | null>(null);
   const [loading, setLoading] = useState(true);

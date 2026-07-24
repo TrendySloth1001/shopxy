@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
+import { decodeId } from '../../shared/ids/publicId.js';
 import { authService } from './auth.service.js';
 import { totpService } from './totp.service.js';
 import { loginAlertsService } from './loginAlerts.service.js';
@@ -555,8 +556,8 @@ export async function listSessions(req: Request, res: Response) {
 
 /// DELETE /auth/sessions/:id — revoke one session (signs that device out now).
 export async function revokeSessionById(req: Request, res: Response) {
-  const id = Number(req.params.id);
-  if (!Number.isInteger(id) || id <= 0) {
+  const id = decodeId(req.params.id);
+  if (id === null) {
     res.status(400).json({ error: 'Invalid session id' });
     return;
   }

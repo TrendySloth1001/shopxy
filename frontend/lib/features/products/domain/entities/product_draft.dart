@@ -27,7 +27,7 @@ class ProductDraft {
   final double? stockQuantity;
   final double? lowStockThreshold;
   final String? unit;
-  final int? categoryId;
+  final String? categoryId;
 
   bool get hasAnyValue {
     return (name?.trim().isNotEmpty ?? false) ||

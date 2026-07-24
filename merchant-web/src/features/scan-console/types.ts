@@ -11,7 +11,7 @@ export type Ticket = z.infer<typeof ticketSchema>;
 /** A single scanned item as broadcast by the backend over the WebSocket. */
 export const scanItemSchema = z.object({
   scanId: z.string(),
-  productId: z.number(),
+  productId: z.coerce.string(),
   name: z.string(),
   sku: z.string(),
   barcode: z.string().nullable(),
@@ -34,7 +34,7 @@ export type Presence = z.infer<typeof presenceSchema>;
 export const scanEventSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("connected"),
-    shopId: z.number(),
+    shopId: z.coerce.string(),
     role: z.enum(["scanner", "console"]),
     presence: presenceSchema,
   }),
@@ -56,7 +56,7 @@ export type ScanEvent = z.infer<typeof scanEventSchema>;
  * again bumps it, POS-style) and the time/price of the latest scan.
  */
 export type ConsoleRow = {
-  productId: number;
+  productId: string;
   name: string;
   sku: string;
   barcode: string | null;

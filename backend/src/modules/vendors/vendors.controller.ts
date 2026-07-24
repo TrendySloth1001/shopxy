@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { decodeId } from '../../shared/ids/publicId.js';
 import { z } from 'zod';
 import { parsePagination, paginatedResponse } from '../../shared/http/pagination.js';
 import { vendorsService } from './vendors.service.js';
@@ -39,8 +40,7 @@ const updateVendorSchema = z
   .refine((d) => Object.keys(d).length > 0, { message: 'At least one field required' });
 
 function parseId(raw: string): number | null {
-  const id = Number(raw);
-  return Number.isInteger(id) && id > 0 ? id : null;
+  return decodeId(raw);
 }
 
 function requireShopId(req: Request, res: Response): number | null {

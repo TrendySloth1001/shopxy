@@ -85,13 +85,13 @@ function OrderDetailContent({
   orderId,
   initialToast,
 }: {
-  orderId: number;
+  orderId: string;
   initialToast?: string;
 }) {
   const [order, setOrder] = useState<CustomerOrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [cancellingChildId, setCancellingChildId] = useState<number | null>(null);
+  const [cancellingChildId, setCancellingChildId] = useState<string | null>(null);
   const [cancelConfirmChild, setCancelConfirmChild] = useState<ShopOrderDetail | null>(null);
   const [reordering, setReordering] = useState(false);
   const [paying, setPaying] = useState(false);
@@ -593,7 +593,7 @@ function ShopSection({
   packageIndex?: number;
   packageCount: number;
   cancelling: boolean;
-  parentOrderId: number;
+  parentOrderId: string;
   onCancel: () => void;
   onRequestReturn: () => void;
 }) {
@@ -820,7 +820,7 @@ export default function OrderDetailPage({
 }) {
   const { id } = use(params);
   const { toast } = use(searchParams);
-  const orderId = parseInt(id, 10);
+  const orderId = id;
 
   return (
     <RequireAuth>

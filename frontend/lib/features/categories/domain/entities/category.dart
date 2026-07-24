@@ -14,7 +14,7 @@ class Category {
     this.parentId,
   });
 
-  final int id;
+  final String id;
   final String name;
   final String? description;
   final String? imageUrl;
@@ -25,7 +25,7 @@ class Category {
   final DateTime createdAt;
   final DateTime updatedAt;
   final String? slug;
-  final int? parentId;
+  final String? parentId;
 }
 
 /// Same Category fields plus child categories — what GET /categories/tree

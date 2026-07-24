@@ -67,14 +67,14 @@ export async function fetchCategoryTree(): Promise<CategoryNode[]> {
 
 const CategoryProductsResponseSchema = z.object({
   category: z.object({
-    id: z.number(),
+    id: z.coerce.string(),
     name: z.string(),
     slug: z.string(),
     imageUrl: z.string().nullable().optional(),
     iconName: z.string().nullable().optional(),
     children: z
       .array(
-        z.object({ id: z.number(), name: z.string(), slug: z.string(), imageUrl: z.string().nullable().optional() }),
+        z.object({ id: z.coerce.string(), name: z.string(), slug: z.string(), imageUrl: z.string().nullable().optional() }),
       )
       .default([]),
   }),
@@ -83,12 +83,12 @@ const CategoryProductsResponseSchema = z.object({
 });
 
 export type CategoryDetail = {
-  id: number;
+  id: string;
   name: string;
   slug: string;
   imageUrl: string | null;
   iconName: string | null;
-  children: { id: number; name: string; slug: string; imageUrl?: string | null }[];
+  children: { id: string; name: string; slug: string; imageUrl?: string | null }[];
 };
 
 export async function fetchCategoryProducts(

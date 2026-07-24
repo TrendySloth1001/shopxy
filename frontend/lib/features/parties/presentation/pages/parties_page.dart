@@ -49,7 +49,7 @@ class _PartiesPageState extends State<PartiesPage> {
 
   /// Most recent invitation we've sent for this party, if any.
   /// Outgoing is already createdAt DESC so first match wins.
-  Invitation? _inviteFor(int partyId, List<Invitation> outgoing) {
+  Invitation? _inviteFor(String partyId, List<Invitation> outgoing) {
     for (final i in outgoing) {
       if (i.linkType == InviteLinkType.party && i.partyId == partyId) {
         return i;
@@ -209,7 +209,7 @@ class _PartiesPageState extends State<PartiesPage> {
     if (mounted) notifs.loadOutgoing();
   }
 
-  Future<void> _cancelInvite(BuildContext context, int invitationId) async {
+  Future<void> _cancelInvite(BuildContext context, String invitationId) async {
     final l10n = AppLocalizations.of(context);
     final confirmed = await AppConfirmDialog.show(
       context,
@@ -374,7 +374,7 @@ class _PartyTile extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onInvite;
-  final ValueChanged<int> onCancelInvite;
+  final ValueChanged<String> onCancelInvite;
 
   @override
   Widget build(BuildContext context) {

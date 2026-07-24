@@ -1,4 +1,6 @@
 import { Request, Response } from 'express';
+import { zPublicId } from '../../shared/ids/zPublicId.js';
+import { decodeId } from '../../shared/ids/publicId.js';
 import { BannerPlacement } from '@prisma/client';
 import { z } from 'zod';
 import { bannersService } from './banners.service.js';
@@ -50,7 +52,7 @@ const replaceBannerProductsSchema = z.object({
   items: z
     .array(
       z.object({
-        productId: z.number().int().positive(),
+        productId: zPublicId,
         discountType: z.enum(['PERCENT', 'AMOUNT']).optional(),
         discountValue: z.number().min(0).max(1_000_000).optional(),
         discountPct: z.number().int().min(0).max(90).optional(),
@@ -66,8 +68,7 @@ const replaceBannerProductsSchema = z.object({
 });
 
 function parseId(raw: string): number | null {
-  const id = Number(raw);
-  return Number.isInteger(id) && id > 0 ? id : null;
+  return decodeId(raw);
 }
 
 function toDate(v: string | null | undefined): Date | null | undefined {

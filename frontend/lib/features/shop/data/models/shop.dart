@@ -37,7 +37,7 @@ class Shop {
     this.operatingHours,
   });
 
-  final int id;
+  final String id;
   final String name;
   final String slug;
   final String? tagline;
@@ -74,7 +74,7 @@ class Shop {
   final Map<String, List<String>>? operatingHours;
 
   factory Shop.fromJson(Map<String, dynamic> json) => Shop(
-        id: json['id'] as int,
+        id: json['id'].toString(),
         name: json['name'] as String,
         slug: json['slug'] as String,
         tagline: json['tagline'] as String?,

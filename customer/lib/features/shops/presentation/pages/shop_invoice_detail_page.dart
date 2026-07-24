@@ -21,7 +21,7 @@ class ShopInvoiceDetailPage extends StatefulWidget {
   });
 
   final LinkedShop shop;
-  final int invoiceId;
+  final String invoiceId;
 
   @override
   State<ShopInvoiceDetailPage> createState() => _ShopInvoiceDetailPageState();

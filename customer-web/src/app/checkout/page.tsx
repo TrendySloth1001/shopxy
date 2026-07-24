@@ -60,7 +60,7 @@ function CheckoutInner() {
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
   const [addressesLoading, setAddressesLoading] = useState(true);
   const [addressesError, setAddressesError] = useState<string | null>(null);
-  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [showAddressSheet, setShowAddressSheet] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
 
@@ -253,7 +253,7 @@ function CheckoutInner() {
     }
   }
 
-  async function startOnlinePayment(orderId: number): Promise<PayAttemptOutcome> {
+  async function startOnlinePayment(orderId: string): Promise<PayAttemptOutcome> {
     try {
       const session = await initiatePayment(orderId);
       const result = await openRazorpayCheckout(session as PaySession, {
@@ -287,7 +287,7 @@ function CheckoutInner() {
 
   // ── Groups by shop ────────────────────────────────────────────────────────
   const shopGroups = lines.reduce<
-    Map<number, { name: string; slug: string; lines: typeof lines }>
+    Map<string, { name: string; slug: string; lines: typeof lines }>
   >((map, line) => {
     const shopId = line.product.shop.id;
     if (!map.has(shopId)) {
@@ -1103,7 +1103,7 @@ function StickyBillRow({
 
 interface OrderErrorBody {
   error?: string;
-  details?: { productId: number; name: string; oldPrice: number; newPrice: number }[];
+  details?: { productId: string; name: string; oldPrice: number; newPrice: number }[];
 }
 
 function friendlyOrderError(msg: string, body?: OrderErrorBody): string {

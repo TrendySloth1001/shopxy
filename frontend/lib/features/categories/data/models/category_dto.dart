@@ -3,7 +3,7 @@ import 'package:shopxy/features/categories/domain/entities/category.dart';
 class CategoryDto {
   static Category fromJson(Map<String, dynamic> json) {
     return Category(
-      id: json['id'] as int,
+      id: json['id'].toString(),
       name: json['name'] as String,
       description: json['description'] as String?,
       imageUrl: json['imageUrl'] as String?,
@@ -16,7 +16,7 @@ class CategoryDto {
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       slug: json['slug'] as String?,
-      parentId: json['parentId'] as int?,
+      parentId: json['parentId']?.toString(),
     );
   }
 
@@ -36,7 +36,7 @@ class CategoryDto {
     String? imageUrl,
     String? iconName,
     int? sortOrder,
-    int? parentId,
+    String? parentId,
   }) {
     final data = <String, dynamic>{
       'name': name,

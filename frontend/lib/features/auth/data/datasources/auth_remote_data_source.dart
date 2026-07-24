@@ -26,7 +26,7 @@ class SessionInfo {
     required this.current,
   });
 
-  final int id;
+  final String id;
   final String device; // friendly label ("Chrome on Windows", "ShopXY app")
   final String? where; // masked IP
   final DateTime createdAt;
@@ -34,7 +34,7 @@ class SessionInfo {
   final bool current; // the session making this request
 
   factory SessionInfo.fromJson(Map<String, dynamic> j) => SessionInfo(
-    id: j['id'] as int,
+    id: j['id'].toString(),
     device: (j['device'] as String?) ?? 'Unknown device',
     where: j['where'] as String?,
     createdAt: DateTime.parse(j['createdAt'] as String),
@@ -154,7 +154,7 @@ class AuthRemoteDataSource {
   }
 
   /// Revoke one session — signs that device out immediately.
-  Future<void> revokeSession(int id) async {
+  Future<void> revokeSession(String id) async {
     final res = await _client.delete('/auth/sessions/$id');
     if (res.statusCode != 204) {
       throw Exception('Could not sign out that device.');

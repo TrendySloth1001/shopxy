@@ -54,7 +54,7 @@ function ReturnDetailSkeleton() {
 
 // ─── Detail content ────────────────────────────────────────────────────────
 
-function ReturnDetailContent({ returnId }: { returnId: number }) {
+function ReturnDetailContent({ returnId }: { returnId: string }) {
   const [data, setData] = useState<ReturnRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -284,7 +284,7 @@ export default function ReturnDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const returnId = parseInt(id, 10);
+  const returnId = id;
 
   return (
     <RequireAuth>

@@ -3,8 +3,8 @@ import 'package:shopxy/features/products/domain/entities/product.dart';
 
 class ProductDto {
   static ProductImage imageFromJson(Map<String, dynamic> json) => ProductImage(
-        id: json['id'] as int,
-        productId: json['productId'] as int,
+        id: json['id'].toString(),
+        productId: json['productId'].toString(),
         url: json['url'] as String,
         sortOrder: json['sortOrder'] as int? ?? 0,
         createdAt: DateTime.parse(json['createdAt'] as String),
@@ -15,7 +15,7 @@ class ProductDto {
   static Product fromJson(Map<String, dynamic> json) {
     final imagesJson = json['images'] as List<dynamic>?;
     return Product(
-      id: json['id'] as int,
+      id: json['id'].toString(),
       name: json['name'] as String,
       description: json['description'] as String?,
       sku: json['sku'] as String,
@@ -29,7 +29,7 @@ class ProductDto {
       stockQuantity: _toDouble(json['stockQuantity']),
       lowStockThreshold: _toDouble(json['lowStockThreshold']),
       unit: json['unit'] as String? ?? 'PCS',
-      categoryId: json['categoryId'] as int?,
+      categoryId: json['categoryId']?.toString(),
       category: json['category'] != null
           ? CategoryDto.fromJson(json['category'] as Map<String, dynamic>)
           : null,
@@ -39,7 +39,7 @@ class ProductDto {
       images: imagesJson?.map((e) => _imageFromJson(e as Map<String, dynamic>)).toList() ?? [],
       lastStockInAt: _parseDate(json['lastStockInAt']),
       lastStockOutAt: _parseDate(json['lastStockOutAt']),
-      lastVendorId: (json['lastVendor'] as Map<String, dynamic>?)?['id'] as int?,
+      lastVendorId: (json['lastVendor'] as Map<String, dynamic>?)?['id']?.toString(),
       lastVendorName:
           (json['lastVendor'] as Map<String, dynamic>?)?['name'] as String?,
       isPublished: json['isPublished'] as bool? ?? false,
@@ -107,7 +107,7 @@ class ProductDto {
     double? stockQuantity,
     double? lowStockThreshold,
     String? unit,
-    int? categoryId,
+    String? categoryId,
     List<String>? tags,
     List<String>? highlights,
     List<SpecGroup>? specs,
@@ -157,7 +157,7 @@ class ProductDto {
     double? taxPercent,
     double? lowStockThreshold,
     String? unit,
-    int? categoryId,
+    String? categoryId,
     bool? isActive,
     bool? isPublished,
     List<String>? tags,

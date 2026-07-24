@@ -11,7 +11,7 @@ export type StockType = (typeof STOCK_TYPES)[number];
 
 /** A selectable vendor from `GET /stock/suppliers`. */
 export const supplierVendorSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   name: z.string(),
   phone: z.string().nullish(),
 });
@@ -32,18 +32,18 @@ export type SuppliersResponse = z.infer<typeof suppliersResponseSchema>;
 /** `POST /stock` returns the draft invoice it created — we only need its id. */
 export const stockDraftSchema = z.object({
   draftInvoice: z
-    .object({ id: z.number(), invoiceNo: z.string().nullish() })
+    .object({ id: z.coerce.string(), invoiceNo: z.string().nullish() })
     .passthrough(),
 });
 export type StockDraft = z.infer<typeof stockDraftSchema>;
 
 export type CreateStockInput = {
-  productId: number;
+  productId: string;
   type: StockType;
   quantity: number;
   unitPrice?: number;
-  vendorId?: number;
-  partyId?: number;
+  vendorId?: string;
+  partyId?: string;
   note?: string;
 };
 
@@ -61,24 +61,24 @@ const nullableDecimal = z
   .transform((v) => (v === null || v === undefined ? null : Number(v)));
 
 export const stockTxnSchema = z.object({
-  id: z.number(),
-  productId: z.number(),
+  id: z.coerce.string(),
+  productId: z.coerce.string(),
   type: z.string(),
   direction: z.string().nullish(),
   reasonCode: z.string().nullish(),
   sourceType: z.string().nullish(),
-  sourceId: z.number().nullish(),
+  sourceId: z.coerce.string().nullish(),
   quantity: decimalToNumber,
   unitPrice: nullableDecimal,
   stockAfter: nullableDecimal,
-  vendorId: z.number().nullish(),
-  vendor: z.object({ id: z.number(), name: z.string() }).nullish(),
+  vendorId: z.coerce.string().nullish(),
+  vendor: z.object({ id: z.coerce.string(), name: z.string() }).nullish(),
   supplierName: z.string().nullish(),
   purchasePriceMode: z.string().nullish(),
-  reversesId: z.number().nullish(),
+  reversesId: z.coerce.string().nullish(),
   note: z.string().nullish(),
   productUnit: z.string().nullish(),
-  createdBy: z.object({ id: z.number(), name: z.string().nullish() }).nullish(),
+  createdBy: z.object({ id: z.coerce.string(), name: z.string().nullish() }).nullish(),
   createdAt: z.string(),
 });
 export type StockTxn = z.infer<typeof stockTxnSchema>;

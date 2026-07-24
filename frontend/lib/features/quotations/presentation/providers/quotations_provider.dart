@@ -33,7 +33,7 @@ class QuotationsProvider extends ChangeNotifier {
   }
 
   Future<Quotation> create({
-    required int partyId,
+    required String partyId,
     required List<Map<String, dynamic>> items,
     String? note,
     String? placeOfSupplyStateCode,
@@ -54,7 +54,7 @@ class QuotationsProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> cancel(int id) async {
+  Future<void> cancel(String id) async {
     final updated = await _ds.cancel(id);
     _items = [
       for (final q in _items) if (q.id == id) updated else q,
@@ -64,7 +64,7 @@ class QuotationsProvider extends ChangeNotifier {
 
   /// Price + send a customer's REQUESTED quote. Returns the updated quotation.
   Future<Quotation> respond(
-    int id, {
+    String id, {
     required List<Map<String, dynamic>> items,
     String? note,
     String? placeOfSupplyStateCode,
@@ -88,7 +88,7 @@ class QuotationsProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> declineRequest(int id, {String? declineNote}) async {
+  Future<void> declineRequest(String id, {String? declineNote}) async {
     final updated = await _ds.declineRequest(id, declineNote: declineNote);
     _items = [
       for (final q in _items) if (q.id == id) updated else q,

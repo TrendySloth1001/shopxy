@@ -2,9 +2,9 @@ import 'package:shopxy/features/invoices/domain/entities/invoice.dart';
 
 class InvoiceDto {
   static InvoiceItem _itemFromJson(Map<String, dynamic> json) => InvoiceItem(
-    id: json['id'] as int,
-    invoiceId: json['invoiceId'] as int,
-    productId: json['productId'] as int,
+    id: json['id'].toString(),
+    invoiceId: json['invoiceId'].toString(),
+    productId: json['productId'].toString(),
     productName: json['productName'] as String,
     productSku: json['productSku'] as String,
     hsn: json['hsn'] as String?,
@@ -25,7 +25,7 @@ class InvoiceDto {
   static InvoiceVendorRef? _vendorFromJson(Map<String, dynamic>? json) {
     if (json == null) return null;
     return InvoiceVendorRef(
-      id: json['id'] as int,
+      id: json['id'].toString(),
       name: json['name'] as String,
     );
   }
@@ -35,12 +35,12 @@ class InvoiceDto {
     final count = json['_count'] as Map<String, dynamic>?;
     final createdAt = DateTime.parse(json['createdAt'] as String);
     return Invoice(
-      id: json['id'] as int,
+      id: json['id'].toString(),
       invoiceNo: json['invoiceNo'] as String,
       type: json['type'] as String,
       status: json['status'] as String,
-      partyId: json['partyId'] as int?,
-      vendorId: json['vendorId'] as int?,
+      partyId: json['partyId']?.toString(),
+      vendorId: json['vendorId']?.toString(),
       vendor: _vendorFromJson(json['vendor'] as Map<String, dynamic>?),
       customerName: json['customerName'] as String?,
       customerPhone: json['customerPhone'] as String?,
@@ -99,8 +99,8 @@ class InvoiceDto {
 
   static Map<String, dynamic> toCreateJson({
     required String type,
-    int? vendorId,
-    int? partyId,
+    String? vendorId,
+    String? partyId,
     String? customerName,
     String? customerPhone,
     String? customerGstin,

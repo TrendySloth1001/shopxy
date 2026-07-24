@@ -65,8 +65,8 @@ function CategoryPills({
   onSelect,
 }: {
   categories: CatalogCategory[];
-  active: number | null;
-  onSelect: (id: number | null) => void;
+  active: string | null;
+  onSelect: (id: string | null) => void;
 }) {
   return (
     <div className="flex items-center gap-xs overflow-x-auto py-xs scrollbar-hide">
@@ -131,7 +131,7 @@ function CatalogContent({ role: roleRaw, id }: CatalogContentProps) {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [activeCategory, setActiveCategory] = useState<number | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Debounce search
@@ -194,7 +194,7 @@ function CatalogContent({ role: roleRaw, id }: CatalogContentProps) {
     return () => { cancelled = true; };
   }, [loadProducts]);
 
-  const handleCategorySelect = (id: number | null) => {
+  const handleCategorySelect = (id: string | null) => {
     setActiveCategory(id);
     setPage(1);
   };

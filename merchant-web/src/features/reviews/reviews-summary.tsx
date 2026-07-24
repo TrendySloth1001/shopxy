@@ -13,7 +13,7 @@ import { Stars } from "./stars";
  * reviews) and renders it. Shows an empty state when the product has no
  * reviews yet, so the section is always informative.
  */
-export function ReviewsSummary({ productId }: { productId: number }) {
+export function ReviewsSummary({ productId }: { productId: string }) {
   const t = useTranslations("common");
   const [summary, setSummary] = useState<ReviewSummary | null>(null);
   const [loading, setLoading] = useState(true);

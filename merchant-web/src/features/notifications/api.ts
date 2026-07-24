@@ -40,7 +40,7 @@ export function getUnreadCount(): Promise<number> {
   );
 }
 
-export async function markNotificationRead(id: number): Promise<void> {
+export async function markNotificationRead(id: string): Promise<void> {
   const res = await fetch(`/api/notifications/${id}/read`, { method: "POST" });
   if (!res.ok && res.status !== 204) throw new Error("Could not mark it read.");
 }

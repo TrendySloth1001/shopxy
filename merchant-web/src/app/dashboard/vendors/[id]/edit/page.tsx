@@ -11,7 +11,7 @@ import { FormSkeleton } from "@/shared/ui/skeleton";
 export default function EditVendorPage() {
   const t = useTranslations("vendors");
   const params = useParams<{ id: string }>();
-  const id = Number(params.id);
+  const id = params.id;
   const [vendor, setVendor] = useState<Vendor | null>(null);
   const [error, setError] = useState<string | null>(null);
 

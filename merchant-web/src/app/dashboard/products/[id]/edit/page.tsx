@@ -21,7 +21,7 @@ export default function EditProductPage({
     let active = true;
     void (async () => {
       try {
-        const p = await getProduct(Number(id));
+        const p = await getProduct(id);
         if (active) setProduct(p);
       } catch (e) {
         if (active) setError(e instanceof Error ? e.message : t("detail.loadError"));

@@ -37,7 +37,7 @@ class PendingPaymentsPage extends StatefulWidget {
 class _PendingPaymentsPageState extends State<PendingPaymentsPage> {
   /// Id of the order whose payment sheet is currently open, so only that
   /// row's button shows a spinner.
-  int? _payingId;
+  String? _payingId;
 
   /// Open the Razorpay sheet for [order]'s payable remainder, then
   /// refresh orders so a successful payment flips the list. Mirrors the

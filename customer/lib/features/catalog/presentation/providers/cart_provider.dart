@@ -25,7 +25,7 @@ class PlaceOrderResult {
       : orderId = null,
         shopOrderCount = 0;
 
-  final int? orderId;
+  final String? orderId;
   final int shopOrderCount;
   final String? error;
 
@@ -62,7 +62,7 @@ class CartProvider extends ChangeNotifier {
   final OrdersRemoteDataSource _ordersDs;
   final CartRemoteDataSource _cartDs;
 
-  final Map<int, CartItem> _lines = {};
+  final Map<String, CartItem> _lines = {};
   String _note = '';
   bool _placing = false;
   String? _error;
@@ -97,7 +97,7 @@ class CartProvider extends ChangeNotifier {
   /// is in flight, and `dirty` if the most recent server mutation
   /// failed and the local change has been rolled back. The UI can
   /// peek at this to render a spinner or an error chip.
-  final Map<int, CartLineSyncStatus> _lineSync = {};
+  final Map<String, CartLineSyncStatus> _lineSync = {};
 
   /// Snackbar bus for persistent sync failures. The cart page (or any
   /// screen visible at the time) subscribes and surfaces a snackbar so
@@ -107,7 +107,7 @@ class CartProvider extends ChangeNotifier {
       StreamController<String>.broadcast();
   Stream<String> get syncErrors => _syncErrors.stream;
 
-  CartLineSyncStatus? lineSyncStatus(int productId) => _lineSync[productId];
+  CartLineSyncStatus? lineSyncStatus(String productId) => _lineSync[productId];
 
   List<CartItem> get lines => _lines.values.toList(growable: false);
   int get lineCount => _lines.length;
@@ -137,8 +137,8 @@ class CartProvider extends ChangeNotifier {
   double get mrpTotal => totalPrice + savings;
   /// Distinct shop ids the cart spans. Used by coupon validation to
   /// enforce shop-scoped redemption rules.
-  List<int> get shopIds {
-    final s = <int>{};
+  List<String> get shopIds {
+    final s = <String>{};
     for (final l in _lines.values) {
       final id = l.product.shopId;
       if (id != null) s.add(id);
@@ -150,7 +150,7 @@ class CartProvider extends ChangeNotifier {
   String? get error => _error;
   bool get isEmpty => _lines.isEmpty;
 
-  CartItem? lineFor(int productId) => _lines[productId];
+  CartItem? lineFor(String productId) => _lines[productId];
 
   /// Outcome of an [add]/[setQuantity] call so the UI can show a
   /// targeted snackbar instead of silently dropping the input.
@@ -178,7 +178,7 @@ class CartProvider extends ChangeNotifier {
   /// Sets the quantity directly. Q <= 0 removes the line. If the line
   /// didn't exist, the call is a no-op — callers that want to *create*
   /// a new line should go through [add].
-  AddToCartResult setQuantity(int productId, double quantity) {
+  AddToCartResult setQuantity(String productId, double quantity) {
     if (quantity <= 0) {
       _lines.remove(productId);
       if (!_serverSynced) _hasGuestChanges = true;
@@ -198,7 +198,7 @@ class CartProvider extends ChangeNotifier {
     return capped < quantity ? AddToCartResult.capped : AddToCartResult.ok;
   }
 
-  void remove(int productId) {
+  void remove(String productId) {
     _lines.remove(productId);
     if (!_serverSynced) _hasGuestChanges = true;
     _persist();
@@ -232,19 +232,19 @@ class CartProvider extends ChangeNotifier {
   /// gathered under the `0` key — the checkout UI surfaces those as
   /// "Unknown merchant" so the user can remove them rather than fail
   /// the whole submit.
-  Map<int, List<CartItem>> get linesByShop {
-    final byShop = <int, List<CartItem>>{};
+  Map<String, List<CartItem>> get linesByShop {
+    final byShop = <String, List<CartItem>>{};
     for (final line in _lines.values) {
-      final shopId = line.product.shopId ?? 0;
+      final shopId = line.product.shopId ?? '0';
       (byShop[shopId] ??= []).add(line);
     }
     return byShop;
   }
 
   /// Sum totals for a single shop group.
-  double subtotalForShop(int shopId) {
+  double subtotalForShop(String shopId) {
     return _lines.values
-        .where((l) => (l.product.shopId ?? 0) == shopId)
+        .where((l) => (l.product.shopId ?? '0') == shopId)
         .fold(0.0, (s, l) => s + l.lineTotal);
   }
 
@@ -253,7 +253,7 @@ class CartProvider extends ChangeNotifier {
   /// PurchaseRequest per shop. On success the cart is cleared; on
   /// failure the cart is preserved so the user can retry.
   Future<PlaceOrderResult> placeOrder({
-    int? addressId,
+    String? addressId,
     String? couponCode,
   }) async {
     if (_lines.isEmpty) {
@@ -328,13 +328,13 @@ class CartProvider extends ChangeNotifier {
   /// Start an online gateway payment for a just-placed order. Thin delegate to
   /// the orders data source — the checkout page opens the Razorpay sheet with
   /// the returned [GatewayCheckout.clientParams].
-  Future<GatewayCheckout> payForOrder(int orderId) =>
+  Future<GatewayCheckout> payForOrder(String orderId) =>
       _ordersDs.payForOrder(orderId);
 
   /// Confirm-after-sheet: asks the server to settle the payment by checking the
   /// live provider order (a backstop for the webhook, which can't reach a
   /// localhost dev server and may lag in prod). Returns the paymentStatus.
-  Future<String> syncOrderPayment(int orderId) =>
+  Future<String> syncOrderPayment(String orderId) =>
       _ordersDs.syncOrderPayment(orderId);
 
   /// Read the snapshot written by [_persist]. Wishlist/orders providers
@@ -435,7 +435,7 @@ class CartProvider extends ChangeNotifier {
   /// to whatever was there before, flip the line's status to `dirty`,
   /// notify listeners so the UI repaints, and emit a snackbar event
   /// so the user is told the change didn't stick.
-  void _syncLineToServer(int productId, double quantity) {
+  void _syncLineToServer(String productId, double quantity) {
     if (!_serverSynced) return;
     // Snapshot the previous line so we can roll back on failure.
     final priorLine = _lines[productId];

@@ -25,7 +25,7 @@ const loadProducts = (s: string) => listProducts({ search: s, limit: "20" }).the
 const loadParties = (s: string) => listParties(s ? { search: s } : undefined);
 const loadVendors = (s: string) => listVendors(s ? { search: s } : undefined);
 
-type Contact = { id: number; name: string; phone?: string | null; gstin?: string | null; stateCode?: string | null };
+type Contact = { id: string; name: string; phone?: string | null; gstin?: string | null; stateCode?: string | null };
 
 export function InvoiceEditor({
   existing,

@@ -15,18 +15,18 @@ class PaymentDto {
     final vendor = json['vendor'] as Map<String, dynamic>?;
     final invoice = json['invoice'] as Map<String, dynamic>?;
     return Payment(
-      id: json['id'] as int,
+      id: json['id'].toString(),
       type: json['type'] as String,
       referenceNo: json['referenceNo'] as String,
       amount: _d(json['amount']),
       mode: json['mode'] as String,
       modeReference: json['modeReference'] as String?,
       paymentDate: DateTime.parse(json['paymentDate'] as String),
-      partyId: json['partyId'] as int?,
+      partyId: json['partyId']?.toString(),
       partyName: party == null ? null : party['name'] as String?,
-      vendorId: json['vendorId'] as int?,
+      vendorId: json['vendorId']?.toString(),
       vendorName: vendor == null ? null : vendor['name'] as String?,
-      invoiceId: json['invoiceId'] as int?,
+      invoiceId: json['invoiceId']?.toString(),
       invoiceNo: invoice == null ? null : invoice['invoiceNo'] as String?,
       note: json['note'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
@@ -48,7 +48,7 @@ class PaymentDto {
   static LedgerEntry _ledgerEntryFromJson(Map<String, dynamic> j) {
     return LedgerEntry(
       kind: j['kind'] as String,
-      id: j['id'] as int,
+      id: j['id'].toString(),
       date: DateTime.parse(j['date'] as String),
       label: j['label'] as String,
       debit: _d(j['debit']),
@@ -57,7 +57,7 @@ class PaymentDto {
       mode: j['mode'] as String?,
       modeReference: j['modeReference'] as String?,
       note: j['note'] as String?,
-      invoiceId: j['invoiceId'] as int?,
+      invoiceId: j['invoiceId']?.toString(),
       documentType: j['documentType'] as String?,
       status: j['status'] as String?,
     );

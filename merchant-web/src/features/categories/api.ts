@@ -26,7 +26,7 @@ export function getCategoryTree(): Promise<CategoryNode[]> {
   );
 }
 
-export function getCategory(id: number): Promise<CategoryBase> {
+export function getCategory(id: string): Promise<CategoryBase> {
   return fetch(`/api/categories/${id}`, { cache: "no-store" }).then((r) =>
     jsonOrThrow(r, (raw) => categoryDetailSchema.parse(raw), "Could not load the category."),
   );

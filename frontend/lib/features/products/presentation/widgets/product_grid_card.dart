@@ -345,7 +345,7 @@ class _ProductImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final raw = product.primaryImageUrl ?? '';
-    final (bg, fg) = _accents[product.id % _accents.length];
+    final (bg, fg) = _accents[product.id.hashCode.abs() % _accents.length];
     Widget monogram() => Container(
       color: AppColors.tileBg(bg),
       alignment: Alignment.center,

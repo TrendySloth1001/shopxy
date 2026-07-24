@@ -29,7 +29,7 @@ export function InviteControl({
   linked,
 }: {
   linkType: LinkType;
-  entityId: number;
+  entityId: string;
   name: string;
   email?: string | null;
   linked: boolean;

@@ -20,7 +20,7 @@ import 'package:shopxy_customer/core/icons/app_icon.dart';
 
 class ReturnDetailPage extends StatefulWidget {
   const ReturnDetailPage({super.key, required this.returnId});
-  final int returnId;
+  final String returnId;
 
   @override
   State<ReturnDetailPage> createState() => _ReturnDetailPageState();

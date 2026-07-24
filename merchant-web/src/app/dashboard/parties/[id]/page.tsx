@@ -59,7 +59,7 @@ const BALANCE_PUCK: Record<"owe" | "settled" | "advance", string> = {
 export default function PartyDetailPage() {
   const t = useTranslations("parties");
   const params = useParams<{ id: string }>();
-  const id = Number(params.id);
+  const id = params.id;
 
   const [overview, setOverview] = useState<PartyOverview | null>(null);
   const [ledger, setLedger] = useState<Ledger | null>(null);

@@ -24,7 +24,7 @@ export type AnalyticsTotals = z.infer<typeof analyticsTotalsSchema>;
 
 export const analyticsRowSchema = z
   .object({
-    productId: z.number(),
+    productId: z.coerce.string(),
     productName: z.string().nullish(),
     impressions: n,
     taps: n,

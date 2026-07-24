@@ -26,7 +26,7 @@ export default function CartPage() {
   const { status } = useAuth();
   const router = useRouter();
   const [toast, setToast] = useState<UndoToast | null>(null);
-  const [cappedIds, setCappedIds] = useState<Set<number>>(new Set());
+  const [cappedIds, setCappedIds] = useState<Set<string>>(new Set());
 
   // Reference (MRP) total shown struck-through. Derived from subtotal + savings
   // so it stays consistent with the per-line savings guard (a bad catalog row
@@ -42,7 +42,7 @@ export default function CartPage() {
     })),
   );
 
-  function showCapped(productId: number) {
+  function showCapped(productId: string) {
     setCappedIds((prev) => new Set(prev).add(productId));
     setTimeout(() => {
       setCappedIds((prev) => {
@@ -58,7 +58,7 @@ export default function CartPage() {
     setTimeout(() => setToast(null), 4000);
   }
 
-  async function handleSetQty(productId: number, qty: number, maxQty: number) {
+  async function handleSetQty(productId: string, qty: number, maxQty: number) {
     if (qty > maxQty && maxQty > 0) {
       showCapped(productId);
       return;
@@ -66,7 +66,7 @@ export default function CartPage() {
     await setQty(productId, qty);
   }
 
-  async function handleRemove(productId: number) {
+  async function handleRemove(productId: string) {
     const line = lines.find((l) => l.productId === productId);
     if (!line) return;
     const removed = { ...line };

@@ -33,7 +33,7 @@ export function listProducts(
   );
 }
 
-export function getProduct(id: number): Promise<Product> {
+export function getProduct(id: string): Promise<Product> {
   return fetch(`/api/products/${id}`, { cache: "no-store" }).then((r) =>
     jsonOrThrow<Product>(r, "Could not load the product."),
   );
@@ -48,7 +48,7 @@ export function createProduct(payload: ProductWritePayload): Promise<Product> {
 }
 
 export function updateProduct(
-  id: number,
+  id: string,
   payload: ProductWritePayload,
 ): Promise<Product> {
   return fetch(`/api/products/${id}`, {
@@ -58,7 +58,7 @@ export function updateProduct(
   }).then((r) => jsonOrThrow<Product>(r, "Could not save the product."));
 }
 
-export async function deleteProduct(id: number): Promise<void> {
+export async function deleteProduct(id: string): Promise<void> {
   const res = await fetch(`/api/products/${id}`, { method: "DELETE" });
   if (!res.ok && res.status !== 204) {
     await jsonOrThrow(res, "Could not delete the product.");
@@ -66,7 +66,7 @@ export async function deleteProduct(id: number): Promise<void> {
 }
 
 export function setPublished(
-  id: number,
+  id: string,
   isPublished: boolean,
 ): Promise<Product> {
   return fetch(`/api/products/${id}/publish`, {
@@ -76,7 +76,7 @@ export function setPublished(
   }).then((r) => jsonOrThrow<Product>(r, "Could not update publish state."));
 }
 
-export function addImage(id: number, url: string): Promise<ProductImage> {
+export function addImage(id: string, url: string): Promise<ProductImage> {
   return fetch(`/api/products/${id}/images`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -84,7 +84,7 @@ export function addImage(id: number, url: string): Promise<ProductImage> {
   }).then((r) => jsonOrThrow<ProductImage>(r, "Could not add the image."));
 }
 
-export async function deleteImage(id: number, imageId: number): Promise<void> {
+export async function deleteImage(id: string, imageId: string): Promise<void> {
   const res = await fetch(`/api/products/${id}/images/${imageId}`, {
     method: "DELETE",
   });
@@ -94,8 +94,8 @@ export async function deleteImage(id: number, imageId: number): Promise<void> {
 }
 
 export function reorderImages(
-  id: number,
-  orderedIds: number[],
+  id: string,
+  orderedIds: string[],
 ): Promise<ProductImage[]> {
   return fetch(`/api/products/${id}/images/reorder`, {
     method: "PATCH",
@@ -126,7 +126,7 @@ export function listCustomFieldDefs(): Promise<CustomFieldDef[]> {
 }
 
 export function getProductCustomFields(
-  id: number,
+  id: string,
 ): Promise<CustomFieldValue[]> {
   return fetch(`/api/products/${id}/custom-fields`, { cache: "no-store" }).then(
     (r) => jsonOrThrow<CustomFieldValue[]>(r, "Could not load custom fields."),
@@ -134,8 +134,8 @@ export function getProductCustomFields(
 }
 
 export async function saveProductCustomFields(
-  id: number,
-  values: Array<{ definitionId: number; value: string }>,
+  id: string,
+  values: Array<{ definitionId: string; value: string }>,
 ): Promise<void> {
   const res = await fetch(`/api/products/${id}/custom-fields`, {
     method: "PUT",

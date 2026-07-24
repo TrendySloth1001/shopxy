@@ -14,8 +14,8 @@ class StockAdjustmentsRemoteDataSource {
 
   static StockAdjustmentItem _itemFromJson(Map<String, dynamic> json) {
     return StockAdjustmentItem(
-      id: json['id'] as int,
-      productId: json['productId'] as int,
+      id: json['id'].toString(),
+      productId: json['productId'].toString(),
       productName: json['productName'] as String,
       productSku: json['productSku'] as String,
       unit: json['unit'] as String? ?? 'PCS',
@@ -33,7 +33,7 @@ class StockAdjustmentsRemoteDataSource {
     final createdBy = json['createdBy'] as Map<String, dynamic>?;
     final countMap = json['_count'] as Map<String, dynamic>?;
     return StockAdjustment(
-      id: json['id'] as int,
+      id: json['id'].toString(),
       adjustmentNo: json['adjustmentNo'] as String,
       reasonCode: json['reasonCode'] as String,
       direction: json['direction'] as String,
@@ -57,7 +57,7 @@ class StockAdjustmentsRemoteDataSource {
     return data.map((e) => _fromJson(e as Map<String, dynamic>)).toList();
   }
 
-  Future<StockAdjustment> getById(int id) async {
+  Future<StockAdjustment> getById(String id) async {
     final response = await _client.get('/stock-adjustments/$id');
     return _fromJson(jsonDecode(response.body) as Map<String, dynamic>);
   }
@@ -66,7 +66,7 @@ class StockAdjustmentsRemoteDataSource {
     required String reasonCode,
     String? direction,
     String? note,
-    required List<({int productId, double quantity, double? unitCost, String? note})> items,
+    required List<({String productId, double quantity, double? unitCost, String? note})> items,
   }) async {
     final body = <String, dynamic>{
       'reasonCode': reasonCode,

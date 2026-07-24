@@ -33,7 +33,7 @@ class _AdminCategoryTaxonomyPageState extends State<AdminCategoryTaxonomyPage> {
   List<Category> _flat = []; // flattened for the parent picker
   bool _loading = true;
   String? _error;
-  final Set<int> _expanded = {};
+  final Set<String> _expanded = {};
 
   @override
   void initState() {
@@ -83,12 +83,12 @@ class _AdminCategoryTaxonomyPageState extends State<AdminCategoryTaxonomyPage> {
     if (created == true) await _load();
   }
 
-  Future<void> _createChild(int parentId) async {
+  Future<void> _createChild(String parentId) async {
     final created = await _openEditor(parentId: parentId);
     if (created == true) await _load();
   }
 
-  Future<bool?> _openEditor({Category? existing, int? parentId}) async {
+  Future<bool?> _openEditor({Category? existing, String? parentId}) async {
     return showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -128,8 +128,8 @@ class _AdminCategoryTaxonomyPageState extends State<AdminCategoryTaxonomyPage> {
   /// O(n) walk up via `parentId`. Returns true iff `candidateId` lives
   /// somewhere under `ancestorId`. Used to scrub the parent-picker
   /// option list during re-parenting.
-  bool _isDescendantOf(int candidateId, int ancestorId) {
-    int? cursor = candidateId;
+  bool _isDescendantOf(String candidateId, String ancestorId) {
+    String? cursor = candidateId;
     for (int i = 0; i < 32 && cursor != null; i++) {
       final parent = _flat.firstWhere(
         (c) => c.id == cursor,
@@ -349,10 +349,10 @@ class _CategoryTreeTile extends StatelessWidget {
 
   final CategoryNode node;
   final int depth;
-  final Set<int> expanded;
-  final ValueChanged<int> onToggle;
+  final Set<String> expanded;
+  final ValueChanged<String> onToggle;
   final ValueChanged<Category> onEdit;
-  final ValueChanged<int> onAddChild;
+  final ValueChanged<String> onAddChild;
   final ValueChanged<Category> onDelete;
 
   @override
@@ -492,7 +492,7 @@ class _CategoryEditorSheet extends StatefulWidget {
   });
 
   final Category? existing;
-  final int? initialParentId;
+  final String? initialParentId;
   final List<Category> availableParents;
   final CategoriesRemoteDataSource ds;
 
@@ -505,7 +505,7 @@ class _CategoryEditorSheetState extends State<_CategoryEditorSheet> {
   late final TextEditingController _description;
   late final TextEditingController _imageUrl;
   late final TextEditingController _sortOrder;
-  int? _parentId;
+  String? _parentId;
   bool _isActive = true;
   bool _busy = false;
   String? _error;
@@ -645,7 +645,7 @@ class _CategoryEditorSheetState extends State<_CategoryEditorSheet> {
                 ),
               ),
               const SizedBox(height: AppSizes.md),
-              DropdownButtonFormField<int?>(
+              DropdownButtonFormField<String?>(
                 initialValue: _parentId,
                 decoration: InputDecoration(
                   labelText: l10n.adminCategoryParentLabel,

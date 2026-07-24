@@ -6,7 +6,7 @@ import { submitReview, deleteReview } from "../api";
 import type { Review } from "../types";
 
 interface Props {
-  productId: number;
+  productId: string;
   productName: string;
   /** If set, pre-populates the form for editing */
   existingReview?: Review | null;

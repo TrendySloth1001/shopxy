@@ -181,7 +181,7 @@ function ShiftHistory() {
     return () => { active = false; };
   }, [t]);
 
-  const view = async (id: number) => {
+  const view = async (id: string) => {
     setErr(null);
     try {
       setViewing(await fetchShiftReport(id));
@@ -439,7 +439,7 @@ function ReturnsPanel({ busy, run, onChanged }: { busy: boolean; run: (fn: () =>
   const t = useTranslations("cashier");
   const [invoiceId, setInvoiceId] = useState("");
   const [returnable, setReturnable] = useState<Returnable | null>(null);
-  const [qty, setQty] = useState<Record<number, string>>({});
+  const [qty, setQty] = useState<Record<string, string>>({});
   const [refundMode, setRefundMode] = useState<"CASH" | "UPI" | "CARD" | "OTHER">("CASH");
   const [done, setDone] = useState<string | null>(null);
 
@@ -451,7 +451,7 @@ function ReturnsPanel({ busy, run, onChanged }: { busy: boolean; run: (fn: () =>
         <button
           type="button"
           disabled={busy || !invoiceId}
-          onClick={() => run(async () => { setDone(null); setReturnable(await fetchReturnable(Number(invoiceId))); setQty({}); })}
+          onClick={() => run(async () => { setDone(null); setReturnable(await fetchReturnable(invoiceId)); setQty({}); })}
           className="inline-flex h-10 items-center rounded-button border border-hairline px-lg text-label-md text-ink hover:bg-surface-tint disabled:text-disabled"
         >
           {t("returns.lookUp")}

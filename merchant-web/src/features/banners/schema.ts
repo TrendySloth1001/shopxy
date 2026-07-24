@@ -13,7 +13,7 @@ export const PLACEMENT_LABELS: Record<Placement, string> = {
 
 /** One banner row as returned by the backend `/me/banners` endpoints. */
 export const bannerSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   placement: z.enum(PLACEMENTS),
   imageUrl: z.string(),
   linkUrl: z.string().nullable().optional(),
@@ -32,15 +32,15 @@ export type DiscountType = (typeof DISCOUNT_TYPES)[number];
 
 /** A product pinned to a banner, as returned by `/me/banners/:id/products`. */
 export const bannerProductSchema = z.object({
-  id: z.number(),
-  productId: z.number(),
+  id: z.coerce.string(),
+  productId: z.coerce.string(),
   position: z.number().default(0),
   discountType: z.enum(DISCOUNT_TYPES),
   discountValue: z.coerce.number().default(0),
   salePrice: z.coerce.number().default(0),
   perUnitDiscount: z.coerce.number().default(0),
   product: z.object({
-    id: z.number(),
+    id: z.coerce.string(),
     name: z.string(),
     sku: z.string().nullable().optional(),
     mrp: z.coerce.number().default(0),

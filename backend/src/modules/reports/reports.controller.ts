@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
+import { decodeId } from '../../shared/ids/publicId.js';
 import { reportsService, DateRange } from './reports.service.js';
 import { parsePagination, paginatedResponse } from '../../shared/http/pagination.js';
 
@@ -136,8 +137,8 @@ export class ReportsController {
     if (range === null) return;
     const params = parsePagination(req);
     const search = typeof req.query.search === 'string' ? req.query.search : undefined;
-    const rawPid = Number(req.query.productId);
-    const productId = Number.isInteger(rawPid) && rawPid > 0 ? rawPid : undefined;
+    // Dual-mode: accepts an opaque token or a legacy numeric productId.
+    const productId = decodeId(req.query.productId as string | undefined) ?? undefined;
     const { items, total } = await reportsService.soldItems(shopId, range, {
       ...params,
       search,

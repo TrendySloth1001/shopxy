@@ -12,14 +12,14 @@ import type {
  */
 export class OrderConfirmError extends Error {
   readonly code: string;
-  readonly productId?: number;
+  readonly productId?: string;
   readonly available?: number;
   readonly requested?: number;
 
   constructor(opts: {
     code: string;
     message: string;
-    productId?: number;
+    productId?: string;
     available?: number;
     requested?: number;
   }) {
@@ -53,7 +53,7 @@ export function listOrders(query: Record<string, string>): Promise<OrderList> {
   );
 }
 
-export function getOrder(id: number): Promise<OrderDetail> {
+export function getOrder(id: string): Promise<OrderDetail> {
   return fetch(`/api/orders/${id}`, { cache: "no-store" }).then((r) =>
     jsonOrThrow<OrderDetail>(r, "Could not load the order."),
   );
@@ -68,7 +68,7 @@ export function pendingOrderCount(): Promise<number> {
 
 /** Confirm an order → materialises a SALE invoice. */
 export async function confirmOrder(
-  id: number,
+  id: string,
   note?: string,
 ): Promise<ConfirmResult> {
   const res = await fetch(`/api/orders/${id}/confirm`, {
@@ -80,7 +80,7 @@ export async function confirmOrder(
 
   let body: {
     error?: string;
-    productId?: number;
+    productId?: string;
     available?: number;
     requested?: number;
   } = {};
@@ -121,7 +121,7 @@ export const SHIPPING_MILESTONE_LABELS: Record<ShippingMilestone, string> = {
 
 /** Push a shipping milestone (PACKED…DELIVERED) with optional courier/awb/eta. */
 export async function addShippingEvent(
-  id: number,
+  id: string,
   input: { type: ShippingMilestone; courier?: string; awb?: string; eta?: string; note?: string },
 ): Promise<void> {
   const res = await fetch(`/api/orders/${id}/events`, {
@@ -134,7 +134,7 @@ export async function addShippingEvent(
   }
 }
 
-export async function rejectOrder(id: number, note?: string): Promise<void> {
+export async function rejectOrder(id: string, note?: string): Promise<void> {
   const res = await fetch(`/api/orders/${id}/reject`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

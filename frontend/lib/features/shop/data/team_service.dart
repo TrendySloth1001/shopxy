@@ -16,7 +16,7 @@ class TeamMember {
     this.permissions = const [],
   });
 
-  final int userId;
+  final String userId;
   final String name;
   final String email;
   final String role; // OWNER | STAFF (+ legacy MANAGER/STOCKIST/CASHIER)
@@ -31,7 +31,7 @@ class TeamMember {
   factory TeamMember.fromJson(Map<String, dynamic> j) {
     final user = (j['user'] as Map<String, dynamic>?) ?? const {};
     return TeamMember(
-      userId: user['id'] as int,
+      userId: user['id'].toString(),
       name: (user['name'] as String?) ?? '',
       email: (user['email'] as String?) ?? '',
       role: j['role'] as String,
@@ -55,14 +55,14 @@ class TeamInvite {
     this.expiresAt,
   });
 
-  final int id;
+  final String id;
   final String email;
   final String roleName;
   final List<String> permissions;
   final DateTime? expiresAt;
 
   factory TeamInvite.fromJson(Map<String, dynamic> j) => TeamInvite(
-        id: j['id'] as int,
+        id: j['id'].toString(),
         email: (j['toEmail'] as String?) ?? '',
         roleName: (j['teamRoleName'] as String?) ?? 'Staff',
         permissions: (j['teamPermissions'] as List?)?.cast<String>() ?? const [],
@@ -81,13 +81,13 @@ class TeamRole {
     required this.builtin,
   });
 
-  final int id;
+  final String id;
   final String name;
   final List<String> permissions;
   final bool builtin;
 
   factory TeamRole.fromJson(Map<String, dynamic> j) => TeamRole(
-        id: j['id'] as int,
+        id: j['id'].toString(),
         name: j['name'] as String,
         permissions: (j['permissions'] as List?)?.cast<String>() ?? const [],
         builtin: (j['builtin'] as bool?) ?? false,
@@ -166,7 +166,7 @@ class TeamService {
   }
 
   Future<void> setPermissions({
-    required int userId,
+    required String userId,
     required String roleName,
     required List<String> permissions,
   }) async {
@@ -177,14 +177,14 @@ class TeamService {
     }
   }
 
-  Future<void> removeMember(int userId) async {
+  Future<void> removeMember(String userId) async {
     final res = await _client.delete('/me/team/members/$userId');
     if (res.statusCode != 204) {
       throw Exception(_error(res.body, 'Could not remove member'));
     }
   }
 
-  Future<void> cancelInvite(int inviteId) async {
+  Future<void> cancelInvite(String inviteId) async {
     final res = await _client.delete('/me/team/invites/$inviteId');
     if (res.statusCode != 204 && res.statusCode != 200) {
       throw Exception(_error(res.body, 'Could not cancel invitation'));
@@ -213,7 +213,7 @@ class TeamService {
         (jsonDecode(res.body) as Map<String, dynamic>)['role'] as Map<String, dynamic>);
   }
 
-  Future<TeamRole> updateRole(int id, String name, List<String> permissions) async {
+  Future<TeamRole> updateRole(String id, String name, List<String> permissions) async {
     final res = await _client
         .patch('/me/team/roles/$id', body: {'name': name, 'permissions': permissions});
     if (res.statusCode != 200) {
@@ -223,7 +223,7 @@ class TeamService {
         (jsonDecode(res.body) as Map<String, dynamic>)['role'] as Map<String, dynamic>);
   }
 
-  Future<void> deleteRole(int id) async {
+  Future<void> deleteRole(String id) async {
     final res = await _client.delete('/me/team/roles/$id');
     if (res.statusCode != 204) {
       throw Exception(_error(res.body, 'Could not delete role'));

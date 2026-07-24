@@ -23,11 +23,11 @@ import 'package:shopxy/shared/theme/app_text_styles.dart';
 class CategoryPickerSheet extends StatefulWidget {
   const CategoryPickerSheet({super.key, required this.currentSelectionId});
 
-  final int? currentSelectionId;
+  final String? currentSelectionId;
 
   static Future<CategoryPickerResult?> show(
     BuildContext context, {
-    required int? currentSelectionId,
+    required String? currentSelectionId,
   }) {
     return showModalBottomSheet<CategoryPickerResult>(
       context: context,
@@ -47,7 +47,7 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
   List<CategoryNode> _tree = const [];
   bool _isLoading = true;
   String? _error;
-  final Set<int> _expanded = {};
+  final Set<String> _expanded = {};
 
   @override
   void initState() {
@@ -223,7 +223,7 @@ class _ParentRow extends StatelessWidget {
 
   final CategoryNode parent;
   final bool expanded;
-  final int? currentSelectionId;
+  final String? currentSelectionId;
   final VoidCallback onToggle;
   final ValueChanged<Category?> onPickChild;
 
@@ -428,7 +428,7 @@ class _CategoryThumb extends StatelessWidget {
 /// a `null` result means the sheet was dismissed without choosing.
 class CategoryPickerResult {
   const CategoryPickerResult({required this.categoryId, this.categoryName});
-  final int? categoryId;
+  final String? categoryId;
   final String? categoryName;
 }
 

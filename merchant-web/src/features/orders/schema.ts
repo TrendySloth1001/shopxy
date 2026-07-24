@@ -32,9 +32,9 @@ export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 export const orderPartySchema = z
   .object({
-    id: z.number(),
+    id: z.coerce.string(),
     name: z.string().nullish(),
-    linkedUserId: z.number().nullish(),
+    linkedUserId: z.coerce.string().nullish(),
   })
   .passthrough();
 export type OrderParty = z.infer<typeof orderPartySchema>;
@@ -50,14 +50,14 @@ export type OrderItemPreview = z.infer<typeof orderItemPreviewSchema>;
 /** A single inbox row. */
 export const orderListRowSchema = z
   .object({
-    id: z.number(),
+    id: z.coerce.string(),
     status: z.string(),
     customerName: z.string(),
     customerPhone: z.string().nullish(),
     customerEmail: z.string().nullish(),
     estimatedTotal: num.default(0),
     note: z.string().nullish(),
-    invoiceId: z.number().nullish(),
+    invoiceId: z.coerce.string().nullish(),
     createdAt: z.string(),
     decidedAt: z.string().nullish(),
     party: orderPartySchema.nullish(),
@@ -82,8 +82,8 @@ export type OrderList = z.infer<typeof orderListSchema>;
 /** Detail line item — carries the linked product's live stock + first image. */
 export const orderItemSchema = z
   .object({
-    id: z.number(),
-    productId: z.number(),
+    id: z.coerce.string(),
+    productId: z.coerce.string(),
     productName: z.string(),
     productSku: z.string(),
     unit: z.string().default("PCS"),
@@ -104,7 +104,7 @@ export type OrderItem = z.infer<typeof orderItemSchema>;
 /** Linked invoice with the derived payment summary the backend attaches. */
 export const orderInvoiceSchema = z
   .object({
-    id: z.number(),
+    id: z.coerce.string(),
     invoiceNo: z.string(),
     status: z.string().nullish(),
     total: num.nullish(),
@@ -118,7 +118,7 @@ export type OrderInvoice = z.infer<typeof orderInvoiceSchema>;
 /** Shipping-event timeline entry (PACKED / SHIPPED / …). */
 export const orderEventSchema = z
   .object({
-    id: z.number(),
+    id: z.coerce.string(),
     type: z.string(),
     occurredAt: z.string(),
     courier: z.string().nullish(),
@@ -132,7 +132,7 @@ export type OrderEvent = z.infer<typeof orderEventSchema>;
 export const orderDetailSchema = orderListRowSchema
   .extend({
     customerAddress: z.string().nullish(),
-    customerUserId: z.number().nullish(),
+    customerUserId: z.coerce.string().nullish(),
     decisionNote: z.string().nullish(),
     invoice: orderInvoiceSchema.nullish(),
     items: arr(orderItemSchema),
@@ -144,7 +144,7 @@ export type OrderDetail = z.infer<typeof orderDetailSchema>;
 /** Successful confirm response — the materialised invoice id + number. */
 export const confirmResultSchema = z
   .object({
-    invoice: z.object({ id: z.number(), invoiceNo: z.string() }).passthrough(),
+    invoice: z.object({ id: z.coerce.string(), invoiceNo: z.string() }).passthrough(),
   })
   .passthrough();
 export type ConfirmResult = z.infer<typeof confirmResultSchema>;

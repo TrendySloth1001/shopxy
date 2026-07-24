@@ -26,9 +26,9 @@ export function RecordPaymentModal({
   onDone,
 }: {
   kind: "RECEIPT" | "PAYMENT";
-  partyId?: number;
-  vendorId?: number;
-  invoiceId?: number;
+  partyId?: string;
+  vendorId?: string;
+  invoiceId?: string;
   max?: number;
   title?: string;
   onClose: () => void;

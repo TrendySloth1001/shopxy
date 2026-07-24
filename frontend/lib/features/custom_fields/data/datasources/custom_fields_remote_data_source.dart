@@ -99,7 +99,7 @@ class CustomFieldsRemoteDataSource {
   }
 
   Future<CustomFieldSection> updateSection(
-    int id, {
+    String id, {
     String? name,
     String? icon,
     int? sortOrder,
@@ -120,11 +120,11 @@ class CustomFieldsRemoteDataSource {
     );
   }
 
-  Future<void> deleteSection(int id) async {
+  Future<void> deleteSection(String id) async {
     await _client.delete('/custom-fields/sections/$id');
   }
 
-  Future<List<CustomFieldSection>> reorderSections(List<int> orderedIds) async {
+  Future<List<CustomFieldSection>> reorderSections(List<String> orderedIds) async {
     final response = await _client.patch(
       '/custom-fields/sections/reorder',
       body: {'orderedIds': orderedIds},
@@ -159,7 +159,7 @@ class CustomFieldsRemoteDataSource {
     List<String>? options,
     String? unitSuffix,
     String? icon,
-    int? sectionId,
+    String? sectionId,
     int? sortOrder,
   }) async {
     final response = await _client.post(
@@ -181,7 +181,7 @@ class CustomFieldsRemoteDataSource {
   }
 
   Future<CustomFieldDefinition> updateDefinition(
-    int id, {
+    String id, {
     String? name,
     CustomFieldType? type,
     List<String>? options,
@@ -213,8 +213,8 @@ class CustomFieldsRemoteDataSource {
   /// here is the meaningful "ungroup" signal, while in
   /// [updateDefinition] null fields are stripped from the payload.
   Future<CustomFieldDefinition> assignSection(
-    int definitionId, {
-    required int? sectionId,
+    String definitionId, {
+    required String? sectionId,
   }) async {
     final response = await _client.patch(
       '/custom-fields/$definitionId',
@@ -226,12 +226,12 @@ class CustomFieldsRemoteDataSource {
     );
   }
 
-  Future<void> deleteDefinition(int id) async {
+  Future<void> deleteDefinition(String id) async {
     await _client.delete('/custom-fields/$id');
   }
 
   Future<List<CustomFieldDefinition>> reorderDefinitions(
-    List<int> orderedIds,
+    List<String> orderedIds,
   ) async {
     final response = await _client.patch(
       '/custom-fields/reorder',
@@ -248,7 +248,7 @@ class CustomFieldsRemoteDataSource {
   // ── Per-product values ─────────────────────────────────────────────
 
   Future<List<ProductCustomFieldValue>> listValuesForProduct(
-    int productId,
+    String productId,
   ) async {
     final response = await _client.get('/products/$productId/custom-fields');
     _expectOk(response);
@@ -262,8 +262,8 @@ class CustomFieldsRemoteDataSource {
   /// Bulk-replace values for a product in one call. Empty-string
   /// values clear that field's row.
   Future<List<ProductCustomFieldValue>> bulkSetValuesForProduct(
-    int productId,
-    List<({int definitionId, String value})> entries,
+    String productId,
+    List<({String definitionId, String value})> entries,
   ) async {
     final response = await _client.put(
       '/products/$productId/custom-fields',

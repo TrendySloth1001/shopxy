@@ -15,7 +15,7 @@ class AuthUser {
     this.smsEnabled = false,
   });
 
-  final int id;
+  final String id;
   final String email;
   final String name;
   final String role;
@@ -33,7 +33,7 @@ class AuthUser {
   final bool smsEnabled;
 
   factory AuthUser.fromJson(Map<String, dynamic> j) => AuthUser(
-        id: j['id'] as int,
+        id: j['id'].toString(),
         email: j['email'] as String,
         name: j['name'] as String,
         role: j['role'] as String,

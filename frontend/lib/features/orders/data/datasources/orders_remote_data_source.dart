@@ -16,7 +16,7 @@ class OrderConfirmException implements Exception {
 
   final String code;
   final String message;
-  final int? productId;
+  final String? productId;
   final double? available;
   final double? requested;
 
@@ -62,20 +62,20 @@ class OrdersRemoteDataSource {
     return json['count'] as int? ?? 0;
   }
 
-  Future<MerchantOrderDetail> detail(int id) async {
+  Future<MerchantOrderDetail> detail(String id) async {
     final res = await _client.get('/orders/$id');
     if (res.statusCode != 200) throw Exception('Order not found');
     return MerchantOrderDetail.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  Future<({int invoiceId, String invoiceNo})> confirm(int id, {String? note}) async {
+  Future<({String invoiceId, String invoiceNo})> confirm(String id, {String? note}) async {
     final res = await _client.post('/orders/$id/confirm', body: {
       if (note != null && note.isNotEmpty) 'note': note,
     });
     if (res.statusCode == 200) {
       final json = jsonDecode(res.body) as Map<String, dynamic>;
       final inv = json['invoice'] as Map<String, dynamic>;
-      return (invoiceId: inv['id'] as int, invoiceNo: inv['invoiceNo'] as String);
+      return (invoiceId: inv['id'].toString(), invoiceNo: inv['invoiceNo'] as String);
     }
     Map<String, dynamic> body = const {};
     try {
@@ -86,7 +86,7 @@ class OrdersRemoteDataSource {
     throw OrderConfirmException(
       code: code,
       message: message,
-      productId: body['productId'] as int?,
+      productId: body['productId']?.toString(),
       available: _maybeDouble(body['available']),
       requested: _maybeDouble(body['requested']),
     );
@@ -97,7 +97,7 @@ class OrdersRemoteDataSource {
   /// merchant-web uses: POST /orders/:id/events. RETURNED is not a
   /// postable milestone (PR-H3) — returns run through the returns flow.
   Future<void> addShippingEvent(
-    int id, {
+    String id, {
     required String type,
     String? courier,
     String? awb,
@@ -122,7 +122,7 @@ class OrdersRemoteDataSource {
     );
   }
 
-  Future<void> reject(int id, {String? note}) async {
+  Future<void> reject(String id, {String? note}) async {
     final res = await _client.post('/orders/$id/reject', body: {
       if (note != null && note.isNotEmpty) 'note': note,
     });

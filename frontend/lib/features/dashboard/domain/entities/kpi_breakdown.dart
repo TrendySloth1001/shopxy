@@ -22,14 +22,14 @@ class BreakdownInvoice {
     required this.total,
   });
 
-  final int id;
+  final String id;
   final String invoiceNo;
   final String documentType;
   final String invoiceDate; // ISO string
   final double total;
 
   factory BreakdownInvoice.fromJson(Map<String, dynamic> j) => BreakdownInvoice(
-        id: (j['id'] as num).toInt(),
+        id: j['id'].toString(),
         invoiceNo: j['invoiceNo']?.toString() ?? '',
         documentType: j['documentType']?.toString() ?? 'TAX_INVOICE',
         invoiceDate: j['invoiceDate']?.toString() ?? '',
@@ -48,7 +48,7 @@ class BreakdownParty {
     required this.invoices,
   });
 
-  final int id;
+  final String id;
   final String name;
   final double billed;
 
@@ -63,7 +63,7 @@ class BreakdownParty {
   double get settled => received ?? paid ?? 0;
 
   factory BreakdownParty.fromJson(Map<String, dynamic> j) => BreakdownParty(
-        id: (j['id'] as num).toInt(),
+        id: j['id'].toString(),
         name: j['name']?.toString() ?? '',
         billed: _money(j['billed']),
         received: j.containsKey('received') ? _money(j['received']) : null,

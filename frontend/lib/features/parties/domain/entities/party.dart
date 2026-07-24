@@ -19,7 +19,7 @@ class Party {
     this.invoiceCount = 0,
   });
 
-  final int id;
+  final String id;
   final String name;
   final String? contactName;
   final String? phone;

@@ -25,7 +25,7 @@ async function jsonOrThrow<T>(res: Response, parse: (raw: unknown) => T, fallbac
 
 /** Vendors to choose from in the stock-in form (product-scoped, then all). */
 export function listSuppliers(opts?: {
-  productId?: number;
+  productId?: string;
   q?: string;
   limit?: number;
 }): Promise<SuppliersResponse> {
@@ -39,7 +39,7 @@ export function listSuppliers(opts?: {
 
 /** Stock-ledger rows for a product, optionally filtered by movement type. */
 export function listStockTransactions(opts: {
-  productId: number;
+  productId: string;
   type?: StockType;
   limit?: number;
 }): Promise<StockTxn[]> {

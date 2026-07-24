@@ -24,8 +24,8 @@ export const CHALLAN_STATUS_CLASSES: Record<string, string> = {
 
 export const challanItemSchema = z
   .object({
-    id: z.number().optional(),
-    productId: z.number(),
+    id: z.coerce.string().optional(),
+    productId: z.coerce.string(),
     productName: z.string().nullish(),
     productSku: z.string().nullish(),
     unit: z.string().nullish(),
@@ -36,15 +36,15 @@ export type ChallanItem = z.infer<typeof challanItemSchema>;
 
 export const challanSchema = z
   .object({
-    id: z.number(),
+    id: z.coerce.string(),
     challanNo: z.string(),
     status: z.string(),
-    partyId: z.number().nullish(),
+    partyId: z.coerce.string().nullish(),
     partyName: z.string().nullish(),
     partyPhone: z.string().nullish(),
     note: z.string().nullish(),
-    invoiceId: z.number().nullish(),
-    invoice: z.object({ id: z.number(), invoiceNo: z.string(), status: z.string().nullish() }).nullish(),
+    invoiceId: z.coerce.string().nullish(),
+    invoice: z.object({ id: z.coerce.string(), invoiceNo: z.string(), status: z.string().nullish() }).nullish(),
     items: z
       .array(challanItemSchema)
       .nullish()

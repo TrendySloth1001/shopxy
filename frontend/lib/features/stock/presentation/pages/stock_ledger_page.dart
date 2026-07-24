@@ -36,7 +36,7 @@ class StockLedgerPage extends StatefulWidget {
     this.productUnit,
   });
 
-  final int productId;
+  final String productId;
   final String productName;
   final String? productUnit;
 

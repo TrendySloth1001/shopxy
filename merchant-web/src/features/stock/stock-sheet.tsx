@@ -36,7 +36,7 @@ export function StockSheet({
   product: Product;
   initialType: StockType;
   onClose: () => void;
-  onDone: (draftInvoiceId: number) => void;
+  onDone: (draftInvoiceId: string) => void;
 }) {
   const t = useTranslations("stockAdjustments");
   const [type, setType] = useState<StockType>(initialType);
@@ -118,8 +118,8 @@ export function StockSheet({
         type,
         quantity: quantityNum,
         unitPrice: unitPrice.trim() !== "" && Number.isFinite(unitPriceNum) ? unitPriceNum : undefined,
-        vendorId: type === "STOCK_IN" && vendorId ? Number(vendorId) : undefined,
-        partyId: type === "STOCK_OUT" && partyId ? Number(partyId) : undefined,
+        vendorId: type === "STOCK_IN" && vendorId ? vendorId : undefined,
+        partyId: type === "STOCK_OUT" && partyId ? partyId : undefined,
         note: note.trim() || undefined,
       });
       onDone(res.draftInvoice.id);

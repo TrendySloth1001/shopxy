@@ -31,7 +31,7 @@ class VendorOverviewDto {
         .toList();
 
     return VendorOverview(
-      id: v['id'] as int,
+      id: v['id'].toString(),
       name: v['name'] as String,
       contactName: v['contactName'] as String?,
       phone: v['phone'] as String?,
@@ -49,7 +49,7 @@ class VendorOverviewDto {
       linkedUser: linked == null
           ? null
           : VendorLinkedUser(
-              id: linked['id'] as int,
+              id: linked['id'].toString(),
               name: linked['name'] as String,
               email: linked['email'] as String,
             ),
@@ -71,7 +71,7 @@ class VendorOverviewDto {
 
   static VendorInvoiceRef _invoiceFromJson(Map<String, dynamic> j) {
     return VendorInvoiceRef(
-      id: j['id'] as int,
+      id: j['id'].toString(),
       invoiceNo: j['invoiceNo'] as String,
       type: j['type'] as String,
       status: j['status'] as String,
@@ -84,8 +84,8 @@ class VendorOverviewDto {
   static VendorStockInRef _stockInFromJson(Map<String, dynamic> j) {
     final p = j['product'] as Map<String, dynamic>;
     return VendorStockInRef(
-      id: j['id'] as int,
-      productId: p['id'] as int,
+      id: j['id'].toString(),
+      productId: p['id'].toString(),
       productName: p['name'] as String,
       productSku: p['sku'] as String,
       unit: p['unit'] as String? ?? 'PCS',

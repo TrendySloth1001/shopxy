@@ -24,7 +24,7 @@ class CouponsRemoteDataSource {
   Future<CouponPreview> validate({
     required String code,
     required double subtotal,
-    required List<int> shopIds,
+    required List<String> shopIds,
   }) async {
     final res = await _client.post(
       '/me/coupons/validate',
@@ -45,7 +45,7 @@ class CouponsRemoteDataSource {
   /// code that's already on their carousel.
   Future<CouponPreview> autoApply({
     required double subtotal,
-    required List<int> shopIds,
+    required List<String> shopIds,
   }) async {
     final res = await _client.post(
       '/me/coupons/auto-apply',

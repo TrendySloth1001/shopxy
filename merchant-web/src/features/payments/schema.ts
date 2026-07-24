@@ -23,16 +23,16 @@ export const PAYMENT_MODE_LABELS: Record<string, string> = {
 
 export const paymentSchema = z
   .object({
-    id: z.number(),
+    id: z.coerce.string(),
     type: z.string(),
     referenceNo: z.string().nullish(),
     amount: z.coerce.number().default(0),
     mode: z.string().default("CASH"),
     modeReference: z.string().nullish(),
     paymentDate: z.string(),
-    partyId: z.number().nullish(),
-    vendorId: z.number().nullish(),
-    invoiceId: z.number().nullish(),
+    partyId: z.coerce.string().nullish(),
+    vendorId: z.coerce.string().nullish(),
+    invoiceId: z.coerce.string().nullish(),
     note: z.string().nullish(),
     voidedAt: z.string().nullish(),
     createdAt: z.string().optional(),

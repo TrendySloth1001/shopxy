@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
 import { parsePagination, paginatedResponse } from '../../shared/http/pagination.js';
+import { decodeId } from '../../shared/ids/publicId.js';
 import { notificationsService } from './notifications.service.js';
 
 function parseId(raw: string): number | null {
-  const id = Number(raw);
-  return Number.isInteger(id) && id > 0 ? id : null;
+  return decodeId(raw);
 }
 
 export class NotificationsController {

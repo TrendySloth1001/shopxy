@@ -6,12 +6,12 @@ import 'package:shopxy/features/stock/domain/entities/stock_transaction.dart';
 class SupplierVendor {
   const SupplierVendor({required this.id, required this.name, this.phone});
 
-  final int id;
+  final String id;
   final String name;
   final String? phone;
 
   factory SupplierVendor.fromJson(Map<String, dynamic> j) => SupplierVendor(
-        id: j['id'] as int,
+        id: j['id'].toString(),
         name: j['name'] as String,
         phone: j['phone'] as String?,
       );
@@ -23,18 +23,18 @@ class StockRemoteDataSource {
 
   /// Manual stock-in/out now creates a DRAFT invoice instead of posting
   /// directly. Returns the draft invoice id so callers can navigate to it.
-  Future<int> createTransaction(Map<String, dynamic> data) async {
+  Future<String> createTransaction(Map<String, dynamic> data) async {
     final response = await _client.post('/stock', body: data);
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     final draft = body['draftInvoice'] as Map<String, dynamic>?;
     if (draft == null) {
       throw Exception('Backend did not return a draft invoice');
     }
-    return draft['id'] as int;
+    return draft['id'].toString();
   }
 
   Future<List<StockTransaction>> getTransactions({
-    int? productId,
+    String? productId,
     String? type,
     int page = 1,
     int limit = 20,
@@ -56,7 +56,7 @@ class StockRemoteDataSource {
 
   Future<({List<SupplierVendor> vendors, List<String> freeTextSuppliers})> getSuppliers({
     String? query,
-    int? productId,
+    String? productId,
     int limit = 12,
   }) async {
     final params = <String, String>{'limit': limit.toString()};

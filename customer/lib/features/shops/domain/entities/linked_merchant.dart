@@ -20,12 +20,12 @@ class LinkedMerchant {
   });
 
   /// Marketplace `Shop.id` — distinct from the merchant owner's userId.
-  final int shopId;
+  final String shopId;
 
   /// Owner User.id of the shop. Used by the customer app to skip its
   /// own shop on browse pages (the "can't buy from your own shop" rule
   /// is enforced server-side; this is just a UI nicety).
-  final int ownerUserId;
+  final String ownerUserId;
 
   final String name;
 
@@ -53,8 +53,8 @@ class LinkedMerchant {
   factory LinkedMerchant.fromJson(Map<String, dynamic> j) {
     final roles = j['roles'] as Map<String, dynamic>? ?? const {};
     return LinkedMerchant(
-      shopId: j['id'] as int,
-      ownerUserId: j['ownerUserId'] as int,
+      shopId: j['id'].toString(),
+      ownerUserId: j['ownerUserId'].toString(),
       name: j['name'] as String,
       slug: j['slug'] as String,
       isPublished: j['isPublished'] as bool? ?? false,

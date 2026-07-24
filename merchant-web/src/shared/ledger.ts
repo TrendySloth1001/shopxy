@@ -8,7 +8,7 @@ import { z } from "zod";
 export const ledgerEntrySchema = z
   .object({
     kind: z.enum(["invoice", "payment"]),
-    id: z.number(),
+    id: z.coerce.string(),
     date: z.string(),
     label: z.string(),
     debit: z.coerce.number().default(0),
@@ -17,7 +17,7 @@ export const ledgerEntrySchema = z
     mode: z.string().nullish(),
     modeReference: z.string().nullish(),
     note: z.string().nullish(),
-    invoiceId: z.number().nullish(),
+    invoiceId: z.coerce.string().nullish(),
     documentType: z.string().nullish(),
     status: z.string().nullish(),
   })

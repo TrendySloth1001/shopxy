@@ -181,13 +181,13 @@ class DashboardTransaction {
     this.productName,
   });
 
-  final int id;
-  final int productId;
+  final String id;
+  final String productId;
   final String? type;
   final String? direction;
   final double quantity;
   final String? sourceType;
-  final int? sourceId;
+  final String? sourceId;
   final DateTime createdAt;
   final String? productName;
 

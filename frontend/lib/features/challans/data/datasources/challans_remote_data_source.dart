@@ -36,17 +36,17 @@ class ChallansRemoteDataSource {
     );
   }
 
-  Future<Challan> getChallanById(int id) async {
+  Future<Challan> getChallanById(String id) async {
     final response = await _client.get('/challans/$id');
     return ChallanDto.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
   }
 
-  Future<void> cancelChallan(int id) async {
+  Future<void> cancelChallan(String id) async {
     await _client.patch('/challans/$id/cancel', body: {});
   }
 
   Future<Map<String, dynamic>> convertToInvoice(
-    int id,
+    String id,
     Map<String, dynamic> data,
   ) async {
     final response = await _client.post('/challans/$id/convert', body: data);

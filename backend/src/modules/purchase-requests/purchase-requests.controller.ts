@@ -1,4 +1,6 @@
 import { Request, Response } from 'express';
+import { zPublicId } from '../../shared/ids/zPublicId.js';
+import { decodeId } from '../../shared/ids/publicId.js';
 import { z } from 'zod';
 import { parsePagination, paginatedResponse } from '../../shared/http/pagination.js';
 import {
@@ -21,7 +23,7 @@ const createSchema = z.object({
   items: z
     .array(
       z.object({
-        productId: z.number().int().positive(),
+        productId: zPublicId,
         quantity: z.number().positive(),
         /// Per-line price the client believes is correct. Optional for
         /// backwards compatibility with older builds; once both apps
@@ -34,7 +36,7 @@ const createSchema = z.object({
   note: z.string().max(500).optional(),
   /// Optional UserAddress id selected at checkout. When present the
   /// service snapshots that address into `customerAddress`.
-  addressId: z.number().int().positive().optional(),
+  addressId: zPublicId.optional(),
   /// Optional promo code. The server validates + redeems atomically
   /// with the order create.
   couponCode: z.string().max(40).optional(),
@@ -98,8 +100,7 @@ const merchantListSchema = z.object({
 });
 
 function parseId(raw: string): number | null {
-  const id = Number(raw);
-  return Number.isInteger(id) && id > 0 ? id : null;
+  return decodeId(raw);
 }
 
 /// Pull the per-request idempotency token off the canonical header. We

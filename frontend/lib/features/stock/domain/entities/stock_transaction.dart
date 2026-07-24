@@ -36,8 +36,8 @@ class StockTransaction {
     required this.createdAt,
   });
 
-  final int id;
-  final int productId;
+  final String id;
+  final String productId;
 
   /// Legacy three-state column ('STOCK_IN' | 'STOCK_OUT' | 'ADJUSTMENT').
   /// New code should prefer [direction] + [reasonCode].
@@ -56,8 +56,8 @@ class StockTransaction {
 
   /// Id of the source document (invoice id, challan id, etc.). Null for
   /// MANUAL / OPENING.
-  final int? sourceId;
-  final int? sourceLineId;
+  final String? sourceId;
+  final String? sourceLineId;
 
   /// Always positive — direction carries the sign.
   final double quantity;
@@ -77,16 +77,16 @@ class StockTransaction {
   final double? stockAfter;
 
   final String? supplierName;
-  final int? vendorId;
+  final String? vendorId;
   final String? vendorName;
   final String? purchasePriceMode;
   final double? purchasePriceBefore;
   final double? purchasePriceAfter;
 
   /// If non-null, this row is a reversal of an earlier one.
-  final int? reversesId;
+  final String? reversesId;
 
-  final int? createdById;
+  final String? createdById;
   final String? createdByName;
 
   final String? note;

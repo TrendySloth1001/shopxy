@@ -12,23 +12,23 @@ class Review {
     required this.createdAt,
   });
 
-  final int id;
+  final String id;
   final int rating;
   final String? title;
   final String? body;
   final String authorName;
-  final int authorId;
+  final String authorId;
   final DateTime createdAt;
 
   factory Review.fromJson(Map<String, dynamic> j) {
     final user = j['user'] as Map<String, dynamic>?;
     return Review(
-      id: (j['id'] as num).toInt(),
+      id: j['id'].toString(),
       rating: (j['rating'] as num).toInt(),
       title: j['title'] as String?,
       body: j['body'] as String?,
       authorName: (user?['name'] ?? 'Anonymous') as String,
-      authorId: (user?['id'] as num?)?.toInt() ?? 0,
+      authorId: user?['id']?.toString() ?? '',
       createdAt:
           DateTime.tryParse((j['createdAt'] ?? '') as String) ?? DateTime.now(),
     );
@@ -94,7 +94,7 @@ class MyReview {
   });
 
   final Review review;
-  final int productId;
+  final String productId;
   final String productName;
   final String? productImage;
   final double productSellingPrice;
@@ -114,7 +114,7 @@ class MyReview {
         : (imgs.first as Map<String, dynamic>)['url'] as String?;
     return MyReview(
       review: Review.fromJson(j),
-      productId: (product['id'] as num?)?.toInt() ?? 0,
+      productId: product['id']?.toString() ?? '',
       productName: (product['name'] as String?) ?? '—',
       productImage: firstUrl,
       productSellingPrice: _asDouble(product['sellingPrice']),

@@ -36,7 +36,7 @@ class NotificationsRemoteDataSource {
     return (jsonDecode(res.body) as Map<String, dynamic>)['unread'] as int;
   }
 
-  Future<void> markRead(int id) async {
+  Future<void> markRead(String id) async {
     await _client.post('/notifications/$id/read');
   }
 
@@ -102,8 +102,8 @@ class InvitationsRemoteDataSource {
   Future<Invitation> send({
     required String toEmail,
     required String linkType,
-    int? partyId,
-    int? vendorId,
+    String? partyId,
+    String? vendorId,
     String? displayName,
     String? message,
   }) async {
@@ -122,7 +122,7 @@ class InvitationsRemoteDataSource {
     return Invitation.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  Future<Invitation> accept(int id) async {
+  Future<Invitation> accept(String id) async {
     final res = await _client.post('/invitations/$id/accept');
     if (res.statusCode != 200) {
       throw Exception(_errorMessage(res.body) ?? 'Failed to accept');
@@ -130,7 +130,7 @@ class InvitationsRemoteDataSource {
     return Invitation.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  Future<Invitation> decline(int id) async {
+  Future<Invitation> decline(String id) async {
     final res = await _client.post('/invitations/$id/decline');
     if (res.statusCode != 200) {
       throw Exception(_errorMessage(res.body) ?? 'Failed to decline');
@@ -138,7 +138,7 @@ class InvitationsRemoteDataSource {
     return Invitation.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  Future<void> cancel(int id) async {
+  Future<void> cancel(String id) async {
     final res = await _client.delete('/invitations/$id');
     if (res.statusCode != 204) {
       throw Exception(_errorMessage(res.body) ?? 'Failed to cancel');

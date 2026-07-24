@@ -29,12 +29,12 @@ export function listIncomingInvitations(): Promise<Invitation[]> {
   );
 }
 
-export async function acceptInvitation(id: number): Promise<void> {
+export async function acceptInvitation(id: string): Promise<void> {
   const res = await fetch(`/api/invitations/${id}/accept`, { method: "POST" });
   if (!res.ok) await jsonOrThrow(res, () => null, "Could not accept the invitation.");
 }
 
-export async function declineInvitation(id: number): Promise<void> {
+export async function declineInvitation(id: string): Promise<void> {
   const res = await fetch(`/api/invitations/${id}/decline`, { method: "POST" });
   if (!res.ok) await jsonOrThrow(res, () => null, "Could not decline the invitation.");
 }
@@ -42,8 +42,8 @@ export async function declineInvitation(id: number): Promise<void> {
 export type SendInviteInput = {
   toEmail: string;
   linkType: LinkType;
-  partyId?: number;
-  vendorId?: number;
+  partyId?: string;
+  vendorId?: string;
   displayName?: string;
   message?: string;
 };
@@ -56,7 +56,7 @@ export function sendInvitation(input: SendInviteInput): Promise<Invitation> {
   }).then((r) => jsonOrThrow(r, (raw) => invitationSchema.parse(raw), "Could not send the invitation."));
 }
 
-export async function cancelInvitation(id: number): Promise<void> {
+export async function cancelInvitation(id: string): Promise<void> {
   const res = await fetch(`/api/invitations/${id}`, { method: "DELETE" });
   if (!res.ok && res.status !== 204) {
     await jsonOrThrow(res, () => null, "Could not cancel the invitation.");

@@ -8,7 +8,7 @@ import { z } from "zod";
 
 export const partySchema = z
   .object({
-    id: z.number(),
+    id: z.coerce.string(),
     name: z.string(),
     contactName: z.string().nullish(),
     phone: z.string().nullish(),
@@ -22,7 +22,7 @@ export const partySchema = z
     gstin: z.string().nullish(),
     isActive: z.boolean().default(true),
     isSystem: z.boolean().default(false),
-    linkedUserId: z.number().nullish(),
+    linkedUserId: z.coerce.string().nullish(),
     createdAt: z.string().optional(),
     updatedAt: z.string().optional(),
     _count: z
@@ -45,7 +45,7 @@ export const partyListSchema = z.object({
 // The backend only selects `{ id, name }` for the linked user, so `email` is
 // absent on the wire — keep it optional rather than failing the whole parse.
 const linkedUserSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   name: z.string(),
   email: z.string().nullish(),
 });
@@ -58,7 +58,7 @@ const partyTotalSchema = z.object({
 
 const partyInvoiceRefSchema = z
   .object({
-    id: z.number(),
+    id: z.coerce.string(),
     invoiceNo: z.string(),
     type: z.string(),
     status: z.string(),
@@ -71,11 +71,11 @@ export type PartyInvoiceRef = z.infer<typeof partyInvoiceRefSchema>;
 
 const partyChallanRefSchema = z
   .object({
-    id: z.number(),
+    id: z.coerce.string(),
     challanNo: z.string(),
     status: z.string(),
     createdAt: z.string(),
-    invoiceId: z.number().nullish(),
+    invoiceId: z.coerce.string().nullish(),
     _count: z.object({ items: z.coerce.number().default(0) }).nullish(),
   })
   .passthrough();
@@ -84,7 +84,7 @@ export type PartyChallanRef = z.infer<typeof partyChallanRefSchema>;
 export const partyOverviewSchema = z.object({
   party: z
     .object({
-      id: z.number(),
+      id: z.coerce.string(),
       name: z.string(),
       contactName: z.string().nullish(),
       phone: z.string().nullish(),
@@ -100,7 +100,7 @@ export const partyOverviewSchema = z.object({
       isSystem: z.boolean().default(false),
       createdAt: z.string().optional(),
       updatedAt: z.string().optional(),
-      linkedUserId: z.number().nullish(),
+      linkedUserId: z.coerce.string().nullish(),
       linkedUser: linkedUserSchema.nullish(),
     })
     .passthrough(),

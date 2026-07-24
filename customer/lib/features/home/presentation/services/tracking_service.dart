@@ -23,20 +23,20 @@ class TrackingService {
   Timer? _flushTimer;
   bool _flushing = false;
 
-  void recordImpression(int productId, {String source = 'home', String? sessionId}) =>
+  void recordImpression(String productId, {String source = 'home', String? sessionId}) =>
       _enqueue('IMPRESSION', productId, source: source, sessionId: sessionId);
-  void recordTap(int productId, {String source = 'home', String? sessionId}) =>
+  void recordTap(String productId, {String source = 'home', String? sessionId}) =>
       _enqueue('TAP', productId, source: source, sessionId: sessionId);
-  void recordView(int productId, {String source = 'pdp', String? sessionId}) =>
+  void recordView(String productId, {String source = 'pdp', String? sessionId}) =>
       _enqueue('VIEW', productId, source: source, sessionId: sessionId);
-  void recordWishlistAdd(int productId, {String source = 'pdp'}) =>
+  void recordWishlistAdd(String productId, {String source = 'pdp'}) =>
       _enqueue('WISHLIST_ADD', productId, source: source);
-  void recordAddToCart(int productId, {String source = 'pdp'}) =>
+  void recordAddToCart(String productId, {String source = 'pdp'}) =>
       _enqueue('ADD_TO_CART', productId, source: source);
 
   void _enqueue(
     String eventType,
-    int productId, {
+    String productId, {
     required String source,
     String? sessionId,
   }) {
@@ -106,7 +106,7 @@ class _Event {
   });
   final String clientUuid;
   final String eventType;
-  final int productId;
+  final String productId;
   final DateTime occurredAt;
   final String source;
   final String? sessionId;

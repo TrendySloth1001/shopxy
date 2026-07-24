@@ -62,8 +62,8 @@ function ReportsContent() {
     return TABS.some((x) => x === tab) ? (tab as Kind) : "sales";
   });
   const quotationId = (() => {
-    const n = Number(searchParams.get("quotation"));
-    return Number.isInteger(n) && n > 0 ? n : undefined;
+    const raw = searchParams.get("quotation")?.trim();
+    return raw ? raw : undefined;
   })();
   const [from, setFrom] = useState(() => inputDateDaysAgo(30));
   const [to, setTo] = useState(() => todayInputDate());
@@ -730,7 +730,7 @@ function SoldProductsTable({ range }: { range: Range }) {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState<number | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   // Debounce the search box so a request isn't fired on every keystroke.
   useEffect(() => {

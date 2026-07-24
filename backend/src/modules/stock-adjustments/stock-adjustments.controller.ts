@@ -1,11 +1,13 @@
 import { Request, Response } from 'express';
+import { zPublicId } from '../../shared/ids/zPublicId.js';
+import { decodeId } from '../../shared/ids/publicId.js';
 import { z } from 'zod';
 import { ADJUSTMENT_REASONS, LEDGER_DIRECTIONS } from '../../shared/constants/index.js';
 import { parsePagination, paginatedResponse } from '../../shared/http/pagination.js';
 import { stockAdjustmentsService } from './stock-adjustments.service.js';
 
 const itemSchema = z.object({
-  productId: z.number().int().positive(),
+  productId: zPublicId,
   quantity: z.number().positive(),
   unitCost: z.number().nonnegative().optional(),
   note: z.string().max(500).optional(),
@@ -23,8 +25,7 @@ const reverseSchema = z.object({
 });
 
 function parseId(raw: string): number | null {
-  const id = Number(raw);
-  return Number.isInteger(id) && id > 0 ? id : null;
+  return decodeId(raw);
 }
 
 function requireShopId(req: Request, res: Response): number | null {

@@ -30,7 +30,7 @@ import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 class MerchantOrderDetailPage extends StatefulWidget {
   const MerchantOrderDetailPage({super.key, required this.orderId});
-  final int orderId;
+  final String orderId;
 
   @override
   State<MerchantOrderDetailPage> createState() =>
@@ -45,7 +45,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
 
   /// Set on a stock-shortfall failure so we can highlight the offending
   /// line in the items list.
-  int? _shortfallProductId;
+  String? _shortfallProductId;
 
   /// Collapses the verbose customer card into a sticky summary header
   /// once the user scrolls past it. ScrollController offset > threshold.
@@ -59,7 +59,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
   /// ledger row, after which we drop it from this list and reload the
   /// order so the stock chips update.
   final List<_PendingStockDraft> _pendingStockDrafts = [];
-  final Set<int> _confirmingDraftIds = {};
+  final Set<String> _confirmingDraftIds = {};
 
   static final _date = DateFormat('d MMM y · h:mm a');
   static final _relativeFmt = DateFormat('h:mm a');
@@ -264,7 +264,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
     try {
       final product = await ds.getProduct(item.productId);
       if (!mounted) return;
-      final draftId = await showModalBottomSheet<int>(
+      final draftId = await showModalBottomSheet<String>(
         context: context,
         isScrollControlled: true,
         backgroundColor: AppColors.surface,
@@ -360,7 +360,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
     final digits = phone.replaceAll(RegExp(r'[^0-9]'), '');
     final order = _order!;
     final msg = Uri.encodeComponent(
-      l10n.ordersWhatsappGreeting(order.customerName, '${order.id}'),
+      l10n.ordersWhatsappGreeting(order.customerName, order.id),
     );
     await _launch(Uri.parse('https://wa.me/$digits?text=$msg'));
   }
@@ -374,7 +374,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
         scheme: 'mailto',
         path: email,
         query:
-            'subject=${Uri.encodeComponent(l10n.ordersEmailSubject('${_order!.id}'))}',
+            'subject=${Uri.encodeComponent(l10n.ordersEmailSubject(_order!.id))}',
       ),
     );
   }
@@ -384,7 +384,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
     if (order == null) return;
     final l10n = AppLocalizations.of(context);
     final lines = <String>[
-      l10n.ordersShareHeader('${order.id}', order.customerName),
+      l10n.ordersShareHeader(order.id, order.customerName),
       _date.format(order.createdAt.toLocal()),
       '',
       for (final i in order.items)
@@ -405,7 +405,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: FloatingAppBar(
-        title: l10n.ordersDetailTitle('${widget.orderId}'),
+        title: l10n.ordersDetailTitle(widget.orderId),
         actions: [
           if (order != null)
             IconButton(
@@ -574,9 +574,9 @@ class _Body extends StatelessWidget {
   final NumberFormat currency;
   final NumberFormat currencyCompact;
   final ScrollController scrollController;
-  final int? shortfallProductId;
+  final String? shortfallProductId;
   final List<_PendingStockDraft> pendingStockDrafts;
-  final Set<int> confirmingDraftIds;
+  final Set<String> confirmingDraftIds;
   final void Function(MerchantOrderItem) onRestock;
   final VoidCallback onRestockBanner;
   final void Function(_PendingStockDraft) onConfirmDraft;
@@ -2741,8 +2741,8 @@ class _PendingStockDraft {
     required this.productName,
     required this.unit,
   });
-  final int invoiceId;
-  final int productId;
+  final String invoiceId;
+  final String productId;
   final String productName;
   final String unit;
 }
@@ -2755,7 +2755,7 @@ class _StockDraftCard extends StatelessWidget {
     required this.onDismiss,
   });
   final List<_PendingStockDraft> drafts;
-  final Set<int> confirming;
+  final Set<String> confirming;
   final void Function(_PendingStockDraft) onConfirm;
   final void Function(_PendingStockDraft) onDismiss;
 
@@ -2859,7 +2859,7 @@ class _StockDraftRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  l10n.ordersDraftInvoiceNo('${draft.invoiceId}'),
+                  l10n.ordersDraftInvoiceNo(draft.invoiceId),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: AppColors.muted,
                   ),

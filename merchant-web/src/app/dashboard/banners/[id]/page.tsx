@@ -15,7 +15,7 @@ export default function EditBannerPage({ params }: { params: Promise<{ id: strin
 
   useEffect(() => {
     let active = true;
-    void getBanner(Number(id))
+    void getBanner(id)
       .then((b) => active && setBanner(b))
       .catch((e) => active && setError(e instanceof Error ? e.message : t("errors.loadOne")));
     return () => {

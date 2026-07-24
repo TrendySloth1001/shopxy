@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { decodeId } from '../../shared/ids/publicId.js';
 import { z } from 'zod';
 import { platformBankOffersService } from './platform-bank-offers.service.js';
 
@@ -66,8 +67,7 @@ const updateSchema = baseSchema.partial().refine(
 );
 
 function parseId(raw: string): number | null {
-  const id = Number(raw);
-  return Number.isInteger(id) && id > 0 ? id : null;
+  return decodeId(raw);
 }
 
 export class PlatformBankOffersController {

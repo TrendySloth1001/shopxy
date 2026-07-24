@@ -4,10 +4,10 @@ import { z } from "zod";
 /// (/api/cashier/*), mirroring the backend cashier.service shapes.
 
 export const shiftSchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   status: z.string(),
   openingFloat: z.number(),
-  openedById: z.number(),
+  openedById: z.coerce.string(),
   openedByName: z.string().nullable(),
   openedByEmail: z.string().nullable(),
   openedAt: z.string(),
@@ -46,7 +46,7 @@ export const reportSchema = z.object({
   returns: z.object({ count: z.number(), amount: z.number() }),
   movements: z.array(
     z.object({
-      id: z.number(),
+      id: z.coerce.string(),
       type: z.string(),
       amount: z.number(),
       reason: z.string().nullable(),
@@ -62,14 +62,14 @@ const currentSchema = z.object({
 });
 
 export const returnableSchema = z.object({
-  invoiceId: z.number(),
+  invoiceId: z.coerce.string(),
   invoiceNo: z.string(),
   invoiceDate: z.string(),
   total: z.number(),
   customerName: z.string().nullable(),
   lines: z.array(
     z.object({
-      productId: z.number(),
+      productId: z.coerce.string(),
       name: z.string(),
       sku: z.string(),
       unitPrice: z.number(),
@@ -83,7 +83,7 @@ export const returnableSchema = z.object({
 export type Returnable = z.infer<typeof returnableSchema>;
 
 export const returnResultSchema = z.object({
-  creditNoteId: z.number(),
+  creditNoteId: z.coerce.string(),
   creditNoteNo: z.string(),
   refundAmount: z.number(),
   refundMode: z.string(),
@@ -92,9 +92,9 @@ export const returnResultSchema = z.object({
 export type ReturnResult = z.infer<typeof returnResultSchema>;
 
 export const shiftSummarySchema = z.object({
-  id: z.number(),
+  id: z.coerce.string(),
   status: z.string(),
-  openedById: z.number(),
+  openedById: z.coerce.string(),
   openedByName: z.string().nullable(),
   openedByEmail: z.string().nullable(),
   openedAt: z.string(),
@@ -174,20 +174,20 @@ export async function listShifts(): Promise<ShiftSummary[]> {
   return shiftSummarySchema.array().parse(await jsonOrThrow(res));
 }
 
-export async function fetchShiftReport(shiftId: number): Promise<ShiftReport> {
+export async function fetchShiftReport(shiftId: string): Promise<ShiftReport> {
   const res = await fetch(`/api/cashier/shifts/${shiftId}/report`, { cache: "no-store" });
   return reportSchema.parse(await jsonOrThrow(res));
 }
 
-export async function fetchReturnable(invoiceId: number): Promise<Returnable> {
+export async function fetchReturnable(invoiceId: string): Promise<Returnable> {
   const res = await fetch(`/api/cashier/returnable/${invoiceId}`, { cache: "no-store" });
   return returnableSchema.parse(await jsonOrThrow(res));
 }
 
 export async function processReturn(input: {
-  originalInvoiceId: number;
+  originalInvoiceId: string;
   refundMode: "CASH" | "UPI" | "CARD" | "OTHER";
-  lines: Array<{ productId: number; quantity: number }>;
+  lines: Array<{ productId: string; quantity: number }>;
   /** Manager-authorisation grant when the cashier lacks the override right. */
   override?: string;
 }): Promise<ReturnResult> {

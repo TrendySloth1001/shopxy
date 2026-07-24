@@ -61,7 +61,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
   return (
     <main className="mx-auto max-w-shell">
-      <PdpClient productId={Number(id)} initialData={product ?? undefined} />
+      <PdpClient productId={id} initialData={product ?? undefined} />
     </main>
   );
 }
