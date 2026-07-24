@@ -19,23 +19,23 @@
   --shadow-*: initial;
 
   /* ── Inks ────────────────────────────────────────────────────────────── */
-  --color-ink: #14181d;
+  --color-ink: #111b21;
   --color-white: #ffffff;
-  --color-hairline: #14181d1f;
-  --color-surface-tint: #14181d0a;
-  --color-muted: #6a707a;
-  --color-subtle: #98a0aa;
-  --color-disabled: #c2c7ce;
+  --color-hairline: #111b211a;
+  --color-surface-tint: #111b2108;
+  --color-muted: #667781;
+  --color-subtle: #8696a0;
+  --color-disabled: #bfc8ce;
 
   /* ── Surfaces ────────────────────────────────────────────────────────── */
-  --color-canvas: #f8f7f3;
-  --color-page-tint: #fafaf7;
-  --color-hero-panel: #efeee7;
+  --color-canvas: #f0f2f5;
+  --color-page-tint: #f6f7f9;
+  --color-hero-panel: #e4e8eb;
 
   /* ── Brand ───────────────────────────────────────────────────────────── */
-  --color-brand: #1e8e5a;
-  --color-brand-strong: #146a42;
-  --color-brand-soft: #e6f2ec;
+  --color-brand: #008069;
+  --color-brand-strong: #006e5a;
+  --color-brand-soft: #e7f3ef;
 
   /* ── Status ──────────────────────────────────────────────────────────── */
   --color-success: #16a34a;
@@ -108,28 +108,28 @@
   --shadow-snackbar: 0 10px 24px rgba(20, 24, 29, 0.12);
 
   /* ── Type scale (text-display-lg … text-label-md) ────────────────────── */
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
   --text-display-lg: 57px;
   --text-display-lg--line-height: 1.1;
-  --text-display-lg--font-weight: 700;
+  --text-display-lg--font-weight: 600;
   --text-display-lg--letter-spacing: -0.5px;
   --text-display-md: 45px;
   --text-display-md--line-height: 1.15;
-  --text-display-md--font-weight: 700;
+  --text-display-md--font-weight: 600;
   --text-display-md--letter-spacing: -0.5px;
   --text-display-sm: 36px;
   --text-display-sm--line-height: 1.2;
-  --text-display-sm--font-weight: 700;
+  --text-display-sm--font-weight: 600;
   --text-display-sm--letter-spacing: -0.4px;
 
   --text-headline-lg: 32px;
   --text-headline-lg--line-height: 1.25;
-  --text-headline-lg--font-weight: 700;
+  --text-headline-lg--font-weight: 600;
   --text-headline-lg--letter-spacing: -0.3px;
   --text-headline-md: 28px;
   --text-headline-md--line-height: 1.3;
-  --text-headline-md--font-weight: 700;
+  --text-headline-md--font-weight: 600;
   --text-headline-md--letter-spacing: -0.3px;
   --text-headline-sm: 24px;
   --text-headline-sm--line-height: 1.33;

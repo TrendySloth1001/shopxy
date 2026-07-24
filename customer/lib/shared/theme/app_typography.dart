@@ -1,5 +1,5 @@
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 
 class AppTypography {
@@ -9,36 +9,39 @@ class AppTypography {
   static TextTheme get dark => _build(AppColors.black);
 
   static TextTheme _build(Color textColor) {
-    final base = GoogleFonts.interTextTheme();
+    // WhatsApp uses the PLATFORM system font (SF Pro on iOS, Roboto on Android)
+    // — lighter and calmer than a bundled geometric face. Same Material-3 sizes;
+    // headings sit at w600 (not w700) with near-0 tracking.
+    final base = Typography.material2021(platform: defaultTargetPlatform).black;
     return base
         .copyWith(
           displayLarge: base.displayLarge?.copyWith(
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.5,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -0.2,
           ),
           displayMedium: base.displayMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.5,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -0.2,
           ),
           displaySmall: base.displaySmall?.copyWith(
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.4,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -0.15,
           ),
           headlineLarge: base.headlineLarge?.copyWith(
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.3,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -0.15,
           ),
           headlineMedium: base.headlineMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.3,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -0.1,
           ),
           headlineSmall: base.headlineSmall?.copyWith(
             fontWeight: FontWeight.w600,
-            letterSpacing: -0.2,
+            letterSpacing: -0.1,
           ),
           titleLarge: base.titleLarge?.copyWith(
             fontWeight: FontWeight.w600,
-            letterSpacing: -0.2,
+            letterSpacing: -0.1,
           ),
           titleMedium: base.titleMedium?.copyWith(fontWeight: FontWeight.w600),
           titleSmall: base.titleSmall?.copyWith(fontWeight: FontWeight.w600),
