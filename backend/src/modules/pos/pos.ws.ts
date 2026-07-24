@@ -7,6 +7,7 @@ import { verifyOverride, type OverrideOp } from '../cashier/override.js';
 import type { WsAuthCtx } from '../scan-console/scan-console.service.js';
 import { hasRight, manageRight, POS_OVERRIDE_RIGHT } from '../../shared/http/permissions.js';
 import { resolveMembershipForUser } from '../../shared/http/requireAuth.js';
+import { zPublicId } from '../../shared/ids/zPublicId.js';
 import { logger } from '../../shared/logging/logger.js';
 
 /// POS over WebSocket — the till sends `{ t:'cmd', reqId, op, saleId?, … }` and
@@ -22,21 +23,27 @@ const TENDER_MODES = ['CASH', 'UPI', 'CARD', 'NEFT', 'RTGS', 'CHEQUE', 'OTHER'] 
 const SHIFT_CACHE_TTL_MS = 10_000;
 
 // ── command arg schemas ──────────────────────────────────────────────────────
+// Entity ids (saleId/productId/partyId) use zPublicId — the same dual-mode decode
+// the REST layer uses — because the client now treats every id as an opaque
+// String (opaque-public-ids migration). WS frames bypass the res.json tokeniser,
+// so these arrive as plain-int strings today; zPublicId accepts a string OR a
+// number (and a token, should WS output ever be tokenised) → positive int.
 const qty = z.number().positive().max(100_000);
 const opId = z.string().trim().min(1).max(64).optional();
-const saleId = z.number().int().positive();
+const saleId = zPublicId;
+const productId = zPublicId;
 
 const schemas = {
-  open: z.object({ partyId: z.number().int().positive().optional(), customerName: z.string().trim().max(120).optional(), customerPhone: z.string().trim().max(20).optional() }),
+  open: z.object({ partyId: zPublicId.optional(), customerName: z.string().trim().max(120).optional(), customerPhone: z.string().trim().max(20).optional() }),
   snapshot: z.object({ saleId }),
   listOpen: z.object({}),
   search: z.object({ term: z.string().trim().min(1).max(80) }),
   scan: z.object({ saleId, code: z.string().trim().min(1).max(128), opId, quantity: qty.optional() }),
-  addItem: z.object({ saleId, productId: z.number().int().positive(), quantity: qty.default(1), opId }),
-  setQty: z.object({ saleId, productId: z.number().int().positive(), quantity: z.number().min(0).max(100_000) }),
-  setLineDiscount: z.object({ saleId, productId: z.number().int().positive(), discount: z.number().min(0), override: z.string().optional() }),
-  setUnitPrice: z.object({ saleId, productId: z.number().int().positive(), unitPrice: z.number().min(0), override: z.string().optional() }),
-  removeLine: z.object({ saleId, productId: z.number().int().positive() }),
+  addItem: z.object({ saleId, productId, quantity: qty.default(1), opId }),
+  setQty: z.object({ saleId, productId, quantity: z.number().min(0).max(100_000) }),
+  setLineDiscount: z.object({ saleId, productId, discount: z.number().min(0), override: z.string().optional() }),
+  setUnitPrice: z.object({ saleId, productId, unitPrice: z.number().min(0), override: z.string().optional() }),
+  removeLine: z.object({ saleId, productId }),
   setHeaderDiscount: z.object({ saleId, discount: z.number().min(0), override: z.string().optional() }),
   quickAdd: z.object({
     saleId,
