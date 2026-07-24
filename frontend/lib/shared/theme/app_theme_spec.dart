@@ -2,38 +2,63 @@ import 'package:flutter/material.dart';
 import 'package:shopxy/core/prefs/theme_prefs.dart' show AppThemeMode;
 import 'package:shopxy/shared/theme/app_palette.dart';
 
-/// A theme is DATA, not code. [AppThemeSpec] bundles every visual axis — colour
-/// palette, font, icon style, corner-shape, density and motion — into one
-/// descriptor. The controller activates one spec; the token accessors
-/// (`AppColors`, `AppTypography`, `AppIcon`, `AppCurves`, and the component
-/// `ThemeData`) all resolve against [active]. Adding or changing a theme is a
-/// one-entry edit in [specFor] — components never change ("switch the theme
-/// file, not the components").
-///
-/// The palette axis was already file-swappable via [AppPalette.active]; this
-/// wraps it and adds the other five axes on the same pattern.
+/// A theme is DATA composed from independent AXES — colour, font, corner-shape,
+/// density and motion — each chosen separately. [AppThemeSpec] is the RESOLVED
+/// bundle the app reads; the controller ([ThemePrefsProvider]) composes it from
+/// the user's per-axis choices (or from a [ThemePreset]). Every token accessor
+/// (`AppColors`, `AppTypography`, `AppIcon`, `AppCurves`, the component
+/// `ThemeData`) resolves against [AppThemeSpec.active] — so changing any axis
+/// re-themes the whole app with zero component edits.
 
-/// Font personality for a theme. Maps to a concrete family in `AppTypography`.
-/// (Hindi/Devanagari always overrides to Noto regardless of this choice.)
+// ── Axis: font ────────────────────────────────────────────────────────────────
+/// Font personality. Maps to a concrete family in `AppTypography`. (Hindi always
+/// overrides to Noto regardless.)
 enum AppFont {
-  /// Platform system font — SF Pro on iOS, Roboto on Android (WhatsApp-like).
-  system,
+  system('System'),
+  rounded('Rounded'),
+  serif('Serif');
 
-  /// Rounded, friendly sans (Nunito) — softer, more playful.
-  rounded,
-
-  /// Editorial serif (Lora) — for paper/warm themes.
-  serif,
+  const AppFont(this.label);
+  final String label;
 }
 
-/// Icon glyph style. Hugeicons 1.1.7 ships ONLY `strokeRounded`, so [rounded]
-/// is the only value that resolves to real glyphs today. The axis is plumbed
-/// end-to-end (spec → [AppIcon]) so a second icon pack can be dropped in behind
-/// a new value + a resolver map, with no component or call-site changes.
-enum AppIconStyle { rounded }
+// ── Axis: icon style ──────────────────────────────────────────────────────────
+/// Icon glyph style. Hugeicons 1.1.7 ships ONLY `strokeRounded`, so [rounded] is
+/// the only value that resolves to real glyphs today; the axis is plumbed
+/// (spec → `AppIcon`) so a second pack drops in behind a new value.
+enum AppIconStyle {
+  rounded('Rounded');
 
-/// Motion feel — the easing curves an animation reaches for. Paired with the
-/// existing `AppDurations`. `AppCurves.*` read the active spec's set.
+  const AppIconStyle(this.label);
+  final String label;
+}
+
+// ── Axis: corner shape ────────────────────────────────────────────────────────
+/// Corner-shape feel — scales the finite component radii (pills stay round).
+enum AppShape {
+  sharp('Sharp', 0.5),
+  standard('Default', 1.0),
+  round('Round', 1.5);
+
+  const AppShape(this.label, this.radiusScale);
+  final String label;
+  final double radiusScale;
+}
+
+// ── Axis: density ─────────────────────────────────────────────────────────────
+/// Compact / comfy — Material [VisualDensity] applied app-wide.
+enum AppDensityChoice {
+  compact('Compact', VisualDensity.compact),
+  standard('Standard', VisualDensity.standard),
+  comfortable('Comfortable', VisualDensity.comfortable);
+
+  const AppDensityChoice(this.label, this.visualDensity);
+  final String label;
+  final VisualDensity visualDensity;
+}
+
+// ── Axis: motion ──────────────────────────────────────────────────────────────
+/// The easing set an animation reaches for (via theme-reactive `AppCurves`).
 @immutable
 class AppMotion {
   const AppMotion({
@@ -48,24 +73,18 @@ class AppMotion {
   final Curve decelerate;
   final Curve decelerateEmphasized;
 
-  /// Gentle, even easing (Material default feel).
   static const AppMotion calm = AppMotion(
     standard: Curves.easeInOut,
     emphasized: Curves.easeInOutCubic,
     decelerate: Curves.easeOut,
     decelerateEmphasized: Curves.easeOutCubic,
   );
-
-  /// Fast-out, crisp — a snappier, more "productive" tempo.
   static const AppMotion snappy = AppMotion(
     standard: Curves.easeOutCubic,
     emphasized: Curves.easeOutExpo,
     decelerate: Curves.easeOutCubic,
     decelerateEmphasized: Curves.easeOutExpo,
   );
-
-  /// A touch of overshoot on prominent moves — playful, without the bounce of
-  /// a full elastic curve.
   static const AppMotion springy = AppMotion(
     standard: Curves.easeOutCubic,
     emphasized: Curves.easeOutBack,
@@ -74,11 +93,32 @@ class AppMotion {
   );
 }
 
+enum AppMotionChoice {
+  calm('Calm', AppMotion.calm),
+  snappy('Snappy', AppMotion.snappy),
+  springy('Springy', AppMotion.springy);
+
+  const AppMotionChoice(this.label, this.motion);
+  final String label;
+  final AppMotion motion;
+}
+
+/// Human label for a colour palette (the colour axis' options).
+String paletteLabel(AppThemeMode mode) => switch (mode) {
+  AppThemeMode.light => 'Light',
+  AppThemeMode.beige => 'Beige',
+  AppThemeMode.rose => 'Rose',
+  AppThemeMode.sage => 'Sage',
+  AppThemeMode.dark => 'Dark',
+  AppThemeMode.oled => 'OLED',
+  AppThemeMode.midnight => 'Midnight',
+  AppThemeMode.nord => 'Nord',
+};
+
+// ── The resolved, active spec ─────────────────────────────────────────────────
 @immutable
 class AppThemeSpec {
   const AppThemeSpec({
-    required this.id,
-    required this.label,
     required this.palette,
     this.font = AppFont.system,
     this.iconStyle = AppIconStyle.rounded,
@@ -87,96 +127,95 @@ class AppThemeSpec {
     this.motion = AppMotion.calm,
   });
 
-  final AppThemeMode id;
-  final String label;
   final AppPalette palette;
   final AppFont font;
   final AppIconStyle iconStyle;
 
-  /// Multiplies the *finite* component corner radii (cards, inputs, sheets,
-  /// dialogs, menus). Pills (radiusFull) stay fully round regardless. 1.0 =
-  /// default; <1 sharper, >1 rounder.
+  /// Multiplies the finite component corner radii. Pills stay round.
   final double radiusScale;
-
-  /// Material [VisualDensity] applied to the whole app — the compact/comfy axis.
   final VisualDensity density;
-
   final AppMotion motion;
 
-  /// The active theme spec. Swapped by [ThemePrefsProvider] before the tree
-  /// rebuilds, alongside [AppPalette.active]. Defaults to light so tokens
-  /// resolve correctly before the controller loads.
-  static AppThemeSpec active = specFor(AppThemeMode.light);
+  /// The active theme spec — swapped by [ThemePrefsProvider] before the tree
+  /// rebuilds, alongside [AppPalette.active].
+  static AppThemeSpec active = const AppThemeSpec(palette: AppPalette.light);
 }
 
-/// The single registry — one entry per theme. THIS is the "theme file" you edit
-/// to tune or add a look; nothing downstream changes. Each theme carries its own
-/// font / shape / density / motion personality on top of its palette.
-AppThemeSpec specFor(AppThemeMode mode) {
-  switch (mode) {
-    case AppThemeMode.light:
-      return AppThemeSpec(
-        id: mode,
-        label: 'Light',
-        palette: AppPalette.light,
-      );
-    case AppThemeMode.beige:
-      return AppThemeSpec(
-        id: mode,
-        label: 'Beige',
-        palette: AppPalette.beige,
-        font: AppFont.serif,
-        radiusScale: 1.15,
-        density: VisualDensity.comfortable,
-      );
-    case AppThemeMode.rose:
-      return AppThemeSpec(
-        id: mode,
-        label: 'Rose',
-        palette: AppPalette.rose,
-        font: AppFont.rounded,
-        radiusScale: 1.3,
-        density: VisualDensity.comfortable,
-        motion: AppMotion.springy,
-      );
-    case AppThemeMode.sage:
-      return AppThemeSpec(
-        id: mode,
-        label: 'Sage',
-        palette: AppPalette.sage,
-        radiusScale: 1.1,
-      );
-    case AppThemeMode.dark:
-      return AppThemeSpec(
-        id: mode,
-        label: 'Dark',
-        palette: AppPalette.dark,
-      );
-    case AppThemeMode.oled:
-      return AppThemeSpec(
-        id: mode,
-        label: 'OLED',
-        palette: AppPalette.oled,
-        radiusScale: 0.6,
-        density: VisualDensity.compact,
-        motion: AppMotion.snappy,
-      );
-    case AppThemeMode.midnight:
-      return AppThemeSpec(
-        id: mode,
-        label: 'Midnight',
-        palette: AppPalette.midnight,
-        font: AppFont.rounded,
-        radiusScale: 1.2,
-      );
-    case AppThemeMode.nord:
-      return AppThemeSpec(
-        id: mode,
-        label: 'Nord',
-        palette: AppPalette.nord,
-        radiusScale: 0.85,
-        density: VisualDensity.compact,
-        motion: AppMotion.snappy,
-      );
-  }
+// ── Presets — curated, ready-made configs ("our own made configs") ────────────
+/// A named full config across every axis. Selecting one sets all axes at once;
+/// changing any axis afterwards drops the selection to "Custom".
+@immutable
+class ThemePreset {
+  const ThemePreset({
+    required this.id,
+    required this.label,
+    required this.palette,
+    this.font = AppFont.system,
+    this.shape = AppShape.standard,
+    this.density = AppDensityChoice.standard,
+    this.motion = AppMotionChoice.calm,
+  });
+
+  final String id;
+  final String label;
+  final AppThemeMode palette;
+  final AppFont font;
+  final AppShape shape;
+  final AppDensityChoice density;
+  final AppMotionChoice motion;
 }
+
+/// The predefined configs. Edit / add here — nothing downstream changes.
+const List<ThemePreset> kThemePresets = [
+  ThemePreset(id: 'whatsapp', label: 'WhatsApp', palette: AppThemeMode.light),
+  ThemePreset(
+    id: 'whatsapp_dark',
+    label: 'WhatsApp Dark',
+    palette: AppThemeMode.dark,
+  ),
+  ThemePreset(
+    id: 'playful',
+    label: 'Playful',
+    palette: AppThemeMode.rose,
+    font: AppFont.rounded,
+    shape: AppShape.round,
+    density: AppDensityChoice.comfortable,
+    motion: AppMotionChoice.springy,
+  ),
+  ThemePreset(
+    id: 'sharp',
+    label: 'Sharp',
+    palette: AppThemeMode.oled,
+    shape: AppShape.sharp,
+    density: AppDensityChoice.compact,
+    motion: AppMotionChoice.snappy,
+  ),
+  ThemePreset(
+    id: 'paper',
+    label: 'Paper',
+    palette: AppThemeMode.beige,
+    font: AppFont.serif,
+    shape: AppShape.round,
+    density: AppDensityChoice.comfortable,
+  ),
+  ThemePreset(
+    id: 'nordic',
+    label: 'Nordic',
+    palette: AppThemeMode.nord,
+    density: AppDensityChoice.compact,
+    motion: AppMotionChoice.snappy,
+  ),
+  ThemePreset(
+    id: 'sage',
+    label: 'Sage',
+    palette: AppThemeMode.sage,
+    shape: AppShape.round,
+  ),
+  ThemePreset(
+    id: 'midnight',
+    label: 'Midnight',
+    palette: AppThemeMode.midnight,
+    font: AppFont.rounded,
+    shape: AppShape.round,
+  ),
+];

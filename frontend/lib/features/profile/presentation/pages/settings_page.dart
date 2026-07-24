@@ -17,6 +17,8 @@ import 'package:shopxy/features/profile/presentation/pages/edit_profile_page.dar
 import 'package:shopxy/features/shop/presentation/pages/shop_operations_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/about_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/legal_page.dart';
+import 'package:shopxy/features/profile/presentation/pages/theme_page.dart';
+import 'package:shopxy/shared/theme/app_theme_spec.dart';
 import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
@@ -454,117 +456,35 @@ class _Gap extends StatelessWidget {
 /// web app's theme picker. Writes through [ThemePrefsProvider], which swaps the
 /// active palette, persists the choice and rebuilds the whole app live so the
 /// theme flips without leaving Settings.
+/// Settings entry point into the Theme studio. Shows the active preset (or
+/// "Custom" + the colour) and opens [ThemePage] where presets and every axis
+/// are chosen.
 class _ThemeRow extends StatelessWidget {
   const _ThemeRow();
 
   @override
   Widget build(BuildContext context) {
     final prefs = context.watch<ThemePrefsProvider>();
-    final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.lg,
-        vertical: AppSizes.md,
+    final preset = prefs.activePreset;
+    final summary = preset != null
+        ? preset.label
+        : 'Custom · ${paletteLabel(prefs.mode)}';
+    return _SettingRow(
+      icon: AppIcons.paletteOutlined,
+      title: l10n.theme,
+      subtitle: summary,
+      trailing: AppIcon(
+        AppIcons.chevronRightRounded,
+        color: AppColors.subtle,
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: AppSizes.xxxl,
-            height: AppSizes.xxxl,
-            decoration: ShapeDecoration(
-              color: AppColors.heroPanel,
-              shape: AppShapes.squircle(AppSizes.radiusSm),
-            ),
-            alignment: Alignment.center,
-            child: AppIcon(
-              AppIcons.paletteOutlined,
-              size: AppSizes.iconMd,
-              color: AppColors.black,
-            ),
-          ),
-          const SizedBox(width: AppSizes.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.theme,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: AppColors.black,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: AppSizes.xxs),
-                Text(
-                  switch (prefs.mode) {
-                    AppThemeMode.light => l10n.themeLightDesc,
-                    AppThemeMode.beige => l10n.themeBeigeDesc,
-                    AppThemeMode.rose => l10n.themeRoseDesc,
-                    AppThemeMode.sage => l10n.themeSageDesc,
-                    AppThemeMode.dark => l10n.themeDarkDesc,
-                    AppThemeMode.oled => l10n.themeOledDesc,
-                    AppThemeMode.midnight => l10n.themeMidnightDesc,
-                    AppThemeMode.nord => l10n.themeNordDesc,
-                  },
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: AppColors.muted,
-                  ),
-                ),
-                const SizedBox(height: AppSizes.sm),
-                // A wrapping chip set (not a SegmentedButton) so the eight
-                // themes stay usable on a phone — they flow onto multiple rows
-                // instead of squeezing into one. Each chip previews the theme's
-                // canvas colour as a swatch dot.
-                Wrap(
-                  spacing: AppSizes.sm,
-                  runSpacing: AppSizes.sm,
-                  children: [
-                    for (final mode in AppThemeMode.values)
-                      ChoiceChip(
-                        avatar: Container(
-                          decoration: BoxDecoration(
-                            color: ThemePrefsProvider.paletteFor(mode).canvas,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: AppColors.hairline),
-                          ),
-                        ),
-                        label: Text(_themeLabel(l10n, mode)),
-                        // Explicit label colour so the chip stays readable in
-                        // both states (ChoiceChip otherwise renders unselected
-                        // labels from the inverse foreground — invisible here).
-                        labelStyle: theme.textTheme.labelMedium?.copyWith(
-                          color: prefs.mode == mode
-                              ? AppColors.onInverse
-                              : AppColors.black,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        selected: prefs.mode == mode,
-                        onSelected: (_) => prefs.setMode(mode),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const ThemePage()),
       ),
     );
   }
 }
-
-/// Display label for a theme mode, shown on its picker chip (localized).
-String _themeLabel(AppLocalizations l10n, AppThemeMode mode) => switch (mode) {
-  AppThemeMode.light => l10n.themeLight,
-  AppThemeMode.beige => l10n.themeBeige,
-  AppThemeMode.rose => l10n.themeRose,
-  AppThemeMode.sage => l10n.themeSage,
-  AppThemeMode.dark => l10n.themeDark,
-  AppThemeMode.oled => l10n.themeOled,
-  AppThemeMode.midnight => l10n.themeMidnight,
-  AppThemeMode.nord => l10n.themeNord,
-};
 
 /// Picker for the UI language — the multilingual pilot (English + हिन्दी).
 /// Mirrors [_ThemeRow]: writes through [LocalePrefsProvider], which persists the
