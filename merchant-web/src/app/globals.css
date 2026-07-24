@@ -19,16 +19,16 @@
   --shadow-*: initial;
 
   /* ── Inks ────────────────────────────────────────────────────────────── */
-  --color-ink: #14181d;
+  --color-ink: #111b21;
   /* Literal foreground white — text/icons on a coloured fill (text-white on a
      brand button, the toggle thumb). Stays white in every theme. NOT a surface
      colour; for raised card/input surfaces use `--color-surface` below. */
   --color-white: #ffffff;
-  --color-hairline: #14181d1f;
-  --color-surface-tint: #14181d0a;
-  --color-muted: #6a707a;
-  --color-subtle: #98a0aa;
-  --color-disabled: #c2c7ce;
+  --color-hairline: #111b211a;
+  --color-surface-tint: #111b2108;
+  --color-muted: #667781;
+  --color-subtle: #8696a0;
+  --color-disabled: #bfc8ce;
   /* Scrim — the dimming wash behind modals / drawers (`bg-scrim/30…/50`). Stays
      a near-black in every theme so it always darkens what's underneath (an
      ink-derived scrim would invert to a *lightening* haze in dark mode). */
@@ -37,13 +37,13 @@
      `bg-inverse-surface text-on-inverse` is a dark chip/button with light text
      in light mode, and a light chip with dark text in dark mode. Use this for
      the strongest neutral CTA / selected pill — not `bg-ink` (ink is text). */
-  --color-inverse-surface: #14181d;
+  --color-inverse-surface: #111b21;
   --color-on-inverse: #ffffff;
 
   /* ── Surfaces ────────────────────────────────────────────────────────── */
-  --color-canvas: #f8f7f3;
-  --color-page-tint: #fafaf7;
-  --color-hero-panel: #efeee7;
+  --color-canvas: #f0f2f5;
+  --color-page-tint: #f6f7f9;
+  --color-hero-panel: #e4e8eb;
   /* Raised surface — cards, inputs, sheets, menus. Pure white in light mode;
      a step above the canvas in the dark / OLED themes (see the override blocks
      below). Use `bg-surface` for any floating surface — never plain white. */
@@ -53,9 +53,9 @@
   --color-field: #ffffff;
 
   /* ── Brand ───────────────────────────────────────────────────────────── */
-  --color-brand: #1e8e5a;
-  --color-brand-strong: #146a42;
-  --color-brand-soft: #e6f2ec;
+  --color-brand: #008069;
+  --color-brand-strong: #006e5a;
+  --color-brand-soft: #e7f3ef;
 
   /* ── Status ──────────────────────────────────────────────────────────── */
   --color-success: #16a34a;
@@ -122,32 +122,32 @@
   --shadow-snackbar: 0 10px 24px rgba(20, 24, 29, 0.12);
 
   /* ── Type scale (text-display-lg … text-label-md) ────────────────────── */
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   /* Display face — Plus Jakarta Sans, used for headings on the auth screens
      (the `font-display` utility). Body text stays on Inter (--font-sans) to
      match the Flutter merchant app. */
-  --font-display: var(--font-jakarta), var(--font-inter), ui-sans-serif, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
   --text-display-lg: 57px;
   --text-display-lg--line-height: 1.1;
-  --text-display-lg--font-weight: 700;
+  --text-display-lg--font-weight: 600;
   --text-display-lg--letter-spacing: -0.5px;
   --text-display-md: 45px;
   --text-display-md--line-height: 1.15;
-  --text-display-md--font-weight: 700;
+  --text-display-md--font-weight: 600;
   --text-display-md--letter-spacing: -0.5px;
   --text-display-sm: 36px;
   --text-display-sm--line-height: 1.2;
-  --text-display-sm--font-weight: 700;
+  --text-display-sm--font-weight: 600;
   --text-display-sm--letter-spacing: -0.4px;
 
   --text-headline-lg: 32px;
   --text-headline-lg--line-height: 1.25;
-  --text-headline-lg--font-weight: 700;
+  --text-headline-lg--font-weight: 600;
   --text-headline-lg--letter-spacing: -0.3px;
   --text-headline-md: 28px;
   --text-headline-md--line-height: 1.3;
-  --text-headline-md--font-weight: 700;
+  --text-headline-md--font-weight: 600;
   --text-headline-md--letter-spacing: -0.3px;
   --text-headline-sm: 24px;
   --text-headline-sm--line-height: 1.33;
@@ -390,30 +390,30 @@ html[data-theme="oled"] {
   color-scheme: dark;
 
   /* Inks — light text on a dark ground. `--color-white` stays literal white. */
-  --color-ink: #e7eaee;
+  --color-ink: #e9edef;
   --color-hairline: #ffffff1f;
   --color-surface-tint: #ffffff0d;
-  --color-muted: #9aa3ad;
-  --color-subtle: #6c7682;
-  --color-disabled: #49515b;
+  --color-muted: #8696a0;
+  --color-subtle: #667781;
+  --color-disabled: #3b4a54;
 
   /* Surfaces — deep slate canvas, raised cards a step lighter. */
-  --color-canvas: #0f1419;
-  --color-page-tint: #141a20;
-  --color-hero-panel: #1c232b;
-  --color-surface: #171d24;
-  --color-field: #1c232b;
+  --color-canvas: #0b141a;
+  --color-page-tint: #0e181f;
+  --color-hero-panel: #202c33;
+  --color-surface: #111b21;
+  --color-field: #202c33;
 
   /* Inverse pair flips: light fill + dark text on a dark UI. (Scrim is shared —
      it stays near-black in every theme, so it isn't re-declared here.) */
-  --color-inverse-surface: #e7eaee;
+  --color-inverse-surface: #e9edef;
   --color-on-inverse: #11161b;
 
   /* Brand — brightened emerald so it reads on dark; `strong` is the on-dark
      text variant (used wherever `text-brand-strong` sits on a soft fill). */
-  --color-brand: #2fb877;
-  --color-brand-strong: #5fd99b;
-  --color-brand-soft: #2fb87726;
+  --color-brand: #00a884;
+  --color-brand-strong: #25d366;
+  --color-brand-soft: #00a88426;
 
   /* Status — readable foregrounds, low-alpha tinted soft fills. */
   --color-success: #3ecf86;

@@ -13,49 +13,47 @@ class AppColors {
   AppColors._();
 
   // ── Inks ─────────────────────────────────────────────
-  /// Primary ink. Warm near-black — kinder to eyes than pure #000
-  /// while still reading as "black" in copy.
-  static const Color black = Color(0xFF14181D);
+  /// Primary ink. WhatsApp's near-black — reads as "black" in copy but is
+  /// kinder to the eyes than pure #000.
+  static const Color black = Color(0xFF111B21);
 
   /// Pure white reserved for floating surfaces (cards, sheets).
   static const Color white = Color(0xFFFFFFFF);
 
-  /// Hairline border — warm graphite at low alpha.
-  static const Color hairline = Color(0x1F14181D);
+  /// Hairline border — cool graphite at low alpha.
+  static const Color hairline = Color(0x1A111B21);
 
   /// Even softer wash — used for hover/pressed surfaces.
-  static const Color surfaceTint = Color(0x0A14181D);
+  static const Color surfaceTint = Color(0x08111B21);
 
-  /// Secondary text.
-  static const Color muted = Color(0xFF6A707A);
+  /// Secondary text (WhatsApp blue-grey).
+  static const Color muted = Color(0xFF667781);
 
   /// Tertiary / placeholder text.
-  static const Color subtle = Color(0xFF98A0AA);
+  static const Color subtle = Color(0xFF8696A0);
 
   /// Disabled foreground.
-  static const Color disabled = Color(0xFFC2C7CE);
+  static const Color disabled = Color(0xFFBFC8CE);
 
   // ── Surfaces ─────────────────────────────────────────
-  /// Warm parchment used as the global page background. White cards
-  /// sit on top of this for subtle depth without shadows.
-  static const Color canvas = Color(0xFFF8F7F3);
+  /// WhatsApp's cool light-grey page background. White cards sit on top of
+  /// this for subtle depth without shadows, at lower glare than warm cream.
+  static const Color canvas = Color(0xFFF0F2F5);
 
-  /// Slightly cooler tint — legacy alias kept for older callers.
-  static const Color pageTint = Color(0xFFFAFAF7);
+  /// Slightly lighter tint — legacy alias kept for older callers.
+  static const Color pageTint = Color(0xFFF6F7F9);
 
-  /// Soft panel used behind hero illustrations — picks up the canvas
-  /// tone a half-step deeper so illustrations have a backdrop.
-  static const Color heroPanel = Color(0xFFEFEEE7);
+  /// Soft panel used behind hero illustrations — a half-step deeper than the
+  /// canvas so illustrations have a backdrop.
+  static const Color heroPanel = Color(0xFFE4E8EB);
 
   // ── Brand ────────────────────────────────────────────
-  /// Refined emerald. Same family as the Glassdoor green that
-  /// preceded it, dropped a few notches in saturation so it reads
-  /// confident, not loud.
-  static const Color brand = Color(0xFF1E8E5A);
-  static const Color brandStrong = Color(0xFF146A42);
+  /// WhatsApp teal-green — confident, calm, not loud.
+  static const Color brand = Color(0xFF008069);
+  static const Color brandStrong = Color(0xFF006E5A);
 
   /// Pale brand wash — chip fills, soft accent surfaces.
-  static const Color brandSoft = Color(0xFFE6F2EC);
+  static const Color brandSoft = Color(0xFFE7F3EF);
 
   // ── Status (soft tones) ──────────────────────────────
   static const Color success = Color(0xFF16A34A);
