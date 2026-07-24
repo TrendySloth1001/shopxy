@@ -1,6 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
+import 'package:shopxy/shared/theme/app_theme_spec.dart';
+
+/// Resolve a glyph to the active theme's icon style. Hugeicons 1.1.7 ships only
+/// `strokeRounded`, so today every style resolves to the rounded glyph
+/// (identity). This is the SINGLE choke point for the icon-style axis: to add a
+/// real second style, add a value to [AppIconStyle], drop in a
+/// `Map<AppIconData, AppIconData>` from a second icon pack (keyed on the const
+/// [AppIcons] glyphs — const canonicalisation makes identity lookup work), and
+/// switch on `style` here. No call site or `AppIcons` entry changes.
+AppIconData? resolveIconGlyph(AppIconData? glyph, AppIconStyle style) {
+  switch (style) {
+    case AppIconStyle.rounded:
+      return glyph;
+  }
+}
 
 /// Drop-in replacement for Flutter's [Icon] that renders a Hugeicons glyph.
 ///
@@ -25,7 +40,7 @@ class AppIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final iconTheme = IconTheme.of(context);
     final resolvedSize = size ?? iconTheme.size ?? 24.0;
-    final glyph = icon;
+    final glyph = resolveIconGlyph(icon, AppThemeSpec.active.iconStyle);
     // Pin the glyph to [resolvedSize] and centre it — exactly what Material's
     // [Icon] does. Without this, a parent that imposes larger *tight*
     // constraints (a fixed-size icon chip/avatar, an IconButton slot, etc.)
