@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shopxy/shared/theme/app_palette.dart';
+import 'package:shopxy/shared/theme/app_theme_spec.dart';
 
 /// The eight themes the merchant app ships, mirroring the web app. Two families
 /// — light (dark ink on a light ground) and dark (light ink on a dark ground):
@@ -30,6 +31,10 @@ class ThemePrefsProvider extends ChangeNotifier {
   /// The resolved palette for the current mode.
   AppPalette get palette => paletteFor(_mode);
 
+  /// The full theme descriptor (palette + font + icon style + shape + density +
+  /// motion) for the current mode. See [AppThemeSpec].
+  AppThemeSpec get spec => specFor(_mode);
+
   static AppPalette paletteFor(AppThemeMode mode) {
     switch (mode) {
       case AppThemeMode.light:
@@ -54,8 +59,10 @@ class ThemePrefsProvider extends ChangeNotifier {
   Future<void> load() async {
     final raw = await _storage.read(key: _key);
     _mode = _parse(raw);
-    // Make the active palette correct for the very first build.
+    // Make the active palette + full theme spec correct for the very first
+    // build (font / shape / density / motion, not just colour).
     AppPalette.active = palette;
+    AppThemeSpec.active = spec;
     notifyListeners();
   }
 
@@ -63,6 +70,7 @@ class ThemePrefsProvider extends ChangeNotifier {
     if (_mode == value) return;
     _mode = value;
     AppPalette.active = palette;
+    AppThemeSpec.active = spec;
     notifyListeners();
     await _storage.write(key: _key, value: value.name);
   }
