@@ -11057,6 +11057,24 @@ abstract class AppLocalizations {
   /// **'No products added yet.'**
   String get stockAdjNoProductsAdded;
 
+  /// No description provided for @stockAdjSearchToAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Search above to add the products you\'re adjusting.'**
+  String get stockAdjSearchToAdd;
+
+  /// No description provided for @stockAdjAddsStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Adds to stock'**
+  String get stockAdjAddsStock;
+
+  /// No description provided for @stockAdjReducesStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Removes from stock'**
+  String get stockAdjReducesStock;
+
   /// No description provided for @stockAdjPostAdjustment.
   ///
   /// In en, this message translates to:

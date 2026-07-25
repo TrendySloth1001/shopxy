@@ -76,14 +76,25 @@ const walletTopUp: SettlementHandler = {
 // paymentStatus to PAID; merchant confirmation/fulfilment is unchanged (the
 // order still flows through the normal inbox).
 //
-// CURRENT STATE — read this before describing the system to anyone: there is NO
-// Route split and NO on-hold settlement here yet. The full captured amount lands
-// in the PLATFORM's own Razorpay account and settles to our bank on the normal
-// schedule; sellers are not paid out by this code at all. That is a plain
-// platform-collection model, not held funds — do not call it "escrow". The
-// per-shop on-hold split (funds parked in Razorpay's balance, released on
-// delivery) is the next increment, designed in ROUTE_SPLIT_DESIGN.md but NOT
-// built: it will create on-hold transfers here per child shop.
+// CURRENT STATE — read this before describing the system to anyone. Which of the
+// two models below is live depends ENTIRELY on the ROUTE_SPLIT_ENABLED flag:
+//
+//   flag OFF (the default, and what prod runs today): no transfer rows are
+//     written and no Route call is made. The full captured amount lands in the
+//     PLATFORM's own Razorpay account and settles to our bank on the normal
+//     schedule; sellers are not paid out by this code at all. That is plain
+//     platform collection, not held funds — do not call it "escrow".
+//
+//   flag ON: the per-shop on-hold split IS built and wired here — phase 1
+//     (writeHeldTransferRows) writes one HELD/KYC_GATED GatewayTransfer row per
+//     child inside the settlement tx, and phase 2 (executeHeldTransfers, in
+//     afterCommit) creates the on-hold transfers at Razorpay. Each seller's
+//     slice is then parked in RAZORPAY's regulated balance with Razorpay as
+//     custodian — still not escrow, and still never in a ShopXY account. See
+//     order-split.ts for the legal framing and ROUTE_SPLIT_DESIGN.md for design.
+//
+// So: the code path exists, the money path is off. Don't describe the split as
+// unbuilt, and don't describe it as live.
 const orderPayment: SettlementHandler = {
   async onPaid(intent, tx) {
     const db = tx ?? prisma;

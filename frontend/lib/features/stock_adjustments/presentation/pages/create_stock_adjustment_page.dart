@@ -234,27 +234,17 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
       },
       child: Scaffold(
         extendBodyBehindAppBar: true,
-        appBar: FloatingAppBar(
-          title: l10n.stockAdjNewTitle,
-          actions: [
-            TextButton(
-              onPressed: _isSaving ? null : _save,
-              child: _isSaving
-                  ? const SizedBox(
-                      width: AppSizes.iconMd,
-                      height: AppSizes.iconMd,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(l10n.stockAdjSubmit),
-            ),
-          ],
-        ),
+        appBar: FloatingAppBar(title: l10n.stockAdjNewTitle),
         body: Form(
           key: _formKey,
           child: MediaQuery.removePadding(
             context: context,
             removeTop: true,
-            child: Column(
+            // Single scroll view so the hero scrolls away with the form instead
+            // of staying pinned. Hero is full-bleed (zero list padding); the
+            // form fields get their own lg padding via the inner Column.
+            child: ListView(
+              padding: EdgeInsets.zero,
               children: [
                 SizedBox(height: FloatingAppBar.contentTopInset(context)),
                 GlassHero.line(
@@ -263,9 +253,10 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
                   illustrationSize: AppSizes.productImageSize,
                   accent: AppColors.warning,
                 ),
-                Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.all(AppSizes.lg),
+                Padding(
+                  padding: const EdgeInsets.all(AppSizes.lg),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       AppSectionHeader(
                         title: l10n.stockAdjReasonSection,
@@ -283,8 +274,8 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
                           );
                         }).toList(),
                       ),
-                      if (allowDirectionToggle) ...[
-                        const SizedBox(height: AppSizes.md),
+                      const SizedBox(height: AppSizes.md),
+                      if (allowDirectionToggle)
                         SegmentedButton<String>(
                           segments: [
                             ButtonSegment(
@@ -300,8 +291,15 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
                           showSelectedIcon: false,
                           onSelectionChanged: (v) =>
                               setState(() => _direction = v.first),
+                        )
+                      else
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: _DirectionHint(
+                            direction: _direction,
+                            l10n: l10n,
+                          ),
                         ),
-                      ],
                       const SizedBox(height: AppSizes.lg),
                       TextFormField(
                         controller: _note,
@@ -315,6 +313,14 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
                       AppSectionHeader(
                         title: l10n.stockAdjProductsSection,
                         padding: const EdgeInsets.only(bottom: AppSizes.sm),
+                        trailing: _items.isEmpty
+                            ? null
+                            : Text(
+                                '${_items.length} ${_items.length == 1 ? l10n.stockAdjItemSingular : l10n.stockAdjItemPlural}',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: AppColors.muted,
+                                ),
+                              ),
                       ),
                       TextFormField(
                         controller: _searchCtrl,
@@ -365,13 +371,40 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
                       const SizedBox(height: AppSizes.lg),
                       if (_items.isEmpty)
                         Container(
-                          padding: const EdgeInsets.all(AppSizes.xl),
-                          alignment: Alignment.center,
-                          child: Text(
-                            l10n.stockAdjNoProductsAdded,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: AppColors.muted,
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSizes.lg,
+                            vertical: AppSizes.xxl,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(
+                              AppSizes.radiusLg,
                             ),
+                            border: Border.all(color: AppColors.hairline),
+                          ),
+                          child: Column(
+                            children: [
+                              AppIcon(
+                                AppIcons.inventory2Rounded,
+                                size: AppSizes.iconXl,
+                                color: AppColors.subtle,
+                              ),
+                              const SizedBox(height: AppSizes.sm),
+                              Text(
+                                l10n.stockAdjNoProductsAdded,
+                                textAlign: TextAlign.center,
+                                style: theme.textTheme.bodyMedium?.semibold,
+                              ),
+                              const SizedBox(height: AppSizes.xxs),
+                              Text(
+                                l10n.stockAdjSearchToAdd,
+                                textAlign: TextAlign.center,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: AppColors.muted,
+                                ),
+                              ),
+                            ],
                           ),
                         )
                       else
@@ -415,7 +448,53 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
   }
 }
 
-class _ItemRow extends StatelessWidget {
+/// Reason → effect pill shown when the direction is fixed (Damaged / Expired /
+/// Shrinkage always remove; Opening balance always adds). Recount lets the user
+/// choose, so it shows the [SegmentedButton] instead. Makes the stock impact of
+/// the chosen reason explicit before the merchant posts.
+class _DirectionHint extends StatelessWidget {
+  const _DirectionHint({required this.direction, required this.l10n});
+
+  final String direction;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isIn = direction == 'IN';
+    final accent = isIn ? AppColors.success : AppColors.error;
+    final tint = isIn ? AppColors.successSoft : AppColors.errorSoft;
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.md,
+        vertical: AppSizes.sm,
+      ),
+      decoration: BoxDecoration(
+        color: tint,
+        borderRadius: BorderRadius.circular(AppSizes.radiusFull),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AppIcon(
+            isIn
+                ? AppIcons.arrowUpwardRounded
+                : AppIcons.arrowDownwardRounded,
+            size: AppSizes.iconSm,
+            color: accent,
+          ),
+          const SizedBox(width: AppSizes.xs),
+          Text(
+            isIn ? l10n.stockAdjAddsStock : l10n.stockAdjReducesStock,
+            style: theme.textTheme.labelMedium?.copyWith(color: accent),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ItemRow extends StatefulWidget {
   const _ItemRow({
     required this.item,
     required this.onQuantityChanged,
@@ -425,6 +504,37 @@ class _ItemRow extends StatelessWidget {
   final _ItemDraft item;
   final ValueChanged<double> onQuantityChanged;
   final VoidCallback onRemove;
+
+  @override
+  State<_ItemRow> createState() => _ItemRowState();
+}
+
+class _ItemRowState extends State<_ItemRow> {
+  late final TextEditingController _qty;
+
+  @override
+  void initState() {
+    super.initState();
+    _qty = TextEditingController(text: _format(widget.item.quantity));
+  }
+
+  @override
+  void dispose() {
+    _qty.dispose();
+    super.dispose();
+  }
+
+  static String _format(double q) =>
+      q % 1 == 0 ? q.toInt().toString() : q.toStringAsFixed(2);
+
+  void _step(double delta) {
+    // Quantity floor mirrors the field validation (must be > 0); stepping down
+    // from 1 stays at 1 rather than going to zero/negative.
+    final raw = widget.item.quantity + delta;
+    final next = raw < 1 ? 1.0 : raw;
+    _qty.text = _format(next);
+    widget.onQuantityChanged(next);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -441,13 +551,13 @@ class _ItemRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.productName,
+                  widget.item.productName,
                   style: theme.textTheme.bodyMedium?.semibold,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  item.productSku,
+                  widget.item.productSku,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: AppColors.muted,
                   ),
@@ -455,32 +565,36 @@ class _ItemRow extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: AppSizes.md),
+          const SizedBox(width: AppSizes.sm),
+          _StepButton(
+            icon: AppIcons.removeRounded,
+            onTap: () => _step(-1),
+          ),
           SizedBox(
-            width: 88,
+            width: AppSizes.massive + AppSizes.sm,
             child: TextFormField(
-              initialValue: item.quantity % 1 == 0
-                  ? item.quantity.toInt().toString()
-                  : item.quantity.toStringAsFixed(2),
+              controller: _qty,
+              textAlign: TextAlign.center,
               decoration: InputDecoration(
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(
-                  horizontal: AppSizes.sm,
+                  horizontal: AppSizes.xs,
                   vertical: AppSizes.sm,
                 ),
-                suffixText: item.unit,
+                suffixText: widget.item.unit,
               ),
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
               onChanged: (v) {
                 final q = double.tryParse(v);
-                if (q != null && q > 0) onQuantityChanged(q);
+                if (q != null && q > 0) widget.onQuantityChanged(q);
               },
             ),
           ),
+          _StepButton(icon: AppIcons.addRounded, onTap: () => _step(1)),
           IconButton(
-            onPressed: onRemove,
+            onPressed: widget.onRemove,
             icon: AppIcon(
               AppIcons.closeRounded,
               color: AppColors.error,
@@ -488,6 +602,32 @@ class _ItemRow extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Square, hairline-bordered ± button used by the quantity stepper.
+class _StepButton extends StatelessWidget {
+  const _StepButton({required this.icon, required this.onTap});
+
+  final AppIconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkResponse(
+      onTap: onTap,
+      radius: AppSizes.iconLg,
+      child: Container(
+        width: AppSizes.iconXl,
+        height: AppSizes.iconXl,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+          border: Border.all(color: AppColors.hairline),
+        ),
+        alignment: Alignment.center,
+        child: AppIcon(icon, size: AppSizes.iconSm, color: AppColors.black),
       ),
     );
   }

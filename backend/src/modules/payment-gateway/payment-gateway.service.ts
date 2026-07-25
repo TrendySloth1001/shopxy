@@ -143,16 +143,27 @@ export class PaymentGatewayService {
    * (E-Commerce) Rules 2020, Rule 4(7)). Wallet credit as a refund vehicle has
    * been removed — this method is the only refund path.
    *
-   * Flow (idempotent + crash-safe):
+   * Flow (idempotent + crash-safe). Note the ordering: we RESERVE the refundable
+   * headroom before calling the provider, not after. Checking the cap and then
+   * consuming it in a later write is a read-modify-write race — two concurrent
+   * refunds on one capture (two children of an order cancelled at once) would
+   * both pass their individual cap and together over-refund.
    *   1. Replay: a GatewayRefund already exists for this idempotency key →
    *      return it (no second provider call).
    *   2. Resolve the CAPTURED payment for (targetType, targetId). None → the
    *      order was COD / never captured online → NO_PAYMENT (caller skips).
-   *   3. Cap the amount at (capture.amount − capture.amountRefunded). ≤0 →
-   *      NOTHING_TO_REFUND (already fully reversed).
+   *   3. In one tx, under a row lock on the capture: reserve up to `amount` of
+   *      (capture.amount − amountRefunded) and write the GatewayRefund row as
+   *      PENDING against exactly what was granted. Granted 0 →
+   *      NOTHING_TO_REFUND (already fully reversed). Concurrent refunds
+   *      serialize here, so their reservations can never sum past the capture.
    *   4. Call the provider's refund API (external — NOT inside a DB tx).
-   *   5. In one tx: write the GatewayRefund row and bump the capture's
-   *      amount_refunded (flipping it to REFUNDED once fully reversed).
+   *   5. Success → confirm the row (PENDING or PROCESSED) with the provider ref.
+   *      Rejection → mark it FAILED and RELEASE the reservation, so a failed
+   *      refund consumes no headroom and a later return isn't under-refunded.
+   *
+   * This keeps the invariant the reconcile sweep depends on: a PENDING row HAS
+   * reserved the cap, a FAILED row has NOT.
    *
    * Never silently swallows: a provider rejection is persisted as a FAILED
    * refund row and returned as `{ status: 'FAILED' }` so the caller/ops can act.
@@ -185,21 +196,74 @@ export class PaymentGatewayService {
       return { status: 'NO_PAYMENT' };
     }
 
-    // (3) Cap at what's left of the capture. Clamp (don't reject) an overshoot.
-    const refundable = round2(capture.amount - capture.amountRefunded);
-    const amount = round2(Math.min(input.amount, refundable));
-    if (!(amount > 0)) {
+    // (3) Reserve the headroom AND write the refund row in one locked tx, so a
+    // concurrent refund on the same capture can only take what's left over.
+    // Amount is clamped to the grant, never rejected — a rounding overshoot in a
+    // caller's proportional share must not strand a legitimate refund.
+    let reserved: { row: GatewayRefundRecord; amount: number; fullyRefunded: boolean } | null;
+    try {
+      reserved = await prisma.$transaction(async (tx) => {
+        const { granted, fullyRefunded } = await this.repo.reserveRefundable(
+          capture.id,
+          input.amount,
+          tx,
+        );
+        if (!(granted > 0)) return null;
+        const row = await this.refunds.create(
+          {
+            gatewayPaymentId: capture.id,
+            provider: capture.provider,
+            amount: granted,
+            currency: capture.currency,
+            // PENDING = "reserved, in flight". Confirmed or released in (5).
+            status: 'PENDING',
+            providerRefundRef: null,
+            sourceType: input.sourceType,
+            sourceId: input.sourceId,
+            reason: input.reason ?? null,
+            idempotencyKey: input.idempotencyKey,
+          },
+          tx,
+        );
+        return { row, amount: granted, fullyRefunded };
+      });
+    } catch (err) {
+      // Two callers raced past the replay check with the SAME key: the loser
+      // blocked on the row lock, then lost the unique on idempotencyKey. That IS
+      // the replay case — re-read and return the winner's refund rather than
+      // surfacing a constraint error to a return/cancel flow.
+      if ((err as { code?: string }).code === 'P2002') {
+        const winner = await this.refunds.findByIdempotencyKey(input.idempotencyKey);
+        if (winner) {
+          tracker.track({
+            step: 'REFUND_REPLAYED',
+            provider: winner.provider,
+            intentId: capture.id,
+            meta: { idempotencyKey: input.idempotencyKey, status: winner.status, raced: true },
+          });
+          return winner.status === 'FAILED'
+            ? { status: 'FAILED', refund: winner }
+            : { status: 'REFUNDED', refund: winner };
+        }
+      }
+      throw err;
+    }
+
+    if (!reserved) {
       tracker.track({
         step: 'REFUND_SKIPPED',
         provider: capture.provider,
         intentId: capture.id,
-        meta: { reason: 'nothing left to refund', refundable, requested: input.amount },
+        meta: { reason: 'nothing left to refund', requested: input.amount },
       });
       return { status: 'NOTHING_TO_REFUND' };
     }
+    const { row: refund, amount, fullyRefunded } = reserved;
 
     // (4) External provider call — outside any DB tx so a crash can't hold the
-    // tx open or leave money moved against an uncommitted row.
+    // tx open or leave money moved against an uncommitted row. A crash between
+    // here and (5) leaves a PENDING row with no provider ref, which the refund
+    // sweep re-drives (the provider Idempotency-Key makes that safe).
     const provider = getProvider(capture.provider);
     let providerRefundRef: string | null = null;
     let providerStatus: GatewayRefundRecord['status'] = 'PENDING';
@@ -221,7 +285,7 @@ export class PaymentGatewayService {
       failed = res.status === 'FAILED';
     } catch (err) {
       // Provider rejected (e.g. payment already fully refunded on their side,
-      // network, validation). Persist a FAILED row for the audit trail + ops.
+      // network, validation). The row stays for the audit trail + ops.
       failed = true;
       tracker.track({
         step: 'REFUND_FAILED',
@@ -231,44 +295,42 @@ export class PaymentGatewayService {
       });
     }
 
-    // (5) Record the refund + advance the capture's cap, atomically. A FAILED
-    // refund records the row (audit) but does NOT consume any refundable amount.
-    const fullyRefunded = !failed && round2(capture.amountRefunded + amount) >= capture.amount;
-    const refund = await prisma.$transaction(async (tx) => {
-      const row = await this.refunds.create(
-        {
-          gatewayPaymentId: capture.id,
-          provider: capture.provider,
-          amount,
-          currency: capture.currency,
-          status: failed ? 'FAILED' : providerStatus,
-          providerRefundRef,
-          sourceType: input.sourceType,
-          sourceId: input.sourceId,
-          reason: input.reason ?? null,
-          idempotencyKey: input.idempotencyKey,
-        },
-        tx,
-      );
-      if (!failed) {
-        await this.repo.addRefundedAmount(capture.id, amount, fullyRefunded, tx);
-      }
-      return row;
-    });
+    // (5) Settle the row against what the provider said. A rejection releases the
+    // reservation so a FAILED refund consumes no refundable amount.
+    if (failed) {
+      await this.releaseAndFail(refund, capture);
+      const failedRow: GatewayRefundRecord = { ...refund, status: 'FAILED' };
+      tracker.track({
+        step: 'REFUND_FAILED',
+        provider: capture.provider,
+        intentId: capture.id,
+        meta: { refundId: refund.id, amount, phase: 'reservation released' },
+      });
+      return { status: 'FAILED', refund: failedRow };
+    }
 
+    await this.refunds.update(refund.id, {
+      status: providerStatus,
+      ...(providerRefundRef ? { providerRefundRef } : {}),
+    });
+    const settledRow: GatewayRefundRecord = {
+      ...refund,
+      status: providerStatus,
+      providerRefundRef,
+    };
     tracker.track({
-      step: failed ? 'REFUND_FAILED' : 'REFUND_ISSUED',
+      step: 'REFUND_ISSUED',
       provider: capture.provider,
       intentId: capture.id,
       meta: {
         refundId: refund.id,
         providerRefundRef,
         amount,
-        status: refund.status,
+        status: providerStatus,
         fullyRefunded,
       },
     });
-    return failed ? { status: 'FAILED', refund } : { status: 'REFUNDED', refund };
+    return { status: 'REFUNDED', refund: settledRow };
   }
 
   /**
@@ -393,6 +455,12 @@ export class PaymentGatewayService {
         app: 'shopxy',
         sourceType: row.sourceType,
         sourceId: String(row.sourceId),
+        // The caller's original custom notes aren't persisted on the row, so a
+        // re-drive can't reproduce them. Carry the target instead, so a transfer
+        // created by a re-drive is still traceable to its order/sale in the
+        // provider dashboard rather than landing there context-free.
+        targetType: capture.target.type,
+        targetId: String(capture.target.id),
         redrive: 'true',
       },
     });
@@ -411,9 +479,10 @@ export class PaymentGatewayService {
     }
 
     // Accepted (PENDING) or settled (PROCESSED). Record the ref + status, and
-    // reserve the cap iff this row hadn't reserved it yet.
-    const fullyRefunded =
-      !alreadyReserved && round2(capture.amountRefunded + row.amount) >= capture.amount;
+    // reserve the cap iff this row hadn't reserved it yet. The reservation goes
+    // through the same locked path as a fresh refund, so a re-drive racing a new
+    // refund on the same capture can't push the total past what was captured.
+    let granted = row.amount;
     await prisma.$transaction(async (tx) => {
       await this.refunds.update(
         row.id,
@@ -424,9 +493,28 @@ export class PaymentGatewayService {
         tx,
       );
       if (!alreadyReserved) {
-        await this.repo.addRefundedAmount(capture.id, row.amount, fullyRefunded, tx);
+        const r = await this.repo.reserveRefundable(capture.id, row.amount, tx);
+        granted = r.granted;
       }
     });
+    if (granted < row.amount) {
+      // The provider accepted the full amount but the capture no longer had room
+      // for it — another refund consumed the headroom while this row sat FAILED.
+      // Not silently absorbed: the ledger and the provider now disagree and only
+      // a human can decide which side is right.
+      tracker.track({
+        step: 'REFUND_FAILED',
+        provider: row.provider,
+        intentId: capture.id,
+        meta: {
+          refundId: row.id,
+          phase: 'redrive-reservation-shortfall',
+          refunded: row.amount,
+          reserved: granted,
+          severity: 'CRITICAL',
+        },
+      });
+    }
     tracker.track({
       step: 'REFUND_REDRIVEN',
       provider: row.provider,
@@ -436,15 +524,16 @@ export class PaymentGatewayService {
     return true;
   }
 
-  /** Mark a reserved (PENDING) refund FAILED and release the cap it held. */
+  /** Mark a reserved (PENDING) refund FAILED and release the cap it held. The
+   *  post-release capture status is re-derived under the row lock inside
+   *  `releaseRefundable`, never from this snapshot of `capture`. */
   private async releaseAndFail(
     row: GatewayRefundRecord,
     capture: GatewayPaymentRecord,
   ): Promise<void> {
-    const stillFully = round2(capture.amountRefunded - row.amount) >= capture.amount;
     await prisma.$transaction(async (tx) => {
       await this.refunds.update(row.id, { status: 'FAILED' }, tx);
-      await this.repo.releaseRefundedAmount(capture.id, row.amount, stillFully, tx);
+      await this.repo.releaseRefundable(capture.id, row.amount, tx);
     });
     tracker.track({
       step: 'REFUND_FAILED',
@@ -961,12 +1050,8 @@ export class PaymentGatewayService {
       return;
     }
 
-    // Transition+settle BEFORE marking processed. If a step throws, the
-    // exception propagates and `markProcessed` is skipped, so processedAt stays
-    // null — the audit trail distinguishes "claimed but settlement failed" from
-    // "claimed and processed". The claim's unique gate still dedupes a literal
-    // redelivery; genuine retries of a transient failure are reconciliation's
-    // job, not the webhook's.
+    // Transition+settle BEFORE marking processed, so processedAt is only ever set
+    // on an event that actually settled.
     try {
       if (event.type === 'PAID') {
         await this.confirm(intent, event);
@@ -977,7 +1062,12 @@ export class PaymentGatewayService {
       }
       // PENDING / UNKNOWN: recorded for audit, no state change.
     } catch (err) {
-      // Don't mark processed — leave processedAt null for the audit trail.
+      // A TRANSIENT failure must give the claim back. The claim commits before
+      // settlement runs, so keeping it would make the provider's redelivery a
+      // no-op ("already seen") and the 500 we're about to return a lie — the
+      // retry it asks for could never land, leaving reconciliation as the ONLY
+      // recovery. Releasing restores the retry; reconciliation stays the backstop.
+      await this.releaseClaimForRetry(provider.name, event, err);
       throw err;
     }
 
@@ -985,10 +1075,54 @@ export class PaymentGatewayService {
   }
 
   /**
+   * Give back a dedupe claim whose settlement failed transiently, so the
+   * provider's redelivery can re-run it. A PERMANENT failure (4xx — bad amount,
+   * malformed data) keeps its claim: a redelivery would fail identically, and the
+   * route acks those with 200 anyway, so re-claiming would only churn.
+   * Never throws — a release failure must not mask the original error.
+   */
+  private async releaseClaimForRetry(
+    providerName: string,
+    event: NormalizedEvent,
+    cause: unknown,
+  ): Promise<void> {
+    const status = (cause as { status?: number })?.status;
+    const permanent = typeof status === 'number' && status >= 400 && status < 500;
+    if (permanent) return;
+    try {
+      await this.events.release(providerName, event.eventId);
+      tracker.track({
+        step: 'WEBHOOK_RELEASED',
+        provider: providerName,
+        meta: {
+          eventId: event.eventId,
+          type: event.type,
+          reason: 'transient settlement failure — claim released for redelivery',
+          error: cause instanceof Error ? cause.message : 'unknown',
+        },
+      });
+    } catch (releaseErr) {
+      // The claim is stuck; reconciliation is the remaining net. Surface it.
+      tracker.track({
+        step: 'WEBHOOK_RELEASED',
+        provider: providerName,
+        status: 'FAILED',
+        meta: {
+          eventId: event.eventId,
+          type: event.type,
+          error: releaseErr instanceof Error ? releaseErr.message : 'unknown',
+          severity: 'CRITICAL',
+        },
+      });
+    }
+  }
+
+  /**
    * Settlement webhook path (transfer / account / dispute events). Same discipline
    * as the intent path: ownership first (ack-and-ignore a foreign event on a shared
-   * account), then exactly-once claim, then handle, then mark processed. A throw
-   * leaves processedAt null so reconciliation/redelivery retries.
+   * account), then exactly-once claim, then handle, then mark processed. A
+   * transient throw releases the claim so the provider's redelivery can retry;
+   * reconciliation remains the backstop.
    */
   private async handleSettlementWebhook(
     providerName: string,
@@ -1007,7 +1141,12 @@ export class PaymentGatewayService {
       tracker.track({ step: 'WEBHOOK_DEDUPED', provider: providerName, meta: { type: event.type } });
       return;
     }
-    await handleSettlementEvent(event); // throws → markProcessed skipped (audit trail)
+    try {
+      await handleSettlementEvent(event);
+    } catch (err) {
+      await this.releaseClaimForRetry(providerName, event, err);
+      throw err;
+    }
     await this.events.markProcessed(providerName, event.eventId);
   }
 

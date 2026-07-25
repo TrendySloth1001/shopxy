@@ -5,7 +5,7 @@
  */
 import { Prisma } from '@prisma/client';
 import prisma from '../../../infra/db/prisma.js';
-import { toNumber } from '../../../shared/numbering/decimal.js';
+import { round2, toNumber } from '../../../shared/numbering/decimal.js';
 import type {
   CreateIntentInput,
   GatewayPaymentRepository,
@@ -209,34 +209,64 @@ class PrismaGatewayPaymentRepository implements GatewayPaymentRepository {
     return row ? toRecord(row) : null;
   }
 
-  async addRefundedAmount(
+  /**
+   * Lock the capture row, then grant what's actually left of it. The
+   * SELECT … FOR UPDATE is the serialization point: a second reservation against
+   * the same capture blocks here until the first commits, so it sees the updated
+   * `amount_refunded` and can only take the remaining headroom. Without the lock
+   * two concurrent refunds both read the pre-refund value and together exceed
+   * the captured amount (Razorpay then rejects the second one, leaving a FAILED
+   * row the sweep churns on — see reserveRefundable's port doc).
+   */
+  async reserveRefundable(
     id: number,
-    amount: number,
-    markFullyRefunded: boolean,
-    tx?: Prisma.TransactionClient,
-  ): Promise<void> {
-    const db = tx ?? prisma;
-    await db.gatewayPayment.update({
+    requested: number,
+    tx: Prisma.TransactionClient,
+  ): Promise<{ granted: number; fullyRefunded: boolean }> {
+    const locked = await tx.$queryRaw<Array<{ amount: string; amount_refunded: string }>>`
+      SELECT amount, amount_refunded FROM gateway_payments WHERE id = ${id} FOR UPDATE
+    `;
+    const row = locked[0];
+    if (!row) return { granted: 0, fullyRefunded: false };
+
+    const amount = Number(row.amount);
+    const alreadyRefunded = Number(row.amount_refunded);
+    // Clamp (never reject) an overshoot: a rounding artefact in a caller's
+    // proportional share must not strand a legitimate refund.
+    const granted = round2(Math.min(requested, round2(amount - alreadyRefunded)));
+    if (!(granted > 0)) return { granted: 0, fullyRefunded: false };
+
+    const fullyRefunded = round2(alreadyRefunded + granted) >= amount;
+    await tx.gatewayPayment.update({
       where: { id },
       data: {
-        amountRefunded: { increment: new Prisma.Decimal(amount) },
-        ...(markFullyRefunded ? { status: 'REFUNDED' } : {}),
+        amountRefunded: { increment: new Prisma.Decimal(granted) },
+        ...(fullyRefunded ? { status: 'REFUNDED' } : {}),
       },
     });
+    return { granted, fullyRefunded };
   }
 
-  async releaseRefundedAmount(
+  async releaseRefundable(
     id: number,
     amount: number,
-    stillFullyRefunded: boolean,
-    tx?: Prisma.TransactionClient,
+    tx: Prisma.TransactionClient,
   ): Promise<void> {
-    const db = tx ?? prisma;
-    await db.gatewayPayment.update({
+    const locked = await tx.$queryRaw<Array<{ amount: string; amount_refunded: string }>>`
+      SELECT amount, amount_refunded FROM gateway_payments WHERE id = ${id} FOR UPDATE
+    `;
+    const row = locked[0];
+    if (!row) return;
+
+    // Derive the post-release status from the LOCKED value, not a caller
+    // snapshot: another refund may have reserved headroom since the caller read
+    // the capture, and that one still legitimately covers the capture in full.
+    const remainingRefunded = round2(Number(row.amount_refunded) - amount);
+    await tx.gatewayPayment.update({
       where: { id },
       data: {
         amountRefunded: { decrement: new Prisma.Decimal(amount) },
-        status: stillFullyRefunded ? 'REFUNDED' : 'CAPTURED',
+        status: remainingRefunded >= Number(row.amount) ? 'REFUNDED' : 'CAPTURED',
       },
     });
   }
@@ -345,6 +375,22 @@ class PrismaWebhookEventRepository implements WebhookEventRepository {
     await prisma.gatewayWebhookEvent.updateMany({
       where: { provider, eventId },
       data: { processedAt: new Date() },
+    });
+  }
+
+  async release(provider: string, eventId: string): Promise<void> {
+    // Delete only an UNPROCESSED claim, so a redelivery re-claims and re-runs
+    // settlement. `processedAt: null` is the guard that makes this safe: a
+    // completed event keeps its row and stays deduped forever.
+    //
+    // Trade-off, stated plainly: dropping the row also drops the stored payload
+    // for that attempt. The alternative (an attempts/failedAt column) needs a
+    // migration; until then the failure is recorded in the tracker log with the
+    // event id and error, the payload is still in the provider's dashboard, and
+    // a redelivery re-inserts it. A retryable money event is worth more than one
+    // audit row of a failed attempt.
+    await prisma.gatewayWebhookEvent.deleteMany({
+      where: { provider, eventId, processedAt: null },
     });
   }
 }

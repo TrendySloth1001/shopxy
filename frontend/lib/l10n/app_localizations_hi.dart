@@ -5987,6 +5987,16 @@ class AppLocalizationsHi extends AppLocalizations {
   String get stockAdjNoProductsAdded => 'अभी तक कोई उत्पाद नहीं जोड़ा गया।';
 
   @override
+  String get stockAdjSearchToAdd =>
+      'जिन उत्पादों को समायोजित करना है उन्हें जोड़ने के लिए ऊपर खोजें।';
+
+  @override
+  String get stockAdjAddsStock => 'स्टॉक में जोड़ता है';
+
+  @override
+  String get stockAdjReducesStock => 'स्टॉक से घटाता है';
+
+  @override
   String get stockAdjPostAdjustment => 'समायोजन पोस्ट करें';
 
   @override

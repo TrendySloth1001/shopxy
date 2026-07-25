@@ -130,12 +130,14 @@ async function handleTransferReversed(event: NormalizedEvent): Promise<void> {
 // account.* → mirror linked-account KYC. Activation is the gate the ORDER split
 // checks before creating a transfer; suspension/needs-clarification disables it.
 //
-// KNOWN GAP (needs the onboarding iteration): if account.activated is dropped or
-// arrives BEFORE our LinkedAccount row exists, ownsSettlementEvent disowns it and
-// payoutsEnabled never flips — there is no provider-side account-status re-poll to
-// self-heal it yet (it requires the adapter's fetchAccountStatus + onboarding).
-// Not a money-loss (transfers stay HELD/KYC_GATED), but a seller can be stranded
-// unpayable on a single missed webhook until the next account.* event.
+// A dropped account.activated — or one that arrives BEFORE our LinkedAccount row
+// exists, which ownsSettlementEvent correctly disowns — does NOT strand the
+// seller: linkedAccountsService.reconcilePendingKyc() re-polls the provider for
+// every not-yet-payout-enabled account every 30 min (scheduler.ts,
+// 'gateway:reconcile-kyc'), claim-once on the `payoutsEnabled: false` gate so it
+// can't clobber a concurrent webhook. Once an account flips, the transfer sweep's
+// P7 step (retryKycGatedTransfers) promotes its KYC_GATED rows. This handler is
+// the fast path; that sweep is the net.
 async function handleAccountUpdated(event: NormalizedEvent): Promise<void> {
   const ref = event.account!.ref;
   const status = event.account!.status;

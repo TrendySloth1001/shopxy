@@ -36,13 +36,51 @@ vi.mock('../../src/modules/payment-gateway/settlement/settlement.js', () => ({
   settlementFor: (type: string) => settlementFor(type),
 }));
 
+// Transactions must actually ROLL BACK in these tests, not just run the callback:
+// two correctness properties the service documents depend on it — a settlement
+// throw must undo the CAPTURED status flip, and a refund insert that loses the
+// idempotency-key unique must undo the reservation it just made. A mock that
+// swallowed rollback would report both as leaked state.
+//
+// Rollback is per-transaction, not a whole-store snapshot: two refunds racing on
+// one capture have OVERLAPPING transactions, and a snapshot taken at the loser's
+// BEGIN predates the winner's commit — restoring it would wipe committed work
+// that Postgres would have kept. So each tx gets a token, every tx-scoped
+// mutation registers a targeted undo against it, and rollback replays only that
+// token's undos in reverse.
+const txLog = vi.hoisted(() => ({
+  entries: [] as Array<{ token: unknown; undo: () => void }>,
+  record(token: unknown, undo: () => void) {
+    if (token != null) this.entries.push({ token, undo });
+  },
+  rollback(token: unknown) {
+    const mine = this.entries.filter((e) => e.token === token);
+    for (const e of mine.reverse()) e.undo();
+    this.entries = this.entries.filter((e) => e.token !== token);
+  },
+  commit(token: unknown) {
+    this.entries = this.entries.filter((e) => e.token !== token);
+  },
+  reset() {
+    this.entries = [];
+  },
+}));
+
 vi.mock('../../src/infra/db/prisma.js', () => ({
   default: {
-    // Run the callback with a sentinel tx so we exercise the real
-    // updateStatus + settlement wiring without touching a database.
-    $transaction: vi.fn(async (cb: (tx: unknown) => Promise<unknown>) =>
-      cb({ __fakeTx: true }),
-    ),
+    // Run the callback with a per-call token as the tx handle, so we exercise the
+    // real updateStatus + settlement wiring (and rollback) without a database.
+    $transaction: vi.fn(async (cb: (t: unknown) => Promise<unknown>) => {
+      const token = { __fakeTx: true };
+      try {
+        const out = await cb(token);
+        txLog.commit(token);
+        return out;
+      } catch (err) {
+        txLog.rollback(token);
+        throw err;
+      }
+    }),
   },
 }));
 
@@ -157,7 +195,13 @@ class FakeRepo implements GatewayPaymentRepository {
   async updateStatus(id: number, status: GatewayPaymentStatus, tx?: unknown) {
     this.statusUpdates.push({ id, status, hadTx: tx != null });
     const row = this.rows.find((r) => r.id === id);
-    if (row) row.status = status;
+    if (row) {
+      const prior = row.status;
+      txLog.record(tx, () => {
+        row.status = prior;
+      });
+      row.status = status;
+    }
   }
 
   async detachIdempotencyKey(id: number) {
@@ -173,19 +217,37 @@ class FakeRepo implements GatewayPaymentRepository {
     );
   }
 
-  async addRefundedAmount(id: number, amount: number, markFullyRefunded: boolean) {
+  // Mirrors the locked SQL implementation: cap-check and increment in one step,
+  // granting only what's actually left. (The real one holds a row lock; a
+  // single-threaded fake serializes anyway — what matters is that the check and
+  // the increment are one indivisible step, which is what this asserts.)
+  async reserveRefundable(id: number, requested: number, tx?: unknown) {
     const row = this.rows.find((r) => r.id === id);
-    if (row) {
-      row.amountRefunded = Math.round((row.amountRefunded + amount) * 100) / 100;
-      if (markFullyRefunded) row.status = 'REFUNDED';
-    }
+    if (!row) return { granted: 0, fullyRefunded: false };
+    const r2 = (v: number) => Math.round(v * 100) / 100;
+    const granted = r2(Math.min(requested, r2(row.amount - row.amountRefunded)));
+    if (!(granted > 0)) return { granted: 0, fullyRefunded: false };
+    const prior = { amountRefunded: row.amountRefunded, status: row.status };
+    txLog.record(tx, () => {
+      row.amountRefunded = prior.amountRefunded;
+      row.status = prior.status;
+    });
+    row.amountRefunded = r2(row.amountRefunded + granted);
+    const fullyRefunded = row.amountRefunded >= row.amount;
+    if (fullyRefunded) row.status = 'REFUNDED';
+    return { granted, fullyRefunded };
   }
 
-  async releaseRefundedAmount(id: number, amount: number, stillFullyRefunded: boolean) {
+  async releaseRefundable(id: number, amount: number, tx?: unknown) {
     const row = this.rows.find((r) => r.id === id);
     if (row) {
+      const prior = { amountRefunded: row.amountRefunded, status: row.status };
+      txLog.record(tx, () => {
+        row.amountRefunded = prior.amountRefunded;
+        row.status = prior.status;
+      });
       row.amountRefunded = Math.round((row.amountRefunded - amount) * 100) / 100;
-      row.status = stillFullyRefunded ? 'REFUNDED' : 'CAPTURED';
+      row.status = row.amountRefunded >= row.amount ? 'REFUNDED' : 'CAPTURED';
     }
   }
 }
@@ -231,15 +293,37 @@ class FakeRefundRepo {
       .slice(0, input.limit);
   }
 
-  async create(input: Omit<FakeRefundRepo['rows'][number], 'id' | 'createdAt' | 'updatedAt'>) {
+  async create(
+    input: Omit<FakeRefundRepo['rows'][number], 'id' | 'createdAt' | 'updatedAt'>,
+    tx?: unknown,
+  ) {
+    // Enforce the real unique (idempotency_key) so the racing-same-key path is
+    // exercisable: the service must translate P2002 into a replay, not an error.
+    if (this.rows.some((r) => r.idempotencyKey === input.idempotencyKey)) {
+      throw Object.assign(new Error('Unique constraint failed on idempotencyKey'), {
+        code: 'P2002',
+      });
+    }
     const row = { ...input, id: ++this.seq, createdAt: new Date(), updatedAt: new Date() };
+    txLog.record(tx, () => {
+      this.rows = this.rows.filter((r) => r !== row);
+    });
     this.rows.push(row);
     return row;
   }
 
-  async update(id: number, data: { status?: 'PENDING' | 'PROCESSED' | 'FAILED'; providerRefundRef?: string }) {
+  async update(
+    id: number,
+    data: { status?: 'PENDING' | 'PROCESSED' | 'FAILED'; providerRefundRef?: string },
+    tx?: unknown,
+  ) {
     const row = this.rows.find((r) => r.id === id);
     if (row) {
+      const prior = { status: row.status, providerRefundRef: row.providerRefundRef };
+      txLog.record(tx, () => {
+        row.status = prior.status;
+        row.providerRefundRef = prior.providerRefundRef;
+      });
       if (data.status !== undefined) row.status = data.status;
       if (data.providerRefundRef !== undefined) row.providerRefundRef = data.providerRefundRef;
     }
@@ -249,6 +333,7 @@ class FakeRefundRepo {
 class FakeEvents implements WebhookEventRepository {
   claimed = new Set<string>();
   processed: string[] = [];
+  released: string[] = [];
   // Override per-test if we need a specific claim outcome.
   claimResult: boolean | null = null;
   claimCalls: Array<{ provider: string; eventId: string }> = [];
@@ -264,6 +349,14 @@ class FakeEvents implements WebhookEventRepository {
 
   async markProcessed(provider: string, eventId: string) {
     this.processed.push(`${provider}:${eventId}`);
+  }
+
+  async release(provider: string, eventId: string) {
+    const key = `${provider}:${eventId}`;
+    this.released.push(key);
+    // Only an unprocessed claim is releasable — mirrors the `processedAt: null`
+    // guard in the SQL, so a settled event stays deduped forever.
+    if (!this.processed.includes(key)) this.claimed.delete(key);
   }
 }
 
@@ -325,6 +418,7 @@ describe('PaymentGatewayService', () => {
     provider = makeProvider();
     getProvider.mockReturnValue(provider);
     settlementFor.mockReturnValue({ onPaid });
+    txLog.reset(); // no undo entries leak between tests
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     svc = new PaymentGatewayService(repo, events, refunds as any);
   });
@@ -580,6 +674,49 @@ describe('PaymentGatewayService', () => {
       expect(repo.statusUpdates).toEqual([{ id: 10, status: 'FAILED', hadTx: false }]);
       expect(onPaid).not.toHaveBeenCalled();
       expect(events.processed).toEqual(['RAZORPAY:ev_1']);
+    });
+
+    // ── claim release on transient failure (the 500 must mean something) ──
+    //
+    // The claim commits before settlement runs, so a claim kept after a transient
+    // failure would make the provider's redelivery a no-op and the 500 we return
+    // a lie. These two tests pin the transient/permanent split.
+
+    it('releases the claim when settlement fails TRANSIENTLY, so a redelivery re-runs it', async () => {
+      repo.seed(makeRecord({ id: 10, providerOrderRef: 'order_FAKE', status: 'PENDING', amount: 100 }));
+      (provider.parseWebhookEvent as ReturnType<typeof vi.fn>).mockReturnValue(
+        evt({ type: 'PAID', amountMinor: 10000 }),
+      );
+      // A DB blip inside settlement — no `status`, so transient.
+      onPaid.mockRejectedValueOnce(new Error('deadlock detected'));
+
+      await expect(svc.handleWebhook('razorpay', BODY, HEADERS)).rejects.toThrow(
+        'deadlock detected',
+      );
+      expect(events.released).toEqual(['RAZORPAY:ev_1']);
+      expect(events.processed).toHaveLength(0);
+
+      // The redelivery the 500 asked for now actually lands and settles.
+      onPaid.mockResolvedValueOnce(undefined);
+      await svc.handleWebhook('razorpay', BODY, HEADERS);
+
+      expect(events.claimCalls).toHaveLength(2);
+      expect(onPaid).toHaveBeenCalledTimes(2);
+      expect(events.processed).toEqual(['RAZORPAY:ev_1']);
+    });
+
+    it('KEEPS the claim on a PERMANENT (4xx) failure — a redelivery would fail identically', async () => {
+      repo.seed(makeRecord({ id: 10, providerOrderRef: 'order_FAKE', status: 'PENDING', amount: 100 }));
+      (provider.parseWebhookEvent as ReturnType<typeof vi.fn>).mockReturnValue(
+        evt({ type: 'PAID', amountMinor: 9999 }), // amount mismatch → 400
+      );
+
+      await expect(svc.handleWebhook('razorpay', BODY, HEADERS)).rejects.toMatchObject({
+        status: 400,
+      });
+
+      expect(events.released).toHaveLength(0);
+      expect(events.claimed.has('RAZORPAY:ev_1')).toBe(true);
     });
   });
 
@@ -906,6 +1043,79 @@ describe('PaymentGatewayService', () => {
       // A failed refund must NOT consume refundable amount.
       expect(repo.rows[0].amountRefunded).toBe(0);
       expect(repo.rows[0].status).toBe('CAPTURED');
+    });
+
+    // ── concurrent refunds on ONE capture must not sum past it ────────────
+    //
+    // The real-world shape: two children of the same order cancelled at once.
+    // Different idempotency keys (so no replay short-circuit), same targetId, so
+    // both resolve the SAME capture. Reserving before the provider call is what
+    // makes the second one see the first's consumption.
+
+    it('two concurrent refunds on one capture cannot over-refund it (reservation serializes)', async () => {
+      seedCapture(); // ₹1000 captured, nothing refunded yet
+      provider.refund = vi.fn(async (p: { amountMinor: number }) => ({
+        providerRefundRef: `rfnd_${p.amountMinor}`,
+        amountMinor: p.amountMinor,
+        status: 'PROCESSED' as const,
+      }));
+
+      // Each asks for ₹600 — individually under the ₹1000 cap, together over it.
+      const [a, b] = await Promise.all([
+        svc.refundToSource({
+          targetType: 'ORDER',
+          targetId: 99,
+          amount: 600,
+          sourceType: 'CANCEL',
+          sourceId: 20,
+          idempotencyKey: 'cancel-20',
+        }),
+        svc.refundToSource({
+          targetType: 'ORDER',
+          targetId: 99,
+          amount: 600,
+          sourceType: 'CANCEL',
+          sourceId: 21,
+          idempotencyKey: 'cancel-21',
+        }),
+      ]);
+
+      expect([a.status, b.status]).toEqual(['REFUNDED', 'REFUNDED']);
+      // The cap held: ₹600 + ₹400, never ₹1200.
+      const total = refunds.rows.reduce((s, r) => s + r.amount, 0);
+      expect(total).toBe(1000);
+      expect(repo.rows[0].amountRefunded).toBe(1000);
+      expect(repo.rows[0].status).toBe('REFUNDED');
+      // And the provider was only ever asked for what was reserved.
+      const askedPaise = (provider.refund as ReturnType<typeof vi.fn>).mock.calls.map(
+        (c) => (c[0] as { amountMinor: number }).amountMinor,
+      );
+      expect(askedPaise.reduce((s, v) => s + v, 0)).toBe(100_000);
+    });
+
+    it('the second of two refunds sharing a key is a replay, not a constraint error', async () => {
+      seedCapture();
+      provider.refund = vi.fn(async () => ({
+        providerRefundRef: 'rfnd_race',
+        amountMinor: 40000,
+        status: 'PROCESSED' as const,
+      }));
+      const input = {
+        targetType: 'ORDER' as const,
+        targetId: 99,
+        amount: 400,
+        sourceType: 'RETURN' as const,
+        sourceId: 22,
+        idempotencyKey: 'return-refund-22',
+      };
+
+      // Both pass the replay lookup (neither row exists yet), so the loser hits
+      // the unique on insert — which must resolve to the winner's refund.
+      const [a, b] = await Promise.all([svc.refundToSource(input), svc.refundToSource(input)]);
+
+      expect([a.status, b.status]).toEqual(['REFUNDED', 'REFUNDED']);
+      expect(refunds.rows).toHaveLength(1);
+      expect(repo.rows[0].amountRefunded).toBe(400); // charged once
     });
 
     it('refund.processed webhook flips a PENDING refund row to PROCESSED', async () => {

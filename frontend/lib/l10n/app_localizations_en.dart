@@ -5985,6 +5985,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stockAdjNoProductsAdded => 'No products added yet.';
 
   @override
+  String get stockAdjSearchToAdd =>
+      'Search above to add the products you\'re adjusting.';
+
+  @override
+  String get stockAdjAddsStock => 'Adds to stock';
+
+  @override
+  String get stockAdjReducesStock => 'Removes from stock';
+
+  @override
   String get stockAdjPostAdjustment => 'Post adjustment';
 
   @override

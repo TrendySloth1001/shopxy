@@ -80,28 +80,48 @@ export interface GatewayPaymentRepository {
     targetId: number,
   ): Promise<GatewayPaymentRecord | null>;
   /**
-   * Atomically add `amount` (rupees) to the capture's amount_refunded and, when
-   * the capture is now fully reversed, flip its status to REFUNDED. Runs inside
-   * the refund-recording tx so the cap and the child refund row commit together.
+   * Reserve up to `requested` rupees of the capture's remaining refundable
+   * headroom, and report how much was actually granted.
+   *
+   * This is the ONLY safe way to consume refundable amount, and the reason it
+   * exists as one repository call rather than a read + an increment: the cap
+   * check and the increment MUST be atomic. Reading `amountRefunded`, deciding
+   * `min(requested, amount − amountRefunded)`, then incrementing is a
+   * read-modify-write race — two concurrent refunds against the SAME capture
+   * (two children of one order cancelled at once; a return racing a cancel)
+   * both read the same stale `amountRefunded`, both pass their individual cap,
+   * and their sum exceeds what was captured.
+   *
+   * The implementation therefore locks the capture row (SELECT … FOR UPDATE)
+   * and re-reads inside the caller's transaction, so concurrent reservations
+   * serialize on the row. `tx` is REQUIRED — a row lock outside a transaction
+   * is released immediately and would reserve nothing.
+   *
+   * Grants `0` when the capture is already fully reversed (the caller then has
+   * nothing to refund). Flips the capture to REFUNDED when this reservation
+   * exhausts it.
    */
-  addRefundedAmount(
+  reserveRefundable(
     id: number,
-    amount: number,
-    markFullyRefunded: boolean,
-    tx?: Prisma.TransactionClient,
-  ): Promise<void>;
+    requested: number,
+    tx: Prisma.TransactionClient,
+  ): Promise<{ granted: number; fullyRefunded: boolean }>;
   /**
-   * Release a reservation: subtract `amount` from amount_refunded and set the
-   * capture's status (REFUNDED if still fully reversed by other refunds, else
-   * CAPTURED). Used when a refund that had reserved the cap (a PENDING row)
-   * later turns out to have FAILED at the provider, so the reserved amount must
-   * not stay consumed (which would under-refund a future return on the order).
+   * Release a reservation: subtract `amount` from amount_refunded and re-derive
+   * the capture's status from the resulting value (REFUNDED if other refunds
+   * still cover it in full, else CAPTURED). Used when a refund that had reserved
+   * the cap (a PENDING row) later turns out to have FAILED at the provider, so
+   * the reserved amount must not stay consumed (which would under-refund a
+   * future return on the order).
+   *
+   * Locks and re-reads under `tx` for the same reason as
+   * {@link reserveRefundable} — the post-release status must be derived from the
+   * committed value, never from a snapshot the caller read earlier.
    */
-  releaseRefundedAmount(
+  releaseRefundable(
     id: number,
     amount: number,
-    stillFullyRefunded: boolean,
-    tx?: Prisma.TransactionClient,
+    tx: Prisma.TransactionClient,
   ): Promise<void>;
 }
 
@@ -154,4 +174,20 @@ export interface WebhookEventRepository {
    */
   claim(provider: string, eventId: string, payload: unknown): Promise<boolean>;
   markProcessed(provider: string, eventId: string): Promise<void>;
+  /**
+   * Give a claim back so a redelivery of the SAME event can be processed.
+   *
+   * Without this, the dedupe gate turns a transient settlement failure into a
+   * permanent drop: the claim commits before settlement runs, so when settlement
+   * throws we return 500, the provider redelivers the same event id, `claim`
+   * says "already seen", and the redelivery is discarded — the retry the 500 was
+   * asking for can never land. Releasing on a TRANSIENT failure restores the
+   * provider's retry as a real recovery path (reconciliation remains the
+   * backstop). A PERMANENT failure keeps its claim: retrying a bad signature or
+   * a mismatched amount would just fail again.
+   *
+   * Must only drop a claim that never completed — an already-processed event
+   * (processedAt set) is left untouched so a settled payment can't be re-settled.
+   */
+  release(provider: string, eventId: string): Promise<void>;
 }

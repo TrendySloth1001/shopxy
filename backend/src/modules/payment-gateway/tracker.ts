@@ -12,6 +12,9 @@ export type GatewayStep =
   | 'WEBHOOK_RECEIVED'
   | 'WEBHOOK_DEDUPED'
   | 'WEBHOOK_IGNORED'
+  /** A dedupe claim was handed back after a transient settlement failure, so the
+   *  provider's redelivery can retry it. Pairs with the 500 the route returns. */
+  | 'WEBHOOK_RELEASED'
   | 'PAYMENT_CONFIRMED'
   | 'PAYMENT_FAILED'
   | 'SETTLEMENT_DONE'
