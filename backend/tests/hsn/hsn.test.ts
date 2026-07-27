@@ -153,7 +153,12 @@ describe('hsn rate master', () => {
 
   it('returns the chapter → heading breadcrumb', async () => {
     const nodes = await hsnService.breadcrumb('62052000');
-    expect(nodes.map((n) => n.code)).toEqual(['62', '6205']);
+    // Ancestors only, shortest first. Asserted as a prefix rather than an exact
+    // list: importing the full tariff added the 6-digit sub-headings, so the
+    // ladder legitimately deepens as the catalogue fills in, and pinning the
+    // exact array would make every future import look like a regression.
+    expect(nodes.map((n) => n.code).slice(0, 2)).toEqual(['62', '6205']);
+    expect(nodes.map((n) => n.code)).not.toContain('62052000');
     // The chapter label is what tells a merchant 62 is woven and 61 is knitted.
     expect(nodes[0].name).toMatch(/NOT knitted/i);
   });
@@ -712,6 +717,37 @@ describe('hsn rate master', () => {
     } finally {
       await cleanupTestUser(ctx);
     }
+  });
+
+  it('refuses a match built only from repaired words', async () => {
+    // `breed` and `bread` fold to the same consonant skeleton (`brd`) — the
+    // mechanism that makes `qameez` → `kameez` work. Left unchecked it scored
+    // 7.6 for *biscuits* against "live horses for breeding", which is worse
+    // than no answer: the merchant trusts it and bills the wrong rate.
+    expect(retrieve('live horses for breeding', 5)).toHaveLength(0);
+
+    // The cure must not disarm the repair itself. Both of these rest entirely
+    // on a repaired word too — the difference is they account for the whole
+    // query rather than one rescued word out of three.
+    expect(retrieve('qameez', 1)[0]?.code).toBe('6205');
+    expect(retrieve('refrigerater', 1)[0]?.code).toBe('8418');
+
+    // And a hit anchored by a word the merchant really typed stays, even when
+    // it explains only a quarter of a descriptive query.
+    const cold = retrieve('device that keeps food cold', 1)[0];
+    expect(cold?.code).toBe('8418');
+    expect(cold!.coverage).toBeLessThan(0.5);
+  });
+
+  it('inherits a rate from the nearest rated ancestor', async () => {
+    // Importing the tariff added ~6,700 codes that carry no rate of their own.
+    // They are only an improvement if they still bill: resolution walks up the
+    // ladder to the heading the notification actually rated. Without this the
+    // import would have made thousands of codes findable and unbillable.
+    const deep = await hsnService.resolveRate({ code: '620520' });
+    expect(deep?.code).toBe('6205');
+    expect(deep?.gstRate).toBe(5);
+    expect(deep?.exact).toBe(false);
   });
 
   it('seeds idempotently — a second run writes nothing', async () => {

@@ -67,12 +67,28 @@ hatch. Backend: `backend/src/modules/hsn/`. Web:
 
 Deferred / open:
 
-- [ ] **Import the real tariff.** `npm run hsn:import -- --directory <codes>
-  --rates <rates>` ingests official CBIC data into
-  `backend/src/modules/hsn/data/hsn.master.json`, which the seed prefers. Until
-  that file is committed, the boot log warns and a ~300-entry hand-written
-  **provisional** manifest is used. Nothing should rely on those rates
-  commercially — get the download, run the import, commit the diff.
+- [x] **Tariff *structure* imported.** `hsn.master.json` now holds **6,999**
+  entries and the boot log reads `source: "imported"` instead of the
+  provisional warning. Directory = the WCO Harmonized System
+  (`github.com/datasets/harmonized-system`, **ODC-PDDL-1.0 / public domain**,
+  6,939 rows, official chapter → heading → sub-heading wording), merged with our
+  375 curated entries appended last so reviewed wording wins on codes a human
+  checked. Deep codes bill through inheritance — `620520` resolves 5% via
+  `6205` — so the added rows are usable, not just browsable.
+- [ ] **Tariff *rates* are still ours, and this is the remaining gap.** Only
+  **297** of the 6,999 rows can price a line; the other 6,702 are
+  `isRatable: false` navigation rows, which is correct (a code with no notified
+  rate must not invent one) but means coverage is 297 headings wide. Those 297
+  are hand-derived from Notification 9/2025-CT(Rate), **not** an official
+  machine-readable download.
+  Both government sources refuse automation *by design* and must not be worked
+  around: `services.gst.gov.in` rejects non-browser requests at the WAF, and
+  NIC's e-invoice HSN master (`einvoice1.gst.gov.in/Others/MasterCodes`) is
+  CAPTCHA-gated. So this needs a **human download**: fetch the rate schedule /
+  CBIC rate-finder export, then
+  `npm run hsn:import -- --directory <codes> --rates <rates>` and commit the
+  diff. Watch `superseded` in the seed output — a non-zero count means a rate
+  moved under existing products.
 - [x] **"My HSN codes" screen.** Web: `dashboard/hsn-codes` (nav → Manage).
   Flutter: `products/presentation/pages/hsn_codes_page.dart` (Menu → Manage).
   Lists saved shortcuts with their **live** rate, flags ones whose code no

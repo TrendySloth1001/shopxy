@@ -232,6 +232,10 @@ type ExpandedTerm = {
   term: string;
   weight: number;
   via: 'exact' | 'prefix' | 'phonetic' | 'fuzzy';
+  /// Which query token this came from. Carried through scoring so a hit can be
+  /// judged on how much of the query it actually explains, not just how loudly
+  /// one word scored — see [MIN_QUERY_COVERAGE].
+  source: number;
 };
 
 /// Minimum trigram overlap to treat two words as the same word mistyped.
@@ -241,13 +245,16 @@ const FUZZY_THRESHOLD = 0.62;
 function expand(tokens: string[], idx: Index): ExpandedTerm[] {
   const out: ExpandedTerm[] = [];
   const seen = new Set<string>();
+  let source = 0;
   const push = (term: string, weight: number, via: ExpandedTerm['via']) => {
     if (seen.has(term)) return;
     seen.add(term);
-    out.push({ term, weight, via });
+    out.push({ term, weight, via, source });
   };
 
-  for (const token of tokens) {
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    source = i;
     if (idx.df.has(token)) {
       push(token, 1, 'exact');
       continue;
@@ -293,7 +300,35 @@ export type RetrievalHit = {
   /// Whether any part of the match needed repairing, for diagnostics and for
   /// deciding whether a result is confident enough to auto-apply.
   matched: Array<ExpandedTerm['via']>;
+  /// Fraction of the query's content words this entry accounted for, 0–1.
+  coverage: number;
 };
+
+/// How much of the query a hit resting **only on repaired words** must explain.
+///
+/// BM25 alone rewards one loud word: "live horses for breeding" scored 7.6
+/// against *biscuits*, because expansion folds `breed` and `bread` onto the
+/// same consonant skeleton (`brd`) — the very mechanism that makes `qameez` →
+/// `kameez` work. Vowels carry meaning in English that they don't in
+/// transliteration, so no weighting fixes both cases at once.
+///
+/// Raw coverage doesn't separate them either: biscuits explains 1 of 3 tokens
+/// (0.33) while the legitimate "device that keeps food cold" → refrigerators
+/// explains only 1 of 4 (0.25). Coverage is the wrong axis on its own.
+///
+/// What actually differs is *how* the word matched. "cold" is a word the
+/// merchant really typed and the entry really contains. "bread" is a word we
+/// invented on their behalf. So: a hit anchored by at least one exact or prefix
+/// term is judged on score alone, and a hit built purely from phonetic or
+/// trigram repairs has to account for the entire query before we'll believe it.
+/// `qameez` and `refrigerater` clear that at 1.0; the biscuits coincidence
+/// doesn't come close.
+const REPAIRED_ONLY_COVERAGE = 1;
+
+/// Did any part of this match rest on a word the merchant actually typed?
+function isAnchored(vias: Set<ExpandedTerm['via']>): boolean {
+  return vias.has('exact') || vias.has('prefix');
+}
 
 /// Rank codes for a free-text query. Empty query → empty result; the caller
 /// decides what to show instead.
@@ -308,8 +343,10 @@ export function retrieve(query: string, limit = 10): RetrievalHit[] {
 
   const scores = new Map<string, number>();
   const vias = new Map<string, Set<ExpandedTerm['via']>>();
+  /// code → which query tokens it managed to account for.
+  const covered = new Map<string, Set<number>>();
 
-  for (const { term, weight, via } of terms) {
+  for (const { term, weight, via, source } of terms) {
     const df = idx.df.get(term);
     if (!df) continue;
     // BM25 IDF, in the form that stays positive for terms present in more than
@@ -331,11 +368,28 @@ export function retrieve(query: string, limit = 10): RetrievalHit[] {
         vias.set(code, set);
       }
       set.add(via);
+      let seenTokens = covered.get(code);
+      if (!seenTokens) {
+        seenTokens = new Set();
+        covered.set(code, seenTokens);
+      }
+      seenTokens.add(source);
     }
   }
 
   return [...scores.entries()]
-    .map(([code, score]) => ({ code, score, matched: [...(vias.get(code) ?? [])] }))
+    .map(([code, score]) => {
+      const via = vias.get(code) ?? new Set<ExpandedTerm['via']>();
+      return {
+        code,
+        score,
+        matched: [...via],
+        coverage: (covered.get(code)?.size ?? 0) / tokens.length,
+        anchored: isAnchored(via),
+      };
+    })
+    .filter((h) => h.anchored || h.coverage >= REPAIRED_ONLY_COVERAGE)
+    .map(({ anchored: _anchored, ...hit }) => hit)
     .sort((a, b) => b.score - a.score || a.code.localeCompare(b.code))
     .slice(0, limit);
 }
