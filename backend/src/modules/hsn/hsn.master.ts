@@ -1,0 +1,572 @@
+/// The checked-in HSN/SAC → GST rate manifest — **facts only**.
+///
+/// Same shape as `categories/catalog.seed.ts`: edit this file, redeploy, and
+/// [seedHsnMaster] syncs the platform-tier rows. Nothing here is edited through
+/// the API, so no request can move a merchant onto the wrong slab.
+///
+/// ── What lives here vs. in the copy catalogues ──────────────────────────
+/// This file holds codes, rates, rules, dates — things with a legal answer.
+/// The words a merchant reads (plain-language name, definition, and the search
+/// aliases that let them find "kameez" or "chappal") live in
+/// `hsn.copy.<locale>.json`, keyed by the same codes. That split is deliberate:
+/// a translation PR can then never touch a rate, and a rate change can never
+/// silently invalidate a translation. Different risk, different reviewer.
+///
+/// ── Rate basis ──────────────────────────────────────────────────────────
+/// Rates reflect the slab structure in force from **22 September 2025** (the
+/// 56th GST Council's two-slab reform): 5% and 18% as the standard rates, a
+/// 40% demerit rate for sin/luxury goods, nil for essentials, plus the two
+/// surviving special rates — 3% on precious metals and 0.25% on rough
+/// diamonds. The pre-reform 12% and 28% slabs no longer appear.
+///
+/// ⚠️ **This is a curated starter set, not the full tariff.** The official
+/// schedule runs to ~12,000 tariff lines; this covers the ~300 headings a
+/// retail/wholesale merchant actually bills against. Two consequences:
+///   1. Verify against the CBIC rate finder (https://cbic-gst.gov.in) before
+///      relying on any single line commercially — entries here are curated,
+///      not certified, and the Council revises rates.
+///   2. A code we don't carry resolves off its shorter prefix (8→6→4), which
+///      is right far more often than it's wrong but is still an inference —
+///      the API flags it as `exact: false` and the UI says so.
+///
+/// ── Changing a rate ─────────────────────────────────────────────────────
+/// Never edit a rate in place. Bump [HSN_RATE_REVISION] (or set `since` on
+/// the individual entry) so the seed closes the superseded row with an
+/// `effectiveTo` and inserts a new one. Rows are effective-dated precisely so
+/// that history stays reconstructable.
+///
+/// Note we do NOT model pre-22-Sep-2025 history: this master exists to author
+/// *new* products, and an already-raised invoice re-renders from the rate
+/// stamped on its own line items, never from here.
+
+/// A conditional slab we can actually evaluate: the rate turns on the line's
+/// own price, which we hold, so the resolver decides it instead of printing a
+/// note and hoping the merchant reads it.
+///
+/// `price <= threshold` → `atOrBelow`, otherwise `above`. Stated as ≤ because
+/// that's how the notifications are worded ("of sale value not exceeding
+/// ₹2,500 per piece"), and the boundary case is a real SKU price.
+export type HsnRateRule = {
+  kind: 'PRICE_THRESHOLD';
+  threshold: number;
+  atOrBelow: number;
+  above: number;
+  /// What the threshold is measured against, for the explanation shown to the
+  /// merchant. Not used in the arithmetic.
+  per: 'PIECE' | 'PAIR' | 'UNIT_PER_DAY';
+};
+
+export type HsnMasterEntry = {
+  /// 2/4/6/8 digits for goods; 99xxxx SAC for services.
+  code: string;
+  /// Official tariff wording — the **fallback** label only. What the merchant
+  /// actually reads (plain-language name, definition, search aliases) lives in
+  /// the translatable copy catalogues keyed by this code. Keeping the official
+  /// wording here means a locale with no entry degrades to real tariff text
+  /// rather than a bare number.
+  description: string;
+  /// Total GST (IGST equivalent); CGST/SGST is this halved by the invoice engine.
+  gstRate: number;
+  /// Compensation cess, ad valorem %. Omit for the overwhelming majority.
+  cessRate?: number;
+  /// Set false for a row that exists only to give the picker a breadcrumb —
+  /// chapters, and headings whose rate lives entirely in their sub-headings.
+  /// Resolution never returns these.
+  isRatable?: boolean;
+  /// Price-conditional slab, evaluated against the line price at billing time.
+  rateRule?: HsnRateRule;
+  /// Advisory caveat for conditions we *can't* evaluate — packaging, engine
+  /// capacity, end use. Prefer a [rateRule] whenever the condition is data we
+  /// hold; a note is what you write when it genuinely needs a human.
+  rateNote?: string;
+  kind?: 'GOODS' | 'SERVICES';
+  /// Per-entry override of [HSN_RATE_REVISION] for a line whose current rate
+  /// started on a different date.
+  since?: string;
+};
+
+/// Effective-from date stamped on every seeded row that doesn't override it.
+/// Bumping this rolls the whole master to a new revision.
+export const HSN_RATE_REVISION = '2025-09-22';
+
+/// Apparel, made-up textiles and footwear all turn on the same ₹2,500
+/// threshold. It's arithmetic against a number we hold, so it's a rule, not a
+/// note — the merchant is never asked to work it out.
+const APPAREL_RULE: HsnRateRule = {
+  kind: 'PRICE_THRESHOLD',
+  threshold: 2500,
+  atOrBelow: 5,
+  above: 18,
+  per: 'PIECE',
+};
+const FOOTWEAR_RULE: HsnRateRule = { ...APPAREL_RULE, per: 'PAIR' };
+
+/// Packaging genuinely can't be inferred from anything on the product — the
+/// same rice is nil loose and 5% pre-packaged and labelled. Stays a note.
+const PACKAGED_NOTE = 'Nil when sold loose/unbranded; 5% when pre-packaged and labelled.';
+
+/// Chapter rows — **navigation only, never rated**.
+///
+/// These exist so the picker can show a merchant where a code sits before
+/// they commit to it: seeing *"Chapter 62 — Articles of apparel, **not**
+/// knitted or crocheted"* above 6205 is what stops the single most common
+/// apparel misclassification, because 61 (knitted) and 62 (woven) are
+/// indistinguishable from the four-digit code alone.
+///
+/// `isRatable: false` is load-bearing. A chapter has no rate of its own, so if
+/// resolution could land on one it would bill at a slab that doesn't legally
+/// exist. The resolver skips them; only the tree walk sees them.
+const CHAPTERS: HsnMasterEntry[] = (
+  [
+    ['02', 'Meat and edible meat offal'],
+    ['03', 'Fish and crustaceans, molluscs and other aquatic invertebrates'],
+    ['04', 'Dairy produce; birds eggs; natural honey'],
+    ['07', 'Edible vegetables and certain roots and tubers'],
+    ['08', 'Edible fruit and nuts; peel of citrus fruit or melons'],
+    ['09', 'Coffee, tea, maté and spices'],
+    ['10', 'Cereals'],
+    ['11', 'Products of the milling industry; malt; starches'],
+    ['12', 'Oil seeds and oleaginous fruits; grains, seeds and fruit'],
+    ['15', 'Animal or vegetable fats and oils'],
+    ['17', 'Sugars and sugar confectionery'],
+    ['18', 'Cocoa and cocoa preparations'],
+    ['19', 'Preparations of cereals, flour, starch or milk; pastrycooks products'],
+    ['20', 'Preparations of vegetables, fruit, nuts or other parts of plants'],
+    ['21', 'Miscellaneous edible preparations'],
+    ['22', 'Beverages, spirits and vinegar'],
+    ['24', 'Tobacco and manufactured tobacco substitutes'],
+    ['25', 'Salt; sulphur; earths and stone; plastering materials, lime and cement'],
+    ['27', 'Mineral fuels, mineral oils and products of their distillation'],
+    ['28', 'Inorganic chemicals'],
+    ['30', 'Pharmaceutical products'],
+    ['32', 'Tanning or dyeing extracts; pigments, paints and varnishes'],
+    ['33', 'Essential oils and resinoids; perfumery, cosmetic or toilet preparations'],
+    ['34', 'Soap, organic surface-active agents, washing and lubricating preparations'],
+    ['39', 'Plastics and articles thereof'],
+    ['40', 'Rubber and articles thereof'],
+    ['42', 'Articles of leather; saddlery; travel goods, handbags'],
+    ['44', 'Wood and articles of wood; wood charcoal'],
+    ['48', 'Paper and paperboard; articles of paper pulp'],
+    ['49', 'Printed books, newspapers, pictures and other printed matter'],
+    ['50', 'Silk'],
+    ['51', 'Wool, fine or coarse animal hair; horsehair yarn and fabric'],
+    ['52', 'Cotton'],
+    ['54', 'Man-made filaments; strip of man-made textile materials'],
+    ['55', 'Man-made staple fibres'],
+    ['57', 'Carpets and other textile floor coverings'],
+    ['60', 'Knitted or crocheted fabrics'],
+    ['61', 'Articles of apparel and clothing accessories, KNITTED or crocheted'],
+    ['62', 'Articles of apparel and clothing accessories, NOT knitted or crocheted'],
+    ['63', 'Other made-up textile articles; sets; worn clothing'],
+    ['64', 'Footwear, gaiters and the like'],
+    ['66', 'Umbrellas, walking-sticks, whips and parts thereof'],
+    ['68', 'Articles of stone, plaster, cement, asbestos or mica'],
+    ['69', 'Ceramic products'],
+    ['70', 'Glass and glassware'],
+    ['71', 'Pearls, precious stones and metals; imitation jewellery; coin'],
+    ['72', 'Iron and steel'],
+    ['73', 'Articles of iron or steel'],
+    ['74', 'Copper and articles thereof'],
+    ['76', 'Aluminium and articles thereof'],
+    ['82', 'Tools, implements, cutlery, spoons and forks, of base metal'],
+    ['83', 'Miscellaneous articles of base metal'],
+    ['84', 'Nuclear reactors, boilers, machinery and mechanical appliances'],
+    ['85', 'Electrical machinery and equipment; sound and TV apparatus'],
+    ['87', 'Vehicles other than railway or tramway rolling stock'],
+    ['90', 'Optical, photographic, measuring, medical or surgical instruments'],
+    ['91', 'Clocks and watches and parts thereof'],
+    ['94', 'Furniture; bedding, mattresses, cushions; lamps and lighting'],
+    ['95', 'Toys, games and sports requisites'],
+    ['96', 'Miscellaneous manufactured articles'],
+  ] as const
+).map(([code, description]) => ({
+  code,
+  description,
+  // Navigation rows still need a number for the NOT NULL column; isRatable
+  // keeps it from ever being read as a rate.
+  gstRate: 0,
+  isRatable: false,
+}));
+
+/// SAC groupings — the service equivalent of chapter rows. `99` is the root,
+/// and the 4-digit groups give a service code a readable middle level.
+const SERVICE_GROUPS: HsnMasterEntry[] = (
+  [
+    ['99', 'Services'],
+    ['9954', 'Construction services'],
+    ['9961', 'Services in wholesale trade'],
+    ['9962', 'Services in retail trade'],
+    ['9963', 'Accommodation, food and beverage services'],
+    ['9964', 'Passenger transport services'],
+    ['9965', 'Goods transport services'],
+    ['9967', 'Supporting services in transport'],
+    ['9968', 'Postal and courier services'],
+    ['9971', 'Financial and related services'],
+    ['9972', 'Real estate services'],
+    ['9982', 'Legal and accounting services'],
+    ['9983', 'Other professional, technical and business services'],
+    ['9985', 'Support services'],
+    ['9987', 'Maintenance, repair and installation services'],
+    ['9988', 'Manufacturing services on physical inputs owned by others'],
+    ['9992', 'Education services'],
+    ['9997', 'Other services'],
+  ] as const
+).map(([code, description]) => ({
+  code,
+  description,
+  gstRate: 0,
+  isRatable: false,
+  kind: 'SERVICES' as const,
+}));
+
+const RATED_ENTRIES: HsnMasterEntry[] = [
+  // ── Ch 02–05 · Meat, fish, dairy, eggs ────────────────────────────────
+  { code: '0201', description: 'Meat of bovine animals, fresh or chilled', gstRate: 0 },
+  { code: '0202', description: 'Meat of bovine animals, frozen', gstRate: 5, rateNote: PACKAGED_NOTE },
+  { code: '0203', description: 'Meat of swine, fresh, chilled or frozen', gstRate: 5, rateNote: PACKAGED_NOTE },
+  { code: '0204', description: 'Meat of sheep or goats', gstRate: 5, rateNote: PACKAGED_NOTE },
+  { code: '0207', description: 'Meat and edible offal of poultry', gstRate: 5, rateNote: PACKAGED_NOTE },
+  { code: '0302', description: 'Fish, fresh or chilled', gstRate: 0 },
+  { code: '0303', description: 'Fish, frozen', gstRate: 5, rateNote: PACKAGED_NOTE },
+  { code: '0306', description: 'Crustaceans — prawns, shrimps, crabs, lobsters', gstRate: 5 },
+  { code: '0401', description: 'Milk and cream, not concentrated or sweetened (incl. UHT)', gstRate: 0 },
+  { code: '0402', description: 'Milk powder, concentrated or sweetened milk', gstRate: 5 },
+  { code: '0403', description: 'Curd, lassi, buttermilk, yoghurt', gstRate: 0 },
+  { code: '0404', description: 'Whey, dairy products not elsewhere specified', gstRate: 5 },
+  { code: '0405', description: 'Butter, ghee, dairy spreads', gstRate: 5 },
+  { code: '0406', description: 'Cheese and curd (paneer)', gstRate: 5, rateNote: 'Paneer/chhena is nil; other cheese 5%.' },
+  { code: '0407', description: 'Birds eggs, in shell', gstRate: 0 },
+  { code: '0409', description: 'Natural honey', gstRate: 5, rateNote: PACKAGED_NOTE },
+
+  // ── Ch 07–08 · Vegetables and fruit ───────────────────────────────────
+  { code: '0701', description: 'Potatoes, fresh or chilled', gstRate: 0 },
+  { code: '0702', description: 'Tomatoes, fresh or chilled', gstRate: 0 },
+  { code: '0703', description: 'Onions, shallots, garlic, leeks, fresh or chilled', gstRate: 0 },
+  { code: '0706', description: 'Carrots, turnips, beetroot, fresh or chilled', gstRate: 0 },
+  { code: '0707', description: 'Cucumbers and gherkins, fresh or chilled', gstRate: 0 },
+  { code: '0710', description: 'Vegetables, frozen', gstRate: 5 },
+  { code: '0712', description: 'Dried vegetables', gstRate: 5 },
+  { code: '0713', description: 'Dried leguminous vegetables — pulses, dals', gstRate: 5, rateNote: PACKAGED_NOTE },
+  { code: '0714', description: 'Cassava, sweet potatoes, tubers, fresh', gstRate: 0 },
+  { code: '0801', description: 'Coconuts, cashew nuts, brazil nuts', gstRate: 5 },
+  { code: '0802', description: 'Almonds, walnuts, pistachios and other nuts', gstRate: 5 },
+  { code: '0803', description: 'Bananas, fresh or dried', gstRate: 0 },
+  { code: '0804', description: 'Dates, figs, pineapples, mangoes, guavas, fresh', gstRate: 0 },
+  { code: '0805', description: 'Citrus fruit — oranges, lemons, fresh', gstRate: 0 },
+  { code: '0806', description: 'Grapes, fresh; raisins', gstRate: 5, rateNote: 'Fresh grapes nil; dried (raisins) 5%.' },
+  { code: '0808', description: 'Apples, pears and quinces, fresh', gstRate: 0 },
+  { code: '0813', description: 'Dried fruit — apricots, prunes, mixed dry fruit', gstRate: 5 },
+
+  // ── Ch 09–12 · Coffee, tea, spices, cereals, flours, oilseeds ─────────
+  { code: '0901', description: 'Coffee, roasted or unroasted; coffee substitutes', gstRate: 5 },
+  { code: '0902', description: 'Tea, whether or not flavoured', gstRate: 5 },
+  { code: '0904', description: 'Pepper; dried or crushed chillies', gstRate: 5 },
+  { code: '0906', description: 'Cinnamon', gstRate: 5 },
+  { code: '0907', description: 'Cloves', gstRate: 5 },
+  { code: '0908', description: 'Nutmeg, mace and cardamom', gstRate: 5 },
+  { code: '0909', description: 'Seeds of anise, coriander, cumin, fennel', gstRate: 5 },
+  { code: '0910', description: 'Ginger, turmeric, curry and other spices', gstRate: 5 },
+  { code: '1001', description: 'Wheat and meslin', gstRate: 5, rateNote: PACKAGED_NOTE },
+  { code: '1006', description: 'Rice', gstRate: 5, rateNote: PACKAGED_NOTE },
+  { code: '1101', description: 'Wheat or meslin flour (atta, maida)', gstRate: 5, rateNote: PACKAGED_NOTE },
+  { code: '1102', description: 'Cereal flours other than wheat', gstRate: 5, rateNote: PACKAGED_NOTE },
+  { code: '1106', description: 'Flour and meal of pulses (besan)', gstRate: 5, rateNote: PACKAGED_NOTE },
+  { code: '1201', description: 'Soya beans', gstRate: 5 },
+  { code: '1202', description: 'Groundnuts', gstRate: 5 },
+
+  // ── Ch 15 · Fats and oils ─────────────────────────────────────────────
+  { code: '1507', description: 'Soya-bean oil', gstRate: 5 },
+  { code: '1508', description: 'Groundnut oil', gstRate: 5 },
+  { code: '1509', description: 'Olive oil', gstRate: 5 },
+  { code: '1511', description: 'Palm oil', gstRate: 5 },
+  { code: '1512', description: 'Sunflower-seed, safflower or cotton-seed oil', gstRate: 5 },
+  { code: '1513', description: 'Coconut oil', gstRate: 5 },
+  { code: '1514', description: 'Rape, colza or mustard oil', gstRate: 5 },
+  { code: '1517', description: 'Margarine; edible mixtures of fats and oils', gstRate: 5 },
+
+  // ── Ch 17–21 · Sugar, cocoa, bakery, preparations ─────────────────────
+  { code: '1701', description: 'Cane or beet sugar', gstRate: 5 },
+  { code: '1702', description: 'Other sugars; glucose, jaggery syrup', gstRate: 5 },
+  { code: '1704', description: 'Sugar confectionery — toffees, candy (no cocoa)', gstRate: 5 },
+  { code: '1801', description: 'Cocoa beans', gstRate: 5 },
+  { code: '1806', description: 'Chocolate and cocoa preparations', gstRate: 5 },
+  { code: '1901', description: 'Malt extract; infant food preparations', gstRate: 5 },
+  { code: '1902', description: 'Pasta, noodles, macaroni, vermicelli', gstRate: 5 },
+  { code: '1904', description: 'Cornflakes and prepared cereal foods', gstRate: 5 },
+  { code: '1905', description: 'Bread, pastry, biscuits, cakes, rusks', gstRate: 5, rateNote: 'Plain bread, roti/chapati and khakhra are nil; biscuits and pastry 5%.' },
+  { code: '2005', description: 'Vegetables prepared or preserved — namkeen, bhujia', gstRate: 5 },
+  { code: '2007', description: 'Jams, fruit jellies, marmalades, purees', gstRate: 5 },
+  { code: '2009', description: 'Fruit and vegetable juices, unfermented', gstRate: 5 },
+  { code: '2101', description: 'Extracts and concentrates of coffee or tea (instant)', gstRate: 5 },
+  { code: '2103', description: 'Sauces, ketchup, mixed condiments and seasonings', gstRate: 5 },
+  { code: '2104', description: 'Soups and broths', gstRate: 5 },
+  { code: '2105', description: 'Ice cream and other edible ice', gstRate: 5 },
+  { code: '2106', description: 'Food preparations not elsewhere specified', gstRate: 5, rateNote: 'Pan masala under 2106 90 20 is 40% plus cess — use that code, not the heading.' },
+  { code: '21069020', description: 'Pan masala', gstRate: 40, cessRate: 60, rateNote: 'Demerit rate plus compensation cess. Confirm the current cess notification.' },
+
+  // ── Ch 22 · Beverages ─────────────────────────────────────────────────
+  { code: '2201', description: 'Waters, incl. packaged drinking and mineral water', gstRate: 5, rateNote: 'Packaged drinking water in 20-litre bottles is 5%; other packaged water may differ.' },
+  { code: '2202', description: 'Aerated, carbonated and caffeinated beverages', gstRate: 40, rateNote: 'Demerit rate. Fruit-pulp/juice-based drinks under 2202 99 are 5% — use the sub-heading.' },
+  { code: '220299', description: 'Fruit pulp or fruit juice based drinks; plant-based milk drinks', gstRate: 5 },
+  { code: '2203', description: 'Beer made from malt', gstRate: 0, rateNote: 'Alcoholic liquor for human consumption is outside GST — state excise/VAT applies.' },
+  { code: '2208', description: 'Spirits, liqueurs and other spirituous beverages', gstRate: 0, rateNote: 'Alcoholic liquor for human consumption is outside GST — state excise/VAT applies.' },
+
+  // ── Ch 24 · Tobacco ───────────────────────────────────────────────────
+  { code: '2401', description: 'Unmanufactured tobacco; tobacco refuse', gstRate: 40, cessRate: 71 },
+  { code: '2402', description: 'Cigars, cheroots and cigarettes', gstRate: 40, cessRate: 36, rateNote: 'Cigarette cess is part ad-valorem, part per-thousand-sticks — verify per SKU.' },
+  { code: '2403', description: 'Other manufactured tobacco — chewing tobacco, zarda, hookah', gstRate: 40, cessRate: 96 },
+  { code: '2404', description: 'Nicotine products; e-cigarette refills', gstRate: 40 },
+
+  // ── Ch 25–27 · Minerals, cement, fuels ────────────────────────────────
+  { code: '2501', description: 'Salt, edible', gstRate: 0 },
+  { code: '2523', description: 'Cement — Portland, aluminous, slag', gstRate: 18 },
+  { code: '2711', description: 'Petroleum gases — LPG', gstRate: 5, rateNote: 'Domestic LPG 5%; non-domestic/commercial LPG 18%.' },
+  { code: '2716', description: 'Electrical energy', gstRate: 0 },
+
+  // ── Ch 28–34 · Chemicals, pharma, cosmetics, soaps ────────────────────
+  { code: '2804', description: 'Hydrogen, rare gases and other non-metals — medical oxygen', gstRate: 5 },
+  { code: '3002', description: 'Human/animal blood products; vaccines; antisera', gstRate: 5 },
+  { code: '3003', description: 'Medicaments, not put up in measured doses', gstRate: 5 },
+  { code: '3004', description: 'Medicaments in measured doses — tablets, capsules, syrups', gstRate: 5, rateNote: 'A notified list of life-saving drugs is nil-rated — check the drug before defaulting to 5%.' },
+  { code: '3005', description: 'Wadding, gauze, bandages and dressings', gstRate: 5 },
+  { code: '3006', description: 'Pharmaceutical goods — sutures, dental cements, diagnostic kits', gstRate: 5 },
+  { code: '3208', description: 'Paints and varnishes in a non-aqueous medium', gstRate: 18 },
+  { code: '3209', description: 'Paints and varnishes in an aqueous medium', gstRate: 18 },
+  { code: '3215', description: 'Printing ink, writing or drawing ink', gstRate: 18 },
+  { code: '3303', description: 'Perfumes and toilet waters', gstRate: 18 },
+  { code: '3304', description: 'Beauty and make-up preparations; skin care', gstRate: 18 },
+  { code: '3305', description: 'Hair preparations — shampoo, hair oil', gstRate: 5 },
+  { code: '3306', description: 'Oral and dental hygiene — toothpaste, toothbrush, floss', gstRate: 5 },
+  { code: '3307', description: 'Shaving preparations, deodorants, bath preparations', gstRate: 18, rateNote: 'Shaving cream and after-shave lotion are 5%; deodorants and perfumed bath preparations 18%.' },
+  { code: '3401', description: 'Soap; organic surface-active products for washing', gstRate: 5 },
+  { code: '3402', description: 'Detergents, washing and cleaning preparations', gstRate: 5 },
+  { code: '3403', description: 'Lubricating preparations', gstRate: 18 },
+  { code: '3406', description: 'Candles, tapers and the like', gstRate: 5 },
+
+  // ── Ch 39–40 · Plastics and rubber ────────────────────────────────────
+  { code: '3917', description: 'Plastic tubes, pipes, hoses and fittings', gstRate: 18 },
+  { code: '3919', description: 'Self-adhesive plastic plates, sheets, tape', gstRate: 18 },
+  { code: '3920', description: 'Plastic sheets, film, foil, non-cellular', gstRate: 18 },
+  { code: '3923', description: 'Plastic articles for packing — bottles, boxes, carboys', gstRate: 18 },
+  { code: '3924', description: 'Plastic tableware, kitchenware and household articles', gstRate: 5 },
+  { code: '3926', description: 'Other articles of plastics', gstRate: 18 },
+  { code: '4011', description: 'New pneumatic tyres of rubber', gstRate: 18 },
+  { code: '4015', description: 'Articles of vulcanised rubber — gloves', gstRate: 5 },
+
+  // ── Ch 42–49 · Leather, wood, paper, print ────────────────────────────
+  { code: '4202', description: 'Trunks, suitcases, handbags, wallets, backpacks', gstRate: 18 },
+  { code: '4203', description: 'Articles of apparel and accessories of leather', gstRate: 5, rateRule: APPAREL_RULE },
+  { code: '4401', description: 'Fuel wood; wood chips and sawdust', gstRate: 5 },
+  { code: '4403', description: 'Wood in the rough', gstRate: 18 },
+  { code: '4407', description: 'Wood sawn or chipped lengthwise', gstRate: 18 },
+  { code: '4410', description: 'Particle board, oriented strand board', gstRate: 18 },
+  { code: '4411', description: 'Fibreboard of wood — MDF, HDF', gstRate: 18 },
+  { code: '4412', description: 'Plywood, veneered panels and laminated wood', gstRate: 18 },
+  { code: '4418', description: "Builders' joinery and carpentry of wood — doors, windows", gstRate: 18 },
+  { code: '4802', description: 'Uncoated paper and paperboard for writing or printing', gstRate: 18 },
+  { code: '4818', description: 'Toilet paper, tissues, napkins, diapers', gstRate: 5 },
+  { code: '4819', description: 'Cartons, boxes and cases of paper or paperboard', gstRate: 18 },
+  { code: '4820', description: 'Registers, exercise books, notebooks, diaries', gstRate: 0, rateNote: 'Exercise books and notebooks are nil; commercial registers and diaries are 18% — check the item.' },
+  { code: '4901', description: 'Printed books, brochures and similar printed matter', gstRate: 0 },
+  { code: '4902', description: 'Newspapers, journals and periodicals', gstRate: 0 },
+  { code: '4911', description: 'Other printed matter — trade advertising, calendars', gstRate: 18 },
+
+  // ── Ch 50–63 · Textiles and apparel ───────────────────────────────────
+  { code: '5007', description: 'Woven fabrics of silk', gstRate: 5 },
+  { code: '5111', description: 'Woven fabrics of carded wool', gstRate: 5 },
+  { code: '5205', description: 'Cotton yarn (≥85% cotton), not for retail sale', gstRate: 5 },
+  { code: '5208', description: 'Woven fabrics of cotton, ≥85% cotton', gstRate: 5 },
+  { code: '5407', description: 'Woven fabrics of synthetic filament yarn', gstRate: 5 },
+  { code: '5509', description: 'Yarn of synthetic staple fibres', gstRate: 5 },
+  { code: '5513', description: 'Woven fabrics of synthetic staple fibres', gstRate: 5 },
+  { code: '5701', description: 'Carpets and other textile floor coverings, knotted', gstRate: 5 },
+  { code: '6001', description: 'Pile fabrics, knitted or crocheted', gstRate: 5 },
+  { code: '6103', description: "Men's suits, jackets, trousers, knitted or crocheted", gstRate: 5, rateRule: APPAREL_RULE },
+  { code: '6104', description: "Women's suits, dresses, skirts, knitted or crocheted", gstRate: 5, rateRule: APPAREL_RULE },
+  { code: '6105', description: "Men's shirts, knitted or crocheted", gstRate: 5, rateRule: APPAREL_RULE },
+  { code: '6106', description: "Women's blouses and shirts, knitted or crocheted", gstRate: 5, rateRule: APPAREL_RULE },
+  { code: '6107', description: "Men's underwear, nightwear, bathrobes, knitted", gstRate: 5, rateRule: APPAREL_RULE },
+  { code: '6108', description: "Women's slips, briefs, nightdresses, knitted", gstRate: 5, rateRule: APPAREL_RULE },
+  { code: '6109', description: 'T-shirts, singlets and vests, knitted or crocheted', gstRate: 5, rateRule: APPAREL_RULE },
+  { code: '6110', description: 'Jerseys, pullovers, cardigans, sweatshirts, knitted', gstRate: 5, rateRule: APPAREL_RULE },
+  { code: '6111', description: "Babies' garments and clothing accessories, knitted", gstRate: 5, rateRule: APPAREL_RULE },
+  { code: '6115', description: 'Panty hose, tights, stockings and socks, knitted', gstRate: 5, rateRule: APPAREL_RULE },
+  { code: '6201', description: "Men's overcoats, anoraks, windcheaters", gstRate: 5, rateRule: APPAREL_RULE },
+  { code: '6203', description: "Men's suits, jackets, trousers, shorts (woven)", gstRate: 5, rateRule: APPAREL_RULE },
+  { code: '6204', description: "Women's suits, dresses, skirts, trousers (woven)", gstRate: 5, rateRule: APPAREL_RULE },
+  { code: '6205', description: "Men's shirts (woven)", gstRate: 5, rateRule: APPAREL_RULE },
+  { code: '6206', description: "Women's blouses, shirts and shirt-blouses (woven)", gstRate: 5, rateRule: APPAREL_RULE },
+  { code: '6209', description: "Babies' garments and clothing accessories (woven)", gstRate: 5, rateRule: APPAREL_RULE },
+  { code: '6211', description: 'Track suits, ski suits, swimwear; sarees and salwar suits', gstRate: 5, rateRule: APPAREL_RULE },
+  { code: '6214', description: 'Shawls, scarves, mufflers, dupattas and veils', gstRate: 5, rateRule: APPAREL_RULE },
+  { code: '6217', description: 'Other made-up clothing accessories', gstRate: 5, rateRule: APPAREL_RULE },
+  { code: '6301', description: 'Blankets and travelling rugs', gstRate: 5, rateRule: APPAREL_RULE },
+  { code: '6302', description: 'Bed linen, table linen, toilet and kitchen linen', gstRate: 5, rateRule: APPAREL_RULE },
+  { code: '6303', description: 'Curtains, blinds and bed valances', gstRate: 5, rateRule: APPAREL_RULE },
+  { code: '6305', description: 'Sacks and bags for packing of goods', gstRate: 5 },
+  { code: '6307', description: 'Other made-up textile articles — face masks, mops', gstRate: 5, rateRule: APPAREL_RULE },
+
+  // ── Ch 64–71 · Footwear, ceramics, glass, jewellery ───────────────────
+  { code: '6401', description: 'Waterproof footwear of rubber or plastics', gstRate: 5, rateRule: FOOTWEAR_RULE },
+  { code: '6402', description: 'Other footwear with rubber or plastic soles and uppers', gstRate: 5, rateRule: FOOTWEAR_RULE },
+  { code: '6403', description: 'Footwear with leather uppers', gstRate: 5, rateRule: FOOTWEAR_RULE },
+  { code: '6404', description: 'Footwear with textile uppers — sports shoes, canvas', gstRate: 5, rateRule: FOOTWEAR_RULE },
+  { code: '6405', description: 'Other footwear', gstRate: 5, rateRule: FOOTWEAR_RULE },
+  { code: '6601', description: 'Umbrellas and sun umbrellas', gstRate: 5 },
+  { code: '6802', description: 'Worked monumental or building stone — granite, marble slabs', gstRate: 18 },
+  { code: '6907', description: 'Ceramic flags and paving, wall tiles', gstRate: 18 },
+  { code: '6910', description: 'Ceramic sinks, wash basins, water closets, sanitary ware', gstRate: 18 },
+  { code: '6911', description: 'Tableware and kitchenware of porcelain or china', gstRate: 5 },
+  { code: '7009', description: 'Glass mirrors, framed or not', gstRate: 18 },
+  { code: '7013', description: 'Glassware for table, kitchen, toilet or office', gstRate: 5 },
+  { code: '7102', description: 'Diamonds, rough', gstRate: 0.25, rateNote: 'Rough diamonds 0.25%; cut and polished diamonds 1.5%.' },
+  { code: '7106', description: 'Silver, unwrought or semi-manufactured', gstRate: 3 },
+  { code: '7108', description: 'Gold, unwrought or semi-manufactured', gstRate: 3 },
+  { code: '7113', description: 'Articles of jewellery of precious metal', gstRate: 3, rateNote: 'Making charges billed separately are 5%.' },
+  { code: '7117', description: 'Imitation jewellery', gstRate: 3 },
+
+  // ── Ch 72–83 · Metals and metal articles ──────────────────────────────
+  { code: '7207', description: 'Semi-finished products of iron or non-alloy steel', gstRate: 18 },
+  { code: '7213', description: 'Bars and rods of iron or non-alloy steel, hot-rolled (TMT)', gstRate: 18 },
+  { code: '7214', description: 'Other bars and rods of iron or non-alloy steel', gstRate: 18 },
+  { code: '7216', description: 'Angles, shapes and sections of iron or non-alloy steel', gstRate: 18 },
+  { code: '7308', description: 'Structures and parts of structures, of iron or steel', gstRate: 18 },
+  { code: '7318', description: 'Screws, bolts, nuts, washers of iron or steel', gstRate: 18 },
+  { code: '7323', description: 'Table, kitchen and household articles of iron or steel', gstRate: 5 },
+  { code: '7418', description: 'Table, kitchen and household articles of copper', gstRate: 5 },
+  { code: '7615', description: 'Table, kitchen and household articles of aluminium', gstRate: 5 },
+  { code: '8201', description: 'Hand tools for agriculture, horticulture or forestry', gstRate: 5 },
+  { code: '8205', description: 'Hand tools not elsewhere specified', gstRate: 18 },
+  { code: '8211', description: 'Knives with cutting blades', gstRate: 5 },
+  { code: '8215', description: 'Spoons, forks, ladles and similar kitchen or tableware', gstRate: 5 },
+  { code: '8301', description: 'Padlocks and locks of base metal', gstRate: 18 },
+  { code: '8302', description: 'Base metal mountings and fittings — hinges, handles', gstRate: 18 },
+
+  // ── Ch 84–85 · Machinery and electronics ──────────────────────────────
+  { code: '8413', description: 'Pumps for liquids — water pumps', gstRate: 18 },
+  { code: '8414', description: 'Air or vacuum pumps; fans, exhaust hoods', gstRate: 18 },
+  { code: '8415', description: 'Air conditioning machines', gstRate: 18 },
+  { code: '8418', description: 'Refrigerators, freezers and other refrigerating equipment', gstRate: 18 },
+  { code: '8422', description: 'Dishwashing machines; packing and bottling machinery', gstRate: 18 },
+  { code: '8443', description: 'Printers, copiers and facsimile machines', gstRate: 18 },
+  { code: '8450', description: 'Household or laundry-type washing machines', gstRate: 18 },
+  { code: '8452', description: 'Sewing machines', gstRate: 5 },
+  { code: '8471', description: 'Computers, laptops, tablets and storage units', gstRate: 18 },
+  { code: '8473', description: 'Parts and accessories of computers and office machines', gstRate: 18 },
+  { code: '8481', description: 'Taps, cocks, valves for pipes and tanks', gstRate: 18 },
+  { code: '8504', description: 'Transformers, static converters, chargers, inverters', gstRate: 18 },
+  { code: '8506', description: 'Primary cells and primary batteries (dry cells)', gstRate: 18 },
+  { code: '8507', description: 'Electric accumulators — lithium-ion and lead-acid batteries', gstRate: 18 },
+  { code: '8508', description: 'Vacuum cleaners', gstRate: 18 },
+  { code: '8509', description: 'Electro-mechanical domestic appliances — mixers, grinders', gstRate: 18 },
+  { code: '8510', description: 'Shavers, hair clippers and hair-removing appliances', gstRate: 18 },
+  { code: '8513', description: 'Portable electric lamps — torches', gstRate: 18 },
+  { code: '8516', description: 'Electric heaters, irons, geysers, microwave ovens, kettles', gstRate: 18 },
+  { code: '8517', description: 'Telephones incl. mobile phones; networking apparatus', gstRate: 18 },
+  { code: '8518', description: 'Microphones, loudspeakers, headphones, amplifiers', gstRate: 18 },
+  { code: '8521', description: 'Video recording or reproducing apparatus', gstRate: 18 },
+  { code: '8523', description: 'Discs, tapes, solid-state storage media, smart cards', gstRate: 18 },
+  { code: '8528', description: 'Monitors, projectors and television receivers', gstRate: 18, rateNote: 'All screen sizes are 18% post-Sept-2025 — the 32-inch split no longer applies.' },
+  { code: '8536', description: 'Electrical switches, relays, plugs, sockets (≤1000 V)', gstRate: 18 },
+  { code: '8537', description: 'Boards, panels and consoles for electric control', gstRate: 18 },
+  { code: '8544', description: 'Insulated wire, cable and optical fibre cables', gstRate: 18 },
+  { code: '8541', description: 'Semiconductor devices; photovoltaic cells and solar panels', gstRate: 5 },
+
+  // ── Ch 87 · Vehicles ──────────────────────────────────────────────────
+  { code: '8703', description: 'Motor cars and passenger vehicles', gstRate: 18, rateNote: 'Small cars (petrol ≤1200cc / diesel ≤1500cc, ≤4 m) are 18%; larger, luxury and SUVs are 40%.' },
+  { code: '8704', description: 'Motor vehicles for the transport of goods', gstRate: 18 },
+  { code: '8708', description: 'Parts and accessories of motor vehicles', gstRate: 18 },
+  { code: '8711', description: 'Motorcycles, scooters and mopeds', gstRate: 18, rateNote: 'Engine capacity ≤350cc is 18%; above 350cc is 40%.' },
+  { code: '8712', description: 'Bicycles and other cycles, not motorised', gstRate: 5 },
+  { code: '8714', description: 'Parts and accessories of cycles and motorcycles', gstRate: 18 },
+  { code: '8715', description: 'Baby carriages and prams', gstRate: 5 },
+
+  // ── Ch 90–96 · Optical, medical, furniture, toys, misc ────────────────
+  { code: '9001', description: 'Optical fibres; spectacle lenses, unmounted', gstRate: 5 },
+  { code: '9003', description: 'Frames and mountings for spectacles', gstRate: 5 },
+  { code: '9004', description: 'Spectacles, goggles and sunglasses', gstRate: 5, rateNote: 'Corrective spectacles 5%; sunglasses may attract 18% — check the item.' },
+  { code: '9018', description: 'Medical, surgical and dental instruments', gstRate: 5 },
+  { code: '9019', description: 'Therapeutic and oxygen therapy apparatus', gstRate: 5 },
+  { code: '9021', description: 'Orthopaedic appliances, hearing aids, implants', gstRate: 5 },
+  { code: '9022', description: 'X-ray and radiation apparatus', gstRate: 5 },
+  { code: '9027', description: 'Instruments for physical or chemical analysis', gstRate: 18 },
+  { code: '9028', description: 'Gas, liquid and electricity supply meters', gstRate: 18 },
+  { code: '9101', description: 'Wrist-watches and clocks with precious-metal cases', gstRate: 18 },
+  { code: '9102', description: 'Wrist-watches, other', gstRate: 18 },
+  { code: '9401', description: 'Seats and parts thereof', gstRate: 18 },
+  { code: '9403', description: 'Other furniture and parts thereof', gstRate: 18 },
+  { code: '9404', description: 'Mattress supports; mattresses, quilts, pillows, cushions', gstRate: 18, rateNote: 'Cotton quilts up to ₹2,500 per piece are 5%.' },
+  { code: '9405', description: 'Lamps and lighting fittings, incl. LED lamps', gstRate: 5 },
+  { code: '9503', description: 'Tricycles, scooters, dolls and other toys; puzzles', gstRate: 5 },
+  { code: '9504', description: 'Video game consoles; articles for funfair or table games', gstRate: 18, rateNote: 'Betting, gambling, casinos, lottery and online money gaming are 40%.' },
+  { code: '9506', description: 'Articles for general physical exercise, gym and sports', gstRate: 5 },
+  { code: '9601', description: 'Worked ivory, bone, horn; articles thereof', gstRate: 5 },
+  { code: '9603', description: 'Brooms, brushes, mops, paint brushes', gstRate: 5 },
+  { code: '9608', description: 'Ball-point pens, felt-tipped pens, pencils, refills', gstRate: 5 },
+  { code: '9609', description: 'Pencils, crayons, chalks and pastels', gstRate: 5 },
+  { code: '9615', description: 'Combs, hair-slides, hairpins and curlers', gstRate: 5 },
+  { code: '9617', description: 'Vacuum flasks and other vacuum vessels', gstRate: 18 },
+  { code: '9619', description: 'Sanitary towels, tampons, napkins and liners', gstRate: 0 },
+  { code: '9620', description: 'Monopods, bipods, tripods and similar articles', gstRate: 18 },
+
+  // ── Ch 99 · Services (SAC) ────────────────────────────────────────────
+  { code: '995411', kind: 'SERVICES', description: 'Construction of residential buildings', gstRate: 18, rateNote: 'Affordable and other residential real-estate projects run at 1%/5% without ITC — a separate scheme, not this rate.' },
+  { code: '995461', kind: 'SERVICES', description: 'Electrical installation services', gstRate: 18 },
+  { code: '995462', kind: 'SERVICES', description: 'Water plumbing and drain laying services', gstRate: 18 },
+  { code: '995473', kind: 'SERVICES', description: 'Painting services', gstRate: 18 },
+  { code: '996111', kind: 'SERVICES', description: 'Wholesale trade services on a fee or commission basis', gstRate: 18 },
+  { code: '996211', kind: 'SERVICES', description: 'Retail trade services on a fee or commission basis', gstRate: 18 },
+  {
+    code: '996311',
+    kind: 'SERVICES',
+    description: 'Room or unit accommodation services (hotels, guest houses)',
+    gstRate: 5,
+    // Same shape as the apparel threshold, different number and unit: tariff
+    // up to ₹7,500 per unit per day is 5% without ITC, above it 18% with ITC.
+    rateRule: { kind: 'PRICE_THRESHOLD', threshold: 7500, atOrBelow: 5, above: 18, per: 'UNIT_PER_DAY' },
+    rateNote: 'The 5% band is without input tax credit; the 18% band carries ITC.',
+  },
+  { code: '996331', kind: 'SERVICES', description: 'Restaurant services incl. takeaway', gstRate: 5, rateNote: 'Standalone restaurants 5% without ITC; restaurants in hotels with room tariff above ₹7,500 are 18% with ITC.' },
+  { code: '996332', kind: 'SERVICES', description: 'Outdoor catering services', gstRate: 5 },
+  { code: '996411', kind: 'SERVICES', description: 'Local land transport of passengers — taxi, cab, auto', gstRate: 5, rateNote: '5% without ITC is the common option; 18% with ITC is available.' },
+  { code: '996511', kind: 'SERVICES', description: 'Road transport of goods — goods transport agency (GTA)', gstRate: 5, rateNote: '5% without ITC (often under reverse charge) or 18% with ITC.' },
+  { code: '996601', kind: 'SERVICES', description: 'Rental services of road vehicles with operator', gstRate: 18 },
+  { code: '996713', kind: 'SERVICES', description: 'Clearing and forwarding services', gstRate: 18 },
+  { code: '996812', kind: 'SERVICES', description: 'Courier services', gstRate: 18 },
+  { code: '996819', kind: 'SERVICES', description: 'Other delivery services', gstRate: 18 },
+  { code: '997212', kind: 'SERVICES', description: 'Rental or leasing services of own or leased non-residential property', gstRate: 18 },
+  { code: '997221', kind: 'SERVICES', description: 'Property management services on a fee or commission basis', gstRate: 18 },
+  { code: '997133', kind: 'SERVICES', description: 'Life insurance services — individual policies', gstRate: 0, rateNote: 'Individual life and health insurance policies are exempt from 22 Sept 2025; group and corporate cover is 18%.' },
+  { code: '998211', kind: 'SERVICES', description: 'Legal advisory and representation services', gstRate: 18, rateNote: 'Services by an individual advocate to a business are under reverse charge — the recipient pays.' },
+  { code: '998221', kind: 'SERVICES', description: 'Accounting and bookkeeping services', gstRate: 18 },
+  { code: '998222', kind: 'SERVICES', description: 'Financial auditing services', gstRate: 18 },
+  { code: '998311', kind: 'SERVICES', description: 'Management consulting services', gstRate: 18 },
+  { code: '998313', kind: 'SERVICES', description: 'IT consulting and support services', gstRate: 18 },
+  { code: '998314', kind: 'SERVICES', description: 'IT design and development services', gstRate: 18 },
+  { code: '998315', kind: 'SERVICES', description: 'Hosting and IT infrastructure provisioning services', gstRate: 18 },
+  { code: '998319', kind: 'SERVICES', description: 'Other IT services not elsewhere classified', gstRate: 18 },
+  { code: '998341', kind: 'SERVICES', description: 'Geological and geophysical consulting services', gstRate: 18 },
+  { code: '998361', kind: 'SERVICES', description: 'Advertising services', gstRate: 18 },
+  { code: '998363', kind: 'SERVICES', description: 'Sale of advertising space in print media', gstRate: 5 },
+  { code: '998371', kind: 'SERVICES', description: 'Market research and public opinion polling', gstRate: 18 },
+  { code: '998519', kind: 'SERVICES', description: 'Manpower supply and staffing services', gstRate: 18 },
+  { code: '998596', kind: 'SERVICES', description: 'Events, exhibitions and conventions assistance services', gstRate: 18 },
+  { code: '998721', kind: 'SERVICES', description: 'Repair services of computers and peripheral equipment', gstRate: 18 },
+  { code: '998722', kind: 'SERVICES', description: 'Repair services of communication equipment (mobile repair)', gstRate: 18 },
+  { code: '998723', kind: 'SERVICES', description: 'Repair services of consumer electronics and appliances', gstRate: 18 },
+  { code: '998729', kind: 'SERVICES', description: 'Maintenance and repair services of other goods', gstRate: 18 },
+  { code: '998821', kind: 'SERVICES', description: 'Textile manufacturing services on physical inputs owned by others (job work)', gstRate: 5 },
+  { code: '998898', kind: 'SERVICES', description: 'Other manufacturing services (job work) not elsewhere classified', gstRate: 18 },
+  { code: '999293', kind: 'SERVICES', description: 'Commercial training and coaching services', gstRate: 18 },
+  { code: '999721', kind: 'SERVICES', description: 'Hairdressing and beauty parlour services', gstRate: 5 },
+  { code: '999722', kind: 'SERVICES', description: 'Physical well-being services — gym, spa, salon', gstRate: 5 },
+  { code: '999799', kind: 'SERVICES', description: 'Other services not elsewhere classified', gstRate: 18 },
+];
+
+/// Navigation rows first so a `Map` built by iterating this list ends up with
+/// the rated entry winning any accidental code collision.
+export const HSN_MASTER: HsnMasterEntry[] = [
+  ...CHAPTERS,
+  ...SERVICE_GROUPS,
+  ...RATED_ENTRIES,
+];

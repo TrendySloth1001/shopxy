@@ -5,6 +5,7 @@ import { ensureBucket } from '../../modules/upload/upload.service.js';
 import { pingRedis, closeRedis } from '../redis.js';
 import { startScheduler, stopScheduler } from '../scheduler.js';
 import { seedCanonicalCategories } from '../../modules/categories/categories.seed.js';
+import { seedHsnMaster } from '../../modules/hsn/hsn.seed.js';
 import { attachScanConsoleWs, registerWsCommandHandler } from '../../modules/scan-console/scan-console.service.js';
 import { saleBus } from '../../modules/pos/pos.bus.js';
 import { sessionRevocationBus } from '../../shared/sessionRevocation.js';
@@ -41,6 +42,12 @@ async function startServer(): Promise<void> {
     // seed fails so we don't lock ourselves out of fixing a bad row.
     await seedCanonicalCategories().catch((e) =>
       logger.warn({ err: e }, 'category seed failed; continuing boot'),
+    );
+    // HSN/SAC → GST rate master, same deal: idempotent sync from the
+    // checked-in manifest. Best-effort for the same reason — a bad row
+    // shouldn't cost us the ability to boot and fix it.
+    await seedHsnMaster().catch((e) =>
+      logger.warn({ err: e }, 'hsn master seed failed; continuing boot'),
     );
     // Recurring jobs (flash-sale flush, expiry sweep, …). No-op in
     // NODE_ENV=test so vitest runs don't fire timers.
