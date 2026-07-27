@@ -1568,6 +1568,24 @@ abstract class AppLocalizations {
   /// **'Tax classification code for invoices'**
   String get productsHsnCodeHelper;
 
+  /// No description provided for @productsHsnRateFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'GST rate from HSN {code}.'**
+  String productsHsnRateFrom(String code);
+
+  /// No description provided for @productsHsnRateFromHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'GST rate inferred from heading {code} — confirm it fits this item.'**
+  String productsHsnRateFromHeading(String code);
+
+  /// No description provided for @productsHsnRateUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'No GST rate on file for this code. Check the code, or set the rate yourself.'**
+  String get productsHsnRateUnknown;
+
   /// No description provided for @productsLowStockThreshold.
   ///
   /// In en, this message translates to:
@@ -12502,6 +12520,240 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{n}d ago'**
   String timeDaysAgo(int n);
+
+  /// No description provided for @productsHsnSuggestedFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested for this product'**
+  String get productsHsnSuggestedFor;
+
+  /// No description provided for @productsHsnNotThis.
+  ///
+  /// In en, this message translates to:
+  /// **'Not this?'**
+  String get productsHsnNotThis;
+
+  /// No description provided for @productsHsnSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to your codes'**
+  String get productsHsnSaved;
+
+  /// No description provided for @productsHsnSaveShortcut.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as my code for “{name}”'**
+  String productsHsnSaveShortcut(String name);
+
+  /// No description provided for @productsGstAwaitingCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick an HSN code'**
+  String get productsGstAwaitingCode;
+
+  /// No description provided for @productsGstFromRule.
+  ///
+  /// In en, this message translates to:
+  /// **'by price'**
+  String get productsGstFromRule;
+
+  /// No description provided for @productsGstFromOverride.
+  ///
+  /// In en, this message translates to:
+  /// **'your override'**
+  String get productsGstFromOverride;
+
+  /// No description provided for @productsGstRuleApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Priced at ₹{price}, against the ₹{threshold} threshold.'**
+  String productsGstRuleApplied(String price, String threshold);
+
+  /// No description provided for @productsGstManualDiverges.
+  ///
+  /// In en, this message translates to:
+  /// **'This differs from HSN {code}, which is {rate}%. Make sure you have a basis for it.'**
+  String productsGstManualDiverges(String code, String rate);
+
+  /// No description provided for @productsGstSetManually.
+  ///
+  /// In en, this message translates to:
+  /// **'Set the rate manually'**
+  String get productsGstSetManually;
+
+  /// No description provided for @productsGstUseHsnRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the rate from the HSN code'**
+  String get productsGstUseHsnRate;
+
+  /// No description provided for @hsnCodesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My HSN codes'**
+  String get hsnCodesTitle;
+
+  /// No description provided for @hsnCodesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The codes you\'ve saved and any rate you\'ve set differently from ours. Saved codes only decide classification — the GST rate is always read live, so a Council change reaches you without you touching anything here.'**
+  String get hsnCodesSubtitle;
+
+  /// No description provided for @hsnRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get hsnRetry;
+
+  /// No description provided for @hsnSavedHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved codes'**
+  String get hsnSavedHeading;
+
+  /// No description provided for @hsnSavedBlurb.
+  ///
+  /// In en, this message translates to:
+  /// **'When you say one of these words on a product, we fill in this code. Created from the product form — no rate is stored, so these can\'t go stale.'**
+  String get hsnSavedBlurb;
+
+  /// No description provided for @hsnSavedEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing saved yet'**
+  String get hsnSavedEmptyTitle;
+
+  /// No description provided for @hsnSavedEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick an HSN code on a product and choose “Save as my code”.'**
+  String get hsnSavedEmptyHint;
+
+  /// No description provided for @hsnSavedBrokenBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs attention'**
+  String get hsnSavedBrokenBadge;
+
+  /// No description provided for @hsnSavedBrokenBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 saved code no longer exists} other{{count} saved codes no longer exist}} in the tariff. Pick a replacement — we won\'t guess one for you.'**
+  String hsnSavedBrokenBanner(num count);
+
+  /// No description provided for @hsnSavedUsedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{used 1 time} other{used {count} times}}'**
+  String hsnSavedUsedCount(num count);
+
+  /// No description provided for @hsnActionChangeCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Change code'**
+  String get hsnActionChangeCode;
+
+  /// No description provided for @hsnActionRemoveSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove saved code'**
+  String get hsnActionRemoveSaved;
+
+  /// No description provided for @hsnActionRemoveOverride.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove override'**
+  String get hsnActionRemoveOverride;
+
+  /// No description provided for @hsnRepointTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change the code for “{label}”'**
+  String hsnRepointTitle(String label);
+
+  /// No description provided for @hsnRepointBlurb.
+  ///
+  /// In en, this message translates to:
+  /// **'This keeps your wording and points it at a different HSN code. Products already saved keep the rate they were billed at.'**
+  String get hsnRepointBlurb;
+
+  /// No description provided for @hsnOverridesHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate overrides'**
+  String get hsnOverridesHeading;
+
+  /// No description provided for @hsnOverridesBlurb.
+  ///
+  /// In en, this message translates to:
+  /// **'A rate you bill that differs from ours, for one code, across your whole catalogue. Use this only when you have a basis for it — the reason you give is what an auditor will ask about.'**
+  String get hsnOverridesBlurb;
+
+  /// No description provided for @hsnOverridesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No overrides. Every code bills at the rate in the shared tariff.'**
+  String get hsnOverridesEmpty;
+
+  /// No description provided for @hsnOverridesAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get hsnOverridesAdd;
+
+  /// No description provided for @hsnOverridesEffectiveFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'In force from {date}'**
+  String hsnOverridesEffectiveFrom(String date);
+
+  /// No description provided for @hsnOverridesDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Override a GST rate'**
+  String get hsnOverridesDialogTitle;
+
+  /// No description provided for @hsnOverridesDialogBlurb.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the code first, so you can see the rate you\'re departing from.'**
+  String get hsnOverridesDialogBlurb;
+
+  /// No description provided for @hsnOverridesPlatformRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Our rate for {code} is {rate}%.'**
+  String hsnOverridesPlatformRate(String code, String rate);
+
+  /// No description provided for @hsnOverridesRateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Your GST rate (%)'**
+  String get hsnOverridesRateLabel;
+
+  /// No description provided for @hsnOverridesDiverges.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re billing {yours}% on {code} where the tariff says {platform}%. This applies to every product on this code and every invoice from here on.'**
+  String hsnOverridesDiverges(String code, String yours, String platform);
+
+  /// No description provided for @hsnOverridesReasonLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Why'**
+  String get hsnOverridesReasonLabel;
+
+  /// No description provided for @hsnOverridesReasonHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Required. An override with no stated basis can\'t be told apart from a typo.'**
+  String get hsnOverridesReasonHelper;
+
+  /// No description provided for @hsnOverridesConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Save override'**
+  String get hsnOverridesConfirm;
 }
 
 class _AppLocalizationsDelegate

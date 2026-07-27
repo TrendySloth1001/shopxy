@@ -1359,8 +1359,12 @@ class _ItemTile extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSizes.xs),
                 Text(
+                  // HSN sits next to the rate it explains — the printed PDF
+                  // shows both per line plus an HSN summary, and the on-screen
+                  // copy shouldn't be harder to reconcile than the print.
                   '${item.quantity} ${item.unit} × ${AppStrings.currencySymbol}${item.unitPrice.toStringAsFixed(2)}'
-                  '${item.taxPercent > 0 ? ' + ${item.taxPercent.toStringAsFixed(0)}% GST' : ''}',
+                  '${item.taxPercent > 0 ? ' + ${item.taxPercent.toStringAsFixed(0)}% GST' : ''}'
+                  '${item.hsn != null && item.hsn!.isNotEmpty ? ' · HSN ${item.hsn}' : ''}',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: AppColors.muted,
                   ),

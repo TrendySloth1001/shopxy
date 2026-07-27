@@ -778,6 +778,20 @@ class AppLocalizationsHi extends AppLocalizations {
   String get productsHsnCodeHelper => 'चालानों के लिए कर वर्गीकरण कोड';
 
   @override
+  String productsHsnRateFrom(String code) {
+    return 'GST दर HSN $code से।';
+  }
+
+  @override
+  String productsHsnRateFromHeading(String code) {
+    return 'GST दर शीर्षक $code से अनुमानित — जाँच लें कि यह इस वस्तु पर लागू होती है।';
+  }
+
+  @override
+  String get productsHsnRateUnknown =>
+      'इस कोड के लिए कोई GST दर दर्ज नहीं है। कोड जाँचें, या दर स्वयं भरें।';
+
+  @override
   String get productsLowStockThreshold => 'कम स्टॉक अलर्ट';
 
   @override
@@ -6786,4 +6800,169 @@ class AppLocalizationsHi extends AppLocalizations {
   String timeDaysAgo(int n) {
     return '$n दिन पहले';
   }
+
+  @override
+  String get productsHsnSuggestedFor => 'इस उत्पाद के लिए सुझाव';
+
+  @override
+  String get productsHsnNotThis => 'यह नहीं?';
+
+  @override
+  String get productsHsnSaved => 'आपके कोड में सहेजा गया';
+
+  @override
+  String productsHsnSaveShortcut(String name) {
+    return '“$name” के लिए मेरा कोड सहेजें';
+  }
+
+  @override
+  String get productsGstAwaitingCode => 'HSN कोड चुनें';
+
+  @override
+  String get productsGstFromRule => 'कीमत के आधार पर';
+
+  @override
+  String get productsGstFromOverride => 'आपका ओवरराइड';
+
+  @override
+  String productsGstRuleApplied(String price, String threshold) {
+    return 'कीमत ₹$price, सीमा ₹$threshold।';
+  }
+
+  @override
+  String productsGstManualDiverges(String code, String rate) {
+    return 'यह HSN $code से अलग है, जो $rate% है। सुनिश्चित करें कि इसका आधार है।';
+  }
+
+  @override
+  String get productsGstSetManually => 'दर स्वयं भरें';
+
+  @override
+  String get productsGstUseHsnRate => 'HSN कोड की दर लें';
+
+  @override
+  String get hsnCodesTitle => 'मेरे HSN कोड';
+
+  @override
+  String get hsnCodesSubtitle =>
+      'आपके सहेजे हुए कोड और कोई भी दर जो आपने हमारी दर से अलग रखी है। सहेजे कोड सिर्फ़ वर्गीकरण तय करते हैं — GST दर हमेशा ताज़ा पढ़ी जाती है।';
+
+  @override
+  String get hsnRetry => 'फिर कोशिश करें';
+
+  @override
+  String get hsnSavedHeading => 'सहेजे कोड';
+
+  @override
+  String get hsnSavedBlurb =>
+      'जब आप किसी उत्पाद पर इनमें से कोई शब्द लिखते हैं, हम यही कोड भर देते हैं। कोई दर सहेजी नहीं जाती, इसलिए ये पुराने नहीं पड़ते।';
+
+  @override
+  String get hsnSavedEmptyTitle => 'अभी कुछ सहेजा नहीं है';
+
+  @override
+  String get hsnSavedEmptyHint =>
+      'किसी उत्पाद पर HSN कोड चुनें और “मेरा कोड बनाएँ” दबाएँ।';
+
+  @override
+  String get hsnSavedBrokenBadge => 'ध्यान चाहिए';
+
+  @override
+  String hsnSavedBrokenBanner(num count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.compact(
+      locale: localeName,
+    );
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString सहेजे कोड',
+      one: '1 सहेजा कोड',
+    );
+    return '$_temp0 अब टैरिफ़ में नहीं है। इसका विकल्प आप चुनें — हम अंदाज़ा नहीं लगाएँगे।';
+  }
+
+  @override
+  String hsnSavedUsedCount(num count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.compact(
+      locale: localeName,
+    );
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString बार इस्तेमाल',
+      one: '1 बार इस्तेमाल',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get hsnActionChangeCode => 'कोड बदलें';
+
+  @override
+  String get hsnActionRemoveSaved => 'सहेजा कोड हटाएँ';
+
+  @override
+  String get hsnActionRemoveOverride => 'ओवरराइड हटाएँ';
+
+  @override
+  String hsnRepointTitle(String label) {
+    return '“$label” का कोड बदलें';
+  }
+
+  @override
+  String get hsnRepointBlurb =>
+      'आपका शब्द वही रहेगा, बस वह दूसरे HSN कोड पर जाएगा। पहले से सहेजे उत्पाद अपनी बिल की गई दर पर बने रहते हैं।';
+
+  @override
+  String get hsnOverridesHeading => 'दर ओवरराइड';
+
+  @override
+  String get hsnOverridesBlurb =>
+      'एक कोड पर आपकी बिलिंग दर, जो हमारी दर से अलग है, और आपके पूरे कैटलॉग पर लागू होती है। आपका दिया कारण ही ऑडिटर पूछेगा।';
+
+  @override
+  String get hsnOverridesEmpty =>
+      'कोई ओवरराइड नहीं। हर कोड साझा टैरिफ़ की दर पर बिल होता है।';
+
+  @override
+  String get hsnOverridesAdd => 'जोड़ें';
+
+  @override
+  String hsnOverridesEffectiveFrom(String date) {
+    return '$date से लागू';
+  }
+
+  @override
+  String get hsnOverridesDialogTitle => 'GST दर ओवरराइड करें';
+
+  @override
+  String get hsnOverridesDialogBlurb =>
+      'पहले कोड चुनें, ताकि आप देख सकें कि आप किस दर से हट रहे हैं।';
+
+  @override
+  String hsnOverridesPlatformRate(String code, String rate) {
+    return '$code के लिए हमारी दर $rate% है।';
+  }
+
+  @override
+  String get hsnOverridesRateLabel => 'आपकी GST दर (%)';
+
+  @override
+  String hsnOverridesDiverges(String code, String yours, String platform) {
+    return 'आप $code पर $yours% बिल कर रहे हैं जबकि टैरिफ़ $platform% कहता है। यह इस कोड के हर उत्पाद और आगे के हर बिल पर लागू होगा।';
+  }
+
+  @override
+  String get hsnOverridesReasonLabel => 'कारण';
+
+  @override
+  String get hsnOverridesReasonHelper =>
+      'ज़रूरी है। बिना आधार वाला ओवरराइड टाइपिंग की गलती से अलग नहीं दिखता।';
+
+  @override
+  String get hsnOverridesConfirm => 'ओवरराइड सहेजें';
 }

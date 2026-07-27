@@ -26,6 +26,9 @@ class ProductDto {
       sellingPrice: _toDouble(json['sellingPrice']),
       purchasePrice: _toDouble(json['purchasePrice']),
       taxPercent: _toDouble(json['taxPercent']),
+      // Absent on older backends — default to MANUAL, which is what an
+      // un-stamped rate always was.
+      taxSource: json['taxSource'] as String? ?? 'MANUAL',
       stockQuantity: _toDouble(json['stockQuantity']),
       lowStockThreshold: _toDouble(json['lowStockThreshold']),
       unit: json['unit'] as String? ?? 'PCS',

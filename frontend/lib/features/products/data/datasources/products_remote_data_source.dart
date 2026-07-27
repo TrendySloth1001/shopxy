@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shopxy/core/network/api_client.dart';
+import 'package:shopxy/features/products/data/models/hsn_dto.dart';
 import 'package:shopxy/features/products/data/models/product_dto.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
 
@@ -126,6 +127,157 @@ class ProductsRemoteDataSource {
   Future<void> deleteImage(String productId, String imageId) async {
     final response = await _client.delete('/products/$productId/images/$imageId');
     _expectOk(response, 'Delete image');
+  }
+
+  /// ── HSN/SAC rate master ────────────────────────────────────────────────
+  /// Reference data behind the product editor's "type a code, get the GST
+  /// rate" auto-fill. Read-only — the master is seeded server-side from a
+  /// checked-in manifest, so there is nothing to write back.
+
+  /// Type-ahead over codes, the translated alias vocabulary and the merchant's
+  /// own saved shortcuts. Returns an empty list rather than throwing: a failed
+  /// lookup must not block the merchant from typing a code by hand.
+  Future<List<HsnMatch>> searchHsn(String query) async {
+    try {
+      final response = await _client.get('/hsn', queryParameters: {'q': query});
+      if (response.statusCode < 200 || response.statusCode >= 300) return const [];
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      return (body['results'] as List? ?? const [])
+          .map((e) => HsnMatch.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  /// Classification from a product name, so the merchant confirms a code
+  /// instead of hunting for one. Quiet on failure for the same reason as
+  /// [searchHsn] — a suggester that throws is worse than one that says nothing.
+  Future<List<HsnSuggestion>> suggestHsn(String name) async {
+    if (name.trim().isEmpty) return const [];
+    try {
+      final response =
+          await _client.get('/hsn/suggest', queryParameters: {'name': name});
+      if (response.statusCode < 200 || response.statusCode >= 300) return const [];
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      return (body['suggestions'] as List? ?? const [])
+          .map((e) => HsnSuggestion.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  /// The rate lookup: one code in, the rate it bills at out.
+  ///
+  /// [price] matters — apparel is 5% up to ₹2,500 a piece and 18% above, so the
+  /// same code answers differently depending on what's being charged.
+  ///
+  /// Null means the master carries no rate for the code (a 404). Callers MUST
+  /// leave the tax field as it was rather than defaulting to 0% — a silent 0
+  /// is an under-charged invoice, the exact failure this feature prevents.
+  Future<HsnResolution?> resolveHsn(String code, {double? price}) async {
+    try {
+      final response = await _client.get('/hsn/resolve', queryParameters: {
+        'code': code,
+        if (price != null && price.isFinite) 'price': price.toString(),
+      });
+      if (response.statusCode < 200 || response.statusCode >= 300) return null;
+      return HsnResolution.fromJson(
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Save "when I say X, I mean this code". Stores no rate by design — the rate
+  /// is always read live, so a saved shortcut can never go stale against a
+  /// Council revision.
+  Future<bool> saveHsnShortcut({required String label, required String code}) async {
+    try {
+      final response = await _client.post(
+        '/hsn/shortcuts',
+        body: {'label': label, 'code': code},
+      );
+      return response.statusCode >= 200 && response.statusCode < 300;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// ── Managing the merchant's own codes ──────────────────────────────────
+  ///
+  /// The calls above are quiet on failure because they run on the typing path,
+  /// where an exception would interrupt an edit for no gain. These are the
+  /// opposite: they back the "My HSN codes" screen, where swallowing an error
+  /// would make a refused delete look like it worked. A 403 in particular is
+  /// meaningful — overrides need `shop:manage`, which a cashier doesn't hold.
+  static Never _fail(http.Response response, String action) {
+    String message = '$action failed (${response.statusCode})';
+    try {
+      final body = jsonDecode(response.body);
+      if (body is Map && body['error'] is String) message = body['error'] as String;
+    } catch (_) {
+      // Non-JSON body — keep the status-code message.
+    }
+    throw Exception(message);
+  }
+
+  Future<List<HsnShortcut>> listHsnShortcuts() async {
+    final response = await _client.get('/hsn/shortcuts');
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _fail(response, 'Load saved codes');
+    }
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    return (body['shortcuts'] as List? ?? const [])
+        .map((e) => HsnShortcut.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Removing a shortcut only forgets a bookmark — nothing already priced
+  /// changes, because a shortcut never carried a rate.
+  Future<void> deleteHsnShortcut(String id) async {
+    final response = await _client.delete('/hsn/shortcuts/$id');
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _fail(response, 'Remove saved code');
+    }
+  }
+
+  Future<List<HsnOverride>> listHsnOverrides() async {
+    final response = await _client.get('/hsn/overrides');
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _fail(response, 'Load rate overrides');
+    }
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    return (body['overrides'] as List? ?? const [])
+        .map((e) => HsnOverride.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<void> createHsnOverride({
+    required String code,
+    required double gstRate,
+    required String reason,
+  }) async {
+    final response = await _client.post('/hsn/overrides', body: {
+      'code': code,
+      'gstRate': gstRate,
+      'reason': reason,
+    });
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _fail(response, 'Save rate override');
+    }
+  }
+
+  /// Soft on the backend: the override stops applying to new documents but
+  /// stays on the record, because it was the shop's stated position when
+  /// earlier invoices were raised.
+  Future<void> deleteHsnOverride(String id) async {
+    final response = await _client.delete('/hsn/overrides/$id');
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _fail(response, 'Remove rate override');
+    }
   }
 
   /// Uploads [file] to MinIO via the backend and returns the stored URL.

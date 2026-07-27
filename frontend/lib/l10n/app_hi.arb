@@ -28,7 +28,11 @@
   "offlineBannerMessage": "नेटवर्क नहीं — सहेजा गया डेटा दिख रहा है",
   "offlineSyncingMessage": "{count} बदलाव सिंक हो रहे हैं…",
   "@offlineSyncingMessage": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "noShopTitle": "अभी तक कोई दुकान लिंक नहीं है",
   "noShopBody": "किसी दुकान मालिक से अपनी टीम में आमंत्रित करने को कहें, फिर स्वीकार करने के लिए दोबारा साइन इन करें।",
@@ -248,6 +252,23 @@
   "productsDone": "हो गया",
   "productsBarcodeHelper": "पैकेज पर धारीदार कोड के नीचे की संख्या",
   "productsHsnCodeHelper": "चालानों के लिए कर वर्गीकरण कोड",
+  "productsHsnRateFrom": "GST दर HSN {code} से।",
+  "@productsHsnRateFrom": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "productsHsnRateFromHeading": "GST दर शीर्षक {code} से अनुमानित — जाँच लें कि यह इस वस्तु पर लागू होती है।",
+  "@productsHsnRateFromHeading": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "productsHsnRateUnknown": "इस कोड के लिए कोई GST दर दर्ज नहीं है। कोड जाँचें, या दर स्वयं भरें।",
   "productsLowStockThreshold": "कम स्टॉक अलर्ट",
   "productsLowStockThresholdHelper": "स्टॉक इस स्तर तक गिरने पर हम उत्पाद को चिह्नित कर देंगे",
   "productsAddTag": "टैग जोड़ें",
@@ -2145,5 +2166,71 @@
         "type": "int"
       }
     }
-  }
+  },
+  "productsHsnSuggestedFor": "इस उत्पाद के लिए सुझाव",
+  "productsHsnNotThis": "यह नहीं?",
+  "productsHsnSaved": "आपके कोड में सहेजा गया",
+  "productsHsnSaveShortcut": "“{name}” के लिए मेरा कोड सहेजें",
+  "@productsHsnSaveShortcut": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "productsGstAwaitingCode": "HSN कोड चुनें",
+  "productsGstFromRule": "कीमत के आधार पर",
+  "productsGstFromOverride": "आपका ओवरराइड",
+  "productsGstRuleApplied": "कीमत ₹{price}, सीमा ₹{threshold}।",
+  "@productsGstRuleApplied": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      },
+      "threshold": {
+        "type": "String"
+      }
+    }
+  },
+  "productsGstManualDiverges": "यह HSN {code} से अलग है, जो {rate}% है। सुनिश्चित करें कि इसका आधार है।",
+  "@productsGstManualDiverges": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "productsGstSetManually": "दर स्वयं भरें",
+  "productsGstUseHsnRate": "HSN कोड की दर लें",
+  "hsnCodesTitle": "मेरे HSN कोड",
+  "hsnCodesSubtitle": "आपके सहेजे हुए कोड और कोई भी दर जो आपने हमारी दर से अलग रखी है। सहेजे कोड सिर्फ़ वर्गीकरण तय करते हैं — GST दर हमेशा ताज़ा पढ़ी जाती है।",
+  "hsnRetry": "फिर कोशिश करें",
+  "hsnSavedHeading": "सहेजे कोड",
+  "hsnSavedBlurb": "जब आप किसी उत्पाद पर इनमें से कोई शब्द लिखते हैं, हम यही कोड भर देते हैं। कोई दर सहेजी नहीं जाती, इसलिए ये पुराने नहीं पड़ते।",
+  "hsnSavedEmptyTitle": "अभी कुछ सहेजा नहीं है",
+  "hsnSavedEmptyHint": "किसी उत्पाद पर HSN कोड चुनें और “मेरा कोड बनाएँ” दबाएँ।",
+  "hsnSavedBrokenBadge": "ध्यान चाहिए",
+  "hsnSavedBrokenBanner": "{count, plural, =1{1 सहेजा कोड} other{{count} सहेजे कोड}} अब टैरिफ़ में नहीं है। इसका विकल्प आप चुनें — हम अंदाज़ा नहीं लगाएँगे।",
+  "hsnSavedUsedCount": "{count, plural, =1{1 बार इस्तेमाल} other{{count} बार इस्तेमाल}}",
+  "hsnActionChangeCode": "कोड बदलें",
+  "hsnActionRemoveSaved": "सहेजा कोड हटाएँ",
+  "hsnActionRemoveOverride": "ओवरराइड हटाएँ",
+  "hsnRepointTitle": "“{label}” का कोड बदलें",
+  "hsnRepointBlurb": "आपका शब्द वही रहेगा, बस वह दूसरे HSN कोड पर जाएगा। पहले से सहेजे उत्पाद अपनी बिल की गई दर पर बने रहते हैं।",
+  "hsnOverridesHeading": "दर ओवरराइड",
+  "hsnOverridesBlurb": "एक कोड पर आपकी बिलिंग दर, जो हमारी दर से अलग है, और आपके पूरे कैटलॉग पर लागू होती है। आपका दिया कारण ही ऑडिटर पूछेगा।",
+  "hsnOverridesEmpty": "कोई ओवरराइड नहीं। हर कोड साझा टैरिफ़ की दर पर बिल होता है।",
+  "hsnOverridesAdd": "जोड़ें",
+  "hsnOverridesEffectiveFrom": "{date} से लागू",
+  "hsnOverridesDialogTitle": "GST दर ओवरराइड करें",
+  "hsnOverridesDialogBlurb": "पहले कोड चुनें, ताकि आप देख सकें कि आप किस दर से हट रहे हैं।",
+  "hsnOverridesPlatformRate": "{code} के लिए हमारी दर {rate}% है।",
+  "hsnOverridesRateLabel": "आपकी GST दर (%)",
+  "hsnOverridesDiverges": "आप {code} पर {yours}% बिल कर रहे हैं जबकि टैरिफ़ {platform}% कहता है। यह इस कोड के हर उत्पाद और आगे के हर बिल पर लागू होगा।",
+  "hsnOverridesReasonLabel": "कारण",
+  "hsnOverridesReasonHelper": "ज़रूरी है। बिना आधार वाला ओवरराइड टाइपिंग की गलती से अलग नहीं दिखता।",
+  "hsnOverridesConfirm": "ओवरराइड सहेजें"
 }

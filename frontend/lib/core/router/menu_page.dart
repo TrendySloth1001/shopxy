@@ -14,6 +14,7 @@ import 'package:shopxy/features/banners/presentation/pages/merchant_banners_page
 import 'package:shopxy/features/cashier/presentation/pages/cashier_page.dart';
 import 'package:shopxy/features/notifications/presentation/widgets/notification_bell.dart';
 import 'package:shopxy/features/categories/presentation/pages/categories_page.dart';
+import 'package:shopxy/features/products/presentation/pages/hsn_codes_page.dart';
 import 'package:shopxy/features/challans/presentation/pages/challans_page.dart';
 import 'package:shopxy/features/coupons/presentation/pages/merchant_coupons_page.dart';
 import 'package:shopxy/features/parties/presentation/pages/parties_page.dart';
@@ -86,6 +87,15 @@ List<_MenuItem> get _manageItems => [
     accent: AppColors.accentTeal,
     accentSoft: AppColors.accentTealSoft,
     builder: (_) => const CategoriesPage(),
+    requires: (u) => u.canView('products'),
+  ),
+  _MenuItem(
+    label: (l) => l.hsnCodesTitle,
+    description: (l) => l.hsnSavedBlurb,
+    icon: AppIcons.percentRounded,
+    accent: AppColors.accentAmber,
+    accentSoft: AppColors.accentAmberSoft,
+    builder: (_) => const HsnCodesPage(),
     requires: (u) => u.canView('products'),
   ),
   _MenuItem(
