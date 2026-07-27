@@ -221,6 +221,12 @@
       "brandLabel": "Brand",
       "barcodeLabel": "Barcode",
       "hsnLabel": "HSN code",
+      "hsnPlaceholder": "Search by code or description",
+      "hsnHelper": "Pick the HSN/SAC code — the GST rate fills in automatically.",
+      "hsnSearching": "Searching…",
+      "hsnUnknown": "No GST rate on file for this code. Check the code, or set the tax rate manually.",
+      "hsnRateFrom": "GST rate from HSN {code}.",
+      "hsnRateFromHeading": "GST rate inferred from heading {code} — confirm it fits this item.",
       "descriptionLabel": "Description",
       "mrpLabel": "MRP",
       "sellingPriceLabel": "Selling price",
@@ -269,7 +275,19 @@
           "title": "Custom fields",
           "description": "Your shop-defined fields for this product."
         }
-      }
+      },
+      "hsnSuggestedFor": "Suggested for this product",
+      "hsnSaveShortcut": "Save as my code for “{name}”",
+      "hsnSaved": "Saved to your codes",
+      "hsnNotThis": "Not this?",
+      "hsnRuleSummary": "{low}% up to ₹{threshold}, {high}% above.",
+      "gstAwaitingCode": "Pick an HSN code",
+      "gstFromRule": "by price",
+      "gstFromOverride": "your override",
+      "gstRuleApplied": "Priced at ₹{price}, against the ₹{threshold} threshold.",
+      "gstManualDiverges": "This differs from HSN {code}, which is {rate}%. Make sure you have a basis for it.",
+      "gstSetManually": "Set the rate manually",
+      "gstUseHsnRate": "Use the rate from the HSN code"
     },
     "imageManager": {
       "uploadError": "Could not upload the image.",
@@ -1082,6 +1100,7 @@
       "banners": "Banners",
       "coupons": "Coupons",
       "categories": "Categories",
+      "hsn-codes": "HSN codes",
       "vendors": "Vendors",
       "parties": "Parties",
       "pos": "Point of sale",
@@ -3649,6 +3668,59 @@
       "tableItem": "Item",
       "tableValue": "Value",
       "tableShare": "Share"
+    }
+  },
+  "hsnCodes": {
+    "title": "My HSN codes",
+    "subtitle": "The codes you've saved and any rate you've set differently from ours. Saved codes only decide classification — the GST rate is always read live, so a Council change reaches you without you touching anything here.",
+    "lockedHint": "You don't have permission to change products.",
+    "actions": {
+      "cancel": "Cancel",
+      "saving": "Saving…",
+      "tryAgain": "Try again",
+      "changeCode": "Change code",
+      "removeSaved": "Remove saved code",
+      "removeOverride": "Remove override"
+    },
+    "errors": {
+      "load": "Could not load your codes.",
+      "saveShortcut": "Could not save that code.",
+      "deleteShortcut": "Could not remove that saved code.",
+      "saveOverride": "Could not save that rate override.",
+      "deleteOverride": "Could not remove that rate override."
+    },
+    "saved": {
+      "heading": "Saved codes",
+      "blurb": "When you say one of these words on a product, we fill in this code. Created from the product form — no rate is stored, so these can't go stale.",
+      "empty": "Nothing saved yet. Pick an HSN code on a product and choose “Save as my code”.",
+      "usedCount": "used {count, plural, one {# time} other {# times}}",
+      "brokenBadge": "Needs attention",
+      "brokenBanner": "{count, plural, one {# saved code no longer exists} other {# saved codes no longer exist}} in the tariff. Pick a replacement — we won't guess one for you."
+    },
+    "overrides": {
+      "heading": "Rate overrides",
+      "blurb": "A rate you bill that differs from ours, for one code, across your whole catalogue. Use this only when you have a basis for it — the reason you give is what an auditor will ask about.",
+      "empty": "No overrides. Every code bills at the rate in the shared tariff.",
+      "add": "Add override",
+      "lockedHint": "Only someone who can manage the shop may change a rate.",
+      "plusCess": "+ {rate}% cess",
+      "effectiveFrom": "In force from {date}",
+      "dialogTitle": "Override a GST rate",
+      "dialogBlurb": "Pick the code first, so you can see the rate you're departing from.",
+      "codeLabel": "HSN code",
+      "platformRate": "Our rate for {code} is {rate}%.",
+      "rateLabel": "Your GST rate (%)",
+      "diverges": "You're billing {yours}% on {code} where the tariff says {platform}%. This applies to every product on this code and every invoice from here on.",
+      "reasonLabel": "Why",
+      "reasonPlaceholder": "e.g. Advance ruling XYZ/2026 classifies our variant under a different heading",
+      "reasonHelper": "Required. An override with no stated basis can't be told apart from a typo.",
+      "confirm": "Save override"
+    },
+    "repoint": {
+      "title": "Change the code for “{label}”",
+      "blurb": "This keeps your wording and points it at a different HSN code. Products already saved keep the rate they were billed at.",
+      "codeLabel": "New HSN code",
+      "confirm": "Save"
     }
   }
 }

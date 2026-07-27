@@ -91,6 +91,11 @@ export const productSchema = z
     sellingPrice: z.coerce.number().default(0),
     purchasePrice: z.coerce.number().default(0),
     taxPercent: z.coerce.number().default(0),
+    /// Where `taxPercent` came from. MANUAL means someone typed it, which is
+    /// what every pre-HSN-master row is; the form uses it to decide whether the
+    /// tax field opens as a readout or as an input.
+    taxSource: z.enum(["HSN", "HSN_RULE", "OVERRIDE", "MANUAL"]).default("MANUAL"),
+    hsnRevision: z.string().nullish(),
     stockQuantity: z.coerce.number().default(0),
     lowStockThreshold: z.coerce.number().default(0),
     unit: z.string().default("PCS"),

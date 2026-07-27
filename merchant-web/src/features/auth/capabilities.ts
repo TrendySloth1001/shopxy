@@ -40,6 +40,10 @@ const PATH_AREAS: readonly [string, Area][] = [
   ["/dashboard/products", "products"],
   ["/dashboard/scan-console", "products"],
   ["/dashboard/custom-fields", "products"],
+  // Saved HSN shortcuts are classification, so `products` gates the page. The
+  // rate-override section inside it is separately gated on `shop`, matching
+  // the backend's per-route guards in `modules/hsn/hsn.routes.ts`.
+  ["/dashboard/hsn-codes", "products"],
   ["/dashboard/orders", "orders"],
   ["/dashboard/returns", "orders"],
   ["/dashboard/pos", "invoices"],

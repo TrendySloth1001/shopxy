@@ -55,3 +55,64 @@ Deferred / simplified:
   password-less accounts, JWT issuance), set `GOOGLE_CLIENT_ID`/`SECRET`, then
   replace the BFF stub with a 302 to the backend authorise URL. Also consider
   adding the button to the register form.
+
+## HSN/SAC rate master (Jul 2026)
+
+The GST rate is no longer typed. The merchant classifies the product — one
+input — and the rate is derived: `hsn_codes` holds codes and rates, the
+translatable copy catalogues hold the words merchants search by, and the tax
+field on the product form is a **readout** with an explicit manual escape
+hatch. Backend: `backend/src/modules/hsn/`. Web:
+`features/products/components/hsn-field.tsx` + `gst-rate-field.tsx`.
+
+Deferred / open:
+
+- [ ] **Import the real tariff.** `npm run hsn:import -- --directory <codes>
+  --rates <rates>` ingests official CBIC data into
+  `backend/src/modules/hsn/data/hsn.master.json`, which the seed prefers. Until
+  that file is committed, the boot log warns and a ~300-entry hand-written
+  **provisional** manifest is used. Nothing should rely on those rates
+  commercially — get the download, run the import, commit the diff.
+- [x] **"My HSN codes" screen.** Web: `dashboard/hsn-codes` (nav → Manage).
+  Flutter: `products/presentation/pages/hsn_codes_page.dart` (Menu → Manage).
+  Lists saved shortcuts with their **live** rate, flags ones whose code no
+  longer resolves, and allows re-pointing (upsert on the merchant's own
+  wording) or removal. Rate overrides are a second section, gated on
+  `shop:manage`, showing the platform rate beside the merchant's so the
+  departure is stated rather than silently entered.
+  - Also closed two defects found while building it: the web `via` enum was
+    missing `"TEXT"`, so every BM25 suggestion failed zod and the array was
+    dropped to `[]`; and `/hsn` is mounted outside `mountMerchant`, which left
+    the shortcut/override **writes** ungated — a Cashier could set a rate
+    override. Guards now live in `hsn.routes.ts` with three regression tests.
+- [ ] **Overrides can't be edited or back-dated from the UI.** The screen
+  creates and soft-deletes; `effectiveFrom` always defaults to today and cess
+  isn't exposed. The backend accepts both, so this is a form gap, not a
+  contract one. Editing is deliberately absent: re-creating leaves a record of
+  what the position was, editing in place would rewrite history.
+- [ ] **Rate-change notification.** Rates apply automatically on their
+  effective date (correct — a Council revision is not optional), but nothing
+  tells the merchant it happened. Needs a notification listing the affected
+  products, ideally sent ahead of the effective date.
+- [ ] **Reconciliation report.** `products.tax_source` makes divergence
+  queryable ("billing at a rate the code doesn't support"), and
+  `invoice_items.hsn_revision` bounds the blast radius of a bad revision. No
+  screen reads either yet.
+- [ ] **Semantic (AI) suggestions are built but OFF.** Classification runs on a
+  local BM25 index with fuzzy + phonetic matching (`hsn.retrieval.ts`) —
+  deterministic, offline, free, sub-millisecond, and it answers every real
+  product name in the test suite. Embeddings only add paraphrase with no shared
+  vocabulary ("thing you fry pakoras in" → cooking oil). To enable when
+  scaling: set `HSN_SEMANTIC=1` plus `GEMINI_API_KEY`, and the vectors file is
+  already generated at `modules/hsn/copy/hsn.vectors.json`. Cost is one API
+  request per novel product name (cached 30 days in Redis).
+- [ ] **Log no-result and corrected suggestions.** Every query the local index
+  can't answer, and every time a merchant overrides a suggestion, is a missing
+  alias we now know about. Logging them turns curation into a finite, ranked
+  backlog and shrinks the case for embeddings instead of growing it.
+- [ ] **Variant-level HSN.** The backend derives a variant's rate from its own
+  code, but neither product form exposes the field; variants inherit the
+  product.
+- [ ] **Hindi copy is machine-drafted.** `hsn.copy.hi.json` needs a native
+  review, especially the trade vocabulary — a shopkeeper's word for a thing is
+  often not the dictionary word.
