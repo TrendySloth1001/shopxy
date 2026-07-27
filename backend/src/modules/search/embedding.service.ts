@@ -1,75 +1,35 @@
 import prisma from '../../infra/db/prisma.js';
 import { logger } from '../../shared/logging/logger.js';
+import { activeProvider, EMBEDDING_DIM } from './embedding.providers.js';
 
-/// Dim for Ollama's `nomic-embed-text` model. Hard-coded because the
-/// pgvector column type `vector(768)` is fixed at migration time —
-/// switching dims is a schema change, not a code change. Override the
-/// model via `OLLAMA_EMBED_MODEL` only if its dim *also* matches 768.
-export const EMBEDDING_DIM = 768;
-const DEFAULT_MODEL = 'nomic-embed-text';
-const DEFAULT_BASE_URL = 'https://ollama.com';
+export { EMBEDDING_DIM };
 
-/// Embedding generator backed by Ollama's `/api/embed` endpoint. We
-/// target Ollama Cloud by default (`https://ollama.com`, bearer auth)
-/// but `OLLAMA_BASE_URL` can point at a self-hosted instance
-/// (e.g. `http://localhost:11434`) — the wire shape is identical.
+/// Embedding generator for product semantic search.
 ///
-/// Env-gated by `OLLAMA_KEY`: if it's missing the service short-
-/// circuits and returns `null`, and the rest of the search stack
-/// degrades cleanly to FTS-only.
+/// The backend is chosen at call time by [activeProvider]: Gemini when
+/// `GEMINI_API_KEY` is set, otherwise Ollama when `OLLAMA_KEY` is, otherwise
+/// disabled. All providers emit 768 dimensions because the pgvector column
+/// width is fixed at migration time, so swapping providers does **not** require
+/// re-embedding the catalogue.
 ///
-/// Throws on transport-level failures (network down, 5xx, malformed
-/// JSON) so callers can backoff. Returns null only when intentionally
-/// disabled — that distinction matters for the cron, which treats
-/// "no embedding for this batch" as a permanent state rather than
-/// "retry in 5 minutes."
+/// Throws on transport-level failures (network down, 5xx, malformed JSON) so
+/// callers can back off. Returns null only when intentionally disabled — that
+/// distinction matters for the cron, which treats "no embedding for this batch"
+/// as a permanent state rather than "retry in 5 minutes."
 export class EmbeddingService {
-  private get apiKey(): string | null {
-    return process.env.OLLAMA_KEY?.trim() || null;
-  }
-
-  private get baseUrl(): string {
-    return (process.env.OLLAMA_BASE_URL?.trim() || DEFAULT_BASE_URL).replace(/\/+$/, '');
-  }
-
-  private get model(): string {
-    return process.env.OLLAMA_EMBED_MODEL?.trim() || DEFAULT_MODEL;
-  }
-
   get isEnabled(): boolean {
-    return this.apiKey !== null;
+    return activeProvider().isEnabled;
   }
 
-  /// Embed a batch of inputs in one API call. Ollama's `/api/embed`
-  /// accepts a string OR a string[] in the `input` field and returns
-  /// `embeddings: number[][]` aligned by index — no sort step needed.
-  /// Returns null when the service is disabled by env.
+  /// Which backend is answering, for diagnostics and the admin surface.
+  get providerName(): string {
+    return activeProvider().name;
+  }
+
+  /// Embed a batch of inputs in one API call, order-preserving. Returns null
+  /// when embeddings are disabled by configuration.
   async embedBatch(texts: string[]): Promise<number[][] | null> {
-    if (!this.isEnabled || texts.length === 0) return texts.length === 0 ? [] : null;
-    const res = await fetch(`${this.baseUrl}/api/embed`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: this.model,
-        input: texts.map((t) => t.slice(0, 8000)),
-      }),
-    });
-    if (!res.ok) {
-      const body = await res.text().catch(() => '');
-      throw new Error(`Ollama embeddings ${res.status}: ${body.slice(0, 200)}`);
-    }
-    const json = (await res.json()) as {
-      embeddings?: number[][];
-      // Self-hosted Ollama on older builds returned `embedding`
-      // (singular) for single-input calls. Tolerate both shapes.
-      embedding?: number[];
-    };
-    if (Array.isArray(json.embeddings)) return json.embeddings;
-    if (Array.isArray(json.embedding)) return [json.embedding];
-    throw new Error('Ollama embeddings: response missing `embeddings` field');
+    return activeProvider().embedBatch(texts);
   }
 
   /// One-shot helper for query-time use: returns the query vector
