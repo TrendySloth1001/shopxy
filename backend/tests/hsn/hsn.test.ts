@@ -12,6 +12,8 @@ import {
   retrieve,
 } from '../../src/modules/hsn/hsn.retrieval.js';
 import { productsService } from '../../src/modules/products/products.service.js';
+import { invoicesService } from '../../src/modules/invoices/invoices.service.js';
+import { HSN_RATE_REVISION } from '../../src/modules/hsn/hsn.master.js';
 import { createTestUser, cleanupTestUser } from '../helpers/setup.js';
 
 /// HSN/SAC rate master.
@@ -521,6 +523,121 @@ describe('hsn rate master', () => {
         .set('Authorization', `Bearer ${ctx.accessToken}`)
         .send({ label: 'Formal Shirt', code: '6205' });
       expect(res.status).toBe(403);
+    } finally {
+      await cleanupTestUser(ctx);
+    }
+  });
+
+  // ── It has to reach the bill ───────────────────────────────────────────
+  //
+  // The whole point of the feature: the code decides the rate, and both appear
+  // on the document the department reconciles against. Everything above can be
+  // right while the line still bills a stale rate or prints no HSN at all, and
+  // the PDF renderer skips its HSN Summary entirely for rows where `hsn` is
+  // null — so a regression here is silent on screen and only visible at filing.
+
+  it('carries the HSN and its derived rate onto the invoice line', async () => {
+    const ctx = await createTestUser();
+    try {
+      // Only a registered shop charges output tax.
+      await prisma.user.update({
+        where: { id: ctx.userId },
+        data: {
+          shopGstin: '27ABCDE1234F1Z5',
+          shopStateCode: '27',
+          registrationType: 'REGULAR',
+        },
+      });
+      const party = await prisma.party.create({
+        data: { shopId: ctx.shopId, name: 'HSN Test Customer' },
+      });
+      // 6205 is men's woven shirts: 5% at or below ₹2,500 a piece.
+      const product = await productsService.createProduct(
+        {
+          name: 'Cotton formal shirt',
+          sku: `HSN-BILL-${Date.now()}`,
+          hsnCode: '6205',
+          mrp: 999,
+          sellingPrice: 999,
+          purchasePrice: 600,
+        },
+        { shopId: ctx.shopId, createdById: ctx.userId },
+      );
+      expect(Number(product!.taxPercent)).toBe(5);
+
+      const result = await invoicesService.createInvoice({
+        shopId: ctx.shopId,
+        type: 'SALE',
+        partyId: party.id,
+        // No taxPercent and no hsn sent — both must come off the product.
+        items: [{ productId: product!.id, quantity: 1, unitPrice: 999 }],
+      });
+      expect('error' in result).toBe(false);
+      if ('error' in result) return;
+
+      const line = await prisma.invoiceItem.findFirst({
+        where: { invoiceId: result.invoice.id },
+        select: { hsn: true, taxPercent: true, hsnRevision: true },
+      });
+      expect(line?.hsn).toBe('6205');
+      expect(Number(line?.taxPercent)).toBe(5);
+      // Stamped because the line billed the product's own derived rate. This
+      // is what scopes a recall if a revision turns out to be wrong.
+      expect(line?.hsnRevision).toBe(HSN_RATE_REVISION);
+    } finally {
+      await cleanupTestUser(ctx);
+    }
+  });
+
+  it('does not stamp a revision on a hand-edited line', async () => {
+    const ctx = await createTestUser();
+    try {
+      await prisma.user.update({
+        where: { id: ctx.userId },
+        data: {
+          shopGstin: '27ABCDE1234F1Z5',
+          shopStateCode: '27',
+          registrationType: 'REGULAR',
+        },
+      });
+      const party = await prisma.party.create({
+        data: { shopId: ctx.shopId, name: 'HSN Override Customer' },
+      });
+      const product = await productsService.createProduct(
+        {
+          name: 'Cotton formal shirt',
+          sku: `HSN-EDIT-${Date.now()}`,
+          hsnCode: '6205',
+          mrp: 999,
+          sellingPrice: 999,
+          purchasePrice: 600,
+        },
+        { shopId: ctx.shopId, createdById: ctx.userId },
+      );
+
+      const result = await invoicesService.createInvoice({
+        shopId: ctx.shopId,
+        type: 'SALE',
+        partyId: party.id,
+        // The biller overrode the rate on this line.
+        items: [
+          { productId: product!.id, quantity: 1, unitPrice: 999, taxPercent: 18 },
+        ],
+      });
+      expect('error' in result).toBe(false);
+      if ('error' in result) return;
+
+      const line = await prisma.invoiceItem.findFirst({
+        where: { invoiceId: result.invoice.id },
+        select: { hsn: true, taxPercent: true, hsnRevision: true },
+      });
+      // The code still prints — it describes the goods regardless of who chose
+      // the rate — but the revision must not, because this line is no longer
+      // evidence of what the master said, and a reconciliation query that
+      // trusted it would chase the wrong invoices.
+      expect(line?.hsn).toBe('6205');
+      expect(Number(line?.taxPercent)).toBe(18);
+      expect(line?.hsnRevision).toBeNull();
     } finally {
       await cleanupTestUser(ctx);
     }
