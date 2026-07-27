@@ -1,8 +1,89 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, type TaxRateSource } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
 import { ledgerService } from '../ledger/ledger.service.js';
 import { embeddingService } from '../search/embedding.service.js';
+import { hsnService } from '../hsn/hsn.service.js';
 import { HttpError } from '../../shared/http/errorHandler.js';
+
+/// Payload slice that carries a GST slab — the product itself and each of its
+/// variants have the same fields, so one helper covers both.
+type RateBearing = {
+  hsnCode?: string | null;
+  taxPercent?: number;
+  cessRate?: number;
+  sellingPrice?: number;
+  /// Set by [applyHsnRates]; never accepted from a client. Provenance is
+  /// something the server observes, not something a caller may assert.
+  taxSource?: TaxRateSource;
+  hsnRevision?: string | null;
+};
+
+/// The HSN master, not the merchant's typing, decides the slab.
+///
+/// The product editors fill the rate the moment a code is picked, so in
+/// practice the payload already agrees with the master. This is the server-side
+/// backstop for everything that isn't the editor — a CSV import, a script, an
+/// older app build, a direct API call — where naming a code but omitting the
+/// rate used to silently create a product that bills at 0% under a heading that
+/// says 18%.
+///
+/// **Price-aware.** Apparel and footwear are 5% up to ₹2,500 a piece and 18%
+/// above, so the resolver is handed the selling price and decides. That's
+/// arithmetic against data we hold, not a judgement call, and asking a merchant
+/// to work it out is how you end up with a catalogue billing at one rate for
+/// products that straddle the threshold.
+///
+/// **Only fills what's missing.** An explicitly-sent rate is left alone: nil
+/// exceptions and advance rulings are real. But it's still recorded — a rate we
+/// didn't derive is stamped `MANUAL`, so "which products bill at a rate their
+/// code doesn't support" stays a query rather than a discovery.
+///
+/// Mutates in place, so call it BEFORE the payload is destructured — a `rest`
+/// spread copies the fields and later mutation would be silently lost.
+async function applyHsnRates(
+  shopId: number,
+  data: RateBearing & { variants?: RateBearing[] },
+  /// The persisted selling price, for a PATCH that changes the code but not
+  /// the price. Without it a threshold rule would silently fall back to the
+  /// unconditional rate — a ₹4,000 shirt would land on 5% instead of 18%.
+  fallbackPrice?: number,
+): Promise<void> {
+  const targets = [data, ...(data.variants ?? [])];
+  const codes = targets
+    .map((t) => t.hsnCode)
+    .filter((c): c is string => typeof c === 'string' && c.trim().length > 0);
+  if (codes.length === 0) return;
+
+  for (const target of targets) {
+    if (!target.hsnCode?.trim()) continue;
+    // Per-target resolve rather than a bulk map: the threshold rules depend on
+    // the price, and a variant can legitimately sit either side of it while
+    // sharing the parent's code.
+    const hit = await hsnService.resolveRate({
+      code: target.hsnCode,
+      shopId,
+      // Variants carry their own price; fall back to the product's, then to
+      // the persisted one, so a variant that only overrides the code — or a
+      // patch that only changes the code — still gets a decided rate.
+      price: target.sellingPrice ?? data.sellingPrice ?? fallbackPrice,
+    });
+    if (!hit) continue;
+
+    if (target.taxPercent === undefined) {
+      target.taxPercent = hit.gstRate;
+      target.taxSource = hit.source as TaxRateSource;
+      target.hsnRevision = hit.revision;
+    } else {
+      // The caller asserted a rate. Record whether it agrees with the master:
+      // a matching value is still derived-equivalent and worth stamping as
+      // such, so only a genuine divergence reads as MANUAL.
+      const agrees = Math.abs(target.taxPercent - hit.gstRate) < 0.005;
+      target.taxSource = agrees ? (hit.source as TaxRateSource) : 'MANUAL';
+      target.hsnRevision = agrees ? hit.revision : null;
+    }
+    if (target.cessRate === undefined && hit.cessRate > 0) target.cessRate = hit.cessRate;
+  }
+}
 
 /// Strip the obvious script-injection vectors from TEXT block markdown
 /// before it lands in the DB.
@@ -99,6 +180,10 @@ const productSelect = {
   purchasePrice: true,
   taxPercent: true,
   cessRate: true,
+  // Provenance: lets the editors open the GST field as a readout for a derived
+  // rate and as an input for one that was typed by hand.
+  taxSource: true,
+  hsnRevision: true,
   stockQuantity: true,
   lowStockThreshold: true,
   unit: true,
@@ -168,6 +253,11 @@ export class ProductsService {
       purchasePrice: number;
       taxPercent?: number;
       cessRate?: number;
+      /// Written by [applyHsnRates], never accepted from a client — the
+      /// controller's schema has no such keys, so zod strips them at the
+      /// boundary. Provenance is something the server observes.
+      taxSource?: TaxRateSource;
+      hsnRevision?: string | null;
       stockQuantity?: number;
       lowStockThreshold?: number;
       unit?: string;
@@ -198,6 +288,14 @@ export class ProductsService {
     },
     options: { createdById?: number; shopId?: number } = {},
   ) {
+    if (!options.shopId) {
+      throw new Error('createProduct requires options.shopId');
+    }
+    const shopId = options.shopId;
+    // Fill any GST slab the payload named an HSN code for but left blank.
+    // Must run BEFORE the destructure below — `rest` copies the fields.
+    await applyHsnRates(shopId, data);
+
     const {
       imageUrls,
       stockQuantity,
@@ -211,10 +309,6 @@ export class ProductsService {
     // Create the product with stockQuantity = 0; the ledger post below is
     // what funds it. This keeps products.stockQuantity in sync with the
     // ledger from row one — no orphan stock without a cost basis.
-    if (!options.shopId) {
-      throw new Error('createProduct requires options.shopId');
-    }
-    const shopId = options.shopId;
 
     // CAT-C1 — variant stockQuantity is a DISPLAY-ONLY breakdown of the
     // ledgered product total (the single source of truth read by the cart
@@ -746,6 +840,9 @@ export class ProductsService {
       purchasePrice?: number;
       taxPercent?: number;
       cessRate?: number;
+      /// Server-set by [applyHsnRates]; see the note on createProduct.
+      taxSource?: TaxRateSource;
+      hsnRevision?: string | null;
       lowStockThreshold?: number;
       unit?: string;
       categoryId?: number | null;
@@ -776,6 +873,26 @@ export class ProductsService {
       }>;
     },
   ) {
+    // A patch that moves the product to a different HSN code without naming a
+    // rate re-derives the slab from the master — "change the code, the tax
+    // follows" is the whole point of having a master. A patch that names both
+    // keeps the merchant's number, stamped MANUAL if it disagrees. Runs before
+    // the destructure so `rest` picks up the filled values.
+    if (data.hsnCode?.trim()) {
+      // Threshold rules need a price. A patch that changes only the code has
+      // none, so read the persisted one rather than resolving unconditionally.
+      const priced =
+        data.sellingPrice === undefined
+          ? await prisma.product.findFirst({
+              where: { id, shopId },
+              select: { sellingPrice: true },
+            })
+          : null;
+      await applyHsnRates(shopId, data, priced ? Number(priced.sellingPrice) : undefined);
+    } else {
+      await applyHsnRates(shopId, data);
+    }
+
     // updateMany returns count instead of throwing on missing row; that
     // lets us distinguish "wrong shop" from "wrong id" cleanly without
     // a separate guard query. count=0 → either id doesn't exist OR
