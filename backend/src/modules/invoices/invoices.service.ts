@@ -917,7 +917,9 @@ export class InvoicesService {
     const productIds = [...new Set(data.items.map((i) => i.productId))];
     const products = await db.product.findMany({
       where: { id: { in: productIds }, shopId: data.shopId },
-      select: { id: true, name: true, sku: true, hsnCode: true, unit: true, stockQuantity: true, taxPercent: true, cessRate: true },
+      // `hsnRevision` rides along so each line can record which revision of the
+      // rate master its frozen rate came from — see the stamp below.
+      select: { id: true, name: true, sku: true, hsnCode: true, unit: true, stockQuantity: true, taxPercent: true, cessRate: true, hsnRevision: true },
     });
     const productMap = new Map(products.map((p) => [p.id, p]));
     for (const item of data.items) {
@@ -1118,11 +1120,21 @@ export class InvoicesService {
       sgstTotal = sgstTotal.add(sgstAmount);
       cessTotal = cessTotal.add(cessAmount);
 
+      // Which revision of the rate master this line's frozen rate came from.
+      // Stamped ONLY when the line actually billed at the product's derived
+      // rate: a per-line override or a variant's own slab has no master
+      // provenance, and claiming one would corrupt the exact query this column
+      // exists to answer ("which documents used the rate that turned out to be
+      // wrong"). A wrong answer there is worse than a null.
+      const billedProductRate =
+        !variantTaxPct.gt(0) && taxPct.eq(new D(product.taxPercent ?? 0));
+
       return {
         productId: item.productId,
         productName: product.name,
         productSku: product.sku,
         hsn: effectiveHsn,
+        hsnRevision: billedProductRate ? (product.hsnRevision ?? null) : null,
         unit: product.unit,
         quantity: item.quantity,
         unitPrice: item.unitPrice,

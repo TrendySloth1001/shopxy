@@ -1,0 +1,559 @@
+{
+  "locale": "en",
+  "_readme": [
+    "Merchant-facing words for HSN/SAC codes. Rates live in hsn.master.ts and never appear here —",
+    "this file can be edited, translated and reviewed without anyone touching a tax figure.",
+    "",
+    "name       plain-language label shown in the picker, instead of the official tariff wording",
+    "definition what belongs under this code, and the trap that makes it ambiguous",
+    "aliases    every word a merchant might type. Transliterated Hindi belongs here too --",
+    "           merchants on the English UI still type 'kameez' and 'chappal'. The loader merges",
+    "           aliases across ALL locales for matching, so an alias only needs listing once.",
+    "notHere    code -> label cross-references for the neighbours people confuse this with.",
+    "",
+    "Codes absent from this file fall back to the official tariff wording in the manifest, so",
+    "coverage can grow with what merchants actually search for rather than being written up front."
+  ],
+  "entries": {
+    "6205": {
+      "name": "Men's shirts (woven)",
+      "definition": "Formal and casual shirts for men, made from woven cloth. If the fabric stretches like a T-shirt, it is knitted and belongs to 6105 instead.",
+      "aliases": ["shirt", "mens shirt", "formal shirt", "casual shirt", "office shirt", "full sleeve shirt", "half sleeve shirt", "kameez", "kamiz", "qameez", "shart"],
+      "notHere": { "6105": "Knitted or jersey shirts", "6109": "T-shirts and vests" }
+    },
+    "6105": {
+      "name": "Men's shirts (knitted)",
+      "definition": "Men's shirts made from knitted or crocheted fabric — polo shirts, jersey shirts, anything with natural stretch.",
+      "aliases": ["polo shirt", "jersey shirt", "knitted shirt", "collar tshirt", "polo"],
+      "notHere": { "6205": "Woven shirts", "6109": "T-shirts and vests" }
+    },
+    "6109": {
+      "name": "T-shirts, vests and singlets",
+      "definition": "Knitted T-shirts, round-neck tees, banians and vests, for any gender.",
+      "aliases": ["tshirt", "t shirt", "tee", "round neck", "vest", "banian", "baniyan", "banyan", "ganji", "sando"],
+      "notHere": { "6105": "Collared knit shirts", "6110": "Sweatshirts and hoodies" }
+    },
+    "6110": {
+      "name": "Sweaters, hoodies and cardigans",
+      "definition": "Knitted upper-body warmers — pullovers, jerseys, cardigans, sweatshirts and hoodies.",
+      "aliases": ["sweater", "hoodie", "sweatshirt", "pullover", "cardigan", "jersey", "jumper", "sweatar"],
+      "notHere": { "6201": "Jackets and windcheaters" }
+    },
+    "6203": {
+      "name": "Men's trousers, suits and jackets (woven)",
+      "definition": "Woven lower and outer wear for men — trousers, formal pants, jeans, shorts, blazers and suits.",
+      "aliases": ["trouser", "pant", "pants", "formal pant", "jeans", "denim", "shorts", "blazer", "suit", "coat pant", "patloon", "pyjama"],
+      "notHere": { "6103": "Knitted trousers and track pants", "6205": "Shirts" }
+    },
+    "6204": {
+      "name": "Women's dresses, tops and trousers (woven)",
+      "definition": "Woven outerwear for women — dresses, skirts, trousers, suits and jackets.",
+      "aliases": ["dress", "frock", "skirt", "womens trouser", "ladies pant", "salwar", "salwar suit", "churidar", "palazzo", "gown"],
+      "notHere": { "6104": "Knitted dresses and leggings", "6211": "Sarees and ethnic sets" }
+    },
+    "6206": {
+      "name": "Women's blouses and tops (woven)",
+      "definition": "Woven shirts, blouses and tops for women, including saree blouses.",
+      "aliases": ["blouse", "ladies top", "womens shirt", "kurti", "top", "choli"],
+      "notHere": { "6106": "Knitted tops", "6211": "Kurtas and ethnic wear" }
+    },
+    "6211": {
+      "name": "Sarees, kurtas, track suits and swimwear",
+      "definition": "Garments that don't fit the shirt/trouser headings — sarees, salwar-kameez sets, kurtas, dhotis, track suits and swimwear.",
+      "aliases": ["saree", "sari", "sadi", "kurta", "kurti", "dhoti", "lehenga", "track suit", "tracksuit", "swimwear", "swimming costume", "ethnic wear"],
+      "notHere": { "6214": "Dupattas, stoles and scarves" }
+    },
+    "6214": {
+      "name": "Shawls, scarves and dupattas",
+      "definition": "Shawls, stoles, mufflers, dupattas, chunnis and veils.",
+      "aliases": ["shawl", "scarf", "muffler", "dupatta", "chunni", "odhni", "stole", "chadar"],
+      "notHere": { "6301": "Blankets" }
+    },
+    "6115": {
+      "name": "Socks, stockings and tights",
+      "definition": "Knitted hosiery for the legs and feet — socks, stockings, tights, leggings sold as hosiery.",
+      "aliases": ["socks", "sock", "stocking", "tights", "moja", "mojey", "hosiery"]
+    },
+    "6107": {
+      "name": "Men's innerwear and nightwear",
+      "definition": "Knitted underwear, briefs, nightwear, pyjamas and bathrobes for men.",
+      "aliases": ["underwear", "brief", "innerwear", "night suit", "pyjama", "chaddi", "jangiya", "boxer"]
+    },
+    "6108": {
+      "name": "Women's innerwear and nightwear",
+      "definition": "Knitted slips, petticoats, briefs, nightdresses and negligees for women.",
+      "aliases": ["petticoat", "nighty", "night gown", "slip", "panty", "ladies innerwear", "bra"]
+    },
+    "6111": {
+      "name": "Babies' garments (knitted)",
+      "definition": "Knitted clothing and accessories for babies — romper suits, bodysuits, baby sets.",
+      "aliases": ["baby clothes", "romper", "onesie", "baby set", "infant wear", "baby dress"],
+      "notHere": { "6209": "Woven baby garments" }
+    },
+    "6302": {
+      "name": "Bed, table and kitchen linen",
+      "definition": "Made-up household linen — bedsheets, pillow covers, quilt covers, table cloths, napkins, towels.",
+      "aliases": ["bedsheet", "bed sheet", "chadar", "pillow cover", "quilt cover", "table cloth", "napkin", "towel", "hand towel", "duvet cover"],
+      "notHere": { "6301": "Blankets and rugs", "9404": "Quilts, pillows and mattresses" }
+    },
+    "6301": {
+      "name": "Blankets and travelling rugs",
+      "definition": "Blankets and rugs of any textile material. Filled quilts and razais are 9404.",
+      "aliases": ["blanket", "kambal", "rug", "throw"],
+      "notHere": { "9404": "Quilts, razais and pillows" }
+    },
+    "6404": {
+      "name": "Shoes with textile uppers",
+      "definition": "Footwear whose upper is fabric and sole is rubber or plastic — canvas shoes, sports shoes, sneakers.",
+      "aliases": ["shoe", "shoes", "sports shoe", "canvas shoe", "sneaker", "running shoe", "joota", "juta"],
+      "notHere": { "6403": "Leather shoes", "6402": "Rubber and plastic footwear" }
+    },
+    "6403": {
+      "name": "Leather footwear",
+      "definition": "Footwear with leather uppers — formal shoes, leather sandals, leather boots.",
+      "aliases": ["leather shoe", "formal shoe", "boot", "leather sandal", "oxford", "loafer"],
+      "notHere": { "6404": "Textile and sports shoes" }
+    },
+    "6402": {
+      "name": "Rubber and plastic footwear",
+      "definition": "Footwear where both the upper and sole are rubber or plastic — slippers, flip-flops, crocs, jellies.",
+      "aliases": ["slipper", "chappal", "chapal", "hawai chappal", "flip flop", "sandal", "crocs", "rubber slipper"],
+      "notHere": { "6401": "Waterproof boots", "6403": "Leather footwear" }
+    },
+    "4202": {
+      "name": "Bags, luggage and wallets",
+      "definition": "Trunks, suitcases, backpacks, handbags, wallets, laptop bags and similar containers.",
+      "aliases": ["bag", "handbag", "purse", "wallet", "backpack", "school bag", "suitcase", "trolley bag", "luggage", "laptop bag", "batua", "thaila"]
+    },
+
+    "0401": {
+      "name": "Milk and cream",
+      "definition": "Fresh, pasteurised or UHT milk and cream, not concentrated or sweetened.",
+      "aliases": ["milk", "doodh", "dudh", "cream", "malai", "toned milk", "full cream milk"],
+      "notHere": { "0402": "Milk powder and condensed milk", "0403": "Curd, lassi and buttermilk" }
+    },
+    "0403": {
+      "name": "Curd, lassi and buttermilk",
+      "definition": "Fermented milk products — dahi, yoghurt, lassi, chaas, buttermilk.",
+      "aliases": ["curd", "dahi", "yoghurt", "yogurt", "lassi", "chaas", "chhach", "buttermilk", "mattha"]
+    },
+    "0405": {
+      "name": "Butter and ghee",
+      "definition": "Butter, ghee, and dairy spreads derived from milk fat.",
+      "aliases": ["butter", "makhan", "ghee", "ghi", "desi ghee", "clarified butter"]
+    },
+    "0406": {
+      "name": "Cheese and paneer",
+      "definition": "Cheese of all kinds, plus paneer and chhena. Note that paneer/chhena is nil-rated while other cheese is 5%.",
+      "aliases": ["cheese", "paneer", "panir", "chhena", "chena", "cottage cheese", "mozzarella", "processed cheese"]
+    },
+    "1006": {
+      "name": "Rice",
+      "definition": "Rice in all forms — paddy, brown, milled, parboiled, basmati. Rate turns on whether it is sold loose or pre-packaged and labelled.",
+      "aliases": ["rice", "chawal", "chaval", "basmati", "sona masoori", "paddy", "brown rice", "poha rice"]
+    },
+    "1001": {
+      "name": "Wheat",
+      "definition": "Wheat grain, whole. Flour milled from it is 1101.",
+      "aliases": ["wheat", "gehu", "gehun", "gahu", "kanak"],
+      "notHere": { "1101": "Atta and maida" }
+    },
+    "1101": {
+      "name": "Wheat flour (atta, maida)",
+      "definition": "Flour milled from wheat — atta, maida, suji/rava. Rate turns on loose versus pre-packaged and labelled.",
+      "aliases": ["atta", "aata", "flour", "maida", "suji", "sooji", "rava", "wheat flour", "chakki atta"]
+    },
+    "1106": {
+      "name": "Pulse flour (besan)",
+      "definition": "Flour and meal ground from dried pulses — besan, chana flour.",
+      "aliases": ["besan", "gram flour", "chana flour", "dal flour", "sattu"]
+    },
+    "0713": {
+      "name": "Pulses and dals",
+      "definition": "Dried leguminous vegetables, shelled — toor, moong, chana, urad, masoor, rajma.",
+      "aliases": ["dal", "daal", "pulse", "toor dal", "arhar", "moong", "chana", "urad", "masoor", "rajma", "lobia", "kabuli chana"]
+    },
+    "1701": {
+      "name": "Sugar",
+      "definition": "Cane or beet sugar, refined or raw, including khandsari.",
+      "aliases": ["sugar", "cheeni", "chini", "shakkar", "khandsari", "sulphurless sugar"],
+      "notHere": { "1702": "Jaggery, gur and glucose" }
+    },
+    "1702": {
+      "name": "Jaggery, gur and glucose",
+      "definition": "Other sugars and syrups — jaggery, gur, glucose, invert sugar.",
+      "aliases": ["jaggery", "gur", "gud", "glucose", "syrup", "honey syrup"]
+    },
+    "1512": {
+      "name": "Sunflower and cottonseed oil",
+      "definition": "Edible oils pressed from sunflower, safflower or cotton seed.",
+      "aliases": ["sunflower oil", "refined oil", "cooking oil", "cottonseed oil", "safflower oil", "tel"]
+    },
+    "1514": {
+      "name": "Mustard oil",
+      "definition": "Oil pressed from rape, colza or mustard seed, refined or not.",
+      "aliases": ["mustard oil", "sarson oil", "sarson ka tel", "kachi ghani", "rapeseed oil"]
+    },
+    "1513": {
+      "name": "Coconut oil",
+      "definition": "Coconut, palm-kernel and babassu oil.",
+      "aliases": ["coconut oil", "nariyal tel", "copra oil", "khopra oil"]
+    },
+    "0902": {
+      "name": "Tea",
+      "definition": "Tea leaves and dust, black or green, flavoured or not.",
+      "aliases": ["tea", "chai", "chay", "chaipatti", "tea powder", "green tea", "black tea", "leaf tea"]
+    },
+    "0901": {
+      "name": "Coffee",
+      "definition": "Coffee beans and ground coffee, roasted or not. Instant coffee is 2101.",
+      "aliases": ["coffee", "coffe", "kaapi", "filter coffee", "coffee beans"],
+      "notHere": { "2101": "Instant coffee" }
+    },
+    "0910": {
+      "name": "Turmeric, ginger and mixed spices",
+      "definition": "Ginger, saffron, turmeric, thyme, bay leaves, curry and other mixed spices and masalas.",
+      "aliases": ["turmeric", "haldi", "ginger", "adrak", "masala", "garam masala", "curry powder", "spice", "saffron", "kesar"]
+    },
+    "0904": {
+      "name": "Pepper and chilli",
+      "definition": "Pepper of the genus Piper, and dried or crushed chillies.",
+      "aliases": ["pepper", "kali mirch", "chilli", "chili", "mirch", "lal mirch", "chilli powder", "mirchi"]
+    },
+    "0909": {
+      "name": "Cumin, coriander and fennel seeds",
+      "definition": "Seeds of anise, badian, fennel, coriander, cumin and caraway.",
+      "aliases": ["jeera", "cumin", "dhania", "coriander seed", "saunf", "fennel", "ajwain", "methi dana"]
+    },
+    "2106": {
+      "name": "Food preparations, mixes and supplements",
+      "definition": "Edible preparations not covered elsewhere — instant mixes, protein supplements, sweeteners, custard powder.",
+      "aliases": ["instant mix", "custard powder", "protein powder", "supplement", "food supplement", "premix", "health drink"],
+      "notHere": { "21069020": "Pan masala" }
+    },
+    "1905": {
+      "name": "Biscuits, bread and bakery",
+      "definition": "Baked goods — bread, rusk, biscuits, cakes, pastries, khakhra. Plain bread and roti are nil; biscuits and pastry are 5%.",
+      "aliases": ["biscuit", "bakery", "bread", "rusk", "toast", "cake", "pastry", "cookies", "khakhra", "papad", "double roti"]
+    },
+    "2005": {
+      "name": "Namkeen and savoury snacks",
+      "definition": "Prepared or preserved vegetable products — namkeen, bhujia, mixture, chips.",
+      "aliases": ["namkeen", "bhujia", "mixture", "sev", "chips", "snacks", "farsan", "chivda"]
+    },
+    "2201": {
+      "name": "Packaged drinking water",
+      "definition": "Water, including mineral and aerated water, with no added sugar or flavour.",
+      "aliases": ["water", "pani", "mineral water", "drinking water", "bisleri", "water bottle", "packaged water"],
+      "notHere": { "2202": "Soft drinks and flavoured beverages" }
+    },
+    "2202": {
+      "name": "Soft drinks and aerated beverages",
+      "definition": "Aerated, carbonated and caffeinated drinks — these carry the 40% demerit rate. Juice-based and plant-milk drinks are 220299 at 5%.",
+      "aliases": ["cold drink", "soft drink", "cola", "soda", "aerated drink", "energy drink", "thanda"],
+      "notHere": { "220299": "Fruit juice drinks and plant-based milk" }
+    },
+    "220299": {
+      "name": "Juice-based and plant-milk drinks",
+      "definition": "Fruit pulp or juice based drinks, and plant-based milk drinks like soy or almond milk.",
+      "aliases": ["juice", "fruit juice", "mango drink", "frooti", "soy milk", "almond milk", "juice drink", "sharbat"]
+    },
+
+    "8517": {
+      "name": "Mobile phones and networking equipment",
+      "definition": "Telephone sets including smartphones, plus routers, modems and other network apparatus.",
+      "aliases": ["mobile", "mobile phone", "smartphone", "phone", "cell phone", "handset", "router", "modem", "wifi router", "feature phone"],
+      "notHere": { "8504": "Chargers and adapters", "8471": "Tablets and computers" }
+    },
+    "8471": {
+      "name": "Computers, laptops and tablets",
+      "definition": "Automatic data-processing machines — laptops, desktops, tablets, servers and storage units.",
+      "aliases": ["laptop", "computer", "desktop", "pc", "tablet", "ipad", "notebook", "macbook", "cpu", "server", "ssd", "hard disk"]
+    },
+    "8504": {
+      "name": "Chargers, adapters and inverters",
+      "definition": "Static converters and transformers — phone chargers, laptop adapters, power inverters, UPS.",
+      "aliases": ["charger", "adapter", "adaptor", "inverter", "ups", "power adapter", "transformer", "smps"]
+    },
+    "8507": {
+      "name": "Batteries (rechargeable)",
+      "definition": "Electric accumulators — lithium-ion packs, power banks, lead-acid and inverter batteries.",
+      "aliases": ["battery", "power bank", "powerbank", "inverter battery", "lithium battery", "car battery", "cell"],
+      "notHere": { "8506": "Dry cells and non-rechargeable batteries" }
+    },
+    "8518": {
+      "name": "Speakers, headphones and microphones",
+      "definition": "Audio apparatus — earphones, headsets, Bluetooth speakers, amplifiers, microphones.",
+      "aliases": ["speaker", "headphone", "earphone", "earbuds", "airpods", "bluetooth speaker", "headset", "mic", "microphone", "amplifier", "soundbar"]
+    },
+    "8528": {
+      "name": "Televisions and monitors",
+      "definition": "Television receivers, monitors and projectors. All screen sizes are 18% since September 2025.",
+      "aliases": ["tv", "television", "led tv", "smart tv", "monitor", "screen", "display", "projector"]
+    },
+    "8516": {
+      "name": "Electric heating appliances",
+      "definition": "Domestic electro-thermal appliances — geysers, irons, kettles, toasters, room heaters, microwave ovens, induction cooktops.",
+      "aliases": ["geyser", "water heater", "iron", "press", "kettle", "toaster", "heater", "microwave", "oven", "induction", "immersion rod"]
+    },
+    "8509": {
+      "name": "Mixers, grinders and small kitchen appliances",
+      "definition": "Electro-mechanical domestic appliances with a built-in motor — mixer grinders, food processors, juicers, wet grinders.",
+      "aliases": ["mixer", "mixie", "grinder", "mixer grinder", "juicer", "food processor", "blender", "wet grinder", "chopper"]
+    },
+    "8415": {
+      "name": "Air conditioners",
+      "definition": "Air conditioning machines, split or window, with a motor-driven fan.",
+      "aliases": ["ac", "air conditioner", "split ac", "window ac", "aircon"]
+    },
+    "8418": {
+      "name": "Refrigerators and freezers",
+      "definition": "Refrigerators, freezers, deep freezers, visi coolers and other refrigerating equipment.",
+      "aliases": ["fridge", "refrigerator", "freezer", "deep freezer", "visi cooler", "cold storage"]
+    },
+    "8450": {
+      "name": "Washing machines",
+      "definition": "Household and laundry-type washing machines, including combined washer-dryers.",
+      "aliases": ["washing machine", "washer", "front load", "top load", "dryer"]
+    },
+    "9405": {
+      "name": "Lamps, LED bulbs and lighting",
+      "definition": "Lamps and lighting fittings of all kinds, including LED bulbs, tube lights and decorative lighting.",
+      "aliases": ["bulb", "led bulb", "tube light", "light", "lamp", "led", "batti", "panel light", "chandelier", "decorative light"]
+    },
+    "8544": {
+      "name": "Wires and cables",
+      "definition": "Insulated wire and cable, including USB and data cables, and optical fibre cables.",
+      "aliases": ["wire", "cable", "usb cable", "data cable", "electric wire", "extension board", "hdmi", "charging cable", "tar"]
+    },
+    "8536": {
+      "name": "Switches, sockets and plugs",
+      "definition": "Electrical apparatus for switching or protecting circuits up to 1000 V — switches, sockets, plugs, MCBs, relays.",
+      "aliases": ["switch", "socket", "plug", "mcb", "switch board", "holder", "relay", "fuse"]
+    },
+
+    "3305": {
+      "name": "Shampoo and hair oil",
+      "definition": "Preparations for use on the hair — shampoo, hair oil, conditioner, hair dye, gel.",
+      "aliases": ["shampoo", "hair oil", "conditioner", "hair dye", "hair colour", "tel", "kesh tel", "hair gel", "serum"]
+    },
+    "3306": {
+      "name": "Toothpaste and oral care",
+      "definition": "Oral and dental hygiene — toothpaste, toothbrush, tooth powder, mouthwash, dental floss.",
+      "aliases": ["toothpaste", "tooth paste", "manjan", "toothbrush", "brush", "mouthwash", "tooth powder", "dant manjan"]
+    },
+    "3401": {
+      "name": "Soap",
+      "definition": "Soap and organic surface-active products in bar, cake or liquid form for washing the skin.",
+      "aliases": ["soap", "sabun", "saban", "bathing soap", "hand wash", "body wash", "liquid soap", "nahane ka sabun"],
+      "notHere": { "3402": "Detergents and cleaning products" }
+    },
+    "3402": {
+      "name": "Detergent and cleaning products",
+      "definition": "Washing and cleaning preparations — detergent powder and bars, dishwash, floor cleaner, surface cleaner.",
+      "aliases": ["detergent", "washing powder", "surf", "nirma", "dishwash", "vim", "floor cleaner", "phenyl", "cleaner", "bartan sabun", "kapde ka sabun"]
+    },
+    "3304": {
+      "name": "Cosmetics and skincare",
+      "definition": "Beauty and make-up preparations, skin-care creams, lotions, sunscreen, lipstick, powder.",
+      "aliases": ["cream", "lotion", "moisturiser", "face cream", "lipstick", "makeup", "make up", "powder", "sunscreen", "kajal", "foundation", "nail polish"]
+    },
+    "9619": {
+      "name": "Sanitary napkins and diapers",
+      "definition": "Sanitary towels, tampons, napkins, liners and similar articles. Nil-rated.",
+      "aliases": ["sanitary pad", "sanitary napkin", "pad", "whisper", "tampon", "panty liner"],
+      "notHere": { "4818": "Baby diapers and tissues" }
+    },
+    "4818": {
+      "name": "Tissues, toilet paper and diapers",
+      "definition": "Household paper products — toilet rolls, facial tissues, kitchen towels, baby diapers.",
+      "aliases": ["tissue", "toilet paper", "toilet roll", "napkin paper", "diaper", "pampers", "kitchen towel", "wet wipes"]
+    },
+    "3004": {
+      "name": "Medicines",
+      "definition": "Medicaments in measured doses — tablets, capsules, syrups, injections, ointments. Some notified life-saving drugs are nil-rated.",
+      "aliases": ["medicine", "tablet", "capsule", "syrup", "dawa", "dawai", "injection", "ointment", "drug", "pharma", "goli"]
+    },
+
+    "3924": {
+      "name": "Plastic kitchenware and household items",
+      "definition": "Tableware, kitchenware and household articles of plastic — buckets, mugs, storage boxes, tiffin, chairs.",
+      "aliases": ["bucket", "balti", "mug", "plastic container", "tiffin", "lunch box", "storage box", "plastic chair", "dustbin", "tub"]
+    },
+    "7323": {
+      "name": "Steel utensils and kitchenware",
+      "definition": "Table, kitchen and household articles of iron or steel — pots, pans, plates, tiffin, scrubbers.",
+      "aliases": ["utensil", "bartan", "steel plate", "thali", "kadhai", "kadai", "patila", "cooker", "pressure cooker", "steel glass", "tawa"]
+    },
+    "7013": {
+      "name": "Glassware for table and kitchen",
+      "definition": "Drinking glasses, jars, bowls and other glassware for table, kitchen or bathroom use.",
+      "aliases": ["glass", "glassware", "tumbler", "glass jar", "bowl", "casserole", "glass bottle"]
+    },
+    "6911": {
+      "name": "Crockery and porcelain tableware",
+      "definition": "Tableware and kitchenware of porcelain, bone china or ceramic — plates, cups, saucers, dinner sets.",
+      "aliases": ["crockery", "plate", "cup", "saucer", "dinner set", "ceramic", "bone china", "mug ceramic"]
+    },
+    "9403": {
+      "name": "Furniture",
+      "definition": "Furniture of any material other than seats — tables, beds, almirahs, wardrobes, cupboards, shelving.",
+      "aliases": ["furniture", "table", "bed", "almirah", "wardrobe", "cupboard", "shelf", "rack", "desk", "dressing table"],
+      "notHere": { "9401": "Chairs and sofas", "9404": "Mattresses and pillows" }
+    },
+    "9401": {
+      "name": "Chairs, sofas and seating",
+      "definition": "Seats of all kinds and their parts — chairs, sofas, stools, benches, office chairs.",
+      "aliases": ["chair", "sofa", "seat", "stool", "bench", "kursi", "office chair", "recliner"]
+    },
+    "9404": {
+      "name": "Mattresses, quilts and pillows",
+      "definition": "Mattresses, mattress supports, quilts, razais, pillows and cushions.",
+      "aliases": ["mattress", "gadda", "quilt", "razai", "rajai", "pillow", "takiya", "cushion", "comforter", "foam mattress"]
+    },
+    "6907": {
+      "name": "Tiles",
+      "definition": "Ceramic flags, paving and wall tiles, glazed or unglazed.",
+      "aliases": ["tile", "tiles", "floor tile", "wall tile", "vitrified tile", "ceramic tile"]
+    },
+    "2523": {
+      "name": "Cement",
+      "definition": "Portland, aluminous, slag and other hydraulic cements.",
+      "aliases": ["cement", "opc", "ppc", "portland cement", "white cement"]
+    },
+    "7213": {
+      "name": "Steel bars and TMT rods",
+      "definition": "Hot-rolled bars and rods of iron or non-alloy steel, including TMT reinforcement bars.",
+      "aliases": ["tmt", "tmt bar", "steel rod", "sariya", "saria", "reinforcement bar", "steel bar", "rebar"]
+    },
+    "3208": {
+      "name": "Paint and varnish",
+      "definition": "Paints and varnishes in a non-aqueous medium, plus solutions and enamels.",
+      "aliases": ["paint", "enamel", "varnish", "primer", "wall paint", "distemper", "rang"]
+    },
+
+    "9608": {
+      "name": "Pens and refills",
+      "definition": "Ball-point pens, felt-tip and marker pens, fountain pens and their refills.",
+      "aliases": ["pen", "ball pen", "gel pen", "marker", "sketch pen", "refill", "fountain pen", "kalam"]
+    },
+    "4820": {
+      "name": "Notebooks and registers",
+      "definition": "Exercise books, notebooks, diaries, registers and letter pads. Exercise books and notebooks are nil-rated; commercial registers and diaries are 18%.",
+      "aliases": ["notebook", "copy", "register", "diary", "note book", "exercise book", "khata", "bahi", "letter pad", "file"]
+    },
+    "4901": {
+      "name": "Books",
+      "definition": "Printed books, brochures and similar printed matter. Nil-rated.",
+      "aliases": ["book", "books", "kitab", "textbook", "novel", "printed book", "pustak"]
+    },
+    "9503": {
+      "name": "Toys",
+      "definition": "Toys of all kinds — dolls, puzzles, ride-ons, tricycles, scale models, soft toys.",
+      "aliases": ["toy", "toys", "doll", "puzzle", "soft toy", "teddy", "khilona", "tricycle", "lego", "board game"]
+    },
+    "9506": {
+      "name": "Sports and gym equipment",
+      "definition": "Articles for general physical exercise, gymnastics, athletics and outdoor games.",
+      "aliases": ["sports", "gym", "bat", "cricket bat", "ball", "football", "dumbbell", "yoga mat", "racket", "badminton", "skipping rope"]
+    },
+    "8712": {
+      "name": "Bicycles",
+      "definition": "Bicycles and other cycles without a motor, including delivery tricycles.",
+      "aliases": ["cycle", "bicycle", "bike cycle", "kids cycle", "gear cycle", "sycle"],
+      "notHere": { "8711": "Motorcycles and scooters" }
+    },
+    "8711": {
+      "name": "Motorcycles and scooters",
+      "definition": "Motorcycles, scooters and mopeds. Up to 350cc is 18%; above 350cc carries the 40% rate.",
+      "aliases": ["bike", "motorcycle", "scooter", "moped", "two wheeler", "scooty", "activa", "gaadi"]
+    },
+    "9004": {
+      "name": "Spectacles and sunglasses",
+      "definition": "Spectacles, goggles and sunglasses, corrective or protective.",
+      "aliases": ["spectacles", "glasses", "chashma", "chasma", "sunglasses", "goggles", "reading glasses", "eyewear"]
+    },
+    "9102": {
+      "name": "Watches",
+      "definition": "Wrist-watches, pocket watches and stop-watches with a non-precious-metal case.",
+      "aliases": ["watch", "wrist watch", "ghadi", "smart watch", "smartwatch", "clock watch"]
+    },
+    "7113": {
+      "name": "Gold and silver jewellery",
+      "definition": "Articles of jewellery of precious metal. Making charges billed separately attract 5%.",
+      "aliases": ["jewellery", "jewelry", "gold jewellery", "silver jewellery", "gehna", "zewar", "ornament", "necklace", "bangle", "ring", "chain"],
+      "notHere": { "7117": "Imitation jewellery", "7108": "Gold bullion and coins" }
+    },
+    "7117": {
+      "name": "Imitation jewellery",
+      "definition": "Jewellery not containing precious metal — fashion and artificial jewellery.",
+      "aliases": ["imitation jewellery", "artificial jewellery", "fashion jewellery", "nakli gehna", "costume jewellery"]
+    },
+
+    "996331": {
+      "name": "Restaurant and takeaway service",
+      "definition": "Food and beverage serving at a restaurant, including takeaway. Standalone restaurants are 5% without input tax credit.",
+      "aliases": ["restaurant", "hotel food", "takeaway", "dhaba", "cafe", "canteen", "food service", "catering restaurant"]
+    },
+    "996311": {
+      "name": "Hotel room accommodation",
+      "definition": "Room or unit accommodation in hotels, lodges and guest houses. Tariff up to ₹7,500 per unit per day is 5%; above that, 18%.",
+      "aliases": ["hotel", "room", "lodging", "accommodation", "guest house", "homestay", "resort"]
+    },
+    "998314": {
+      "name": "IT design and development",
+      "definition": "Software design, development and programming services.",
+      "aliases": ["software development", "web development", "app development", "programming", "it services", "coding", "website"]
+    },
+    "998313": {
+      "name": "IT consulting and support",
+      "definition": "Information technology consulting, advisory and support services.",
+      "aliases": ["it consulting", "it support", "technical support", "amc", "system support"]
+    },
+    "998721": {
+      "name": "Computer repair service",
+      "definition": "Repair and maintenance of computers and peripheral equipment.",
+      "aliases": ["computer repair", "laptop repair", "pc repair", "service charge computer"]
+    },
+    "998722": {
+      "name": "Mobile repair service",
+      "definition": "Repair and maintenance of communication equipment, including mobile phones.",
+      "aliases": ["mobile repair", "phone repair", "screen replacement", "mobile service"]
+    },
+    "998723": {
+      "name": "Appliance repair service",
+      "definition": "Repair of consumer electronics and household appliances.",
+      "aliases": ["appliance repair", "tv repair", "ac repair", "fridge repair", "washing machine repair", "electronics repair"]
+    },
+    "999721": {
+      "name": "Salon and beauty parlour",
+      "definition": "Hairdressing, beauty parlour and grooming services.",
+      "aliases": ["salon", "parlour", "parlor", "beauty parlour", "haircut", "barber", "spa", "grooming"]
+    },
+    "996511": {
+      "name": "Goods transport by road",
+      "definition": "Road transport of goods, including goods transport agency service. Often falls under reverse charge.",
+      "aliases": ["transport", "freight", "goods transport", "gta", "lorry", "truck transport", "delivery charges", "bhada"]
+    },
+    "997212": {
+      "name": "Commercial property rent",
+      "definition": "Renting or leasing of own or leased non-residential property — shops, offices, warehouses.",
+      "aliases": ["rent", "shop rent", "office rent", "commercial rent", "lease", "godown rent", "kiraya"]
+    },
+    "999293": {
+      "name": "Coaching and training",
+      "definition": "Commercial training and coaching services, not covered by the education exemption.",
+      "aliases": ["coaching", "tuition", "training", "classes", "institute", "workshop"]
+    },
+    "998361": {
+      "name": "Advertising service",
+      "definition": "Advertising services, including design and placement of advertisements.",
+      "aliases": ["advertising", "advertisement", "ad", "marketing service", "promotion", "hoarding"]
+    },
+    "998519": {
+      "name": "Manpower and staffing",
+      "definition": "Supply of manpower, labour contracting and staffing services.",
+      "aliases": ["manpower", "labour", "staffing", "contract labour", "housekeeping staff", "security service"]
+    }
+  }
+}

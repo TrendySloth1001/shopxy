@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
@@ -26,6 +26,9 @@ import {
   TextArea,
   TextField,
 } from "./form-controls";
+import { GstRateField } from "./gst-rate-field";
+import { HsnField } from "./hsn-field";
+import type { HsnResolution } from "../hsn";
 import { ImageManager } from "./image-manager";
 import { StringListEditor } from "./string-list-editor";
 import { SpecsEditor } from "./specs-editor";
@@ -62,6 +65,13 @@ function num(s: string): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
+/// HSN/SAC codes are digits only; merchants paste them with spaces and dots.
+/// Mirrors `normalizeHsn` on the backend so the two agree on what "the same
+/// code" means.
+function normalizeCode(s: string): string {
+  return s.replace(/\D/g, "");
+}
+
 export function ProductForm({ product }: { product?: Product }) {
   const router = useRouter();
   const t = useTranslations("products");
@@ -82,6 +92,17 @@ export function ProductForm({ product }: { product?: Product }) {
   );
   const [taxPercent, setTaxPercent] = useState(
     product ? String(product.taxPercent) : "0",
+  );
+  // What the HSN master last said, and which code it said it about. The pair
+  // is what lets us tell "no rate on file for this code" apart from "haven't
+  // looked this one up yet" — only the former is worth warning about.
+  const [hsnRate, setHsnRate] = useState<HsnResolution | null>(null);
+  const [hsnCheckedFor, setHsnCheckedFor] = useState<string | null>(null);
+  // Whether the merchant has taken the rate off the code. Editing an existing
+  // product starts manual only when its stored rate was hand-typed — anything
+  // the master derived stays derived, so a re-save re-derives it.
+  const [taxManual, setTaxManual] = useState(
+    product ? product.taxSource === "MANUAL" && !!product.hsnCode : false,
   );
   const [stockQuantity, setStockQuantity] = useState("0");
   const [lowStockThreshold, setLowStockThreshold] = useState(
@@ -133,6 +154,29 @@ export function ProductForm({ product }: { product?: Product }) {
       active = false;
     };
   }, [categoriesNonce]);
+
+  // ── HSN → GST ──────────────────────────────────────────────────────────
+  // The rate is a consequence of the classification, so a resolved code sets
+  // it. The tax field is a readout unless the merchant explicitly takes it
+  // manual, which is what removes the old conflict: there is only one thing to
+  // fill in, and the number next to it can't disagree with the code.
+  //
+  // A code with no rate on file deliberately leaves the value untouched — a
+  // silent 0% is an under-charged invoice, which is the failure this whole
+  // feature exists to prevent.
+  const applyHsnRate = useCallback(
+    (hit: HsnResolution | null) => {
+      setHsnRate(hit);
+      setHsnCheckedFor(hit ? hit.requestedCode : normalizeCode(hsnCode));
+      // Never overwrite a rate the merchant has taken responsibility for.
+      if (hit && !taxManual) setTaxPercent(String(hit.gstRate));
+    },
+    [hsnCode, taxManual],
+  );
+
+  const codeDigits = normalizeCode(hsnCode);
+  const rateForCurrentCode = hsnRate?.requestedCode === codeDigits ? hsnRate : null;
+  const hsnUnknown = hsnCheckedFor === codeDigits && codeDigits.length >= 4 && !hsnRate;
 
   function validate(): boolean {
     const e: Record<string, string> = {};
@@ -296,7 +340,17 @@ export function ProductForm({ product }: { product?: Product }) {
           <TextField label={t("form.skuLabel")} value={sku} onChange={setSku} error={errors.sku} />
           <TextField label={t("form.brandLabel")} value={brand} onChange={setBrand} />
           <TextField label={t("form.barcodeLabel")} value={barcode} onChange={setBarcode} />
-          <TextField label={t("form.hsnLabel")} value={hsnCode} onChange={setHsnCode} />
+          <div className="sm:col-span-2">
+            <HsnField
+              label={t("form.hsnLabel")}
+              value={hsnCode}
+              onChange={setHsnCode}
+              onResolved={applyHsnRate}
+              productName={name}
+              price={num(sellingPrice)}
+              helper={t("form.hsnHelper")}
+            />
+          </div>
           <div className="sm:col-span-2">
             <TextArea label={t("form.descriptionLabel")} value={description} onChange={setDescription} />
           </div>
@@ -321,14 +375,14 @@ export function ProductForm({ product }: { product?: Product }) {
             min={0}
             step={0.01}
           />
-          <NumberField
-            label={t("form.taxPercentLabel")}
+          <GstRateField
             value={taxPercent}
             onChange={setTaxPercent}
+            manual={taxManual}
+            onManualChange={setTaxManual}
+            resolution={rateForCurrentCode}
+            unknownCode={hsnUnknown}
             error={errors.taxPercent}
-            min={0}
-            max={100}
-            step={0.01}
           />
           {!isEdit ? (
             <NumberField

@@ -10,12 +10,15 @@ import 'package:shopxy/features/categories/presentation/widgets/category_picker_
 import 'package:shopxy/features/custom_fields/data/datasources/custom_fields_remote_data_source.dart';
 import 'package:shopxy/features/custom_fields/presentation/widgets/custom_fields_form_section.dart';
 import 'package:shopxy/features/products/data/datasources/products_remote_data_source.dart';
+import 'package:shopxy/features/products/data/models/hsn_dto.dart';
 import 'package:shopxy/features/products/data/models/product_dto.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/features/products/domain/entities/product_draft.dart';
 import 'package:shopxy/features/products/presentation/providers/products_provider.dart';
 import 'package:shopxy/features/products/presentation/utils/product_ocr_parser.dart';
 import 'package:shopxy/features/products/presentation/widgets/content_blocks_editor.dart';
+import 'package:shopxy/features/products/presentation/widgets/gst_rate_field.dart';
+import 'package:shopxy/features/products/presentation/widgets/hsn_code_field.dart';
 import 'package:shopxy/features/products/presentation/widgets/variants_editor.dart';
 import 'package:shopxy/features/reviews/presentation/pages/product_reviews_page.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
@@ -62,6 +65,17 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   late final TextEditingController _taxPercent;
   late final TextEditingController _stockQuantity;
   late final TextEditingController _lowStockThreshold;
+
+  /// What the HSN master last said, and which code it said it about. The pair
+  /// is what separates "no rate on file for this code" from "haven't looked
+  /// this one up yet" — only the former is worth warning about.
+  HsnResolution? _hsnRate;
+  String? _hsnCheckedFor;
+
+  /// Whether the merchant has taken the rate off the code. Editing an existing
+  /// product starts manual only when its stored rate was hand-typed — anything
+  /// the master derived stays derived, so a re-save re-derives it.
+  bool _taxManual = false;
 
   String _selectedUnit = 'PCS';
   String? _selectedCategoryId;
@@ -132,6 +146,12 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
           p?.taxPercent.toString() ??
           _formatDouble(draft?.taxPercent, fallback: '0'),
     );
+    // Open the GST field as an input only for a rate that was genuinely typed
+    // by hand against a real code. A derived rate stays a readout, and a
+    // product with no code at all has nothing to derive from yet.
+    _taxManual = p != null &&
+        p.taxSource == 'MANUAL' &&
+        (p.hsnCode?.isNotEmpty ?? false);
     _stockQuantity = TextEditingController(
       text:
           p?.stockQuantity.toString() ??
@@ -767,6 +787,45 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
 
   void _markDirty() => _dirty = true;
 
+  /// The HSN → GST auto-fill.
+  ///
+  /// The rate is a consequence of the classification, so a resolved code
+  /// overwrites whatever is in the GST field. It stays editable afterwards:
+  /// the conditional slabs are real (apparel over ₹2,500 is 18%, not 5%) and
+  /// the note under the field says when that applies.
+  ///
+  /// A code with no rate on file deliberately leaves the field untouched — a
+  /// silent 0% is an under-charged invoice, which is the failure this whole
+  /// feature exists to prevent.
+  void _applyHsnRate(HsnResolution? hit) {
+    if (!mounted) return;
+    setState(() {
+      _hsnRate = hit;
+      _hsnCheckedFor = hit?.requestedCode ?? normalizeHsnCode(_hsnCode.text);
+      // Never overwrite a rate the merchant has taken responsibility for.
+      if (hit != null && !_taxManual) {
+        _taxPercent.text = formatHsnRate(hit.gstRate);
+        _dirty = true;
+      }
+    });
+  }
+
+  /// The resolved rate, but only while it still describes what's in the field.
+  /// Guarding on the code stops a stale answer from explaining a number the
+  /// merchant has since changed the code out from under.
+  HsnResolution? get _rateForCurrentCode {
+    final digits = normalizeHsnCode(_hsnCode.text);
+    final rate = _hsnRate;
+    return rate != null && rate.requestedCode == digits ? rate : null;
+  }
+
+  /// A code was entered and looked up, and the master had nothing. Distinct
+  /// from "not looked up yet" — only the former is worth warning about.
+  bool get _hsnUnknown {
+    final digits = normalizeHsnCode(_hsnCode.text);
+    return _hsnCheckedFor == digits && digits.length >= 4 && _hsnRate == null;
+  }
+
   /// Push a focused, full-screen editor for one advanced section, then
   /// refresh the hub summaries when it returns. The [builder] receives a
   /// `refresh` callback so stateless editors (highlights, tags) can
@@ -936,37 +995,33 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                 ],
               ),
               const SizedBox(height: AppSizes.md),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _purchasePrice,
-                      decoration: InputDecoration(
-                        labelText: l10n.productsCostPrice,
-                        prefixText: '${AppStrings.currencySymbol} ',
-                        helperText: l10n.productsCostPriceHelper,
-                      ),
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      validator: _priceValidator,
-                    ),
-                  ),
-                  const SizedBox(width: AppSizes.md),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _taxPercent,
-                      decoration: InputDecoration(
-                        labelText: l10n.productsGst,
-                        suffixText: '%',
-                        helperText: l10n.productsOptional,
-                      ),
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                    ),
-                  ),
-                ],
+              TextFormField(
+                controller: _purchasePrice,
+                decoration: InputDecoration(
+                  labelText: l10n.productsCostPrice,
+                  prefixText: '${AppStrings.currencySymbol} ',
+                  helperText: l10n.productsCostPriceHelper,
+                ),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                validator: _priceValidator,
+              ),
+              const SizedBox(height: AppSizes.md),
+              // GST is derived from the HSN code, not typed — so it gets its
+              // own full-width row rather than sharing one with cost price.
+              // It carries a provenance line and, when a threshold rule
+              // applies, the price it was decided against; none of that fits
+              // in half a row next to another field.
+              GstRateField(
+                controller: _taxPercent,
+                manual: _taxManual,
+                onManualChanged: (v) => setState(() {
+                  _taxManual = v;
+                  _dirty = true;
+                }),
+                resolution: _rateForCurrentCode,
+                unknownCode: _hsnUnknown,
               ),
 
               const SizedBox(height: AppSizes.lg),
@@ -1388,6 +1443,13 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
             hsnCode: _hsnCode,
             lowStockThreshold: _lowStockThreshold,
             onChanged: _markDirty,
+            productsDataSource: context.read<ProductsRemoteDataSource>(),
+            onHsnResolved: _applyHsnRate,
+            // The name and price live on the page, not in this sheet: the name
+            // drives the "suggested for this product" row, and the price
+            // decides a threshold slab.
+            productName: _name.text,
+            price: double.tryParse(_sellingPrice.text.trim()),
           ),
         ),
       ),
@@ -1573,11 +1635,27 @@ class _CodesInventoryEditor extends StatelessWidget {
     required this.hsnCode,
     required this.lowStockThreshold,
     required this.onChanged,
+    required this.productsDataSource,
+    required this.onHsnResolved,
+    required this.productName,
+    required this.price,
   });
   final TextEditingController barcode;
   final TextEditingController hsnCode;
   final TextEditingController lowStockThreshold;
   final VoidCallback onChanged;
+  final ProductsRemoteDataSource productsDataSource;
+
+  /// The GST field lives on the page, not in this sheet, so the resolved rate
+  /// travels back up rather than being applied here.
+  final ValueChanged<HsnResolution?> onHsnResolved;
+
+  /// Drives the "suggested for this product" row and the shortcut label.
+  final String productName;
+
+  /// Selling price, so a threshold slab (apparel over ₹2,500) resolves to the
+  /// rate this product will actually bill at.
+  final double? price;
 
   @override
   Widget build(BuildContext context) {
@@ -1594,13 +1672,13 @@ class _CodesInventoryEditor extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSizes.lg),
-        TextFormField(
+        HsnCodeField(
           controller: hsnCode,
-          onChanged: (_) => onChanged(),
-          decoration: InputDecoration(
-            labelText: l10n.productsHsnCode,
-            helperText: l10n.productsHsnCodeHelper,
-          ),
+          dataSource: productsDataSource,
+          onChanged: onChanged,
+          onResolved: onHsnResolved,
+          productName: productName,
+          price: price,
         ),
         const SizedBox(height: AppSizes.lg),
         TextFormField(

@@ -29,6 +29,7 @@ class Product {
     required this.sellingPrice,
     required this.purchasePrice,
     required this.taxPercent,
+    this.taxSource = 'MANUAL',
     required this.stockQuantity,
     required this.lowStockThreshold,
     required this.unit,
@@ -70,6 +71,13 @@ class Product {
   final double sellingPrice;
   final double purchasePrice;
   final double taxPercent;
+
+  /// Where [taxPercent] came from: 'HSN' (the code's flat rate), 'HSN_RULE'
+  /// (decided by price), 'OVERRIDE' (the shop's own recorded position), or
+  /// 'MANUAL' (typed by hand). Every row predating the HSN master is MANUAL,
+  /// because that is literally what it was. The editor reads this to decide
+  /// whether the GST field opens as a readout or as an input.
+  final String taxSource;
   final double stockQuantity;
   final double lowStockThreshold;
   final String unit;

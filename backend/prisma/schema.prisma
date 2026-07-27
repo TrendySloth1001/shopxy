@@ -104,6 +104,9 @@ model User {
   couponRedemptions       CouponRedemption[]
   quotationsCreated       Quotation[]            @relation("QuotationCreatedBy")
   quotationsRequested     Quotation[]            @relation("QuotationRequestedBy")
+  /// GST rate overrides this user recorded — kept so an audit can ask a
+  /// person, not just a shop, why a rate diverges from the master.
+  hsnOverridesCreated     ShopHsnOverride[]
   /// Staff membership in a shop's team (at most one — see ShopMember).
   /// The shop owner also has a row here (role OWNER), seeded by the
   /// team-roles migration backfill.
@@ -363,6 +366,16 @@ model Product {
   /// back to this when a line omits cessRate, the same way it falls back
   /// to taxPercent — so cess-bearing goods are never silently billed at 0.
   cessRate      Decimal @default(0) @map("cess_rate") @db.Decimal(5, 2)
+  /// Where `taxPercent` came from — master, master-after-rule, shop override,
+  /// or typed by hand. Existing rows are MANUAL because that is literally what
+  /// they were: a number a merchant keyed next to an unrelated HSN box.
+  /// Turns "which products bill at a rate their code doesn't support" into a
+  /// query instead of a discovery.
+  taxSource     TaxRateSource @default(MANUAL) @map("tax_source")
+  /// Which revision of the rate master produced `taxPercent`. Null for
+  /// hand-typed rows. Pairs with [InvoiceItem.hsnRevision] to bound the blast
+  /// radius when a rate turns out to have been wrong.
+  hsnRevision   String? @map("hsn_revision")
 
   stockQuantity     Decimal @default(0) @map("stock_quantity") @db.Decimal(12, 3)
   lowStockThreshold Decimal @default(10) @map("low_stock_threshold") @db.Decimal(12, 3)
@@ -1211,6 +1224,12 @@ model InvoiceItem {
   productName  String  @map("product_name")
   productSku   String  @map("product_sku")
   hsn          String?
+  /// Which revision of the rate master the frozen `taxPercent` on this line
+  /// came from. The line's rate is never recomputed — an issued document is
+  /// final — so if a revision later proves wrong, this is what makes "exactly
+  /// which documents are affected" a query with an exact answer instead of a
+  /// full-catalogue scare. Null on lines raised before the master existed.
+  hsnRevision  String? @map("hsn_revision")
   unit         String  @default("PCS")
   quantity     Decimal @db.Decimal(12, 3)
   unitPrice    Decimal @map("unit_price") @db.Decimal(12, 2)
@@ -2078,9 +2097,254 @@ model Shop {
   members                ShopMember[]
   /// Owner-defined roles (named permission templates) for this shop.
   teamRoles              TeamRole[]
+  /// Shop-private HSN/SAC rows — merchant additions and overrides that
+  /// win over the platform master on lookup. See HsnCode.
+  hsnCodes               HsnCode[]
+  /// The merchant's own "when I say X, I mean this code" list.
+  hsnShortcuts           ShopHsnShortcut[]
+  /// Explicit, reasoned rate overrides. Rare by design — see ShopHsnOverride.
+  hsnOverrides           ShopHsnOverride[]
+  /// Product names this shop typed that the classifier couldn't place.
+  hsnLookupMisses        HsnLookupMiss[]
 
   @@index([isPublished])
   @@map("shops")
+}
+
+/// HSN/SAC → GST rate master. The single source of truth behind "type an
+/// HSN code, get the tax rate" in the product editor: nobody keys a rate
+/// by hand any more, so two merchants can't bill the same goods at
+/// different slabs and a rate change is one manifest edit, not a
+/// catalog-wide re-key.
+///
+/// **Two tiers, one lookup.** `shopId = null` rows are the platform
+/// master, seeded idempotently at boot from the checked-in manifest
+/// (`hsn.master.ts`) exactly like the category taxonomy. `shopId != null`
+/// rows are a merchant's own additions/overrides and WIN over the
+/// platform row for the same code — a merchant with a ruling or an
+/// exemption we don't model shouldn't be blocked, and shouldn't be able
+/// to corrupt the master for everyone else either.
+///
+/// **Effective-dated, never mutated in place.** GST slabs change (the
+/// Sept-2025 reform collapsed 12/28% into 5/18% + a 40% demerit rate),
+/// and an invoice raised last year must keep re-rendering at last year's
+/// rate. A rate change therefore closes the old row (`effectiveTo`) and
+/// inserts a new one; lookups resolve "as of" a date, defaulting to now.
+///
+/// `code` is 2/4/6/8 digits (chapter/heading/sub-heading/tariff item) for
+/// goods and a 6-digit 99xxxx SAC for services. Resolution walks the code
+/// down to shorter prefixes, so an 8-digit tariff item still resolves off
+/// its 4-digit heading when we don't carry the leaf.
+model HsnCode {
+  id   Int     @id @default(autoincrement())
+  code String
+  kind HsnKind @default(GOODS)
+
+  /// Fallback wording. The merchant-facing name, definition and search
+  /// aliases live in the translatable copy catalogues
+  /// (`hsn.copy.<locale>.json`) keyed by this code — words are content and
+  /// belong with the other content, not in rows that need a data migration
+  /// to fix a phrase. This column is the last-resort label when a locale
+  /// has no entry, so a missing translation degrades to English tariff
+  /// wording rather than a bare number.
+  description String
+  /// Whether this row can price a line, or exists only so the picker can
+  /// show where a code sits. Chapters ("62 — Articles of apparel, not
+  /// knitted") and some headings carry no rate of their own; matching one
+  /// and billing at it would invent a slab that doesn't legally exist, so
+  /// resolution skips them and only the tree walk sees them.
+  isRatable   Boolean @default(true) @map("is_ratable")
+  /// Total GST (IGST equivalent). CGST/SGST is this halved — the invoice
+  /// engine does the split, we store one number.
+  gstRate     Decimal @map("gst_rate") @db.Decimal(5, 2)
+  /// Compensation cess, ad valorem %. Decimal(5,2) matches Product.cessRate
+  /// (pan masala/tobacco run into the hundreds).
+  cessRate    Decimal @default(0) @map("cess_rate") @db.Decimal(5, 2)
+  /// Machine-applicable form of a conditional slab, when the condition is
+  /// something we actually hold. Apparel is 5% up to ₹2,500 a piece and 18%
+  /// above — that's arithmetic against the line's own price, not a judgement
+  /// call, so the resolver decides it instead of asking. Shape:
+  ///
+  ///   { "kind": "PRICE_THRESHOLD", "upTo": 2500,
+  ///     "below": 5, "atOrAbove": 18, "per": "PIECE" }
+  ///
+  /// Evaluated against the **line price at billing time**, not the product's
+  /// list price: a shirt listed at ₹2,400 and sold at ₹2,600 after a price
+  /// rise is 18%, and freezing the rate on the product row would quietly get
+  /// that wrong. Null means the code's rate is unconditional.
+  rateRule    Json?   @map("rate_rule")
+  /// Human caveat for conditions we can't evaluate — engine capacity, hotel
+  /// tariff bands, end-use. Shown beside the rate so the merchant knows when
+  /// their SKU is the exception. Unlike [rateRule] this is advisory only.
+  rateNote    String? @map("rate_note")
+
+  /// Inclusive start / exclusive-of-nothing end of this rate's validity.
+  /// A null `effectiveTo` means "current". Dates, not timestamps — GST
+  /// notifications are day-granular.
+  effectiveFrom DateTime  @map("effective_from") @db.Date
+  effectiveTo   DateTime? @map("effective_to") @db.Date
+
+  /// Soft-delete for merchant rows and for master entries we retire
+  /// without a successor. Excluded from search and from resolution.
+  isActive Boolean @default(true) @map("is_active")
+
+  /// Null = platform master (seeded). Non-null = this shop's private
+  /// addition/override.
+  shopId Int?  @map("shop_id")
+  shop   Shop? @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  /// One row per (code, tier, validity start). Postgres treats NULLs as
+  /// distinct in a unique index, so the platform tier is de-duped by the
+  /// partial unique index in the migration instead; this composite covers
+  /// the shop tier and gives the upsert a target.
+  @@unique([code, shopId, effectiveFrom])
+  @@index([code, isActive])
+  @@index([shopId])
+  @@map("hsn_codes")
+}
+
+/// Goods carry an HSN (Harmonised System of Nomenclature) code; services
+/// carry a SAC (Service Accounting Code, always 99xxxx). Same table, same
+/// lookup — the kind only drives filtering and the field label.
+enum HsnKind {
+  GOODS
+  SERVICES
+}
+
+/// A merchant's own shortcut: "when I say *formal shirt*, I mean 6205".
+///
+/// A shop sells a few dozen kinds of thing, so after a couple of weeks this
+/// list covers almost everything they will ever add — the 12,000-code tariff
+/// stops being something they search and becomes something they touch only
+/// for a genuinely new product. It doubles as a private vocabulary: their own
+/// wording matches before the shared aliases are consulted.
+///
+/// **Deliberately stores no rate.** This is a bookmark for a *classification*,
+/// and the rate is always fetched fresh from [HsnCode]. If a merchant's saved
+/// entry carried 5% and the Council moved the code to 8%, no deployment could
+/// correct it — it's their data, we don't rewrite it — and the stale number
+/// would ride onto invoices forever. A merchant who genuinely needs a
+/// different *rate* uses [ShopHsnOverride], which is a tax position and is
+/// treated like one.
+model ShopHsnShortcut {
+  id     Int  @id @default(autoincrement())
+  shopId Int  @map("shop_id")
+  shop   Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  /// The merchant's own words, lowercased and whitespace-collapsed for
+  /// matching. What they typed is kept in [label].
+  term  String
+  label String
+  code  String
+
+  /// Bumped on each hit so the picker can lead with what they actually use.
+  useCount   Int      @default(0) @map("use_count")
+  lastUsedAt DateTime @default(now()) @map("last_used_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([shopId, term])
+  @@index([shopId, useCount])
+  @@map("shop_hsn_shortcuts")
+}
+
+/// A merchant's explicit rate override for one code — an advance ruling, a
+/// notified exemption, or a classification we don't model.
+///
+/// Separate from [ShopHsnShortcut] on purpose. Saving a shortcut is harmless
+/// housekeeping; overriding a rate is a tax position the merchant is taking,
+/// so it demands a reason, gets recorded, and shows up in a review. Merging
+/// the two into one "my codes" table would let the dangerous one be used by
+/// accident.
+model ShopHsnOverride {
+  id     Int  @id @default(autoincrement())
+  shopId Int  @map("shop_id")
+  shop   Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  code     String
+  gstRate  Decimal @map("gst_rate") @db.Decimal(5, 2)
+  cessRate Decimal @default(0) @map("cess_rate") @db.Decimal(5, 2)
+
+  /// Why this shop bills differently from the master. Required — an override
+  /// without a stated basis is indistinguishable from a typo, and this is the
+  /// field an auditor asks about.
+  reason String
+
+  effectiveFrom DateTime  @map("effective_from") @db.Date
+  effectiveTo   DateTime? @map("effective_to") @db.Date
+  isActive      Boolean   @default(true) @map("is_active")
+
+  createdByUserId Int?  @map("created_by_user_id")
+  createdBy       User? @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([shopId, code, effectiveFrom])
+  @@index([shopId, code, isActive])
+  @@map("shop_hsn_overrides")
+}
+
+/// A product name the classifier could not place.
+///
+/// Retrieval quality is capped by the vocabulary it searches, and the only
+/// honest source for what that vocabulary is missing is what merchants
+/// actually type and don't find. Guessing produces aliases nobody searches for;
+/// this produces a backlog ranked by how many shops hit it.
+///
+/// Deliberately shop-scoped rather than a global term counter: a product name
+/// is the merchant's business data, so it stays attributed to the shop that
+/// generated it and aggregation happens at read time.
+///
+/// Only misses are recorded. A successful lookup tells us nothing we don't
+/// already have, and logging every keystroke would cost a write on the typing
+/// path for no information.
+model HsnLookupMiss {
+  id     Int  @id @default(autoincrement())
+  shopId Int  @map("shop_id")
+  shop   Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  /// The normalised query, so "Sarson ka Tel 1L" and "sarson ka tel 1l"
+  /// aggregate rather than appearing as two gaps.
+  term String
+
+  /// Verbatim, for reading the backlog — the normalised form strips the
+  /// punctuation and casing that sometimes explain the miss.
+  sample String
+
+  /// Times this shop hit the same gap. Upserted rather than appended: a
+  /// merchant retyping a name they can't place must not flood the table.
+  occurrences Int      @default(1)
+  lastSeenAt  DateTime @default(now()) @map("last_seen_at")
+
+  /// Set once the gap is closed, so curation can tell "still missing" from
+  /// "fixed, keeping the record". Null means outstanding.
+  resolvedCode String?   @map("resolved_code")
+  resolvedAt   DateTime? @map("resolved_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([shopId, term])
+  @@index([resolvedCode, occurrences])
+  @@map("hsn_lookup_misses")
+}
+
+/// Where a stored GST rate came from. Makes divergence queryable — "show me
+/// every product billing at a rate its HSN doesn't support" is a report
+/// rather than an audit finding.
+enum TaxRateSource {
+  /// Straight from the HSN master's unconditional rate.
+  HSN
+  /// From the master, after evaluating a conditional rule (price threshold).
+  HSN_RULE
+  /// The shop's own [ShopHsnOverride].
+  OVERRIDE
+  /// Typed by hand — pre-dates the master, or no code resolved.
+  MANUAL
 }
 
 /// A staffer's position within a shop's team. The source of truth for

@@ -31,7 +31,11 @@
   "offlineBannerMessage": "No network — showing saved data",
   "offlineSyncingMessage": "Syncing {count} change(s)…",
   "@offlineSyncingMessage": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "noShopTitle": "No shop linked yet",
   "noShopBody": "Ask a shop owner to invite you to their team, then sign in again to accept.",
@@ -299,6 +303,23 @@
   "productsDone": "Done",
   "productsBarcodeHelper": "The number under the striped code on the package",
   "productsHsnCodeHelper": "Tax classification code for invoices",
+  "productsHsnRateFrom": "GST rate from HSN {code}.",
+  "@productsHsnRateFrom": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "productsHsnRateFromHeading": "GST rate inferred from heading {code} — confirm it fits this item.",
+  "@productsHsnRateFromHeading": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "productsHsnRateUnknown": "No GST rate on file for this code. Check the code, or set the rate yourself.",
   "productsLowStockThreshold": "Low Stock Alert",
   "productsLowStockThresholdHelper": "We'll flag the product once stock drops to this",
   "productsAddTag": "Add tag",
@@ -3484,5 +3505,124 @@
         "type": "int"
       }
     }
-  }
+  },
+  "productsHsnSuggestedFor": "Suggested for this product",
+  "productsHsnNotThis": "Not this?",
+  "productsHsnSaved": "Saved to your codes",
+  "productsHsnSaveShortcut": "Save as my code for “{name}”",
+  "@productsHsnSaveShortcut": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "productsGstAwaitingCode": "Pick an HSN code",
+  "productsGstFromRule": "by price",
+  "productsGstFromOverride": "your override",
+  "productsGstRuleApplied": "Priced at ₹{price}, against the ₹{threshold} threshold.",
+  "@productsGstRuleApplied": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      },
+      "threshold": {
+        "type": "String"
+      }
+    }
+  },
+  "productsGstManualDiverges": "This differs from HSN {code}, which is {rate}%. Make sure you have a basis for it.",
+  "@productsGstManualDiverges": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "productsGstSetManually": "Set the rate manually",
+  "productsGstUseHsnRate": "Use the rate from the HSN code",
+  "hsnCodesTitle": "My HSN codes",
+  "hsnCodesSubtitle": "The codes you've saved and any rate you've set differently from ours. Saved codes only decide classification — the GST rate is always read live, so a Council change reaches you without you touching anything here.",
+  "hsnRetry": "Try again",
+  "hsnSavedHeading": "Saved codes",
+  "hsnSavedBlurb": "When you say one of these words on a product, we fill in this code. Created from the product form — no rate is stored, so these can't go stale.",
+  "hsnSavedEmptyTitle": "Nothing saved yet",
+  "hsnSavedEmptyHint": "Pick an HSN code on a product and choose “Save as my code”.",
+  "hsnSavedBrokenBadge": "Needs attention",
+  "hsnSavedBrokenBanner": "{count, plural, =1{1 saved code no longer exists} other{{count} saved codes no longer exist}} in the tariff. Pick a replacement — we won't guess one for you.",
+  "@hsnSavedBrokenBanner": {
+    "placeholders": {
+      "count": {
+        "type": "num",
+        "format": "compact"
+      }
+    }
+  },
+  "hsnSavedUsedCount": "{count, plural, =1{used 1 time} other{used {count} times}}",
+  "@hsnSavedUsedCount": {
+    "placeholders": {
+      "count": {
+        "type": "num",
+        "format": "compact"
+      }
+    }
+  },
+  "hsnActionChangeCode": "Change code",
+  "hsnActionRemoveSaved": "Remove saved code",
+  "hsnActionRemoveOverride": "Remove override",
+  "hsnRepointTitle": "Change the code for “{label}”",
+  "@hsnRepointTitle": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "hsnRepointBlurb": "This keeps your wording and points it at a different HSN code. Products already saved keep the rate they were billed at.",
+  "hsnOverridesHeading": "Rate overrides",
+  "hsnOverridesBlurb": "A rate you bill that differs from ours, for one code, across your whole catalogue. Use this only when you have a basis for it — the reason you give is what an auditor will ask about.",
+  "hsnOverridesEmpty": "No overrides. Every code bills at the rate in the shared tariff.",
+  "hsnOverridesAdd": "Add",
+  "hsnOverridesEffectiveFrom": "In force from {date}",
+  "@hsnOverridesEffectiveFrom": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "hsnOverridesDialogTitle": "Override a GST rate",
+  "hsnOverridesDialogBlurb": "Pick the code first, so you can see the rate you're departing from.",
+  "hsnOverridesPlatformRate": "Our rate for {code} is {rate}%.",
+  "@hsnOverridesPlatformRate": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "hsnOverridesRateLabel": "Your GST rate (%)",
+  "hsnOverridesDiverges": "You're billing {yours}% on {code} where the tariff says {platform}%. This applies to every product on this code and every invoice from here on.",
+  "@hsnOverridesDiverges": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "yours": {
+        "type": "String"
+      },
+      "platform": {
+        "type": "String"
+      }
+    }
+  },
+  "hsnOverridesReasonLabel": "Why",
+  "hsnOverridesReasonHelper": "Required. An override with no stated basis can't be told apart from a typo.",
+  "hsnOverridesConfirm": "Save override"
 }

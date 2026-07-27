@@ -776,6 +776,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get productsHsnCodeHelper => 'Tax classification code for invoices';
 
   @override
+  String productsHsnRateFrom(String code) {
+    return 'GST rate from HSN $code.';
+  }
+
+  @override
+  String productsHsnRateFromHeading(String code) {
+    return 'GST rate inferred from heading $code — confirm it fits this item.';
+  }
+
+  @override
+  String get productsHsnRateUnknown =>
+      'No GST rate on file for this code. Check the code, or set the rate yourself.';
+
+  @override
   String get productsLowStockThreshold => 'Low Stock Alert';
 
   @override
@@ -6783,4 +6797,169 @@ class AppLocalizationsEn extends AppLocalizations {
   String timeDaysAgo(int n) {
     return '${n}d ago';
   }
+
+  @override
+  String get productsHsnSuggestedFor => 'Suggested for this product';
+
+  @override
+  String get productsHsnNotThis => 'Not this?';
+
+  @override
+  String get productsHsnSaved => 'Saved to your codes';
+
+  @override
+  String productsHsnSaveShortcut(String name) {
+    return 'Save as my code for “$name”';
+  }
+
+  @override
+  String get productsGstAwaitingCode => 'Pick an HSN code';
+
+  @override
+  String get productsGstFromRule => 'by price';
+
+  @override
+  String get productsGstFromOverride => 'your override';
+
+  @override
+  String productsGstRuleApplied(String price, String threshold) {
+    return 'Priced at ₹$price, against the ₹$threshold threshold.';
+  }
+
+  @override
+  String productsGstManualDiverges(String code, String rate) {
+    return 'This differs from HSN $code, which is $rate%. Make sure you have a basis for it.';
+  }
+
+  @override
+  String get productsGstSetManually => 'Set the rate manually';
+
+  @override
+  String get productsGstUseHsnRate => 'Use the rate from the HSN code';
+
+  @override
+  String get hsnCodesTitle => 'My HSN codes';
+
+  @override
+  String get hsnCodesSubtitle =>
+      'The codes you\'ve saved and any rate you\'ve set differently from ours. Saved codes only decide classification — the GST rate is always read live, so a Council change reaches you without you touching anything here.';
+
+  @override
+  String get hsnRetry => 'Try again';
+
+  @override
+  String get hsnSavedHeading => 'Saved codes';
+
+  @override
+  String get hsnSavedBlurb =>
+      'When you say one of these words on a product, we fill in this code. Created from the product form — no rate is stored, so these can\'t go stale.';
+
+  @override
+  String get hsnSavedEmptyTitle => 'Nothing saved yet';
+
+  @override
+  String get hsnSavedEmptyHint =>
+      'Pick an HSN code on a product and choose “Save as my code”.';
+
+  @override
+  String get hsnSavedBrokenBadge => 'Needs attention';
+
+  @override
+  String hsnSavedBrokenBanner(num count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.compact(
+      locale: localeName,
+    );
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString saved codes no longer exist',
+      one: '1 saved code no longer exists',
+    );
+    return '$_temp0 in the tariff. Pick a replacement — we won\'t guess one for you.';
+  }
+
+  @override
+  String hsnSavedUsedCount(num count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.compact(
+      locale: localeName,
+    );
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'used $countString times',
+      one: 'used 1 time',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get hsnActionChangeCode => 'Change code';
+
+  @override
+  String get hsnActionRemoveSaved => 'Remove saved code';
+
+  @override
+  String get hsnActionRemoveOverride => 'Remove override';
+
+  @override
+  String hsnRepointTitle(String label) {
+    return 'Change the code for “$label”';
+  }
+
+  @override
+  String get hsnRepointBlurb =>
+      'This keeps your wording and points it at a different HSN code. Products already saved keep the rate they were billed at.';
+
+  @override
+  String get hsnOverridesHeading => 'Rate overrides';
+
+  @override
+  String get hsnOverridesBlurb =>
+      'A rate you bill that differs from ours, for one code, across your whole catalogue. Use this only when you have a basis for it — the reason you give is what an auditor will ask about.';
+
+  @override
+  String get hsnOverridesEmpty =>
+      'No overrides. Every code bills at the rate in the shared tariff.';
+
+  @override
+  String get hsnOverridesAdd => 'Add';
+
+  @override
+  String hsnOverridesEffectiveFrom(String date) {
+    return 'In force from $date';
+  }
+
+  @override
+  String get hsnOverridesDialogTitle => 'Override a GST rate';
+
+  @override
+  String get hsnOverridesDialogBlurb =>
+      'Pick the code first, so you can see the rate you\'re departing from.';
+
+  @override
+  String hsnOverridesPlatformRate(String code, String rate) {
+    return 'Our rate for $code is $rate%.';
+  }
+
+  @override
+  String get hsnOverridesRateLabel => 'Your GST rate (%)';
+
+  @override
+  String hsnOverridesDiverges(String code, String yours, String platform) {
+    return 'You\'re billing $yours% on $code where the tariff says $platform%. This applies to every product on this code and every invoice from here on.';
+  }
+
+  @override
+  String get hsnOverridesReasonLabel => 'Why';
+
+  @override
+  String get hsnOverridesReasonHelper =>
+      'Required. An override with no stated basis can\'t be told apart from a typo.';
+
+  @override
+  String get hsnOverridesConfirm => 'Save override';
 }

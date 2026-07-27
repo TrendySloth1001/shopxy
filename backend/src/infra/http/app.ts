@@ -6,6 +6,7 @@ import { encodeIdsDeep } from '../../shared/ids/publicId.js';
 import prisma from '../db/prisma.js';
 import authRouter from '../../modules/auth/auth.routes.js';
 import categoriesRouter from '../../modules/categories/categories.routes.js';
+import hsnRouter from '../../modules/hsn/hsn.routes.js';
 import productsRouter from '../../modules/products/products.routes.js';
 import stockRouter from '../../modules/stock/stock.routes.js';
 import stockAdjustmentsRouter from '../../modules/stock-adjustments/stock-adjustments.routes.js';
@@ -353,6 +354,12 @@ export function buildApp(): express.Express {
   mountMerchant('/me/analytics', analyticsRouter, [resolveShop]);
   mountMerchant('/me/coupons-admin', merchantCouponsRouter, [resolveShop]);
   mountMerchant('/custom-fields', customFieldsRouter);
+  // HSN/SAC rate master — read-only reference data behind the product
+  // editor's "type a code, get the GST rate" auto-fill. Authenticated but
+  // NOT merchant-area-gated: it's a public tariff, every role that can open
+  // a product or an invoice needs it, and a shopless caller simply sees the
+  // platform tier (see callerShopId in hsn.controller).
+  app.use('/hsn', hsnRouter);
   mountMerchant('/products', productsRouter, [resolveShop]);
   mountMerchant('/stock', stockRouter);
   mountMerchant('/stock-adjustments', stockAdjustmentsRouter);

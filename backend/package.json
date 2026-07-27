@@ -5,11 +5,13 @@
   "type": "commonjs",
   "scripts": {
     "dev": "nodemon",
-    "build": "tsc",
+    "build": "tsc && cp -R src/modules/hsn/copy dist/modules/hsn/copy && { [ -d src/modules/hsn/data ] && cp -R src/modules/hsn/data dist/modules/hsn/data || true; }",
     "start": "node dist/infra/http/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "rollup:backfill": "tsx scripts/rollup-backfill.ts",
+    "hsn:embed": "tsx src/scripts/hsn-embed.ts",
+    "hsn:import": "tsx src/scripts/hsn-import.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
