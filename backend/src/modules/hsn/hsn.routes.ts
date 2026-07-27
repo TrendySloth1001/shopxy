@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import asyncHandler from '../../shared/http/asyncHandler.js';
 import { requireArea } from '../../shared/http/permissions.js';
-import { requireRole } from '../../shared/http/requireRole.js';
+import { requirePlatformAdmin, requireRole } from '../../shared/http/requireRole.js';
 import { resolveShop } from '../../shared/http/resolveShop.js';
 import { hsnController } from './hsn.controller.js';
 
@@ -35,6 +35,16 @@ router.get('/', asyncHandler(hsnController.search.bind(hsnController)));
 router.get('/resolve', asyncHandler(hsnController.resolve.bind(hsnController)));
 router.get('/tree', asyncHandler(hsnController.tree.bind(hsnController)));
 router.get('/suggest', asyncHandler(hsnController.suggest.bind(hsnController)));
+
+// ── Curation backlog. Platform-admin only: it aggregates product names across
+// every shop, which no merchant may see. Registered before `/:code`-shaped
+// paths so it can't be shadowed.
+router.get('/gaps', requirePlatformAdmin, asyncHandler(hsnController.gaps.bind(hsnController)));
+router.post(
+  '/gaps/resolve',
+  requirePlatformAdmin,
+  asyncHandler(hsnController.resolveGap.bind(hsnController)),
+);
 
 // ── The merchant's own shortcuts. Classification only, no rates — see
 // ShopHsnShortcut. Guards are applied per-route rather than to the whole

@@ -42,6 +42,11 @@ const shortcutSchema = z.object({
   code: z.string().min(1).max(20),
 });
 
+const resolveGapSchema = z.object({
+  term: z.string().min(1).max(300),
+  code: z.string().min(1).max(20),
+});
+
 const overrideSchema = z.object({
   code: z.string().min(1).max(20),
   gstRate: z.number().min(0).max(100),
@@ -137,6 +142,32 @@ export class HsnController {
       limit: parsed.data.limit,
     });
     res.json(suggestions);
+  }
+
+  // ── Platform curation ───────────────────────────────────────────────────
+
+  /// GET /hsn/gaps — product names merchants typed that we couldn't classify,
+  /// aggregated across shops, most-searched first. This is the alias backlog:
+  /// each row is a gap curable once, for free, forever.
+  async gaps(req: Request, res: Response): Promise<void> {
+    const limit = Number(req.query.limit);
+    const gaps = await classifyService.outstandingGaps(
+      Number.isFinite(limit) ? limit : undefined,
+    );
+    res.json({ gaps });
+  }
+
+  /// POST /hsn/gaps/resolve — mark a gap closed after adding an alias for it.
+  /// Not a fix in itself: if the term is searched again and still misses, the
+  /// logger re-opens it, which is the only real proof the alias worked.
+  async resolveGap(req: Request, res: Response): Promise<void> {
+    const parsed = resolveGapSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: 'Invalid payload', details: parsed.error.flatten() });
+      return;
+    }
+    const updated = await classifyService.resolveGap(parsed.data.term, parsed.data.code);
+    res.json({ updated });
   }
 
   // ── Shop-scoped: the merchant's own shortcuts ───────────────────────────

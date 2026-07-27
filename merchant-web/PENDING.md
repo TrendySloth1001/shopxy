@@ -106,10 +106,22 @@ Deferred / open:
   scaling: set `HSN_SEMANTIC=1` plus `GEMINI_API_KEY`, and the vectors file is
   already generated at `modules/hsn/copy/hsn.vectors.json`. Cost is one API
   request per novel product name (cached 30 days in Redis).
-- [ ] **Log no-result and corrected suggestions.** Every query the local index
-  can't answer, and every time a merchant overrides a suggestion, is a missing
-  alias we now know about. Logging them turns curation into a finite, ranked
-  backlog and shrinks the case for embeddings instead of growing it.
+- [x] **Log no-result suggestions.** `hsn_lookup_misses` records every product
+  name the classifier can't place, upserted per (shop, term) so a retype counts
+  once. `GET /hsn/gaps` (platform-admin) aggregates them across shops,
+  most-searched first; `POST /hsn/gaps/resolve` closes one after an alias is
+  added, and the logger re-opens it automatically if the term still misses —
+  which is the only real proof the alias worked. Curation is now a finite,
+  ranked backlog rather than guesswork.
+- [ ] **Log *corrected* suggestions.** The other half: when a merchant is shown
+  suggestions and picks something else (or types a code by hand), our ranking
+  was wrong in a way a miss doesn't capture. Needs the client to report the
+  chosen code alongside what was offered — one call on selection, not per
+  keystroke. Higher-signal than misses; deferred only because it touches both
+  product forms.
+- [ ] **No UI for the gaps backlog.** `/hsn/gaps` is API-only. It belongs on the
+  platform-admin surface next to Category taxonomy, ideally with the alias edit
+  inline so closing a gap and marking it resolved are one action.
 - [ ] **Variant-level HSN.** The backend derives a variant's rate from its own
   code, but neither product form exposes the field; variants inherit the
   product.

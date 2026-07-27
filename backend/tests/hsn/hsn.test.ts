@@ -643,6 +643,77 @@ describe('hsn rate master', () => {
     }
   });
 
+  // ── Learning what the catalogue is missing ─────────────────────────────
+
+  it('records a name it could not classify, and counts a repeat once', async () => {
+    const ctx = await createTestUser();
+    try {
+      // Deliberately outside the catalogue's vocabulary.
+      const q = `zzq widget ${ctx.shopId}`;
+      const first = await classifyService.suggestForName({ name: q, shopId: ctx.shopId });
+      expect(first.suggestions).toHaveLength(0);
+
+      // The write is fire-and-forget so the typing path never waits on it.
+      await new Promise((r) => setTimeout(r, 120));
+      const row = await prisma.hsnLookupMiss.findFirst({ where: { shopId: ctx.shopId } });
+      expect(row?.occurrences).toBe(1);
+      // Verbatim sample kept alongside the normalised term.
+      expect(row?.sample).toBe(q);
+
+      // A merchant retyping the same name must increment, not insert — the
+      // whole value of the backlog is that its counts mean something.
+      await classifyService.suggestForName({ name: q.toUpperCase(), shopId: ctx.shopId });
+      await new Promise((r) => setTimeout(r, 120));
+      const rows = await prisma.hsnLookupMiss.findMany({ where: { shopId: ctx.shopId } });
+      expect(rows).toHaveLength(1);
+      expect(rows[0].occurrences).toBe(2);
+    } finally {
+      await cleanupTestUser(ctx);
+    }
+  });
+
+  it('records nothing when the name classifies', async () => {
+    const ctx = await createTestUser();
+    try {
+      const hit = await classifyService.suggestForName({
+        name: 'blue cotton formal shirt',
+        shopId: ctx.shopId,
+      });
+      expect(hit.suggestions.length).toBeGreaterThan(0);
+      await new Promise((r) => setTimeout(r, 120));
+      // A successful lookup tells curation nothing it doesn't already have;
+      // logging it would cost a write per keystroke for no information.
+      const count = await prisma.hsnLookupMiss.count({ where: { shopId: ctx.shopId } });
+      expect(count).toBe(0);
+    } finally {
+      await cleanupTestUser(ctx);
+    }
+  });
+
+  it('reopens a gap that recurs after being marked resolved', async () => {
+    const ctx = await createTestUser();
+    try {
+      const q = `zzr gadget ${ctx.shopId}`;
+      await classifyService.suggestForName({ name: q, shopId: ctx.shopId });
+      await new Promise((r) => setTimeout(r, 120));
+
+      expect(await classifyService.resolveGap(q, '8418')).toBe(1);
+      const closed = await prisma.hsnLookupMiss.findFirst({ where: { shopId: ctx.shopId } });
+      expect(closed?.resolvedCode).toBe('8418');
+
+      // Marking it resolved is a claim, not a fix. If the term still misses,
+      // the alias didn't work and the row has to come back — otherwise the
+      // backlog quietly fills with gaps someone believed they had closed.
+      await classifyService.suggestForName({ name: q, shopId: ctx.shopId });
+      await new Promise((r) => setTimeout(r, 120));
+      const reopened = await prisma.hsnLookupMiss.findFirst({ where: { shopId: ctx.shopId } });
+      expect(reopened?.resolvedCode).toBeNull();
+      expect(reopened?.occurrences).toBe(2);
+    } finally {
+      await cleanupTestUser(ctx);
+    }
+  });
+
   it('seeds idempotently — a second run writes nothing', async () => {
     const again = await seedHsnMaster();
     expect(again.created).toBe(0);

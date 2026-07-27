@@ -2104,6 +2104,8 @@ model Shop {
   hsnShortcuts           ShopHsnShortcut[]
   /// Explicit, reasoned rate overrides. Rare by design — see ShopHsnOverride.
   hsnOverrides           ShopHsnOverride[]
+  /// Product names this shop typed that the classifier couldn't place.
+  hsnLookupMisses        HsnLookupMiss[]
 
   @@index([isPublished])
   @@map("shops")
@@ -2285,6 +2287,50 @@ model ShopHsnOverride {
   @@unique([shopId, code, effectiveFrom])
   @@index([shopId, code, isActive])
   @@map("shop_hsn_overrides")
+}
+
+/// A product name the classifier could not place.
+///
+/// Retrieval quality is capped by the vocabulary it searches, and the only
+/// honest source for what that vocabulary is missing is what merchants
+/// actually type and don't find. Guessing produces aliases nobody searches for;
+/// this produces a backlog ranked by how many shops hit it.
+///
+/// Deliberately shop-scoped rather than a global term counter: a product name
+/// is the merchant's business data, so it stays attributed to the shop that
+/// generated it and aggregation happens at read time.
+///
+/// Only misses are recorded. A successful lookup tells us nothing we don't
+/// already have, and logging every keystroke would cost a write on the typing
+/// path for no information.
+model HsnLookupMiss {
+  id     Int  @id @default(autoincrement())
+  shopId Int  @map("shop_id")
+  shop   Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  /// The normalised query, so "Sarson ka Tel 1L" and "sarson ka tel 1l"
+  /// aggregate rather than appearing as two gaps.
+  term String
+
+  /// Verbatim, for reading the backlog — the normalised form strips the
+  /// punctuation and casing that sometimes explain the miss.
+  sample String
+
+  /// Times this shop hit the same gap. Upserted rather than appended: a
+  /// merchant retyping a name they can't place must not flood the table.
+  occurrences Int      @default(1)
+  lastSeenAt  DateTime @default(now()) @map("last_seen_at")
+
+  /// Set once the gap is closed, so curation can tell "still missing" from
+  /// "fixed, keeping the record". Null means outstanding.
+  resolvedCode String?   @map("resolved_code")
+  resolvedAt   DateTime? @map("resolved_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([shopId, term])
+  @@index([resolvedCode, occurrences])
+  @@map("hsn_lookup_misses")
 }
 
 /// Where a stored GST rate came from. Makes divergence queryable — "show me

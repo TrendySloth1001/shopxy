@@ -158,6 +158,15 @@ export class ClassifyService {
       for (const code of semantic) push(code, 'SEMANTIC');
     }
 
+    // ── Nothing fitted ───────────────────────────────────────────────────
+    // The one thing worth writing down. Retrieval is capped by the vocabulary
+    // it searches, and guessing at what that vocabulary lacks produces aliases
+    // nobody searches for. What merchants type and don't find is the real
+    // backlog — and each entry is curable once, for free, forever.
+    if (ordered.length === 0 && params.shopId !== undefined) {
+      void this.recordMiss(params.shopId, query);
+    }
+
     const described = await hsnService.describeCodes(ordered.slice(0, limit), locale, {
       shortcutCodes,
     });
@@ -166,6 +175,88 @@ export class ClassifyService {
       suggestions: described.map((d) => ({ ...d, via: via.get(d.code) ?? 'ALIAS' })),
       usedEmbeddings,
     };
+  }
+
+  /// Shortest string worth recording. One or two characters is someone
+  /// mid-keystroke, not a gap in the catalogue.
+  private static readonly MIN_MISS_LENGTH = 3;
+
+  /// Note that this shop asked for something we couldn't place.
+  ///
+  /// Deliberately fire-and-forget and deliberately un-awaited by the caller:
+  /// this runs on the typing path, and a suggester that fails — or even one
+  /// that gets slower — because a *logging* write went wrong would be a bad
+  /// trade for a curation nicety. Every failure is swallowed.
+  ///
+  /// Upsert on (shop, term) rather than insert: a merchant retyping a name
+  /// they can't classify would otherwise write a row per keystroke and drown
+  /// the signal we're collecting.
+  private async recordMiss(shopId: number, query: string): Promise<void> {
+    const term = normalizeTerm(query);
+    if (term.length < ClassifyService.MIN_MISS_LENGTH) return;
+    try {
+      await prisma.hsnLookupMiss.upsert({
+        where: { shopId_term: { shopId, term } },
+        create: { shopId, term, sample: query.slice(0, 300) },
+        update: {
+          occurrences: { increment: 1 },
+          lastSeenAt: new Date(),
+          // A term that recurs after being marked fixed is not fixed.
+          resolvedCode: null,
+          resolvedAt: null,
+        },
+      });
+    } catch (e) {
+      logger.debug({ err: (e as Error).message }, 'hsn: could not record lookup miss');
+    }
+  }
+
+  /// The curation backlog: gaps nobody has closed, most-hit first.
+  ///
+  /// Aggregated across shops at read time, because a term twenty shops search
+  /// for is worth an alias and one shop's private jargon usually isn't — but
+  /// the rows stay attributed to the shop that produced them, since a product
+  /// name is that merchant's business data, not the platform's.
+  async outstandingGaps(limit = 100): Promise<
+    Array<{ term: string; sample: string; occurrences: number; shops: number }>
+  > {
+    const rows = await prisma.hsnLookupMiss.groupBy({
+      by: ['term'],
+      where: { resolvedCode: null },
+      _sum: { occurrences: true },
+      _count: { shopId: true },
+      _max: { lastSeenAt: true },
+      orderBy: { _sum: { occurrences: 'desc' } },
+      take: Math.min(Math.max(limit, 1), 500),
+    });
+    if (rows.length === 0) return [];
+    // One extra query for a readable sample per term, rather than dragging
+    // `sample` through the group-by (which would split the aggregation).
+    const samples = await prisma.hsnLookupMiss.findMany({
+      where: { term: { in: rows.map((r) => r.term) }, resolvedCode: null },
+      distinct: ['term'],
+      select: { term: true, sample: true },
+    });
+    const sampleOf = new Map(samples.map((s) => [s.term, s.sample]));
+    return rows.map((r) => ({
+      term: r.term,
+      sample: sampleOf.get(r.term) ?? r.term,
+      occurrences: r._sum.occurrences ?? 0,
+      shops: r._count.shopId,
+    }));
+  }
+
+  /// Mark a gap closed once an alias has been added for it. Idempotent, and
+  /// re-opened automatically by [recordMiss] if the term is searched again —
+  /// which is the only proof that the fix actually worked.
+  async resolveGap(term: string, code: string): Promise<number> {
+    const normalized = normalizeTerm(term);
+    if (!normalized) return 0;
+    const { count } = await prisma.hsnLookupMiss.updateMany({
+      where: { term: normalized, resolvedCode: null },
+      data: { resolvedCode: normalizeHsn(code), resolvedAt: new Date() },
+    });
+    return count;
   }
 
   /// Shortcuts whose saved wording overlaps the product name. Matched on the
