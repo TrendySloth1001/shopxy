@@ -68,11 +68,21 @@ class PartyOverview {
   double get netBilled => totalSales - totalReturns;
 }
 
+/// The customer account a party is linked to.
+///
+/// Name only, and deliberately so. The backend withholds the linked customer's
+/// registered login email under DPDP §6/§8 — it is a different data principal's
+/// PII, shared with no specific consent at link time — and the merchant already
+/// holds whatever contact email they typed on the party row itself
+/// (`PartyOverview.email`, which is a separate field).
+///
+/// Carrying an `email` here was a crash, not just dead weight: the DTO cast a
+/// value the server never sends, so opening any linked party threw
+/// "type 'Null' is not a subtype of type 'String' in type cast".
 class PartyLinkedUser {
-  const PartyLinkedUser({required this.id, required this.name, required this.email});
+  const PartyLinkedUser({required this.id, required this.name});
   final String id;
   final String name;
-  final String email;
 }
 
 class PartyTotal {

@@ -44,8 +44,10 @@ class PartyOverviewDto {
           ? null
           : PartyLinkedUser(
               id: linked['id'].toString(),
-              name: linked['name'] as String,
-              email: linked['email'] as String,
+              // Name only — the server sends nothing else here by design
+              // (DPDP §6/§8, see PartyLinkedUser). Reading `email` off this
+              // object is what threw the Null-is-not-a-String cast.
+              name: linked['name'] as String? ?? '',
             ),
       invoiceCount: counts['invoices'] as int? ?? 0,
       challanCount: counts['challans'] as int? ?? 0,

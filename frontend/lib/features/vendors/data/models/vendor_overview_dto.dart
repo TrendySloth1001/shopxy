@@ -50,8 +50,10 @@ class VendorOverviewDto {
           ? null
           : VendorLinkedUser(
               id: linked['id'].toString(),
-              name: linked['name'] as String,
-              email: linked['email'] as String,
+              // Name only — the server sends `{id, name, avatarUrl}` and no
+              // email by design. Casting one threw the Null-is-not-a-String
+              // crash on every linked vendor.
+              name: linked['name'] as String? ?? '',
             ),
       invoiceCount: counts['invoices'] as int? ?? 0,
       stockInCount: counts['stockIns'] as int? ?? 0,

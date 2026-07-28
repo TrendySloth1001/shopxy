@@ -64,11 +64,17 @@ class VendorOverview {
   double get netPurchased => totalPurchases - totalReturns;
 }
 
+/// The customer account a vendor is linked to.
+///
+/// Name only. Same reasoning as [PartyLinkedUser]: the backend selects
+/// `{ id, name, avatarUrl }` and withholds the linked account's login email,
+/// which belongs to a different data principal. Casting an `email` the server
+/// never sends is what threw "type 'Null' is not a subtype of type 'String' in
+/// type cast" on any linked vendor.
 class VendorLinkedUser {
-  const VendorLinkedUser({required this.id, required this.name, required this.email});
+  const VendorLinkedUser({required this.id, required this.name});
   final String id;
   final String name;
-  final String email;
 }
 
 class VendorTotal {
