@@ -28,8 +28,7 @@ class AuthScaffold extends StatelessWidget {
     required this.footerPrompt,
     required this.footerCta,
     required this.onFooterTap,
-    required this.onSignIn,
-    required this.onCreateAccount,
+    this.headerIcon = AppIcons.personAddAlt1Rounded,
     this.heroAsset = 'assets/login.png',
   });
 
@@ -39,13 +38,17 @@ class AuthScaffold extends StatelessWidget {
   /// The form body (fields, buttons, legal copy) for the column.
   final List<Widget> children;
 
+  /// The way *off* this screen — "New to ShopXY? / Create an account" on sign
+  /// in, the reverse on register. Rendered twice on purpose: as a chip in the
+  /// header (reachable without scrolling) and as the footer prompt.
+  ///
+  /// There used to be a second chip for the screen you were already on, which
+  /// did nothing when tapped — a dead control at the top of the first screen of
+  /// the app.
   final String footerPrompt;
   final String footerCta;
   final VoidCallback onFooterTap;
-
-  /// Header chip actions.
-  final VoidCallback onSignIn;
-  final VoidCallback onCreateAccount;
+  final AppIconData headerIcon;
 
   final String heroAsset;
 
@@ -83,8 +86,9 @@ class AuthScaffold extends StatelessWidget {
                   left: AppSizes.lg,
                   right: AppSizes.lg,
                   child: _AuthHeader(
-                    onSignIn: onSignIn,
-                    onCreateAccount: onCreateAccount,
+                    actionLabel: footerCta,
+                    actionIcon: headerIcon,
+                    onAction: onFooterTap,
                   ),
                 ),
               ],
@@ -97,7 +101,16 @@ class AuthScaffold extends StatelessWidget {
 
   Widget _formColumn(BuildContext context) {
     final theme = Theme.of(context);
-    return Center(
+    // Biased above centre rather than dead-centre. True centring split the
+    // slack evenly, which on a tall phone left a ~180px void between the brand
+    // header and "Welcome back" — the headline floated, unattached to the
+    // lockup it belongs with, and the gap read as a layout bug. At -0.35 the
+    // slack falls roughly a third above / two thirds below, so the headline
+    // sits under the header and the empty space collects at the bottom where
+    // it looks deliberate. When the content is taller than the viewport this
+    // has no effect: the scroll view fills the height and alignment is moot.
+    return Align(
+      alignment: const Alignment(0, -0.35),
       child: SingleChildScrollView(
         // Bottom inset grows with the keyboard so the focused field can scroll
         // clear of it (the Scaffold no longer resizes — see resizeToAvoidBottomInset).
@@ -210,29 +223,34 @@ class _PhoneBackdrop extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        // Boho art, softly blurred for a frosted backdrop.
+        // Boho art, blurred past the point where any single shape reads. The
+        // artwork stays — the blur is only enough that the dark mass in it
+        // stops resolving into a *blob*, which is what made it look like a
+        // smudge on the glass rather than a backdrop.
         ImageFiltered(
-          imageFilter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+          imageFilter: ImageFilter.blur(sigmaX: 26, sigmaY: 26),
           child: Image.asset(
             'assets/auth-boho.jpg',
             fit: BoxFit.cover,
             alignment: Alignment.topCenter,
           ),
         ),
-        // Translucent canvas wash — lets the art read through (theme-aware) while
-        // keeping the form legible. A touch denser at the bottom behind the
-        // footer/links.
+        // Translucent canvas wash (theme-aware) — the art's opacity, in effect.
+        // Not a flat value: densest at the top so the headline sits on near-
+        // clean canvas, lightest through the middle band where the art has room
+        // to show, and denser again at the foot behind the legal copy. Raise
+        // these numbers to fade the artwork, lower them to bring it forward.
         DecoratedBox(
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                AppColors.canvas.withValues(alpha: 0.65),
-                AppColors.canvas.withValues(alpha: 0.80),
-                AppColors.canvas.withValues(alpha: 0.95),
+                AppColors.canvas.withValues(alpha: 0.86),
+                AppColors.canvas.withValues(alpha: 0.72),
+                AppColors.canvas.withValues(alpha: 0.90),
               ],
-              stops: const [0.0, 0.55, 1.0],
+              stops: const [0.0, 0.45, 1.0],
             ),
           ),
         ),
@@ -241,16 +259,25 @@ class _PhoneBackdrop extends StatelessWidget {
   }
 }
 
-/// Top bar: brand lockup on the left, Sign in / Create account chips on the
-/// right — the signed-out counterpart to the app header.
+/// Top bar: brand lockup on the left, and a single chip for the *other* auth
+/// screen on the right — the signed-out counterpart to the app header.
+///
+/// Outline rather than filled: this is a secondary way out, and a solid black
+/// pill up here was out-weighting the green Sign in button that the screen
+/// actually exists for.
 class _AuthHeader extends StatelessWidget {
-  const _AuthHeader({required this.onSignIn, required this.onCreateAccount});
-  final VoidCallback onSignIn;
-  final VoidCallback onCreateAccount;
+  const _AuthHeader({
+    required this.actionLabel,
+    required this.actionIcon,
+    required this.onAction,
+  });
+
+  final String actionLabel;
+  final AppIconData actionIcon;
+  final VoidCallback onAction;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -283,23 +310,7 @@ class _AuthHeader extends StatelessWidget {
             ),
           ],
         ),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _HeaderChip(
-              icon: AppIcons.loginRounded,
-              label: l10n.authSignIn,
-              onTap: onSignIn,
-            ),
-            const SizedBox(width: AppSizes.sm),
-            _HeaderChip(
-              icon: AppIcons.personAddAlt1Rounded,
-              label: l10n.authCreateAccount,
-              filled: true,
-              onTap: onCreateAccount,
-            ),
-          ],
-        ),
+        _HeaderChip(icon: actionIcon, label: actionLabel, onTap: onAction),
       ],
     );
   }
@@ -310,23 +321,21 @@ class _HeaderChip extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
-    this.filled = false,
   });
 
   final AppIconData icon;
   final String label;
   final VoidCallback onTap;
-  final bool filled;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final fg = filled ? AppColors.onInverse : AppColors.black;
+    final fg = AppColors.black;
     return Material(
-      color: filled ? AppColors.inverseSurface : Colors.transparent,
+      color: AppColors.surface,
       shape: AppShapes.squircle(
         AppSizes.radiusFull,
-        side: filled ? BorderSide.none : BorderSide(color: AppColors.hairline),
+        side: BorderSide(color: AppColors.hairline),
       ),
       child: InkWell(
         customBorder: AppShapes.squircle(AppSizes.radiusFull),
@@ -518,6 +527,29 @@ class _AuthFieldState extends State<AuthField> {
   late bool _revealed = !widget.obscure;
 
   @override
+  void initState() {
+    super.initState();
+    // The Show/Hide toggle only appears once there's something to reveal —
+    // otherwise an empty password field carries a control that does nothing.
+    if (widget.obscure) widget.controller.addListener(_onTextChanged);
+  }
+
+  @override
+  void dispose() {
+    if (widget.obscure) widget.controller.removeListener(_onTextChanged);
+    super.dispose();
+  }
+
+  void _onTextChanged() {
+    final shouldShowToggle = widget.controller.text.isNotEmpty;
+    if (shouldShowToggle != _toggleVisible) {
+      setState(() => _toggleVisible = shouldShowToggle);
+    }
+  }
+
+  bool _toggleVisible = false;
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
@@ -546,7 +578,7 @@ class _AuthFieldState extends State<AuthField> {
           decoration: InputDecoration(
             helperText: widget.helper,
             helperMaxLines: 2,
-            suffixIcon: widget.obscure
+            suffixIcon: widget.obscure && _toggleVisible
                 ? TextButton(
                     onPressed: () => setState(() => _revealed = !_revealed),
                     style: TextButton.styleFrom(

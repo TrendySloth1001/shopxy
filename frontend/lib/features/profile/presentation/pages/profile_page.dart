@@ -243,15 +243,14 @@ class ProfilePage extends StatelessWidget {
     return null;
   }
 
-  /// Confirms via a bottom sheet, then clears the session. Logout only nulls
-  /// the user; the root `_AuthGate` then rebuilds its (home) route to the
-  /// login screen — so we pop every pushed route back to it to reveal it.
+  /// Confirms via a bottom sheet, then clears the session. Unwinding back to
+  /// the login screen is the root `_AuthGate`'s job — it watches for the
+  /// session ending and pops every pushed route, so this (and every other
+  /// logout entry point) doesn't have to remember to.
   static Future<void> _confirmAndLogout(BuildContext context) async {
     final confirmed = await showLogoutConfirmSheet(context);
     if (confirmed != true || !context.mounted) return;
     await context.read<AuthProvider>().logout();
-    if (!context.mounted) return;
-    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 }
 
@@ -1025,29 +1024,55 @@ class ProfileAvatar extends StatelessWidget {
     final resolved = (imageUrl == null || imageUrl!.isEmpty)
         ? null
         : resolveImageUrl(imageUrl!);
+
+    final monogram = Text(
+      letter,
+      style: TextStyle(
+        color: pair.$2,
+        fontSize: size * 0.4,
+        fontWeight: FontWeight.w800,
+        letterSpacing: -0.5,
+      ),
+    );
+
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: pair.$1,
+      decoration: BoxDecoration(color: pair.$1, shape: BoxShape.circle),
+      // The hairline is a FOREGROUND decoration, not a border on the one above.
+      // A border in the background decoration is reported as padding, so the
+      // content box shrinks by the stroke on every edge while the child is
+      // still asked for `size` — the image then overflows its box and gets
+      // clipped, which is what cut the discs off. Painted in front, the ring
+      // costs no layout space: this widget measures exactly `size`, and the
+      // picture fills the whole circle.
+      foregroundDecoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(color: AppColors.hairline, width: 1),
-        image: resolved != null
-            ? DecorationImage(image: NetworkImage(resolved), fit: BoxFit.cover)
-            : null,
       ),
       alignment: Alignment.center,
+      clipBehavior: Clip.antiAlias,
       child: resolved == null
-          ? Text(
-              letter,
-              style: TextStyle(
-                color: pair.$2,
-                fontSize: size * 0.4,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.5,
-              ),
-            )
-          : null,
+          ? monogram
+          : Image.network(
+              resolved,
+              width: size,
+              height: size,
+              fit: BoxFit.cover,
+              // Every failure falls back to the monogram. The previous
+              // DecorationImage had no error path at all and nulled the child
+              // whenever a URL existed, so a fetch that failed left an empty
+              // coloured circle with no letter in it — which is what a missing
+              // avatar looked like. It fails for ordinary reasons: the login
+              // screen renders before the network is usable, and a remembered
+              // account carries the avatar URL it was cached with, which 404s
+              // once that user changes their picture.
+              errorBuilder: (_, _, _) => monogram,
+              // Same letter while the bytes are in flight, so the circle is
+              // never momentarily blank; the image simply replaces it.
+              frameBuilder: (_, child, frame, wasSynchronouslyLoaded) =>
+                  wasSynchronouslyLoaded || frame != null ? child : monogram,
+            ),
     );
   }
 

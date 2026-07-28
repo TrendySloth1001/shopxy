@@ -295,8 +295,6 @@
   "productsTagsTitle": "Tags",
   "productsTagsSubtitle": "Keywords that help shoppers find this",
   "productsTagsIntro": "Up to 20. Bestseller, Eco-friendly, etc.",
-  "productsCodesInventoryTitle": "Codes & inventory",
-  "productsCodesInventorySubtitle": "Barcode, HSN code, low-stock alert",
   "productsMoreAboutTitle": "More about this product",
   "productsMoreAboutSubtitle": "Your shop's own custom fields",
   "productsMoreAboutIntro": "Shop-wide fields like Warranty, Model number or Material — define them once, reuse on every product.",
@@ -1318,12 +1316,22 @@
   "authLegalTerms": "Terms",
   "authLegalAcknowledgeMid": " and acknowledge our ",
   "authLegalPrivacyPolicy": "Privacy Policy",
-  "authLegalCookieSuffix": ". We use a strictly-necessary session cookie to keep you signed in.",
   "authTroubleSigningIn": "Trouble signing in? ",
   "authContactSupport": "Contact support",
-  "authComplianceLawsFormulas": "Compliance, laws & formulas",
   "authContinueAs": "Continue as",
   "authRemoveThisAccount": "Remove this account",
+  "authSavedAccounts": "Logged in accounts",
+  "authContinueAsName": "Continue as {name}",
+  "@authContinueAsName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "authPickAccountTitle": "Choose an account",
+  "authPickAccountSubtitle": "You're already signed in on this device. Tap an account to continue — no password needed.",
+  "authUseAnotherAccount": "Use another account",
   "authRegisterTitle": "Create your account",
   "authRegisterSubtitle": "Set up your merchant account to start managing your inventory, invoices and customers.",
   "authRegisterFooterPrompt": "Already have an account?",

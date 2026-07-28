@@ -956,6 +956,86 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
               ),
 
               const SizedBox(height: AppSizes.lg),
+              // ── Identity & stock ──────────────────────────────────────
+              //
+              // Ahead of Price on purpose: the HSN code decides the GST rate,
+              // and the rate readout sits in the price block below. Asking for
+              // the rate before the field that determines it read backwards.
+              AppSectionHeader(
+                title: l10n.productsSectionIdentityStock,
+                padding: const EdgeInsets.only(bottom: AppSizes.sm),
+              ),
+              TextFormField(
+                controller: _sku,
+                decoration: InputDecoration(
+                  labelText: l10n.productsSku,
+                  helperText: l10n.productsSkuHelper,
+                ),
+                validator: _requiredValidator,
+              ),
+              const SizedBox(height: AppSizes.md),
+              TextFormField(
+                controller: _barcode,
+                onChanged: (_) => _markDirty(),
+                decoration: InputDecoration(
+                  labelText: l10n.productsBarcode,
+                  helperText: l10n.productsBarcodeHelper,
+                ),
+              ),
+              const SizedBox(height: AppSizes.md),
+              // The classifier suggests codes from the product name and
+              // re-resolves when the price crosses a threshold slab, so it has
+              // to see both as they're typed. A ListenableBuilder on those two
+              // controllers rebuilds this field alone — a page-level setState
+              // per keystroke would rebuild the entire form.
+              ListenableBuilder(
+                listenable: Listenable.merge([_name, _sellingPrice]),
+                builder: (context, _) => HsnCodeField(
+                  controller: _hsnCode,
+                  dataSource: context.read<ProductsRemoteDataSource>(),
+                  onChanged: _markDirty,
+                  onResolved: _applyHsnRate,
+                  productName: _name.text,
+                  price: double.tryParse(_sellingPrice.text.trim()),
+                ),
+              ),
+              const SizedBox(height: AppSizes.md),
+              if (!isEditing)
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _stockQuantity,
+                        decoration: InputDecoration(
+                          labelText: l10n.productsOpeningStock,
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSizes.md),
+                    Expanded(child: _unitField()),
+                  ],
+                )
+              else
+                _unitField(),
+              const SizedBox(height: AppSizes.md),
+              TextFormField(
+                controller: _lowStockThreshold,
+                onChanged: (_) => _markDirty(),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: InputDecoration(
+                  labelText: l10n.productsLowStockThreshold,
+                  helperText: l10n.productsLowStockThresholdHelper,
+                ),
+              ),
+              const SizedBox(height: AppSizes.md),
+              _categoryField(categories),
+
+              const SizedBox(height: AppSizes.lg),
               // ── Price ─────────────────────────────────────────────────
               AppSectionHeader(
                 title: l10n.productsSectionPrice,
@@ -1023,44 +1103,6 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                 resolution: _rateForCurrentCode,
                 unknownCode: _hsnUnknown,
               ),
-
-              const SizedBox(height: AppSizes.lg),
-              // ── Identity & stock ──────────────────────────────────────
-              AppSectionHeader(
-                title: l10n.productsSectionIdentityStock,
-                padding: const EdgeInsets.only(bottom: AppSizes.sm),
-              ),
-              TextFormField(
-                controller: _sku,
-                decoration: InputDecoration(
-                  labelText: l10n.productsSku,
-                  helperText: l10n.productsSkuHelper,
-                ),
-                validator: _requiredValidator,
-              ),
-              const SizedBox(height: AppSizes.md),
-              if (!isEditing)
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _stockQuantity,
-                        decoration: InputDecoration(
-                          labelText: l10n.productsOpeningStock,
-                        ),
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: AppSizes.md),
-                    Expanded(child: _unitField()),
-                  ],
-                )
-              else
-                _unitField(),
-              const SizedBox(height: AppSizes.md),
-              _categoryField(categories),
 
               const SizedBox(height: AppSizes.xxl),
 
@@ -1322,11 +1364,6 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     final customSet = _customFieldValues.values
         .where((v) => v.trim().isNotEmpty)
         .length;
-    final codesSet = [
-      _barcode.text.trim().isNotEmpty,
-      _hsnCode.text.trim().isNotEmpty,
-    ].where((b) => b).length;
-
     final tiles = <Widget>[
       _DetailTile(
         icon: AppIcons.boltOutlined,
@@ -1428,28 +1465,6 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
               _dirty = true;
               refresh();
             },
-          ),
-        ),
-      ),
-      _DetailTile(
-        icon: AppIcons.qrCode2Outlined,
-        title: l10n.productsCodesInventoryTitle,
-        subtitle: l10n.productsCodesInventorySubtitle,
-        count: codesSet,
-        onTap: () => _openEditor(
-          title: l10n.productsCodesInventoryTitle,
-          builder: (_) => _CodesInventoryEditor(
-            barcode: _barcode,
-            hsnCode: _hsnCode,
-            lowStockThreshold: _lowStockThreshold,
-            onChanged: _markDirty,
-            productsDataSource: context.read<ProductsRemoteDataSource>(),
-            onHsnResolved: _applyHsnRate,
-            // The name and price live on the page, not in this sheet: the name
-            // drives the "suggested for this product" row, and the price
-            // decides a threshold slab.
-            productName: _name.text,
-            price: double.tryParse(_sellingPrice.text.trim()),
           ),
         ),
       ),
@@ -1622,75 +1637,6 @@ class _EditorScaffoldState extends State<_EditorScaffold> {
           ],
         ),
       ),
-    );
-  }
-}
-
-/// Barcode / HSN / low-stock — the techy identifiers, kept off the main
-/// page so the essentials stay clean. Controllers are owned by the page;
-/// this is a thin presentation wrapper.
-class _CodesInventoryEditor extends StatelessWidget {
-  const _CodesInventoryEditor({
-    required this.barcode,
-    required this.hsnCode,
-    required this.lowStockThreshold,
-    required this.onChanged,
-    required this.productsDataSource,
-    required this.onHsnResolved,
-    required this.productName,
-    required this.price,
-  });
-  final TextEditingController barcode;
-  final TextEditingController hsnCode;
-  final TextEditingController lowStockThreshold;
-  final VoidCallback onChanged;
-  final ProductsRemoteDataSource productsDataSource;
-
-  /// The GST field lives on the page, not in this sheet, so the resolved rate
-  /// travels back up rather than being applied here.
-  final ValueChanged<HsnResolution?> onHsnResolved;
-
-  /// Drives the "suggested for this product" row and the shortcut label.
-  final String productName;
-
-  /// Selling price, so a threshold slab (apparel over ₹2,500) resolves to the
-  /// rate this product will actually bill at.
-  final double? price;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        TextFormField(
-          controller: barcode,
-          onChanged: (_) => onChanged(),
-          decoration: InputDecoration(
-            labelText: l10n.productsBarcode,
-            helperText: l10n.productsBarcodeHelper,
-          ),
-        ),
-        const SizedBox(height: AppSizes.lg),
-        HsnCodeField(
-          controller: hsnCode,
-          dataSource: productsDataSource,
-          onChanged: onChanged,
-          onResolved: onHsnResolved,
-          productName: productName,
-          price: price,
-        ),
-        const SizedBox(height: AppSizes.lg),
-        TextFormField(
-          controller: lowStockThreshold,
-          onChanged: (_) => onChanged(),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: InputDecoration(
-            labelText: l10n.productsLowStockThreshold,
-            helperText: l10n.productsLowStockThresholdHelper,
-          ),
-        ),
-      ],
     );
   }
 }

@@ -752,13 +752,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get productsTagsIntro => 'अधिकतम 20। बेस्टसेलर, पर्यावरण-अनुकूल, आदि।';
 
   @override
-  String get productsCodesInventoryTitle => 'कोड और इन्वेंटरी';
-
-  @override
-  String get productsCodesInventorySubtitle =>
-      'बारकोड, HSN कोड, कम-स्टॉक अलर्ट';
-
-  @override
   String get productsMoreAboutTitle => 'इस उत्पाद के बारे में अधिक';
 
   @override
@@ -2950,23 +2943,34 @@ class AppLocalizationsHi extends AppLocalizations {
   String get authLegalPrivacyPolicy => 'गोपनीयता नीति';
 
   @override
-  String get authLegalCookieSuffix =>
-      ' को स्वीकार करते हैं। आपको साइन इन रखने के लिए हम एक सख्ती से आवश्यक सेशन कुकी का उपयोग करते हैं।';
-
-  @override
   String get authTroubleSigningIn => 'साइन इन करने में परेशानी? ';
 
   @override
   String get authContactSupport => 'सहायता से संपर्क करें';
 
   @override
-  String get authComplianceLawsFormulas => 'अनुपालन, कानून और सूत्र';
-
-  @override
   String get authContinueAs => 'इस रूप में जारी रखें';
 
   @override
   String get authRemoveThisAccount => 'इस खाते को हटाएं';
+
+  @override
+  String get authSavedAccounts => 'लॉग इन किए गए खाते';
+
+  @override
+  String authContinueAsName(String name) {
+    return '$name के रूप में जारी रखें';
+  }
+
+  @override
+  String get authPickAccountTitle => 'खाता चुनें';
+
+  @override
+  String get authPickAccountSubtitle =>
+      'आप इस डिवाइस पर पहले से साइन इन हैं। जारी रखने के लिए किसी खाते पर टैप करें — पासवर्ड की ज़रूरत नहीं।';
+
+  @override
+  String get authUseAnotherAccount => 'दूसरा खाता इस्तेमाल करें';
 
   @override
   String get authRegisterTitle => 'अपना खाता बनाएं';

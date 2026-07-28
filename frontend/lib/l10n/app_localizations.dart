@@ -1520,18 +1520,6 @@ abstract class AppLocalizations {
   /// **'Up to 20. Bestseller, Eco-friendly, etc.'**
   String get productsTagsIntro;
 
-  /// No description provided for @productsCodesInventoryTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Codes & inventory'**
-  String get productsCodesInventoryTitle;
-
-  /// No description provided for @productsCodesInventorySubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Barcode, HSN code, low-stock alert'**
-  String get productsCodesInventorySubtitle;
-
   /// No description provided for @productsMoreAboutTitle.
   ///
   /// In en, this message translates to:
@@ -5630,12 +5618,6 @@ abstract class AppLocalizations {
   /// **'Privacy Policy'**
   String get authLegalPrivacyPolicy;
 
-  /// No description provided for @authLegalCookieSuffix.
-  ///
-  /// In en, this message translates to:
-  /// **'. We use a strictly-necessary session cookie to keep you signed in.'**
-  String get authLegalCookieSuffix;
-
   /// No description provided for @authTroubleSigningIn.
   ///
   /// In en, this message translates to:
@@ -5648,12 +5630,6 @@ abstract class AppLocalizations {
   /// **'Contact support'**
   String get authContactSupport;
 
-  /// No description provided for @authComplianceLawsFormulas.
-  ///
-  /// In en, this message translates to:
-  /// **'Compliance, laws & formulas'**
-  String get authComplianceLawsFormulas;
-
   /// No description provided for @authContinueAs.
   ///
   /// In en, this message translates to:
@@ -5665,6 +5641,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remove this account'**
   String get authRemoveThisAccount;
+
+  /// No description provided for @authSavedAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Logged in accounts'**
+  String get authSavedAccounts;
+
+  /// No description provided for @authContinueAsName.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue as {name}'**
+  String authContinueAsName(String name);
+
+  /// No description provided for @authPickAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an account'**
+  String get authPickAccountTitle;
+
+  /// No description provided for @authPickAccountSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re already signed in on this device. Tap an account to continue — no password needed.'**
+  String get authPickAccountSubtitle;
+
+  /// No description provided for @authUseAnotherAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Use another account'**
+  String get authUseAnotherAccount;
 
   /// No description provided for @authRegisterTitle.
   ///

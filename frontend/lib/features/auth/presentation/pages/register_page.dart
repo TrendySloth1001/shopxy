@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/features/auth/presentation/pages/otp_verify_page.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/auth/presentation/widgets/auth_scaffold.dart';
@@ -91,8 +92,7 @@ class _RegisterPageState extends State<RegisterPage> {
         heroAsset: 'assets/register.png',
         title: l10n.authRegisterTitle,
         subtitle: l10n.authRegisterSubtitle,
-        onSignIn: () => Navigator.pop(context),
-        onCreateAccount: () {},
+        headerIcon: AppIcons.loginRounded,
         footerPrompt: l10n.authRegisterFooterPrompt,
         footerCta: l10n.authSignIn,
         onFooterTap: () => Navigator.pop(context),

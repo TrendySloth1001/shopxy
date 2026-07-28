@@ -244,8 +244,6 @@
   "productsTagsTitle": "टैग",
   "productsTagsSubtitle": "कीवर्ड जो खरीदारों को इसे ढूँढने में मदद करते हैं",
   "productsTagsIntro": "अधिकतम 20। बेस्टसेलर, पर्यावरण-अनुकूल, आदि।",
-  "productsCodesInventoryTitle": "कोड और इन्वेंटरी",
-  "productsCodesInventorySubtitle": "बारकोड, HSN कोड, कम-स्टॉक अलर्ट",
   "productsMoreAboutTitle": "इस उत्पाद के बारे में अधिक",
   "productsMoreAboutSubtitle": "आपकी दुकान के अपने कस्टम फ़ील्ड",
   "productsMoreAboutIntro": "वारंटी, मॉडल नंबर या सामग्री जैसे दुकान-व्यापी फ़ील्ड — एक बार परिभाषित करें, हर उत्पाद पर पुनः उपयोग करें।",
@@ -971,12 +969,22 @@
   "authLegalTerms": "शर्तों",
   "authLegalAcknowledgeMid": " से सहमत होते हैं और हमारी ",
   "authLegalPrivacyPolicy": "गोपनीयता नीति",
-  "authLegalCookieSuffix": " को स्वीकार करते हैं। आपको साइन इन रखने के लिए हम एक सख्ती से आवश्यक सेशन कुकी का उपयोग करते हैं।",
   "authTroubleSigningIn": "साइन इन करने में परेशानी? ",
   "authContactSupport": "सहायता से संपर्क करें",
-  "authComplianceLawsFormulas": "अनुपालन, कानून और सूत्र",
   "authContinueAs": "इस रूप में जारी रखें",
   "authRemoveThisAccount": "इस खाते को हटाएं",
+  "authSavedAccounts": "लॉग इन किए गए खाते",
+  "authContinueAsName": "{name} के रूप में जारी रखें",
+  "@authContinueAsName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "authPickAccountTitle": "खाता चुनें",
+  "authPickAccountSubtitle": "आप इस डिवाइस पर पहले से साइन इन हैं। जारी रखने के लिए किसी खाते पर टैप करें — पासवर्ड की ज़रूरत नहीं।",
+  "authUseAnotherAccount": "दूसरा खाता इस्तेमाल करें",
   "authRegisterTitle": "अपना खाता बनाएं",
   "authRegisterSubtitle": "अपनी इन्वेंट्री, इनवॉइस और ग्राहकों को प्रबंधित करना शुरू करने के लिए अपना मर्चेंट खाता सेट करें।",
   "authRegisterFooterPrompt": "पहले से खाता है?",

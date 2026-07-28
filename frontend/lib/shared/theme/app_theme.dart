@@ -227,9 +227,13 @@ class AppTheme {
           borderRadius: AppShapes.squircleRadius(AppSizes.radiusInput),
           borderSide: BorderSide(color: p.hairline, width: 1),
         ),
+        // Focus is a brand signal, not an ink one. A near-black 1.4px ring was
+        // the starkest element on any form — on the sign-in screen it out-shone
+        // the green CTA it sat above — and it read as an error state as much as
+        // a focus state, since the only other heavy border here is the red one.
         focusedBorder: OutlineInputBorder(
           borderRadius: AppShapes.squircleRadius(AppSizes.radiusInput),
-          borderSide: BorderSide(color: p.ink, width: 1.4),
+          borderSide: BorderSide(color: p.brandStrong, width: 1.6),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: AppShapes.squircleRadius(AppSizes.radiusInput),

@@ -749,13 +749,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get productsTagsIntro => 'Up to 20. Bestseller, Eco-friendly, etc.';
 
   @override
-  String get productsCodesInventoryTitle => 'Codes & inventory';
-
-  @override
-  String get productsCodesInventorySubtitle =>
-      'Barcode, HSN code, low-stock alert';
-
-  @override
   String get productsMoreAboutTitle => 'More about this product';
 
   @override
@@ -2952,23 +2945,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authLegalPrivacyPolicy => 'Privacy Policy';
 
   @override
-  String get authLegalCookieSuffix =>
-      '. We use a strictly-necessary session cookie to keep you signed in.';
-
-  @override
   String get authTroubleSigningIn => 'Trouble signing in? ';
 
   @override
   String get authContactSupport => 'Contact support';
 
   @override
-  String get authComplianceLawsFormulas => 'Compliance, laws & formulas';
-
-  @override
   String get authContinueAs => 'Continue as';
 
   @override
   String get authRemoveThisAccount => 'Remove this account';
+
+  @override
+  String get authSavedAccounts => 'Logged in accounts';
+
+  @override
+  String authContinueAsName(String name) {
+    return 'Continue as $name';
+  }
+
+  @override
+  String get authPickAccountTitle => 'Choose an account';
+
+  @override
+  String get authPickAccountSubtitle =>
+      'You\'re already signed in on this device. Tap an account to continue — no password needed.';
+
+  @override
+  String get authUseAnotherAccount => 'Use another account';
 
   @override
   String get authRegisterTitle => 'Create your account';

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/core/auth/session_route_guard.dart';
 import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/core/network/offline/offline_banner.dart';
 import 'package:shopxy/core/prefs/locale_prefs.dart';
@@ -63,7 +64,11 @@ class ShopxyApp extends StatelessWidget {
             locale: localePrefs.locale,
             supportedLocales: AppLocalizations.supportedLocales,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
-            home: const _AuthGate(),
+            // The guard sits at the home route so its context resolves to the
+            // root navigator: when the session ends it pops every pushed
+            // screen, otherwise logging out from Settings would leave the user
+            // sitting on Settings with the login screen hidden below.
+            home: const SessionRouteGuard(child: _AuthGate()),
           );
         },
       ),
