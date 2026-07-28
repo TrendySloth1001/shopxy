@@ -4,6 +4,7 @@ import 'package:shopxy/core/app.dart';
 import 'package:shopxy/core/auth/token_manager.dart';
 import 'dart:async';
 
+import 'package:http/http.dart' as http;
 import 'package:shopxy/core/config/app_config.dart';
 import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/core/network/offline/http_cache.dart';
@@ -89,7 +90,39 @@ void main() async {
   // both injected into the single ApiClient so every read gets offline support
   // without touching data sources. Cache init is awaited so the first request
   // can already hit it.
-  final networkStatus = NetworkStatus();
+  // The probe is what lets the app *recover* on its own. Every other signal
+  // comes from a completed request, and while offline nothing issues one — the
+  // outbox won't drain and screens serve cache — so without this the app can
+  // sit behind the offline banner long after the network is back.
+  //
+  // `/health` is unauthenticated on purpose: probing an authed route while a
+  // token has expired would answer 401 and start a refresh storm during exactly
+  // the moment the network is flaky. And ANY completed response counts,
+  // including 503 (`{status: 'degraded', db: 'down'}`) — the question here is
+  // whether we can reach the network at all, not whether the server is well.
+  final networkStatus = NetworkStatus(
+    probe: () async {
+      try {
+        final res = await http
+            .get(Uri.parse('${AppConfig.apiBaseUrl}health'))
+            .timeout(const Duration(seconds: 5));
+        return res.statusCode > 0;
+      } catch (_) {
+        return false;
+      }
+    },
+  );
+  // Coming back to the foreground is the strongest hint the answer changed —
+  // a phone that slept through a network change wakes with the backoff already
+  // at its 30s ceiling, and making someone watch a stale banner for half a
+  // minute after they've opened the app is the visible half of this bug.
+  // Retained for the app's lifetime; nothing disposes it because nothing
+  // outlives it.
+  // ignore: unused_local_variable
+  final lifecycle = AppLifecycleListener(
+    onResume: networkStatus.probeNow,
+  );
+
   final httpCache = HttpCache();
   final outbox = Outbox();
   await httpCache.init();
