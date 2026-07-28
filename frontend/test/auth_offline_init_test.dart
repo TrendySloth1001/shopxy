@@ -77,4 +77,110 @@ void main() {
     expect(tm.accessToken, isNull, reason: 'a rejected session must be cleared');
     expect(auth.isAuthenticated, isFalse);
   });
+
+  // ── The signed-out-every-restart bug ───────────────────────────────────────
+  //
+  // Neither test above covers the case that actually happened, because both are
+  // uniform: either everything fails at the transport layer, or everything
+  // answers 401. Real restarts are MIXED. The access token expires between
+  // launches, so /auth/me genuinely reaches the server and is genuinely
+  // refused — and then the refresh, moments later, doesn't get through at all.
+  //
+  // ApiClient handles that correctly: `unavailable` keeps the tokens and hands
+  // back the original 401 specifically so nobody logs the user out. The bug was
+  // that AuthProvider.init read that same 401 as proof of expiry and wiped the
+  // session anyway, overruling the layer that actually knew.
+
+  test('401 on /auth/me + unreachable refresh KEEPS the session', () async {
+    final tm = TokenManager();
+    await tm.saveTokens(accessToken: 'access-token', refreshToken: 'refresh-token');
+
+    final api = ApiClient(
+      tm,
+      httpClient: MockClient((req) async {
+        // The refresh never lands — network dropped between the two calls.
+        if (req.url.path.endsWith('/auth/refresh')) {
+          throw const SocketException('network dropped mid-refresh');
+        }
+        return http.Response('{"error":"jwt expired"}', 401);
+      }),
+    );
+    final auth = AuthProvider(AuthRemoteDataSource(api), tm);
+
+    await auth.init();
+
+    expect(
+      tm.accessToken,
+      isNotNull,
+      reason: 'an unverifiable 401 is not proof the session is dead',
+    );
+    expect(store.containsKey('refresh_token'), isTrue,
+        reason: 'the refresh token is what restores the next launch');
+  });
+
+  test('401 on /auth/me + a 5xx refresh KEEPS the session', () async {
+    final tm = TokenManager();
+    await tm.saveTokens(accessToken: 'access-token', refreshToken: 'refresh-token');
+
+    final api = ApiClient(
+      tm,
+      httpClient: MockClient((req) async {
+        // A server hiccup or proxy error page is not a verdict on the session.
+        if (req.url.path.endsWith('/auth/refresh')) {
+          return http.Response('<html>502 Bad Gateway</html>', 502);
+        }
+        return http.Response('{"error":"jwt expired"}', 401);
+      }),
+    );
+    final auth = AuthProvider(AuthRemoteDataSource(api), tm);
+
+    await auth.init();
+
+    expect(tm.accessToken, isNotNull);
+    expect(store.containsKey('refresh_token'), isTrue);
+  });
+
+  test('a restart that CAN reach the server refreshes and restores silently',
+      () async {
+    final tm = TokenManager();
+    await tm.saveTokens(accessToken: 'expired-token', refreshToken: 'refresh-token');
+
+    var refreshed = false;
+    final api = ApiClient(
+      tm,
+      httpClient: MockClient((req) async {
+        if (req.url.path.endsWith('/auth/refresh')) {
+          refreshed = true;
+          return http.Response(
+            '{"accessToken":"new-access","refreshToken":"new-refresh"}',
+            200,
+          );
+        }
+        // Expired token is refused; the rotated one is accepted. Header keys
+        // are lower-cased by the http package, so don't match on casing.
+        final auth = req.headers.entries
+            .firstWhere(
+              (e) => e.key.toLowerCase() == 'authorization',
+              orElse: () => const MapEntry('', ''),
+            )
+            .value;
+        if (auth == 'Bearer new-access') {
+          return http.Response(
+            '{"id":"1","email":"m@x.com","name":"M","role":"OWNER",'
+            '"createdAt":"2026-01-01T00:00:00.000Z"}',
+            200,
+          );
+        }
+        return http.Response('{"error":"jwt expired"}', 401);
+      }),
+    );
+    final auth = AuthProvider(AuthRemoteDataSource(api), tm);
+
+    await auth.init();
+
+    expect(refreshed, isTrue);
+    expect(tm.accessToken, 'new-access', reason: 'rotated in place');
+    expect(auth.isAuthenticated, isTrue,
+        reason: 'the normal restart must not show a login screen');
+  });
 }

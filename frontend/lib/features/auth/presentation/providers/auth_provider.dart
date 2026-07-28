@@ -52,14 +52,28 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
       } else {
         _user = me;
       }
-    } catch (e) {
-      // A transport/offline failure must NOT end the session — keep the tokens
-      // so a later online launch restores it (this launch just shows login if
-      // there's no cached identity yet). Only a definitive rejection — the
-      // server actually said no — clears the session.
-      if (!isTransportError(e)) {
-        await _tokenManager.clear();
-      }
+    } catch (_) {
+      // Deliberately does NOT clear the session, for any error.
+      //
+      // Deciding "the session is dead" here is not possible: `getMe` throws a
+      // bare Exception('Session expired') for every non-200, so a 401 that came
+      // back only because the *refresh* couldn't reach the server is
+      // indistinguishable from one the server truly rejected. Treating both as
+      // fatal is what signed merchants out on every restart — the access token
+      // expires between launches, the refresh times out on a flaky network, and
+      // the 401 that ApiClient returns precisely so we DON'T log out was being
+      // read as proof that we should.
+      //
+      // Nothing is lost by staying quiet. `ApiClient._tryRefresh` already
+      // clears the tokens itself when the server definitively refuses (401/403
+      // on the refresh, or no refresh token at all) and fires `onUnauthorized`;
+      // and `_RefreshOutcome.unavailable` deliberately keeps them. Both
+      // verdicts are already correct one layer down. This layer's only job is
+      // to not overrule them.
+      //
+      // Worst case on a launch we can't verify: no cached identity, so the user
+      // sees the login screen this once — with the session still on disk, so
+      // the next reachable launch restores it silently.
     }
     _isLoading = false;
     notifyListeners();
@@ -151,8 +165,14 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
         ),
         token,
       );
-    } catch (_) {
-      // Remembering is a convenience — a failure must not affect sign-in.
+    } catch (e) {
+      // Remembering is a convenience — a failure must not affect sign-in, so
+      // this stays swallowed. But it must not be *silent*: this failing for
+      // every user (the remember_tokens table was missing, so /auth/remember
+      // 500'd) looked identical to the feature not existing, because the login
+      // picker renders nothing on an empty list. One debug line is the
+      // difference between "no widget on the login screen" and a diagnosis.
+      debugPrint('remember-device: could not save this account — $e');
     }
   }
 
@@ -171,7 +191,14 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
     try {
       result = await _dataSource.rememberLogin(token);
     } catch (e) {
-      await _rememberStore.remove(id);
+      // Only forget the credential when the SERVER refused it. A transport
+      // failure means we never got an answer, and deleting on "couldn't ask"
+      // is destructive in a way the session wipe isn't: the card is gone for
+      // good, and the merchant has to do a full password login to earn it back.
+      // One tap while the network is flaky used to cost exactly that.
+      if (!isTransportError(e)) {
+        await _rememberStore.remove(id);
+      }
       rethrow;
     }
     if (!result.user.isOwner) {
