@@ -100,16 +100,29 @@ export class HsnController {
       return;
     }
     const locale = callerLocale(req, parsed.data.locale);
-    const hit = await hsnService.resolveRate({
+    const outcome = await hsnService.resolveOutcome({
       code: parsed.data.code,
       shopId: callerShopId(req),
       price: parsed.data.price,
       asOf: parsed.data.asOf,
     });
-    if (!hit) {
-      res.status(404).json({ error: 'No GST rate on file for this HSN/SAC code' });
+    if (outcome.status !== 'RESOLVED') {
+      // Still a 404 with no rate in the body — but when the master knows *why*
+      // there's no rate, say so. "1006 is nil loose and 5% pre-packaged" is the
+      // difference between a merchant answering the question and a merchant
+      // assuming the code is broken.
+      res.status(404).json({
+        error:
+          outcome.status === 'UNRATED' && outcome.reason === 'CONDITIONAL'
+            ? 'This code has no single GST rate — it depends on the goods'
+            : 'No GST rate on file for this HSN/SAC code',
+        ...(outcome.status === 'UNRATED'
+          ? { code: outcome.code, reason: outcome.reason, note: outcome.note }
+          : {}),
+      });
       return;
     }
+    const hit = outcome.rate;
     // The breadcrumb rides along so the client can show where the rate came
     // from without a second round trip on every keystroke.
     const breadcrumb = await hsnService.breadcrumb(hit.code, locale, parsed.data.asOf);

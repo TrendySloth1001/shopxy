@@ -12,6 +12,8 @@
     "rollup:backfill": "tsx scripts/rollup-backfill.ts",
     "hsn:embed": "tsx src/scripts/hsn-embed.ts",
     "hsn:import": "tsx src/scripts/hsn-import.ts",
+    "hsn:rules-dump": "tsx src/scripts/hsn-rules-dump.ts",
+    "hsn:rates": "npm run hsn:rules-dump && python3 src/scripts/hsn-rates-extract.py",
     "test": "vitest run",
     "test:watch": "vitest"
   },

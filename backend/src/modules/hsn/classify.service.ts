@@ -4,9 +4,15 @@ import prisma from '../../infra/db/prisma.js';
 import { cached } from '../../shared/cache/cached.js';
 import { logger } from '../../shared/logging/logger.js';
 import { embeddingService } from '../search/embedding.service.js';
-import { matchAliasesInText, normalizeTerm, searchCopy, type HsnLocale } from './hsn.copy.js';
-import { MIN_CONFIDENT_SCORE, retrieve } from './hsn.retrieval.js';
-import { hsnService, normalizeHsn, type HsnSearchResult } from './hsn.service.js';
+import { copyFor, matchAliasesInText, normalizeTerm, searchCopy, type HsnLocale } from './hsn.copy.js';
+import { retrieve } from './hsn.retrieval.js';
+import {
+  codeLadder,
+  hsnService,
+  normalizeHsn,
+  type HsnSearchResult,
+  type UnratedReason,
+} from './hsn.service.js';
 
 /// "The merchant typed a product name — what is this thing?"
 ///
@@ -24,11 +30,36 @@ import { hsnService, normalizeHsn, type HsnSearchResult } from './hsn.service.js
 /// Every layer degrades to the one above it. No embedding key, no vectors file,
 /// no network — the suggester still works, just with less reach on the tail.
 
-export type ClassifySuggestion = HsnSearchResult & {
+/// Whether a suggested code can price a line, and if not, why not.
+///
+/// Mirrors [HsnRateOutcome]. It rides on the suggestion because the alternative
+/// — hiding every code that can't decide its own rate — is what made rice
+/// unfindable: heading 1006 is nil loose and 5% pre-packaged, so it carries no
+/// single rate, and a kirana merchant searching "chawal" got nothing at all.
+///
+///   - `RESOLVED` — [gstRate] is the master's answer, directly or inherited.
+///   - `CONDITIONAL` — the schedule splits this code by a condition no column
+///     holds. [rateNote] is the condition in the schedule's own words.
+///   - `NO_RATE_ON_FILE` — the code is real and nothing on its ladder is rated.
+///
+/// For the last two [gstRate] is **null**, never 0. A code that cannot decide
+/// its rate is the merchant's question to answer, and a zero we made up would
+/// be an under-charged invoice they never got asked about.
+export type SuggestionRateStatus = 'RESOLVED' | UnratedReason;
+
+export type ClassifySuggestion = Omit<HsnSearchResult, 'gstRate' | 'cessRate'> & {
   /// Which layer produced this, so the UI can say "you saved this" versus
   /// "we think this fits" — a saved shortcut deserves more confidence than a
   /// text match, and far more than a semantic guess.
-  via: 'SHORTCUT' | 'ALIAS' | 'TEXT' | 'SEMANTIC';
+  ///
+  /// `TARIFF` is a match on the official tariff description rather than on
+  /// vocabulary anyone reviewed: right code, wording written for a customs
+  /// officer. Worth showing more cautiously than `TEXT`.
+  via: 'SHORTCUT' | 'ALIAS' | 'TEXT' | 'TARIFF' | 'SEMANTIC';
+  rateStatus: SuggestionRateStatus;
+  /// Null exactly when [rateStatus] is not `RESOLVED`.
+  gstRate: number | null;
+  cessRate: number | null;
 };
 
 export type ClassifyResult = {
@@ -131,14 +162,15 @@ export class ClassifyService {
     // shorter than the alias ("sham" → "shampoo").
     for (const code of searchCopy(query, limit)) push(code, 'ALIAS');
 
-    // ── 3. BM25 over name + definition + aliases ─────────────────────────
+    // ── 3. BM25 over the curated copy, then the official tariff ──────────
     // The workhorse. Rare words dominate, common ones are ignored, and the
     // definitions we already wrote finally get searched — "stuff to wash
     // dishes with" lands on detergent because `dishwash` is in 3402's text,
-    // with no model and no network.
+    // with no model and no network. Underneath it, every one of the ~7,000
+    // imported tariff descriptions: "keyboard" and "pneumatic tyres" appear
+    // nowhere in the 101 curated entries and everywhere in the schedule.
     for (const hit of retrieve(query, limit)) {
-      if (hit.score < MIN_CONFIDENT_SCORE) continue;
-      push(hit.code, 'TEXT');
+      push(hit.code, hit.layer === 'TARIFF' ? 'TARIFF' : 'TEXT');
     }
 
     // ── 4. Semantic — off by default ─────────────────────────────────────
@@ -167,14 +199,118 @@ export class ClassifyService {
       void this.recordMiss(params.shopId, query);
     }
 
-    const described = await hsnService.describeCodes(ordered.slice(0, limit), locale, {
-      shortcutCodes,
-    });
+    const wanted = ordered.slice(0, limit);
+    const described = await this.describe(wanted, locale, shortcutCodes);
     return {
       query,
       suggestions: described.map((d) => ({ ...d, via: via.get(d.code) ?? 'ALIAS' })),
       usedEmbeddings,
     };
+  }
+
+  /// Hydrate ranked codes into suggestions, **including the ones that carry no
+  /// rate**.
+  ///
+  /// [HsnService.describeCodes] answers only for `isRatable` rows, which is
+  /// right for a picker that must not offer an unbillable code — and wrong
+  /// here. Two thirds of the curated catalogue's own headings are non-ratable:
+  /// 1006 rice and 4820 notebooks because the schedule splits them by a
+  /// condition, and 3305 shampoo, 9608 pens, 1905 biscuits, 4011 tyres, 9405
+  /// lamps because their rate lives in sub-headings the import left unrated.
+  /// Filtering them out is what made a kirana merchant's entire shelf
+  /// unsearchable.
+  ///
+  /// So: take what `describeCodes` gives, and fill the gaps from
+  /// [HsnService.resolveOutcome] — which is the one function that can tell
+  /// "inherits 5% from its parent heading" from "the law needs you to answer a
+  /// question first". Order is the caller's throughout; the ranking is theirs.
+  private async describe(
+    codes: string[],
+    locale: HsnLocale,
+    shortcutCodes: Set<string>,
+  ): Promise<Array<Omit<ClassifySuggestion, 'via'>>> {
+    if (codes.length === 0) return [];
+    const rated = await hsnService.describeCodes(codes, locale, { shortcutCodes });
+    const byCode = new Map<string, Omit<ClassifySuggestion, 'via'>>(
+      // A row `describeCodes` returned at all is a row with a rate of its own.
+      rated.map((r) => [r.code, { ...r, rateStatus: 'RESOLVED' as const }]),
+    );
+    const missing = codes.filter((c) => !byCode.has(c));
+    for (const row of await this.describeWithoutOwnRate(missing, locale, shortcutCodes)) {
+      byCode.set(row.code, row);
+    }
+
+    return codes.flatMap((code) => {
+      const hit = byCode.get(code);
+      return hit ? [hit] : [];
+    });
+  }
+
+  /// Suggestions for codes with no rate row of their own.
+  ///
+  /// Costs one query for the descriptions of every code and ancestor at once,
+  /// plus one outcome walk per code — and only ever runs for the handful
+  /// `describeCodes` couldn't answer.
+  private async describeWithoutOwnRate(
+    codes: string[],
+    locale: HsnLocale,
+    shortcutCodes: Set<string>,
+  ): Promise<Array<Omit<ClassifySuggestion, 'via'>>> {
+    if (codes.length === 0) return [];
+    const wanted = new Set<string>();
+    for (const code of codes) for (const c of codeLadder(code)) wanted.add(c);
+
+    const [rows, outcomes] = await Promise.all([
+      prisma.hsnCode.findMany({
+        where: { shopId: null, code: { in: [...wanted] } },
+        select: { code: true, kind: true, description: true },
+      }),
+      Promise.all(codes.map((code) => hsnService.resolveOutcome({ code }))),
+    ]);
+    const known = new Map(rows.map((r) => [r.code, r]));
+
+    const out: Array<Omit<ClassifySuggestion, 'via'>> = [];
+    for (let i = 0; i < codes.length; i++) {
+      const code = codes[i];
+      const row = known.get(code);
+      const outcome = outcomes[i];
+      // Nothing in the master at heading level or deeper: we have no name for
+      // it and no rate, so there is nothing honest to show.
+      if (!row || outcome.status === 'UNKNOWN') continue;
+      const copy = copyFor(code, locale);
+      const resolved = outcome.status === 'RESOLVED' ? outcome.rate : null;
+      const unrated = outcome.status === 'UNRATED' ? outcome : null;
+      out.push({
+        code,
+        kind: row.kind,
+        name: copy?.name ?? row.description,
+        definition: copy?.definition ?? null,
+        // The master's own number when the ladder could decide one, and null
+        // when it could not. Never a stand-in zero.
+        gstRate: resolved ? resolved.gstRate : null,
+        cessRate: resolved ? resolved.cessRate : null,
+        rateStatus: unrated ? unrated.reason : 'RESOLVED',
+        // The condition in the schedule's own words — "Nil when sold
+        // loose/unbranded; 5% when pre-packaged and labelled" is what lets the
+        // merchant answer the question the code can't.
+        rateNote: unrated ? unrated.note : (resolved?.rateNote ?? null),
+        rule: resolved?.rule
+          ? {
+              threshold: resolved.rule.threshold,
+              atOrBelow: resolved.rule.atOrBelow,
+              above: resolved.rule.above,
+              per: resolved.rule.per,
+            }
+          : null,
+        breadcrumb: codeLadder(code)
+          .filter((c) => c !== code && known.has(c))
+          .sort((a, b) => a.length - b.length)
+          .map((c) => ({ code: c, name: copyFor(c, locale)?.name ?? known.get(c)!.description })),
+        notHere: Object.entries(copy?.notHere ?? {}).map(([c, label]) => ({ code: c, name: label })),
+        fromShortcut: shortcutCodes.has(code),
+      });
+    }
+    return out;
   }
 
   /// Shortest string worth recording. One or two characters is someone

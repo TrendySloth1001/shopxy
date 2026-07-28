@@ -418,12 +418,15 @@ describe('hsn rate master', () => {
       );
       expect(Number(product!.taxPercent)).toBe(18);
 
-      // Moved to printed books (nil-rated); no taxPercent in the patch.
-      const updated = await productsService.updateProduct(ctx.shopId, product!.id, {
-        hsnCode: '4901',
-      });
-      expect(Number(updated!.taxPercent)).toBe(0);
-      expect(updated!.taxSource).toBe('HSN');
+      // Moved to 4901, which the notification splits: printed books are Nil
+      // (Exempt S.No 132) while brochures and leaflets under the same heading
+      // are 5% (Schedule I S.No 324). The code alone cannot say which, so the
+      // write is refused rather than resolved — returning 0 here would be
+      // inventing the nil half. This assertion used to expect 0 and got 18,
+      // because the patch silently kept the previous code's rate.
+      await expect(
+        productsService.updateProduct(ctx.shopId, product!.id, { hsnCode: '4901' }),
+      ).rejects.toMatchObject({ status: 422, code: 'HSN_RATE_UNRESOLVED' });
     } finally {
       await cleanupTestUser(ctx);
     }
@@ -469,8 +472,13 @@ describe('hsn rate master', () => {
         },
         { shopId: ctx.shopId, createdById: ctx.userId },
       );
-      expect(Number(product!.taxPercent)).toBe(40);
-      expect(Number(product!.cessRate)).toBeGreaterThan(0);
+      // 28%, not 40%: pan masala sits in Schedule VII (14% CGST), S.No 1 of
+      // Notification 09/2025 — the demerit 40% slab is the cess-free one, and
+      // pan masala keeps a live compensation cess instead. The hand-written
+      // master this test was written against had it at 40% and no cess, which
+      // overcharged the GST and dropped the larger levy entirely.
+      expect(Number(product!.taxPercent)).toBe(28);
+      expect(Number(product!.cessRate)).toBe(60);
     } finally {
       await cleanupTestUser(ctx);
     }
@@ -724,7 +732,19 @@ describe('hsn rate master', () => {
     // mechanism that makes `qameez` → `kameez` work. Left unchecked it scored
     // 7.6 for *biscuits* against "live horses for breeding", which is worse
     // than no answer: the merchant trusts it and bills the wrong rate.
-    expect(retrieve('live horses for breeding', 5)).toHaveLength(0);
+    //
+    // This used to assert an empty result, which was only ever true because
+    // nothing in the 101-entry catalogue was about horses. The tariff is, so
+    // the honest assertion is the one that was always meant: the answer is
+    // *horses*, and bakery is nowhere in it.
+    const horses = retrieve('live horses for breeding', 5);
+    expect(horses[0]?.code).toBe('010121');
+    expect(horses.map((h) => h.code)).not.toContain('1905');
+    // Every surviving hit rests on a word that was really typed. Nothing here
+    // is held up by a repair alone.
+    for (const hit of horses) {
+      expect(hit.matched.some((m) => m === 'exact' || m === 'prefix')).toBe(true);
+    }
 
     // The cure must not disarm the repair itself. Both of these rest entirely
     // on a repaired word too — the difference is they account for the whole

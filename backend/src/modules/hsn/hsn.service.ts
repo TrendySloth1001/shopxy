@@ -58,6 +58,45 @@ export type HsnRateResolution = {
   rule: AppliedRule | null;
 };
 
+/// Why a code that the master *does* carry still can't price a line.
+///
+///   - `CONDITIONAL` — the schedule declares the rate per (code + condition),
+///     and the condition isn't anything we hold. Heading 1006 rice is 5%
+///     pre-packaged and labelled, nil loose; 4820 is nil for exercise books
+///     and 18% for diaries. The row is marked non-ratable **and** carries the
+///     condition in `rateNote`: that pairing is the master saying "the code
+///     alone cannot decide this".
+///   - `NO_RATE_ON_FILE` — the code is real, but neither it nor any ancestor
+///     carries a notified rate (printed books, 4901, whose chapter 49 is a
+///     navigation row too).
+///
+/// Both mean the same thing to a caller: **there is no rate to apply, and one
+/// must not be invented.** They differ only in what the merchant is told.
+export type UnratedReason = 'CONDITIONAL' | 'NO_RATE_ON_FILE';
+
+/// The full answer to "what does this code bill at" — including the two
+/// answers that aren't a number.
+///
+/// [HsnService.resolveRate] flattens this to `rate | null`, which is all most
+/// callers need. Anything that *writes* a rate onto a row should use the
+/// outcome instead: "no rate" and "code we've never heard of" call for
+/// different handling, and collapsing them is what let a stale slab survive a
+/// re-classification (see `applyHsnRates` in products.service).
+export type HsnRateOutcome =
+  | { status: 'RESOLVED'; rate: HsnRateResolution }
+  | {
+      status: 'UNRATED';
+      requestedCode: string;
+      /// The most specific row in the master that the walk actually reached —
+      /// the one whose condition (or silence) is the reason there's no rate.
+      code: string;
+      reason: UnratedReason;
+      /// The condition in the schedule's own words, when we carry it. This is
+      /// what a merchant needs to pick the right rate themselves.
+      note: string | null;
+    }
+  | { status: 'UNKNOWN'; requestedCode: string };
+
 export type HsnNode = { code: string; name: string };
 
 export type HsnSearchResult = {
@@ -168,10 +207,34 @@ function displayName(code: string, fallback: string, locale: HsnLocale): string 
   return copyFor(code, locale)?.name ?? fallback;
 }
 
+/// Does this row mean "unrated because the law splits it by condition", as
+/// opposed to "unrated because it's a signpost"?
+///
+/// Both kinds of row carry `isRatable: false`, and there are ~6,000 of the
+/// second kind (chapters, and headings whose rate lives entirely in their
+/// sub-headings) against a couple of hundred of the first. What tells them
+/// apart is the note: `HSN_RATE_NOTES` records the condition in the schedule's
+/// own prose precisely for the codes whose rate turns on something no column
+/// holds. A navigation row has nothing to say and says nothing.
+///
+/// The distinction is load-bearing for the ladder. A navigation row must be
+/// walked *through* — 620520 has no rate of its own and has to reach 6205's 5%
+/// or the tariff import would have made thousands of codes findable and
+/// unbillable. A conditional row must be walked *to and stopped at*: rice sits
+/// under a chapter row that the rate file happens to carry at 0%, and
+/// inheriting that would bill pre-packaged rice — legally 5% — at nil, quietly
+/// and forever.
+function conditionOf(row: Pick<Row, 'isRatable' | 'rateNote'>): string | null {
+  if (row.isRatable) return null;
+  const note = row.rateNote?.trim();
+  return note ? note : null;
+}
+
 export class HsnService {
-  /// Rate for a code. Null when nothing matches at any prefix length — callers
+  /// Rate for a code. Null when nothing on the ladder can decide one — callers
   /// must surface that rather than defaulting to 0%, because a silent zero is
-  /// an under-charged invoice.
+  /// an under-charged invoice. A caller that *writes* the rate somewhere wants
+  /// [resolveOutcome] instead, which says why.
   ///
   /// `price` is the per-unit amount the threshold rules test against. Pass the
   /// **line price at billing time**, not the product's list price: a shirt
@@ -183,8 +246,24 @@ export class HsnService {
     price?: number;
     asOf?: Date;
   }): Promise<HsnRateResolution | null> {
+    const outcome = await this.resolveOutcome(params);
+    return outcome.status === 'RESOLVED' ? outcome.rate : null;
+  }
+
+  /// [resolveRate] without the collapse: distinguishes "no rate for this code"
+  /// from "we don't carry this code at all", and says *why* there is no rate.
+  ///
+  /// Write paths must use this. `null` reads as "nothing to say", and a caller
+  /// that treats it that way leaves whatever rate was already on the row —
+  /// which, after a re-classification, is the rate of the *previous* code.
+  async resolveOutcome(params: {
+    code: string;
+    shopId?: number;
+    price?: number;
+    asOf?: Date;
+  }): Promise<HsnRateOutcome> {
     const requestedCode = normalizeHsn(params.code);
-    if (requestedCode.length < MIN_CODE_LENGTH) return null;
+    if (requestedCode.length < MIN_CODE_LENGTH) return { status: 'UNKNOWN', requestedCode };
     const asOf = params.asOf ?? new Date();
     const day = startOfDay(asOf);
     const ladder = codeLadder(requestedCode);
@@ -207,49 +286,94 @@ export class HsnService {
       });
       if (override) {
         return {
-          requestedCode,
-          code: override.code,
-          exact: true,
-          gstRate: Number(override.gstRate),
-          cessRate: Number(override.cessRate),
-          source: 'OVERRIDE',
-          revision: revisionOf(override.effectiveFrom),
-          rateNote: override.reason,
-          rule: null,
+          status: 'RESOLVED',
+          rate: {
+            requestedCode,
+            code: override.code,
+            exact: true,
+            gstRate: Number(override.gstRate),
+            cessRate: Number(override.cessRate),
+            source: 'OVERRIDE',
+            revision: revisionOf(override.effectiveFrom),
+            rateNote: override.reason,
+            rule: null,
+          },
         };
       }
     }
 
     // ── Tier 2: the shared master ──────────────────────────────────────────
-    // Ratable rows only: chapters exist for the breadcrumb and have no rate of
-    // their own, so matching one would invent a slab.
+    // Every row on the ladder, ratable or not. The non-ratable ones are read
+    // but never billed: they're what tells us whether we're standing on a
+    // signpost (walk on) or on a code the schedule split by condition (stop).
     const rows = (await prisma.hsnCode.findMany({
       where: {
-        AND: [inForceOn(asOf), { shopId: null }, { isRatable: true }, { code: { in: ladder } }],
+        AND: [inForceOn(asOf), { shopId: null }, { code: { in: ladder } }],
       },
       select: ROW_SELECT,
     })) as Row[];
-    if (rows.length === 0) return null;
+    if (rows.length === 0) return { status: 'UNKNOWN', requestedCode };
 
-    // Longest matching code wins — heading 2202 (aerated drinks, 40%) must
-    // never beat sub-heading 220299 (juice drinks, 5%).
-    let best = rows[0];
+    // One row per code — the newest revision in force on the day.
+    const byCode = new Map<string, Row>();
     for (const row of rows) {
-      if (row.code.length > best.code.length) best = row;
-      else if (row.code.length === best.code.length && row.effectiveFrom > best.effectiveFrom) {
-        best = row;
-      }
+      const seen = byCode.get(row.code);
+      if (!seen || row.effectiveFrom > seen.effectiveFrom) byCode.set(row.code, row);
     }
 
-    const rule = parseRule(best.rateRule);
-    let gstRate = Number(best.gstRate);
+    // Walk most-specific first, so the longest code that can decide wins —
+    // heading 2202 (aerated drinks, 40%) must never beat sub-heading 220299
+    // (juice drinks, 5%).
+    const walk = [...ladder].sort((a, b) => b.length - a.length);
+    let deepestKnown: Row | null = null;
+    for (const code of walk) {
+      const row = byCode.get(code);
+      if (!row) continue;
+      // "Known" means known at heading level or deeper. A chapter row alone
+      // says nothing about the code that was asked for — 12 existing is not
+      // evidence that 1234567 does — so it must not turn an unrecognised code
+      // into a code we claim to carry but refuse to rate.
+      if (!deepestKnown && code.length >= MIN_CODE_LENGTH) deepestKnown = row;
+      if (row.isRatable) {
+        return { status: 'RESOLVED', rate: this.rateFrom(row, requestedCode, params.price) };
+      }
+      const condition = conditionOf(row);
+      if (condition) {
+        // Stop. An ancestor's rate is a rate for a *different* description —
+        // and for a condition-split code it is systematically the wrong half
+        // of the split, because the importer keeps the lower of the two.
+        return {
+          status: 'UNRATED',
+          requestedCode,
+          code: row.code,
+          reason: 'CONDITIONAL',
+          note: condition,
+        };
+      }
+      // Navigation row: no rate of its own, nothing to say. Keep walking up.
+    }
+
+    // The code exists in the tariff, but nothing on its ladder is rated.
+    if (!deepestKnown) return { status: 'UNKNOWN', requestedCode };
+    return {
+      status: 'UNRATED',
+      requestedCode,
+      code: deepestKnown.code,
+      reason: 'NO_RATE_ON_FILE',
+      note: deepestKnown.rateNote,
+    };
+  }
+
+  /// Turn a ratable master row into a resolution, applying the price rule if
+  /// the code has one and we were given a price to test it against.
+  private rateFrom(row: Row, requestedCode: string, price?: number): HsnRateResolution {
+    const rule = parseRule(row.rateRule);
+    let gstRate = Number(row.gstRate);
     let source: RateSource = 'HSN';
     let applied: AppliedRule | null = null;
 
     if (rule) {
-      const testedPrice = typeof params.price === 'number' && Number.isFinite(params.price)
-        ? params.price
-        : null;
+      const testedPrice = typeof price === 'number' && Number.isFinite(price) ? price : null;
       applied = { ...rule, testedPrice };
       if (testedPrice !== null) {
         // "of sale value not exceeding ₹2,500 per piece" — the boundary is
@@ -261,13 +385,13 @@ export class HsnService {
 
     return {
       requestedCode,
-      code: best.code,
-      exact: best.code === requestedCode,
+      code: row.code,
+      exact: row.code === requestedCode,
       gstRate,
-      cessRate: Number(best.cessRate),
+      cessRate: Number(row.cessRate),
       source,
-      revision: revisionOf(best.effectiveFrom),
-      rateNote: best.rateNote,
+      revision: revisionOf(row.effectiveFrom),
+      rateNote: row.rateNote,
       rule: applied,
     };
   }

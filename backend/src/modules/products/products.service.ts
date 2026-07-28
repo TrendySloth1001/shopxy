@@ -38,6 +38,36 @@ type RateBearing = {
 /// didn't derive is stamped `MANUAL`, so "which products bill at a rate their
 /// code doesn't support" stays a query rather than a discovery.
 ///
+/// **A code with no rate stops the write.** Some codes exist in the tariff and
+/// still have no rate the code alone can decide: 1006 rice is nil loose and 5%
+/// pre-packaged, 4901 is nil for printed books and 5% for brochures. The master
+/// deliberately marks these unrated rather than guessing, and this used to fall
+/// through the `if (!hit) continue` below — so a product moved onto one of them
+/// kept the rate of the code it *used* to have. A bookshop re-classifying to
+/// printed books went on billing 18% on an exempt good with nothing anywhere
+/// saying so.
+///
+/// Three ways that could be handled, and only one of them is safe:
+///
+///   1. Keep the old rate — the bug. It bills a rate for a different good.
+///   2. Write 0% (or 0 + `MANUAL`, since `taxPercent` is NOT NULL) — trades a
+///      silent over-charge for a silent under-charge. Pre-packaged rice is
+///      legally 5%, and nil is just as wrong as 18%, only harder to notice
+///      because a zero looks deliberate.
+///   3. Refuse the write until someone states the rate. ← this one.
+///
+/// (3) is the only option where a wrong rate cannot ship without a human having
+/// chosen it. The merchant gets the schedule's own words back — "Nil when sold
+/// loose/unbranded; 5% when pre-packaged and labelled" — and answers the one
+/// question we genuinely can't: which half of the split their SKU is. Their
+/// answer is then honestly recorded as `MANUAL`, not dressed up as derived.
+///
+/// The alternative shape — persist an "unresolved, needs a rate" state on the
+/// product — needs a new `TaxRateSource` value and a nullable `taxPercent`,
+/// i.e. a migration, and it still leaves a sellable product with no rate on it
+/// for as long as nobody looks. Refusing at the boundary keeps the invariant
+/// "every product row carries a rate someone stands behind".
+///
 /// Mutates in place, so call it BEFORE the payload is destructured — a `rest`
 /// spread copies the fields and later mutation would be silently lost.
 async function applyHsnRates(
@@ -59,7 +89,7 @@ async function applyHsnRates(
     // Per-target resolve rather than a bulk map: the threshold rules depend on
     // the price, and a variant can legitimately sit either side of it while
     // sharing the parent's code.
-    const hit = await hsnService.resolveRate({
+    const outcome = await hsnService.resolveOutcome({
       code: target.hsnCode,
       shopId,
       // Variants carry their own price; fall back to the product's, then to
@@ -67,7 +97,38 @@ async function applyHsnRates(
       // patch that only changes the code — still gets a decided rate.
       price: target.sellingPrice ?? data.sellingPrice ?? fallbackPrice,
     });
-    if (!hit) continue;
+
+    // A code the master doesn't carry at all tells us nothing, so it changes
+    // nothing: the merchant's own rate stands, exactly as before.
+    if (outcome.status === 'UNKNOWN') continue;
+
+    if (outcome.status === 'UNRATED') {
+      if (target.taxPercent === undefined) {
+        throw new HttpError(
+          422,
+          'HSN_RATE_UNRESOLVED',
+          outcome.note
+            ? `HSN ${outcome.code} has no single GST rate — ${outcome.note} ` +
+              'Set the rate that applies to this product.'
+            : `HSN ${outcome.code} has no GST rate on file, so the rate can't be ` +
+              'derived. Set the rate that applies to this product.',
+          {
+            hsnCode: target.hsnCode,
+            resolvedAt: outcome.code,
+            reason: outcome.reason,
+            note: outcome.note,
+          },
+        );
+      }
+      // They answered the question. It's their number and nothing in the
+      // master backs it, so it is recorded as exactly that — never stamped
+      // with a revision, which would imply we derived it.
+      target.taxSource = 'MANUAL';
+      target.hsnRevision = null;
+      continue;
+    }
+
+    const hit = outcome.rate;
 
     if (target.taxPercent === undefined) {
       target.taxPercent = hit.gstRate;

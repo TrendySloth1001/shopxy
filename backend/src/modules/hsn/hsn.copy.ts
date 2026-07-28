@@ -223,23 +223,28 @@ export function searchCopy(query: string, limit = 20): string[] {
 export function matchAliasesInText(text: string, limit = 20): string[] {
   const haystack = normalizeTerm(text);
   if (!haystack) return [];
-  const hits: Array<{ code: string; len: number }> = [];
-  const seen = new Set<string>();
+  /// code → the length of the **longest** alias of that code found in the text.
+  ///
+  /// Longest, not first-seen. A code usually has several aliases that all match
+  /// ("pen" and "ball pen" both sit inside "ball pen"), and the index is walked
+  /// in insertion order — so keeping whichever turned up first recorded 9608 at
+  /// the length of "pen" (3) and let 9506's "ball" (4) outrank it. A merchant
+  /// typing "ball pen" got sports equipment. The specificity this function
+  /// ranks by is the length of the *best* alias, not an arbitrary one.
+  const best = new Map<string, number>();
   for (const [alias, codes] of aliasIndex) {
     // Single characters and two-letter fragments match far too much to be
     // evidence of anything.
     if (alias.length < 3) continue;
     if (!containsWord(haystack, alias)) continue;
     for (const code of codes) {
-      if (seen.has(code)) continue;
-      seen.add(code);
-      hits.push({ code, len: alias.length });
+      if ((best.get(code) ?? 0) < alias.length) best.set(code, alias.length);
     }
   }
-  return hits
-    .sort((a, b) => b.len - a.len || a.code.localeCompare(b.code))
+  return [...best.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .slice(0, limit)
-    .map((h) => h.code);
+    .map(([code]) => code);
 }
 
 /// The full corpus, field by field, across every locale.
