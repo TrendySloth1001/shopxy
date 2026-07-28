@@ -42,7 +42,7 @@ export async function AuthShell({
 
   return (
     <div className="relative flex min-h-dvh flex-col">
-      <AuthHeader />
+      <AuthHeader href={footerHref} cta={footerCta} />
 
       <div className="grid flex-1 grid-cols-1 lg:grid-cols-2">
         {/* Illustration panel — large screens only. Runs full height *behind*
@@ -142,12 +142,17 @@ export async function AuthShell({
 
 /**
  * Top bar for the auth screens — the signed-OUT counterpart to AppHeader. Brand
- * lockup (the shared ShopXY storefront mark) on the left; sign-in / create-
- * account chips on the right. It deliberately does NOT use `useAuth`, so it can
- * render before there's a session.
+ * lockup (the shared ShopXY storefront mark) on the left; a single chip for the
+ * *other* auth screen on the right. It deliberately does NOT use `useAuth`, so
+ * it can render before there's a session.
+ *
+ * It used to render both chips on both screens, which meant /login carried a
+ * "Sign in" chip linking to /login, and /register carried its own no-op. The
+ * create-account chip was also `variant="ink"` — a solid black pill sitting
+ * above the green submit button, out-weighting the action each screen exists
+ * for. One outline chip, pointing at the way out, fixes both.
  */
-async function AuthHeader() {
-  const t = await getTranslations("auth");
+async function AuthHeader({ href, cta }: { href: string; cta: string }) {
   return (
     <header className="absolute inset-x-0 top-0 z-20">
       <div className="flex h-16 w-full items-center justify-between px-lg sm:px-xl">
@@ -167,11 +172,8 @@ async function AuthHeader() {
           </span>
         </Link>
         <nav className="flex items-center gap-sm">
-          <HeaderChip href="/login" icon={LogIn}>
-            {t("header.signIn")}
-          </HeaderChip>
-          <HeaderChip href="/register" icon={UserPlus} variant="ink">
-            {t("header.createAccount")}
+          <HeaderChip href={href} icon={href === "/login" ? LogIn : UserPlus}>
+            {cta}
           </HeaderChip>
         </nav>
       </div>
@@ -184,21 +186,15 @@ function HeaderChip({
   href,
   icon: Icon,
   children,
-  variant = "default",
 }: {
   href: string;
   icon: ComponentType<{ size?: number }>;
   children: ReactNode;
-  variant?: "default" | "ink";
 }) {
-  const styles =
-    variant === "ink"
-      ? "border-ink bg-inverse-surface text-on-inverse hover:bg-ink/90"
-      : "border-hairline text-ink hover:bg-surface-tint";
   return (
     <Link
       href={href}
-      className={`inline-flex h-9 items-center gap-xs rounded-full border px-md text-label-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft ${styles}`}
+      className="inline-flex h-9 items-center gap-xs rounded-full border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
     >
       <Icon size={16} />
       {children}

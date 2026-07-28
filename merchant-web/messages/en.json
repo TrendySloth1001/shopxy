@@ -2029,10 +2029,6 @@
       "cancel": "Cancel",
       "notSet": "Not set"
     },
-    "header": {
-      "signIn": "Sign in",
-      "createAccount": "Create account"
-    },
     "shell": {
       "attribution": "Illustration by <author></author> on <pixabay>Pixabay</pixabay>"
     },
