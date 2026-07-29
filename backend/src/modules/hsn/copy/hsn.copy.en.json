@@ -308,7 +308,7 @@
     },
     "8418": {
       "name": "Refrigerators and freezers",
-      "definition": "Refrigerators, freezers, deep freezers, visi coolers and other refrigerating equipment.",
+      "definition": "Refrigerators, freezers, deep freezers, visi coolers and other refrigerating equipment. Keeps food and drinks cold.",
       "aliases": ["fridge", "refrigerator", "freezer", "deep freezer", "visi cooler", "cold storage"]
     },
     "8450": {
@@ -330,6 +330,23 @@
       "name": "Switches, sockets and plugs",
       "definition": "Electrical apparatus for switching or protecting circuits up to 1000 V — switches, sockets, plugs, MCBs, relays.",
       "aliases": ["switch", "socket", "plug", "mcb", "switch board", "holder", "relay", "fuse"]
+    },
+    "847160": {
+      "name": "Computer keyboard and mouse",
+      "definition": "Input or output units of a computer — keyboard, mouse, touchpad. The tariff calls these 'input or output units' of an automatic data processing machine; the machine itself is 8471.",
+      "aliases": ["keyboard", "computer keyboard", "wireless keyboard", "keybord", "kibord", "mouse", "computer mouse", "wireless mouse", "optical mouse", "maus"],
+      "notHere": { "8471": "Whole computers, laptops and tablets" }
+    },
+    "8443": {
+      "name": "Printers, copiers and scanners",
+      "definition": "Printing, copying and facsimile machines, including scanners sold as multi-function units.",
+      "aliases": ["printer", "computer printer", "inkjet printer", "laser printer", "photocopier", "xerox machine", "scanner", "all in one printer", "printar"]
+    },
+    "8523": {
+      "name": "Pen drives, memory cards and blank discs",
+      "definition": "Discs, tapes and solid-state storage media for recording — pen drives, memory cards, blank CDs and DVDs.",
+      "aliases": ["pen drive", "pendrive", "usb drive", "flash drive", "memory card", "sd card", "memory stick", "blank cd", "blank dvd", "data card"],
+      "notHere": { "8471": "Internal computer storage — SSD and hard disk" }
     },
 
     "3305": {
@@ -357,6 +374,16 @@
       "name": "Cosmetics and skincare",
       "definition": "Beauty and make-up preparations, skin-care creams, lotions, sunscreen, lipstick, powder.",
       "aliases": ["cream", "lotion", "moisturiser", "face cream", "lipstick", "makeup", "make up", "powder", "sunscreen", "kajal", "foundation", "nail polish"]
+    },
+    "3303": {
+      "name": "Perfume and toilet water",
+      "definition": "Perfumes and toilet waters — scent, attar, body spray, cologne.",
+      "aliases": ["perfume", "scent", "attar", "itr", "body spray", "cologne"]
+    },
+    "3307": {
+      "name": "Deodorant and shaving preparations",
+      "definition": "Shaving preparations, deodorants and bath preparations — shaving cream, after-shave, personal deodorants and antiperspirants.",
+      "aliases": ["deodorant", "deo", "shaving cream", "after shave", "aftershave", "shaving foam", "antiperspirant"]
     },
     "9619": {
       "name": "Sanitary napkins and diapers",
@@ -395,6 +422,11 @@
       "definition": "Tableware and kitchenware of porcelain, bone china or ceramic — plates, cups, saucers, dinner sets.",
       "aliases": ["crockery", "plate", "cup", "saucer", "dinner set", "ceramic", "bone china", "mug ceramic"]
     },
+    "8211": {
+      "name": "Knives",
+      "definition": "Knives with cutting blades — kitchen knives, vegetable knives, chef's knives.",
+      "aliases": ["knife", "kitchen knife", "chaku", "chhuri", "vegetable knife", "chopping knife"]
+    },
     "9403": {
       "name": "Furniture",
       "definition": "Furniture of any material other than seats — tables, beds, almirahs, wardrobes, cupboards, shelving.",
@@ -432,10 +464,111 @@
       "aliases": ["paint", "enamel", "varnish", "primer", "wall paint", "distemper", "rang"]
     },
 
+    "8205": {
+      "name": "Hammers, screwdrivers and general hand tools",
+      "definition": "Hand tools not covered by a more specific heading — hammers, sledgehammers, screwdrivers, chisels and household tool sets.",
+      "aliases": ["hammer", "sledge hammer", "hathoda", "screwdriver", "screw driver", "pecas", "chisel", "hand tool", "tool set", "household tool"]
+    },
+    "8204": {
+      "name": "Spanners and wrenches",
+      "definition": "Hand-operated spanners and wrenches, adjustable or fixed, plus interchangeable spanner sockets.",
+      "aliases": ["spanner", "wrench", "panna", "adjustable wrench", "socket wrench", "socket set", "ring spanner"]
+    },
+    "8203": {
+      "name": "Pliers, files and pipe cutters",
+      "definition": "Files, rasps, pliers, pincers, tweezers, metal cutting shears, pipe cutters and bolt croppers.",
+      "aliases": ["plier", "pliers", "nose plier", "combination plier", "file", "rasp", "reti", "pipe cutter", "bolt cropper", "tweezer"]
+    },
+    "8202": {
+      "name": "Hand saws and saw blades",
+      "definition": "Hand saws and blades for saws of every kind, including hacksaw blades and slitting blades.",
+      "aliases": ["saw", "hand saw", "hacksaw", "aari", "saw blade"]
+    },
+    "8467": {
+      "name": "Power drills and motorised hand tools",
+      "definition": "Hand-held tools driven by a self-contained electric, pneumatic or hydraulic motor — power drills, angle grinders, motorised saws.",
+      "aliases": ["drill machine", "power drill", "electric drill", "drill", "angle grinder", "grinder machine"]
+    },
+    "7318": {
+      "name": "Nuts, bolts and screws",
+      "definition": "Screws, bolts, nuts and washers of iron or steel, threaded or not.",
+      "aliases": ["nut", "bolt", "screw", "washer", "nut bolt", "machine screw", "wood screw"]
+    },
+    "9017": {
+      "name": "Measuring tapes and geometry instruments",
+      "definition": "Drawing and marking-out instruments and length-measuring tools — measuring tapes, geometry/compass boxes, dividers, callipers, rulers.",
+      "aliases": ["measuring tape", "tape measure", "fita", "geometry box", "compass box", "divider", "ruler", "calliper"]
+    },
+    "4011": {
+      "name": "Tyres",
+      "definition": "New pneumatic tyres of rubber, for any vehicle — car, two-wheeler, bus, lorry, tractor or bicycle.",
+      "aliases": ["tyre", "tire", "car tyre", "bike tyre", "tractor tyre", "gaadi ka tyre"]
+    },
+    "4013": {
+      "name": "Inner tubes (tyre)",
+      "definition": "Inner tubes of rubber, for tyres of any vehicle.",
+      "aliases": ["tube", "tyre tube", "inner tube"]
+    },
+    "2710": {
+      "name": "Engine oil and lubricating oil",
+      "definition": "Petroleum oils other than light (petrol-type) oils, and preparations mostly made of them — engine oil, gear oil, hydraulic oil and other automotive lubricating oils.",
+      "aliases": ["engine oil", "motor oil", "mobil oil", "gear oil", "hydraulic oil", "2t oil", "lubricating oil", "lubricant oil"]
+    },
+    "8511": {
+      "name": "Spark plugs and ignition parts",
+      "definition": "Ignition and starting equipment for spark-ignition or compression-ignition engines — spark plugs, ignition coils, starter motors.",
+      "aliases": ["spark plug", "ignition coil", "starter motor", "spark plug set"]
+    },
+    "6813": {
+      "name": "Brake pads and clutch plates",
+      "definition": "Friction material for brakes and clutches — brake pads, brake linings, brake shoes, clutch plates and discs.",
+      "aliases": ["brake pad", "brake lining", "brake shoe", "clutch plate", "clutch disc"]
+    },
+    "8421": {
+      "name": "Oil, air and fuel filters",
+      "definition": "Filtering and purifying machinery for liquids and gases, including automotive oil filters, intake air filters and fuel filters.",
+      "aliases": ["oil filter", "air filter", "fuel filter", "car filter", "engine filter"]
+    },
+
     "9608": {
       "name": "Pens and refills",
       "definition": "Ball-point pens, felt-tip and marker pens, fountain pens and their refills.",
       "aliases": ["pen", "ball pen", "gel pen", "marker", "sketch pen", "refill", "fountain pen", "kalam"]
+    },
+    "9609": {
+      "name": "Pencils, crayons and chalk",
+      "definition": "Pencils, colour pencils, crayons, chalk and pastels for writing or drawing.",
+      "aliases": ["pencil", "colour pencil", "crayon", "chalk", "pastel", "lead pencil", "pencil lead"]
+    },
+    "8472": {
+      "name": "Stapler and punching machines",
+      "definition": "Office machines not covered by a more specific heading — stapling machines, punching machines and similar desk equipment.",
+      "aliases": ["stapler", "stapler machine", "punching machine", "paper punch"]
+    },
+    "8305": {
+      "name": "Staple pins and paper clips",
+      "definition": "Office stationery fittings of base metal — staples in strips, paper clips, binder clips, letter clips and loose-leaf binder fittings.",
+      "aliases": ["staple pin", "staples", "paper clip", "binder clip", "clip"]
+    },
+    "8213": {
+      "name": "Scissors",
+      "definition": "Scissors, tailors' shears and similar shears.",
+      "aliases": ["scissors", "scissor", "kainchi", "shears", "tailor scissors"]
+    },
+    "3506": {
+      "name": "Glue and adhesive",
+      "definition": "Prepared glues and other adhesives, put up for retail sale as glues or adhesives, up to 1kg net weight.",
+      "aliases": ["glue", "fevicol", "adhesive", "gond", "glue stick"]
+    },
+    "401692": {
+      "name": "Eraser",
+      "definition": "Erasers of non-cellular vulcanised rubber.",
+      "aliases": ["eraser", "rubber eraser", "rabar"]
+    },
+    "821410": {
+      "name": "Pencil sharpener",
+      "definition": "Paper knives, letter openers, erasing knives and pencil sharpeners.",
+      "aliases": ["sharpener", "pencil sharpener", "sharpner"]
     },
     "4820": {
       "name": "Notebooks and registers",

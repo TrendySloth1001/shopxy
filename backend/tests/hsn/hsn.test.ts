@@ -752,11 +752,17 @@ describe('hsn rate master', () => {
     expect(retrieve('qameez', 1)[0]?.code).toBe('6205');
     expect(retrieve('refrigerater', 1)[0]?.code).toBe('8418');
 
-    // And a hit anchored by a word the merchant really typed stays, even when
-    // it explains only a quarter of a descriptive query.
+    // And a hit anchored by words the merchant really typed stays, even though
+    // it never explains the whole query — "device" and "that" are in no
+    // definition anywhere. The bound is deliberately loose: this used to sit
+    // under 0.5, and rose when 8418's definition gained "keeps food and drinks
+    // cold" to settle a near-tie against restaurant services, where `food` and
+    // `cold` were pulling one term each. Pinning the exact figure would make
+    // every future copy edit look like a regression.
     const cold = retrieve('device that keeps food cold', 1)[0];
     expect(cold?.code).toBe('8418');
-    expect(cold!.coverage).toBeLessThan(0.5);
+    expect(cold!.coverage).toBeLessThan(1);
+    expect(cold!.matched.some((m) => m === 'exact' || m === 'prefix')).toBe(true);
   });
 
   it('inherits a rate from the nearest rated ancestor', async () => {

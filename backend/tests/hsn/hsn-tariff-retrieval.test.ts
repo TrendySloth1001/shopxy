@@ -36,10 +36,16 @@ describe('hsn — retrieval over the official tariff', () => {
   it('finds words that exist only in the official tariff', async () => {
     // None of these appear in any of the 101 curated entries. All of them
     // appear in the imported descriptions, which is the whole point.
+    // "keyboard" and "tyre" used to sit here and no longer can: both have
+    // since been given curated entries, which is the better outcome — the
+    // tariff's word for a computer keyboard is "input or output units", so
+    // the tariff layer could only ever land it on chapter 92's pianos. These
+    // three are still tariff-only, and asserted absent from the catalogue in
+    // the test below so they can't silently become curated either.
     for (const [name, chapter] of [
-      ['keyboard', '92'],
-      ['tyre', '40'],
       ['padlock', '83'],
+      ['tarpaulin', '63'],
+      ['umbrella', '66'],
     ] as const) {
       const hits = await top(name, 3);
       expect(hits.length, `"${name}" found nothing`).toBeGreaterThan(0);
