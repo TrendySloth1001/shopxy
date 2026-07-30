@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:shopxy/core/haptics/app_haptics.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/features/dashboard/domain/entities/dashboard_stats.dart';
 import 'package:shopxy/features/dashboard/presentation/widgets/dashboard_ui.dart';
 import 'package:shopxy/features/dashboard/presentation/widgets/infographic_pie.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
+import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
 /// Ranked analytics as infographic pie charts. Top categories + top products
 /// sit side by side on wide screens; slow movers spans full width.
@@ -93,13 +98,34 @@ class _PieCard extends StatelessWidget {
   final String? hint;
   final Widget child;
 
+  void _expand(BuildContext context) {
+    AppHaptics.selection();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) =>
+            _ExpandedChartPage(title: title, hint: hint, child: child),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return DashCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Eyebrow(title),
+          Row(
+            children: [
+              Expanded(child: Eyebrow(title)),
+              _ExpandButton(
+                tooltip: l10n.dashboardExpandChart,
+                onTap: () => _expand(context),
+              ),
+            ],
+          ),
           if (hint != null) ...[
             const SizedBox(height: AppSizes.xs),
             Text(hint!, style: DashText.bodySm),
@@ -107,6 +133,79 @@ class _PieCard extends StatelessWidget {
           const SizedBox(height: AppSizes.md),
           child,
         ],
+      ),
+    );
+  }
+}
+
+/// Corner affordance that opens the same chart in [_ExpandedChartPage] —
+/// the Flutter analog of the web `Card`'s Maximize2/Minimize2 toggle. Web
+/// toggles an inline overlay; here a full-screen route reuses the SAME
+/// [InfographicPie] widget instance, which is safe (and simpler) because
+/// Flutter builds an independent Element/State per subtree location a
+/// widget config appears in.
+class _ExpandButton extends StatelessWidget {
+  const _ExpandButton({required this.tooltip, required this.onTap});
+  final String tooltip;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: InkResponse(
+        onTap: onTap,
+        radius: 20,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSizes.xxs),
+          child: AppIcon(
+            AppIcons.expandRounded,
+            size: AppSizes.iconSm,
+            color: AppColors.subtle,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Full-screen "expanded" view of a single analytics chart — the mobile
+/// analog of the web `Card`'s fixed-inset-0 overlay. Reuses [child] as-is,
+/// so [InfographicPie]'s own responsive `LayoutBuilder` (chart + "About
+/// this chart" side by side once there's ≥560 of width) kicks in for free
+/// on a wide phone/landscape/tablet screen, exactly like the web breakpoint.
+class _ExpandedChartPage extends StatelessWidget {
+  const _ExpandedChartPage({
+    required this.title,
+    required this.hint,
+    required this.child,
+  });
+  final String title;
+  final String? hint;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: FloatingAppBar(title: title),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          AppSizes.lg,
+          FloatingAppBar.contentTopInset(context) + AppSizes.md,
+          AppSizes.lg,
+          AppSizes.xxl,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (hint != null) ...[
+              Text(hint!, style: DashText.bodySm),
+              const SizedBox(height: AppSizes.md),
+            ],
+            child,
+          ],
+        ),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/core/haptics/scroll_boundary_haptics.dart';
 import 'package:shopxy/features/notifications/domain/entities/invitation.dart';
 import 'package:shopxy/features/notifications/domain/entities/notification.dart';
 import 'package:shopxy/features/notifications/presentation/pages/send_invite_page.dart';
@@ -30,11 +31,20 @@ class NotificationsPage extends StatefulWidget {
 class _NotificationsPageState extends State<NotificationsPage>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs;
+  final _inboxScrollCtrl = ScrollController();
+  final _incomingScrollCtrl = ScrollController();
+  final _outgoingScrollCtrl = ScrollController();
+  late final ScrollBoundaryHaptics _inboxHaptics;
+  late final ScrollBoundaryHaptics _incomingHaptics;
+  late final ScrollBoundaryHaptics _outgoingHaptics;
 
   @override
   void initState() {
     super.initState();
     _tabs = TabController(length: 3, vsync: this);
+    _inboxHaptics = ScrollBoundaryHaptics(_inboxScrollCtrl);
+    _incomingHaptics = ScrollBoundaryHaptics(_incomingScrollCtrl);
+    _outgoingHaptics = ScrollBoundaryHaptics(_outgoingScrollCtrl);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final p = context.read<NotificationsProvider>();
@@ -47,6 +57,12 @@ class _NotificationsPageState extends State<NotificationsPage>
   @override
   void dispose() {
     _tabs.dispose();
+    _inboxHaptics.dispose();
+    _inboxScrollCtrl.dispose();
+    _incomingHaptics.dispose();
+    _incomingScrollCtrl.dispose();
+    _outgoingHaptics.dispose();
+    _outgoingScrollCtrl.dispose();
     super.dispose();
   }
 
@@ -92,7 +108,11 @@ class _NotificationsPageState extends State<NotificationsPage>
       ),
       body: TabBarView(
         controller: _tabs,
-        children: const [_InboxTab(), _IncomingTab(), _OutgoingTab()],
+        children: [
+          _InboxTab(controller: _inboxScrollCtrl),
+          _IncomingTab(controller: _incomingScrollCtrl),
+          _OutgoingTab(controller: _outgoingScrollCtrl),
+        ],
       ),
     );
   }
@@ -103,7 +123,8 @@ class _NotificationsPageState extends State<NotificationsPage>
 // ─────────────────────────────────────────────────────────────────────
 
 class _InboxTab extends StatelessWidget {
-  const _InboxTab();
+  const _InboxTab({required this.controller});
+  final ScrollController controller;
 
   @override
   Widget build(BuildContext context) {
@@ -123,6 +144,7 @@ class _InboxTab extends StatelessWidget {
       onRefresh: () => p.loadInbox(),
       color: AppColors.brand,
       child: ListView.separated(
+        controller: controller,
         padding: EdgeInsets.only(
           top:
               AppSizes.sm +
@@ -388,7 +410,8 @@ class _NotificationTileSkeleton extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────
 
 class _IncomingTab extends StatelessWidget {
-  const _IncomingTab();
+  const _IncomingTab({required this.controller});
+  final ScrollController controller;
 
   @override
   Widget build(BuildContext context) {
@@ -405,6 +428,7 @@ class _IncomingTab extends StatelessWidget {
       onRefresh: () => p.loadIncoming(),
       color: AppColors.brand,
       child: ListView.separated(
+        controller: controller,
         padding: EdgeInsets.only(
           top:
               AppSizes.sm +
@@ -580,7 +604,8 @@ class _IncomingInviteTile extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────
 
 class _OutgoingTab extends StatelessWidget {
-  const _OutgoingTab();
+  const _OutgoingTab({required this.controller});
+  final ScrollController controller;
 
   @override
   Widget build(BuildContext context) {
@@ -597,6 +622,7 @@ class _OutgoingTab extends StatelessWidget {
       onRefresh: () => p.loadOutgoing(),
       color: AppColors.brand,
       child: ListView.separated(
+        controller: controller,
         padding: EdgeInsets.only(
           top:
               AppSizes.sm +

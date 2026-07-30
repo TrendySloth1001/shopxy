@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/core/haptics/scroll_boundary_haptics.dart';
 import 'package:shopxy/features/categories/domain/entities/category.dart';
 import 'package:shopxy/features/categories/presentation/widgets/category_icon_catalog.dart';
 import 'package:shopxy/features/products/data/datasources/products_remote_data_source.dart';
@@ -55,11 +56,13 @@ class _CategoryProductsPageState extends State<CategoryProductsPage> {
   Timer? _searchDebounce;
 
   final ScrollController _scrollCtrl = ScrollController();
+  late final ScrollBoundaryHaptics _scrollHaptics;
 
   @override
   void initState() {
     super.initState();
     _scrollCtrl.addListener(_onScroll);
+    _scrollHaptics = ScrollBoundaryHaptics(_scrollCtrl);
     _load();
   }
 
@@ -67,6 +70,7 @@ class _CategoryProductsPageState extends State<CategoryProductsPage> {
   void dispose() {
     _searchDebounce?.cancel();
     _searchCtrl.dispose();
+    _scrollHaptics.dispose();
     _scrollCtrl
       ..removeListener(_onScroll)
       ..dispose();

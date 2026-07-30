@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/auth/permission_widgets.dart';
 import 'package:shopxy/core/auth/shop_capabilities.dart';
+import 'package:shopxy/core/haptics/scroll_boundary_haptics.dart';
 import 'package:shopxy/features/profile/presentation/pages/profile_page.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/dashboard/domain/entities/dashboard_stats.dart';
@@ -47,10 +48,13 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   /// Guards the one-time payout-setup nudge so a rebuild can't stack sheets.
   bool _payoutNudgeScheduled = false;
+  final _scrollCtrl = ScrollController();
+  late final ScrollBoundaryHaptics _scrollHaptics;
 
   @override
   void initState() {
     super.initState();
+    _scrollHaptics = ScrollBoundaryHaptics(_scrollCtrl);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final user = context.read<AuthProvider>().user;
@@ -65,6 +69,13 @@ class _DashboardPageState extends State<DashboardPage> {
         context.read<LinkedAccountProvider>().load();
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollHaptics.dispose();
+    _scrollCtrl.dispose();
+    super.dispose();
   }
 
   void _maybeNudgePayouts(LinkedAccountProvider payouts) {
@@ -132,7 +143,11 @@ class _DashboardPageState extends State<DashboardPage> {
               onRefresh: () => provider.loadStats(),
               color: AppColors.brand,
               backgroundColor: AppColors.surface,
-              child: _DashboardScroll(provider: provider, stats: stats),
+              child: _DashboardScroll(
+                controller: _scrollCtrl,
+                provider: provider,
+                stats: stats,
+              ),
             ),
     );
   }
@@ -142,7 +157,12 @@ class _DashboardPageState extends State<DashboardPage> {
 double _hPad(double w) => w >= 768 ? AppSizes.xxl : AppSizes.lg;
 
 class _DashboardScroll extends StatelessWidget {
-  const _DashboardScroll({required this.provider, required this.stats});
+  const _DashboardScroll({
+    required this.controller,
+    required this.provider,
+    required this.stats,
+  });
+  final ScrollController controller;
   final DashboardProvider provider;
   final DashboardStats stats;
 
@@ -155,6 +175,7 @@ class _DashboardScroll extends StatelessWidget {
         // app bar's inset (status bar + island band) to the top padding.
         final topInset = FloatingAppBar.contentTopInset(context) + AppSizes.xxl;
         return ListView(
+          controller: controller,
           padding: EdgeInsets.fromLTRB(
             pad,
             topInset,

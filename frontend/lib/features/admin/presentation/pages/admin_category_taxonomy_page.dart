@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
+import 'package:shopxy/core/haptics/scroll_boundary_haptics.dart';
 import 'package:shopxy/features/categories/data/datasources/categories_remote_data_source.dart';
 import 'package:shopxy/features/categories/domain/entities/category.dart';
 import 'package:shopxy/shared/constants/app_durations.dart';
@@ -29,6 +30,8 @@ class AdminCategoryTaxonomyPage extends StatefulWidget {
 
 class _AdminCategoryTaxonomyPageState extends State<AdminCategoryTaxonomyPage> {
   late final CategoriesRemoteDataSource _ds;
+  final _scrollCtrl = ScrollController();
+  late final ScrollBoundaryHaptics _scrollHaptics;
   List<CategoryNode> _tree = [];
   List<Category> _flat = []; // flattened for the parent picker
   bool _loading = true;
@@ -39,7 +42,15 @@ class _AdminCategoryTaxonomyPageState extends State<AdminCategoryTaxonomyPage> {
   void initState() {
     super.initState();
     _ds = context.read<CategoriesRemoteDataSource>();
+    _scrollHaptics = ScrollBoundaryHaptics(_scrollCtrl);
     _load();
+  }
+
+  @override
+  void dispose() {
+    _scrollHaptics.dispose();
+    _scrollCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -207,6 +218,7 @@ class _AdminCategoryTaxonomyPageState extends State<AdminCategoryTaxonomyPage> {
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView(
+                controller: _scrollCtrl,
                 padding: EdgeInsets.fromLTRB(
                   AppSizes.lg,
                   AppSizes.lg + FloatingAppBar.contentTopInset(context),

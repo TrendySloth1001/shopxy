@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/core/haptics/scroll_boundary_haptics.dart';
 import 'package:shopxy/features/reviews/data/datasources/reviews_remote_data_source.dart';
 import 'package:shopxy/features/reviews/data/models/product_review.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
@@ -40,12 +41,22 @@ class _ProductReviewsPageState extends State<ProductReviewsPage> {
   int? _nextCursor;
   String? _error;
   late final ReviewsRemoteDataSource _ds;
+  final _scrollCtrl = ScrollController();
+  late final ScrollBoundaryHaptics _scrollHaptics;
 
   @override
   void initState() {
     super.initState();
+    _scrollHaptics = ScrollBoundaryHaptics(_scrollCtrl);
     _ds = context.read<ReviewsRemoteDataSource>();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _scrollHaptics.dispose();
+    _scrollCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _load({bool more = false}) async {
@@ -104,6 +115,7 @@ class _ProductReviewsPageState extends State<ProductReviewsPage> {
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView.separated(
+                controller: _scrollCtrl,
                 padding: EdgeInsets.only(
                   top: FloatingAppBar.contentTopInset(context),
                   bottom: AppSizes.huge,

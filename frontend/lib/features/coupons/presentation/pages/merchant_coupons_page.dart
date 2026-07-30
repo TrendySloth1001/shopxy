@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/core/haptics/scroll_boundary_haptics.dart';
 import 'package:shopxy/features/coupons/data/datasources/merchant_coupons_remote_data_source.dart';
 import 'package:shopxy/features/coupons/domain/merchant_coupon.dart';
 import 'package:shopxy/features/coupons/presentation/widgets/coupon_editor_sheet.dart';
@@ -30,6 +31,8 @@ class _MerchantCouponsPageState extends State<MerchantCouponsPage> {
   List<MerchantCoupon> _rows = const [];
   bool _loading = true;
   String? _error;
+  final _scrollCtrl = ScrollController();
+  late final ScrollBoundaryHaptics _scrollHaptics;
 
   static final _date = DateFormat('d MMM y');
   static final _currency = NumberFormat.currency(symbol: '₹', decimalDigits: 0);
@@ -37,7 +40,15 @@ class _MerchantCouponsPageState extends State<MerchantCouponsPage> {
   @override
   void initState() {
     super.initState();
+    _scrollHaptics = ScrollBoundaryHaptics(_scrollCtrl);
     _load();
+  }
+
+  @override
+  void dispose() {
+    _scrollHaptics.dispose();
+    _scrollCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -127,6 +138,7 @@ class _MerchantCouponsPageState extends State<MerchantCouponsPage> {
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView.builder(
+                controller: _scrollCtrl,
                 padding: EdgeInsets.only(
                   left: AppSizes.lg,
                   right: AppSizes.lg,

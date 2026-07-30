@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/core/haptics/scroll_boundary_haptics.dart';
 import 'package:shopxy/features/quotations/domain/entities/quotation.dart';
 import 'package:shopxy/features/quotations/presentation/pages/create_quotation_page.dart';
 import 'package:shopxy/features/quotations/presentation/pages/quotation_detail_page.dart';
@@ -30,13 +31,23 @@ class _QuotationsPageState extends State<QuotationsPage> {
     decimalDigits: 2,
   );
   final _dateFmt = DateFormat('d MMM y');
+  final _scrollCtrl = ScrollController();
+  late final ScrollBoundaryHaptics _scrollHaptics;
 
   @override
   void initState() {
     super.initState();
+    _scrollHaptics = ScrollBoundaryHaptics(_scrollCtrl);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) context.read<QuotationsProvider>().load();
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollHaptics.dispose();
+    _scrollCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _create() async {
@@ -104,6 +115,7 @@ class _QuotationsPageState extends State<QuotationsPage> {
                         ],
                       )
                     : ListView.separated(
+                        controller: _scrollCtrl,
                         padding: const EdgeInsets.fromLTRB(
                           AppSizes.lg,
                           AppSizes.sm,

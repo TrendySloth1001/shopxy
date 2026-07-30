@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/auth/permission_widgets.dart';
 import 'package:shopxy/core/auth/shop_capabilities.dart';
+import 'package:shopxy/core/haptics/scroll_boundary_haptics.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/orders/domain/entities/merchant_order.dart';
 import 'package:shopxy/features/orders/presentation/pages/merchant_order_detail_page.dart';
@@ -56,11 +57,14 @@ class _OrdersInboxPageState extends State<OrdersInboxPage> {
 
   int _index = 0;
   final _searchCtrl = TextEditingController();
+  final _scrollCtrl = ScrollController();
+  late final ScrollBoundaryHaptics _scrollHaptics;
   Timer? _searchDebounce;
 
   @override
   void initState() {
     super.initState();
+    _scrollHaptics = ScrollBoundaryHaptics(_scrollCtrl);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final p = context.read<OrdersProvider>();
@@ -73,6 +77,8 @@ class _OrdersInboxPageState extends State<OrdersInboxPage> {
   void dispose() {
     _searchCtrl.dispose();
     _searchDebounce?.cancel();
+    _scrollHaptics.dispose();
+    _scrollCtrl.dispose();
     super.dispose();
   }
 
@@ -207,6 +213,7 @@ class _OrdersInboxPageState extends State<OrdersInboxPage> {
                                 p.to != null,
                           )
                         : ListView.separated(
+                            controller: _scrollCtrl,
                             // Header already clears the bar; stop the list
                             // from auto-applying the MediaQuery top inset
                             // (extendBodyBehindAppBar) a second time. Bottom

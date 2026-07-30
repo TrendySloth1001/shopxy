@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shopxy/core/auth/permission_widgets.dart';
 import 'package:shopxy/core/auth/shop_capabilities.dart';
+import 'package:shopxy/core/haptics/scroll_boundary_haptics.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/invoices/presentation/pages/invoice_detail_page.dart';
 import 'package:shopxy/features/invoices/presentation/providers/invoices_provider.dart';
@@ -50,6 +51,7 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
   /// Collapses the verbose customer card into a sticky summary header
   /// once the user scrolls past it. ScrollController offset > threshold.
   final _scrollCtrl = ScrollController();
+  late final ScrollBoundaryHaptics _scrollHaptics;
   bool _stickyHeaderVisible = false;
   static const _stickyThreshold = 96.0;
 
@@ -75,12 +77,14 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
   void initState() {
     super.initState();
     _scrollCtrl.addListener(_onScroll);
+    _scrollHaptics = ScrollBoundaryHaptics(_scrollCtrl);
     _load();
   }
 
   @override
   void dispose() {
     _scrollCtrl.removeListener(_onScroll);
+    _scrollHaptics.dispose();
     _scrollCtrl.dispose();
     super.dispose();
   }

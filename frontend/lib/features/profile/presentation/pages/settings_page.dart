@@ -5,6 +5,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shopxy/core/auth/shop_capabilities.dart';
+import 'package:shopxy/core/haptics/app_haptics.dart';
+import 'package:shopxy/core/haptics/haptics_prefs.dart';
 import 'package:shopxy/core/prefs/locale_prefs.dart';
 import 'package:shopxy/core/prefs/navigation_prefs.dart';
 import 'package:shopxy/core/prefs/theme_prefs.dart';
@@ -231,6 +233,7 @@ class _SettingsPageState extends State<SettingsPage> {
           // Language is live (multilingual pilot): English + हिन्दी.
           const _LanguageRow(),
           const _DensityRow(),
+          const _HapticsRow(),
 
           const _Gap(),
 
@@ -539,6 +542,30 @@ class _DensityRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// On/off switch for [AppHaptics] — the single source of truth every haptic
+/// call site (nav taps, menu rows, scroll edges) checks before vibrating.
+/// Firing a confirmation tick right after turning it on lets the merchant
+/// feel the setting take effect immediately; turning it off stays silent.
+class _HapticsRow extends StatelessWidget {
+  const _HapticsRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final prefs = context.watch<HapticsPrefsProvider>();
+    final l10n = AppLocalizations.of(context);
+    return _SettingToggle(
+      icon: AppIcons.vibrationRounded,
+      title: l10n.profileHapticFeedback,
+      subtitle: l10n.profileHapticFeedbackSubtitle,
+      value: prefs.enabled,
+      onChanged: (value) {
+        prefs.setEnabled(value);
+        if (value) AppHaptics.selection();
+      },
     );
   }
 }

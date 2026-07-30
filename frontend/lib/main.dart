@@ -15,6 +15,8 @@ import 'package:shopxy/core/utils/device_info_helper.dart';
 import 'package:shopxy/core/prefs/navigation_prefs.dart';
 import 'package:shopxy/core/prefs/prefs_storage.dart';
 import 'package:shopxy/core/prefs/theme_prefs.dart';
+import 'package:shopxy/core/haptics/app_haptics.dart';
+import 'package:shopxy/core/haptics/haptics_prefs.dart';
 import 'package:shopxy/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/categories/data/datasources/categories_remote_data_source.dart';
@@ -56,6 +58,7 @@ import 'package:shopxy/features/payments/presentation/providers/payments_provide
 import 'package:shopxy/features/quotations/data/datasources/quotations_remote_data_source.dart';
 import 'package:shopxy/features/quotations/presentation/providers/quotations_provider.dart';
 import 'package:shopxy/features/products/data/datasources/products_remote_data_source.dart';
+import 'package:shopxy/features/products/presentation/providers/product_catalogue.dart';
 import 'package:shopxy/features/products/presentation/providers/products_provider.dart';
 import 'package:shopxy/features/stock/data/datasources/stock_remote_data_source.dart';
 import 'package:shopxy/features/stock/presentation/providers/stock_provider.dart';
@@ -85,6 +88,13 @@ void main() async {
   // app opens in the saved theme with no flash. Also primes AppPalette.active.
   final themePrefs = ThemePrefsProvider(appPrefsStorage);
   await themePrefs.load();
+
+  // Haptics on/off — loaded before the first frame and attached to the
+  // static AppHaptics gate so every tap-site call (nav, menu, scroll edges)
+  // respects the saved choice from the very first interaction.
+  final hapticsPrefs = HapticsPrefsProvider(appPrefsStorage);
+  await hapticsPrefs.load();
+  AppHaptics.attach(hapticsPrefs);
 
   // Offline layer (SSOT): one connectivity signal + one device response cache,
   // both injected into the single ApiClient so every read gets offline support
@@ -185,6 +195,10 @@ void main() async {
   // previous user's cached lists. Without these, user B sees A's
   // products/invoices/etc. flash on screen for a frame.
   final productsProvider = ProductsProvider(productsDs);
+  // The in-memory catalogue behind local product search in the invoice,
+  // challan and quotation pickers. Loaded lazily by whichever picker opens
+  // first; refreshed by the cache listener below when products change.
+  final productCatalogue = ProductCatalogue(productsDs);
   final invoicesProvider = InvoicesProvider(invoicesDs);
   final vendorsProvider = VendorsProvider(vendorsDs);
   final partiesProvider = PartiesProvider(partiesDs);
@@ -199,6 +213,7 @@ void main() async {
 
   authProvider.registerOnClear(notificationsProvider.reset);
   authProvider.registerOnClear(productsProvider.reset);
+  authProvider.registerOnClear(productCatalogue.reset);
   authProvider.registerOnClear(invoicesProvider.reset);
   authProvider.registerOnClear(vendorsProvider.reset);
   authProvider.registerOnClear(partiesProvider.reset);
@@ -254,7 +269,13 @@ void main() async {
   // per-provider wiring. Errors are swallowed (background refresh).
   apiClient.cacheEvents.listen((tag) {
     final Future<void>? reload = switch (tag) {
-      'products' => productsProvider.loadProducts(),
+      // Both: the grid reloads its current page, and the in-memory catalogue
+      // refetches so a product created on web is findable in the pickers here
+      // without a restart.
+      'products' => Future.wait<void>([
+        productsProvider.loadProducts(),
+        productCatalogue.refresh(),
+      ]).then<void>((_) {}),
       'invoices' => invoicesProvider.loadInvoices(refresh: true),
       'parties' => partiesProvider.loadParties(refresh: true),
       'vendors' => vendorsProvider.loadVendors(refresh: true),
@@ -286,6 +307,7 @@ void main() async {
         ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
         ChangeNotifierProvider<NavigationPrefsProvider>.value(value: navPrefs),
         ChangeNotifierProvider<ThemePrefsProvider>.value(value: themePrefs),
+        ChangeNotifierProvider<HapticsPrefsProvider>.value(value: hapticsPrefs),
         // Offline connectivity signal — watched by the app-wide offline banner.
         ChangeNotifierProvider<NetworkStatus>.value(value: networkStatus),
         // Outbox exposed so the banner can show "syncing N changes" from its
@@ -324,6 +346,7 @@ void main() async {
           create: (_) => CustomFieldsProvider(customFieldsDs),
         ),
         ChangeNotifierProvider<ProductsProvider>.value(value: productsProvider),
+        ChangeNotifierProvider<ProductCatalogue>.value(value: productCatalogue),
         ChangeNotifierProvider(create: (_) => StockProvider(stockDs)),
         ChangeNotifierProvider<InvoicesProvider>.value(value: invoicesProvider),
         ChangeNotifierProvider<VendorsProvider>.value(value: vendorsProvider),

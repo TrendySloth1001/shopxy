@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/auth/permission_widgets.dart';
 import 'package:shopxy/core/auth/shop_capabilities.dart';
+import 'package:shopxy/core/haptics/scroll_boundary_haptics.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/invoices/data/datasources/invoices_remote_data_source.dart';
 import 'package:shopxy/features/invoices/domain/entities/invoice.dart';
@@ -43,11 +44,13 @@ class InvoicesPage extends StatefulWidget {
 class _InvoicesPageState extends State<InvoicesPage> {
   final _searchCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
+  late final ScrollBoundaryHaptics _scrollHaptics;
 
   @override
   void initState() {
     super.initState();
     _scrollCtrl.addListener(_onScroll);
+    _scrollHaptics = ScrollBoundaryHaptics(_scrollCtrl);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) context.read<InvoicesProvider>().loadInvoices();
     });
@@ -57,6 +60,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
   void dispose() {
     _searchCtrl.dispose();
     _scrollCtrl.removeListener(_onScroll);
+    _scrollHaptics.dispose();
     _scrollCtrl.dispose();
     super.dispose();
   }

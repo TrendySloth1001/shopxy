@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
+import 'package:shopxy/core/haptics/scroll_boundary_haptics.dart';
 import 'package:shopxy/features/admin/data/models/platform_bank_offer.dart';
 import 'package:shopxy/features/admin/presentation/pages/admin_bank_offer_editor_sheet.dart';
 import 'package:shopxy/features/admin/presentation/providers/admin_bank_offers_provider.dart';
@@ -30,14 +31,24 @@ class AdminBankOffersPage extends StatefulWidget {
 class _AdminBankOffersPageState extends State<AdminBankOffersPage> {
   static final _date = DateFormat('d MMM y');
   static final _currency = NumberFormat.currency(symbol: '₹', decimalDigits: 0);
+  final _scrollCtrl = ScrollController();
+  late final ScrollBoundaryHaptics _scrollHaptics;
 
   @override
   void initState() {
     super.initState();
+    _scrollHaptics = ScrollBoundaryHaptics(_scrollCtrl);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<AdminBankOffersProvider>().load();
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollHaptics.dispose();
+    _scrollCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _openEditor({AdminPlatformBankOffer? existing}) async {
@@ -112,6 +123,7 @@ class _AdminBankOffersPageState extends State<AdminBankOffersPage> {
           : RefreshIndicator(
               onRefresh: provider.load,
               child: ListView.builder(
+                controller: _scrollCtrl,
                 padding: EdgeInsets.fromLTRB(
                   AppSizes.lg,
                   AppSizes.sm + FloatingAppBar.contentTopInset(context),

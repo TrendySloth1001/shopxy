@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/auth/shop_capabilities.dart';
+import 'package:shopxy/core/haptics/app_haptics.dart';
+import 'package:shopxy/core/haptics/scroll_boundary_haptics.dart';
 import 'package:shopxy/core/router/app_shell.dart';
 import 'package:shopxy/features/admin/presentation/pages/admin_bank_offers_page.dart';
 import 'package:shopxy/features/admin/presentation/pages/admin_banners_page.dart';
@@ -285,8 +287,29 @@ List<_MenuItem> get _accountItems => [
 
 /// The "Menu" bottom-nav tab — every secondary feature grouped into
 /// iOS-Settings-style rounded sections (replaces the old slide-out drawer).
-class MenuPage extends StatelessWidget {
+class MenuPage extends StatefulWidget {
   const MenuPage({super.key});
+
+  @override
+  State<MenuPage> createState() => _MenuPageState();
+}
+
+class _MenuPageState extends State<MenuPage> {
+  final _scrollCtrl = ScrollController();
+  late final ScrollBoundaryHaptics _scrollHaptics;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollHaptics = ScrollBoundaryHaptics(_scrollCtrl);
+  }
+
+  @override
+  void dispose() {
+    _scrollHaptics.dispose();
+    _scrollCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -318,6 +341,7 @@ class MenuPage extends StatelessWidget {
         ],
       ),
       body: ListView(
+        controller: _scrollCtrl,
         padding: EdgeInsets.only(
           top: AppSizes.sm + FloatingAppBar.contentTopInset(context),
           bottom: FloatingBottomNav.contentBottomInset(context) + AppSizes.sm,
@@ -437,8 +461,10 @@ class _MenuRow extends StatelessWidget {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
     return InkWell(
-      onTap: () =>
-          Navigator.push(context, MaterialPageRoute(builder: item.builder)),
+      onTap: () {
+        AppHaptics.selection();
+        Navigator.push(context, MaterialPageRoute(builder: item.builder));
+      },
       child: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSizes.md,

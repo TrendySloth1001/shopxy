@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/core/haptics/scroll_boundary_haptics.dart';
 import 'package:shopxy/features/reports/domain/entities/sales_report.dart';
 import 'package:shopxy/features/reports/presentation/providers/reports_provider.dart';
 import 'package:shopxy/features/reports/presentation/widgets/calculator_view.dart';
@@ -30,14 +31,24 @@ class ReportsPage extends StatefulWidget {
 
 class _ReportsPageState extends State<ReportsPage> {
   _ReportTab _tab = _ReportTab.sales;
+  final _scrollCtrl = ScrollController();
+  late final ScrollBoundaryHaptics _scrollHaptics;
 
   @override
   void initState() {
     super.initState();
+    _scrollHaptics = ScrollBoundaryHaptics(_scrollCtrl);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<ReportsProvider>().load();
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollHaptics.dispose();
+    _scrollCtrl.dispose();
+    super.dispose();
   }
 
   void _selectTab(_ReportTab tab) {
@@ -211,7 +222,7 @@ class _ReportsPageState extends State<ReportsPage> {
                   ? const _ReportSkeleton()
                   : p.error != null
                   ? _ErrorBlock(error: p.error!, onRetry: p.load)
-                  : _ReportBody(provider: p),
+                  : _ReportBody(provider: p, scrollController: _scrollCtrl),
             ),
           ],
         ),
@@ -345,27 +356,38 @@ class _ErrorBlock extends StatelessWidget {
 }
 
 class _ReportBody extends StatelessWidget {
-  const _ReportBody({required this.provider});
+  const _ReportBody({required this.provider, required this.scrollController});
   final ReportsProvider provider;
+  final ScrollController scrollController;
 
   @override
   Widget build(BuildContext context) {
     switch (provider.kind) {
       case ReportKind.sales:
         if (provider.sales == null) return const _ReportSkeleton();
-        return _SalesView(report: provider.sales!);
+        return _SalesView(
+          report: provider.sales!,
+          scrollController: scrollController,
+        );
       case ReportKind.purchases:
         if (provider.purchases == null) return const _ReportSkeleton();
-        return _PurchasesView(report: provider.purchases!);
+        return _PurchasesView(
+          report: provider.purchases!,
+          scrollController: scrollController,
+        );
       case ReportKind.gst:
         if (provider.gst == null) return const _ReportSkeleton();
-        return _GstView(report: provider.gst!);
+        return _GstView(
+          report: provider.gst!,
+          scrollController: scrollController,
+        );
       case ReportKind.pnl:
         if (provider.pnl == null) return const _ReportSkeleton();
         return _PnlView(
           report: provider.pnl!,
           from: provider.from,
           to: provider.to,
+          scrollController: scrollController,
         );
     }
   }
@@ -775,8 +797,9 @@ class _LeaderRow extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────
 
 class _SalesView extends StatelessWidget {
-  const _SalesView({required this.report});
+  const _SalesView({required this.report, required this.scrollController});
   final SalesReport report;
+  final ScrollController scrollController;
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -791,6 +814,7 @@ class _SalesView extends StatelessWidget {
       (m, c) => c.amount > m ? c.amount : m,
     );
     return ListView(
+      controller: scrollController,
       padding: const EdgeInsets.only(bottom: AppSizes.huge),
       children: [
         _BigStat(
@@ -838,8 +862,9 @@ class _SalesView extends StatelessWidget {
 }
 
 class _PurchasesView extends StatelessWidget {
-  const _PurchasesView({required this.report});
+  const _PurchasesView({required this.report, required this.scrollController});
   final PurchasesReport report;
+  final ScrollController scrollController;
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -854,6 +879,7 @@ class _PurchasesView extends StatelessWidget {
       (m, c) => c.amount > m ? c.amount : m,
     );
     return ListView(
+      controller: scrollController,
       padding: const EdgeInsets.only(bottom: AppSizes.huge),
       children: [
         _BigStat(
@@ -900,8 +926,9 @@ class _PurchasesView extends StatelessWidget {
 }
 
 class _GstView extends StatelessWidget {
-  const _GstView({required this.report});
+  const _GstView({required this.report, required this.scrollController});
   final GstReport report;
+  final ScrollController scrollController;
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -912,6 +939,7 @@ class _GstView extends StatelessWidget {
     final hasGst = report.outputTax != 0 || report.inputTax != 0;
     final returnedGst = report.returns?.gst ?? 0;
     return ListView(
+      controller: scrollController,
       padding: const EdgeInsets.only(bottom: AppSizes.huge),
       children: [
         // Headline — three stats.
@@ -1480,10 +1508,16 @@ class _StatBlock extends StatelessWidget {
 }
 
 class _PnlView extends StatelessWidget {
-  const _PnlView({required this.report, required this.from, required this.to});
+  const _PnlView({
+    required this.report,
+    required this.from,
+    required this.to,
+    required this.scrollController,
+  });
   final PnlReport report;
   final DateTime from;
   final DateTime to;
+  final ScrollController scrollController;
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -1492,6 +1526,7 @@ class _PnlView extends StatelessWidget {
     final grossSales = r.revenue + r.refunds;
     final grossCogs = r.cogs + r.returnedCogs;
     return ListView(
+      controller: scrollController,
       padding: const EdgeInsets.only(bottom: AppSizes.huge),
       children: [
         _BigStat(

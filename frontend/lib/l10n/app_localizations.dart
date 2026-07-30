@@ -4814,6 +4814,18 @@ abstract class AppLocalizations {
   /// **'Low-stock alerts and weekly summary'**
   String get profileEmailNotificationsSubtitle;
 
+  /// No description provided for @profileHapticFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Haptic feedback'**
+  String get profileHapticFeedback;
+
+  /// No description provided for @profileHapticFeedbackSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Vibrate on navigation, menu taps, and scroll edges'**
+  String get profileHapticFeedbackSubtitle;
+
   /// No description provided for @profilePreferenceSaveFailed.
   ///
   /// In en, this message translates to:
@@ -6379,6 +6391,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Share of idle in-stock units — capital that isn\'t moving.'**
   String get dashboardSlowMoversHint;
+
+  /// No description provided for @dashboardExpandChart.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand chart'**
+  String get dashboardExpandChart;
 
   /// No description provided for @dashboardUnitsValue.
   ///

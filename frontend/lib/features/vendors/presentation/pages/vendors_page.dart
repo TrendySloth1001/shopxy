@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/auth/permission_widgets.dart';
 import 'package:shopxy/core/auth/shop_capabilities.dart';
+import 'package:shopxy/core/haptics/scroll_boundary_haptics.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/notifications/domain/entities/invitation.dart';
 import 'package:shopxy/features/notifications/presentation/pages/send_invite_page.dart';
@@ -37,9 +38,13 @@ class VendorsPage extends StatefulWidget {
 }
 
 class _VendorsPageState extends State<VendorsPage> {
+  final _scrollCtrl = ScrollController();
+  late final ScrollBoundaryHaptics _scrollHaptics;
+
   @override
   void initState() {
     super.initState();
+    _scrollHaptics = ScrollBoundaryHaptics(_scrollCtrl);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<VendorsProvider>().loadVendors();
@@ -47,6 +52,13 @@ class _VendorsPageState extends State<VendorsPage> {
       // Cheap query — uses (from_user_id, status, created_at DESC) index.
       context.read<NotificationsProvider>().loadOutgoing();
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollHaptics.dispose();
+    _scrollCtrl.dispose();
+    super.dispose();
   }
 
   /// Most recent invitation we've sent for this vendor, if any. PENDING
@@ -136,6 +148,7 @@ class _VendorsPageState extends State<VendorsPage> {
                       color: AppColors.black,
                       backgroundColor: AppColors.surface,
                       child: ListView.separated(
+                        controller: _scrollCtrl,
                         padding: const EdgeInsets.fromLTRB(
                           AppSizes.lg,
                           AppSizes.sm,

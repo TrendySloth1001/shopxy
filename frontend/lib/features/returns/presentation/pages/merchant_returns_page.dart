@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/core/haptics/scroll_boundary_haptics.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/features/returns/data/datasources/merchant_returns_remote_data_source.dart';
 import 'package:shopxy/features/returns/domain/merchant_return.dart';
@@ -56,11 +57,21 @@ class _MerchantReturnsPageState extends State<MerchantReturnsPage> {
   List<MerchantReturn> _rows = const [];
   bool _loading = true;
   String? _error;
+  final _scrollCtrl = ScrollController();
+  late final ScrollBoundaryHaptics _scrollHaptics;
 
   @override
   void initState() {
     super.initState();
+    _scrollHaptics = ScrollBoundaryHaptics(_scrollCtrl);
     _load();
+  }
+
+  @override
+  void dispose() {
+    _scrollHaptics.dispose();
+    _scrollCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -136,6 +147,7 @@ class _MerchantReturnsPageState extends State<MerchantReturnsPage> {
                   : RefreshIndicator(
                       onRefresh: _load,
                       child: ListView.builder(
+                        controller: _scrollCtrl,
                         padding: const EdgeInsets.symmetric(
                           horizontal: AppSizes.lg,
                           vertical: AppSizes.sm,

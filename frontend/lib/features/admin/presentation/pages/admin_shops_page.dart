@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
+import 'package:shopxy/core/haptics/scroll_boundary_haptics.dart';
 import 'package:shopxy/core/network/image_url.dart';
 import 'package:shopxy/features/admin/data/datasources/admin_shops_remote_data_source.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
@@ -28,6 +29,8 @@ class AdminShopsPage extends StatefulWidget {
 
 class _AdminShopsPageState extends State<AdminShopsPage> {
   final _searchCtrl = TextEditingController();
+  final _scrollCtrl = ScrollController();
+  late final ScrollBoundaryHaptics _scrollHaptics;
   List<AdminShopRow> _rows = const [];
   bool _loading = true;
   String? _error;
@@ -35,6 +38,7 @@ class _AdminShopsPageState extends State<AdminShopsPage> {
   @override
   void initState() {
     super.initState();
+    _scrollHaptics = ScrollBoundaryHaptics(_scrollCtrl);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _load();
@@ -44,6 +48,8 @@ class _AdminShopsPageState extends State<AdminShopsPage> {
   @override
   void dispose() {
     _searchCtrl.dispose();
+    _scrollHaptics.dispose();
+    _scrollCtrl.dispose();
     super.dispose();
   }
 
@@ -134,6 +140,7 @@ class _AdminShopsPageState extends State<AdminShopsPage> {
                   : RefreshIndicator(
                       onRefresh: _load,
                       child: ListView.builder(
+                        controller: _scrollCtrl,
                         padding: const EdgeInsets.fromLTRB(
                           AppSizes.lg,
                           0,

@@ -179,6 +179,8 @@ abstract final class AppIcons {
   static const AppIconData eventRounded = HugeIcons.strokeRoundedCalendar01;
   static const AppIconData expandMoreRounded =
       HugeIcons.strokeRoundedArrowDown01;
+  static const AppIconData expandRounded =
+      HugeIcons.strokeRoundedMaximizeScreen;
   static const AppIconData factCheckOutlined = HugeIcons.strokeRoundedCheckList;
   static const AppIconData factCheckRounded = HugeIcons.strokeRoundedCheckList;
   static const AppIconData factoryRounded = HugeIcons.strokeRoundedFactory;
@@ -407,6 +409,7 @@ abstract final class AppIcons {
       HugeIcons.strokeRoundedSecurityCheck;
   static const AppIconData verifiedUserRounded =
       HugeIcons.strokeRoundedSecurityCheck;
+  static const AppIconData vibrationRounded = HugeIcons.strokeRoundedVibrate;
   static const AppIconData viewCarouselOutlined =
       HugeIcons.strokeRoundedCarouselHorizontal;
   static const AppIconData viewListRounded = HugeIcons.strokeRoundedListView;

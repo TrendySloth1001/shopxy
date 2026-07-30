@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
+import 'package:shopxy/core/haptics/scroll_boundary_haptics.dart';
 import 'package:shopxy/core/network/image_url.dart';
 import 'package:shopxy/features/admin/data/models/admin_collection.dart';
 import 'package:shopxy/features/admin/presentation/pages/admin_collection_editor_page.dart';
@@ -24,13 +25,24 @@ class AdminCollectionsPage extends StatefulWidget {
 }
 
 class _AdminCollectionsPageState extends State<AdminCollectionsPage> {
+  final _scrollCtrl = ScrollController();
+  late final ScrollBoundaryHaptics _scrollHaptics;
+
   @override
   void initState() {
     super.initState();
+    _scrollHaptics = ScrollBoundaryHaptics(_scrollCtrl);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<AdminCollectionsProvider>().load();
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollHaptics.dispose();
+    _scrollCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _openNew() async {
@@ -115,6 +127,7 @@ class _AdminCollectionsPageState extends State<AdminCollectionsPage> {
                       ],
                     )
                   : ListView.separated(
+                      controller: _scrollCtrl,
                       padding: EdgeInsets.fromLTRB(
                         AppSizes.lg,
                         AppSizes.lg + FloatingAppBar.contentTopInset(context),

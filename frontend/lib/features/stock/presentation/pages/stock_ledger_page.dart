@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/core/haptics/scroll_boundary_haptics.dart';
 import 'package:shopxy/features/challans/presentation/pages/challan_detail_page.dart';
 import 'package:shopxy/features/invoices/presentation/pages/invoice_detail_page.dart';
 import 'package:shopxy/features/stock/data/datasources/stock_remote_data_source.dart';
@@ -48,11 +49,21 @@ class _StockLedgerPageState extends State<StockLedgerPage> {
   List<StockTransaction> _entries = const [];
   bool _isLoading = true;
   String? _error;
+  final _scrollCtrl = ScrollController();
+  late final ScrollBoundaryHaptics _scrollHaptics;
 
   @override
   void initState() {
     super.initState();
+    _scrollHaptics = ScrollBoundaryHaptics(_scrollCtrl);
     _load();
+  }
+
+  @override
+  void dispose() {
+    _scrollHaptics.dispose();
+    _scrollCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -161,6 +172,7 @@ class _StockLedgerPageState extends State<StockLedgerPage> {
       color: AppColors.black,
       backgroundColor: AppColors.surface,
       child: ListView.separated(
+        controller: _scrollCtrl,
         padding: EdgeInsets.fromLTRB(
           AppSizes.lg,
           AppSizes.md +

@@ -2,6 +2,7 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/core/haptics/app_haptics.dart';
 import 'package:shopxy/core/prefs/theme_prefs.dart';
 import 'package:shopxy/core/router/menu_page.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
@@ -116,6 +117,7 @@ class AppShellState extends State<AppShell> {
   late final Set<int> _visited = {_currentIndex};
 
   void _select(int index) {
+    if (index != _currentIndex) AppHaptics.selection();
     setState(() {
       _currentIndex = index;
       _visited.add(index);

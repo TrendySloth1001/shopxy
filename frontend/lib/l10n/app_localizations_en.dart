@@ -2514,6 +2514,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Low-stock alerts and weekly summary';
 
   @override
+  String get profileHapticFeedback => 'Haptic feedback';
+
+  @override
+  String get profileHapticFeedbackSubtitle =>
+      'Vibrate on navigation, menu taps, and scroll edges';
+
+  @override
   String get profilePreferenceSaveFailed => 'Could not save preference:';
 
   @override
@@ -3388,6 +3395,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get dashboardSlowMoversHint =>
       'Share of idle in-stock units — capital that isn\'t moving.';
+
+  @override
+  String get dashboardExpandChart => 'Expand chart';
 
   @override
   String dashboardUnitsValue(Object count) {

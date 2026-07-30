@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/core/haptics/scroll_boundary_haptics.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/features/analytics/data/models/analytics.dart';
 import 'package:shopxy/features/analytics/presentation/providers/analytics_provider.dart';
@@ -23,13 +24,24 @@ class MerchantAnalyticsPage extends StatefulWidget {
 }
 
 class _MerchantAnalyticsPageState extends State<MerchantAnalyticsPage> {
+  final _scrollCtrl = ScrollController();
+  late final ScrollBoundaryHaptics _scrollHaptics;
+
   @override
   void initState() {
     super.initState();
+    _scrollHaptics = ScrollBoundaryHaptics(_scrollCtrl);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<AnalyticsProvider>().load();
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollHaptics.dispose();
+    _scrollCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _pickRange() async {
@@ -69,6 +81,7 @@ class _MerchantAnalyticsPageState extends State<MerchantAnalyticsPage> {
           : RefreshIndicator(
               onRefresh: provider.load,
               child: ListView(
+                controller: _scrollCtrl,
                 padding: EdgeInsets.fromLTRB(
                   AppSizes.lg,
                   AppSizes.lg + FloatingAppBar.contentTopInset(context),

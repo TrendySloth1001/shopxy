@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/auth/permission_widgets.dart';
 import 'package:shopxy/core/auth/shop_capabilities.dart';
+import 'package:shopxy/core/haptics/scroll_boundary_haptics.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/challans/presentation/pages/challan_detail_page.dart';
 import 'package:shopxy/features/challans/presentation/pages/create_challan_page.dart';
@@ -31,12 +32,23 @@ class ChallansPage extends StatefulWidget {
 }
 
 class _ChallansPageState extends State<ChallansPage> {
+  final _scrollCtrl = ScrollController();
+  late final ScrollBoundaryHaptics _scrollHaptics;
+
   @override
   void initState() {
     super.initState();
+    _scrollHaptics = ScrollBoundaryHaptics(_scrollCtrl);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) context.read<ChallansProvider>().loadChallans();
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollHaptics.dispose();
+    _scrollCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _openCreate() async {
@@ -121,6 +133,7 @@ class _ChallansPageState extends State<ChallansPage> {
                       color: AppColors.black,
                       backgroundColor: AppColors.surface,
                       child: ListView.separated(
+                        controller: _scrollCtrl,
                         padding: const EdgeInsets.fromLTRB(
                           AppSizes.lg,
                           AppSizes.sm,

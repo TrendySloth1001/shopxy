@@ -1127,6 +1127,8 @@
   "profileSectionNotifications": "NOTIFICATIONS",
   "profileEmailNotifications": "Email notifications",
   "profileEmailNotificationsSubtitle": "Low-stock alerts and weekly summary",
+  "profileHapticFeedback": "Haptic feedback",
+  "profileHapticFeedbackSubtitle": "Vibrate on navigation, menu taps, and scroll edges",
   "profilePreferenceSaveFailed": "Could not save preference:",
   "profileSectionAbout": "ABOUT",
   "profileAppVersion": "App version",
@@ -1586,6 +1588,7 @@
   "dashboardTopProducts": "Top products",
   "dashboardSlowMovers": "Slow movers",
   "dashboardSlowMoversHint": "Share of idle in-stock units — capital that isn't moving.",
+  "dashboardExpandChart": "Expand chart",
   "dashboardUnitsValue": "{count} units",
   "@dashboardUnitsValue": {
     "placeholders": {

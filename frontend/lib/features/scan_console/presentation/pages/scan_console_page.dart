@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/core/haptics/scroll_boundary_haptics.dart';
 import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/features/scan_console/presentation/scan_console_client.dart';
@@ -27,6 +28,8 @@ class ScanConsolePage extends StatefulWidget {
 class _ScanConsolePageState extends State<ScanConsolePage> {
   final MobileScannerController _controller = MobileScannerController();
   late final ScanConsoleClient _client;
+  final _scrollCtrl = ScrollController();
+  late final ScrollBoundaryHaptics _scrollHaptics;
 
   String? _lastCode;
   DateTime? _lastAt;
@@ -34,6 +37,7 @@ class _ScanConsolePageState extends State<ScanConsolePage> {
   @override
   void initState() {
     super.initState();
+    _scrollHaptics = ScrollBoundaryHaptics(_scrollCtrl);
     _client = ScanConsoleClient(context.read<ApiClient>())
       ..addListener(_onChange);
     _client.start();
@@ -48,6 +52,8 @@ class _ScanConsolePageState extends State<ScanConsolePage> {
     _client.removeListener(_onChange);
     _client.dispose();
     _controller.dispose();
+    _scrollHaptics.dispose();
+    _scrollCtrl.dispose();
     super.dispose();
   }
 
@@ -140,6 +146,7 @@ class _ScanConsolePageState extends State<ScanConsolePage> {
                       ),
                     )
                   : ListView.separated(
+                      controller: _scrollCtrl,
                       padding: const EdgeInsets.all(AppSizes.lg),
                       itemCount: _client.recent.length,
                       separatorBuilder: (_, _) =>

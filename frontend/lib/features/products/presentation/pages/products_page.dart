@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/auth/permission_widgets.dart';
 import 'package:shopxy/core/auth/shop_capabilities.dart';
+import 'package:shopxy/core/haptics/scroll_boundary_haptics.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/categories/presentation/widgets/category_icon_catalog.dart';
 import 'package:shopxy/features/categories/presentation/widgets/category_picker_sheet.dart';
@@ -48,6 +49,8 @@ class ProductsPage extends StatefulWidget {
 
 class _ProductsPageState extends State<ProductsPage> {
   final _searchController = TextEditingController();
+  final _scrollCtrl = ScrollController();
+  late final ScrollBoundaryHaptics _scrollHaptics;
 
   // Picker returns the chosen category's name so the chip can display
   // it without us having to fetch the full category list up-front
@@ -60,6 +63,7 @@ class _ProductsPageState extends State<ProductsPage> {
   @override
   void initState() {
     super.initState();
+    _scrollHaptics = ScrollBoundaryHaptics(_scrollCtrl);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<ProductsProvider>().loadProducts();
@@ -69,6 +73,8 @@ class _ProductsPageState extends State<ProductsPage> {
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollHaptics.dispose();
+    _scrollCtrl.dispose();
     super.dispose();
   }
 
@@ -199,6 +205,7 @@ class _ProductsPageState extends State<ProductsPage> {
   Widget _buildGrid({required ProductsProvider provider}) {
     final products = provider.products;
     return CustomScrollView(
+      controller: _scrollCtrl,
       slivers: [
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(
@@ -406,6 +413,7 @@ class _ProductsPageState extends State<ProductsPage> {
                           child: _grid
                               ? _buildGrid(provider: provider)
                               : ListView.separated(
+                                  controller: _scrollCtrl,
                                   padding: EdgeInsets.only(
                                     top: AppSizes.sm,
                                     bottom:

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy/core/haptics/scroll_boundary_haptics.dart';
 import 'package:shopxy/features/categories/domain/entities/category.dart';
 import 'package:shopxy/features/categories/presentation/pages/category_products_page.dart';
 import 'package:shopxy/features/categories/presentation/providers/categories_provider.dart';
@@ -28,13 +29,24 @@ class CategoriesPage extends StatefulWidget {
 }
 
 class _CategoriesPageState extends State<CategoriesPage> {
+  final _scrollCtrl = ScrollController();
+  late final ScrollBoundaryHaptics _scrollHaptics;
+
   @override
   void initState() {
     super.initState();
+    _scrollHaptics = ScrollBoundaryHaptics(_scrollCtrl);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<CategoriesProvider>().loadTree();
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollHaptics.dispose();
+    _scrollCtrl.dispose();
+    super.dispose();
   }
 
   @override
@@ -59,6 +71,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
               color: AppColors.black,
               backgroundColor: AppColors.surface,
               child: GridView.builder(
+                controller: _scrollCtrl,
                 padding: EdgeInsets.fromLTRB(
                   AppSizes.md,
                   AppSizes.md + FloatingAppBar.contentTopInset(context),

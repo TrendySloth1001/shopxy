@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/auth/shop_capabilities.dart';
+import 'package:shopxy/core/haptics/scroll_boundary_haptics.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
@@ -45,15 +46,25 @@ class _HsnCodesPageState extends State<HsnCodesPage> {
   bool _loading = true;
   bool _busy = false;
   String? _error;
+  final _scrollCtrl = ScrollController();
+  late final ScrollBoundaryHaptics _scrollHaptics;
 
   ProductsRemoteDataSource get _ds => context.read<ProductsRemoteDataSource>();
 
   @override
   void initState() {
     super.initState();
+    _scrollHaptics = ScrollBoundaryHaptics(_scrollCtrl);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _load();
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollHaptics.dispose();
+    _scrollCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -122,6 +133,7 @@ class _HsnCodesPageState extends State<HsnCodesPage> {
               color: AppColors.black,
               backgroundColor: AppColors.surface,
               child: ListView(
+                controller: _scrollCtrl,
                 padding: EdgeInsets.fromLTRB(
                   AppSizes.lg,
                   AppSizes.md + FloatingAppBar.contentTopInset(context),

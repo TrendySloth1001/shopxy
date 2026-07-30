@@ -2511,6 +2511,13 @@ class AppLocalizationsHi extends AppLocalizations {
       'कम-स्टॉक अलर्ट और साप्ताहिक सारांश';
 
   @override
+  String get profileHapticFeedback => 'हैप्टिक फ़ीडबैक';
+
+  @override
+  String get profileHapticFeedbackSubtitle =>
+      'नेविगेशन, मेनू टैप और स्क्रॉल किनारों पर वाइब्रेट करें';
+
+  @override
   String get profilePreferenceSaveFailed => 'प्राथमिकता सहेजी नहीं जा सकी:';
 
   @override
@@ -3386,6 +3393,9 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get dashboardSlowMoversHint =>
       'निष्क्रिय स्टॉक इकाइयों का हिस्सा — पूँजी जो नहीं चल रही।';
+
+  @override
+  String get dashboardExpandChart => 'चार्ट बड़ा करें';
 
   @override
   String dashboardUnitsValue(Object count) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/auth/permission_widgets.dart';
 import 'package:shopxy/core/auth/shop_capabilities.dart';
+import 'package:shopxy/core/haptics/scroll_boundary_haptics.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/notifications/domain/entities/invitation.dart';
 import 'package:shopxy/features/notifications/presentation/pages/send_invite_page.dart';
@@ -37,14 +38,25 @@ class PartiesPage extends StatefulWidget {
 }
 
 class _PartiesPageState extends State<PartiesPage> {
+  final _scrollCtrl = ScrollController();
+  late final ScrollBoundaryHaptics _scrollHaptics;
+
   @override
   void initState() {
     super.initState();
+    _scrollHaptics = ScrollBoundaryHaptics(_scrollCtrl);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<PartiesProvider>().loadParties();
       context.read<NotificationsProvider>().loadOutgoing();
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollHaptics.dispose();
+    _scrollCtrl.dispose();
+    super.dispose();
   }
 
   /// Most recent invitation we've sent for this party, if any.
@@ -133,6 +145,7 @@ class _PartiesPageState extends State<PartiesPage> {
                       color: AppColors.brand,
                       backgroundColor: AppColors.surface,
                       child: ListView.separated(
+                        controller: _scrollCtrl,
                         padding: const EdgeInsets.fromLTRB(
                           AppSizes.lg,
                           AppSizes.sm,
