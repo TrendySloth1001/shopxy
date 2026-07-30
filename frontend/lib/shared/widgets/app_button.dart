@@ -160,7 +160,16 @@ class AppButton extends StatelessWidget {
         highlightColor: fg.withValues(alpha: 0.04),
         child: Padding(
           padding: _padding,
-          child: Center(child: child),
+          child: Center(
+            // `heightFactor: 1` is load-bearing. A bare Center sizes to its
+            // child only when the incoming constraints are unbounded; when
+            // they're bounded it expands to fill them. Scaffold hands
+            // `bottomNavigationBar` a loose full-screen maxHeight, so every
+            // pinned CTA grew into a full-page slab. Hug the child's height
+            // and keep the Center purely for horizontal alignment.
+            heightFactor: 1,
+            child: child,
+          ),
         ),
       ),
     );
