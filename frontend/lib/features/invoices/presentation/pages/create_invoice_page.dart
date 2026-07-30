@@ -10,6 +10,7 @@ import 'package:shopxy/features/parties/presentation/widgets/party_picker.dart';
 import 'package:shopxy/features/products/data/datasources/products_remote_data_source.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/features/products/presentation/pages/qr_scanner_page.dart';
+import 'package:shopxy/features/products/presentation/providers/product_catalogue.dart';
 import 'package:shopxy/features/vendors/domain/entities/vendor.dart';
 import 'package:shopxy/features/vendors/presentation/widgets/vendor_picker.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
@@ -151,6 +152,10 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
       if (shopCode != null && _walkInStateCode == null) {
         setState(() => _walkInStateCode = shopCode);
       }
+      // Warm the catalogue while the merchant is still picking a customer, so
+      // the first character typed into product search already has an answer.
+      // No-op if another page loaded it already.
+      unawaited(context.read<ProductCatalogue>().ensureLoaded());
     });
   }
 
@@ -276,8 +281,20 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
   }
 
   void _onProductSearchChanged(String value) {
-    // Debounce — same pattern as OrdersInboxPage, so typing "sol" hits
-    // the backend once instead of once per keystroke.
+    // The catalogue answers in this frame, so there is nothing to debounce —
+    // debouncing a local list would only add lag the merchant can feel.
+    final catalogue = context.read<ProductCatalogue>();
+    if (catalogue.isSearchable) {
+      _searchDebounce?.cancel();
+      setState(() {
+        _productResults = catalogue.search(value, limit: 10);
+        _isSearchingProducts = false;
+      });
+      return;
+    }
+
+    // Catalogue cold or too large for this shop — the server is still the
+    // answer, and it still needs debouncing so "sol" costs one round-trip.
     _searchDebounce?.cancel();
     _searchDebounce = Timer(AppDurations.searchDebounce, () {
       if (!mounted) return;
@@ -294,7 +311,11 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     try {
       final ds = context.read<ProductsRemoteDataSource>();
       final result = await ds.getProducts(search: query, limit: 10);
-      if (mounted) setState(() => _productResults = result.products);
+      // If the catalogue finished loading while this was in flight, the local
+      // results on screen are newer than this response — dropping it stops an
+      // old query's rows replacing what the merchant is looking at now.
+      if (!mounted || context.read<ProductCatalogue>().isSearchable) return;
+      setState(() => _productResults = result.products);
     } catch (_) {
       // ignore
     } finally {

@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/auth/permission_widgets.dart';
+import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/core/auth/shop_capabilities.dart';
 import 'package:shopxy/core/haptics/scroll_boundary_haptics.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
@@ -60,6 +63,13 @@ class _ProductsPageState extends State<ProductsPage> {
   /// Grid (card) view vs the vertical list. Grid is the default.
   bool _grid = true;
 
+  /// This grid stays server-authoritative — its pagination, total count and
+  /// low/out-of-stock filters are all computed there, and the cards read
+  /// fields the light catalogue doesn't carry. So the fix here is the one it
+  /// was missing: every other search in the app debounces, this one fired a
+  /// request per character, meaning "sugar" cost five.
+  Timer? _searchDebounce;
+
   @override
   void initState() {
     super.initState();
@@ -70,8 +80,17 @@ class _ProductsPageState extends State<ProductsPage> {
     });
   }
 
+  void _onSearchChanged(String value) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(AppDurations.searchDebounce, () {
+      if (!mounted) return;
+      context.read<ProductsProvider>().setSearch(value);
+    });
+  }
+
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchController.dispose();
     _scrollHaptics.dispose();
     _scrollCtrl.dispose();
@@ -313,7 +332,7 @@ class _ProductsPageState extends State<ProductsPage> {
                   child: AppSearchBar(
                     hint: l10n.productsSearchHint,
                     controller: _searchController,
-                    onChanged: provider.setSearch,
+                    onChanged: _onSearchChanged,
                     trailing: _ScanAction(onTap: _openScanner),
                   ),
                 ),

@@ -12,6 +12,12 @@ import { productsService } from './products.service.js';
 // both the product- and variant-level stock at the schema so the API rejects
 // these cleanly instead of leaking a DB error or storing a truncated number.
 const STOCK_MAX = 999_999_999;
+
+// Ceiling on a single-response catalogue. Chosen for the payload, not the row
+// count: the light projection runs ~250 bytes a row, so 5,000 rows is ~1.2 MB
+// before gzip — around the most that's defensible to hand a phone in one go.
+// A shop past this keeps using server-side search, which has no such limit.
+const PRODUCT_CATALOGUE_MAX = 5_000;
 const hasMax3Decimals = (n: number): boolean =>
   Number.isFinite(n) && Math.round(n * 1000) === n * 1000;
 
@@ -337,6 +343,22 @@ export class ProductsController {
     });
 
     res.json(paginatedResponse(products, total, { page, limit, skip }));
+  }
+
+  /// The whole active catalogue, light, for clients that search locally.
+  ///
+  /// Not a page of `list` with a big limit: the projection is deliberately
+  /// narrower (no specs/offers/variants), which is the only reason sending
+  /// every row is affordable.
+  async catalogue(req: Request, res: Response): Promise<void> {
+    const { products, total, truncated } = await productsService.listCatalogue({
+      shopId: req.shopId!,
+      limit: PRODUCT_CATALOGUE_MAX,
+    });
+
+    // `truncated` is load-bearing, not diagnostic — it's how the client knows
+    // to keep asking the server instead of searching an incomplete list.
+    res.json({ data: products, total, truncated, limit: PRODUCT_CATALOGUE_MAX });
   }
 
   async lookup(req: Request, res: Response): Promise<void> {

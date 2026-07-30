@@ -56,6 +56,32 @@ class ProductsRemoteDataSource {
     );
   }
 
+  /// The whole active catalogue in one light response, for searching locally.
+  ///
+  /// `truncated` means the shop has more products than the server will send at
+  /// once. It is not a hint — a caller that searches a truncated list will tell
+  /// a merchant their own SKU doesn't exist, so the only correct response is to
+  /// abandon local search and ask the server.
+  ///
+  /// Goes through `ApiClient.get`, so it inherits the cache-first read: a cold
+  /// start paints from the last catalogue on disk and revalidates behind it,
+  /// and the whole thing keeps working offline.
+  Future<({List<Product> products, int total, bool truncated})>
+  getCatalogue() async {
+    final response = await _client.get('/products/catalogue');
+    _expectOk(response, 'Load product catalogue');
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final data = body['data'] as List;
+
+    return (
+      products: data
+          .map((e) => ProductDto.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      total: body['total'] as int? ?? data.length,
+      truncated: body['truncated'] as bool? ?? false,
+    );
+  }
+
   Future<Product> getProduct(String id) async {
     final response = await _client.get('/products/$id');
     _expectOk(response, 'Load product');

@@ -578,6 +578,60 @@ export class ProductsService {
     }));
   }
 
+  /// The fields a client needs to *find* a product and then price a line from
+  /// it — nothing more. `productSelect` drags description, specs, offers,
+  /// contentBlocks, variantAxes and every variant row along for the ride,
+  /// which is right for an editor and hopeless for a catalogue: preloading a
+  /// few hundred of those is megabytes on a shop's mobile data.
+  ///
+  /// `createdAt`/`updatedAt` are here because the client's Product model
+  /// requires them, not because search uses them.
+  static readonly catalogueSelect = {
+    id: true,
+    name: true,
+    sku: true,
+    barcode: true,
+    hsnCode: true,
+    unit: true,
+    mrp: true,
+    sellingPrice: true,
+    purchasePrice: true,
+    taxPercent: true,
+    cessRate: true,
+    taxSource: true,
+    stockQuantity: true,
+    lowStockThreshold: true,
+    categoryId: true,
+    isActive: true,
+    createdAt: true,
+    updatedAt: true,
+  } as const;
+
+  /// Every active product in the shop, in one light response, for a client
+  /// that wants to search locally instead of asking per keystroke.
+  ///
+  /// Capped: past `limit` rows the answer is a *partial* catalogue, and a
+  /// partial catalogue that looks complete is worse than none — a merchant
+  /// would type a real SKU and be told it doesn't exist. So we report
+  /// `truncated` and the client falls back to server-side search wholesale
+  /// rather than searching a subset.
+  async listCatalogue(options: { shopId: number; limit: number }) {
+    // Same non-negotiable tenant filter as every other product read.
+    const where = { shopId: options.shopId, isActive: true };
+
+    const [total, rows] = await Promise.all([
+      prisma.product.count({ where }),
+      prisma.product.findMany({
+        where,
+        orderBy: { name: 'asc' },
+        take: options.limit,
+        select: ProductsService.catalogueSelect,
+      }),
+    ]);
+
+    return { products: rows, total, truncated: total > options.limit };
+  }
+
   async listProducts(options: {
     shopId: number;
     activeOnly: boolean;

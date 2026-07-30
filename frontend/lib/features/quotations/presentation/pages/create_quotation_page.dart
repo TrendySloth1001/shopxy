@@ -7,6 +7,7 @@ import 'package:shopxy/features/parties/domain/entities/party.dart';
 import 'package:shopxy/features/parties/presentation/widgets/party_picker.dart';
 import 'package:shopxy/features/products/data/datasources/products_remote_data_source.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
+import 'package:shopxy/features/products/presentation/providers/product_catalogue.dart';
 import 'package:shopxy/features/quotations/domain/entities/quotation.dart';
 import 'package:shopxy/features/quotations/presentation/providers/quotations_provider.dart';
 import 'package:shopxy/features/quotations/presentation/widgets/quote_line_thumb.dart';
@@ -94,6 +95,11 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
   @override
   void initState() {
     super.initState();
+    // Warm the catalogue so the first typed character already has an answer.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(context.read<ProductCatalogue>().ensureLoaded());
+    });
     final req = widget.respondTo;
     if (req != null) {
       for (final l in req.items) {
@@ -129,8 +135,21 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
   double get _total => _subtotal + _tax;
 
   void _onProductSearchChanged(String value) {
-    // Debounce — same pattern as OrdersInboxPage, so typing "sol" hits
-    // the backend once instead of once per keystroke.
+    // Local catalogue answers in this frame — nothing to debounce.
+    final catalogue = context.read<ProductCatalogue>();
+    if (catalogue.isSearchable) {
+      _searchDebounce?.cancel();
+      // Bump the sequence so a server response still in flight from before the
+      // catalogue warmed can't land on top of these results.
+      _searchSeq++;
+      setState(() {
+        _results = catalogue.search(value, limit: 8);
+        _searching = false;
+      });
+      return;
+    }
+
+    // Cold or oversized catalogue — back to the server, still debounced.
     _searchDebounce?.cancel();
     _searchDebounce = Timer(AppDurations.searchDebounce, () {
       if (!mounted) return;

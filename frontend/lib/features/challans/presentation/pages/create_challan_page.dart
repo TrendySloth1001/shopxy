@@ -7,6 +7,7 @@ import 'package:shopxy/features/parties/domain/entities/party.dart';
 import 'package:shopxy/features/parties/presentation/widgets/party_picker.dart';
 import 'package:shopxy/features/products/data/datasources/products_remote_data_source.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
+import 'package:shopxy/features/products/presentation/providers/product_catalogue.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
@@ -57,6 +58,11 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
     super.initState();
     _partyName.addListener(_markDirty);
     _note.addListener(_markDirty);
+    // Warm the catalogue so the first typed character already has an answer.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(context.read<ProductCatalogue>().ensureLoaded());
+    });
   }
 
   @override
@@ -70,8 +76,18 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
   }
 
   void _onProductSearchChanged(String value) {
-    // Debounce — same pattern as OrdersInboxPage, so typing "sol" hits
-    // the backend once instead of once per keystroke.
+    // Local catalogue answers in this frame — nothing to debounce.
+    final catalogue = context.read<ProductCatalogue>();
+    if (catalogue.isSearchable) {
+      _searchDebounce?.cancel();
+      setState(() {
+        _searchResults = catalogue.search(value, limit: 8);
+        _isSearching = false;
+      });
+      return;
+    }
+
+    // Cold or oversized catalogue — back to the server, still debounced.
     _searchDebounce?.cancel();
     _searchDebounce = Timer(AppDurations.searchDebounce, () {
       if (!mounted) return;
@@ -88,7 +104,10 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
     try {
       final ds = context.read<ProductsRemoteDataSource>();
       final result = await ds.getProducts(search: query, limit: 8);
-      if (mounted) setState(() => _searchResults = result.products);
+      // Catalogue may have warmed while this was in flight — see the same
+      // guard in CreateInvoicePage.
+      if (!mounted || context.read<ProductCatalogue>().isSearchable) return;
+      setState(() => _searchResults = result.products);
     } catch (_) {
     } finally {
       if (mounted) setState(() => _isSearching = false);
