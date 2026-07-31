@@ -26,6 +26,11 @@ services:
     build: ./backend
     restart: unless-stopped
     depends_on: [postgres, minio, redis]
+    # Passes every optional var in .env through as-is (GEMINI_API_KEY,
+    # RAZORPAY_*, DISABLE_CRON, ...) without needing a compose.yaml edit each
+    # time a new optional feature flag is added. `environment:` below still
+    # wins for the required vars it lists, giving them fail-fast validation.
+    env_file: .env
     environment:
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set in .env}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?JWT_ACCESS_SECRET must be set in .env}
@@ -39,6 +44,31 @@ services:
       PORT: ${PORT:-3003}
       CORS_ORIGINS: ${CORS_ORIGINS:?CORS_ORIGINS must be set in .env (use a real origin list)}
     ports: ["3003:3003"]
+  merchant-web:
+    build:
+      context: ./merchant-web
+      args:
+        # Browser-visible (Next inlines it at build time) — must be the
+        # public origin the browser can reach, e.g. wss://api.yourdomain.com.
+        # Changing it after first build requires a rebuild of this service.
+        NEXT_PUBLIC_BACKEND_WS_URL: ${NEXT_PUBLIC_BACKEND_WS_URL:?NEXT_PUBLIC_BACKEND_WS_URL must be set in .env}
+    restart: unless-stopped
+    depends_on: [backend]
+    environment:
+      # Server-only — reaches the backend over the compose network, not the
+      # public internet.
+      API_BASE_URL: http://backend:3003
+      NODE_ENV: production
+    ports: ["3010:3010"]
+  customer-web:
+    build:
+      context: ./customer-web
+    restart: unless-stopped
+    depends_on: [backend]
+    environment:
+      API_BASE_URL: http://backend:3003
+      NODE_ENV: production
+    ports: ["3009:3009"]
 volumes:
   postgres_data:
   minio_data:

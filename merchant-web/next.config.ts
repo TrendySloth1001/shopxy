@@ -11,7 +11,10 @@ const { version } = JSON.parse(readFileSync("./package.json", "utf8")) as { vers
 // boots locally, and skips the built-in image optimizer (which would pull in
 // the native `sharp` binary) — images already proxy through `/api/*`, so the
 // optimizer isn't needed. Gated so the normal web deploy is unaffected.
-const isDesktopBuild = process.env.DESKTOP_BUILD === "1";
+// Docker packaging (`DOCKER_BUILD=1`, see Dockerfile) wants the same
+// self-contained output for the same reason — a portable image that doesn't
+// need `sharp` compiled for the container's platform.
+const isStandaloneBuild = process.env.DESKTOP_BUILD === "1" || process.env.DOCKER_BUILD === "1";
 
 // Conservative security-header set applied to every response. The CSP is kept
 // intentionally minimal — `frame-ancestors`/`object-src`/`base-uri` are safe
@@ -63,14 +66,15 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/(.*)", headers: SECURITY_HEADERS }];
   },
-  ...(isDesktopBuild
+  ...(isStandaloneBuild
     ? {
         output: "standalone" as const,
         images: { unoptimized: true },
-        // The desktop standalone bundle is verified separately (tsc + eslint).
-        // Skip the in-build re-check, which otherwise chokes on a concurrently
-        // running dev server's stale `.next/dev/types` route artifacts (the
-        // multi-session hazard). Normal web builds still type-check + lint.
+        // The desktop/Docker standalone bundle is verified separately (tsc +
+        // eslint). Skip the in-build re-check, which otherwise chokes on a
+        // concurrently running dev server's stale `.next/dev/types` route
+        // artifacts (the multi-session hazard). Normal web builds still
+        // type-check + lint.
         typescript: { ignoreBuildErrors: true },
         eslint: { ignoreDuringBuilds: true },
       }

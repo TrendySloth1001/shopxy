@@ -1,5 +1,10 @@
 import type { NextConfig } from "next";
 
+// Docker packaging (`DOCKER_BUILD=1`, see Dockerfile) emits a self-contained
+// server under `<distDir>/standalone` — a portable image that doesn't need
+// `sharp` compiled for the container's platform. Mirrors merchant-web.
+const isDockerBuild = process.env.DOCKER_BUILD === "1";
+
 // Conservative security-header set applied to every response. The CSP is kept
 // intentionally minimal — `frame-ancestors`/`object-src`/`base-uri` are safe
 // to pin hard, while a tight `script-src` would need a nonce for Next's runtime
@@ -60,6 +65,15 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/(.*)", headers: SECURITY_HEADERS }];
   },
+  ...(isDockerBuild
+    ? {
+        output: "standalone" as const,
+        // The Docker standalone bundle is verified separately (tsc + eslint)
+        // before build, so skip the in-build re-check.
+        typescript: { ignoreBuildErrors: true },
+        eslint: { ignoreDuringBuilds: true },
+      }
+    : {}),
 };
 
 export default nextConfig;

@@ -5,3 +5,8 @@ readmes/
 # Desktop installer artifacts (large binaries — built locally, never committed).
 dist/
 *.dmg
+
+# Full-stack compose secrets (DB/JWT/MinIO creds, API keys). Copy from
+# .env.example, never commit the filled-in version.
+.env
+shopxy-backup-*.tar.gz
