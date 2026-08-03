@@ -477,8 +477,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get productsSellingPriceInclGst => 'Selling price (incl. GST)';
 
   @override
+  String get productsTotalPayableExclGst => 'Total payable (incl. GST)';
+
+  @override
   String get productsGstExplainer =>
       'Prices include GST. CGST + SGST shown for a sale within your state; a sale to another state is charged the same total as IGST.';
+
+  @override
+  String get productsGstExplainerExclusive =>
+      'GST is added on top of this price when billed. CGST + SGST shown for a sale within your state; a sale to another state is charged the same total as IGST.';
+
+  @override
+  String get productsPricingModeLabel => 'GST pricing';
+
+  @override
+  String get productsPricingModeExclusive =>
+      'Exclusive — GST added on top when billed';
+
+  @override
+  String get productsPricingModeInclusive =>
+      'Inclusive — price already includes GST';
+
+  @override
+  String get productsPricingModeNoGst => 'No GST — exempt / nil-rated';
+
+  @override
+  String get productsPricingModeHelper =>
+      'Decides how invoices, quotations and orders bill this product\'s price.';
 
   @override
   String get productsReviewsSection => 'REVIEWS';

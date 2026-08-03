@@ -330,6 +330,14 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
       setState(() => _items[existing].quantity += 1);
     } else {
       setState(() {
+        // The document-wide inclusive/exclusive switch can't represent mixed
+        // per-line modes, so it's seeded from the FIRST product added — a
+        // later product with a disagreeing pricingMode still bills correctly
+        // per-line on the backend (which resolves per-product), just isn't
+        // reflected in this preview toggle. Only seed once, on an empty cart.
+        if (_items.isEmpty) {
+          _isPriceInclusive = product.pricingMode == 'TAX_INCLUSIVE';
+        }
         _items.add(
           InvoiceItemDraft(
             productId: product.id,
@@ -341,7 +349,8 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
             unitPrice: _type == 'SALE'
                 ? product.sellingPrice
                 : product.purchasePrice,
-            taxPercent: product.taxPercent,
+            taxPercent:
+                product.pricingMode == 'NO_GST' ? 0 : product.taxPercent,
           ),
         );
       });

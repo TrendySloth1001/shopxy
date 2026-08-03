@@ -181,6 +181,11 @@ const createProductSchema = z.object({
   // Compensation cess is ad valorem up to 290% (tobacco) — wider bound
   // than GST on purpose.
   cessRate: z.number().min(0).max(300).optional(),
+  // Whether mrp/sellingPrice already contain GST (TAX_INCLUSIVE), have it
+  // added on top when billed (TAX_EXCLUSIVE, the default), or the product is
+  // exempt/nil-rated (NO_GST — taxPercent/cessRate are then forced to 0 by
+  // the service, see resolveProductPricing()).
+  pricingMode: z.enum(['TAX_EXCLUSIVE', 'TAX_INCLUSIVE', 'NO_GST']).optional(),
   // CAT-M5 — same Decimal(12,3) bound as the variant field.
   stockQuantity: z
     .number()
@@ -238,6 +243,7 @@ const updateProductSchema = z
     purchasePrice: z.number().nonnegative().optional(),
     taxPercent: z.number().min(0).max(100).optional(),
     cessRate: z.number().min(0).max(300).optional(),
+    pricingMode: z.enum(['TAX_EXCLUSIVE', 'TAX_INCLUSIVE', 'NO_GST']).optional(),
     lowStockThreshold: z.number().nonnegative().optional(),
     unit: z.enum(UNITS).optional(),
     categoryId: zPublicId.nullable().optional(),

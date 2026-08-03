@@ -1022,11 +1022,53 @@ abstract class AppLocalizations {
   /// **'Selling price (incl. GST)'**
   String get productsSellingPriceInclGst;
 
+  /// No description provided for @productsTotalPayableExclGst.
+  ///
+  /// In en, this message translates to:
+  /// **'Total payable (incl. GST)'**
+  String get productsTotalPayableExclGst;
+
   /// No description provided for @productsGstExplainer.
   ///
   /// In en, this message translates to:
   /// **'Prices include GST. CGST + SGST shown for a sale within your state; a sale to another state is charged the same total as IGST.'**
   String get productsGstExplainer;
+
+  /// No description provided for @productsGstExplainerExclusive.
+  ///
+  /// In en, this message translates to:
+  /// **'GST is added on top of this price when billed. CGST + SGST shown for a sale within your state; a sale to another state is charged the same total as IGST.'**
+  String get productsGstExplainerExclusive;
+
+  /// No description provided for @productsPricingModeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'GST pricing'**
+  String get productsPricingModeLabel;
+
+  /// No description provided for @productsPricingModeExclusive.
+  ///
+  /// In en, this message translates to:
+  /// **'Exclusive — GST added on top when billed'**
+  String get productsPricingModeExclusive;
+
+  /// No description provided for @productsPricingModeInclusive.
+  ///
+  /// In en, this message translates to:
+  /// **'Inclusive — price already includes GST'**
+  String get productsPricingModeInclusive;
+
+  /// No description provided for @productsPricingModeNoGst.
+  ///
+  /// In en, this message translates to:
+  /// **'No GST — exempt / nil-rated'**
+  String get productsPricingModeNoGst;
+
+  /// No description provided for @productsPricingModeHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Decides how invoices, quotations and orders bill this product\'s price.'**
+  String get productsPricingModeHelper;
 
   /// No description provided for @productsReviewsSection.
   ///

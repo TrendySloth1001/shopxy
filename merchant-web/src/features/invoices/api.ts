@@ -55,6 +55,7 @@ export type InvoiceItemWrite = {
   quantity: number;
   unitPrice: number;
   taxPercent?: number;
+  isPriceInclusive?: boolean;
 };
 
 export type InvoiceWrite = {

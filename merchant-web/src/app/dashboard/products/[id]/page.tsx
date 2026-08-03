@@ -35,7 +35,7 @@ import {
 import { money, qty } from "@/features/products/format";
 import { formatDateTime } from "@/shared/datetime";
 import { formatINR2 } from "@/shared/money";
-import { gstFromInclusive } from "@/features/products/gst";
+import { gstBreakdownForProduct } from "@/features/products/gst";
 import { unitLabel } from "@/features/products/units";
 import { ProductThumb, mediaSrc } from "@/features/products/components/product-thumb";
 import { StockBadge } from "@/features/products/components/stock-badge";
@@ -385,8 +385,8 @@ export default function ProductDetailPage({
               ],
               [
                 t("detail.facts.gst"),
-                product.taxPercent > 0
-                  ? `${product.taxPercent}% · ${money(gstFromInclusive(product.sellingPrice, product.taxPercent).gst)}`
+                product.pricingMode !== "NO_GST" && product.taxPercent > 0
+                  ? `${product.taxPercent}% · ${money(gstBreakdownForProduct(product.sellingPrice, product.taxPercent, product.pricingMode)?.gst ?? 0)}`
                   : t("detail.facts.none"),
               ],
               [t("detail.facts.stock"), `${qty(product.stockQuantity)} ${unitLabel(product.unit)}`],
@@ -402,6 +402,7 @@ export default function ProductDetailPage({
               <GstBreakdown
                 sellingPrice={product.sellingPrice}
                 taxPercent={product.taxPercent}
+                pricingMode={product.pricingMode}
               />
             </div>
           </div>

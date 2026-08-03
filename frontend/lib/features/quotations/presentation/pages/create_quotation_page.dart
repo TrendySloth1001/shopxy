@@ -31,6 +31,7 @@ class _Line {
     required this.sku,
     required this.unitPrice,
     required this.taxPercent,
+    this.isPriceInclusive = false,
     this.imageUrl,
   }) {
     priceCtrl = TextEditingController(text: _fmtPrice(unitPrice));
@@ -42,6 +43,11 @@ class _Line {
   /// The quoted unit price — editable by the merchant in the builder.
   double unitPrice;
   final double taxPercent;
+
+  /// Whether [unitPrice] already contains GST, seeded from the product's own
+  /// pricingMode when added — editable via the line's badge, same as the
+  /// invoice editor.
+  bool isPriceInclusive;
   final String? imageUrl;
 
   /// Backs the inline price field so the merchant can set their own quote
@@ -49,8 +55,16 @@ class _Line {
   late final TextEditingController priceCtrl;
   int qty = 1;
 
-  double get taxable => qty * unitPrice;
-  double get lineTotal => taxable * (1 + taxPercent / 100);
+  double get gross => qty * unitPrice;
+
+  /// Pre-tax value: for an inclusive line, back GST out of the gross amount;
+  /// for an exclusive line the gross amount already IS the taxable value.
+  double get taxable => isPriceInclusive
+      ? (taxPercent > 0 ? (gross * 100) / (100 + taxPercent) : gross)
+      : gross;
+
+  double get lineTotal =>
+      isPriceInclusive ? gross : taxable * (1 + taxPercent / 100);
 
   static String _fmtPrice(double v) =>
       v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(2);
@@ -110,6 +124,7 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
             sku: l.sku,
             unitPrice: l.unitPrice,
             taxPercent: l.taxPercent,
+            isPriceInclusive: l.isPriceInclusive,
             imageUrl: l.imageUrl,
           )..qty = l.quantity <= 0 ? 1 : l.quantity.round(),
         );
@@ -130,8 +145,7 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
   }
 
   double get _subtotal => _lines.fold(0, (s, l) => s + l.taxable);
-  double get _tax =>
-      _lines.fold(0, (s, l) => s + l.taxable * l.taxPercent / 100);
+  double get _tax => _lines.fold(0, (s, l) => s + (l.lineTotal - l.taxable));
   double get _total => _subtotal + _tax;
 
   void _onProductSearchChanged(String value) {
@@ -190,7 +204,8 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
             name: p.name,
             sku: p.sku,
             unitPrice: p.sellingPrice,
-            taxPercent: p.taxPercent,
+            taxPercent: p.pricingMode == 'NO_GST' ? 0 : p.taxPercent,
+            isPriceInclusive: p.pricingMode == 'TAX_INCLUSIVE',
             imageUrl: p.primaryImageUrl,
           ),
         );
@@ -219,6 +234,7 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
           'quantity': l.qty,
           'unitPrice': l.unitPrice,
           'taxPercent': l.taxPercent,
+          'isPriceInclusive': l.isPriceInclusive,
           if (l.imageUrl != null) 'imageUrl': l.imageUrl,
         },
     ];
@@ -507,6 +523,29 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
                             : 'No GST',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: AppColors.muted,
+                        ),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => setState(
+                        () => line.isPriceInclusive = !line.isPriceInclusive,
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSizes.sm,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: AppShapes.squircleRadius(
+                            AppSizes.radiusSm,
+                          ),
+                          border: Border.all(color: AppColors.hairline),
+                        ),
+                        child: Text(
+                          line.isPriceInclusive ? 'Incl.' : 'Excl.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppColors.muted,
+                          ),
                         ),
                       ),
                     ),

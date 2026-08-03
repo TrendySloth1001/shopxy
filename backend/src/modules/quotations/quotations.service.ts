@@ -6,6 +6,8 @@ import { toNumber, round2 } from '../../shared/numbering/decimal.js';
 import { HttpError } from '../../shared/http/errorHandler.js';
 import { invoicesService } from '../invoices/invoices.service.js';
 import { renderQuotationPdf } from './quotation-pdf-renderer.js';
+import { resolveProductPricing } from '../products/pricing.js';
+import { chargesOutputGstForSale, isOutputGstRegistered } from '../invoices/gst-registration-gate.js';
 
 export type QuotationStatus =
   | 'REQUESTED'
@@ -26,6 +28,11 @@ export interface QuotationItemInput {
   /// GST compensation cess (tobacco / luxury / aerated). Carried through
   /// to the spawned invoice so a cess-bearing quote isn't under-billed.
   cessRate?: number | null;
+  /// Whether unitPrice already contains GST. Frozen onto the line at
+  /// hydrate time (same as taxPercent/cessRate) so a merchant changing a
+  /// product's pricingMode after this quote was sent can't retroactively
+  /// change what the customer already saw and is about to accept.
+  isPriceInclusive?: boolean | null;
   discount?: number | null;
   imageUrl?: string | null;
 }
@@ -71,7 +78,14 @@ function toDTO(r: QuotationRow) {
 /// authoritative GST engine), which additionally applies cess, the CGST/SGST
 /// place-of-supply split and invoice-level round-off. Rounding here mirrors the
 /// invoice engine's per-line round2 so the common (no-cess) estimate matches.
-function priceItems(items: QuotationItemInput[]) {
+///
+/// `chargesGst` is this shop's registration gate (see gst-registration-gate.ts)
+/// — the SAME check the invoice engine applies at accept() time. Without it, a
+/// COMPOSITION/UNREGISTERED shop's quotation preview showed a full GST
+/// breakdown that the spawned invoice then silently zeroed out — the quoted
+/// total and the accepted invoice's total disagreeing is exactly the bug this
+/// gate closes. Mirrors resolveInvoiceFields's `chargesOutputGst ? … : 0`.
+function priceItems(items: QuotationItemInput[], chargesGst: boolean) {
   let subtotal = 0;
   let taxAmount = 0;
   const lines = items.map((it) => {
@@ -80,9 +94,21 @@ function priceItems(items: QuotationItemInput[]) {
     // negative line (and so the spawned invoice — which also clamps — agrees).
     const gross = round2(qty * it.unitPrice);
     const discount = Math.min(Math.max(0, it.discount ?? 0), gross);
-    const taxable = round2(gross - discount);
-    const tax = round2((taxable * (it.taxPercent ?? 0)) / 100);
-    const cess = round2((taxable * (it.cessRate ?? 0)) / 100);
+    const lineAmount = round2(gross - discount);
+    const taxPercent = chargesGst ? it.taxPercent ?? 0 : 0;
+    const cessRate = chargesGst ? it.cessRate ?? 0 : 0;
+    // GST-5 — inclusive vs exclusive, mirroring resolveInvoiceFields: an
+    // inclusive line's amount already contains GST + cess, so back it out;
+    // an exclusive line adds tax on top of the full discounted amount.
+    let taxable: number;
+    if (it.isPriceInclusive) {
+      const divisor = 100 + taxPercent + cessRate;
+      taxable = divisor > 0 ? round2((lineAmount * 100) / divisor) : lineAmount;
+    } else {
+      taxable = lineAmount;
+    }
+    const tax = round2((taxable * taxPercent) / 100);
+    const cess = round2((taxable * cessRate) / 100);
     subtotal += taxable;
     taxAmount += tax + cess;
     return {
@@ -91,8 +117,9 @@ function priceItems(items: QuotationItemInput[]) {
       sku: it.sku ?? null,
       quantity: qty,
       unitPrice: it.unitPrice,
-      taxPercent: it.taxPercent ?? 0,
-      cessRate: it.cessRate ?? 0,
+      taxPercent,
+      cessRate,
+      isPriceInclusive: !!it.isPriceInclusive,
       discount,
       imageUrl: it.imageUrl ?? null,
       lineTotal: round2(taxable + tax + cess),
@@ -139,6 +166,7 @@ async function repriceFromMaster(
       sellingPrice: true,
       taxPercent: true,
       cessRate: true,
+      pricingMode: true,
     },
   });
   const byId = new Map(products.map((p) => [p.id, p]));
@@ -148,14 +176,23 @@ async function repriceFromMaster(
     // Silently skip a line whose product isn't in this shop — a customer
     // request must not seed an invoice line at a client-chosen price.
     if (!p) continue;
+    // The customer's own request must not carry the pricing CONVENTION any
+    // more than it carries the price itself — always the product's own
+    // resolved mode, never something the client could imply.
+    const resolved = resolveProductPricing({
+      taxPercent: toNumber(p.taxPercent),
+      cessRate: toNumber(p.cessRate),
+      pricingMode: p.pricingMode,
+    });
     out.push({
       productId: it.productId,
       name: p.name,
       sku: p.sku,
       quantity: it.quantity,
       unitPrice: toNumber(p.sellingPrice),
-      taxPercent: toNumber(p.taxPercent),
-      cessRate: toNumber(p.cessRate),
+      taxPercent: resolved.taxPercent,
+      cessRate: resolved.cessRate,
+      isPriceInclusive: resolved.isPriceInclusive,
       discount: 0,
       imageUrl: it.imageUrl ?? null,
     });
@@ -163,32 +200,48 @@ async function repriceFromMaster(
   return out;
 }
 
-/// Fill missing GST / cess rates from the product master before pricing.
-/// A quote line that omits taxPercent/cessRate must inherit the product's
-/// statutory rate — priceItems would otherwise snapshot 0, and accept()
-/// then passes that stored 0 to the invoice engine as an EXPLICIT rate,
-/// overriding the engine's own product fallback (the C1 "₹0 GST" bug
+/// Fill missing GST / cess rate / inclusive-flag from the product master
+/// before pricing. A quote line that omits taxPercent/cessRate must inherit
+/// the product's statutory rate — priceItems would otherwise snapshot 0, and
+/// accept() then passes that stored 0 to the invoice engine as an EXPLICIT
+/// rate, overriding the engine's own product fallback (the C1 "₹0 GST" bug
 /// resurfacing via the quotation path). An explicit rate — including a
-/// deliberate 0 for exempt/nil-rated lines — always wins.
+/// deliberate 0 for exempt/nil-rated lines — always wins. Same treatment for
+/// isPriceInclusive: it's frozen onto the line HERE (creation/response time),
+/// not left to resolve live at accept() — otherwise a merchant flipping a
+/// product's pricingMode between sending the quote and the customer
+/// accepting it would retroactively change what was already quoted.
 async function hydrateRates(
   shopId: number,
   items: QuotationItemInput[],
 ): Promise<QuotationItemInput[]> {
-  if (!items.some((it) => it.taxPercent == null || it.cessRate == null)) {
+  if (
+    !items.some(
+      (it) => it.taxPercent == null || it.cessRate == null || it.isPriceInclusive == null,
+    )
+  ) {
     return items;
   }
   const ids = [...new Set(items.map((i) => i.productId))];
   const products = await prisma.product.findMany({
     where: { id: { in: ids }, shopId },
-    select: { id: true, taxPercent: true, cessRate: true },
+    select: { id: true, taxPercent: true, cessRate: true, pricingMode: true },
   });
   const byId = new Map(products.map((p) => [p.id, p]));
   return items.map((it) => {
     const p = byId.get(it.productId);
+    const resolved = p
+      ? resolveProductPricing({
+          taxPercent: toNumber(p.taxPercent),
+          cessRate: toNumber(p.cessRate),
+          pricingMode: p.pricingMode,
+        })
+      : { taxPercent: 0, cessRate: 0, isPriceInclusive: false };
     return {
       ...it,
-      taxPercent: it.taxPercent ?? (p ? toNumber(p.taxPercent) : 0),
-      cessRate: it.cessRate ?? (p ? toNumber(p.cessRate) : 0),
+      taxPercent: it.taxPercent ?? resolved.taxPercent,
+      cessRate: it.cessRate ?? resolved.cessRate,
+      isPriceInclusive: it.isPriceInclusive ?? resolved.isPriceInclusive,
     };
   });
 }
@@ -218,7 +271,11 @@ export class QuotationsService {
       return { error: 'PARTY_NOT_LINKED' as const };
     }
 
-    const priced = priceItems(await hydrateRates(shopId, input.items));
+    const [hydrated, chargesGst] = await Promise.all([
+      hydrateRates(shopId, input.items),
+      chargesOutputGstForSale(prisma, shopId),
+    ]);
+    const priced = priceItems(hydrated, chargesGst);
 
     const created = await prisma.$transaction(async (tx) => {
       // Allocate inside the txn so a rollback doesn't burn the QUO counter.
@@ -361,6 +418,7 @@ export class QuotationsService {
       unitPrice: number;
       taxPercent?: number;
       cessRate?: number;
+      isPriceInclusive?: boolean;
       discount?: number;
     }>);
 
@@ -387,6 +445,11 @@ export class QuotationsService {
           unitPrice: l.unitPrice,
           taxPercent: l.taxPercent,
           cessRate: l.cessRate,
+          // Frozen at quote-hydrate time (see hydrateRates) — passed through
+          // explicitly so the invoice bills under the SAME convention the
+          // customer was quoted, not whatever the product's live pricingMode
+          // happens to be by the time they accept.
+          isPriceInclusive: l.isPriceInclusive,
           discount: l.discount,
         })),
         confirm: true,
@@ -532,7 +595,10 @@ export class QuotationsService {
   ) {
     const shop = await prisma.shop.findUnique({
       where: { id: shopId },
-      select: { ownerUserId: true },
+      select: {
+        ownerUserId: true,
+        owner: { select: { shopGstin: true, registrationType: true } },
+      },
     });
     if (!shop) return { error: 'PARTY_NOT_FOUND' as const };
 
@@ -542,7 +608,7 @@ export class QuotationsService {
     if (repriced.length === 0) {
       return { error: 'NO_VALID_ITEMS' as const };
     }
-    const priced = priceItems(repriced);
+    const priced = priceItems(repriced, isOutputGstRegistered(shop.owner));
 
     const created = await prisma.$transaction(async (tx) => {
       // Allocate inside the txn so a rollback doesn't burn the QUO counter.
@@ -600,7 +666,11 @@ export class QuotationsService {
       throw new HttpError(404, 'QUOTATION_NOT_FOUND', 'Quotation not found');
     }
 
-    const priced = priceItems(await hydrateRates(shopId, input.items));
+    const [hydrated, chargesGst] = await Promise.all([
+      hydrateRates(shopId, input.items),
+      chargesOutputGstForSale(prisma, shopId),
+    ]);
+    const priced = priceItems(hydrated, chargesGst);
     // Claim REQUESTED → PENDING so two merchants can't both send it.
     const claimed = await prisma.quotation.updateMany({
       where: { id, shopId, status: 'REQUESTED' },

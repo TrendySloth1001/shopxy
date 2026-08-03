@@ -11,6 +11,8 @@ import {
   resolveActiveProductPromos,
   lineDiscount,
 } from '../banners/promo-pricing.js';
+import { resolveProductPricing } from '../products/pricing.js';
+import { isOutputGstRegistered } from './gst-registration-gate.js';
 
 type InvoiceType = 'SALE' | 'PURCHASE';
 type InvoiceStatus = 'DRAFT' | 'CONFIRMED' | 'CANCELLED';
@@ -859,7 +861,7 @@ export class InvoicesService {
     // unregistered buyer still pays the vendor's GST — it just isn't
     // claimable as ITC, which is a reporting concern, not a document one).
     const registrationType = shop?.owner.registrationType ?? 'UNREGISTERED';
-    const isShopRegistered = registrationType === 'REGULAR' && !!shopGstin;
+    const isShopRegistered = isOutputGstRegistered({ shopGstin, registrationType });
     const chargesOutputGst = data.type === 'SALE' ? isShopRegistered : true;
 
     // An unregistered shop can't issue a tax invoice — downgrade it to a
@@ -919,7 +921,9 @@ export class InvoicesService {
       where: { id: { in: productIds }, shopId: data.shopId },
       // `hsnRevision` rides along so each line can record which revision of the
       // rate master its frozen rate came from — see the stamp below.
-      select: { id: true, name: true, sku: true, hsnCode: true, unit: true, stockQuantity: true, taxPercent: true, cessRate: true, hsnRevision: true },
+      // `pricingMode` feeds resolveProductPricing() below — the product-driven
+      // fallback for a line/invoice that omits its own isPriceInclusive/taxPercent.
+      select: { id: true, name: true, sku: true, hsnCode: true, unit: true, stockQuantity: true, taxPercent: true, cessRate: true, hsnRevision: true, pricingMode: true },
     });
     const productMap = new Map(products.map((p) => [p.id, p]));
     for (const item of data.items) {
@@ -969,7 +973,11 @@ export class InvoicesService {
       v.toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);
 
     // GST-5 — invoice-wide inclusive default; a per-line flag still wins.
-    const inclusiveDefault = data.isPriceInclusive ?? false;
+    // Deliberately NOT collapsed to `false` here (unlike before) — an omitted
+    // invoice-wide flag must fall through to each line's own product's
+    // pricingMode below, not silently become "exclusive" before the product
+    // ever gets a say. See the isInclusive resolution further down.
+    const inclusiveDefault = data.isPriceInclusive;
 
     // First pass: each line's gross value (qty * unitPrice) and its own
     // discount, clamped so a single line can never exceed its gross value.
@@ -1061,12 +1069,30 @@ export class InvoicesService {
         : new D(0);
       const variantHsn = lineVariantForProduct?.hsnCode ?? null;
 
-      // Effective slab: variant's own rate when set (> 0), else the product's.
-      const effectiveTaxPct = variantTaxPct.gt(0) ? variantTaxPct : new D(product.taxPercent ?? 0);
+      // Product-driven defaults — the single source of truth for "does this
+      // product's stored price already include GST, and what rate/cess apply
+      // when a caller doesn't override them." NO_GST forces 0 here regardless
+      // of what's still sitting on the row (belt-and-suspenders alongside the
+      // write-time normalization in products.service.ts).
+      const resolvedProductPricing = resolveProductPricing({
+        taxPercent: Number(product.taxPercent ?? 0),
+        cessRate: Number(product.cessRate ?? 0),
+        pricingMode: product.pricingMode,
+      });
+
+      // Effective slab: variant's own rate when set (> 0), else the product's
+      // resolved default. NO_GST is a product-level legal declaration a
+      // variant can't opt out of, so it wins over a variant's own rate too.
+      const effectiveTaxPct =
+        product.pricingMode === 'NO_GST'
+          ? new D(0)
+          : variantTaxPct.gt(0)
+            ? variantTaxPct
+            : new D(resolvedProductPricing.taxPercent);
       const effectiveHsn = variantHsn ?? product.hsnCode ?? undefined;
 
       const productTaxPct = effectiveTaxPct;
-      const productCessRate = new D(product.cessRate ?? 0);
+      const productCessRate = new D(resolvedProductPricing.cessRate);
       const taxPct = chargesOutputGst
         ? (item.taxPercent !== undefined ? new D(item.taxPercent) : productTaxPct)
         : new D(0);
@@ -1083,7 +1109,15 @@ export class InvoicesService {
       //     GST + cess, so back it out — taxable = amount * 100 / (100+rate+cess)
       //     and tax = amount - taxable. The combined divisor uses BOTH the GST
       //     rate and the cess rate because both are embedded in the MRP.
-      const isInclusive = item.isPriceInclusive ?? inclusiveDefault;
+      //
+      // Three-level fallback: an explicit per-line flag wins; else an
+      // explicit invoice-wide flag; else the product's own pricingMode. Only
+      // when NEITHER the line nor the invoice states a convention does the
+      // product get a say — this is what lets merchant-web/POS/stock/challan-
+      // conversion/quotation-accept (which all omit both) bill correctly per
+      // product without every call site having to say so explicitly.
+      const isInclusive =
+        item.isPriceInclusive ?? inclusiveDefault ?? resolvedProductPricing.isPriceInclusive;
       const lineAmount = dround2(gross.sub(lineDiscountTotal)); // discounted line money
       let taxableValue: Prisma.Decimal;
       if (isInclusive) {

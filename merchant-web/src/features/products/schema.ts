@@ -96,6 +96,12 @@ export const productSchema = z
     /// tax field opens as a readout or as an input.
     taxSource: z.enum(["HSN", "HSN_RULE", "OVERRIDE", "MANUAL"]).default("MANUAL"),
     hsnRevision: z.string().nullish(),
+    /// Whether mrp/sellingPrice already contain GST (TAX_INCLUSIVE), have it
+    /// added on top when billed (TAX_EXCLUSIVE, the default), or the product
+    /// is exempt/nil-rated (NO_GST — taxPercent is then forced to 0 server-side).
+    pricingMode: z
+      .enum(["TAX_EXCLUSIVE", "TAX_INCLUSIVE", "NO_GST"])
+      .default("TAX_EXCLUSIVE"),
     stockQuantity: z.coerce.number().default(0),
     lowStockThreshold: z.coerce.number().default(0),
     unit: z.string().default("PCS"),

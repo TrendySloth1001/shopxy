@@ -44,6 +44,7 @@ export const quotationLineSchema = z
     quantity: z.coerce.number().default(0),
     unitPrice: z.coerce.number().default(0),
     taxPercent: z.coerce.number().default(0),
+    isPriceInclusive: z.boolean().default(false),
     discount: z.coerce.number().default(0),
     cessRate: z.coerce.number().default(0),
     imageUrl: z.string().nullish(),

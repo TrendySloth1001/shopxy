@@ -1,22 +1,27 @@
 import { useTranslations } from "next-intl";
 import { money } from "../format";
-import { gstFromInclusive } from "../gst";
+import { gstBreakdownForProduct, type ProductPricingMode } from "../gst";
 
 /**
- * Breaks a GST-inclusive selling price into its taxable value and CGST/SGST
- * components so the merchant can see exactly how much of the price is tax —
- * instead of a bare "18%". Catalogue prices are tax-inclusive, so this backs
- * the GST out of the price rather than adding it on top.
+ * Breaks a selling price into its taxable value and CGST/SGST components so
+ * the merchant can see exactly how much of the price is tax — instead of a
+ * bare "18%". Mode-aware: TAX_INCLUSIVE backs GST out of the price,
+ * TAX_EXCLUSIVE adds it on top, NO_GST (or a zero rate under any mode) shows
+ * the plain no-tax line — matching whichever convention this product will
+ * actually be billed under.
  */
 export function GstBreakdown({
   sellingPrice,
   taxPercent,
+  pricingMode,
 }: {
   sellingPrice: number;
   taxPercent: number;
+  pricingMode: ProductPricingMode;
 }) {
   const t = useTranslations("products");
-  if (!taxPercent || taxPercent <= 0) {
+  const b = gstBreakdownForProduct(sellingPrice, taxPercent, pricingMode);
+  if (!b) {
     return (
       <p className="text-body-sm text-muted">
         {t("gstBreakdown.noGst", { price: money(sellingPrice) })}
@@ -24,7 +29,7 @@ export function GstBreakdown({
     );
   }
 
-  const b = gstFromInclusive(sellingPrice, taxPercent);
+  const inclusive = pricingMode === "TAX_INCLUSIVE";
   const half = taxPercent / 2;
 
   return (
@@ -38,11 +43,13 @@ export function GstBreakdown({
         strong
       />
       <div className="mt-xs flex items-baseline justify-between gap-md border-t border-hairline pt-sm">
-        <dt className="text-body-md text-ink">{t("gstBreakdown.sellingPriceInclGst")}</dt>
-        <dd className="text-title-sm tabular-nums text-ink">{money(sellingPrice)}</dd>
+        <dt className="text-body-md text-ink">
+          {t(inclusive ? "gstBreakdown.sellingPriceInclGst" : "gstBreakdown.totalPayableExclGst")}
+        </dt>
+        <dd className="text-title-sm tabular-nums text-ink">{money(b.totalPayable)}</dd>
       </div>
       <p className="mt-xs text-body-sm text-subtle">
-        {t("gstBreakdown.explainer")}
+        {t(inclusive ? "gstBreakdown.explainer" : "gstBreakdown.explainerExclusive")}
       </p>
     </dl>
   );

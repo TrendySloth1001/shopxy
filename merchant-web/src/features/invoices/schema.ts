@@ -36,6 +36,7 @@ export const invoiceItemSchema = z
     quantity: z.coerce.number().default(0),
     unitPrice: z.coerce.number().default(0),
     taxPercent: z.coerce.number().default(0),
+    isPriceInclusive: z.boolean().default(false),
     discount: z.coerce.number().default(0),
     taxableValue: z.coerce.number().default(0),
     igstAmount: z.coerce.number().default(0),

@@ -232,6 +232,11 @@
       "sellingPriceLabel": "विक्रय मूल्य",
       "purchasePriceLabel": "खरीद मूल्य",
       "taxPercentLabel": "कर %",
+      "pricingModeLabel": "GST मूल्य निर्धारण",
+      "pricingModeExclusive": "एक्सक्लूसिव — बिल बनाते समय GST ऊपर से जोड़ा जाएगा",
+      "pricingModeInclusive": "इन्क्लूसिव — कीमत में GST पहले से शामिल है",
+      "pricingModeNoGst": "कोई GST नहीं — कर-मुक्त",
+      "pricingModeHelper": "यह तय करता है कि इनवॉइस, कोटेशन और ऑर्डर इस उत्पाद की कीमत पर बिल कैसे बनाएंगे।",
       "openingStockLabel": "शुरुआती स्टॉक",
       "lowStockThresholdLabel": "कम-स्टॉक सीमा",
       "unitLabel": "यूनिट",
@@ -367,7 +372,9 @@
       "sgst": "SGST @ {rate}%",
       "totalGst": "कुल GST @ {rate}%",
       "sellingPriceInclGst": "विक्रय मूल्य (GST सहित)",
-      "explainer": "कीमतों में GST शामिल है। आपके राज्य के भीतर बिक्री के लिए CGST + SGST दिखाया गया है; दूसरे राज्य में बिक्री पर वही कुल IGST के रूप में लगता है।"
+      "totalPayableExclGst": "कुल देय (GST सहित)",
+      "explainer": "कीमतों में GST शामिल है। आपके राज्य के भीतर बिक्री के लिए CGST + SGST दिखाया गया है; दूसरे राज्य में बिक्री पर वही कुल IGST के रूप में लगता है।",
+      "explainerExclusive": "बिल बनाते समय इस कीमत पर GST ऊपर से जोड़ा जाता है। आपके राज्य के भीतर बिक्री के लिए CGST + SGST दिखाया गया है; दूसरे राज्य में बिक्री पर वही कुल IGST के रूप में लगता है।"
     },
     "offers": {
       "kindLabel": "ऑफ़र प्रकार",
@@ -665,6 +672,10 @@
       "qty": "मात्रा",
       "rate": "दर ₹",
       "amountPreTax": "राशि (टैक्स से पहले)",
+      "priceInclusive": "सहित",
+      "priceExclusive": "रहित",
+      "priceInclusiveHint": "कीमत में GST शामिल है — इसके बजाय ऊपर से GST जोड़ने के लिए टैप करें",
+      "priceExclusiveHint": "GST ऊपर से जोड़ा गया है — कीमत को पहले से GST-सहित मानने के लिए टैप करें",
       "removeItem": "आइटम हटाएँ"
     },
     "picker": {
@@ -740,6 +751,10 @@
       "productFallback": "उत्पाद",
       "noGst": "कोई GST नहीं",
       "rate": "दर ₹",
+      "priceInclusive": "सहित",
+      "priceExclusive": "रहित",
+      "priceInclusiveHint": "कीमत में GST शामिल है — इसके बजाय ऊपर से GST जोड़ने के लिए टैप करें",
+      "priceExclusiveHint": "GST ऊपर से जोड़ा गया है — कीमत को पहले से GST-सहित मानने के लिए टैप करें",
       "decrease": "घटाएं",
       "increase": "बढ़ाएं",
       "remove": "हटाएं"

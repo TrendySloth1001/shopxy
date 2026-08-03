@@ -232,6 +232,11 @@
       "sellingPriceLabel": "Selling price",
       "purchasePriceLabel": "Purchase price",
       "taxPercentLabel": "Tax %",
+      "pricingModeLabel": "GST pricing",
+      "pricingModeExclusive": "Exclusive — GST added on top when billed",
+      "pricingModeInclusive": "Inclusive — price already includes GST",
+      "pricingModeNoGst": "No GST — exempt / nil-rated",
+      "pricingModeHelper": "Decides how invoices, quotations and orders bill this product's price.",
       "openingStockLabel": "Opening stock",
       "lowStockThresholdLabel": "Low-stock threshold",
       "unitLabel": "Unit",
@@ -367,7 +372,9 @@
       "sgst": "SGST @ {rate}%",
       "totalGst": "Total GST @ {rate}%",
       "sellingPriceInclGst": "Selling price (incl. GST)",
-      "explainer": "Prices include GST. CGST + SGST shown for a sale within your state; a sale to another state is charged the same total as IGST."
+      "totalPayableExclGst": "Total payable (incl. GST)",
+      "explainer": "Prices include GST. CGST + SGST shown for a sale within your state; a sale to another state is charged the same total as IGST.",
+      "explainerExclusive": "GST is added on top of this price when billed. CGST + SGST shown for a sale within your state; a sale to another state is charged the same total as IGST."
     },
     "offers": {
       "kindLabel": "Offer type",
@@ -665,6 +672,10 @@
       "qty": "Qty",
       "rate": "Rate ₹",
       "amountPreTax": "Amount (pre-tax)",
+      "priceInclusive": "Incl.",
+      "priceExclusive": "Excl.",
+      "priceInclusiveHint": "Price includes GST — tap to bill GST on top instead",
+      "priceExclusiveHint": "GST added on top — tap to treat the price as already including GST",
       "removeItem": "Remove item"
     },
     "picker": {
@@ -740,6 +751,10 @@
       "productFallback": "Product",
       "noGst": "No GST",
       "rate": "Rate ₹",
+      "priceInclusive": "Incl.",
+      "priceExclusive": "Excl.",
+      "priceInclusiveHint": "Price includes GST — tap to bill GST on top instead",
+      "priceExclusiveHint": "GST added on top — tap to treat the price as already including GST",
       "decrease": "Decrease",
       "increase": "Increase",
       "remove": "Remove"

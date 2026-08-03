@@ -26,6 +26,10 @@ type QuoteLine = {
   quantity: number;
   unitPrice: number;
   taxPercent: number;
+  /// Whether unitPrice already contains GST, seeded from the product's own
+  /// pricingMode when added to the line (mirrors the invoice editor and the
+  /// backend's resolveProductPricing()).
+  isPriceInclusive: boolean;
   imageUrl: string | null;
 };
 
@@ -47,6 +51,7 @@ export function QuotationEditor({ existing }: { existing?: Quotation }) {
       quantity: it.quantity || 1,
       unitPrice: it.unitPrice,
       taxPercent: it.taxPercent,
+      isPriceInclusive: it.isPriceInclusive,
       imageUrl: it.imageUrl ?? null,
     })) ?? [],
   );
@@ -55,9 +60,23 @@ export function QuotationEditor({ existing }: { existing?: Quotation }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Per-line inclusive/exclusive, mirroring computeInvoiceTotals: an
+  // inclusive line's amount already contains GST — back it out — while an
+  // exclusive line adds GST on top. A quote can mix both, same as an invoice.
   const totals = useMemo(() => {
-    const subtotal = lines.reduce((s, l) => s + l.quantity * l.unitPrice, 0);
-    const tax = lines.reduce((s, l) => s + (l.quantity * l.unitPrice * l.taxPercent) / 100, 0);
+    let subtotal = 0;
+    let tax = 0;
+    for (const l of lines) {
+      const gross = l.quantity * l.unitPrice;
+      if (l.isPriceInclusive) {
+        const taxable = l.taxPercent > 0 ? (gross * 100) / (100 + l.taxPercent) : gross;
+        subtotal += taxable;
+        tax += gross - taxable;
+      } else {
+        subtotal += gross;
+        tax += (gross * l.taxPercent) / 100;
+      }
+    }
     return { subtotal, tax, total: subtotal + tax };
   }, [lines]);
 
@@ -78,7 +97,8 @@ export function QuotationEditor({ existing }: { existing?: Quotation }) {
           sku: p.sku,
           quantity: 1,
           unitPrice: p.sellingPrice,
-          taxPercent: p.taxPercent,
+          taxPercent: p.pricingMode === "NO_GST" ? 0 : p.taxPercent,
+          isPriceInclusive: p.pricingMode === "TAX_INCLUSIVE",
           imageUrl: p.images[0]?.url ?? null,
         },
       ];
@@ -110,6 +130,7 @@ export function QuotationEditor({ existing }: { existing?: Quotation }) {
       quantity: l.quantity,
       unitPrice: l.unitPrice,
       taxPercent: l.taxPercent,
+      isPriceInclusive: l.isPriceInclusive,
       imageUrl: l.imageUrl ?? undefined,
     }));
     const placeOfSupplyStateCode = party?.stateCode ?? existing?.placeOfSupplyStateCode ?? undefined;
@@ -200,6 +221,7 @@ export function QuotationEditor({ existing }: { existing?: Quotation }) {
                 line={l}
                 onPrice={(v) => patch(i, { unitPrice: v })}
                 onStep={(d) => step(i, d)}
+                onToggleInclusive={() => patch(i, { isPriceInclusive: !l.isPriceInclusive })}
                 onRemove={() => setLines((prev) => prev.filter((_, idx) => idx !== i))}
               />
             ))}
@@ -269,15 +291,20 @@ function QuoteLineRow({
   line,
   onPrice,
   onStep,
+  onToggleInclusive,
   onRemove,
 }: {
   line: QuoteLine;
   onPrice: (v: number) => void;
   onStep: (delta: number) => void;
+  onToggleInclusive: () => void;
   onRemove: () => void;
 }) {
   const t = useTranslations("quotations");
-  const lineTotal = line.quantity * line.unitPrice * (1 + line.taxPercent / 100);
+  const gross = line.quantity * line.unitPrice;
+  // Mirrors the totals-level math: an inclusive line's price already
+  // contains GST (lineTotal = gross), an exclusive line adds GST on top.
+  const lineTotal = line.isPriceInclusive ? gross : gross * (1 + line.taxPercent / 100);
   return (
     <div className="flex flex-wrap items-end gap-md border-b border-hairline py-md">
       <div className="min-w-0 flex-1">
@@ -296,6 +323,14 @@ function QuoteLineRow({
           className={priceInput}
         />
       </label>
+      <button
+        type="button"
+        onClick={onToggleInclusive}
+        title={t(line.isPriceInclusive ? "line.priceInclusiveHint" : "line.priceExclusiveHint")}
+        className="mb-0.5 inline-flex h-6 items-center rounded-full border border-hairline px-sm text-body-sm text-muted transition-colors hover:bg-surface-tint"
+      >
+        {t(line.isPriceInclusive ? "line.priceInclusive" : "line.priceExclusive")}
+      </button>
       <div className="flex items-center gap-xs">
         <button
           type="button"

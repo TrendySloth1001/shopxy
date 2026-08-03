@@ -79,6 +79,7 @@ export function InvoiceEditor({
       quantity: it.quantity,
       unitPrice: it.unitPrice,
       taxPercent: it.taxPercent,
+      isPriceInclusive: it.isPriceInclusive,
     })) ?? [],
   );
 
@@ -106,6 +107,10 @@ export function InvoiceEditor({
         next[idx] = { ...next[idx], quantity: next[idx].quantity + 1 };
         return next;
       }
+      // Seed the line's tax convention from the product's own pricingMode —
+      // the same three modes the backend's resolveProductPricing() resolves,
+      // so the preview here matches what the invoice actually bills. Still
+      // editable afterward via the line's badge, same as rate/discount.
       return [
         ...prev,
         {
@@ -116,7 +121,8 @@ export function InvoiceEditor({
           unit: p.unit,
           quantity: 1,
           unitPrice: type === "SALE" ? p.sellingPrice : p.purchasePrice,
-          taxPercent: p.taxPercent,
+          taxPercent: p.pricingMode === "NO_GST" ? 0 : p.taxPercent,
+          isPriceInclusive: p.pricingMode === "TAX_INCLUSIVE",
         },
       ];
     });
@@ -147,6 +153,7 @@ export function InvoiceEditor({
         quantity: l.quantity,
         unitPrice: l.unitPrice,
         taxPercent: l.taxPercent,
+        isPriceInclusive: l.isPriceInclusive,
       })),
       discount: Number(discount) || 0,
       note: note.trim() || undefined,
@@ -302,6 +309,7 @@ export function InvoiceEditor({
                 onQty={(v) => patchLine(i, { quantity: v })}
                 onPrice={(v) => patchLine(i, { unitPrice: v })}
                 onTax={(v) => patchLine(i, { taxPercent: v })}
+                onToggleInclusive={() => patchLine(i, { isPriceInclusive: !l.isPriceInclusive })}
                 onRemove={() => removeLine(i)}
               />
             ))}
@@ -487,12 +495,14 @@ function LineRow({
   onQty,
   onPrice,
   onTax,
+  onToggleInclusive,
   onRemove,
 }: {
   line: InvoiceLineDraft;
   onQty: (v: number) => void;
   onPrice: (v: number) => void;
   onTax: (v: number) => void;
+  onToggleInclusive: () => void;
   onRemove: () => void;
 }) {
   const t = useTranslations("invoices");
@@ -539,6 +549,14 @@ function LineRow({
           className={`${numInput} w-16`}
         />
       </label>
+      <button
+        type="button"
+        onClick={onToggleInclusive}
+        title={t(line.isPriceInclusive ? "form.priceInclusiveHint" : "form.priceExclusiveHint")}
+        className="mb-0.5 inline-flex h-6 items-center rounded-full border border-hairline px-sm text-body-sm text-muted transition-colors hover:bg-surface-tint"
+      >
+        {t(line.isPriceInclusive ? "form.priceInclusive" : "form.priceExclusive")}
+      </button>
       <div className="flex flex-col items-end gap-xs">
         <span className="text-label-md text-subtle">{t("form.amountPreTax")}</span>
         <span className="text-body-md font-semibold text-ink">{formatINR2(lineAmount)}</span>

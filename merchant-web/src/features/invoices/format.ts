@@ -28,6 +28,12 @@ export type InvoiceLineDraft = {
   quantity: number;
   unitPrice: number;
   taxPercent: number;
+  /// Whether unitPrice already contains GST, seeded from the product's own
+  /// pricingMode when it's added to the line (see resolveProductPricing on
+  /// the backend). Per-line, not invoice-wide — an invoice can mix a
+  /// TAX_INCLUSIVE product with a TAX_EXCLUSIVE one, same as the backend
+  /// engine allows.
+  isPriceInclusive: boolean;
 };
 
 export type InvoiceTotals = {
@@ -49,22 +55,19 @@ export type InvoiceTotals = {
  * rounded to the nearest rupee. The backend recomputes authoritatively on save
  * — this is a live preview only.
  *
- * `priceInclusive` (default `false`) selects the tax convention, matching the
- * backend's `isPriceInclusive` flag:
- *   - exclusive (default, existing merchant manual invoice): `unitPrice` is the
- *     pre-tax amount; tax is added on top → total = taxable + tax.
- *   - inclusive (marketplace / customer-order path): `unitPrice` ALREADY
- *     contains tax; the engine BACKS the tax out of the discounted line amount
- *     so it is NOT double-added. taxable = amount × 100 / (100 + rate).
- *
- * The default preserves the existing exclusive behaviour — never silently
- * change merchant-invoice maths.
+ * Each line's own `isPriceInclusive` selects its tax convention, matching the
+ * backend's per-line `isPriceInclusive` flag:
+ *   - exclusive (the historical default): `unitPrice` is the pre-tax amount;
+ *     tax is added on top → total = taxable + tax.
+ *   - inclusive (a TAX_INCLUSIVE product, or the marketplace/customer-order
+ *     path): `unitPrice` ALREADY contains tax; back it out of the discounted
+ *     line amount so it is NOT double-added. taxable = amount × 100 / (100 + rate).
+ * An invoice can mix both — the split is per line, same as the backend engine.
  */
 export function computeInvoiceTotals(
   lines: InvoiceLineDraft[],
   headerDiscount: number,
   interstate: boolean,
-  priceInclusive = false,
 ): InvoiceTotals {
   const subtotal = lines.reduce((sum, l) => sum + l.quantity * l.unitPrice, 0);
   const discount = Math.min(Math.max(headerDiscount, 0), subtotal);
@@ -75,7 +78,7 @@ export function computeInvoiceTotals(
     const lineBase = l.quantity * l.unitPrice;
     const share = subtotal > 0 ? lineBase / subtotal : 0;
     const lineAmount = lineBase - share * discount;
-    if (priceInclusive) {
+    if (l.isPriceInclusive) {
       // Inclusive: the discounted line amount already contains tax — back it
       // out so the displayed tax matches the backend and isn't double-added.
       const lineTaxable = (lineAmount * 100) / (100 + l.taxPercent);

@@ -1541,14 +1541,15 @@ export class PurchaseRequestsService {
         customerPhone: request.customerPhone ?? undefined,
         placeOfSupplyStateCode,
         note: opts.note ?? request.note ?? undefined,
-        // PR-C1 — the snapshot unitPrice is the marketplace sellingPrice, which
-        // is GST-INCLUSIVE (Legal Metrology MRP convention; the storefront
-        // labels prices "inclusive of all taxes"). Tell the invoice engine to
-        // back the tax out of each line so taxable + GST == the inclusive
-        // amount the customer is actually charged — making the tax-invoice
-        // total equal the amount collected (and the receipts that reconcile
-        // against it).
-        isPriceInclusive: true,
+        // PR-C1 — the snapshot unitPrice is the marketplace sellingPrice. This
+        // used to hardcode isPriceInclusive: true for every product (assuming
+        // Legal Metrology MRP-style "inclusive of all taxes" pricing across
+        // the whole catalogue). That's now the product's own call: each
+        // line omits isPriceInclusive/taxPercent entirely, so the invoice
+        // engine's resolveProductPricing() fallback reads it straight off
+        // each product's pricingMode — inclusive, exclusive, or no-GST — the
+        // same convention the merchant's own invoices/quotations bill it
+        // under, instead of a blanket assumption applied to every listing.
         // Header discount = this shop's seller-funded coupon share (CWQ-1),
         // applied BEFORE tax inside the engine (Sec 15(3)(a)).
         discount: couponShare > 0 ? couponShare : undefined,

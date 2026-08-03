@@ -7,6 +7,7 @@ class QuotationLine {
     required this.quantity,
     required this.unitPrice,
     required this.taxPercent,
+    this.isPriceInclusive = false,
     required this.discount,
     required this.lineTotal,
     this.imageUrl,
@@ -18,6 +19,12 @@ class QuotationLine {
   final double quantity;
   final double unitPrice;
   final double taxPercent;
+
+  /// Whether [unitPrice] already contains GST. Frozen onto the line at
+  /// quote-creation time from the product's own pricingMode (see
+  /// resolveProductPricing on the backend), not re-resolved at accept time —
+  /// so the quoted total can't drift from what the customer already saw.
+  final bool isPriceInclusive;
   final double discount;
   final double lineTotal;
   final String? imageUrl;
@@ -36,6 +43,7 @@ class QuotationLine {
         quantity: _d(j['quantity']),
         unitPrice: _d(j['unitPrice']),
         taxPercent: _d(j['taxPercent']),
+        isPriceInclusive: j['isPriceInclusive'] as bool? ?? false,
         discount: _d(j['discount']),
         lineTotal: _d(j['lineTotal']),
         imageUrl: (j['imageUrl'] as String?)?.isNotEmpty == true

@@ -697,8 +697,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       ),
                       _DetailRow(
                         l10n.productsTaxPercent,
-                        p.taxPercent > 0
-                            ? '${_formatRate(p.taxPercent)}% · ${currencyFormat.format(gstFromInclusive(p.sellingPrice, p.taxPercent).gst)}'
+                        p.pricingMode != 'NO_GST' && p.taxPercent > 0
+                            ? '${_formatRate(p.taxPercent)}% · ${currencyFormat.format(gstBreakdownForProduct(p.sellingPrice, p.taxPercent, p.pricingMode)?.gst ?? 0)}'
                             : l10n.productsNone,
                       ),
                       _DetailRow(
@@ -707,11 +707,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       ),
                     ],
                   ),
-                  if (p.taxPercent > 0) ...[
+                  if (p.pricingMode != 'NO_GST' && p.taxPercent > 0) ...[
                     const SizedBox(height: AppSizes.lg),
                     _GstBreakdownSection(
                       sellingPrice: p.sellingPrice,
                       taxPercent: p.taxPercent,
+                      pricingMode: p.pricingMode,
                       currencyFormat: currencyFormat,
                     ),
                   ],
@@ -2974,18 +2975,23 @@ class _GstBreakdownSection extends StatelessWidget {
   const _GstBreakdownSection({
     required this.sellingPrice,
     required this.taxPercent,
+    required this.pricingMode,
     required this.currencyFormat,
   });
 
   final double sellingPrice;
   final double taxPercent;
+  final String pricingMode;
   final NumberFormat currencyFormat;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
-    final b = gstFromInclusive(sellingPrice, taxPercent);
+    final inclusive = pricingMode == 'TAX_INCLUSIVE';
+    final b = inclusive
+        ? gstFromInclusive(sellingPrice, taxPercent)
+        : gstFromExclusive(sellingPrice, taxPercent);
     final half = taxPercent / 2;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -3028,12 +3034,14 @@ class _GstBreakdownSection extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      l10n.productsSellingPriceInclGst,
+                      inclusive
+                          ? l10n.productsSellingPriceInclGst
+                          : l10n.productsTotalPayableExclGst,
                       style: theme.textTheme.bodyMedium,
                     ),
                   ),
                   Text(
-                    currencyFormat.format(sellingPrice),
+                    currencyFormat.format(b.totalPayable),
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w800,
                       fontFeatures: const [FontFeature.tabularFigures()],
@@ -3043,7 +3051,9 @@ class _GstBreakdownSection extends StatelessWidget {
               ),
               const SizedBox(height: AppSizes.sm),
               Text(
-                l10n.productsGstExplainer,
+                inclusive
+                    ? l10n.productsGstExplainer
+                    : l10n.productsGstExplainerExclusive,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: AppColors.muted,
                 ),

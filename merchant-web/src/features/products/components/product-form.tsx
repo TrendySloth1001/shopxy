@@ -93,6 +93,9 @@ export function ProductForm({ product }: { product?: Product }) {
   const [taxPercent, setTaxPercent] = useState(
     product ? String(product.taxPercent) : "0",
   );
+  const [pricingMode, setPricingMode] = useState(
+    product?.pricingMode ?? "TAX_EXCLUSIVE",
+  );
   // What the HSN master last said, and which code it said it about. The pair
   // is what lets us tell "no rate on file for this code" apart from "haven't
   // looked this one up yet" — only the former is worth warning about.
@@ -174,6 +177,17 @@ export function ProductForm({ product }: { product?: Product }) {
     [hsnCode, taxManual],
   );
 
+  // NO_GST is exempt/nil-rated — the tax field has nothing to show, so
+  // switching into this mode clears it rather than letting a stale rate sit
+  // disabled and confusing (and mirrors the backend's own normalization).
+  const onPricingModeChange = useCallback((mode: string) => {
+    setPricingMode(mode as typeof pricingMode);
+    if (mode === "NO_GST") {
+      setTaxPercent("0");
+      setTaxManual(false);
+    }
+  }, []);
+
   const codeDigits = normalizeCode(hsnCode);
   const rateForCurrentCode = hsnRate?.requestedCode === codeDigits ? hsnRate : null;
   const hsnUnknown = hsnCheckedFor === codeDigits && codeDigits.length >= 4 && !hsnRate;
@@ -229,6 +243,7 @@ export function ProductForm({ product }: { product?: Product }) {
       sellingPrice: num(sellingPrice),
       purchasePrice: num(purchasePrice) ?? 0,
       taxPercent: num(taxPercent) ?? 0,
+      pricingMode,
       lowStockThreshold: num(lowStockThreshold) ?? 0,
       unit,
       tags: cleanTags,
@@ -375,15 +390,37 @@ export function ProductForm({ product }: { product?: Product }) {
             min={0}
             step={0.01}
           />
-          <GstRateField
-            value={taxPercent}
-            onChange={setTaxPercent}
-            manual={taxManual}
-            onManualChange={setTaxManual}
-            resolution={rateForCurrentCode}
-            unknownCode={hsnUnknown}
-            error={errors.taxPercent}
-          />
+          <div className="flex flex-col gap-xs">
+            <SelectField
+              label={t("form.pricingModeLabel")}
+              value={pricingMode}
+              onChange={onPricingModeChange}
+              options={[
+                { value: "TAX_EXCLUSIVE", label: t("form.pricingModeExclusive") },
+                { value: "TAX_INCLUSIVE", label: t("form.pricingModeInclusive") },
+                { value: "NO_GST", label: t("form.pricingModeNoGst") },
+              ]}
+            />
+            <p className="text-body-sm text-subtle">{t("form.pricingModeHelper")}</p>
+          </div>
+          {pricingMode === "NO_GST" ? (
+            <div className="flex flex-col gap-xs">
+              <span className="text-label-md text-muted">{t("form.taxPercentLabel")}</span>
+              <div className="flex h-10 items-center rounded-input border border-hairline bg-field-tint px-md">
+                <span className="text-body-md text-subtle">{t("form.pricingModeNoGst")}</span>
+              </div>
+            </div>
+          ) : (
+            <GstRateField
+              value={taxPercent}
+              onChange={setTaxPercent}
+              manual={taxManual}
+              onManualChange={setTaxManual}
+              resolution={rateForCurrentCode}
+              unknownCode={hsnUnknown}
+              error={errors.taxPercent}
+            />
+          )}
           {!isEdit ? (
             <NumberField
               label={t("form.openingStockLabel")}

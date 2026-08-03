@@ -173,6 +173,138 @@ describe('invoices.service — smoke', () => {
     }
   });
 
+  it('createInvoice — TAX_INCLUSIVE product with isPriceInclusive omitted backs GST out of the price', async () => {
+    // The line omits isPriceInclusive entirely (the merchant-web/POS/stock/
+    // challan-conversion path today) — the engine must fall back to the
+    // product's own pricingMode instead of silently defaulting exclusive.
+    const ctx = await createTestUser();
+    try {
+      await prisma.user.update({
+        where: { id: ctx.userId },
+        data: { shopGstin: '27ABCDE1234F1Z5', shopStateCode: '27', registrationType: 'REGULAR' },
+      });
+      const product = await prisma.product.create({
+        data: {
+          shopId: ctx.shopId,
+          name: 'MRP Product',
+          sku: `SKU-INC-${Date.now()}`,
+          mrp: 118,
+          sellingPrice: 118,
+          purchasePrice: 70,
+          taxPercent: 18,
+          pricingMode: 'TAX_INCLUSIVE',
+        },
+      });
+      const party = await createTestParty(ctx.shopId);
+      const result = await invoicesService.createInvoice({
+        shopId: ctx.shopId,
+        type: 'SALE',
+        partyId: party.id,
+        items: [{ productId: product.id, quantity: 1, unitPrice: 118 }],
+      });
+      expect('error' in result).toBe(false);
+      if ('error' in result) return;
+      const inv = result.invoice;
+      // ₹118 already contains 18% GST → taxable = 100, tax = 18, total stays 118.
+      expect(Number(inv.taxableValue)).toBeCloseTo(100, 2);
+      expect(Number(inv.cgstAmount)).toBeCloseTo(9, 2);
+      expect(Number(inv.sgstAmount)).toBeCloseTo(9, 2);
+      expect(Number(inv.total)).toBeCloseTo(118, 2);
+      await prisma.invoice.delete({ where: { id: inv.id } });
+    } finally {
+      await cleanupTestUser(ctx);
+    }
+  });
+
+  it('createInvoice — NO_GST product with a stale non-zero taxPercent still on the row bills ₹0 tax', async () => {
+    // Simulates data drift (a row hand-edited outside the normal write path):
+    // pricingMode is NO_GST but taxPercent wasn't zeroed. The engine's own
+    // resolveProductPricing() call must still force it to 0 — the belt-and-
+    // suspenders guarantee, not just write-time normalization in
+    // products.service.ts.
+    const ctx = await createTestUser();
+    try {
+      await prisma.user.update({
+        where: { id: ctx.userId },
+        data: { shopGstin: '27ABCDE1234F1Z5', shopStateCode: '27', registrationType: 'REGULAR' },
+      });
+      const product = await prisma.product.create({
+        data: {
+          shopId: ctx.shopId,
+          name: 'Stale Exempt Product',
+          sku: `SKU-NOGST-${Date.now()}`,
+          mrp: 100,
+          sellingPrice: 100,
+          purchasePrice: 60,
+          taxPercent: 28, // stale — should never bill
+          pricingMode: 'NO_GST',
+        },
+      });
+      const party = await createTestParty(ctx.shopId);
+      const result = await invoicesService.createInvoice({
+        shopId: ctx.shopId,
+        type: 'SALE',
+        partyId: party.id,
+        items: [{ productId: product.id, quantity: 1, unitPrice: 100 }],
+      });
+      expect('error' in result).toBe(false);
+      if ('error' in result) return;
+      const inv = result.invoice;
+      expect(Number(inv.taxableValue)).toBe(100);
+      expect(Number(inv.cgstAmount)).toBe(0);
+      expect(Number(inv.sgstAmount)).toBe(0);
+      expect(Number(inv.igstAmount)).toBe(0);
+      expect(Number(inv.total)).toBe(100);
+      await prisma.invoice.delete({ where: { id: inv.id } });
+    } finally {
+      await cleanupTestUser(ctx);
+    }
+  });
+
+  it('createInvoice — NO_GST product on a COMPOSITION shop composes to the same zero, not a double negative', async () => {
+    const ctx = await createTestUser();
+    try {
+      await prisma.user.update({
+        where: { id: ctx.userId },
+        data: {
+          shopGstin: '27ABCDE1234F1Z5',
+          shopStateCode: '27',
+          registrationType: 'COMPOSITION',
+        },
+      });
+      const product = await prisma.product.create({
+        data: {
+          shopId: ctx.shopId,
+          name: 'Exempt Product',
+          sku: `SKU-COMPNOGST-${Date.now()}`,
+          mrp: 100,
+          sellingPrice: 100,
+          purchasePrice: 60,
+          taxPercent: 0,
+          pricingMode: 'NO_GST',
+        },
+      });
+      const party = await createTestParty(ctx.shopId);
+      const result = await invoicesService.createInvoice({
+        shopId: ctx.shopId,
+        type: 'SALE',
+        documentType: 'TAX_INVOICE',
+        partyId: party.id,
+        items: [{ productId: product.id, quantity: 1, unitPrice: 100 }],
+      });
+      expect('error' in result).toBe(false);
+      if ('error' in result) return;
+      const inv = result.invoice;
+      expect(inv.documentType).toBe('BILL_OF_SUPPLY');
+      expect(Number(inv.cgstAmount)).toBe(0);
+      expect(Number(inv.sgstAmount)).toBe(0);
+      expect(Number(inv.total)).toBe(100);
+      await prisma.invoice.delete({ where: { id: inv.id } });
+    } finally {
+      await cleanupTestUser(ctx);
+    }
+  });
+
   it('createInvoice — header discount reduces taxable value BEFORE GST (Sec 15(3))', async () => {
     const ctx = await createTestUser();
     try {

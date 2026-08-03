@@ -1,0 +1,2 @@
+CREATE TYPE "ProductPricingMode" AS ENUM ('TAX_EXCLUSIVE', 'TAX_INCLUSIVE', 'NO_GST');
+ALTER TABLE "products" ADD COLUMN "pricing_mode" "ProductPricingMode" NOT NULL DEFAULT 'TAX_EXCLUSIVE';

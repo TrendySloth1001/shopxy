@@ -477,8 +477,33 @@ class AppLocalizationsHi extends AppLocalizations {
   String get productsSellingPriceInclGst => 'बिक्री मूल्य (GST सहित)';
 
   @override
+  String get productsTotalPayableExclGst => 'कुल देय (GST सहित)';
+
+  @override
   String get productsGstExplainer =>
       'मूल्यों में GST शामिल है। CGST + SGST आपके राज्य के भीतर बिक्री के लिए दिखाए गए हैं; दूसरे राज्य में बिक्री पर वही कुल राशि IGST के रूप में ली जाती है।';
+
+  @override
+  String get productsGstExplainerExclusive =>
+      'बिल बनाते समय इस कीमत पर GST ऊपर से जोड़ा जाता है। CGST + SGST आपके राज्य के भीतर बिक्री के लिए दिखाए गए हैं; दूसरे राज्य में बिक्री पर वही कुल राशि IGST के रूप में ली जाती है।';
+
+  @override
+  String get productsPricingModeLabel => 'GST मूल्य निर्धारण';
+
+  @override
+  String get productsPricingModeExclusive =>
+      'एक्सक्लूसिव — बिल बनाते समय GST ऊपर से जोड़ा जाएगा';
+
+  @override
+  String get productsPricingModeInclusive =>
+      'इन्क्लूसिव — कीमत में GST पहले से शामिल है';
+
+  @override
+  String get productsPricingModeNoGst => 'कोई GST नहीं — कर-मुक्त';
+
+  @override
+  String get productsPricingModeHelper =>
+      'यह तय करता है कि इनवॉइस, कोटेशन और ऑर्डर इस उत्पाद की कीमत पर बिल कैसे बनाएंगे।';
 
   @override
   String get productsReviewsSection => 'समीक्षाएँ';

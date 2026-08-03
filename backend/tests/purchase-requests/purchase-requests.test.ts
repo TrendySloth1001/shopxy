@@ -103,6 +103,101 @@ describe('purchase-requests.service — smoke', () => {
     }
   });
 
+  it('confirmRequest — a TAX_EXCLUSIVE (default) product is billed exclusive at checkout, not inclusive', async () => {
+    // PR-C1 used to hardcode isPriceInclusive: true for every marketplace
+    // checkout regardless of the product. Post-migration, existing/new
+    // products default to TAX_EXCLUSIVE, so the invoice this produces must
+    // ADD GST on top of the snapshot unitPrice, not back it out of it — this
+    // is the one deliberately-accepted behavior change from the old blanket
+    // inclusive assumption.
+    const merchant = await createTestUser();
+    const buyer = await createBuyer();
+    try {
+      await prisma.user.update({
+        where: { id: merchant.userId },
+        data: { shopGstin: '27ABCDE1234F1Z5', shopStateCode: '27', registrationType: 'REGULAR' },
+      });
+      // createForCustomer requires a published storefront; createTestUser's
+      // fixture shop starts unpublished (a known gap in the shared fixture,
+      // same class as hsn.test.ts's linkOwnerToShop — worked around locally
+      // rather than changing the shared helper's behavior for every suite).
+      await prisma.shop.update({ where: { id: merchant.shopId }, data: { isPublished: true } });
+      const product = await createTestProduct(merchant.shopId, {
+        sellingPrice: 100,
+        isPublished: true,
+      });
+      await prisma.product.update({ where: { id: product.id }, data: { taxPercent: 18 } });
+      const created = await purchaseRequestsService.createForCustomer({
+        customerUserId: buyer.userId,
+        items: [{ productId: product.id, quantity: 1, expectedUnitPrice: 100 }],
+      });
+      expect('error' in created).toBe(false);
+      if ('error' in created) return;
+      const requestId = created.order.shopOrders[0].id;
+      const result = await purchaseRequestsService.confirmRequest({
+        shopId: merchant.shopId,
+        requestId,
+        decidedById: merchant.userId,
+      });
+      expect('error' in result).toBe(false);
+      if ('error' in result) return;
+      const invoice = await prisma.invoice.findUniqueOrThrow({ where: { id: result.invoice.id } });
+      // ₹100 exclusive + 18% GST on top = ₹118, not ₹100 backed out of an
+      // assumed-inclusive price.
+      expect(Number(invoice.taxableValue)).toBeCloseTo(100, 2);
+      expect(Number(invoice.total)).toBeCloseTo(118, 2);
+      await prisma.invoice.delete({ where: { id: invoice.id } });
+      await prisma.customerOrder.delete({ where: { id: created.order.id } });
+    } finally {
+      await cleanupTestUser(merchant);
+      await cleanupTestUser(buyer);
+    }
+  });
+
+  it('confirmRequest — a TAX_INCLUSIVE product still backs GST out of the snapshot price at checkout', async () => {
+    const merchant = await createTestUser();
+    const buyer = await createBuyer();
+    try {
+      await prisma.user.update({
+        where: { id: merchant.userId },
+        data: { shopGstin: '27ABCDE1234F1Z5', shopStateCode: '27', registrationType: 'REGULAR' },
+      });
+      await prisma.shop.update({ where: { id: merchant.shopId }, data: { isPublished: true } });
+      const product = await createTestProduct(merchant.shopId, {
+        sellingPrice: 118,
+        mrp: 118,
+        isPublished: true,
+      });
+      await prisma.product.update({
+        where: { id: product.id },
+        data: { taxPercent: 18, pricingMode: 'TAX_INCLUSIVE' },
+      });
+      const created = await purchaseRequestsService.createForCustomer({
+        customerUserId: buyer.userId,
+        items: [{ productId: product.id, quantity: 1, expectedUnitPrice: 118 }],
+      });
+      expect('error' in created).toBe(false);
+      if ('error' in created) return;
+      const requestId = created.order.shopOrders[0].id;
+      const result = await purchaseRequestsService.confirmRequest({
+        shopId: merchant.shopId,
+        requestId,
+        decidedById: merchant.userId,
+      });
+      expect('error' in result).toBe(false);
+      if ('error' in result) return;
+      const invoice = await prisma.invoice.findUniqueOrThrow({ where: { id: result.invoice.id } });
+      // ₹118 already includes 18% GST → taxable backs out to ₹100, total stays ₹118.
+      expect(Number(invoice.taxableValue)).toBeCloseTo(100, 2);
+      expect(Number(invoice.total)).toBeCloseTo(118, 2);
+      await prisma.invoice.delete({ where: { id: invoice.id } });
+      await prisma.customerOrder.delete({ where: { id: created.order.id } });
+    } finally {
+      await cleanupTestUser(merchant);
+      await cleanupTestUser(buyer);
+    }
+  });
+
   it('createForCustomer — rejects buyer ordering from their own shop', async () => {
     const owner = await createTestUser();
     try {

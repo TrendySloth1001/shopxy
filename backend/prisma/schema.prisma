@@ -389,6 +389,12 @@ model Product {
   /// hand-typed rows. Pairs with [InvoiceItem.hsnRevision] to bound the blast
   /// radius when a rate turns out to have been wrong.
   hsnRevision   String? @map("hsn_revision")
+  /// Whether `sellingPrice`/`mrp` already contain GST (TAX_INCLUSIVE), have it
+  /// added on top when billed (TAX_EXCLUSIVE), or the product is exempt/nil-
+  /// rated and never carries GST regardless of `taxPercent` (NO_GST). The
+  /// single source of truth every invoice/quotation/challan-conversion line
+  /// resolves its tax convention from — see resolveProductPricing().
+  pricingMode   ProductPricingMode @default(TAX_EXCLUSIVE) @map("pricing_mode")
 
   stockQuantity     Decimal @default(0) @map("stock_quantity") @db.Decimal(12, 3)
   lowStockThreshold Decimal @default(10) @map("low_stock_threshold") @db.Decimal(12, 3)
@@ -2358,6 +2364,19 @@ enum TaxRateSource {
   OVERRIDE
   /// Typed by hand — pre-dates the master, or no code resolved.
   MANUAL
+}
+
+/// How a product's stored price relates to GST — the single source of truth
+/// every document type (invoice/quotation/challan-conversion) resolves its
+/// per-line tax convention from, instead of each guessing independently.
+enum ProductPricingMode {
+  /// GST is added on top of sellingPrice/mrp when billed (the historical
+  /// de-facto default across the app — safe, no-op default for existing rows).
+  TAX_EXCLUSIVE
+  /// sellingPrice/mrp already contains GST + cess; billing backs it out.
+  TAX_INCLUSIVE
+  /// Exempt / nil-rated — never carries GST, regardless of taxPercent.
+  NO_GST
 }
 
 /// A staffer's position within a shop's team. The source of truth for

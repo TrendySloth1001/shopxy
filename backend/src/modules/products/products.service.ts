@@ -1,4 +1,4 @@
-import { Prisma, type TaxRateSource } from '@prisma/client';
+import { Prisma, type TaxRateSource, type ProductPricingMode } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
 import { ledgerService } from '../ledger/ledger.service.js';
 import { embeddingService } from '../search/embedding.service.js';
@@ -146,6 +146,44 @@ async function applyHsnRates(
   }
 }
 
+/// A product declared NO_GST (exempt/nil-rated) must never carry a nonzero
+/// taxPercent, on the product row or any variant — resolveProductPricing()
+/// forces it to 0 downstream regardless, but leaving a nonzero number sitting
+/// on the row is exactly the kind of "looks derived, isn't" state
+/// [applyHsnRates]'s own doc-comment argues against. So: an explicit nonzero
+/// rate alongside NO_GST is a contradiction the client stated and must be
+/// rejected (matching HSN_RATE_UNRESOLVED's "refuse the write" precedent),
+/// while an omitted rate is simply normalized to 0.
+///
+/// Returns true when NO_GST was applied — the caller must then skip
+/// [applyHsnRates] entirely, since an HSN master's rate must never repopulate
+/// taxPercent for a line the merchant has declared exempt (the code itself
+/// may still be worth keeping on file for the printed Bill of Supply).
+function enforceNoGstMode(
+  data: RateBearing & { pricingMode?: ProductPricingMode; variants?: RateBearing[] },
+): boolean {
+  if (data.pricingMode !== 'NO_GST') return false;
+  if (data.taxPercent !== undefined && data.taxPercent !== 0) {
+    throw new HttpError(
+      422,
+      'NO_GST_WITH_TAX_PERCENT',
+      'A no-GST product cannot have a non-zero tax percent — clear the rate or change the pricing mode.',
+    );
+  }
+  data.taxPercent = 0;
+  for (const v of data.variants ?? []) {
+    if (v.taxPercent !== undefined && v.taxPercent !== 0) {
+      throw new HttpError(
+        422,
+        'NO_GST_WITH_TAX_PERCENT',
+        'A no-GST product cannot have a variant with a non-zero tax percent — clear the rate or change the pricing mode.',
+      );
+    }
+    v.taxPercent = 0;
+  }
+  return true;
+}
+
 /// Strip the obvious script-injection vectors from TEXT block markdown
 /// before it lands in the DB.
 ///
@@ -241,6 +279,7 @@ const productSelect = {
   purchasePrice: true,
   taxPercent: true,
   cessRate: true,
+  pricingMode: true,
   // Provenance: lets the editors open the GST field as a readout for a derived
   // rate and as an input for one that was typed by hand.
   taxSource: true,
@@ -314,6 +353,7 @@ export class ProductsService {
       purchasePrice: number;
       taxPercent?: number;
       cessRate?: number;
+      pricingMode?: ProductPricingMode;
       /// Written by [applyHsnRates], never accepted from a client — the
       /// controller's schema has no such keys, so zod strips them at the
       /// boundary. Provenance is something the server observes.
@@ -355,7 +395,11 @@ export class ProductsService {
     const shopId = options.shopId;
     // Fill any GST slab the payload named an HSN code for but left blank.
     // Must run BEFORE the destructure below — `rest` copies the fields.
-    await applyHsnRates(shopId, data);
+    // NO_GST short-circuits this entirely (see enforceNoGstMode) — an exempt
+    // product's rate must never be derived from the HSN master.
+    if (!enforceNoGstMode(data)) {
+      await applyHsnRates(shopId, data);
+    }
 
     const {
       imageUrls,
@@ -955,6 +999,7 @@ export class ProductsService {
       purchasePrice?: number;
       taxPercent?: number;
       cessRate?: number;
+      pricingMode?: ProductPricingMode;
       /// Server-set by [applyHsnRates]; see the note on createProduct.
       taxSource?: TaxRateSource;
       hsnRevision?: string | null;
@@ -993,19 +1038,23 @@ export class ProductsService {
     // follows" is the whole point of having a master. A patch that names both
     // keeps the merchant's number, stamped MANUAL if it disagrees. Runs before
     // the destructure so `rest` picks up the filled values.
-    if (data.hsnCode?.trim()) {
-      // Threshold rules need a price. A patch that changes only the code has
-      // none, so read the persisted one rather than resolving unconditionally.
-      const priced =
-        data.sellingPrice === undefined
-          ? await prisma.product.findFirst({
-              where: { id, shopId },
-              select: { sellingPrice: true },
-            })
-          : null;
-      await applyHsnRates(shopId, data, priced ? Number(priced.sellingPrice) : undefined);
-    } else {
-      await applyHsnRates(shopId, data);
+    // NO_GST short-circuits the HSN-rate fill entirely (see enforceNoGstMode)
+    // — an exempt product's rate must never be derived from the HSN master.
+    if (!enforceNoGstMode(data)) {
+      if (data.hsnCode?.trim()) {
+        // Threshold rules need a price. A patch that changes only the code has
+        // none, so read the persisted one rather than resolving unconditionally.
+        const priced =
+          data.sellingPrice === undefined
+            ? await prisma.product.findFirst({
+                where: { id, shopId },
+                select: { sellingPrice: true },
+              })
+            : null;
+        await applyHsnRates(shopId, data, priced ? Number(priced.sellingPrice) : undefined);
+      } else {
+        await applyHsnRates(shopId, data);
+      }
     }
 
     // updateMany returns count instead of throwing on missing row; that

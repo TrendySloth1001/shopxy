@@ -30,6 +30,7 @@ class Product {
     required this.purchasePrice,
     required this.taxPercent,
     this.taxSource = 'MANUAL',
+    this.pricingMode = 'TAX_EXCLUSIVE',
     required this.stockQuantity,
     required this.lowStockThreshold,
     required this.unit,
@@ -78,6 +79,13 @@ class Product {
   /// because that is literally what it was. The editor reads this to decide
   /// whether the GST field opens as a readout or as an input.
   final String taxSource;
+
+  /// Whether [mrp]/[sellingPrice] already contain GST ('TAX_INCLUSIVE'), have
+  /// it added on top when billed ('TAX_EXCLUSIVE', the default), or the
+  /// product is exempt/nil-rated ('NO_GST' — [taxPercent] is then forced to 0
+  /// server-side). The single source of truth every invoice/quotation line
+  /// resolves its tax convention from — see [gstBreakdownForProduct].
+  final String pricingMode;
   final double stockQuantity;
   final double lowStockThreshold;
   final String unit;

@@ -77,6 +77,12 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   /// the master derived stays derived, so a re-save re-derives it.
   bool _taxManual = false;
 
+  /// Whether mrp/sellingPrice already contain GST ('TAX_INCLUSIVE'), have it
+  /// added on top when billed ('TAX_EXCLUSIVE', the default), or the product
+  /// is exempt/nil-rated ('NO_GST'). The single source of truth every
+  /// invoice/quotation resolves its tax convention from.
+  String _pricingMode = 'TAX_EXCLUSIVE';
+
   String _selectedUnit = 'PCS';
   String? _selectedCategoryId;
   final List<String> _imageUrls = [];
@@ -152,6 +158,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     _taxManual = p != null &&
         p.taxSource == 'MANUAL' &&
         (p.hsnCode?.isNotEmpty ?? false);
+    _pricingMode = p?.pricingMode ?? 'TAX_EXCLUSIVE';
     _stockQuantity = TextEditingController(
       text:
           p?.stockQuantity.toString() ??
@@ -376,6 +383,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
           sellingPrice: double.parse(_sellingPrice.text),
           purchasePrice: double.parse(_purchasePrice.text),
           taxPercent: double.tryParse(_taxPercent.text),
+          pricingMode: _pricingMode,
           lowStockThreshold: double.tryParse(_lowStockThreshold.text),
           unit: _selectedUnit,
           categoryId: _selectedCategoryId,
@@ -416,6 +424,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
           brand: _brand.text.trim().isNotEmpty ? _brand.text.trim() : null,
           imageUrls: _imageUrls.isNotEmpty ? _imageUrls : null,
           taxPercent: double.tryParse(_taxPercent.text),
+          pricingMode: _pricingMode,
           stockQuantity: double.tryParse(_stockQuantity.text),
           lowStockThreshold: double.tryParse(_lowStockThreshold.text),
           unit: _selectedUnit,
@@ -1088,21 +1097,24 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                 validator: _priceValidator,
               ),
               const SizedBox(height: AppSizes.md),
+              _pricingModeField(),
+              const SizedBox(height: AppSizes.md),
               // GST is derived from the HSN code, not typed — so it gets its
               // own full-width row rather than sharing one with cost price.
               // It carries a provenance line and, when a threshold rule
               // applies, the price it was decided against; none of that fits
               // in half a row next to another field.
-              GstRateField(
-                controller: _taxPercent,
-                manual: _taxManual,
-                onManualChanged: (v) => setState(() {
-                  _taxManual = v;
-                  _dirty = true;
-                }),
-                resolution: _rateForCurrentCode,
-                unknownCode: _hsnUnknown,
-              ),
+              if (_pricingMode != 'NO_GST')
+                GstRateField(
+                  controller: _taxPercent,
+                  manual: _taxManual,
+                  onManualChanged: (v) => setState(() {
+                    _taxManual = v;
+                    _dirty = true;
+                  }),
+                  resolution: _rateForCurrentCode,
+                  unknownCode: _hsnUnknown,
+                ),
 
               const SizedBox(height: AppSizes.xxl),
 
@@ -1155,6 +1167,45 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
           .toList(),
       onChanged: (v) {
         if (v != null) setState(() => _selectedUnit = v);
+      },
+    );
+  }
+
+  /// Pricing mode — decides whether mrp/sellingPrice already contain GST,
+  /// have it added on top when billed, or the product is exempt. The single
+  /// source of truth every invoice/quotation resolves its tax convention
+  /// from (see resolveProductPricing on the backend).
+  Widget _pricingModeField() {
+    final l10n = AppLocalizations.of(context);
+    final options = <String, String>{
+      'TAX_EXCLUSIVE': l10n.productsPricingModeExclusive,
+      'TAX_INCLUSIVE': l10n.productsPricingModeInclusive,
+      'NO_GST': l10n.productsPricingModeNoGst,
+    };
+    return DropdownButtonFormField<String>(
+      initialValue: options.containsKey(_pricingMode) ? _pricingMode : 'TAX_EXCLUSIVE',
+      isExpanded: true,
+      decoration: InputDecoration(
+        labelText: l10n.productsPricingModeLabel,
+        helperText: l10n.productsPricingModeHelper,
+      ),
+      items: options.entries
+          .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+          .toList(),
+      onChanged: (v) {
+        if (v == null) return;
+        setState(() {
+          _pricingMode = v;
+          _dirty = true;
+          // NO_GST is exempt/nil-rated — the tax field has nothing to show,
+          // so switching into this mode clears it rather than leaving a
+          // stale rate sitting on a now-hidden field (mirrors the backend's
+          // own normalization).
+          if (v == 'NO_GST') {
+            _taxPercent.text = '0';
+            _taxManual = false;
+          }
+        });
       },
     );
   }

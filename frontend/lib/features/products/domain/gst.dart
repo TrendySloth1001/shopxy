@@ -1,8 +1,11 @@
-/// GST maths for the catalogue. Catalogue selling/MRP prices are stored
-/// GST-inclusive, so to show the merchant "how much of this price is tax" we
-/// BACK the GST out of the gross price rather than adding it on top. This
-/// mirrors the merchant-web `gst.ts` helper and the inclusive branch of the
-/// invoice totals engine.
+/// GST maths for the catalogue. A product's `pricingMode` decides whether its
+/// stored mrp/sellingPrice already contains GST ('TAX_INCLUSIVE' — back the
+/// tax OUT of the price) or GST is added on top when billed
+/// ('TAX_EXCLUSIVE' — the default), or the product never carries GST at all
+/// ('NO_GST'). This mirrors the backend's `resolveProductPricing()` and the
+/// merchant-web `gst.ts` helper — same three modes, same meaning — so the
+/// merchant sees the exact convention their invoices/quotations will bill
+/// under, not a blanket "prices are inclusive" assumption.
 ///
 /// An intra-state sale (the default for a single-shop merchant) splits GST
 /// evenly into CGST + SGST; an inter-state sale charges the same total as a
@@ -15,15 +18,16 @@ class GstBreakdown {
     required this.gst,
     required this.cgst,
     required this.sgst,
+    required this.totalPayable,
   });
 
   /// The applied GST rate, e.g. 18.
   final double rate;
 
-  /// Pre-tax (taxable) value backed out of the inclusive price.
+  /// Pre-tax (taxable) value.
   final double taxable;
 
-  /// Total GST contained in the inclusive price.
+  /// Total GST on top of/backed out of the price.
   final double gst;
 
   /// Half of [gst] — Central GST for an intra-state sale.
@@ -31,6 +35,10 @@ class GstBreakdown {
 
   /// Half of [gst] — State GST for an intra-state sale.
   final double sgst;
+
+  /// The amount actually payable — equals the price when inclusive, price +
+  /// gst when exclusive.
+  final double totalPayable;
 }
 
 /// Split a tax-inclusive price into its taxable value and GST components.
@@ -50,5 +58,37 @@ GstBreakdown gstFromInclusive(double gross, double ratePercent) {
     gst: gst,
     cgst: cgst,
     sgst: sgst,
+    totalPayable: gross,
   );
+}
+
+/// Add GST on top of a tax-exclusive price. [price] is the taxable value itself.
+GstBreakdown gstFromExclusive(double price, double ratePercent) {
+  final rate = ratePercent < 0 ? 0.0 : ratePercent;
+  final gst = price * rate / 100;
+  final cgst = (gst / 2 * 100).roundToDouble() / 100;
+  final sgst = (gst - cgst);
+  return GstBreakdown(
+    rate: rate,
+    taxable: price,
+    gst: gst,
+    cgst: cgst,
+    sgst: sgst,
+    totalPayable: price + gst,
+  );
+}
+
+/// Mode-aware entry point — the one callers in the products feature should
+/// use instead of reaching for [gstFromInclusive] directly. Returns `null`
+/// for 'NO_GST' (nothing to break down) and for a zero rate under any mode
+/// (same reasoning) — callers fall back to their own zero-tax display.
+GstBreakdown? gstBreakdownForProduct(
+  double price,
+  double taxPercent,
+  String pricingMode,
+) {
+  if (pricingMode == 'NO_GST' || taxPercent <= 0) return null;
+  return pricingMode == 'TAX_INCLUSIVE'
+      ? gstFromInclusive(price, taxPercent)
+      : gstFromExclusive(price, taxPercent);
 }
