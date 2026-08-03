@@ -94,7 +94,9 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
     );
     // Re-fetch via /auth/me so the user carries shopRole/shopId (the
     // login response doesn't include them) — the auth gate routes on it.
-    _user = await _dataSource.getMe();
+    // Bypass cache: see _applySession for why a fresh sign-in shouldn't
+    // serve a stale cached profile from a previous session as this user.
+    _user = await _dataSource.getMe(bypassCache: true);
     await _rememberThisDevice();
     notifyListeners();
   }
@@ -124,8 +126,9 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> setRecoveryPin(String pin) async {
     await _dataSource.setRecoveryPin(pin);
     // Refresh so `_user.recoveryPinSetAt` reflects the change immediately —
-    // the auth gate reads it to stop showing the setup screen.
-    _user = await _dataSource.getMe();
+    // the auth gate reads it to stop showing the setup screen. Bypass
+    // cache for the same reason as refreshUser().
+    _user = await _dataSource.getMe(bypassCache: true);
     notifyListeners();
   }
 
@@ -181,7 +184,11 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
       accessToken: session.accessToken,
       refreshToken: session.refreshToken,
     );
-    _user = await _dataSource.getMe();
+    // Bypass cache: this device may hold a stale cached profile from a
+    // previous session as this same user (e.g. cached before they'd
+    // finished onboarding a shop) — a fresh sign-in should always reflect
+    // current server state, not a leftover snapshot.
+    _user = await _dataSource.getMe(bypassCache: true);
     await _rememberThisDevice();
     notifyListeners();
   }
@@ -261,7 +268,9 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
       ),
       result.rememberToken,
     );
-    _user = await _dataSource.getMe();
+    // See _applySession — a fresh sign-in shouldn't serve a stale cached
+    // profile from a previous session as this user.
+    _user = await _dataSource.getMe(bypassCache: true);
     notifyListeners();
   }
 
@@ -279,8 +288,15 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   /// Re-fetch the current user (e.g. after accepting a team invite, so
   /// shopRole/shopId update and the auth gate re-routes into the app).
+  /// Bypasses the cache — the whole point of calling this is to see a
+  /// write that just happened, not a pre-write snapshot that hasn't hit
+  /// its background-revalidation window yet. (Root cause of a stuck
+  /// "Set up your shop" screen after a successful create: this used to go
+  /// through the cache-first path like every other GET, and the shop
+  /// creation only invalidates the "me" cache tag, not "auth" — the
+  /// unrelated tag /auth/me's cached response actually lives under.)
   Future<void> refreshUser() async {
-    _user = await _dataSource.getMe();
+    _user = await _dataSource.getMe(bypassCache: true);
     notifyListeners();
   }
 

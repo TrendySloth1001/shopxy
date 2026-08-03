@@ -41,9 +41,23 @@ class _OnboardingShopPageState extends State<OnboardingShopPage> {
     );
     if (!mounted) return;
     if (!ok) {
+      final error = context.read<ShopProvider>().error;
+      // The server is the source of truth here, and it's telling us this
+      // account already has a shop — which can only mean this screen's
+      // showing on stale client state (e.g. a device-cached /auth/me from
+      // before onboarding finished). That's not a user-facing error to
+      // display and retry forever: resync from the server instead, and
+      // the auth gate swaps this screen out on its own once shopRole
+      // populates. A genuinely different failure (network, validation)
+      // still surfaces normally.
+      if (error != null && error.contains('already have a shop')) {
+        await context.read<AuthProvider>().refreshUser();
+        if (mounted) setState(() => _isLoading = false);
+        return;
+      }
       setState(() {
         _isLoading = false;
-        _error = context.read<ShopProvider>().error;
+        _error = error;
       });
       return;
     }

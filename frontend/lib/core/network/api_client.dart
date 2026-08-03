@@ -89,13 +89,19 @@ class ApiClient {
       case 'GET':
         return _http.get(uri, headers: h).timeout(_kDefaultTimeout);
       case 'POST':
-        return _http.post(uri, headers: h, body: body).timeout(_kDefaultTimeout);
+        return _http
+            .post(uri, headers: h, body: body)
+            .timeout(_kDefaultTimeout);
       case 'PATCH':
-        return _http.patch(uri, headers: h, body: body).timeout(_kDefaultTimeout);
+        return _http
+            .patch(uri, headers: h, body: body)
+            .timeout(_kDefaultTimeout);
       case 'PUT':
         return _http.put(uri, headers: h, body: body).timeout(_kDefaultTimeout);
       case 'DELETE':
-        return _http.delete(uri, headers: h, body: body).timeout(_kDefaultTimeout);
+        return _http
+            .delete(uri, headers: h, body: body)
+            .timeout(_kDefaultTimeout);
       default:
         throw ArgumentError('Unsupported method: $method');
     }
@@ -137,7 +143,17 @@ class ApiClient {
   Future<http.Response> get(
     String path, {
     Map<String, String>? queryParameters,
+
+    /// Skip the cache-first read (still write-through the fresh response
+    /// afterward) — for the rare call site that just performed a write and
+    /// needs this read to reflect it *now*, not after the next background
+    /// revalidation. Cache-first stays the default: that's what lets the
+    /// app cold-boot into the shell offline.
+    bool bypassCache = false,
   }) async {
+    // Whether this resource is cacheable at all, independent of
+    // `bypassCache` — governs the write-through below, so a bypassed read
+    // still refreshes the cache for the *next* cache-first read.
     final cacheable = cache != null && ResourcePolicy.isCacheableRead(path);
     final userId = _tokenManager.currentUserId;
     final tag = ResourcePolicy.tagFor(path);
@@ -151,7 +167,7 @@ class ApiClient {
           )
         : null;
 
-    if (cacheable && key != null) {
+    if (cacheable && !bypassCache && key != null) {
       final cached = await cache!.read(key);
       if (cached != null) {
         // Serve instantly. Only revalidate if the copy is old enough to be
@@ -159,7 +175,15 @@ class ApiClient {
         // (Set.add returns false when the key is already present).
         final stale = DateTime.now().difference(cached.storedAt) >= _staleAfter;
         if (stale && _revalidating.add(key)) {
-          unawaited(_revalidate(uri, key: key, userId: userId, tag: tag, previousBody: cached.body));
+          unawaited(
+            _revalidate(
+              uri,
+              key: key,
+              userId: userId,
+              tag: tag,
+              previousBody: cached.body,
+            ),
+          );
         }
         return http.Response(
           cached.body,
@@ -271,7 +295,8 @@ class ApiClient {
     Map<String, String>? headers,
   }) async {
     final resp = await _withRetry(
-      () => _rawSend(method, _buildUri(path), body: body, extraHeaders: headers),
+      () =>
+          _rawSend(method, _buildUri(path), body: body, extraHeaders: headers),
     );
     if (resp.statusCode >= 200 && resp.statusCode < 300) _afterWrite(path);
     return resp;
@@ -301,7 +326,12 @@ class ApiClient {
       bodyJson,
       extraHeaders,
       () => _withRetry(
-        () => _rawSend('POST', _buildUri(path), body: bodyJson, extraHeaders: extraHeaders),
+        () => _rawSend(
+          'POST',
+          _buildUri(path),
+          body: bodyJson,
+          extraHeaders: extraHeaders,
+        ),
       ),
     );
   }
@@ -313,7 +343,8 @@ class ApiClient {
       path,
       bodyJson,
       null,
-      () => _withRetry(() => _rawSend('PATCH', _buildUri(path), body: bodyJson)),
+      () =>
+          _withRetry(() => _rawSend('PATCH', _buildUri(path), body: bodyJson)),
     );
   }
 
@@ -335,7 +366,8 @@ class ApiClient {
       path,
       bodyJson,
       null,
-      () => _withRetry(() => _rawSend('DELETE', _buildUri(path), body: bodyJson)),
+      () =>
+          _withRetry(() => _rawSend('DELETE', _buildUri(path), body: bodyJson)),
     );
   }
 

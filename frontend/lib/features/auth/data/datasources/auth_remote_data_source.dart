@@ -224,8 +224,11 @@ class AuthRemoteDataSource {
         0;
   }
 
-  Future<AuthUser> getMe() async {
-    final res = await _client.get('/auth/me');
+  /// [bypassCache] forces a live read — for callers that just wrote
+  /// something (a new shop, a profile change) and need this response to
+  /// reflect it immediately, not after the next background revalidation.
+  Future<AuthUser> getMe({bool bypassCache = false}) async {
+    final res = await _client.get('/auth/me', bypassCache: bypassCache);
     if (res.statusCode != 200) throw Exception('Session expired');
     return AuthUser.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
