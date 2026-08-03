@@ -6,6 +6,9 @@ import {
   verifyEmail,
   resendOtp,
   login,
+  googleAuth,
+  setRecoveryPin,
+  recoveryPinLogin,
   refresh,
   logout,
   logoutAll,
@@ -37,6 +40,8 @@ router.post('/register', asyncHandler(register));
 router.post('/verify-email', asyncHandler(verifyEmail));
 router.post('/resend-otp', asyncHandler(resendOtp));
 router.post('/login', asyncHandler(login));
+router.post('/google', asyncHandler(googleAuth));
+router.post('/recovery-pin/login', asyncHandler(recoveryPinLogin));
 router.post('/refresh', asyncHandler(refresh));
 router.post('/logout', asyncHandler(logout));
 // Device-remember: one-tap return sign-in for native apps (desktop/Flutter).
@@ -54,6 +59,7 @@ router.get('/me', requireAuth, asyncHandler(getMe));
 router.patch('/me', requireAuth, asyncHandler(updateProfile));
 router.post('/change-password', requireAuth, asyncHandler(changePassword));
 router.post('/remember', requireAuth, asyncHandler(issueRemember));
+router.post('/recovery-pin', requireAuth, asyncHandler(setRecoveryPin));
 
 // Two-factor auth (TOTP) — all require an active session.
 router.get('/2fa/status', requireAuth, asyncHandler(twoFactorStatus));

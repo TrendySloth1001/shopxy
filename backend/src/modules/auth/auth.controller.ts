@@ -336,6 +336,105 @@ export async function login(req: Request, res: Response) {
   res.json(result);
 }
 
+const googleAuthSchema = z.object({
+  idToken: z.string().min(10),
+});
+
+/// POST /auth/google — public. Sign in with a Google-issued ID token
+/// (verified server-side); creates/links the account as needed.
+export async function googleAuth(req: Request, res: Response) {
+  const parsed = googleAuthSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: 'idToken required' });
+    return;
+  }
+  const result = await authService.googleAuth(parsed.data.idToken, deviceFromReq(req));
+  if ('error' in result) {
+    if (result.error === 'account_disabled') {
+      res.status(403).json({ error: 'This account has been disabled' });
+      return;
+    }
+    res.status(401).json({ error: 'Google sign-in failed' });
+    return;
+  }
+  if (result.user?.id) {
+    void loginAlertsService.recordLogin({
+      userId: result.user.id,
+      ip: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+  }
+  res.json(result);
+}
+
+const pinSchema = z
+  .string()
+  .regex(/^\d{4,6}$/, 'PIN must be 4-6 digits');
+
+const setRecoveryPinSchema = z.object({ pin: pinSchema });
+
+/// POST /auth/recovery-pin — authenticated. Set (or replace) the recovery
+/// PIN used to sign in if Google is ever unreachable.
+export async function setRecoveryPin(req: Request, res: Response) {
+  const parsed = setRecoveryPinSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten() });
+    return;
+  }
+  const result = await authService.setRecoveryPin(req.user!.sub, parsed.data.pin);
+  res.json(result);
+}
+
+const recoveryPinLoginSchema = z.object({
+  email: z.string().trim().email(),
+  pin: pinSchema,
+  totpCode: z.string().trim().min(6).max(16).optional(),
+});
+
+/// POST /auth/recovery-pin/login — public. Fallback sign-in for
+/// Google-only accounts when Google itself isn't reachable.
+export async function recoveryPinLogin(req: Request, res: Response) {
+  const parsed = recoveryPinLoginSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten() });
+    return;
+  }
+  const result = await authService.loginWithRecoveryPin(
+    parsed.data.email,
+    parsed.data.pin,
+    parsed.data.totpCode,
+    deviceFromReq(req),
+  );
+  if ('error' in result) {
+    if (result.error === 'locked') {
+      const seconds = Math.ceil(result.retryAfterMs / 1000);
+      res.setHeader('Retry-After', String(seconds));
+      res.status(429).json({
+        error: `Too many failed attempts. Try again in ${Math.ceil(seconds / 60)} minute(s).`,
+      });
+      return;
+    }
+    if (result.error === '2fa_required') {
+      res.status(401).json({ error: '2fa_required', twoFactorRequired: true });
+      return;
+    }
+    if (result.error === '2fa_invalid') {
+      res.status(401).json({ error: 'Invalid two-factor code', twoFactorRequired: true });
+      return;
+    }
+    res.status(401).json({ error: result.error });
+    return;
+  }
+  if (result.user?.id) {
+    void loginAlertsService.recordLogin({
+      userId: result.user.id,
+      ip: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+  }
+  res.json(result);
+}
+
 export async function refresh(req: Request, res: Response) {
   const parsed = refreshSchema.safeParse(req.body);
   if (!parsed.success) {

@@ -9,6 +9,7 @@ import 'package:shopxy/core/prefs/theme_prefs.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/core/router/app_shell.dart';
 import 'package:shopxy/features/auth/presentation/pages/login_page.dart';
+import 'package:shopxy/features/auth/presentation/pages/recovery_pin_setup_page.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/notifications/data/datasources/notifications_remote_data_source.dart';
 import 'package:shopxy/features/notifications/domain/entities/invitation.dart';
@@ -98,6 +99,13 @@ class _AuthGate extends StatelessWidget {
     final auth = context.watch<AuthProvider>();
     if (auth.isLoading) return const _SplashScreen();
     if (!auth.isAuthenticated) return const LoginPage();
+    // A Google-only account without a recovery PIN yet takes priority over
+    // every other gate below — persists across an app restart between
+    // signing up with Google and setting the PIN (see AuthUser
+    // .needsRecoveryPinSetup), not just a one-time post-signup redirect.
+    if (auth.user?.needsRecoveryPinSetup ?? false) {
+      return const RecoveryPinSetupPage();
+    }
     // A member (owner or staff) has a shopRole → straight into the app.
     if (auth.user?.shopRole != null) return const AppShell();
     // A brand-new OWNER signs up shopless (the register form no longer asks

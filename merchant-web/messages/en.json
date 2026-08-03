@@ -2041,6 +2041,8 @@
       "failed": "Sign in failed.",
       "orContinueWithEmail": "or continue with email",
       "continueWithGoogle": "Continue with Google",
+      "googleUnavailable": "Google sign-in isn't available right now.",
+      "usePinInstead": "Trouble with Google? Sign in with your recovery PIN",
       "legalConsent": "By signing in you agree to our <terms>Terms</terms> and acknowledge our <privacy>Privacy Policy</privacy>. We use a strictly-necessary session cookie to keep you signed in.",
       "troubleSigningIn": "Trouble signing in? <support>Contact support</support>",
       "complianceLink": "Compliance, laws & formulas"
@@ -2048,8 +2050,7 @@
     "notice": {
       "passwordChanged": "Password changed. Please sign in again.",
       "signedOutEverywhere": "Signed out of all devices.",
-      "accountDeleted": "Your account has been deleted.",
-      "googleSoon": "Google sign-in is coming soon — please use your email for now."
+      "accountDeleted": "Your account has been deleted."
     },
     "register": {
       "title": "Create your account",

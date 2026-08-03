@@ -12,8 +12,42 @@ class AppConfig {
 
   static String get apiBaseUrl {
     if (_envBaseUrl.isNotEmpty) return _envBaseUrl;
-    return 'https://qjhcp0ph-3003.inc1.devtunnels.ms/';
+    //return 'https://qjhcp0ph-3003.inc1.devtunnels.ms/';
+    return 'https://backendshopxy.cloudnsofts.com/';
   }
+
+  /// Google sign-in client IDs. Override at build time:
+  ///   flutter run --dart-define=GOOGLE_CLIENT_ID_ANDROID=... \
+  ///     --dart-define=GOOGLE_CLIENT_ID_IOS=... \
+  ///     --dart-define=GOOGLE_CLIENT_ID_WEB=...
+  /// `googleClientIdWeb` is passed as `serverClientId` to `GoogleSignIn`
+  /// (not `googleClientIdAndroid`/iOS) — so the ID token's audience is
+  /// the WEB client ID and the same backend check works across every
+  /// platform, matching the merchant-web build.
+  ///
+  /// Hardcoded fallbacks (mirrors [apiBaseUrl]) so a plain `flutter run`
+  /// works without dart-define flags. Android is confirmed (package
+  /// com.shopxy.shopxy + debug SHA-1, verified in Cloud Console — Android
+  /// clients use the same "installed" JSON key as Desktop app, which is
+  /// what caused the earlier back-and-forth). iOS has no fallback yet
+  /// (not received) — the button still shows once Android alone is set
+  /// (see `isConfigured` in google_auth.dart), but iOS sign-in itself
+  /// will fail until its client ID + Info.plist URL scheme are filled in.
+  /// Will need the RELEASE keystore's SHA-1 added as a second Android
+  /// client before a Play Store build (this one's the debug keystore).
+  static const String googleClientIdAndroid = String.fromEnvironment(
+    'GOOGLE_CLIENT_ID_ANDROID',
+    defaultValue:
+        '345405040836-j23uacgv396b20da9hjqa2ui00d2d2at.apps.googleusercontent.com',
+  );
+  static const String googleClientIdIos = String.fromEnvironment(
+    'GOOGLE_CLIENT_ID_IOS',
+  );
+  static const String googleClientIdWeb = String.fromEnvironment(
+    'GOOGLE_CLIENT_ID_WEB',
+    defaultValue:
+        '345405040836-lps9u0rducshks9kjtpb96t8u3365lui.apps.googleusercontent.com',
+  );
 
   /// Throws on release builds that didn't get an explicit API_BASE_URL
   /// or that were misconfigured to a developer's personal tunnel.

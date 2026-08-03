@@ -99,6 +99,47 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
+  /// Sign in with a verified Google ID token. Returns whether this account
+  /// still needs to set up its recovery PIN (new signups always do) — the
+  /// caller routes to the setup screen when true. [_AuthGate]-equivalent
+  /// callers should prefer `_user!.needsRecoveryPinSetup` after this
+  /// resolves, since that's what survives an app restart; this return
+  /// value is just to avoid an extra round-trip for the immediate redirect.
+  Future<bool> loginWithGoogle(String idToken) async {
+    final result = await _dataSource.googleAuth(idToken);
+    if (!result.user.isOwner) {
+      await _tokenManager.clear();
+      throw Exception(AppStrings.customerAccountBlocked);
+    }
+    await _applySession((
+      user: result.user,
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+    ));
+    return result.needsPinSetup;
+  }
+
+  /// Set (or replace) the recovery PIN used to sign in if Google is ever
+  /// unreachable.
+  Future<void> setRecoveryPin(String pin) async {
+    await _dataSource.setRecoveryPin(pin);
+    // Refresh so `_user.recoveryPinSetAt` reflects the change immediately —
+    // the auth gate reads it to stop showing the setup screen.
+    _user = await _dataSource.getMe();
+    notifyListeners();
+  }
+
+  /// Fallback sign-in for Google-only accounts when Google itself isn't
+  /// reachable.
+  Future<void> loginWithRecoveryPin(String email, String pin) async {
+    final result = await _dataSource.loginWithRecoveryPin(email, pin);
+    if (!result.user.isOwner) {
+      await _tokenManager.clear();
+      throw Exception(AppStrings.customerAccountBlocked);
+    }
+    await _applySession(result);
+  }
+
   /// Start registration. Returns [RegisterPending] when the backend emailed an
   /// OTP (the UI must collect it via [verifyEmail]), or [RegisterSignedIn] when
   /// the account was created directly (OTP infra unavailable) and the session

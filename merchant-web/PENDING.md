@@ -47,14 +47,23 @@ Deferred / simplified:
   (current + previous window) for its delta — the heaviest part of the load.
   Replace with a lean prior-window query if needed.
 
-- [ ] **Google SSO ("Continue with Google").** The button is live on the sign-in
-  form (`features/auth/components/google-button.tsx`) and points at the BFF route
-  `app/api/auth/google/route.ts`, which currently redirects back to
-  `/login?reason=google-soon` with a "coming soon" notice. To make it real:
-  add backend Google OAuth (authorise + callback, user provisioning for
-  password-less accounts, JWT issuance), set `GOOGLE_CLIENT_ID`/`SECRET`, then
-  replace the BFF stub with a 302 to the backend authorise URL. Also consider
-  adding the button to the register form.
+- [x] **Google SSO ("Continue with Google").** Shipped (Jul 2026) — but as a
+  client-side ID-token flow (Google Identity Services `prompt()` from our own
+  button, verified server-side via `google-auth-library`), NOT the
+  authorise-code redirect this note originally sketched. No client secret
+  needed. New accounts get role OWNER, shopless, and must set a 4-6 digit
+  recovery PIN (`/onboarding/recovery-pin`) before continuing — the only
+  fallback since Google accounts have no password. Returning users can sign
+  in with that PIN at `/login/recovery-pin` if Google itself is ever
+  unreachable. Set `NEXT_PUBLIC_GOOGLE_CLIENT_ID` (web) to enable; the button
+  renders nothing if unset. Not yet added to the register form.
+  - [ ] `RecoveryPinLoginForm` doesn't collect a TOTP code — an account with
+    both a recovery PIN and 2FA enabled hitting that exact path is a narrow
+    edge case not covered yet (backend supports it; the form doesn't ask).
+  - [ ] customer-web / customer Flutter app don't have Google sign-in
+    (merchant-only per the original ask). The Flutter merchant app gets the
+    same flow separately — check `frontend/PENDING.md` (if present) for its
+    status.
 
 ## HSN/SAC rate master (Jul 2026)
 

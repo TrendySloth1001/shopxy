@@ -2,6 +2,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shopxy/core/auth/google_auth.dart';
+import 'package:shopxy/features/auth/presentation/pages/recovery_pin_login_page.dart';
 import 'package:shopxy/features/auth/presentation/pages/register_page.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/auth/presentation/widgets/auth_scaffold.dart';
@@ -60,11 +62,30 @@ class _LoginPageState extends State<LoginPage> {
     MaterialPageRoute(builder: (_) => const RegisterPage()),
   );
 
-  void _googleSoon() {
-    final l10n = AppLocalizations.of(context);
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(l10n.authGoogleComingSoon)));
+  void _goToRecoveryPinLogin() => Navigator.push(
+    context,
+    MaterialPageRoute(builder: (_) => const RecoveryPinLoginPage()),
+  );
+
+  Future<void> _continueWithGoogle() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final idToken = await GoogleAuth.signInIdToken();
+      // User cancelled the Google flow — not an error, just stop quietly.
+      if (idToken == null) return;
+      if (!mounted) return;
+      // The root auth gate (app.dart) routes to the recovery-PIN setup
+      // screen on its own once `needsRecoveryPinSetup` is true; no manual
+      // navigation needed here.
+      await context.read<AuthProvider>().loginWithGoogle(idToken);
+    } catch (e) {
+      if (mounted) setState(() => _error = friendlyError(e));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -81,7 +102,7 @@ class _LoginPageState extends State<LoginPage> {
         children: [
           // The two password-less ways in, stacked as a pair above the form.
           const RememberedAccountsButton(),
-          GoogleButton(onTap: _googleSoon),
+          if (GoogleAuth.isConfigured) GoogleButton(onTap: _continueWithGoogle),
           const SizedBox(height: AppSizes.lg),
           const AuthOrDivider(),
           const SizedBox(height: AppSizes.lg),
@@ -118,6 +139,19 @@ class _LoginPageState extends State<LoginPage> {
             loading: _isLoading,
             onPressed: _submit,
           ),
+          if (GoogleAuth.isConfigured) ...[
+            const SizedBox(height: AppSizes.lg),
+            Center(
+              child: TextButton(
+                onPressed: _isLoading ? null : _goToRecoveryPinLogin,
+                style: TextButton.styleFrom(foregroundColor: AppColors.muted),
+                child: Text(
+                  l10n.authUsePinInstead,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: AppSizes.lg),
           const _LegalFooter(),
         ],
@@ -223,4 +257,3 @@ class _LegalFooterState extends State<_LegalFooter> {
     );
   }
 }
-

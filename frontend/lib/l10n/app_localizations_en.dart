@@ -2921,8 +2921,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authCreateAccountCta => 'Create an account';
 
   @override
-  String get authGoogleComingSoon =>
-      'Google sign-in is coming soon — please use your email for now.';
+  String get authUsePinInstead =>
+      'Trouble with Google? Sign in with your recovery PIN';
+
+  @override
+  String get authRecoveryPinSetupTitle => 'Set up a recovery PIN';
+
+  @override
+  String get authRecoveryPinSetupSubtitle =>
+      'Your account signed in with Google, which doesn\'t use a password. Choose a 4-6 digit PIN so you can still sign in if Google is ever unreachable. You can change it later in Settings.';
+
+  @override
+  String get authRecoveryPinLabel => 'PIN';
+
+  @override
+  String get authRecoveryPinConfirmLabel => 'Confirm PIN';
+
+  @override
+  String get authRecoveryPinMismatch => 'PINs don\'t match';
+
+  @override
+  String get authRecoveryPinInvalid => 'PIN must be 4-6 digits';
+
+  @override
+  String get authRecoveryPinSave => 'Save PIN';
+
+  @override
+  String get authRecoveryPinLoginTitle => 'Sign in with your recovery PIN';
+
+  @override
+  String get authRecoveryPinLoginSubtitle =>
+      'For accounts that signed in with Google, when Google itself isn\'t reachable.';
 
   @override
   String get authEmail => 'Email';

@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/features/auth/auth-context";
+import { needsRecoveryPinSetup } from "@/features/auth/types";
 import { Field } from "@/features/auth/components/field";
 import { SubmitButton } from "@/features/auth/components/submit-button";
 import { AuthErrorBanner } from "@/features/auth/components/auth-shell";
@@ -35,7 +36,12 @@ export function OnboardingForm() {
       router.replace("/login");
       return;
     }
-    if (status === "authed" && user && user.shopId != null) {
+    if (status !== "authed" || !user) return;
+    if (needsRecoveryPinSetup(user)) {
+      router.replace("/onboarding/recovery-pin");
+      return;
+    }
+    if (user.shopId != null) {
       router.replace("/dashboard");
     }
   }, [status, user, router]);
@@ -76,8 +82,11 @@ export function OnboardingForm() {
   }
 
   // Don't flash the form while the session resolves or while a redirect (to
-  // login / dashboard) is in flight.
-  if (status !== "authed" || (user && user.shopId != null)) {
+  // login / recovery-pin / dashboard) is in flight.
+  if (
+    status !== "authed" ||
+    (user && (needsRecoveryPinSetup(user) || user.shopId != null))
+  ) {
     return (
       <main className="flex min-h-dvh items-center justify-center px-lg">
         <p className="text-body-md text-subtle">Loading…</p>

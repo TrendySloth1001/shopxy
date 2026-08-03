@@ -2919,8 +2919,37 @@ class AppLocalizationsHi extends AppLocalizations {
   String get authCreateAccountCta => 'खाता बनाएं';
 
   @override
-  String get authGoogleComingSoon =>
-      'Google साइन-इन जल्द ही आ रहा है — अभी कृपया अपने ईमेल का उपयोग करें।';
+  String get authUsePinInstead =>
+      'Google में समस्या? अपने रिकवरी पिन से साइन इन करें';
+
+  @override
+  String get authRecoveryPinSetupTitle => 'एक रिकवरी पिन सेट करें';
+
+  @override
+  String get authRecoveryPinSetupSubtitle =>
+      'आपके खाते ने Google से साइन इन किया है, जो पासवर्ड का उपयोग नहीं करता। 4-6 अंकों का पिन चुनें ताकि अगर Google कभी उपलब्ध न हो तो भी आप साइन इन कर सकें। आप इसे बाद में सेटिंग्स में बदल सकते हैं।';
+
+  @override
+  String get authRecoveryPinLabel => 'पिन';
+
+  @override
+  String get authRecoveryPinConfirmLabel => 'पिन की पुष्टि करें';
+
+  @override
+  String get authRecoveryPinMismatch => 'पिन मेल नहीं खाते';
+
+  @override
+  String get authRecoveryPinInvalid => 'पिन 4-6 अंकों का होना चाहिए';
+
+  @override
+  String get authRecoveryPinSave => 'पिन सहेजें';
+
+  @override
+  String get authRecoveryPinLoginTitle => 'अपने रिकवरी पिन से साइन इन करें';
+
+  @override
+  String get authRecoveryPinLoginSubtitle =>
+      'उन खातों के लिए जिन्होंने Google से साइन इन किया, जब Google स्वयं उपलब्ध न हो।';
 
   @override
   String get authEmail => 'ईमेल';

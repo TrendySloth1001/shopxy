@@ -35,7 +35,25 @@ export const authUserSchema = z.object({
   upiVpa: z.string().nullable().optional(),
   avatarUrl: z.string().nullable().optional(),
   phoneNumber: z.string().nullable().optional(),
+  // Not a secret — Google's stable per-account `sub`, useless without also
+  // owning that Google account. Presence means this account has no
+  // password (see backend `safeUserSelect` comment) — combined with
+  // `recoveryPinSetAt == null` this is how the app knows a recovery PIN
+  // is mandatory before continuing, persistently (not just right after
+  // the Google button succeeds, which wouldn't survive a page reload
+  // between signup and setting the PIN).
+  googleId: z.string().nullable().optional(),
+  // Timestamp only (never the PIN or its hash) — presence means the
+  // Google-sign-in recovery PIN is already set up.
+  recoveryPinSetAt: z.string().nullable().optional(),
 });
+
+/** True when this account signed up via Google and hasn't set a recovery
+ *  PIN yet — the one thing that gates every protected page ahead of the
+ *  usual shopId-based onboarding check. */
+export function needsRecoveryPinSetup(user: AuthUser): boolean {
+  return user.googleId != null && user.recoveryPinSetAt == null;
+}
 
 export type AuthUser = z.infer<typeof authUserSchema>;
 
@@ -48,4 +66,10 @@ export const tokenPairSchema = z.object({
 /** Login / register success envelope from the backend. */
 export const authResultSchema = tokenPairSchema.extend({
   user: authUserSchema,
+});
+
+/** Google sign-in envelope — same as login, plus whether this account
+ *  still needs to set up its recovery PIN (new signups always do). */
+export const googleAuthResultSchema = authResultSchema.extend({
+  needsPinSetup: z.boolean().optional().default(false),
 });

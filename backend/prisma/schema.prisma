@@ -69,6 +69,19 @@ model User {
   totpSecret         String?            @map("totp_secret")
   totpEnabledAt      DateTime?          @map("totp_enabled_at")
   totpRecoveryCodes  String[]           @default([]) @map("totp_recovery_codes")
+  /// Google account link (the `sub` claim from the verified ID token).
+  /// Null = this account has never signed in with Google. Accounts
+  /// created via Google get a random unusable `passwordHash` (never
+  /// null — keeps every password-login codepath unchanged) and rely on
+  /// Google + the recovery PIN below instead.
+  googleId           String?            @unique @map("google_id")
+  /// bcrypt hash of a user-chosen 4-6 digit PIN (WhatsApp-style), the
+  /// fallback sign-in for Google-only accounts if Google itself is ever
+  /// unreachable. Null = not set up yet. Reuses the same per-account
+  /// throttle as password login (loginThrottle.ts) — no separate
+  /// attempt-counter columns needed.
+  recoveryPinHash    String?            @map("recovery_pin_hash")
+  recoveryPinSetAt   DateTime?          @map("recovery_pin_set_at")
   createdAt          DateTime           @default(now()) @map("created_at")
   updatedAt          DateTime           @updatedAt @map("updated_at")
   refreshTokens      RefreshToken[]

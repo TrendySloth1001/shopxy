@@ -42,6 +42,14 @@ type AuthContextValue = {
   user: AuthUser | null;
   status: Status;
   login: (email: string, password: string) => Promise<void>;
+  /** Sign in with a Google ID token (from the client-side GSI prompt).
+   *  Returns whether this account still needs to set up its recovery PIN. */
+  loginWithGoogle: (idToken: string) => Promise<{ needsPinSetup: boolean }>;
+  /** Set (or replace) the recovery PIN used to sign in if Google is ever
+   *  unreachable. */
+  setRecoveryPin: (pin: string) => Promise<void>;
+  /** Fallback sign-in for Google-only accounts when Google isn't reachable. */
+  loginWithRecoveryPin: (email: string, pin: string) => Promise<void>;
   register: (payload: RegisterPayload) => Promise<RegisterResult>;
   /** Confirm the signup OTP → creates the account server-side + signs in. */
   verifyEmail: (email: string, otp: string) => Promise<void>;
@@ -138,6 +146,42 @@ export function AuthProvider({
     setUser(body.user);
     setStatus("authed");
     // Desktop only: remember this account for one-tap return sign-in.
+    void rememberCurrentAccount();
+  }, []);
+
+  const loginWithGoogle = useCallback(async (idToken: string) => {
+    const res = await fetch("/api/auth/google", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idToken }),
+    });
+    if (!res.ok) await throwApiError(res, "Google sign-in failed.");
+    const body = (await res.json()) as { user: AuthUser; needsPinSetup?: boolean };
+    setUser(body.user);
+    setStatus("authed");
+    void rememberCurrentAccount();
+    return { needsPinSetup: body.needsPinSetup ?? false };
+  }, []);
+
+  const setRecoveryPin = useCallback(async (pin: string) => {
+    const res = await fetch("/api/auth/recovery-pin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pin }),
+    });
+    if (!res.ok) await throwApiError(res, "Could not save your PIN.");
+  }, []);
+
+  const loginWithRecoveryPin = useCallback(async (email: string, pin: string) => {
+    const res = await fetch("/api/auth/recovery-pin/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, pin }),
+    });
+    if (!res.ok) await throwApiError(res, "Invalid email or recovery PIN.");
+    const body = (await res.json()) as { user: AuthUser };
+    setUser(body.user);
+    setStatus("authed");
     void rememberCurrentAccount();
   }, []);
 
@@ -286,6 +330,9 @@ export function AuthProvider({
       user,
       status,
       login,
+      loginWithGoogle,
+      setRecoveryPin,
+      loginWithRecoveryPin,
       register,
       verifyEmail,
       resendOtp,
@@ -304,6 +351,9 @@ export function AuthProvider({
       user,
       status,
       login,
+      loginWithGoogle,
+      setRecoveryPin,
+      loginWithRecoveryPin,
       register,
       verifyEmail,
       resendOtp,

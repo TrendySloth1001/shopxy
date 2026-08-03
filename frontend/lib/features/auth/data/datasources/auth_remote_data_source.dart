@@ -15,6 +15,15 @@ typedef RememberLoginResult = ({
   String rememberToken,
 });
 
+/// Google sign-in result — same as [AuthResult] plus whether this account
+/// still needs to set up its recovery PIN (new signups always do).
+typedef GoogleAuthResult = ({
+  AuthUser user,
+  String accessToken,
+  String refreshToken,
+  bool needsPinSetup,
+});
+
 /// One active session behind the account (a device where you're signed in).
 class SessionInfo {
   const SessionInfo({
@@ -57,6 +66,50 @@ class AuthRemoteDataSource {
     final body = jsonDecode(res.body) as Map<String, dynamic>;
     if (res.statusCode != 200) {
       throw Exception(body['error'] ?? 'Login failed');
+    }
+    return (
+      user: AuthUser.fromJson(body['user'] as Map<String, dynamic>),
+      accessToken: body['accessToken'] as String,
+      refreshToken: body['refreshToken'] as String,
+    );
+  }
+
+  /// Sign in via a verified Google ID token — creates/links/signs in the
+  /// account server-side (see `backend auth.service.ts#googleAuth`).
+  Future<GoogleAuthResult> googleAuth(String idToken) async {
+    final res = await _client.post('/auth/google', body: {'idToken': idToken});
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    if (res.statusCode != 200) {
+      throw Exception(body['error'] ?? 'Google sign-in failed');
+    }
+    return (
+      user: AuthUser.fromJson(body['user'] as Map<String, dynamic>),
+      accessToken: body['accessToken'] as String,
+      refreshToken: body['refreshToken'] as String,
+      needsPinSetup: (body['needsPinSetup'] as bool?) ?? false,
+    );
+  }
+
+  /// Set (or replace) the recovery PIN used to sign in if Google is ever
+  /// unreachable. Authenticated.
+  Future<void> setRecoveryPin(String pin) async {
+    final res = await _client.post('/auth/recovery-pin', body: {'pin': pin});
+    if (res.statusCode != 200) {
+      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      throw Exception(_extractError(body));
+    }
+  }
+
+  /// Fallback sign-in for Google-only accounts when Google itself isn't
+  /// reachable.
+  Future<AuthResult> loginWithRecoveryPin(String email, String pin) async {
+    final res = await _client.post(
+      '/auth/recovery-pin/login',
+      body: {'email': email, 'pin': pin},
+    );
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    if (res.statusCode != 200) {
+      throw Exception(body['error'] ?? 'Sign in failed');
     }
     return (
       user: AuthUser.fromJson(body['user'] as Map<String, dynamic>),

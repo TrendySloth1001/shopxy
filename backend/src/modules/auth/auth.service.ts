@@ -21,6 +21,7 @@ import {
 import { isPasswordBreached } from './passwordBreach.js';
 import { revokeSession } from '../../shared/sessionRevocation.js';
 import { totpService } from './totp.service.js';
+import { verifyGoogleIdToken } from './googleAuth.js';
 import { maskIp, type DeviceContext } from './deviceContext.js';
 import {
   canVerifyEmail,
@@ -66,6 +67,17 @@ const safeUserSelect = {
   pushEnabled: true,
   smsEnabled: true,
   acceptedAt: true,
+  // Not a secret (it's Google's stable per-account `sub`, useless without
+  // also owning the Google account) — clients derive "does this account
+  // need a recovery PIN?" from `googleId != null && recoveryPinSetAt ==
+  // null`, since that combination can't be told apart from a plain
+  // password account any other way (Google-only accounts get a random,
+  // unusable passwordHash rather than a nullable column — see the schema
+  // comment on `googleId`).
+  googleId: true,
+  // Timestamp only, never the hash — lets clients derive "PIN already set
+  // up?" without exposing anything guessable.
+  recoveryPinSetAt: true,
   createdAt: true,
 } as const;
 
@@ -610,6 +622,118 @@ export class AuthService {
     // Genuine success — wipe the failure/escalation state for this account.
     await clearLoginFailures(normEmail);
 
+    const { accessToken, refreshToken } = await issueSession(user, undefined, device);
+    const safeUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: safeUserSelect,
+    });
+    return { user: safeUser, accessToken, refreshToken };
+  }
+
+  /**
+   * Sign in via a verified Google ID token — creates the account on first
+   * use, links it to an existing email/password account if one matches
+   * (Google's verified-email guarantee makes that safe), or just signs in
+   * if the link already exists. Merchant-only for now (role OWNER,
+   * shopless — named on the onboarding screen next, same as a password
+   * signup without a shopName).
+   */
+  async googleAuth(idToken: string, device?: DeviceContext) {
+    const profile = await verifyGoogleIdToken(idToken);
+    if (!profile) return { error: 'invalid_google_token' as const };
+
+    let user = await prisma.user.findUnique({ where: { googleId: profile.googleId } });
+
+    if (!user) {
+      const existing = await prisma.user.findUnique({ where: { email: profile.email } });
+      if (existing) {
+        user = await prisma.user.update({
+          where: { id: existing.id },
+          data: { googleId: profile.googleId },
+        });
+      } else {
+        // Brand-new account. There's no password to set, so mint a random,
+        // unusable one (same trick `pseudonymiseAccount` uses below) rather
+        // than making `passwordHash` nullable and touching every
+        // password-login codepath for a case that only ever authenticates
+        // via Google or the recovery PIN.
+        const passwordHash = await bcrypt.hash(crypto.randomUUID(), 12);
+        const created = await this._finalizeRegistration(
+          { email: profile.email, name: profile.name, passwordHash, role: 'OWNER' },
+          device,
+        );
+        await prisma.user.update({
+          where: { id: created.user!.id },
+          data: { googleId: profile.googleId },
+        });
+        return {
+          user: created.user,
+          accessToken: created.accessToken,
+          refreshToken: created.refreshToken,
+          needsPinSetup: true as const,
+        };
+      }
+    }
+
+    if (!user.isActive) return { error: 'account_disabled' as const };
+
+    const { accessToken, refreshToken } = await issueSession(user, undefined, device);
+    const safeUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: safeUserSelect,
+    });
+    return {
+      user: safeUser,
+      accessToken,
+      refreshToken,
+      needsPinSetup: !user.recoveryPinHash,
+    };
+  }
+
+  /** Set (or replace) the recovery PIN — called right after Google signup,
+   * or any time after from Settings. Requires an active session; there's
+   * no separate "confirm current PIN" step since this is the same trust
+   * level as the session that's already authenticated. */
+  async setRecoveryPin(userId: number, pin: string) {
+    const recoveryPinHash = await bcrypt.hash(pin, 12);
+    await prisma.user.update({
+      where: { id: userId },
+      data: { recoveryPinHash, recoveryPinSetAt: new Date() },
+    });
+    return { ok: true as const };
+  }
+
+  /** Fallback sign-in for Google-only accounts when Google itself isn't
+   * reachable. Shares the same per-account throttle as password login
+   * (loginThrottle.ts) — one brute-force guard per account regardless of
+   * which credential the attacker is trying. */
+  async loginWithRecoveryPin(email: string, pin: string, totpCode?: string, device?: DeviceContext) {
+    const normEmail = email.toLowerCase().trim();
+
+    const lockedMs = await loginLockRemainingMs(normEmail);
+    if (lockedMs > 0) return { error: 'locked' as const, retryAfterMs: lockedMs };
+
+    const user = await prisma.user.findUnique({ where: { email: normEmail } });
+    const dummyHash = '$2b$12$invalidhashpadding000000000000000000000000000000000000';
+    const valid = user?.recoveryPinHash
+      ? await bcrypt.compare(pin, user.recoveryPinHash)
+      : await bcrypt.compare(pin, dummyHash).then(() => false);
+
+    if (!user || !user.isActive || !valid) {
+      await recordLoginFailure(normEmail);
+      return { error: 'Invalid email or recovery PIN' as const };
+    }
+
+    if (user.totpEnabledAt) {
+      if (!totpCode) return { error: '2fa_required' as const };
+      const okTotp = await totpService.verifyForLogin(user.id, totpCode);
+      if (!okTotp) {
+        await recordLoginFailure(normEmail);
+        return { error: '2fa_invalid' as const };
+      }
+    }
+
+    await clearLoginFailures(normEmail);
     const { accessToken, refreshToken } = await issueSession(user, undefined, device);
     const safeUser = await prisma.user.findUnique({
       where: { id: user.id },

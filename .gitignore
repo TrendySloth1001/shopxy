@@ -10,3 +10,8 @@ dist/
 # .env.example, never commit the filled-in version.
 .env
 shopxy-backup-*.tar.gz
+
+# Google OAuth client secret downloads (Google Cloud Console "Download
+# JSON") — contain a client secret. Never commit; the Client ID alone
+# (not the secret) is what actually goes into .env as GOOGLE_CLIENT_ID_*.
+client_secret_*.json

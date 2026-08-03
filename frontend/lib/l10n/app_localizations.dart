@@ -5570,11 +5570,65 @@ abstract class AppLocalizations {
   /// **'Create an account'**
   String get authCreateAccountCta;
 
-  /// No description provided for @authGoogleComingSoon.
+  /// No description provided for @authUsePinInstead.
   ///
   /// In en, this message translates to:
-  /// **'Google sign-in is coming soon — please use your email for now.'**
-  String get authGoogleComingSoon;
+  /// **'Trouble with Google? Sign in with your recovery PIN'**
+  String get authUsePinInstead;
+
+  /// No description provided for @authRecoveryPinSetupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up a recovery PIN'**
+  String get authRecoveryPinSetupTitle;
+
+  /// No description provided for @authRecoveryPinSetupSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account signed in with Google, which doesn\'t use a password. Choose a 4-6 digit PIN so you can still sign in if Google is ever unreachable. You can change it later in Settings.'**
+  String get authRecoveryPinSetupSubtitle;
+
+  /// No description provided for @authRecoveryPinLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'PIN'**
+  String get authRecoveryPinLabel;
+
+  /// No description provided for @authRecoveryPinConfirmLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm PIN'**
+  String get authRecoveryPinConfirmLabel;
+
+  /// No description provided for @authRecoveryPinMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'PINs don\'t match'**
+  String get authRecoveryPinMismatch;
+
+  /// No description provided for @authRecoveryPinInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'PIN must be 4-6 digits'**
+  String get authRecoveryPinInvalid;
+
+  /// No description provided for @authRecoveryPinSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save PIN'**
+  String get authRecoveryPinSave;
+
+  /// No description provided for @authRecoveryPinLoginTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with your recovery PIN'**
+  String get authRecoveryPinLoginTitle;
+
+  /// No description provided for @authRecoveryPinLoginSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'For accounts that signed in with Google, when Google itself isn\'t reachable.'**
+  String get authRecoveryPinLoginSubtitle;
 
   /// No description provided for @authEmail.
   ///

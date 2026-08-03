@@ -12,7 +12,6 @@ const NOTICE_KEYS: Record<string, string> = {
   "password-changed": "notice.passwordChanged",
   "signed-out-everywhere": "notice.signedOutEverywhere",
   "account-deleted": "notice.accountDeleted",
-  "google-soon": "notice.googleSoon",
 };
 
 export default async function LoginPage({

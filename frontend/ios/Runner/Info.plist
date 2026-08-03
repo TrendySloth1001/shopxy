@@ -49,5 +49,25 @@
 	<string>ShopXY uses the camera to scan product barcodes and take product photos.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>ShopXY needs access to your photos so you can add pictures to your products.</string>
+	<!-- Google Sign-In: required even though clientId/serverClientId are also
+	     passed in Dart (GoogleAuth._ensureInitialized) — the redirect back
+	     into the app needs this URL scheme registered natively.
+	     TODO: replace with the REAL reversed iOS client ID once it exists
+	     (Google Cloud Console → Credentials → iOS OAuth client). Format:
+	     reverse the numeric prefix of the client ID, e.g. client ID
+	     "861823949799-xxxx.apps.googleusercontent.com" becomes
+	     "com.googleusercontent.apps.861823949799-xxxx". Until then this is
+	     an inert placeholder — Google sign-in on iOS will not work. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.REPLACE_ME_IOS_CLIENT_ID</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

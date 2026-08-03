@@ -2041,6 +2041,8 @@
       "failed": "साइन इन नहीं हो सका।",
       "orContinueWithEmail": "या ईमेल से जारी रखें",
       "continueWithGoogle": "Google से जारी रखें",
+      "googleUnavailable": "Google साइन-इन अभी उपलब्ध नहीं है।",
+      "usePinInstead": "Google में समस्या? अपने रिकवरी पिन से साइन इन करें",
       "legalConsent": "साइन इन करके आप हमारी <terms>शर्तों</terms> से सहमत होते हैं और हमारी <privacy>गोपनीयता नीति</privacy> को स्वीकार करते हैं। आपको साइन इन रखने के लिए हम केवल आवश्यक सत्र कुकी का उपयोग करते हैं।",
       "troubleSigningIn": "साइन इन करने में परेशानी है? <support>सहायता से संपर्क करें</support>",
       "complianceLink": "अनुपालन, कानून और सूत्र"
@@ -2048,8 +2050,7 @@
     "notice": {
       "passwordChanged": "पासवर्ड बदल गया। कृपया दोबारा साइन इन करें।",
       "signedOutEverywhere": "सभी डिवाइस से साइन आउट कर दिया गया।",
-      "accountDeleted": "आपका खाता हटा दिया गया है।",
-      "googleSoon": "Google साइन-इन जल्द आ रहा है — फ़िलहाल कृपया अपने ईमेल का उपयोग करें।"
+      "accountDeleted": "आपका खाता हटा दिया गया है।"
     },
     "register": {
       "title": "अपना खाता बनाएँ",

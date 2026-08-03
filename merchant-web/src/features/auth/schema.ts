@@ -23,6 +23,19 @@ export const loginSchema = z.object({
 
 export type LoginInput = z.infer<typeof loginSchema>;
 
+/** The Google-only-account recovery PIN — mirrors the backend's 4-6 digit
+ *  rule (auth.controller.ts `pinSchema`). WhatsApp-style: short, numeric,
+ *  memorable, protected by the same account-level login throttle as a
+ *  password. */
+export const recoveryPinSchema = z
+  .string()
+  .regex(/^\d{4,6}$/, "PIN must be 4-6 digits");
+
+export const recoveryPinLoginSchema = z.object({
+  email: z.string().trim().email("Enter a valid email address"),
+  pin: recoveryPinSchema,
+});
+
 /**
  * Merchant registration. Signup now creates the OWNER account only — the
  * shop is named on the onboarding screen straight after (or skipped entirely

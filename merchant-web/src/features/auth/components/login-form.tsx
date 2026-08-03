@@ -52,7 +52,7 @@ export function LoginForm() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-lg">
-      <GoogleButton />
+      <GoogleButton onError={setError} />
       <div className="flex items-center gap-md text-label-sm text-subtle">
         <span className="h-px flex-1 bg-hairline" />
         {t("login.orContinueWithEmail")}
@@ -80,6 +80,11 @@ export function LoginForm() {
         error={fieldErrors.password}
       />
       <SubmitButton loading={submitting} pill>{t("login.submit")}</SubmitButton>
+      <p className="text-center text-body-sm text-subtle">
+        <Link href="/login/recovery-pin" className="text-muted underline hover:text-brand">
+          {t("login.usePinInstead")}
+        </Link>
+      </p>
       {/* Pre-signin discoverability of the published policies — the DPDP notice
           and the user agreement must be accessible before/around collection,
           not only behind auth. (DPDP Act 2023 s.5; IT Intermediary Rules 2021
