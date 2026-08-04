@@ -18,7 +18,7 @@ COPY . .
 # `docker run` / compose time (this ENV doesn't survive into the final stage
 # below, since Docker doesn't carry ENV across a new FROM).
 ENV DATABASE_URL="postgresql://build:build@localhost:5432/build"
-RUN npx prisma generate && npx tsc
+RUN npx prisma generate && npm run build
 RUN npm prune --production
 
 FROM node:22-alpine
