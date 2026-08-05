@@ -4712,6 +4712,30 @@ abstract class AppLocalizations {
   /// **'Pick the date GST starts applying.'**
   String get profileGstEffectiveFromRequired;
 
+  /// No description provided for @profileGstEffectiveSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'When does GST start applying?'**
+  String get profileGstEffectiveSheetTitle;
+
+  /// No description provided for @profileGstEffectiveSheetBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the date on your GST registration certificate. Invoices dated before this stay tax-free as a Bill of Supply — you can always change this later from your profile.'**
+  String get profileGstEffectiveSheetBody;
+
+  /// No description provided for @profileGstEffectiveSheetDeclare.
+  ///
+  /// In en, this message translates to:
+  /// **'Declare the date'**
+  String get profileGstEffectiveSheetDeclare;
+
+  /// No description provided for @profileGstEffectiveSheetSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip for now'**
+  String get profileGstEffectiveSheetSkip;
+
   /// No description provided for @profilePan.
   ///
   /// In en, this message translates to:

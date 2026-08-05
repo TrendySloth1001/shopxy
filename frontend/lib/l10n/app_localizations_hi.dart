@@ -2461,6 +2461,19 @@ class AppLocalizationsHi extends AppLocalizations {
       'GST कब से लागू होगा, वह तारीख चुनें।';
 
   @override
+  String get profileGstEffectiveSheetTitle => 'GST किस तारीख से लागू होगा?';
+
+  @override
+  String get profileGstEffectiveSheetBody =>
+      'अपने GST पंजीकरण प्रमाणपत्र पर दी गई तारीख चुनें। इस तारीख से पहले के इनवॉइस बिल ऑफ सप्लाई के रूप में टैक्स-फ्री रहेंगे — आप इसे बाद में प्रोफाइल से कभी भी बदल सकते हैं।';
+
+  @override
+  String get profileGstEffectiveSheetDeclare => 'तारीख बताएं';
+
+  @override
+  String get profileGstEffectiveSheetSkip => 'अभी के लिए छोड़ें';
+
+  @override
   String get profilePan => 'PAN';
 
   @override

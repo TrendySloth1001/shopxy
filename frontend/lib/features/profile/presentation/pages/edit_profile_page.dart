@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/profile/presentation/pages/profile_page.dart'
     show ProfileAvatar;
+import 'package:shopxy/features/profile/presentation/widgets/gst_effective_date_sheet.dart';
 import 'package:shopxy/features/shop/presentation/providers/shop_provider.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
@@ -33,6 +34,7 @@ enum ProfileField {
   shopGstin,
   shopPan,
   upiVpa,
+  gstEffectiveFrom,
   photo,
 }
 
@@ -69,6 +71,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   // the controllers above and picked via showDatePicker.
   DateTime? _gstEffectiveFrom;
   String? _gstEffectiveFromError;
+  final _gstEffectiveFromKey = GlobalKey();
   bool _busy = false;
   bool _uploadingAvatar = false;
 
@@ -114,6 +117,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (target != null && _focusNodes.containsKey(target)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _focusNodes[target]!.requestFocus();
+      });
+    } else if (target == ProfileField.gstEffectiveFrom) {
+      // No text field/FocusNode for this one — scroll the date picker
+      // row into view instead (same mechanism the save-flow skip uses).
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _scrollToGstEffectiveDate();
       });
     }
   }
@@ -231,12 +240,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
   }
 
-  // Default the effective date to today the moment a GSTIN first appears —
-  // the merchant can still pick a different date afterward. Mirrors the
-  // merchant-web profile form.
-  void _onGstinChanged(String value) {
-    if (value.trim().isNotEmpty && _gstEffectiveFrom == null) {
-      setState(() => _gstEffectiveFrom = DateTime.now());
+  void _scrollToGstEffectiveDate() {
+    final ctx = _gstEffectiveFromKey.currentContext;
+    if (ctx != null) {
+      Scrollable.ensureVisible(
+        ctx,
+        duration: const Duration(milliseconds: 300),
+        alignment: 0.2,
+      );
     }
   }
 
@@ -272,6 +283,30 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final shopGstinArg = diff(_shopGstin.text.toUpperCase(), user?.shopGstin);
     final shopPanArg = diff(_shopPan.text.toUpperCase(), user?.shopPan);
     final upiArg = diff(_upiVpa.text, user?.upiVpa);
+
+    // Mirrors the backend guard exactly: a NEW/changed GSTIN requires an
+    // effective date before it's ever sent to the server. Rather than a
+    // blocking inline error, prompt with the same declaration-sheet pattern
+    // as payout setup — "Declare" opens the date picker right there;
+    // "Skip for now" leaves the whole save untouched (nothing is sent,
+    // nothing typed is lost) and scrolls the merchant to the date field so
+    // they can set it themselves whenever — it's editable indefinitely, on
+    // them to come back to it.
+    final isNewGstinRegistration =
+        shopGstinArg != null && shopGstinArg.isNotEmpty;
+    if (isNewGstinRegistration && _gstEffectiveFrom == null) {
+      final declared = await showGstEffectiveDateSheet(context);
+      if (!mounted) return;
+      if (declared == null) {
+        _scrollToGstEffectiveDate();
+        return;
+      }
+      setState(() {
+        _gstEffectiveFrom = declared;
+        _gstEffectiveFromError = null;
+      });
+    }
+
     final gstEffectiveFromText = _gstEffectiveFrom != null
         ? DateFormat('yyyy-MM-dd').format(_gstEffectiveFrom!)
         : '';
@@ -305,19 +340,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
       Navigator.pop(context);
       return;
     }
-
-    // Mirrors the backend guard exactly: a NEW/changed GSTIN requires an
-    // effective date before it's ever sent to the server.
-    final isNewGstinRegistration =
-        shopGstinArg != null && shopGstinArg.isNotEmpty;
-    if (isNewGstinRegistration && _gstEffectiveFrom == null) {
-      setState(
-        () => _gstEffectiveFromError =
-            AppLocalizations.of(context).profileGstEffectiveFromRequired,
-      );
-      return;
-    }
-    setState(() => _gstEffectiveFromError = null);
 
     setState(() => _busy = true);
     try {
@@ -527,7 +549,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     decoration: InputDecoration(labelText: l10n.profileGstin),
                     textCapitalization: TextCapitalization.characters,
                     validator: IndianValidators.gstin,
-                    onChanged: _onGstinChanged,
                   ),
                 ),
                 const SizedBox(width: AppSizes.md),
@@ -544,6 +565,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             ),
             const SizedBox(height: AppSizes.md),
             InkWell(
+              key: _gstEffectiveFromKey,
               onTap: _pickGstEffectiveFrom,
               borderRadius: AppShapes.squircleRadius(AppSizes.radiusInput),
               child: InputDecorator(

@@ -30,9 +30,34 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
   AuthUser? _user;
   bool _isLoading = true;
 
+  /// True once the merchant dismisses the startup GST-effective-date nudge
+  /// (see [showGstEffectiveDateSheet] from the dashboard) — kept for the
+  /// rest of the session so it doesn't re-prompt on every rebuild. Reset on
+  /// logout/401 alongside everything else, mirroring
+  /// `LinkedAccountProvider._promptDismissed`.
+  bool _gstEffectiveDatePromptDismissed = false;
+
   AuthUser? get user => _user;
   bool get isAuthenticated => _user != null;
   bool get isLoading => _isLoading;
+
+  /// Whether the dashboard should nudge the merchant to declare their GST
+  /// effective date — a REGULAR shop with a GSTIN on file but no date yet
+  /// (either a pre-feature legacy shop, or one that skipped the sheet in
+  /// edit-profile). COMPOSITION/UNREGISTERED shops never charge GST, so
+  /// they're never nudged regardless of whether a GSTIN is on file.
+  bool get shouldPromptGstEffectiveDate =>
+      _user != null &&
+      _user!.registrationType == 'REGULAR' &&
+      (_user!.shopGstin?.isNotEmpty ?? false) &&
+      _user!.gstEffectiveFrom == null &&
+      !_gstEffectiveDatePromptDismissed;
+
+  void dismissGstEffectiveDatePrompt() {
+    if (_gstEffectiveDatePromptDismissed) return;
+    _gstEffectiveDatePromptDismissed = true;
+    notifyListeners();
+  }
 
   /// Called on app start to restore session from stored tokens.
   Future<void> init() async {
@@ -371,6 +396,7 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
     }
     await _tokenManager.clear();
     _user = null;
+    _gstEffectiveDatePromptDismissed = false;
     for (final cb in _onClearCallbacks) {
       cb();
     }
@@ -464,6 +490,7 @@ class AuthProvider extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> clearAuth() async {
     await _tokenManager.clear();
     _user = null;
+    _gstEffectiveDatePromptDismissed = false;
     for (final cb in _onClearCallbacks) {
       cb();
     }

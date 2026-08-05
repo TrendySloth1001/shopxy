@@ -2462,6 +2462,19 @@ class AppLocalizationsEn extends AppLocalizations {
       'Pick the date GST starts applying.';
 
   @override
+  String get profileGstEffectiveSheetTitle => 'When does GST start applying?';
+
+  @override
+  String get profileGstEffectiveSheetBody =>
+      'Pick the date on your GST registration certificate. Invoices dated before this stay tax-free as a Bill of Supply — you can always change this later from your profile.';
+
+  @override
+  String get profileGstEffectiveSheetDeclare => 'Declare the date';
+
+  @override
+  String get profileGstEffectiveSheetSkip => 'Skip for now';
+
+  @override
   String get profilePan => 'PAN';
 
   @override

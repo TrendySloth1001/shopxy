@@ -17,6 +17,7 @@ class AuthUser {
     this.shopStateCode,
     this.shopPinCode,
     this.shopGstin,
+    this.registrationType,
     this.gstEffectiveFrom,
     this.shopPan,
     this.upiVpa,
@@ -61,6 +62,12 @@ class AuthUser {
   final String? shopPinCode;
   final String? shopGstin;
 
+  /// REGULAR | COMPOSITION | UNREGISTERED. Only a REGULAR shop with a
+  /// GSTIN charges output GST — a COMPOSITION dealer holds a GSTIN too but
+  /// never charges it, so this app must check both fields together
+  /// whenever it decides the merchant needs to declare [gstEffectiveFrom].
+  final String? registrationType;
+
   /// Calendar date (YYYY-MM-DD) GST starts applying — null = ungated
   /// (pre-feature behaviour). See backend `gstEffectiveFrom` on `User`.
   final String? gstEffectiveFrom;
@@ -103,6 +110,7 @@ class AuthUser {
     shopStateCode: j['shopStateCode'] as String?,
     shopPinCode: j['shopPinCode'] as String?,
     shopGstin: j['shopGstin'] as String?,
+    registrationType: j['registrationType'] as String?,
     // Backend sends a full ISO datetime for the underlying Date column —
     // this app only ever needs the calendar-date part.
     gstEffectiveFrom: (j['gstEffectiveFrom'] as String?)?.substring(0, 10),

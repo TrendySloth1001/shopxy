@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:shopxy/core/auth/permission_widgets.dart';
 import 'package:shopxy/core/auth/shop_capabilities.dart';
 import 'package:shopxy/core/haptics/scroll_boundary_haptics.dart';
+import 'package:shopxy/features/profile/presentation/pages/edit_profile_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/profile_page.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/dashboard/domain/entities/dashboard_stats.dart';
@@ -21,6 +22,8 @@ import 'package:shopxy/features/notifications/presentation/pages/notifications_p
 import 'package:shopxy/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:shopxy/features/notifications/presentation/widgets/notification_bell.dart';
 import 'package:shopxy/features/orders/presentation/providers/orders_provider.dart';
+import 'package:shopxy/features/profile/presentation/widgets/gst_effective_date_sheet.dart';
+import 'package:intl/intl.dart';
 import 'package:shopxy/features/shop/presentation/providers/linked_account_provider.dart';
 import 'package:shopxy/features/shop/presentation/widgets/payout_setup_sheet.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
@@ -46,8 +49,9 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  /// Guards the one-time payout-setup nudge so a rebuild can't stack sheets.
-  bool _payoutNudgeScheduled = false;
+  /// Guards the one-time startup-nudge sequence so a rebuild can't stack
+  /// sheets or re-run the chain mid-way.
+  bool _startupNudgesScheduled = false;
   final _scrollCtrl = ScrollController();
   late final ScrollBoundaryHaptics _scrollHaptics;
 
@@ -78,13 +82,44 @@ class _DashboardPageState extends State<DashboardPage> {
     super.dispose();
   }
 
-  void _maybeNudgePayouts(LinkedAccountProvider payouts) {
-    if (_payoutNudgeScheduled || !payouts.shouldPrompt) return;
-    _payoutNudgeScheduled = true;
+  /// Runs the startup nudge sheets ONE AT A TIME, never stacked — payout
+  /// setup first (if due), then the GST-effective-date declaration (if
+  /// due), only after the payout sheet has fully resolved either way.
+  void _maybeRunStartupNudges(LinkedAccountProvider payouts, AuthProvider auth) {
+    if (_startupNudgesScheduled) return;
+    if (!payouts.shouldPrompt && !auth.shouldPromptGstEffectiveDate) return;
+    _startupNudgesScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted || !payouts.shouldPrompt) return;
-      await showPayoutSetupSheet(context, hasDraft: payouts.hasDraft);
-      if (mounted) payouts.dismissPrompt();
+      if (!mounted) return;
+      if (payouts.shouldPrompt) {
+        await showPayoutSetupSheet(context, hasDraft: payouts.hasDraft);
+        if (mounted) payouts.dismissPrompt();
+      }
+      if (!mounted || !auth.shouldPromptGstEffectiveDate) return;
+      final declared = await showGstEffectiveDateSheet(context);
+      if (!mounted) return;
+      if (declared != null) {
+        try {
+          await auth.updateProfile(
+            gstEffectiveFrom: DateFormat('yyyy-MM-dd').format(declared),
+          );
+        } catch (_) {
+          // Best-effort — the merchant can still set it from Edit profile;
+          // don't block the dashboard on a transient save failure here.
+        }
+        if (mounted) auth.dismissGstEffectiveDatePrompt();
+        return;
+      }
+      // Skipped — take them straight to the exact setting instead of just
+      // dropping the nudge, so declaring the date is still one tap away.
+      auth.dismissGstEffectiveDatePrompt();
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              const EditProfilePage(focusField: ProfileField.gstEffectiveFrom),
+        ),
+      );
     });
   }
 
@@ -97,7 +132,10 @@ class _DashboardPageState extends State<DashboardPage> {
       (a) => a.user?.canView('dashboard') ?? false,
     );
     if (canViewDashboard) {
-      _maybeNudgePayouts(context.watch<LinkedAccountProvider>());
+      _maybeRunStartupNudges(
+        context.watch<LinkedAccountProvider>(),
+        context.watch<AuthProvider>(),
+      );
     }
     // The profile action shows the user's actual avatar (their photo, or a
     // colored monogram fallback) rather than a generic person glyph.
