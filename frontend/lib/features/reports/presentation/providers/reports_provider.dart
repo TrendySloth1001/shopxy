@@ -33,6 +33,19 @@ class ReportsProvider extends ChangeNotifier {
   GstReport? get gst => _gst;
   PnlReport? get pnl => _pnl;
 
+  /// Drops cached report data on logout — these are financial figures
+  /// (sales/GST/P&L), so the next account on this device must never see
+  /// the previous shop's numbers flash on screen.
+  void reset() {
+    _sales = null;
+    _purchases = null;
+    _gst = null;
+    _pnl = null;
+    _loading = false;
+    _error = null;
+    notifyListeners();
+  }
+
   void setRange(DateTime from, DateTime to) {
     _from = from;
     _to = to;

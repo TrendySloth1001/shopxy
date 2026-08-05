@@ -4694,6 +4694,24 @@ abstract class AppLocalizations {
   /// **'GSTIN'**
   String get profileGstin;
 
+  /// No description provided for @profileGstEffectiveFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'GST applies from'**
+  String get profileGstEffectiveFrom;
+
+  /// No description provided for @profileGstEffectiveFromHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'The date on your GST registration certificate. Invoices dated before this are billed as a Bill of Supply, not taxed.'**
+  String get profileGstEffectiveFromHelper;
+
+  /// No description provided for @profileGstEffectiveFromRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the date GST starts applying.'**
+  String get profileGstEffectiveFromRequired;
+
   /// No description provided for @profilePan.
   ///
   /// In en, this message translates to:

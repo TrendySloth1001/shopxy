@@ -263,6 +263,99 @@ describe('challans.service — create, render, convert', () => {
     }
   });
 
+  it('challan created before its shop\'s gstEffectiveFrom converts to a zero-tax invoice', async () => {
+    const ctx = await createTestUser();
+    try {
+      await registerShop(ctx.userId, '27');
+      // Effective date is in the future relative to the challan's createdAt
+      // (now) — the challan must be gated as unregistered.
+      await prisma.user.update({
+        where: { id: ctx.userId },
+        data: { gstEffectiveFrom: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) },
+      });
+      const product = await createTestProduct(ctx.shopId, { sellingPrice: 100 });
+      await prisma.product.update({
+        where: { id: product.id },
+        data: { taxPercent: 18, hsnCode: '1234' },
+      });
+      const party = await prisma.party.create({
+        data: { shopId: ctx.shopId, name: 'Local Consignee', stateCode: '27' },
+      });
+      await seedStock(ctx, product.id, 10);
+
+      const created = await challansService.createChallan(ctx.shopId, {
+        partyId: party.id,
+        items: [{ productId: product.id, quantity: 2 }],
+        createdById: ctx.userId,
+      });
+      if (!('challan' in created)) throw new Error('challan not created');
+
+      const conv = await challansService.convertToInvoice(ctx.shopId, created.challan.id);
+      if (!('invoice' in conv)) throw new Error('convert failed');
+      const inv = await prisma.invoice.findUniqueOrThrow({ where: { id: conv.invoice.id } });
+      expect(inv.documentType).toBe('BILL_OF_SUPPLY');
+      expect(Number(inv.cgstAmount)).toBe(0);
+      expect(Number(inv.sgstAmount)).toBe(0);
+
+      await prisma.invoice.delete({ where: { id: inv.id } });
+    } finally {
+      await cleanupTestUser(ctx);
+    }
+  });
+
+  it('a challan\'s tax gate is keyed to its own createdAt, not wall-clock "now" at render time', async () => {
+    // The shop's gstEffectiveFrom is in the past relative to TODAY, so a
+    // naive "now >= gstEffectiveFrom" check would charge GST on every
+    // render regardless of the challan's own date. Prove it isn't: a
+    // challan whose OWN createdAt predates the effective date must render
+    // zero tax even though "today" is well after it.
+    const ctx = await createTestUser();
+    try {
+      await registerShop(ctx.userId, '27');
+      await prisma.user.update({
+        where: { id: ctx.userId },
+        data: { gstEffectiveFrom: new Date('2026-06-01') }, // in the past relative to "today"
+      });
+      const product = await createTestProduct(ctx.shopId, { sellingPrice: 100 });
+      await prisma.product.update({
+        where: { id: product.id },
+        data: { taxPercent: 18, hsnCode: '1234' },
+      });
+      const party = await prisma.party.create({
+        data: { shopId: ctx.shopId, name: 'Local Consignee', stateCode: '27' },
+      });
+      await seedStock(ctx, product.id, 10);
+
+      const created = await challansService.createChallan(ctx.shopId, {
+        partyId: party.id,
+        items: [{ productId: product.id, quantity: 2 }],
+        createdById: ctx.userId,
+      });
+      if (!('challan' in created)) throw new Error('challan not created');
+
+      // Sanity: rendered "as-is" (createdAt = today, after the effective
+      // date), it charges GST.
+      const asIs = await renderChallanPdf(ctx.shopId, created.challan.id, null);
+      if (!Buffer.isBuffer(asIs)) throw new Error('expected a Buffer');
+      expect(pdfText(asIs)).toMatch(/18\.00/);
+
+      // Now backdate the challan's own createdAt to before the effective
+      // date. If the gate were keyed to wall-clock "now" this would render
+      // identically (today is still after the effective date) — it must
+      // instead flip to zero tax, proving the comparison uses the
+      // challan's own date.
+      await prisma.challan.update({
+        where: { id: created.challan.id },
+        data: { createdAt: new Date('2026-01-01') },
+      });
+      const backdated = await renderChallanPdf(ctx.shopId, created.challan.id, null);
+      if (!Buffer.isBuffer(backdated)) throw new Error('expected a Buffer');
+      expect(pdfText(backdated)).not.toMatch(/18\.00/);
+    } finally {
+      await cleanupTestUser(ctx);
+    }
+  });
+
   it('rendered PDF actually contains the Rule 55 fields (intra-state heads)', async () => {
     const ctx = await createTestUser();
     try {

@@ -2451,6 +2451,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileGstin => 'GSTIN';
 
   @override
+  String get profileGstEffectiveFrom => 'GST applies from';
+
+  @override
+  String get profileGstEffectiveFromHelper =>
+      'The date on your GST registration certificate. Invoices dated before this are billed as a Bill of Supply, not taxed.';
+
+  @override
+  String get profileGstEffectiveFromRequired =>
+      'Pick the date GST starts applying.';
+
+  @override
   String get profilePan => 'PAN';
 
   @override

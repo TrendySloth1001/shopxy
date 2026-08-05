@@ -81,6 +81,17 @@ class AnalyticsProvider extends ChangeNotifier {
     return _sortedCache!;
   }
 
+  /// Drops cached product-analytics data on logout so the next account
+  /// on this device doesn't see the previous shop's numbers flash on screen.
+  void reset() {
+    _data = null;
+    _sortedCache = null;
+    _sortedCacheKey = null;
+    _isLoading = false;
+    _error = null;
+    notifyListeners();
+  }
+
   void setRange(DateTime from, DateTime to) {
     _from = from;
     _to = to;

@@ -17,6 +17,7 @@ class AuthUser {
     this.shopStateCode,
     this.shopPinCode,
     this.shopGstin,
+    this.gstEffectiveFrom,
     this.shopPan,
     this.upiVpa,
     this.avatarUrl,
@@ -59,6 +60,10 @@ class AuthUser {
   final String? shopStateCode;
   final String? shopPinCode;
   final String? shopGstin;
+
+  /// Calendar date (YYYY-MM-DD) GST starts applying — null = ungated
+  /// (pre-feature behaviour). See backend `gstEffectiveFrom` on `User`.
+  final String? gstEffectiveFrom;
   final String? shopPan;
   final String? upiVpa;
 
@@ -98,6 +103,9 @@ class AuthUser {
     shopStateCode: j['shopStateCode'] as String?,
     shopPinCode: j['shopPinCode'] as String?,
     shopGstin: j['shopGstin'] as String?,
+    // Backend sends a full ISO datetime for the underlying Date column —
+    // this app only ever needs the calendar-date part.
+    gstEffectiveFrom: (j['gstEffectiveFrom'] as String?)?.substring(0, 10),
     shopPan: j['shopPan'] as String?,
     upiVpa: j['upiVpa'] as String?,
     avatarUrl: (j['avatarUrl'] as String?)?.trim().isEmpty == false
@@ -135,6 +143,7 @@ class AuthUser {
     String? shopStateCode,
     String? shopPinCode,
     String? shopGstin,
+    String? gstEffectiveFrom,
     String? shopPan,
     String? upiVpa,
     String? avatarUrl,
@@ -157,6 +166,7 @@ class AuthUser {
     shopStateCode: shopStateCode ?? this.shopStateCode,
     shopPinCode: shopPinCode ?? this.shopPinCode,
     shopGstin: shopGstin ?? this.shopGstin,
+    gstEffectiveFrom: gstEffectiveFrom ?? this.gstEffectiveFrom,
     shopPan: shopPan ?? this.shopPan,
     upiVpa: upiVpa ?? this.upiVpa,
     avatarUrl: avatarUrl ?? this.avatarUrl,

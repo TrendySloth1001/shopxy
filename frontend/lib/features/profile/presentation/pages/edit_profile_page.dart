@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/profile/presentation/pages/profile_page.dart'
@@ -11,6 +12,7 @@ import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/indian.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
@@ -62,6 +64,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late final TextEditingController _shopPan;
   late final TextEditingController _upiVpa;
   String? _shopStateCode;
+  // Calendar date GST starts applying — see AuthUser.gstEffectiveFrom.
+  // Not a text field (no keyboard entry), so it's tracked separately from
+  // the controllers above and picked via showDatePicker.
+  DateTime? _gstEffectiveFrom;
+  String? _gstEffectiveFromError;
   bool _busy = false;
   bool _uploadingAvatar = false;
 
@@ -84,6 +91,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _shopPan = TextEditingController(text: user?.shopPan ?? '');
     _upiVpa = TextEditingController(text: user?.upiVpa ?? '');
     _shopStateCode = user?.shopStateCode;
+    final storedEffectiveFrom = user?.gstEffectiveFrom;
+    _gstEffectiveFrom = storedEffectiveFrom != null
+        ? DateTime.tryParse(storedEffectiveFrom)
+        : null;
 
     _focusNodes = {
       for (final f in const [
@@ -204,6 +215,31 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
   }
 
+  Future<void> _pickGstEffectiveFrom() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _gstEffectiveFrom ?? now,
+      firstDate: DateTime(now.year - 10),
+      lastDate: DateTime(now.year + 10),
+    );
+    if (picked != null) {
+      setState(() {
+        _gstEffectiveFrom = picked;
+        _gstEffectiveFromError = null;
+      });
+    }
+  }
+
+  // Default the effective date to today the moment a GSTIN first appears —
+  // the merchant can still pick a different date afterward. Mirrors the
+  // merchant-web profile form.
+  void _onGstinChanged(String value) {
+    if (value.trim().isNotEmpty && _gstEffectiveFrom == null) {
+      setState(() => _gstEffectiveFrom = DateTime.now());
+    }
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     final auth = context.read<AuthProvider>();
@@ -236,6 +272,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final shopGstinArg = diff(_shopGstin.text.toUpperCase(), user?.shopGstin);
     final shopPanArg = diff(_shopPan.text.toUpperCase(), user?.shopPan);
     final upiArg = diff(_upiVpa.text, user?.upiVpa);
+    final gstEffectiveFromText = _gstEffectiveFrom != null
+        ? DateFormat('yyyy-MM-dd').format(_gstEffectiveFrom!)
+        : '';
+    final gstEffectiveFromArg = diff(
+      gstEffectiveFromText,
+      user?.gstEffectiveFrom,
+    );
 
     // State pair must move together: if the code changed, send both
     // halves; if it didn't, send neither.
@@ -256,11 +299,25 @@ class _EditProfilePageState extends State<EditProfilePage> {
         shopGstinArg == null &&
         shopPanArg == null &&
         upiArg == null &&
-        shopStateCodeArg == null;
+        shopStateCodeArg == null &&
+        gstEffectiveFromArg == null;
     if (unchanged) {
       Navigator.pop(context);
       return;
     }
+
+    // Mirrors the backend guard exactly: a NEW/changed GSTIN requires an
+    // effective date before it's ever sent to the server.
+    final isNewGstinRegistration =
+        shopGstinArg != null && shopGstinArg.isNotEmpty;
+    if (isNewGstinRegistration && _gstEffectiveFrom == null) {
+      setState(
+        () => _gstEffectiveFromError =
+            AppLocalizations.of(context).profileGstEffectiveFromRequired,
+      );
+      return;
+    }
+    setState(() => _gstEffectiveFromError = null);
 
     setState(() => _busy = true);
     try {
@@ -275,6 +332,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         shopStateCode: shopStateCodeArg,
         shopPinCode: shopPinCodeArg,
         shopGstin: shopGstinArg,
+        gstEffectiveFrom: gstEffectiveFromArg,
         shopPan: shopPanArg,
         upiVpa: upiArg,
       );
@@ -469,6 +527,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     decoration: InputDecoration(labelText: l10n.profileGstin),
                     textCapitalization: TextCapitalization.characters,
                     validator: IndianValidators.gstin,
+                    onChanged: _onGstinChanged,
                   ),
                 ),
                 const SizedBox(width: AppSizes.md),
@@ -482,6 +541,25 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: AppSizes.md),
+            InkWell(
+              onTap: _pickGstEffectiveFrom,
+              borderRadius: AppShapes.squircleRadius(AppSizes.radiusInput),
+              child: InputDecorator(
+                decoration: InputDecoration(
+                  labelText: l10n.profileGstEffectiveFrom,
+                  helperText: l10n.profileGstEffectiveFromHelper,
+                  helperMaxLines: 3,
+                  errorText: _gstEffectiveFromError,
+                  suffixIcon: const AppIcon(AppIcons.calendarTodayOutlined),
+                ),
+                child: Text(
+                  _gstEffectiveFrom != null
+                      ? DateFormat('d MMM y').format(_gstEffectiveFrom!)
+                      : l10n.profileSelectPlaceholder,
+                ),
+              ),
             ),
             const SizedBox(height: AppSizes.md),
             TextFormField(

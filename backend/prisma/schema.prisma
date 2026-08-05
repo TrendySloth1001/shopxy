@@ -39,6 +39,13 @@ model User {
   shopStateCode      String?            @map("shop_state_code")
   shopPinCode        String?            @map("shop_pin_code")
   shopGstin          String?            @map("shop_gstin")
+  /// Calendar date GST starts applying to this shop's SALE documents. Null =
+  /// ungated (pre-feature behaviour — every existing GSTIN-holder keeps
+  /// charging GST unconditionally). Set only via the new-registration guard
+  /// in `updateProfile`. Date-only (`@db.Date`), compared against a
+  /// document's own date (`Invoice.invoiceDate`, `Challan.createdAt`), never
+  /// wall-clock "now" — a backdated invoice must be billed correctly.
+  gstEffectiveFrom   DateTime?          @map("gst_effective_from") @db.Date
   /// GST registration status. Gates whether this shop charges output tax
   /// and issues tax invoices vs Bills of Supply. Defaults to UNREGISTERED;
   /// the migration backfills REGULAR for rows that already have a GSTIN.

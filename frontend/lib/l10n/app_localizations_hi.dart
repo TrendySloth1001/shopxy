@@ -2450,6 +2450,17 @@ class AppLocalizationsHi extends AppLocalizations {
   String get profileGstin => 'GSTIN';
 
   @override
+  String get profileGstEffectiveFrom => 'GST किस तारीख से लागू होगा';
+
+  @override
+  String get profileGstEffectiveFromHelper =>
+      'आपके GST पंजीकरण प्रमाणपत्र पर दी गई तारीख। इस तारीख से पहले के इनवॉइस बिल ऑफ सप्लाई के रूप में जारी होंगे, उन पर टैक्स नहीं लगेगा।';
+
+  @override
+  String get profileGstEffectiveFromRequired =>
+      'GST कब से लागू होगा, वह तारीख चुनें।';
+
+  @override
   String get profilePan => 'PAN';
 
   @override

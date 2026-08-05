@@ -87,6 +87,16 @@ export const updateProfileSchema = z.object({
   shopStateCode: z.string().trim().max(2).optional(),
   shopPinCode: z.string().trim().max(6).optional(),
   shopGstin: z.string().trim().max(15).optional(),
+  // Plain calendar date (YYYY-MM-DD) — mirrors the backend's day-granular
+  // validation; no time-of-day/timezone for a "which date does GST start"
+  // decision. The empty string (an untouched/cleared picker) is valid too —
+  // the route handler maps it to `null`, same as every other clearable
+  // shop field.
+  gstEffectiveFrom: z
+    .string()
+    .trim()
+    .regex(/^(\d{4}-\d{2}-\d{2})?$/, "must be YYYY-MM-DD")
+    .optional(),
   registrationType: z.enum(["REGULAR", "COMPOSITION", "UNREGISTERED"]).optional(),
   shopPan: z.string().trim().max(10).optional(),
   upiVpa: z.string().trim().max(120).optional(),

@@ -287,6 +287,7 @@ class AuthRemoteDataSource {
     String? shopStateCode,
     String? shopPinCode,
     String? shopGstin,
+    String? gstEffectiveFrom,
     String? shopPan,
     String? upiVpa,
     String? avatarUrl,
@@ -314,6 +315,7 @@ class AuthRemoteDataSource {
     put('shopStateCode', shopStateCode);
     put('shopPinCode', shopPinCode);
     put('shopGstin', shopGstin);
+    put('gstEffectiveFrom', gstEffectiveFrom);
     put('shopPan', shopPan);
     put('upiVpa', upiVpa);
     // Avatar + phone — explicit clear flag because the empty-string
@@ -332,7 +334,12 @@ class AuthRemoteDataSource {
     final res = await _client.patch('/auth/me', body: body);
     if (res.statusCode != 200) {
       final errBody = jsonDecode(res.body) as Map<String, dynamic>;
-      throw Exception(_extractError(errBody));
+      final code = _extractError(errBody);
+      throw Exception(
+        code == 'GST_EFFECTIVE_DATE_REQUIRED'
+            ? 'Pick the date GST starts applying before saving a new GSTIN.'
+            : code,
+      );
     }
     return AuthUser.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }

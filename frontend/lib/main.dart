@@ -210,6 +210,18 @@ void main() async {
   // Hoisted to a local (was inline in the MultiProvider) so the cache-
   // revalidation listener below can reload it when the dashboard changes.
   final dashboardProvider = DashboardProvider(dashboardDs);
+  // These five were previously created inline in the MultiProvider below
+  // (`create: (_) => X(...)`), which meant nothing outside the widget tree
+  // held a reference to register a clear-on-logout callback — the previous
+  // shop's custom fields, stock history, quotations, reports and analytics
+  // could all flash on screen for the next account on a shared device.
+  // Hoisted here so they can be wired into the same fan-out as everything
+  // else.
+  final customFieldsProvider = CustomFieldsProvider(customFieldsDs);
+  final stockProvider = StockProvider(stockDs);
+  final quotationsProvider = QuotationsProvider(quotationsDs);
+  final reportsProvider = ReportsProvider(reportsDs);
+  final analyticsProvider = AnalyticsProvider(analyticsDs);
 
   authProvider.registerOnClear(notificationsProvider.reset);
   authProvider.registerOnClear(productsProvider.reset);
@@ -222,6 +234,11 @@ void main() async {
   authProvider.registerOnClear(linkedAccountProvider.reset);
   authProvider.registerOnClear(ordersProvider.reset);
   authProvider.registerOnClear(merchantBannersProvider.reset);
+  authProvider.registerOnClear(customFieldsProvider.reset);
+  authProvider.registerOnClear(stockProvider.reset);
+  authProvider.registerOnClear(quotationsProvider.reset);
+  authProvider.registerOnClear(reportsProvider.reset);
+  authProvider.registerOnClear(analyticsProvider.reset);
   // Purge the device response cache on logout / 401 / account-delete so the
   // next account can't see the previous user's cached business data.
   authProvider.registerOnClear(httpCache.wipe);
@@ -342,22 +359,24 @@ void main() async {
           value: dashboardProvider,
         ),
         ChangeNotifierProvider(create: (_) => CategoriesProvider(categoriesDs)),
-        ChangeNotifierProvider(
-          create: (_) => CustomFieldsProvider(customFieldsDs),
+        ChangeNotifierProvider<CustomFieldsProvider>.value(
+          value: customFieldsProvider,
         ),
         ChangeNotifierProvider<ProductsProvider>.value(value: productsProvider),
         ChangeNotifierProvider<ProductCatalogue>.value(value: productCatalogue),
-        ChangeNotifierProvider(create: (_) => StockProvider(stockDs)),
+        ChangeNotifierProvider<StockProvider>.value(value: stockProvider),
         ChangeNotifierProvider<InvoicesProvider>.value(value: invoicesProvider),
         ChangeNotifierProvider<VendorsProvider>.value(value: vendorsProvider),
         ChangeNotifierProvider<PartiesProvider>.value(value: partiesProvider),
         ChangeNotifierProvider(create: (_) => PaymentsProvider(paymentsDs)),
-        ChangeNotifierProvider(create: (_) => QuotationsProvider(quotationsDs)),
+        ChangeNotifierProvider<QuotationsProvider>.value(
+          value: quotationsProvider,
+        ),
         ChangeNotifierProvider<ChallansProvider>.value(value: challansProvider),
         ChangeNotifierProvider<NotificationsProvider>.value(
           value: notificationsProvider,
         ),
-        ChangeNotifierProvider(create: (_) => ReportsProvider(reportsDs)),
+        ChangeNotifierProvider<ReportsProvider>.value(value: reportsProvider),
         ChangeNotifierProvider<ShopProvider>.value(value: shopProvider),
         ChangeNotifierProvider<LinkedAccountProvider>.value(
           value: linkedAccountProvider,
@@ -375,7 +394,9 @@ void main() async {
           create: (_) => AdminBankOffersProvider(adminBankOffersDs),
         ),
         Provider<AdminShopsRemoteDataSource>.value(value: adminShopsDs),
-        ChangeNotifierProvider(create: (_) => AnalyticsProvider(analyticsDs)),
+        ChangeNotifierProvider<AnalyticsProvider>.value(
+          value: analyticsProvider,
+        ),
         ChangeNotifierProvider<OrdersProvider>.value(value: ordersProvider),
       ],
       child: const ShopxyApp(),

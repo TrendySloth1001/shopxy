@@ -828,6 +828,12 @@ export class InvoicesService {
       vendorPanNumber = vendor.panNumber ?? null;
     }
 
+    // Hoisted above the GST registration gate below, which must compare
+    // against this document's OWN date (a merchant can backdate an invoice)
+    // rather than wall-clock "now" — a backdated invoice must be billed
+    // under whatever registration state applied on its own date.
+    const invoiceDate = data.invoiceDate ? new Date(data.invoiceDate) : new Date();
+
     // Shop owner identity drives IGST vs CGST+SGST. Looked up from the
     // owning Shop's owner User row, not the global "first OWNER" — that
     // pre-multi-tenant query went to whichever merchant was alphabetically
@@ -836,7 +842,12 @@ export class InvoicesService {
       where: { id: data.shopId },
       select: {
         owner: {
-          select: { shopStateCode: true, shopGstin: true, registrationType: true },
+          select: {
+            shopStateCode: true,
+            shopGstin: true,
+            registrationType: true,
+            gstEffectiveFrom: true,
+          },
         },
       },
     });
@@ -861,7 +872,11 @@ export class InvoicesService {
     // unregistered buyer still pays the vendor's GST — it just isn't
     // claimable as ITC, which is a reporting concern, not a document one).
     const registrationType = shop?.owner.registrationType ?? 'UNREGISTERED';
-    const isShopRegistered = isOutputGstRegistered({ shopGstin, registrationType });
+    const gstEffectiveFrom = shop?.owner.gstEffectiveFrom ?? null;
+    const isShopRegistered = isOutputGstRegistered(
+      { shopGstin, registrationType, gstEffectiveFrom },
+      invoiceDate,
+    );
     const chargesOutputGst = data.type === 'SALE' ? isShopRegistered : true;
 
     // An unregistered shop can't issue a tax invoice — downgrade it to a
@@ -1251,8 +1266,6 @@ export class InvoicesService {
         }
       }
     }
-
-    const invoiceDate = data.invoiceDate ? new Date(data.invoiceDate) : new Date();
 
     return {
       header: {

@@ -18,6 +18,16 @@ class QuotationsProvider extends ChangeNotifier {
   String? get error => _error;
   bool get isSubmitting => _submitting;
 
+  /// Drops the cached list on logout so the next account on this device
+  /// doesn't see the previous shop's quotations flash on screen.
+  void reset() {
+    _items = const [];
+    _loading = false;
+    _error = null;
+    _submitting = false;
+    notifyListeners();
+  }
+
   Future<void> load({String? status}) async {
     _loading = true;
     _error = null;

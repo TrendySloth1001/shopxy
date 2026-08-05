@@ -117,6 +117,14 @@ const updateProfileSchema = z.object({
     .regex(GSTIN_REGEX, 'invalid GSTIN')
     .nullable()
     .optional(),
+  // Plain calendar date (no time-of-day) — GST effective date is inherently
+  // day-granular; a full ISO datetime would introduce timezone ambiguity a
+  // merchant picking "the date GST starts" shouldn't have to reason about.
+  gstEffectiveFrom: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'must be YYYY-MM-DD')
+    .nullable()
+    .optional(),
   registrationType: z.enum(['REGULAR', 'COMPOSITION', 'UNREGISTERED']).optional(),
   shopPan: z
     .string()
@@ -527,12 +535,16 @@ export async function updateProfile(req: Request, res: Response) {
     res.status(400).json({ error: parsed.error.flatten() });
     return;
   }
-  const user = await authService.updateProfile(req.user!.sub, parsed.data);
-  if (!user) {
+  const result = await authService.updateProfile(req.user!.sub, parsed.data);
+  if (!result) {
     res.status(404).json({ error: 'User not found' });
     return;
   }
-  res.json(user);
+  if ('error' in result) {
+    res.status(422).json({ error: result.error });
+    return;
+  }
+  res.json(result);
 }
 
 export async function exportData(req: Request, res: Response) {

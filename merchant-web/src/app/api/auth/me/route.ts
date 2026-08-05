@@ -29,6 +29,7 @@ const CLEARABLE = [
   "shopStateCode",
   "shopPinCode",
   "shopGstin",
+  "gstEffectiveFrom",
   "shopPan",
   "upiVpa",
   "phoneNumber",
@@ -56,10 +57,12 @@ export async function PATCH(req: Request) {
   });
   if (!res) return NextResponse.json({ user: null }, { status: 401 });
   if (!res.ok) {
-    return NextResponse.json(
-      { error: await extractError(res, "Could not save your changes.") },
-      { status: 400 },
-    );
+    const code = await extractError(res, "Could not save your changes.");
+    const message =
+      code === "GST_EFFECTIVE_DATE_REQUIRED"
+        ? "Pick the date GST starts applying before saving a new GSTIN."
+        : code;
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 
   // PATCH returns the safe user without team scope — re-read /auth/me so the

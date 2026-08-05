@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/network/image_url.dart';
 import 'package:shopxy/features/auth/domain/entities/auth_user.dart';
@@ -17,6 +18,13 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
+
+/// Formats the stored `YYYY-MM-DD` (or full ISO datetime) effective-date
+/// string for display; falls back to the raw value if parsing fails.
+String _formatGstEffectiveFrom(String value) {
+  final parsed = DateTime.tryParse(value);
+  return parsed != null ? DateFormat('d MMM y').format(parsed) : value;
+}
 
 /// Profile tab — polished snapshot of the merchant identity plus the
 /// shortcuts that don't deserve a top-level nav slot. One canonical
@@ -210,6 +218,14 @@ class ProfilePage extends StatelessWidget {
           accentSoft: accentSoft,
           copyable: true,
         ),
+        if (user.gstEffectiveFrom != null)
+          _DetailRow(
+            icon: AppIcons.calendarTodayOutlined,
+            label: l10n.profileGstEffectiveFrom,
+            value: _formatGstEffectiveFrom(user.gstEffectiveFrom!),
+            accent: accent,
+            accentSoft: accentSoft,
+          ),
         _DetailRow(
           icon: AppIcons.creditCardOutlined,
           label: l10n.profileFieldPan,

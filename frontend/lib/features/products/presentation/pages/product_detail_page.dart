@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
@@ -93,8 +94,26 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     // Tree lookup (sections + their names) is needed to label the
     // Specifications groups. Provider caches across pages so this is
     // a no-op once the user has visited settings or another product.
+    // load()'s first line is a synchronous notifyListeners(), so on the
+    // very first call (from initState) it must be deferred a frame —
+    // calling it inline here throws "setState() called during build"
+    // (same pattern as custom_fields_form_section.dart).
     final cf = context.read<CustomFieldsProvider>();
-    final treeFuture = cf.hasLoadedOnce ? Future.value() : cf.load();
+    Future<void> treeFuture;
+    if (cf.hasLoadedOnce) {
+      treeFuture = Future.value();
+    } else {
+      final completer = Completer<void>();
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) {
+          completer.complete();
+          return;
+        }
+        await cf.load();
+        completer.complete();
+      });
+      treeFuture = completer.future;
+    }
 
     await Future.wait([
       _loadProduct(),

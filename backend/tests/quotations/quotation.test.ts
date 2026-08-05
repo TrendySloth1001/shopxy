@@ -149,4 +149,66 @@ describe('quotations.service — GST gate + pricing mode', () => {
       await cleanupTestUser(buyer);
     }
   });
+
+  it('create → accept — a quote priced before gstEffectiveFrom stays frozen at zero tax even if accepted after it', async () => {
+    // Quotations have no backdating concept — they're always gated as of
+    // "now" at create() time. If the shop's gstEffectiveFrom is still in the
+    // future when the quote is created, the quote is correctly priced
+    // ungated (zero tax). Simulate time passing by moving gstEffectiveFrom
+    // into the past before accept() — the per-line tax frozen at quote time
+    // must survive unchanged, so the quoted total the customer saw can never
+    // silently drift once they accept it.
+    const merchant = await createTestUser();
+    const buyer = await createBuyer();
+    try {
+      const futureEffectiveFrom = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+      await prisma.user.update({
+        where: { id: merchant.userId },
+        data: {
+          shopGstin: '27ABCDE1234F1Z5',
+          shopStateCode: '27',
+          registrationType: 'REGULAR',
+          gstEffectiveFrom: futureEffectiveFrom,
+        },
+      });
+      const product = await prisma.product.create({
+        data: {
+          shopId: merchant.shopId,
+          name: 'Not Yet Registered Product',
+          sku: `SKU-QEFF-${Date.now()}`,
+          mrp: 100,
+          sellingPrice: 100,
+          purchasePrice: 60,
+          taxPercent: 18,
+          stockQuantity: 10,
+        },
+      });
+      const party = await createLinkedParty(merchant.shopId, buyer.userId);
+      const created = await quotationsService.create(merchant.shopId, party.id, merchant.userId, {
+        items: [{ productId: product.id, name: product.name, quantity: 1, unitPrice: 100, taxPercent: 18 }],
+      });
+      expect('error' in created).toBe(false);
+      if ('error' in created) return;
+      expect(created.quotation.taxAmount).toBe(0);
+      expect(created.quotation.total).toBe(100);
+
+      // Time "passes" — the effective date is now in the past.
+      await prisma.user.update({
+        where: { id: merchant.userId },
+        data: { gstEffectiveFrom: new Date('2020-01-01') },
+      });
+
+      const accepted = await quotationsService.accept(merchant.shopId, party.id, created.quotation.id, buyer.userId);
+      const invoice = await prisma.invoice.findUniqueOrThrow({ where: { id: accepted.invoice.id } });
+      // Frozen at quote time — must stay zero-tax despite the shop now
+      // resolving as registered-as-of-today.
+      expect(Number(invoice.total)).toBe(created.quotation.total);
+      expect(Number(invoice.cgstAmount)).toBe(0);
+      expect(Number(invoice.sgstAmount)).toBe(0);
+      await prisma.invoice.delete({ where: { id: invoice.id } });
+    } finally {
+      await cleanupTestUser(merchant);
+      await cleanupTestUser(buyer);
+    }
+  });
 });

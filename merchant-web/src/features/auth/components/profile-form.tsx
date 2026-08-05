@@ -9,6 +9,8 @@ import { SubmitButton } from "./submit-button";
 import { Banner } from "./banner";
 import { AvatarPicker } from "./avatar-picker";
 import { ComboSelect } from "@/shared/ui/combo-select";
+import { DatePicker } from "@/shared/ui/date-picker";
+import { todayInputDate } from "@/shared/datetime";
 
 const REGISTRATION_TYPES = ["REGULAR", "COMPOSITION", "UNREGISTERED"] as const;
 
@@ -29,6 +31,7 @@ export function ProfileForm({ onSaved }: { onSaved?: () => void } = {}) {
     shopStateCode: user?.shopStateCode ?? "",
     shopPinCode: user?.shopPinCode ?? "",
     shopGstin: user?.shopGstin ?? "",
+    gstEffectiveFrom: user?.gstEffectiveFrom?.slice(0, 10) ?? "",
     registrationType: user?.registrationType ?? "",
     shopPan: user?.shopPan ?? "",
     upiVpa: user?.upiVpa ?? "",
@@ -39,8 +42,25 @@ export function ProfileForm({ onSaved }: { onSaved?: () => void } = {}) {
   const [saved, setSaved] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  // The GSTIN as it was when the form loaded — used to tell "editing an
+  // unrelated field on an already-registered shop" apart from "registering
+  // a new/different GSTIN", which is the only case that requires an
+  // effective date (mirrors the backend guard in auth.service.ts exactly).
+  const originalGstin = user?.shopGstin ?? "";
+
   function set(key: keyof typeof values, value: string) {
     setValues((v) => ({ ...v, [key]: value }));
+    setSaved(false);
+  }
+
+  function onGstinChange(value: string) {
+    setValues((v) => ({
+      ...v,
+      shopGstin: value,
+      // Default the effective date to today the moment a GSTIN first
+      // appears — the merchant can still pick a different date afterward.
+      gstEffectiveFrom: value && !v.gstEffectiveFrom ? todayInputDate() : v.gstEffectiveFrom,
+    }));
     setSaved(false);
   }
 
@@ -60,6 +80,14 @@ export function ProfileForm({ onSaved }: { onSaved?: () => void } = {}) {
           Object.entries(flat).map(([k, v]) => [k, v?.[0] ?? ""]),
         ),
       );
+      return;
+    }
+    // Mirrors the backend guard: a NEW/changed GSTIN resolving to REGULAR
+    // requires an effective date before it's ever sent to the server.
+    const isNewGstinRegistration = values.shopGstin && values.shopGstin !== originalGstin;
+    const resolvedRegType = values.registrationType || (values.shopGstin ? "REGULAR" : "UNREGISTERED");
+    if (isNewGstinRegistration && resolvedRegType === "REGULAR" && !values.gstEffectiveFrom) {
+      setFieldErrors({ gstEffectiveFrom: t("field.gstEffectiveFromRequired") });
       return;
     }
     setFieldErrors({});
@@ -138,9 +166,22 @@ export function ProfileForm({ onSaved }: { onSaved?: () => void } = {}) {
       <Field
         label={t("field.gstin")}
         value={values.shopGstin}
-        onChange={(e) => set("shopGstin", e.target.value)}
+        onChange={(e) => onGstinChange(e.target.value)}
         error={fieldErrors.shopGstin}
       />
+      <div className="flex flex-col gap-xs">
+        <DatePicker
+          label={t("field.gstEffectiveFrom")}
+          value={values.gstEffectiveFrom}
+          onChange={(v) => set("gstEffectiveFrom", v)}
+          clearable
+        />
+        {fieldErrors.gstEffectiveFrom ? (
+          <p className="text-body-sm text-error">{fieldErrors.gstEffectiveFrom}</p>
+        ) : (
+          <p className="text-body-sm text-subtle">{t("field.gstEffectiveFromHelper")}</p>
+        )}
+      </div>
       <ComboSelect
         label={t("field.gstRegistration")}
         value={values.registrationType}

@@ -30,6 +30,9 @@ export const authUserSchema = z.object({
   shopStateCode: z.string().nullable().optional(),
   shopPinCode: z.string().nullable().optional(),
   shopGstin: z.string().nullable().optional(),
+  // Calendar date (YYYY-MM-DD) GST starts applying — null = ungated
+  // (pre-feature behaviour). See backend `gstEffectiveFrom` on `User`.
+  gstEffectiveFrom: z.string().nullable().optional(),
   registrationType: z.string().nullable().optional(),
   shopPan: z.string().nullable().optional(),
   upiVpa: z.string().nullable().optional(),

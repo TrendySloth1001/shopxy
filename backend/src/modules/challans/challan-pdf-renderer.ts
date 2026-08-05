@@ -7,6 +7,7 @@ import {
   isInterstateSupply,
   isValidStateCode,
 } from '../../shared/validation/indian.js';
+import { isOutputGstRegistered } from '../invoices/gst-registration-gate.js';
 
 /// The Rule 55 tax figures for one challan line. CGST + SGST + IGST + cess is
 /// the tax portion of `total`; `taxable` is the value of the goods.
@@ -116,6 +117,7 @@ export async function renderChallanPdf(
           shopGstin: true,
           shopPan: true,
           registrationType: true,
+          gstEffectiveFrom: true,
           name: true,
         },
       },
@@ -149,8 +151,12 @@ export async function renderChallanPdf(
 
   // Only a REGULAR GST-registered consignor charges/declares output tax; an
   // unregistered/composition consignor's challan carries no tax (Sec 32 gate),
-  // matching the Bill of Supply such a shop would issue.
-  const chargesGst = owner?.registrationType === 'REGULAR' && !!owner?.shopGstin;
+  // matching the Bill of Supply such a shop would issue. Gated as of the
+  // challan's own (immutable) createdAt — not "now" — so a challan's PDF
+  // renders deterministically every time instead of drifting as the shop's
+  // live registration state changes across repeated renders. A challan has
+  // no other date field to compare against.
+  const chargesGst = owner ? isOutputGstRegistered(owner, challan.createdAt) : false;
 
   const D = Prisma.Decimal;
   const round2 = (v: Prisma.Decimal) => v.toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);

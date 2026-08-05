@@ -16,6 +16,15 @@ class StockProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
+  /// Drops cached transactions on logout so the next account on this
+  /// device doesn't see the previous shop's stock history flash on screen.
+  void reset() {
+    _transactions = [];
+    _isLoading = false;
+    _error = null;
+    notifyListeners();
+  }
+
   Future<void> loadTransactions({String? productId}) async {
     _isLoading = true;
     _error = null;

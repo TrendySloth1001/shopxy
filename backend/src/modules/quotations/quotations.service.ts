@@ -273,7 +273,7 @@ export class QuotationsService {
 
     const [hydrated, chargesGst] = await Promise.all([
       hydrateRates(shopId, input.items),
-      chargesOutputGstForSale(prisma, shopId),
+      chargesOutputGstForSale(prisma, shopId, new Date()),
     ]);
     const priced = priceItems(hydrated, chargesGst);
 
@@ -597,7 +597,9 @@ export class QuotationsService {
       where: { id: shopId },
       select: {
         ownerUserId: true,
-        owner: { select: { shopGstin: true, registrationType: true } },
+        owner: {
+          select: { shopGstin: true, registrationType: true, gstEffectiveFrom: true },
+        },
       },
     });
     if (!shop) return { error: 'PARTY_NOT_FOUND' as const };
@@ -608,7 +610,8 @@ export class QuotationsService {
     if (repriced.length === 0) {
       return { error: 'NO_VALID_ITEMS' as const };
     }
-    const priced = priceItems(repriced, isOutputGstRegistered(shop.owner));
+    // Quotations have no backdating concept — always gated as of "now".
+    const priced = priceItems(repriced, isOutputGstRegistered(shop.owner, new Date()));
 
     const created = await prisma.$transaction(async (tx) => {
       // Allocate inside the txn so a rollback doesn't burn the QUO counter.
@@ -668,7 +671,7 @@ export class QuotationsService {
 
     const [hydrated, chargesGst] = await Promise.all([
       hydrateRates(shopId, input.items),
-      chargesOutputGstForSale(prisma, shopId),
+      chargesOutputGstForSale(prisma, shopId, new Date()),
     ]);
     const priced = priceItems(hydrated, chargesGst);
     // Claim REQUESTED → PENDING so two merchants can't both send it.

@@ -55,6 +55,7 @@ const safeUserSelect = {
   shopStateCode: true,
   shopPinCode: true,
   shopGstin: true,
+  gstEffectiveFrom: true,
   registrationType: true,
   shopPan: true,
   upiVpa: true,
@@ -911,6 +912,10 @@ export class AuthService {
       shopStateCode?: string | null;
       shopPinCode?: string | null;
       shopGstin?: string | null;
+      // Calendar date GST starts applying — see gstEffectiveFrom on the
+      // Prisma User model. YYYY-MM-DD or null; the guard below requires it
+      // the moment a shop newly registers for GST.
+      gstEffectiveFrom?: string | null;
       registrationType?: 'REGULAR' | 'COMPOSITION' | 'UNREGISTERED';
       shopPan?: string | null;
       upiVpa?: string | null;
@@ -938,6 +943,7 @@ export class AuthService {
       shopStateCode?: string | null;
       shopPinCode?: string | null;
       shopGstin?: string | null;
+      gstEffectiveFrom?: Date | null;
       registrationType?: 'REGULAR' | 'COMPOSITION' | 'UNREGISTERED';
       shopPan?: string | null;
       upiVpa?: string | null;
@@ -969,6 +975,11 @@ export class AuthService {
     } else if (data.shopGstin !== undefined) {
       updates.registrationType = data.shopGstin ? 'REGULAR' : 'UNREGISTERED';
     }
+    if (data.gstEffectiveFrom !== undefined) {
+      updates.gstEffectiveFrom = data.gstEffectiveFrom
+        ? new Date(`${data.gstEffectiveFrom}T00:00:00.000Z`)
+        : null;
+    }
     if (data.shopPan !== undefined) updates.shopPan = data.shopPan;
     if (data.upiVpa !== undefined) updates.upiVpa = data.upiVpa;
     if (data.avatarUrl !== undefined) updates.avatarUrl = data.avatarUrl;
@@ -982,6 +993,31 @@ export class AuthService {
     if (Object.keys(updates).length === 0) {
       return prisma.user.findUnique({ where: { id: userId }, select: safeUserSelect });
     }
+
+    // GST-effective-date guard: force the precise "from when" decision only
+    // at the exact moment a shop is newly acquiring/changing its GSTIN and
+    // resolves to REGULAR. Only query the current row when shopGstin is
+    // actually part of this request — the overwhelming majority of profile
+    // edits never touch this and skip the extra query entirely.
+    if (data.shopGstin !== undefined) {
+      const current = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { shopGstin: true, gstEffectiveFrom: true },
+      });
+      if (!current) return null;
+      const isNewGstinRegistration =
+        data.shopGstin !== null && data.shopGstin !== current.shopGstin;
+      if (isNewGstinRegistration && updates.registrationType === 'REGULAR') {
+        const resolvedEffectiveFrom =
+          data.gstEffectiveFrom !== undefined
+            ? updates.gstEffectiveFrom
+            : current.gstEffectiveFrom;
+        if (resolvedEffectiveFrom == null) {
+          return { error: 'GST_EFFECTIVE_DATE_REQUIRED' as const };
+        }
+      }
+    }
+
     return prisma.user.update({
       where: { id: userId },
       data: updates,

@@ -42,6 +42,17 @@ class CustomFieldsProvider extends ChangeNotifier {
     ];
   }
 
+  /// Drops the cached tree/templates on logout so the next account on this
+  /// device doesn't see the previous shop's custom fields flash on screen.
+  void reset() {
+    _tree = const CustomFieldsTree(sections: [], ungrouped: []);
+    _templates = const [];
+    _isLoading = false;
+    _error = null;
+    _hasLoadedOnce = false;
+    notifyListeners();
+  }
+
   // ── Loading ────────────────────────────────────────────────────────
 
   Future<void> load({bool activeOnly = false}) async {

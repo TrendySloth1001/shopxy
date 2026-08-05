@@ -173,6 +173,109 @@ describe('invoices.service — smoke', () => {
     }
   });
 
+  it('createInvoice — REGULAR shop with a future gstEffectiveFrom is billed as unregistered for a document dated before it', async () => {
+    // The shop has a GSTIN on file but GST doesn't apply until 2026-08-10 —
+    // an invoice dated the day before must still be a zero-tax Bill of
+    // Supply, gated by the document's OWN date, not "today".
+    const ctx = await createTestUser();
+    try {
+      await prisma.user.update({
+        where: { id: ctx.userId },
+        data: {
+          shopGstin: '27ABCDE1234F1Z5',
+          shopStateCode: '27',
+          registrationType: 'REGULAR',
+          gstEffectiveFrom: new Date('2026-08-10'),
+        },
+      });
+      const product = await createTestProduct(ctx.shopId, { sellingPrice: 100 });
+      const party = await createTestParty(ctx.shopId);
+      const result = await invoicesService.createInvoice({
+        shopId: ctx.shopId,
+        type: 'SALE',
+        documentType: 'TAX_INVOICE',
+        partyId: party.id,
+        invoiceDate: '2026-08-09T12:00:00.000Z',
+        items: [{ productId: product.id, quantity: 2, unitPrice: 100, taxPercent: 18 }],
+      });
+      expect('error' in result).toBe(false);
+      if ('error' in result) return;
+      const inv = result.invoice;
+      expect(inv.documentType).toBe('BILL_OF_SUPPLY');
+      expect(Number(inv.cgstAmount)).toBe(0);
+      expect(Number(inv.sgstAmount)).toBe(0);
+      expect(Number(inv.total)).toBe(200);
+      await prisma.invoice.delete({ where: { id: inv.id } });
+    } finally {
+      await cleanupTestUser(ctx);
+    }
+  });
+
+  it('createInvoice — REGULAR shop with a past gstEffectiveFrom charges real GST for a document dated on/after it', async () => {
+    const ctx = await createTestUser();
+    try {
+      await prisma.user.update({
+        where: { id: ctx.userId },
+        data: {
+          shopGstin: '27ABCDE1234F1Z5',
+          shopStateCode: '27',
+          registrationType: 'REGULAR',
+          gstEffectiveFrom: new Date('2026-08-10'),
+        },
+      });
+      const product = await createTestProduct(ctx.shopId, { sellingPrice: 100 });
+      const party = await createTestParty(ctx.shopId);
+      const result = await invoicesService.createInvoice({
+        shopId: ctx.shopId,
+        type: 'SALE',
+        partyId: party.id,
+        invoiceDate: '2026-08-10T00:00:00.000Z',
+        items: [{ productId: product.id, quantity: 2, unitPrice: 100, taxPercent: 18 }],
+      });
+      expect('error' in result).toBe(false);
+      if ('error' in result) return;
+      const inv = result.invoice;
+      expect(inv.documentType).toBe('TAX_INVOICE');
+      expect(Number(inv.cgstAmount)).toBeCloseTo(18, 2);
+      expect(Number(inv.sgstAmount)).toBeCloseTo(18, 2);
+      expect(Number(inv.total)).toBeCloseTo(236, 2);
+      await prisma.invoice.delete({ where: { id: inv.id } });
+    } finally {
+      await cleanupTestUser(ctx);
+    }
+  });
+
+  it('createInvoice — REGULAR shop with gstEffectiveFrom null (pre-feature row) charges GST regardless of invoiceDate', async () => {
+    // Regression guard: every existing registered shop must keep charging
+    // GST unconditionally — gstEffectiveFrom is null unless the merchant
+    // explicitly went through the new profile flow.
+    const ctx = await createTestUser();
+    try {
+      await prisma.user.update({
+        where: { id: ctx.userId },
+        data: { shopGstin: '27ABCDE1234F1Z5', shopStateCode: '27', registrationType: 'REGULAR' },
+      });
+      const product = await createTestProduct(ctx.shopId, { sellingPrice: 100 });
+      const party = await createTestParty(ctx.shopId);
+      const result = await invoicesService.createInvoice({
+        shopId: ctx.shopId,
+        type: 'SALE',
+        partyId: party.id,
+        invoiceDate: '2020-01-01T00:00:00.000Z',
+        items: [{ productId: product.id, quantity: 2, unitPrice: 100, taxPercent: 18 }],
+      });
+      expect('error' in result).toBe(false);
+      if ('error' in result) return;
+      const inv = result.invoice;
+      expect(inv.documentType).toBe('TAX_INVOICE');
+      expect(Number(inv.cgstAmount)).toBeCloseTo(18, 2);
+      expect(Number(inv.sgstAmount)).toBeCloseTo(18, 2);
+      await prisma.invoice.delete({ where: { id: inv.id } });
+    } finally {
+      await cleanupTestUser(ctx);
+    }
+  });
+
   it('createInvoice — TAX_INCLUSIVE product with isPriceInclusive omitted backs GST out of the price', async () => {
     // The line omits isPriceInclusive entirely (the merchant-web/POS/stock/
     // challan-conversion path today) — the engine must fall back to the
