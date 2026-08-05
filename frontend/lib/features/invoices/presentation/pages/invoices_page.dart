@@ -12,6 +12,7 @@ import 'package:shopxy/features/invoices/data/datasources/invoices_remote_data_s
 import 'package:shopxy/features/invoices/domain/entities/invoice.dart';
 import 'package:shopxy/features/invoices/presentation/pages/create_invoice_page.dart';
 import 'package:shopxy/features/invoices/presentation/pages/invoice_detail_page.dart';
+import 'package:shopxy/features/invoices/presentation/pages/invoice_settings_page.dart';
 import 'package:shopxy/features/invoices/presentation/providers/invoices_provider.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
@@ -124,6 +125,14 @@ class _InvoicesPageState extends State<InvoicesPage> {
       appBar: FloatingAppBar(
         title: l10n.invoicesNavTitle,
         actions: [
+          IconButton(
+            icon: const AppIcon(AppIcons.settingsRounded),
+            tooltip: l10n.profileInvoiceSettingsTitle,
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const InvoiceSettingsPage()),
+            ),
+          ),
           Stack(
             clipBehavior: Clip.none,
             children: [

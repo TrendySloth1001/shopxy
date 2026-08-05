@@ -2484,6 +2484,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileSave => 'Save';
 
   @override
+  String get profileInvoiceSettingsTitle => 'Invoice settings';
+
+  @override
+  String get profileInvoiceSettingsHint =>
+      'Tax and payment details that appear on your invoices and PDFs.';
+
+  @override
+  String get profileInvoiceSettingsSubtitle =>
+      'GSTIN, PAN, GST date and UPI ID';
+
+  @override
+  String get profileInvoiceSettingsPreviewTitle => 'Review before saving';
+
+  @override
+  String get profileInvoiceSettingsPreviewBody =>
+      'These changes will apply to your invoices going forward.';
+
+  @override
+  String get profileSectionInvoicing => 'INVOICING';
+
+  @override
   String get profileSectionAccount => 'ACCOUNT';
 
   @override
@@ -6839,6 +6860,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get menuDescSettings => 'Currency, theme and language';
+
+  @override
+  String get menuDescInvoiceSettings => 'GSTIN, PAN, GST date and UPI ID';
 
   @override
   String get profileDevicesSessions => 'Devices & sessions';

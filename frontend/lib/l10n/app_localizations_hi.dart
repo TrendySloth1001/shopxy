@@ -2483,6 +2483,27 @@ class AppLocalizationsHi extends AppLocalizations {
   String get profileSave => 'सहेजें';
 
   @override
+  String get profileInvoiceSettingsTitle => 'इनवॉइस सेटिंग्स';
+
+  @override
+  String get profileInvoiceSettingsHint =>
+      'टैक्स और भुगतान जानकारी जो आपके इनवॉइस और PDF पर दिखती है।';
+
+  @override
+  String get profileInvoiceSettingsSubtitle =>
+      'GSTIN, PAN, GST तारीख और UPI ID';
+
+  @override
+  String get profileInvoiceSettingsPreviewTitle => 'सेव करने से पहले जांच लें';
+
+  @override
+  String get profileInvoiceSettingsPreviewBody =>
+      'ये बदलाव आगे से आपके इनवॉइस पर लागू होंगे।';
+
+  @override
+  String get profileSectionInvoicing => 'इनवॉइसिंग';
+
+  @override
   String get profileSectionAccount => 'खाता';
 
   @override
@@ -6842,6 +6863,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get menuDescSettings => 'मुद्रा, थीम और भाषा';
+
+  @override
+  String get menuDescInvoiceSettings => 'GSTIN, PAN, GST तारीख और UPI ID';
 
   @override
   String get profileDevicesSessions => 'डिवाइस और सत्र';

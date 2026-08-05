@@ -62,6 +62,7 @@ class _Destination {
 }
 
 const _kOrdersDestinationId = 'orders';
+const _kInvoicesDestinationId = 'invoices';
 
 // Labels are resolvers (see [_Destination.label]) so the list can't be const;
 // it's built once as a top-level final instead. Everything beyond these five
@@ -100,6 +101,7 @@ final _destinations = <_Destination>[
     icon: AppIcons.receiptLongOutlined,
     selectedIcon: AppIcons.receiptLong,
     pageBuilder: InvoicesPage.new,
+    id: _kInvoicesDestinationId,
   ),
 ];
 
@@ -122,6 +124,17 @@ class AppShellState extends State<AppShell> {
       _currentIndex = index;
       _visited.add(index);
     });
+  }
+
+  /// Selects a bottom-nav tab by its destination id — for flows that finish
+  /// deep in the navigation stack (e.g. Invoice settings' Save, which then
+  /// pops back to the shell) and want to land the user on a specific tab
+  /// rather than whichever one was active before they drilled in. Found via
+  /// `context.findAncestorStateOfType<AppShellState>()` since AppShell is
+  /// always the mounted root beneath any pushed screen — no GlobalKey needed.
+  void selectDestination(String id) {
+    final index = _destinations.indexWhere((d) => d.id == id);
+    if (index >= 0) _select(index);
   }
 
   @override

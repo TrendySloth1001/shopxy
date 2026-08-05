@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:shopxy/core/auth/permission_widgets.dart';
 import 'package:shopxy/core/auth/shop_capabilities.dart';
 import 'package:shopxy/core/haptics/scroll_boundary_haptics.dart';
-import 'package:shopxy/features/profile/presentation/pages/edit_profile_page.dart';
+import 'package:shopxy/features/invoices/presentation/pages/invoice_settings_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/profile_page.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/dashboard/domain/entities/dashboard_stats.dart';
@@ -116,8 +116,7 @@ class _DashboardPageState extends State<DashboardPage> {
       await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) =>
-              const EditProfilePage(focusField: ProfileField.gstEffectiveFrom),
+          builder: (_) => const InvoiceSettingsPage(focusGstEffectiveDate: true),
         ),
       );
     });

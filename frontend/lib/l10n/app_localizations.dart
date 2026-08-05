@@ -4754,6 +4754,42 @@ abstract class AppLocalizations {
   /// **'Save'**
   String get profileSave;
 
+  /// No description provided for @profileInvoiceSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice settings'**
+  String get profileInvoiceSettingsTitle;
+
+  /// No description provided for @profileInvoiceSettingsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tax and payment details that appear on your invoices and PDFs.'**
+  String get profileInvoiceSettingsHint;
+
+  /// No description provided for @profileInvoiceSettingsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'GSTIN, PAN, GST date and UPI ID'**
+  String get profileInvoiceSettingsSubtitle;
+
+  /// No description provided for @profileInvoiceSettingsPreviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review before saving'**
+  String get profileInvoiceSettingsPreviewTitle;
+
+  /// No description provided for @profileInvoiceSettingsPreviewBody.
+  ///
+  /// In en, this message translates to:
+  /// **'These changes will apply to your invoices going forward.'**
+  String get profileInvoiceSettingsPreviewBody;
+
+  /// No description provided for @profileSectionInvoicing.
+  ///
+  /// In en, this message translates to:
+  /// **'INVOICING'**
+  String get profileSectionInvoicing;
+
   /// No description provided for @profileSectionAccount.
   ///
   /// In en, this message translates to:
@@ -12604,6 +12640,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Currency, theme and language'**
   String get menuDescSettings;
+
+  /// No description provided for @menuDescInvoiceSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'GSTIN, PAN, GST date and UPI ID'**
+  String get menuDescInvoiceSettings;
 
   /// No description provided for @profileDevicesSessions.
   ///

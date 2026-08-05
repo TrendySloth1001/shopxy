@@ -15,6 +15,7 @@ import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/auth/presentation/widgets/logout_confirm_sheet.dart';
 import 'package:shopxy/features/custom_fields/presentation/pages/custom_fields_settings_page.dart';
 import 'package:shopxy/features/auth/presentation/pages/sessions_page.dart';
+import 'package:shopxy/features/invoices/presentation/pages/invoice_settings_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/change_password_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/edit_profile_page.dart';
 import 'package:shopxy/features/shop/presentation/pages/shop_operations_page.dart';
@@ -213,6 +214,26 @@ class _SettingsPageState extends State<SettingsPage> {
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const ShopOperationsPage()),
+              ),
+            ),
+            const _Gap(),
+          ],
+
+          // ── Invoicing ────────────────────────────────────────
+          if (user?.canView('invoices') ?? false) ...[
+            _Eyebrow(l10n.profileSectionInvoicing),
+            const SizedBox(height: AppSizes.sm),
+            _SettingRow(
+              icon: AppIcons.receiptLongOutlined,
+              title: l10n.profileInvoiceSettingsTitle,
+              subtitle: l10n.profileInvoiceSettingsSubtitle,
+              trailing: AppIcon(
+                AppIcons.chevronRightRounded,
+                color: AppColors.subtle,
+              ),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const InvoiceSettingsPage()),
               ),
             ),
             const _Gap(),

@@ -2,27 +2,26 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/profile/presentation/pages/profile_page.dart'
     show ProfileAvatar;
-import 'package:shopxy/features/profile/presentation/widgets/gst_effective_date_sheet.dart';
 import 'package:shopxy/features/shop/presentation/providers/shop_provider.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/indian.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
-import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// A field the caller can ask [EditProfilePage] to open focused on — lets
-/// the completion meter deep-link straight to the field a user still needs
-/// to fill instead of dumping them at the top of the form.
+/// A field the caller can ask [EditProfilePage] (or [InvoiceSettingsPage])
+/// to open focused on — lets the completion meter deep-link straight to the
+/// field a user still needs to fill instead of dumping them at the top of
+/// the form. [shopGstin]/[shopPan]/[upiVpa] live on the Invoice settings
+/// screen now, not here — see `invoice_settings_page.dart`.
 enum ProfileField {
   name,
   phone,
@@ -34,7 +33,6 @@ enum ProfileField {
   shopGstin,
   shopPan,
   upiVpa,
-  gstEffectiveFrom,
   photo,
 }
 
@@ -62,16 +60,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late final TextEditingController _shopAddress;
   late final TextEditingController _shopCity;
   late final TextEditingController _shopPinCode;
-  late final TextEditingController _shopGstin;
-  late final TextEditingController _shopPan;
-  late final TextEditingController _upiVpa;
   String? _shopStateCode;
-  // Calendar date GST starts applying — see AuthUser.gstEffectiveFrom.
-  // Not a text field (no keyboard entry), so it's tracked separately from
-  // the controllers above and picked via showDatePicker.
-  DateTime? _gstEffectiveFrom;
-  String? _gstEffectiveFromError;
-  final _gstEffectiveFromKey = GlobalKey();
   bool _busy = false;
   bool _uploadingAvatar = false;
 
@@ -90,14 +79,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _shopAddress = TextEditingController(text: user?.shopAddress ?? '');
     _shopCity = TextEditingController(text: user?.shopCity ?? '');
     _shopPinCode = TextEditingController(text: user?.shopPinCode ?? '');
-    _shopGstin = TextEditingController(text: user?.shopGstin ?? '');
-    _shopPan = TextEditingController(text: user?.shopPan ?? '');
-    _upiVpa = TextEditingController(text: user?.upiVpa ?? '');
     _shopStateCode = user?.shopStateCode;
-    final storedEffectiveFrom = user?.gstEffectiveFrom;
-    _gstEffectiveFrom = storedEffectiveFrom != null
-        ? DateTime.tryParse(storedEffectiveFrom)
-        : null;
 
     _focusNodes = {
       for (final f in const [
@@ -107,9 +89,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
         ProfileField.shopAddress,
         ProfileField.shopCity,
         ProfileField.shopPinCode,
-        ProfileField.shopGstin,
-        ProfileField.shopPan,
-        ProfileField.upiVpa,
       ])
         f: FocusNode(),
     };
@@ -117,12 +96,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (target != null && _focusNodes.containsKey(target)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _focusNodes[target]!.requestFocus();
-      });
-    } else if (target == ProfileField.gstEffectiveFrom) {
-      // No text field/FocusNode for this one — scroll the date picker
-      // row into view instead (same mechanism the save-flow skip uses).
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _scrollToGstEffectiveDate();
       });
     }
   }
@@ -135,9 +108,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _shopAddress.dispose();
     _shopCity.dispose();
     _shopPinCode.dispose();
-    _shopGstin.dispose();
-    _shopPan.dispose();
-    _upiVpa.dispose();
     for (final node in _focusNodes.values) {
       node.dispose();
     }
@@ -224,33 +194,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
   }
 
-  Future<void> _pickGstEffectiveFrom() async {
-    final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _gstEffectiveFrom ?? now,
-      firstDate: DateTime(now.year - 10),
-      lastDate: DateTime(now.year + 10),
-    );
-    if (picked != null) {
-      setState(() {
-        _gstEffectiveFrom = picked;
-        _gstEffectiveFromError = null;
-      });
-    }
-  }
-
-  void _scrollToGstEffectiveDate() {
-    final ctx = _gstEffectiveFromKey.currentContext;
-    if (ctx != null) {
-      Scrollable.ensureVisible(
-        ctx,
-        duration: const Duration(milliseconds: 300),
-        alignment: 0.2,
-      );
-    }
-  }
-
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     final auth = context.read<AuthProvider>();
@@ -280,40 +223,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final shopAddressArg = diff(_shopAddress.text, user?.shopAddress);
     final shopCityArg = diff(_shopCity.text, user?.shopCity);
     final shopPinCodeArg = diff(_shopPinCode.text, user?.shopPinCode);
-    final shopGstinArg = diff(_shopGstin.text.toUpperCase(), user?.shopGstin);
-    final shopPanArg = diff(_shopPan.text.toUpperCase(), user?.shopPan);
-    final upiArg = diff(_upiVpa.text, user?.upiVpa);
-
-    // Mirrors the backend guard exactly: a NEW/changed GSTIN requires an
-    // effective date before it's ever sent to the server. Rather than a
-    // blocking inline error, prompt with the same declaration-sheet pattern
-    // as payout setup — "Declare" opens the date picker right there;
-    // "Skip for now" leaves the whole save untouched (nothing is sent,
-    // nothing typed is lost) and scrolls the merchant to the date field so
-    // they can set it themselves whenever — it's editable indefinitely, on
-    // them to come back to it.
-    final isNewGstinRegistration =
-        shopGstinArg != null && shopGstinArg.isNotEmpty;
-    if (isNewGstinRegistration && _gstEffectiveFrom == null) {
-      final declared = await showGstEffectiveDateSheet(context);
-      if (!mounted) return;
-      if (declared == null) {
-        _scrollToGstEffectiveDate();
-        return;
-      }
-      setState(() {
-        _gstEffectiveFrom = declared;
-        _gstEffectiveFromError = null;
-      });
-    }
-
-    final gstEffectiveFromText = _gstEffectiveFrom != null
-        ? DateFormat('yyyy-MM-dd').format(_gstEffectiveFrom!)
-        : '';
-    final gstEffectiveFromArg = diff(
-      gstEffectiveFromText,
-      user?.gstEffectiveFrom,
-    );
 
     // State pair must move together: if the code changed, send both
     // halves; if it didn't, send neither.
@@ -331,11 +240,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         shopAddressArg == null &&
         shopCityArg == null &&
         shopPinCodeArg == null &&
-        shopGstinArg == null &&
-        shopPanArg == null &&
-        upiArg == null &&
-        shopStateCodeArg == null &&
-        gstEffectiveFromArg == null;
+        shopStateCodeArg == null;
     if (unchanged) {
       Navigator.pop(context);
       return;
@@ -353,10 +258,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
         shopState: shopStateArg,
         shopStateCode: shopStateCodeArg,
         shopPinCode: shopPinCodeArg,
-        shopGstin: shopGstinArg,
-        gstEffectiveFrom: gstEffectiveFromArg,
-        shopPan: shopPanArg,
-        upiVpa: upiArg,
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -538,61 +439,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   ),
               ],
               onChanged: (v) => setState(() => _shopStateCode = v),
-            ),
-            const SizedBox(height: AppSizes.md),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _shopGstin,
-                    focusNode: _focusNodes[ProfileField.shopGstin],
-                    decoration: InputDecoration(labelText: l10n.profileGstin),
-                    textCapitalization: TextCapitalization.characters,
-                    validator: IndianValidators.gstin,
-                  ),
-                ),
-                const SizedBox(width: AppSizes.md),
-                Expanded(
-                  child: TextFormField(
-                    controller: _shopPan,
-                    focusNode: _focusNodes[ProfileField.shopPan],
-                    decoration: InputDecoration(labelText: l10n.profilePan),
-                    textCapitalization: TextCapitalization.characters,
-                    validator: IndianValidators.pan,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSizes.md),
-            InkWell(
-              key: _gstEffectiveFromKey,
-              onTap: _pickGstEffectiveFrom,
-              borderRadius: AppShapes.squircleRadius(AppSizes.radiusInput),
-              child: InputDecorator(
-                decoration: InputDecoration(
-                  labelText: l10n.profileGstEffectiveFrom,
-                  helperText: l10n.profileGstEffectiveFromHelper,
-                  helperMaxLines: 3,
-                  errorText: _gstEffectiveFromError,
-                  suffixIcon: const AppIcon(AppIcons.calendarTodayOutlined),
-                ),
-                child: Text(
-                  _gstEffectiveFrom != null
-                      ? DateFormat('d MMM y').format(_gstEffectiveFrom!)
-                      : l10n.profileSelectPlaceholder,
-                ),
-              ),
-            ),
-            const SizedBox(height: AppSizes.md),
-            TextFormField(
-              controller: _upiVpa,
-              focusNode: _focusNodes[ProfileField.upiVpa],
-              decoration: InputDecoration(
-                labelText: l10n.profileUpiId,
-                hintText: 'shop@upi',
-              ),
-              keyboardType: TextInputType.emailAddress,
-              validator: IndianValidators.upiVpa,
             ),
             const SizedBox(height: AppSizes.xl),
             FilledButton(

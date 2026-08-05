@@ -19,6 +19,7 @@ import 'package:shopxy/features/categories/presentation/pages/categories_page.da
 import 'package:shopxy/features/products/presentation/pages/hsn_codes_page.dart';
 import 'package:shopxy/features/challans/presentation/pages/challans_page.dart';
 import 'package:shopxy/features/coupons/presentation/pages/merchant_coupons_page.dart';
+import 'package:shopxy/features/invoices/presentation/pages/invoice_settings_page.dart';
 import 'package:shopxy/features/parties/presentation/pages/parties_page.dart';
 import 'package:shopxy/features/pos/presentation/pages/pos_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/profile_page.dart';
@@ -99,6 +100,15 @@ List<_MenuItem> get _manageItems => [
     accentSoft: AppColors.accentAmberSoft,
     builder: (_) => const HsnCodesPage(),
     requires: (u) => u.canView('products'),
+  ),
+  _MenuItem(
+    label: (l) => l.profileInvoiceSettingsTitle,
+    description: (l) => l.menuDescInvoiceSettings,
+    icon: AppIcons.receiptLongOutlined,
+    accent: AppColors.accentAmber,
+    accentSoft: AppColors.accentAmberSoft,
+    builder: (_) => const InvoiceSettingsPage(),
+    requires: (u) => u.canView('invoices'),
   ),
   _MenuItem(
     label: (l) => l.navVendors,

@@ -6,6 +6,7 @@ import 'package:shopxy/core/network/image_url.dart';
 import 'package:shopxy/features/auth/domain/entities/auth_user.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/auth/presentation/widgets/logout_confirm_sheet.dart';
+import 'package:shopxy/features/invoices/presentation/pages/invoice_settings_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/edit_profile_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/settings_page.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
@@ -18,6 +19,15 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
+
+/// [ProfileField] targets that now live on [InvoiceSettingsPage] instead of
+/// [EditProfilePage] — the completion meter's "what's left" chips route
+/// through this to decide which screen a deep-link opens.
+const _kInvoiceSettingsFields = {
+  ProfileField.shopGstin,
+  ProfileField.shopPan,
+  ProfileField.upiVpa,
+};
 
 /// Formats the stored `YYYY-MM-DD` (or full ISO datetime) effective-date
 /// string for display; falls back to the raw value if parsing fails.
@@ -97,6 +107,8 @@ class ProfilePage extends StatelessWidget {
             _personalSection(context, user),
             const SizedBox(height: AppSizes.xl),
             _shopSection(context, user),
+            const SizedBox(height: AppSizes.xl),
+            _invoiceSettingsSection(context, user),
             const SizedBox(height: AppSizes.xl),
             _LogoutTile(onTap: () => _confirmAndLogout(context)),
           ],
@@ -210,6 +222,27 @@ class ProfilePage extends StatelessWidget {
           accent: accent,
           accentSoft: accentSoft,
         ),
+      ],
+    );
+  }
+
+  /// "Invoice settings" — the tax/payment fields that identify the shop on
+  /// its invoices (GSTIN, GST effective date, PAN, UPI ID). A snapshot like
+  /// the sections above, but the whole card is tappable through to
+  /// [InvoiceSettingsPage] since that's now the only place these fields
+  /// are edited.
+  static Widget _invoiceSettingsSection(BuildContext context, AuthUser user) {
+    final l10n = AppLocalizations.of(context);
+    final accent = AppColors.accentAmber;
+    final accentSoft = AppColors.accentAmberSoft;
+    return _DetailSection(
+      icon: AppIcons.receiptLongOutlined,
+      title: l10n.profileInvoiceSettingsTitle,
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const InvoiceSettingsPage()),
+      ),
+      rows: [
         _DetailRow(
           icon: AppIcons.receiptLongOutlined,
           label: l10n.profileFieldGstin,
@@ -664,7 +697,9 @@ class _ProfileCompletion extends StatelessWidget {
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => EditProfilePage(focusField: m.target),
+                          builder: (_) => _kInvoiceSettingsFields.contains(m.target)
+                              ? InvoiceSettingsPage(focusField: m.target)
+                              : EditProfilePage(focusField: m.target),
                         ),
                       ),
                       customBorder: AppShapes.squircle(AppSizes.radiusFull),
@@ -721,10 +756,16 @@ class _DetailSection extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.rows,
+    this.onTap,
   });
   final AppIconData icon;
   final String title;
   final List<Widget> rows;
+
+  /// When set, the whole card becomes tappable (with a trailing chevron
+  /// next to the header) — used when this section is really a shortcut to
+  /// another screen rather than a plain read-only snapshot.
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -742,6 +783,10 @@ class _DetailSection extends StatelessWidget {
       }
       children.add(rows[i]);
     }
+    final shape = AppShapes.squircle(
+      AppSizes.radiusLg,
+      side: BorderSide(color: AppColors.hairline),
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -751,28 +796,39 @@ class _DetailSection extends StatelessWidget {
             children: [
               AppIcon(icon, size: AppSizes.iconSm, color: AppColors.muted),
               const SizedBox(width: AppSizes.sm),
-              Text(
-                title,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  color: AppColors.muted,
-                  fontWeight: FontWeight.w700,
+              Expanded(
+                child: Text(
+                  title,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: AppColors.muted,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
+              if (onTap != null)
+                AppIcon(
+                  AppIcons.chevronRightRounded,
+                  size: AppSizes.iconSm,
+                  color: AppColors.subtle,
+                ),
             ],
           ),
         ),
         const SizedBox(height: AppSizes.sm),
         Container(
           margin: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+          clipBehavior: Clip.antiAlias,
           decoration: ShapeDecoration(
             color: AppColors.surface,
-            shape: AppShapes.squircle(
-              AppSizes.radiusLg,
-              side: BorderSide(color: AppColors.hairline),
-            ),
+            shape: shape,
             shadows: AppShadows.floating,
           ),
-          child: Column(children: children),
+          child: onTap == null
+              ? Column(children: children)
+              : InkWell(
+                  onTap: onTap,
+                  child: Column(children: children),
+                ),
         ),
       ],
     );
