@@ -5160,6 +5160,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get challansFilterAll => 'All';
 
   @override
+  String get challansStatusPending => 'Pending';
+
+  @override
+  String get challansStatusConverted => 'Converted';
+
+  @override
+  String get challansStatusCancelled => 'Cancelled';
+
+  @override
   String get challansEmptyTitle => 'No challans found';
 
   @override

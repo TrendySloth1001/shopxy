@@ -9589,6 +9589,24 @@ abstract class AppLocalizations {
   /// **'All'**
   String get challansFilterAll;
 
+  /// No description provided for @challansStatusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get challansStatusPending;
+
+  /// No description provided for @challansStatusConverted.
+  ///
+  /// In en, this message translates to:
+  /// **'Converted'**
+  String get challansStatusConverted;
+
+  /// No description provided for @challansStatusCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get challansStatusCancelled;
+
   /// No description provided for @challansEmptyTitle.
   ///
   /// In en, this message translates to:

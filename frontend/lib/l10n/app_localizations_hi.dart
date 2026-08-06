@@ -5162,6 +5162,15 @@ class AppLocalizationsHi extends AppLocalizations {
   String get challansFilterAll => 'सभी';
 
   @override
+  String get challansStatusPending => 'लंबित';
+
+  @override
+  String get challansStatusConverted => 'परिवर्तित';
+
+  @override
+  String get challansStatusCancelled => 'रद्द';
+
+  @override
   String get challansEmptyTitle => 'कोई चालान नहीं मिला';
 
   @override

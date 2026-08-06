@@ -21,6 +21,7 @@ import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/core/router/app_shell.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+import 'package:shopxy/shared/widgets/section_divider.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
@@ -229,8 +230,22 @@ class _OrdersInboxPageState extends State<OrdersInboxPage> {
                             itemCount: p.orders.length,
                             separatorBuilder: (_, _) =>
                                 const SizedBox(height: AppSizes.sm),
-                            itemBuilder: (_, i) =>
-                                _OrderRow(order: p.orders[i]),
+                            itemBuilder: (_, i) {
+                              final date = p.orders[i].createdAt.toLocal();
+                              final newDay =
+                                  i == 0 ||
+                                  !SectionDivider.isSameDay(
+                                    date,
+                                    p.orders[i - 1].createdAt.toLocal(),
+                                  );
+                              final tile = _OrderRow(order: p.orders[i]);
+                              if (!newDay) return tile;
+                              return Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.stretch,
+                                children: [SectionDivider.date(date), tile],
+                              );
+                            },
                           ),
                   ),
                 ),

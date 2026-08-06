@@ -21,6 +21,7 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
+import 'package:shopxy/shared/widgets/section_divider.dart';
 import 'package:shopxy/shared/widgets/app_filter_pill.dart';
 import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
 import 'package:shopxy/shared/widgets/app_search_bar.dart';
@@ -37,53 +38,6 @@ import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 final _rangeDf = DateFormat('d MMM');
 
-bool _sameDay(DateTime a, DateTime b) =>
-    a.year == b.year && a.month == b.month && a.day == b.day;
-
-/// A dated section break in the invoice list — a centered pill flanked by
-/// hairlines, grouping consecutive invoices issued on the same day.
-class _DateDivider extends StatelessWidget {
-  const _DateDivider(this.date);
-  final DateTime date;
-
-  static final _fmt = DateFormat('EEEE, MMMM d');
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
-      child: Row(
-        children: [
-          const Expanded(child: AppDivider.flush()),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm),
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSizes.md,
-                vertical: AppSizes.xs,
-              ),
-              decoration: ShapeDecoration(
-                color: AppColors.surface,
-                shape: AppShapes.squircle(
-                  AppSizes.radiusFull,
-                  side: BorderSide(color: AppColors.hairline),
-                ),
-              ),
-              child: Text(
-                _fmt.format(date),
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: AppColors.muted,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-          const Expanded(child: AppDivider.flush()),
-        ],
-      ),
-    );
-  }
-}
 
 class InvoicesPage extends StatefulWidget {
   const InvoicesPage({super.key});
@@ -387,7 +341,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
                           // day printed on it, not the day someone typed it in.
                           final newDay =
                               i == 0 ||
-                              !_sameDay(
+                              !SectionDivider.isSameDay(
                                 invoice.invoiceDate,
                                 provider.invoices[i - 1].invoiceDate,
                               );
@@ -406,7 +360,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              _DateDivider(invoice.invoiceDate),
+                              SectionDivider.date(invoice.invoiceDate),
                               tile,
                             ],
                           );

@@ -151,46 +151,22 @@ class _InboxTab extends StatelessWidget {
             );
           }
           final notification = slice.items[i];
+          final date = notification.createdAt.toLocal();
           final newDay = i == 0 ||
-              !_sameDay(
-                notification.createdAt.toLocal(),
+              !SectionDivider.isSameDay(
+                date,
                 slice.items[i - 1].createdAt.toLocal(),
               );
           final tile = _NotificationTile(notification: notification);
           if (!newDay) return tile;
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [_DateDivider(notification.createdAt.toLocal()), tile],
+            children: [SectionDivider.date(date), tile],
           );
         },
       ),
     );
   }
-}
-
-bool _sameDay(DateTime a, DateTime b) =>
-    a.year == b.year && a.month == b.month && a.day == b.day;
-
-/// Dated section break above the first notification of each day — a
-/// centered "Today" / "Yesterday" / "12 Jul" pill flanked by hairlines.
-class _DateDivider extends StatelessWidget {
-  const _DateDivider(this.date);
-  final DateTime date;
-
-  static String _label(DateTime date) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final that = DateTime(date.year, date.month, date.day);
-    if (that == today) return 'Today';
-    if (today.difference(that).inDays == 1) return 'Yesterday';
-    final fmt = now.year == date.year
-        ? DateFormat('d MMM')
-        : DateFormat('d MMM yyyy');
-    return fmt.format(date);
-  }
-
-  @override
-  Widget build(BuildContext context) => SectionDivider(label: _label(date));
 }
 
 class _NotificationTile extends StatelessWidget {

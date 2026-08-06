@@ -11,7 +11,9 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
+import 'package:shopxy/shared/widgets/app_filter_pill.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+import 'package:shopxy/shared/widgets/section_divider.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
@@ -38,6 +40,23 @@ class _MerchantReturnsPageState extends State<MerchantReturnsPage> {
     (status: null),
   ];
   int _index = 0;
+
+  /// Fill colour for a selected status pill, matching the tone the same
+  /// status carries on a return row. "All" stays neutral.
+  Color? _tabAccent(String? status) {
+    switch (status) {
+      case 'REQUESTED':
+        return AppColors.warning;
+      case 'APPROVED':
+        return AppColors.info;
+      case 'RECEIVED':
+        return AppColors.accentIndigo;
+      case 'REFUNDED':
+        return AppColors.success;
+      default:
+        return null;
+    }
+  }
 
   String _tabLabel(AppLocalizations l10n, int i) {
     switch (_tabs[i].status) {
@@ -110,32 +129,21 @@ class _MerchantReturnsPageState extends State<MerchantReturnsPage> {
         child: Column(
           children: [
             SizedBox(height: FloatingAppBar.contentTopInset(context)),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSizes.lg,
-                AppSizes.md,
-                AppSizes.lg,
-                AppSizes.sm,
-              ),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    for (int i = 0; i < _tabs.length; i++)
-                      Padding(
-                        padding: const EdgeInsets.only(right: AppSizes.sm),
-                        child: ChoiceChip(
-                          label: Text(_tabLabel(l10n, i)),
-                          selected: _index == i,
-                          onSelected: (_) {
-                            setState(() => _index = i);
-                            _load();
-                          },
-                        ),
-                      ),
-                  ],
-                ),
-              ),
+            // Was a raw Material ChoiceChip, which ignores the app theme —
+            // same strip the other list screens use now.
+            AppFilterStrip(
+              children: [
+                for (int i = 0; i < _tabs.length; i++)
+                  AppFilterPill(
+                    label: _tabLabel(l10n, i),
+                    selected: _index == i,
+                    accent: _tabAccent(_tabs[i].status),
+                    onTap: () {
+                      setState(() => _index = i);
+                      _load();
+                    },
+                  ),
+              ],
             ),
             Expanded(
               child: _loading
@@ -153,19 +161,33 @@ class _MerchantReturnsPageState extends State<MerchantReturnsPage> {
                           vertical: AppSizes.sm,
                         ),
                         itemCount: _rows.length,
-                        itemBuilder: (_, i) => _ReturnRow(
-                          row: _rows[i],
-                          onTap: () async {
-                            await Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => MerchantReturnDetailPage(
-                                  returnId: _rows[i].id,
+                        itemBuilder: (_, i) {
+                          final date = _rows[i].createdAt.toLocal();
+                          final newDay =
+                              i == 0 ||
+                              !SectionDivider.isSameDay(
+                                date,
+                                _rows[i - 1].createdAt.toLocal(),
+                              );
+                          final tile = _ReturnRow(
+                            row: _rows[i],
+                            onTap: () async {
+                              await Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => MerchantReturnDetailPage(
+                                    returnId: _rows[i].id,
+                                  ),
                                 ),
-                              ),
-                            );
-                            if (mounted) _load();
-                          },
-                        ),
+                              );
+                              if (mounted) _load();
+                            },
+                          );
+                          if (!newDay) return tile;
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [SectionDivider.date(date), tile],
+                          );
+                        },
                       ),
                     ),
             ),

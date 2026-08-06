@@ -14,12 +14,14 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_error_view.dart';
 import 'package:shopxy/shared/widgets/app_icon_avatar.dart';
+import 'package:shopxy/shared/widgets/app_filter_pill.dart';
 import 'package:shopxy/shared/widgets/app_search_bar.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+import 'package:shopxy/shared/widgets/section_divider.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
@@ -91,27 +93,22 @@ class _ChallansPageState extends State<ChallansPage> {
                 onChanged: context.read<ChallansProvider>().setSearch,
               ),
             ),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSizes.lg,
-                vertical: AppSizes.sm,
-              ),
-              child: Row(
-                children: <String?>[null, 'PENDING', 'CONVERTED', 'CANCELLED']
-                    .map(
-                      (s) => Padding(
-                        padding: const EdgeInsets.only(right: AppSizes.sm),
-                        child: FilterChip(
-                          label: Text(s ?? l10n.challansFilterAll),
-                          selected: provider.statusFilter == s,
-                          onSelected: (_) =>
-                              context.read<ChallansProvider>().setStatus(s),
-                        ),
-                      ),
-                    )
-                    .toList(),
-              ),
+            // Was a raw Material FilterChip, which ignores the app theme
+            // entirely — same strip as every other list screen now.
+            AppFilterStrip(
+              children: <String?>[null, 'PENDING', 'CONVERTED', 'CANCELLED']
+                  .map(
+                    (s) => AppFilterPill(
+                      label: s == null
+                          ? l10n.challansFilterAll
+                          : challanStatusLabel(l10n, s),
+                      selected: provider.statusFilter == s,
+                      accent: s == null ? null : challanStatusAccent(s),
+                      onTap: () =>
+                          context.read<ChallansProvider>().setStatus(s),
+                    ),
+                  )
+                  .toList(),
             ),
             Expanded(
               child: provider.isLoading && provider.challans.isEmpty
@@ -145,7 +142,14 @@ class _ChallansPageState extends State<ChallansPage> {
                             const SizedBox(height: AppSizes.sm),
                         itemBuilder: (ctx, i) {
                           final c = provider.challans[i];
-                          return _ChallanTile(
+                          final date = c.createdAt.toLocal();
+                          final newDay =
+                              i == 0 ||
+                              !SectionDivider.isSameDay(
+                                date,
+                                provider.challans[i - 1].createdAt.toLocal(),
+                              );
+                          final tile = _ChallanTile(
                             challan: c,
                             onTap: () async {
                               final challansProvider = context
@@ -161,6 +165,11 @@ class _ChallansPageState extends State<ChallansPage> {
                                 challansProvider.loadChallans();
                               }
                             },
+                          );
+                          if (!newDay) return tile;
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [SectionDivider.date(date), tile],
                           );
                         },
                       ),
@@ -192,6 +201,32 @@ AppStatusTone challanStatusTone(String status) {
       return AppStatusTone.error;
     default:
       return AppStatusTone.neutral;
+  }
+}
+
+/// Human label for a challan status — the filter strip used to render the
+/// raw enum ("CONVERTED"), which is database vocabulary, not user language.
+String challanStatusLabel(AppLocalizations l10n, String status) {
+  switch (status) {
+    case 'CONVERTED':
+      return l10n.challansStatusConverted;
+    case 'CANCELLED':
+      return l10n.challansStatusCancelled;
+    default:
+      return l10n.challansStatusPending;
+  }
+}
+
+/// Fill colour for a selected status pill, matching the badge tone the
+/// same status gets on a challan row.
+Color challanStatusAccent(String status) {
+  switch (status) {
+    case 'CONVERTED':
+      return AppColors.success;
+    case 'CANCELLED':
+      return AppColors.error;
+    default:
+      return AppColors.warning;
   }
 }
 
