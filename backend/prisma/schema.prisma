@@ -1358,6 +1358,7 @@ model Notification {
   userId    Int       @map("user_id")
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// INVITE_RECEIVED / INVITE_ACCEPTED / INVITE_DECLINED / INVITE_CANCELLED /
+  /// INVITE_EXPIRED /
   /// ORDER_RECEIVED / ORDER_CONFIRMED / ORDER_REJECTED / ORDER_UPDATE /
   /// PAYMENT_RECEIVED / LOW_STOCK / RETURN_REQUESTED / RETURN_APPROVED /
   /// RETURN_REJECTED / RETURN_UPDATE / RETURN_REFUNDED / SECURITY /

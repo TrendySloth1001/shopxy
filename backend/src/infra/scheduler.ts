@@ -9,6 +9,7 @@ import { paymentGatewayService } from '../modules/payment-gateway/index.js';
 import { reconcileStaleTransfers } from '../modules/payment-gateway/settlement/transfer-reconcile.js';
 import { isRouteSplitEnabled } from '../modules/payment-gateway/settlement/order-split.js';
 import { linkedAccountsService } from '../modules/linked-accounts/linked-accounts.service.js';
+import { invitationsService } from '../modules/invitations/invitations.service.js';
 import { sweepStaleSales } from '../modules/pos/pos.service.js';
 import { runChangefeed, reconcileRecent } from '../modules/analytics-rollup/changefeed.service.js';
 import { runOutboxRelay } from './outbox/relay.js';
@@ -224,6 +225,19 @@ export function startScheduler(): void {
         }
         return reconcileStaleTransfers();
       }),
+    ),
+  );
+
+  // Hourly — flip PENDING invitations past their expiresAt to EXPIRED and
+  // notify the sender. Nothing else ever revisits an untouched invite after
+  // it goes stale (the lazy checks on accept/decline/claim only run if
+  // someone actually tries to act on it), so without this sweep a dead
+  // invite sits at PENDING forever. Idempotent; safe to skip a tick.
+  jobs.push(
+    cron.schedule('0 * * * *', () =>
+      runSafely('invitations:expire-stale', () =>
+        invitationsService.expireStalePendingInvites(),
+      ),
     ),
   );
 

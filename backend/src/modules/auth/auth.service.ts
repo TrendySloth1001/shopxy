@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { Role } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
-import { invitationsService } from '../invitations/invitations.service.js';
+import { invitationsService, notifyInviteExpired } from '../invitations/invitations.service.js';
 import { notificationsService } from '../notifications/notifications.service.js';
 import { logger } from '../../shared/logging/logger.js';
 import {
@@ -491,6 +491,7 @@ export class AuthService {
         status: true,
         expiresAt: true,
         fromUserId: true,
+        displayName: true,
       },
     });
     if (!invite || invite.linkType !== 'TEAM' || !invite.teamRoleName) {
@@ -500,6 +501,11 @@ export class AuthService {
       return { error: 'This invitation has already been used.' as const };
     }
     if (invite.expiresAt < new Date()) {
+      const flipped = await prisma.invitation.updateMany({
+        where: { id: invite.id, status: 'PENDING' },
+        data: { status: 'EXPIRED' },
+      });
+      if (flipped.count > 0) await notifyInviteExpired(prisma, invite);
       return { error: 'This invitation has expired.' as const };
     }
     const email = invite.toEmail.toLowerCase().trim();

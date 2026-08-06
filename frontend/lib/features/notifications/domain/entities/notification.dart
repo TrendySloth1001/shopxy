@@ -24,7 +24,8 @@ class AppNotification {
       kind == 'INVITE_RECEIVED' ||
       kind == 'INVITE_ACCEPTED' ||
       kind == 'INVITE_DECLINED' ||
-      kind == 'INVITE_CANCELLED';
+      kind == 'INVITE_CANCELLED' ||
+      kind == 'INVITE_EXPIRED';
 
   String? get invitationId {
     final v = data['invitationId'];

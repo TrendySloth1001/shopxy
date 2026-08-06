@@ -77,10 +77,25 @@ class Invitation {
   final String? fromUserName;
   final String? fromUserEmail;
 
-  bool get isPending => status == InviteStatus.pending;
   bool get isAccepted => status == InviteStatus.accepted;
   bool get isParty => linkType == InviteLinkType.party;
   bool get isTeam => linkType == InviteLinkType.team;
+
+  /// The server only flips a stale PENDING row to EXPIRED when something
+  /// touches it (an hourly sweep, or a user attempting to accept/decline/
+  /// claim it) — so a row can sit at PENDING past its own [expiresAt] for
+  /// up to an hour. Compare the date directly so the badge/actions are
+  /// correct immediately rather than waiting on the next sweep tick.
+  bool get isEffectivelyExpired =>
+      status == InviteStatus.pending && DateTime.now().isAfter(expiresAt);
+
+  /// [status] with the client-side expiry check folded in — use this for
+  /// display and for gating actions (e.g. hiding "Cancel"/"Accept" once an
+  /// invite is past its window even if the DB hasn't caught up yet).
+  InviteStatus get effectiveStatus =>
+      isEffectivelyExpired ? InviteStatus.expired : status;
+
+  bool get isPending => effectiveStatus == InviteStatus.pending;
 
   factory Invitation.fromJson(Map<String, dynamic> j) {
     final fromUser = j['fromUser'] as Map<String, dynamic>?;

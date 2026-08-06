@@ -399,6 +399,7 @@ export class InvitationsService {
           where: { id: invite.id },
           data: { status: 'EXPIRED' },
         });
+        await notifyInviteExpired(tx, invite);
         return { error: 'Invitation expired' as const };
       }
 
@@ -658,14 +659,30 @@ export class InvitationsService {
     if (!token) return { error: 'Invalid invitation token' as const };
     const invite = await prisma.invitation.findUnique({
       where: { token },
-      select: { id: true, status: true, toUserId: true, expiresAt: true },
+      select: {
+        id: true,
+        status: true,
+        toUserId: true,
+        expiresAt: true,
+        fromUserId: true,
+        toEmail: true,
+        displayName: true,
+        linkType: true,
+      },
     });
     if (!invite) return { error: 'Invitation not found' as const };
     if (invite.toUserId !== null && invite.toUserId !== opts.userId) {
       return { error: 'This invitation belongs to someone else.' as const };
     }
     if (invite.status !== 'PENDING') return { error: 'This invitation has already been used.' as const };
-    if (invite.expiresAt < new Date()) return { error: 'This invitation has expired.' as const };
+    if (invite.expiresAt < new Date()) {
+      const flipped = await prisma.invitation.updateMany({
+        where: { id: invite.id, status: 'PENDING' },
+        data: { status: 'EXPIRED' },
+      });
+      if (flipped.count > 0) await notifyInviteExpired(prisma, invite);
+      return { error: 'This invitation has expired.' as const };
+    }
     if (invite.toUserId === null) {
       // Atomic bind: only claim if still unbound, so two concurrent claims
       // (or a race with a send-time bind) can't both win.
@@ -676,6 +693,46 @@ export class InvitationsService {
       if (claimed.count === 0) return { error: 'This invitation belongs to someone else.' as const };
     }
     return { ok: true as const, invitationId: invite.id };
+  }
+
+  /// Scheduled sweep (see scheduler.ts) — nothing else in the codebase ever
+  /// revisits a PENDING invite once its `expiresAt` passes; the lazy checks
+  /// in `respond`/`claimByToken`/`acceptTeamInvite` only fire if a user
+  /// actually attempts to act on the dead invite, so an invite nobody
+  /// touches after expiry sat at PENDING forever. This closes that gap by
+  /// periodically flipping stale rows and notifying the original sender.
+  async expireStalePendingInvites(): Promise<{ expired: number }> {
+    const stale = await prisma.invitation.findMany({
+      where: { status: 'PENDING', expiresAt: { lt: new Date() } },
+      select: { id: true },
+    });
+    if (stale.length === 0) return { expired: 0 };
+    const ids = stale.map((s) => s.id);
+
+    // Guarded on status: 'PENDING' so a row that raced to ACCEPTED/DECLINED/
+    // CANCELLED between the read above and this write is left untouched.
+    await prisma.invitation.updateMany({
+      where: { id: { in: ids }, status: 'PENDING' },
+      data: { status: 'EXPIRED' },
+    });
+
+    // Re-read exactly the rows THIS sweep actually flipped — excludes any
+    // that won that race above — so we only ever notify a sender about an
+    // invite that genuinely expired unanswered.
+    const justExpired = await prisma.invitation.findMany({
+      where: { id: { in: ids }, status: 'EXPIRED' },
+      select: {
+        id: true,
+        fromUserId: true,
+        toEmail: true,
+        displayName: true,
+        linkType: true,
+      },
+    });
+    for (const invite of justExpired) {
+      await notifyInviteExpired(prisma, invite);
+    }
+    return { expired: justExpired.length };
   }
 }
 
@@ -706,6 +763,34 @@ async function createInviteReceivedNotification(
         partyId: invite.partyId,
         vendorId: invite.vendorId,
       },
+    },
+  });
+}
+
+/// Notifies the original sender that an invite they sent expired without a
+/// response. Shared by every place a PENDING→EXPIRED transition happens
+/// (the scheduled sweep, and the lazy on-demand checks in respond/
+/// claimByToken/acceptTeamInvite) so the copy and `kind` stay in sync.
+/// Caller is responsible for the actual status flip — this only notifies.
+export async function notifyInviteExpired(
+  db: Prisma.TransactionClient | PrismaClient,
+  invite: {
+    id: number;
+    fromUserId: number;
+    toEmail: string;
+    displayName: string | null;
+    linkType: string;
+  },
+): Promise<void> {
+  await db.notification.create({
+    data: {
+      userId: invite.fromUserId,
+      kind: 'INVITE_EXPIRED',
+      title: `Your invitation to ${invite.toEmail} expired`,
+      body: invite.displayName
+        ? `No response for "${invite.displayName}" — you can send a new invite anytime.`
+        : 'No response before the invite window closed — you can send a new invite anytime.',
+      data: { invitationId: invite.id, linkType: invite.linkType },
     },
   });
 }

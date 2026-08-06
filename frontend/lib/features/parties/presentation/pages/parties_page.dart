@@ -598,7 +598,7 @@ class _InviteChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final (label, icon, fg, bg) = switch (invite.status) {
+    final (label, icon, fg, bg) = switch (invite.effectiveStatus) {
       InviteStatus.pending => (
         l10n.partiesInviteStatusInvited,
         AppIcons.markEmailUnreadOutlined,

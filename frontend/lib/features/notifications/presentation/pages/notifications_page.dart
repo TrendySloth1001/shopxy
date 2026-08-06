@@ -447,6 +447,12 @@ class _NotificationTile extends StatelessWidget {
           AppColors.heroPanel,
           AppIcons.cancelScheduleSendOutlined,
         );
+      case 'INVITE_EXPIRED':
+        return (
+          AppColors.muted,
+          AppColors.heroPanel,
+          AppIcons.markEmailUnreadOutlined,
+        );
       case 'QUOTATION_REQUESTED':
         return (
           AppColors.brandStrong,
@@ -726,7 +732,7 @@ class _IncomingInviteTile extends StatelessWidget {
                   ],
                 ),
               ),
-              _StatusChip(status: invite.status),
+              _StatusChip(status: invite.effectiveStatus),
             ],
           ),
           if (invite.message != null) ...[
@@ -938,7 +944,7 @@ class _OutgoingInviteTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSizes.sm),
-              _StatusChip(status: invite.status),
+              _StatusChip(status: invite.effectiveStatus),
               const SizedBox(width: AppSizes.xs),
               AppIcon(
                 AppIcons.chevronRightRounded,
@@ -1070,7 +1076,7 @@ class _OutgoingInviteDetailsSheetState
                   ],
                 ),
               ),
-              _StatusChip(status: invite.status),
+              _StatusChip(status: invite.effectiveStatus),
             ],
           ),
           const SizedBox(height: AppSizes.lg),
