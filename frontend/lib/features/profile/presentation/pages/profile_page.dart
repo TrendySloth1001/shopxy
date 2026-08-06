@@ -345,18 +345,18 @@ class _ProfileHero extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          // The user's own photo, blown up and blurred past recognition —
-          // just enough colour/light bleeding through to feel like an aura
-          // behind the card, never a legible picture. Scaled up so the blur
-          // doesn't sample transparent edges into the visible area.
+          // The user's own photo, blown up and softly blurred — still
+          // unmistakably a photo (shapes/colour read through), just too soft
+          // to make out any detail. Scaled up so the blur doesn't sample
+          // transparent edges into the visible area.
           if (bgImage != null)
             Positioned.fill(
               child: Transform.scale(
                 scale: 1.4,
                 child: ImageFiltered(
                   imageFilter: ImageFilter.blur(
-                    sigmaX: 60,
-                    sigmaY: 60,
+                    sigmaX: 22,
+                    sigmaY: 22,
                     tileMode: TileMode.decal,
                   ),
                   child: Image.network(
@@ -375,10 +375,10 @@ class _ProfileHero extends StatelessWidget {
                   end: Alignment.bottomRight,
                   colors: [
                     AppColors.brandSoft.withValues(
-                      alpha: bgImage != null ? 0.78 : 1,
+                      alpha: bgImage != null ? 0.5 : 1,
                     ),
                     AppColors.heroPanel.withValues(
-                      alpha: bgImage != null ? 0.88 : 1,
+                      alpha: bgImage != null ? 0.62 : 1,
                     ),
                   ],
                 ),
