@@ -330,6 +330,10 @@ class _ProfileHero extends StatelessWidget {
     final bgImage = (avatarUrl == null || avatarUrl.isEmpty)
         ? null
         : resolveImageUrl(avatarUrl);
+    // Dark canvases need a heavier scrim to keep the text legible over a
+    // bright photo; light canvases can let more of it show through.
+    final isDark = theme.brightness == Brightness.dark;
+    final tint = bgImage == null ? 1.0 : (isDark ? 0.55 : 0.3);
 
     return Container(
       margin: const EdgeInsets.fromLTRB(
@@ -355,8 +359,8 @@ class _ProfileHero extends StatelessWidget {
                 scale: 1.4,
                 child: ImageFiltered(
                   imageFilter: ImageFilter.blur(
-                    sigmaX: 22,
-                    sigmaY: 22,
+                    sigmaX: 14,
+                    sigmaY: 14,
                     tileMode: TileMode.decal,
                   ),
                   child: Image.network(
@@ -374,11 +378,9 @@ class _ProfileHero extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    AppColors.brandSoft.withValues(
-                      alpha: bgImage != null ? 0.5 : 1,
-                    ),
+                    AppColors.brandSoft.withValues(alpha: tint),
                     AppColors.heroPanel.withValues(
-                      alpha: bgImage != null ? 0.62 : 1,
+                      alpha: (tint + 0.15).clamp(0.0, 1.0),
                     ),
                   ],
                 ),
