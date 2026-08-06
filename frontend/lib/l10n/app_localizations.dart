@@ -11717,6 +11717,42 @@ abstract class AppLocalizations {
   /// **'Post adjustment'**
   String get stockAdjPostAdjustment;
 
+  /// No description provided for @stockAdjDetailItemsHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Items adjusted'**
+  String get stockAdjDetailItemsHeader;
+
+  /// No description provided for @stockAdjDetailRecordedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Recorded by'**
+  String get stockAdjDetailRecordedBy;
+
+  /// No description provided for @stockAdjDetailUnitCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Cost {amount} per unit'**
+  String stockAdjDetailUnitCost(String amount);
+
+  /// No description provided for @stockAdjDetailExplainerIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock went up the moment this was posted. Each product below now shows the higher count, and this adjustment is a permanent row in its stock ledger.'**
+  String get stockAdjDetailExplainerIn;
+
+  /// No description provided for @stockAdjDetailExplainerOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock came down the moment this was posted. Each product below now shows the lower count, and this adjustment is a permanent row in its stock ledger.'**
+  String get stockAdjDetailExplainerOut;
+
+  /// No description provided for @stockAdjDetailTapHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a product to see its full stock history, including the balance before and after this adjustment.'**
+  String get stockAdjDetailTapHint;
+
   /// No description provided for @sharedContactChangesRecentChanges.
   ///
   /// In en, this message translates to:

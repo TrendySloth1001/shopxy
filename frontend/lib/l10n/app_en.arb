@@ -3155,6 +3155,17 @@
   "stockAdjAddsStock": "Adds to stock",
   "stockAdjReducesStock": "Removes from stock",
   "stockAdjPostAdjustment": "Post adjustment",
+  "stockAdjDetailItemsHeader": "Items adjusted",
+  "stockAdjDetailRecordedBy": "Recorded by",
+  "stockAdjDetailUnitCost": "Cost {amount} per unit",
+  "@stockAdjDetailUnitCost": {
+    "placeholders": {
+      "amount": { "type": "String" }
+    }
+  },
+  "stockAdjDetailExplainerIn": "Stock went up the moment this was posted. Each product below now shows the higher count, and this adjustment is a permanent row in its stock ledger.",
+  "stockAdjDetailExplainerOut": "Stock came down the moment this was posted. Each product below now shows the lower count, and this adjustment is a permanent row in its stock ledger.",
+  "stockAdjDetailTapHint": "Tap a product to see its full stock history, including the balance before and after this adjustment.",
   "sharedContactChangesRecentChanges": "Recent changes",
   "sharedContactChangesChangedSuffix": "changed",
   "sharedContactChangesFieldName": "Name",

@@ -6,6 +6,7 @@ import 'package:shopxy/features/challans/presentation/pages/challan_detail_page.
 import 'package:shopxy/features/invoices/presentation/pages/invoice_detail_page.dart';
 import 'package:shopxy/features/stock/data/datasources/stock_remote_data_source.dart';
 import 'package:shopxy/features/stock/domain/entities/stock_transaction.dart';
+import 'package:shopxy/features/stock_adjustments/presentation/pages/stock_adjustment_detail_page.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
@@ -101,6 +102,9 @@ class _StockLedgerPageState extends State<StockLedgerPage> {
         break;
       case 'CHALLAN':
         page = ChallanDetailPage(challanId: id);
+        break;
+      case 'ADJUSTMENT':
+        page = StockAdjustmentDetailPage(adjustmentId: id);
         break;
       default:
         return;

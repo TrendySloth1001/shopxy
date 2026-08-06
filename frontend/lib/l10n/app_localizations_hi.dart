@@ -6350,6 +6350,29 @@ class AppLocalizationsHi extends AppLocalizations {
   String get stockAdjPostAdjustment => 'समायोजन पोस्ट करें';
 
   @override
+  String get stockAdjDetailItemsHeader => 'समायोजित वस्तुएँ';
+
+  @override
+  String get stockAdjDetailRecordedBy => 'दर्ज किया गया';
+
+  @override
+  String stockAdjDetailUnitCost(String amount) {
+    return 'लागत $amount प्रति यूनिट';
+  }
+
+  @override
+  String get stockAdjDetailExplainerIn =>
+      'पोस्ट करते ही स्टॉक बढ़ गया था। नीचे दिए गए हर प्रोडक्ट में अब बढ़ी हुई मात्रा दिखेगी, और यह समायोजन उसके स्टॉक लेजर में स्थायी रूप से दर्ज है।';
+
+  @override
+  String get stockAdjDetailExplainerOut =>
+      'पोस्ट करते ही स्टॉक घट गया था। नीचे दिए गए हर प्रोडक्ट में अब घटी हुई मात्रा दिखेगी, और यह समायोजन उसके स्टॉक लेजर में स्थायी रूप से दर्ज है।';
+
+  @override
+  String get stockAdjDetailTapHint =>
+      'किसी प्रोडक्ट पर टैप करके उसका पूरा स्टॉक इतिहास देखें, जिसमें इस समायोजन से पहले और बाद का बैलेंस शामिल है।';
+
+  @override
   String get sharedContactChangesRecentChanges => 'हाल के बदलाव';
 
   @override

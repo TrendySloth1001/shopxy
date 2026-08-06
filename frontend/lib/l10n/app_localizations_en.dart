@@ -6348,6 +6348,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stockAdjPostAdjustment => 'Post adjustment';
 
   @override
+  String get stockAdjDetailItemsHeader => 'Items adjusted';
+
+  @override
+  String get stockAdjDetailRecordedBy => 'Recorded by';
+
+  @override
+  String stockAdjDetailUnitCost(String amount) {
+    return 'Cost $amount per unit';
+  }
+
+  @override
+  String get stockAdjDetailExplainerIn =>
+      'Stock went up the moment this was posted. Each product below now shows the higher count, and this adjustment is a permanent row in its stock ledger.';
+
+  @override
+  String get stockAdjDetailExplainerOut =>
+      'Stock came down the moment this was posted. Each product below now shows the lower count, and this adjustment is a permanent row in its stock ledger.';
+
+  @override
+  String get stockAdjDetailTapHint =>
+      'Tap a product to see its full stock history, including the balance before and after this adjustment.';
+
+  @override
   String get sharedContactChangesRecentChanges => 'Recent changes';
 
   @override

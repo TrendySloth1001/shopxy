@@ -7,6 +7,7 @@ import 'package:shopxy/features/stock/domain/entities/stock_transaction.dart'
 import 'package:shopxy/features/stock_adjustments/data/datasources/stock_adjustments_remote_data_source.dart';
 import 'package:shopxy/features/stock_adjustments/domain/entities/stock_adjustment.dart';
 import 'package:shopxy/features/stock_adjustments/presentation/pages/create_stock_adjustment_page.dart';
+import 'package:shopxy/features/stock_adjustments/presentation/pages/stock_adjustment_detail_page.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
@@ -74,6 +75,16 @@ class _StockAdjustmentsPageState extends State<StockAdjustmentsPage> {
     }
   }
 
+  void _openDetail(StockAdjustment adjustment) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            StockAdjustmentDetailPage(adjustmentId: adjustment.id),
+      ),
+    );
+  }
+
   void _openCreate() async {
     final created = await Navigator.push<bool>(
       context,
@@ -138,7 +149,10 @@ class _StockAdjustmentsPageState extends State<StockAdjustmentsPage> {
             _startsNewDay(i + 1) ? const SizedBox.shrink() : const AppDivider(),
         itemBuilder: (_, i) {
           final date = _items[i].createdAt.toLocal();
-          final tile = _AdjustmentTile(adjustment: _items[i]);
+          final tile = _AdjustmentTile(
+            adjustment: _items[i],
+            onTap: () => _openDetail(_items[i]),
+          );
           if (!_startsNewDay(i)) return tile;
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -231,8 +245,9 @@ class _AdjustmentTileSkeleton extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _AdjustmentTile extends StatelessWidget {
-  const _AdjustmentTile({required this.adjustment});
+  const _AdjustmentTile({required this.adjustment, this.onTap});
   final StockAdjustment adjustment;
+  final VoidCallback? onTap;
 
   AppStatusTone get _tone {
     switch (adjustment.reasonCode) {
@@ -262,7 +277,9 @@ class _AdjustmentTile extends StatelessWidget {
         : l10n.stockAdjItemPlural;
 
     return InkWell(
-      onTap: null,
+      onTap: onTap,
+      splashColor: AppColors.surfaceTint,
+      highlightColor: AppColors.surfaceTint,
       child: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSizes.lg,
