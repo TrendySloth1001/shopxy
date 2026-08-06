@@ -49,7 +49,6 @@ describe("areaForPath", () => {
     expect(areaForPath("/dashboard/quotations")).toBe("invoices");
     expect(areaForPath("/dashboard/returns")).toBe("orders");
     expect(areaForPath("/dashboard/reports")).toBe("reports");
-    expect(areaForPath("/dashboard/analytics/insights")).toBe("reports");
     expect(areaForPath("/dashboard/team")).toBe("team");
   });
 

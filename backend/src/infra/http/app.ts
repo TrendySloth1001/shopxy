@@ -64,7 +64,6 @@ import {
 } from '../../modules/marketplace/marketplace.routes.js';
 import addressesRouter from '../../modules/addresses/addresses.routes.js';
 import cartRouter from '../../modules/cart/cart.routes.js';
-import analyticsRouter from '../../modules/analytics/analytics.routes.js';
 import {
   customerReturnsRouter,
   customerOrderReturnsSubmitRouter,
@@ -353,7 +352,6 @@ export function buildApp(): express.Express {
   mountMerchant('/me/scan-console', scanConsoleMerchantRouter, [resolveShop]);
   mountMerchant('/me/pos', posMerchantRouter, [resolveShop]);
   mountMerchant('/me/cashier', cashierMerchantRouter, [resolveShop]);
-  mountMerchant('/me/analytics', analyticsRouter, [resolveShop]);
   mountMerchant('/me/coupons-admin', merchantCouponsRouter, [resolveShop]);
   mountMerchant('/custom-fields', customFieldsRouter);
   // HSN/SAC rate master — read-only reference data behind the product

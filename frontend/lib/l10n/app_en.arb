@@ -2857,26 +2857,6 @@
   "adminShopVerified": "Verified",
   "adminShopDraft": "draft",
   "adminShopsEmpty": "No shops found.",
-  "analyticsTitle": "Analytics",
-  "analyticsRefresh": "Refresh",
-  "analyticsByProduct": "By product",
-  "analyticsNoActiveProducts": "No active products yet",
-  "analyticsKpiImpressions": "Impressions",
-  "analyticsKpiTaps": "Taps",
-  "analyticsKpiViews": "Views",
-  "analyticsKpiAddToCart": "Add to cart",
-  "analyticsKpiPurchases": "Purchases",
-  "analyticsKpiWishlist": "Wishlist",
-  "analyticsKpiCtr": "CTR",
-  "analyticsKpiCvr": "CVR",
-  "analyticsColProduct": "Product",
-  "analyticsColImpressions": "Imp",
-  "analyticsColTaps": "Taps",
-  "analyticsColViews": "Views",
-  "analyticsColAddToCart": "ATC",
-  "analyticsColPurchases": "Buys",
-  "analyticsColCtr": "CTR",
-  "analyticsColCvr": "CVR",
   "customFieldsTitle": "Custom Fields",
   "customFieldsTemplates": "Templates",
   "customFieldsAddField": "Add field",
@@ -3160,7 +3140,9 @@
   "stockAdjDetailUnitCost": "Cost {amount} per unit",
   "@stockAdjDetailUnitCost": {
     "placeholders": {
-      "amount": { "type": "String" }
+      "amount": {
+        "type": "String"
+      }
     }
   },
   "stockAdjDetailExplainerIn": "Stock went up the moment this was posted. Each product below now shows the higher count, and this adjustment is a permanent row in its stock ledger.",
@@ -3198,7 +3180,6 @@
   "navStockAdjustments": "Stock adjustments",
   "navReturns": "Returns",
   "navReports": "Reports",
-  "navAnalytics": "Analytics",
   "navBannerManager": "Banner manager",
   "navCategoryTaxonomy": "Category taxonomy",
   "navCollections": "Collections",
@@ -3583,7 +3564,6 @@
   "menuDescStockAdj": "Damage, expiry and corrections",
   "menuDescReturns": "Customer returns and refunds",
   "menuDescReports": "Sales, purchases, GST and P&L",
-  "menuDescAnalytics": "Traffic and performance",
   "menuDescBannerManager": "Marketplace home banners",
   "menuDescCategoryTaxonomy": "Global category tree",
   "menuDescCollections": "Curated product collections",

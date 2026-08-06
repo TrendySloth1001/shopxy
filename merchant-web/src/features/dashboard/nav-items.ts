@@ -16,7 +16,6 @@ import {
   SlidersHorizontal,
   Undo2,
   FileText,
-  BarChart3,
   Images,
   ScanLine,
   CreditCard,
@@ -97,7 +96,6 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: "stock-adjustments", label: "Stock adjustments", icon: SlidersHorizontal },
       { key: "returns", label: "Returns", icon: Undo2 },
       { key: "reports", label: "Reports", icon: FileText },
-      { key: "analytics", label: "Analytics", icon: BarChart3 },
     ],
   },
   {

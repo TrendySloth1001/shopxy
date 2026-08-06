@@ -10805,126 +10805,6 @@ abstract class AppLocalizations {
   /// **'No shops found.'**
   String get adminShopsEmpty;
 
-  /// No description provided for @analyticsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Analytics'**
-  String get analyticsTitle;
-
-  /// No description provided for @analyticsRefresh.
-  ///
-  /// In en, this message translates to:
-  /// **'Refresh'**
-  String get analyticsRefresh;
-
-  /// No description provided for @analyticsByProduct.
-  ///
-  /// In en, this message translates to:
-  /// **'By product'**
-  String get analyticsByProduct;
-
-  /// No description provided for @analyticsNoActiveProducts.
-  ///
-  /// In en, this message translates to:
-  /// **'No active products yet'**
-  String get analyticsNoActiveProducts;
-
-  /// No description provided for @analyticsKpiImpressions.
-  ///
-  /// In en, this message translates to:
-  /// **'Impressions'**
-  String get analyticsKpiImpressions;
-
-  /// No description provided for @analyticsKpiTaps.
-  ///
-  /// In en, this message translates to:
-  /// **'Taps'**
-  String get analyticsKpiTaps;
-
-  /// No description provided for @analyticsKpiViews.
-  ///
-  /// In en, this message translates to:
-  /// **'Views'**
-  String get analyticsKpiViews;
-
-  /// No description provided for @analyticsKpiAddToCart.
-  ///
-  /// In en, this message translates to:
-  /// **'Add to cart'**
-  String get analyticsKpiAddToCart;
-
-  /// No description provided for @analyticsKpiPurchases.
-  ///
-  /// In en, this message translates to:
-  /// **'Purchases'**
-  String get analyticsKpiPurchases;
-
-  /// No description provided for @analyticsKpiWishlist.
-  ///
-  /// In en, this message translates to:
-  /// **'Wishlist'**
-  String get analyticsKpiWishlist;
-
-  /// No description provided for @analyticsKpiCtr.
-  ///
-  /// In en, this message translates to:
-  /// **'CTR'**
-  String get analyticsKpiCtr;
-
-  /// No description provided for @analyticsKpiCvr.
-  ///
-  /// In en, this message translates to:
-  /// **'CVR'**
-  String get analyticsKpiCvr;
-
-  /// No description provided for @analyticsColProduct.
-  ///
-  /// In en, this message translates to:
-  /// **'Product'**
-  String get analyticsColProduct;
-
-  /// No description provided for @analyticsColImpressions.
-  ///
-  /// In en, this message translates to:
-  /// **'Imp'**
-  String get analyticsColImpressions;
-
-  /// No description provided for @analyticsColTaps.
-  ///
-  /// In en, this message translates to:
-  /// **'Taps'**
-  String get analyticsColTaps;
-
-  /// No description provided for @analyticsColViews.
-  ///
-  /// In en, this message translates to:
-  /// **'Views'**
-  String get analyticsColViews;
-
-  /// No description provided for @analyticsColAddToCart.
-  ///
-  /// In en, this message translates to:
-  /// **'ATC'**
-  String get analyticsColAddToCart;
-
-  /// No description provided for @analyticsColPurchases.
-  ///
-  /// In en, this message translates to:
-  /// **'Buys'**
-  String get analyticsColPurchases;
-
-  /// No description provided for @analyticsColCtr.
-  ///
-  /// In en, this message translates to:
-  /// **'CTR'**
-  String get analyticsColCtr;
-
-  /// No description provided for @analyticsColCvr.
-  ///
-  /// In en, this message translates to:
-  /// **'CVR'**
-  String get analyticsColCvr;
-
   /// No description provided for @customFieldsTitle.
   ///
   /// In en, this message translates to:
@@ -11944,12 +11824,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reports'**
   String get navReports;
-
-  /// No description provided for @navAnalytics.
-  ///
-  /// In en, this message translates to:
-  /// **'Analytics'**
-  String get navAnalytics;
 
   /// No description provided for @navBannerManager.
   ///
@@ -13054,12 +12928,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sales, purchases, GST and P&L'**
   String get menuDescReports;
-
-  /// No description provided for @menuDescAnalytics.
-  ///
-  /// In en, this message translates to:
-  /// **'Traffic and performance'**
-  String get menuDescAnalytics;
 
   /// No description provided for @menuDescBannerManager.
   ///

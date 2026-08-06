@@ -12,7 +12,6 @@ export const MERCHANT_AREAS: Record<string, Area> = {
   '/me/scan-console': 'products',
   '/me/pos': 'invoices',
   '/me/cashier': 'invoices',
-  '/me/analytics': 'reports',
   '/me/coupons-admin': 'marketing',
   '/custom-fields': 'products',
   '/products': 'products',

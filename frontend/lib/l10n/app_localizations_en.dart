@@ -5835,66 +5835,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminShopsEmpty => 'No shops found.';
 
   @override
-  String get analyticsTitle => 'Analytics';
-
-  @override
-  String get analyticsRefresh => 'Refresh';
-
-  @override
-  String get analyticsByProduct => 'By product';
-
-  @override
-  String get analyticsNoActiveProducts => 'No active products yet';
-
-  @override
-  String get analyticsKpiImpressions => 'Impressions';
-
-  @override
-  String get analyticsKpiTaps => 'Taps';
-
-  @override
-  String get analyticsKpiViews => 'Views';
-
-  @override
-  String get analyticsKpiAddToCart => 'Add to cart';
-
-  @override
-  String get analyticsKpiPurchases => 'Purchases';
-
-  @override
-  String get analyticsKpiWishlist => 'Wishlist';
-
-  @override
-  String get analyticsKpiCtr => 'CTR';
-
-  @override
-  String get analyticsKpiCvr => 'CVR';
-
-  @override
-  String get analyticsColProduct => 'Product';
-
-  @override
-  String get analyticsColImpressions => 'Imp';
-
-  @override
-  String get analyticsColTaps => 'Taps';
-
-  @override
-  String get analyticsColViews => 'Views';
-
-  @override
-  String get analyticsColAddToCart => 'ATC';
-
-  @override
-  String get analyticsColPurchases => 'Buys';
-
-  @override
-  String get analyticsColCtr => 'CTR';
-
-  @override
-  String get analyticsColCvr => 'CVR';
-
-  @override
   String get customFieldsTitle => 'Custom Fields';
 
   @override
@@ -6465,9 +6405,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get navReports => 'Reports';
-
-  @override
-  String get navAnalytics => 'Analytics';
 
   @override
   String get navBannerManager => 'Banner manager';
@@ -7085,9 +7022,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get menuDescReports => 'Sales, purchases, GST and P&L';
-
-  @override
-  String get menuDescAnalytics => 'Traffic and performance';
 
   @override
   String get menuDescBannerManager => 'Marketplace home banners';

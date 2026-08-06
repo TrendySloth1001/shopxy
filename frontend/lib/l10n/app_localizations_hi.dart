@@ -5835,66 +5835,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get adminShopsEmpty => 'कोई दुकान नहीं मिली।';
 
   @override
-  String get analyticsTitle => 'एनालिटिक्स';
-
-  @override
-  String get analyticsRefresh => 'रिफ़्रेश करें';
-
-  @override
-  String get analyticsByProduct => 'उत्पाद अनुसार';
-
-  @override
-  String get analyticsNoActiveProducts => 'अभी तक कोई सक्रिय उत्पाद नहीं';
-
-  @override
-  String get analyticsKpiImpressions => 'इंप्रेशन';
-
-  @override
-  String get analyticsKpiTaps => 'टैप';
-
-  @override
-  String get analyticsKpiViews => 'व्यूज़';
-
-  @override
-  String get analyticsKpiAddToCart => 'कार्ट में जोड़ा';
-
-  @override
-  String get analyticsKpiPurchases => 'खरीदारी';
-
-  @override
-  String get analyticsKpiWishlist => 'विशलिस्ट';
-
-  @override
-  String get analyticsKpiCtr => 'CTR';
-
-  @override
-  String get analyticsKpiCvr => 'CVR';
-
-  @override
-  String get analyticsColProduct => 'उत्पाद';
-
-  @override
-  String get analyticsColImpressions => 'इंप्र.';
-
-  @override
-  String get analyticsColTaps => 'टैप';
-
-  @override
-  String get analyticsColViews => 'व्यूज़';
-
-  @override
-  String get analyticsColAddToCart => 'ATC';
-
-  @override
-  String get analyticsColPurchases => 'खरीद';
-
-  @override
-  String get analyticsColCtr => 'CTR';
-
-  @override
-  String get analyticsColCvr => 'CVR';
-
-  @override
   String get customFieldsTitle => 'कस्टम फ़ील्ड';
 
   @override
@@ -6467,9 +6407,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get navReports => 'रिपोर्ट';
-
-  @override
-  String get navAnalytics => 'एनालिटिक्स';
 
   @override
   String get navBannerManager => 'बैनर मैनेजर';
@@ -7089,9 +7026,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get menuDescReports => 'बिक्री, खरीद, GST और लाभ-हानि';
-
-  @override
-  String get menuDescAnalytics => 'ट्रैफ़िक और प्रदर्शन';
 
   @override
   String get menuDescBannerManager => 'मार्केटप्लेस होम बैनर';

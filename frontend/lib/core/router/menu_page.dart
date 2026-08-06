@@ -9,7 +9,6 @@ import 'package:shopxy/features/admin/presentation/pages/admin_banners_page.dart
 import 'package:shopxy/features/admin/presentation/pages/admin_category_taxonomy_page.dart';
 import 'package:shopxy/features/admin/presentation/pages/admin_collections_page.dart';
 import 'package:shopxy/features/admin/presentation/pages/admin_shops_page.dart';
-import 'package:shopxy/features/analytics/presentation/pages/merchant_analytics_page.dart';
 import 'package:shopxy/features/auth/domain/entities/auth_user.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/banners/presentation/pages/merchant_banners_page.dart';
@@ -246,15 +245,6 @@ List<_MenuItem> get _operationItems => [
     accent: AppColors.brandStrong,
     accentSoft: AppColors.brandSoft,
     builder: (_) => const ReportsPage(),
-    requires: (u) => u.canView('reports'),
-  ),
-  _MenuItem(
-    label: (l) => l.navAnalytics,
-    description: (l) => l.menuDescAnalytics,
-    icon: AppIcons.barChartOutlined,
-    accent: AppColors.accentIndigo,
-    accentSoft: AppColors.accentIndigoSoft,
-    builder: (_) => const MerchantAnalyticsPage(),
     requires: (u) => u.canView('reports'),
   ),
 ];

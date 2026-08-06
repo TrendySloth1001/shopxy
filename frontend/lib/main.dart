@@ -52,8 +52,6 @@ import 'package:shopxy/features/admin/presentation/providers/admin_banners_provi
 import 'package:shopxy/features/admin/presentation/providers/admin_collections_provider.dart';
 import 'package:shopxy/features/banners/data/datasources/merchant_banners_remote_data_source.dart';
 import 'package:shopxy/features/banners/presentation/providers/merchant_banners_provider.dart';
-import 'package:shopxy/features/analytics/data/datasources/analytics_remote_data_source.dart';
-import 'package:shopxy/features/analytics/presentation/providers/analytics_provider.dart';
 import 'package:shopxy/features/reviews/data/datasources/reviews_remote_data_source.dart';
 import 'package:shopxy/features/parties/data/datasources/parties_remote_data_source.dart';
 import 'package:shopxy/features/parties/presentation/providers/parties_provider.dart';
@@ -183,7 +181,6 @@ void main() async {
   final adminCollectionsDs = AdminCollectionsRemoteDataSource(apiClient);
   final adminBankOffersDs = AdminBankOffersRemoteDataSource(apiClient);
   final adminShopsDs = AdminShopsRemoteDataSource(apiClient);
-  final analyticsDs = AnalyticsRemoteDataSource(apiClient);
   final reviewsDs = ReviewsRemoteDataSource(apiClient);
   final couponsDs = MerchantCouponsRemoteDataSource(apiClient);
   final returnsDs = MerchantReturnsRemoteDataSource(apiClient);
@@ -229,7 +226,6 @@ void main() async {
   final stockProvider = StockProvider(stockDs);
   final quotationsProvider = QuotationsProvider(quotationsDs);
   final reportsProvider = ReportsProvider(reportsDs);
-  final analyticsProvider = AnalyticsProvider(analyticsDs);
 
   authProvider.registerOnClear(notificationsProvider.reset);
   authProvider.registerOnClear(productsProvider.reset);
@@ -248,7 +244,6 @@ void main() async {
   authProvider.registerOnClear(stockProvider.reset);
   authProvider.registerOnClear(quotationsProvider.reset);
   authProvider.registerOnClear(reportsProvider.reset);
-  authProvider.registerOnClear(analyticsProvider.reset);
   // Purge the device response cache on logout / 401 / account-delete so the
   // next account can't see the previous user's cached business data.
   authProvider.registerOnClear(httpCache.wipe);
@@ -414,9 +409,6 @@ void main() async {
           create: (_) => AdminBankOffersProvider(adminBankOffersDs),
         ),
         Provider<AdminShopsRemoteDataSource>.value(value: adminShopsDs),
-        ChangeNotifierProvider<AnalyticsProvider>.value(
-          value: analyticsProvider,
-        ),
         ChangeNotifierProvider<OrdersProvider>.value(value: ordersProvider),
       ],
       child: const ShopxyApp(),
