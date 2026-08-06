@@ -15,6 +15,7 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
@@ -182,12 +183,13 @@ class _InboxTab extends StatelessWidget {
       color: AppColors.brand,
       child: ListView.separated(
         controller: controller,
-        padding: EdgeInsets.only(
-          top:
-              AppSizes.sm +
+        padding: EdgeInsets.fromLTRB(
+          AppSizes.lg,
+          AppSizes.sm +
               FloatingAppBar.contentTopInset(context) +
               kTextTabBarHeight,
-          bottom: AppSizes.massive + AppSizes.xxxl,
+          AppSizes.lg,
+          AppSizes.massive + AppSizes.xxxl,
         ),
         itemCount: itemCount,
         separatorBuilder: (_, _) => const SizedBox(height: AppSizes.sm),
@@ -540,12 +542,13 @@ class _InboxSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
-      padding: EdgeInsets.only(
-        top:
-            AppSizes.sm +
+      padding: EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.sm +
             FloatingAppBar.contentTopInset(context) +
             kTextTabBarHeight,
-        bottom: AppSizes.massive + AppSizes.xxxl,
+        AppSizes.lg,
+        AppSizes.massive + AppSizes.xxxl,
       ),
       itemCount: 6,
       separatorBuilder: (_, _) => const SizedBox(height: AppSizes.sm),
@@ -631,12 +634,13 @@ class _IncomingTab extends StatelessWidget {
       color: AppColors.brand,
       child: ListView.separated(
         controller: controller,
-        padding: EdgeInsets.only(
-          top:
-              AppSizes.sm +
+        padding: EdgeInsets.fromLTRB(
+          AppSizes.lg,
+          AppSizes.sm +
               FloatingAppBar.contentTopInset(context) +
               kTextTabBarHeight,
-          bottom: AppSizes.massive + AppSizes.xxxl,
+          AppSizes.lg,
+          AppSizes.massive + AppSizes.xxxl,
         ),
         itemCount: incoming.length,
         separatorBuilder: (_, _) => const SizedBox(height: AppSizes.sm),
@@ -835,12 +839,13 @@ class _OutgoingTab extends StatelessWidget {
       color: AppColors.brand,
       child: ListView.separated(
         controller: controller,
-        padding: EdgeInsets.only(
-          top:
-              AppSizes.sm +
+        padding: EdgeInsets.fromLTRB(
+          AppSizes.lg,
+          AppSizes.sm +
               FloatingAppBar.contentTopInset(context) +
               kTextTabBarHeight,
-          bottom: AppSizes.massive + AppSizes.xxxl,
+          AppSizes.lg,
+          AppSizes.massive + AppSizes.xxxl,
         ),
         itemCount: outgoing.length,
         separatorBuilder: (_, _) => const SizedBox(height: AppSizes.sm),
@@ -861,110 +866,280 @@ class _OutgoingInviteTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final p = context.read<NotificationsProvider>();
-    // Same rounded-surface-card recipe as the inbox tiles — a bare Padding
-    // row on the plain canvas made this float with no boundary, and the
-    // unstyled close icon read as an ambiguous "dismiss" rather than the
-    // destructive "cancel this invite" action it actually is.
-    return Container(
-      decoration: ShapeDecoration(
-        color: AppColors.surface,
-        shape: AppShapes.squircle(
-          AppSizes.radiusLg,
-          side: BorderSide(color: AppColors.hairline),
+    // Same rounded-surface-card recipe as the inbox tiles. The row itself
+    // is now the tap target — it opens a details sheet with the cancel
+    // action inside, rather than a bare unlabelled "x" sitting next to the
+    // status chip (that read as an ambiguous dismiss, not a destructive
+    // cancel-this-invite action).
+    return Material(
+      color: AppColors.surface,
+      shape: AppShapes.squircle(
+        AppSizes.radiusLg,
+        side: BorderSide(color: AppColors.hairline),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        splashColor: AppColors.surfaceTint,
+        highlightColor: AppColors.surfaceTint,
+        onTap: () => _OutgoingInviteDetailsSheet.show(context, invite),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.lg,
+            vertical: AppSizes.md,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: AppSizes.xxxl,
+                height: AppSizes.xxxl,
+                decoration: ShapeDecoration(
+                  color: invite.isParty
+                      ? AppColors.accentRoseSoft
+                      : AppColors.accentIndigoSoft,
+                  shape: AppShapes.squircle(AppSizes.radiusSm),
+                ),
+                alignment: Alignment.center,
+                child: AppIcon(
+                  invite.isParty
+                      ? AppIcons.groupsOutlined
+                      : AppIcons.storefrontOutlined,
+                  color: invite.isParty
+                      ? AppColors.accentRose
+                      : AppColors.accentIndigo,
+                  size: AppSizes.iconMd,
+                ),
+              ),
+              const SizedBox(width: AppSizes.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      invite.toEmail,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: AppColors.black,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      invite.displayName ??
+                          (invite.isParty
+                              ? l10n.notificationsRoleParty
+                              : l10n.notificationsRoleVendor),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.muted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSizes.sm),
+              _StatusChip(status: invite.status),
+              const SizedBox(width: AppSizes.xs),
+              AppIcon(
+                AppIcons.chevronRightRounded,
+                size: AppSizes.iconSm,
+                color: AppColors.subtle,
+              ),
+            ],
+          ),
         ),
       ),
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.lg,
-        vertical: AppSizes.md,
+    );
+  }
+}
+
+/// Details sheet for a sent invitation — opened by tapping the row in the
+/// Sent tab. Shows what was sent and to whom, with the destructive cancel
+/// action living here (behind a deliberate tap + sheet open) instead of a
+/// bare icon inline on the row.
+class _OutgoingInviteDetailsSheet extends StatefulWidget {
+  const _OutgoingInviteDetailsSheet({required this.invite});
+  final Invitation invite;
+
+  static Future<void> show(BuildContext context, Invitation invite) {
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: AppColors.surface,
+      shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
+      builder: (_) => _OutgoingInviteDetailsSheet(invite: invite),
+    );
+  }
+
+  @override
+  State<_OutgoingInviteDetailsSheet> createState() =>
+      _OutgoingInviteDetailsSheetState();
+}
+
+class _OutgoingInviteDetailsSheetState
+    extends State<_OutgoingInviteDetailsSheet> {
+  static final _dateFmt = DateFormat('d MMM y · hh:mm a');
+  bool _cancelling = false;
+
+  Invitation get invite => widget.invite;
+
+  Future<void> _cancel() async {
+    final l10n = AppLocalizations.of(context);
+    final navigator = Navigator.of(context);
+    setState(() => _cancelling = true);
+    try {
+      await context.read<NotificationsProvider>().cancel(invite.id);
+      if (!mounted) return;
+      navigator.pop();
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.notificationsInvitationCancelled)));
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _cancelling = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(friendlyError(e))));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.md,
+        AppSizes.lg,
+        AppSizes.lg + MediaQuery.of(context).padding.bottom,
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: AppSizes.xxxl,
-            height: AppSizes.xxxl,
-            decoration: ShapeDecoration(
-              color: invite.isParty
-                  ? AppColors.accentRoseSoft
-                  : AppColors.accentIndigoSoft,
-              shape: AppShapes.squircle(AppSizes.radiusSm),
-            ),
-            alignment: Alignment.center,
-            child: AppIcon(
-              invite.isParty
-                  ? AppIcons.groupsOutlined
-                  : AppIcons.storefrontOutlined,
-              color: invite.isParty
-                  ? AppColors.accentRose
-                  : AppColors.accentIndigo,
-              size: AppSizes.iconMd,
-            ),
-          ),
-          const SizedBox(width: AppSizes.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  invite.toEmail,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: AppColors.black,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                Text(
-                  invite.displayName ??
-                      (invite.isParty
-                          ? l10n.notificationsRoleParty
-                          : l10n.notificationsRoleVendor),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: AppColors.muted,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: AppSizes.sm),
-          _StatusChip(status: invite.status),
-          if (invite.isPending) ...[
-            const SizedBox(width: AppSizes.xs),
-            // errorSoft/error tint — the same negative-action pairing used
-            // everywhere else (out-of-stock, margin loss, etc.) — so this
-            // reads as a deliberate cancel, not a bare dismiss "x".
-            Material(
-              color: AppColors.errorSoft,
-              shape: const CircleBorder(),
-              clipBehavior: Clip.antiAlias,
-              child: IconButton(
-                tooltip: l10n.notificationsCancel,
-                icon: AppIcon(
-                  AppIcons.closeRounded,
-                  size: AppSizes.iconSm,
-                  color: AppColors.error,
-                ),
-                onPressed: () async {
-                  try {
-                    await p.cancel(invite.id);
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(l10n.notificationsInvitationCancelled),
-                      ),
-                    );
-                  } catch (e) {
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text(friendlyError(e))));
-                  }
-                },
+          Center(
+            child: Container(
+              width: AppSizes.xxxl,
+              height: AppSizes.xxs,
+              margin: const EdgeInsets.only(bottom: AppSizes.lg),
+              decoration: BoxDecoration(
+                color: AppColors.hairline,
+                borderRadius: BorderRadius.circular(AppSizes.radiusFull),
               ),
             ),
+          ),
+          Row(
+            children: [
+              Container(
+                width: AppSizes.xxxl,
+                height: AppSizes.xxxl,
+                decoration: ShapeDecoration(
+                  color: invite.isParty
+                      ? AppColors.accentRoseSoft
+                      : AppColors.accentIndigoSoft,
+                  shape: AppShapes.squircle(AppSizes.radiusSm),
+                ),
+                alignment: Alignment.center,
+                child: AppIcon(
+                  invite.isParty
+                      ? AppIcons.groupsOutlined
+                      : AppIcons.storefrontOutlined,
+                  color: invite.isParty
+                      ? AppColors.accentRose
+                      : AppColors.accentIndigo,
+                  size: AppSizes.iconMd,
+                ),
+              ),
+              const SizedBox(width: AppSizes.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.notificationsInviteDetailsTitle,
+                      style: theme.textTheme.titleMedium?.bold,
+                    ),
+                    Text(
+                      invite.toEmail,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: AppColors.muted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _StatusChip(status: invite.status),
+            ],
+          ),
+          const SizedBox(height: AppSizes.lg),
+          _DetailRow(
+            label: l10n.notificationsDetailRole,
+            value: invite.displayName ??
+                (invite.isParty
+                    ? l10n.notificationsRoleParty
+                    : l10n.notificationsRoleVendor),
+          ),
+          _DetailRow(
+            label: l10n.notificationsDetailSentOn,
+            value: _dateFmt.format(invite.createdAt.toLocal()),
+          ),
+          _DetailRow(
+            label: l10n.notificationsDetailExpires,
+            value: _dateFmt.format(invite.expiresAt.toLocal()),
+          ),
+          if (invite.message != null && invite.message!.isNotEmpty)
+            _DetailRow(
+              label: l10n.notificationsDetailMessage,
+              value: invite.message!,
+            ),
+          if (invite.isPending) ...[
+            const SizedBox(height: AppSizes.lg),
+            AppButton.danger(
+              label: l10n.notificationsCancelInvitation,
+              icon: AppIcons.closeRounded,
+              isLoading: _cancelling,
+              fullWidth: true,
+              onPressed: _cancel,
+            ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  const _DetailRow({required this.label, required this.value});
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSizes.sm),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: AppSizes.massive,
+            child: Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.muted,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: AppColors.black,
+              ),
+            ),
+          ),
         ],
       ),
     );

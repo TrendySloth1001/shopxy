@@ -5570,6 +5570,42 @@ abstract class AppLocalizations {
   /// **'No contacts found'**
   String get notificationsNoContactsFound;
 
+  /// No description provided for @notificationsInviteDetailsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Invitation details'**
+  String get notificationsInviteDetailsTitle;
+
+  /// No description provided for @notificationsDetailRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Role'**
+  String get notificationsDetailRole;
+
+  /// No description provided for @notificationsDetailSentOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent on'**
+  String get notificationsDetailSentOn;
+
+  /// No description provided for @notificationsDetailExpires.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires'**
+  String get notificationsDetailExpires;
+
+  /// No description provided for @notificationsDetailMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get notificationsDetailMessage;
+
+  /// No description provided for @notificationsCancelInvitation.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel invitation'**
+  String get notificationsCancelInvitation;
+
   /// No description provided for @categoriesTitle.
   ///
   /// In en, this message translates to:

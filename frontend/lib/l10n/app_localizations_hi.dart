@@ -2917,6 +2917,24 @@ class AppLocalizationsHi extends AppLocalizations {
   String get notificationsNoContactsFound => 'कोई संपर्क नहीं मिला';
 
   @override
+  String get notificationsInviteDetailsTitle => 'आमंत्रण विवरण';
+
+  @override
+  String get notificationsDetailRole => 'भूमिका';
+
+  @override
+  String get notificationsDetailSentOn => 'भेजा गया';
+
+  @override
+  String get notificationsDetailExpires => 'समाप्ति';
+
+  @override
+  String get notificationsDetailMessage => 'संदेश';
+
+  @override
+  String get notificationsCancelInvitation => 'आमंत्रण रद्द करें';
+
+  @override
   String get categoriesTitle => 'श्रेणियाँ';
 
   @override

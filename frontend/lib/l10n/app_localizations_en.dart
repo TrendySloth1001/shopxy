@@ -2918,6 +2918,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notificationsNoContactsFound => 'No contacts found';
 
   @override
+  String get notificationsInviteDetailsTitle => 'Invitation details';
+
+  @override
+  String get notificationsDetailRole => 'Role';
+
+  @override
+  String get notificationsDetailSentOn => 'Sent on';
+
+  @override
+  String get notificationsDetailExpires => 'Expires';
+
+  @override
+  String get notificationsDetailMessage => 'Message';
+
+  @override
+  String get notificationsCancelInvitation => 'Cancel invitation';
+
+  @override
   String get categoriesTitle => 'Categories';
 
   @override
