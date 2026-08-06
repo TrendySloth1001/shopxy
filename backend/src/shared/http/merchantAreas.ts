@@ -23,6 +23,8 @@ export const MERCHANT_AREAS: Record<string, Area> = {
   '/parties': 'parties',
   '/quotations': 'quotations',
   '/invoices': 'invoices',
+  '/numbering': 'invoices',
+  '/pdf-templates': 'invoices',
   '/challans': 'challans',
   '/reports': 'reports',
   '/orders/returns': 'orders',

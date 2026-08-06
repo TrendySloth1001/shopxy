@@ -35,6 +35,7 @@ class Shop {
     this.returnPolicyNote,
     this.cancellationPolicy = 'UNTIL_SHIPPED',
     this.operatingHours,
+    this.pdfTemplateId = 'classic',
   });
 
   final String id;
@@ -72,6 +73,9 @@ class Shop {
   /// Day → [open, close] in HH:MM. Missing days = closed. Null when
   /// the merchant hasn't set any hours.
   final Map<String, List<String>>? operatingHours;
+  /// Which of the ~7 preset PDF looks this shop's invoices/quotations/
+  /// challans render with — see `PdfTemplate` in the `pdf_templates` feature.
+  final String pdfTemplateId;
 
   factory Shop.fromJson(Map<String, dynamic> json) => Shop(
         id: json['id'].toString(),
@@ -101,6 +105,7 @@ class Shop {
           'UNTIL_SHIPPED',
         ),
         operatingHours: _parseHours(json['operatingHours']),
+        pdfTemplateId: (json['pdfTemplateId'] as String?) ?? 'classic',
       );
 
   /// Tolerant enum parse — unknown server values fall back so a newer

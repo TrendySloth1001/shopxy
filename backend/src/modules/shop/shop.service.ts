@@ -36,6 +36,7 @@ const merchantShopSelect = {
   refundMode: true,
   returnPolicyNote: true,
   cancellationPolicy: true,
+  pdfTemplateId: true,
 } as const;
 
 /// Lower-cases, collapses non-alphanumerics to single dashes, trims
@@ -168,6 +169,7 @@ export class ShopService {
       refundMode?: string;
       returnPolicyNote?: string | null;
       cancellationPolicy?: string;
+      pdfTemplateId?: string;
     },
   ) {
     const existing = await prisma.shop.findUnique({
@@ -231,6 +233,7 @@ export class ShopService {
         cancellationPolicy: data.cancellationPolicy === undefined
             ? undefined
             : data.cancellationPolicy,
+        pdfTemplateId: data.pdfTemplateId === undefined ? undefined : data.pdfTemplateId,
       },
       select: merchantShopSelect,
     });

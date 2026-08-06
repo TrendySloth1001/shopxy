@@ -4,13 +4,31 @@ import { Writable } from 'stream';
 import QRCode from 'qrcode';
 import prisma from '../../infra/db/prisma.js';
 import { stateNameFromCode } from '../../shared/validation/indian.js';
+import { loadPdfEngine } from '../../shared/pdfEngineLoader.js';
 
 /// Render one invoice as a PDF — to a stream when `out` is set, or to a
-/// Buffer otherwise. Returns `{ error }` if the invoice can't be found
-/// or doesn't belong to `shopId`. Lives in its own file because PDFKit
-/// rendering is 480 lines of layout code that don't benefit from sharing
-/// space with the rest of the invoice service.
+/// Buffer otherwise. Returns `{ error }` if the invoice can't be found or
+/// doesn't belong to `shopId`.
+///
+/// Dispatches to the react-pdf engine (which honors the shop's chosen
+/// `pdfTemplateId`) by default; set `PDF_ENGINE=pdfkit` to roll back to the
+/// original hand-drawn PDFKit layout below — a one-line env change, not a
+/// redeploy, if the new engine ever misbehaves in production.
 export async function renderInvoicePdf(
+  shopId: number,
+  id: number,
+  out: Writable | null,
+  onReady?: () => void,
+): Promise<Buffer | null | { error: string }> {
+  if (process.env.PDF_ENGINE === 'pdfkit') {
+    return renderInvoicePdfPdfKit(shopId, id, out, onReady);
+  }
+  return renderInvoicePdfReactPdf(shopId, id, out, onReady);
+}
+
+/// The original hand-drawn PDFKit layout — kept verbatim as the rollback
+/// path (see `PDF_ENGINE=pdfkit` above).
+async function renderInvoicePdfPdfKit(
   shopId: number,
   id: number,
   out: Writable | null,
@@ -653,4 +671,251 @@ function formatDDMMYYYY(d: Date | string): string {
   const mm = String(dt.getMonth() + 1).padStart(2, '0');
   const yy = dt.getFullYear();
   return `${dd}/${mm}/${yy}`;
+}
+
+/// Converts PDFKit-style absolute point widths into percentages summing to
+/// 100 — the react-pdf engine's tables are percentage-based. A ~3-line pure
+/// function, duplicated per-renderer rather than reached for across the
+/// CJS/ESM boundary (same convention as `pctWidths` in `shared/pdf/model.ts`).
+function pct(points: number[]): number[] {
+  const total = points.reduce((a, b) => a + b, 0);
+  return points.map((p) => (p / total) * 100);
+}
+
+/// Builds the doc-kind-agnostic `PdfDocumentModel` (see `shared/pdf/model.ts`)
+/// from the same invoice query the PDFKit path uses, then renders it through
+/// the shop's chosen template. This is the default path — see the
+/// `PDF_ENGINE=pdfkit` dispatcher above for the rollback.
+async function renderInvoicePdfReactPdf(
+  shopId: number,
+  id: number,
+  out: Writable | null,
+  onReady?: () => void,
+): Promise<Buffer | null | { error: string }> {
+  const invoice = await prisma.invoice.findFirst({
+    where: { id, shopId },
+    include: { vendor: true, party: true, items: { orderBy: { id: 'asc' } } },
+  });
+  if (!invoice) return { error: 'Invoice not found' };
+
+  const shopRow = await prisma.shop.findUnique({
+    where: { id: shopId },
+    select: {
+      pdfTemplateId: true,
+      owner: {
+        select: {
+          shopName: true,
+          shopAddress: true,
+          shopCity: true,
+          shopState: true,
+          shopStateCode: true,
+          shopPinCode: true,
+          shopGstin: true,
+          shopPan: true,
+          upiVpa: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+  const owner = shopRow?.owner ?? null;
+
+  let originalRef: { invoiceNo: string; invoiceDate: Date } | null = null;
+  if (
+    (invoice.documentType === 'CREDIT_NOTE' || invoice.documentType === 'DEBIT_NOTE') &&
+    invoice.originalInvoiceId
+  ) {
+    const orig = await prisma.invoice.findFirst({
+      where: { id: invoice.originalInvoiceId, shopId },
+      select: { invoiceNo: true, invoiceDate: true },
+    });
+    if (orig) originalRef = orig;
+  }
+
+  const D = Prisma.Decimal;
+  const total = new D(invoice.total.toString());
+  let upiQr: { buffer: Buffer; link: string } | null = null;
+  if (invoice.type === 'SALE' && owner?.upiVpa && total.gt(0)) {
+    const payeeName = owner.shopName ?? owner.name ?? 'Merchant';
+    const link =
+      `upi://pay?pa=${encodeURIComponent(owner.upiVpa)}` +
+      `&pn=${encodeURIComponent(payeeName)}` +
+      `&am=${total.toFixed(2)}` +
+      `&cu=INR` +
+      `&tn=${encodeURIComponent(`Invoice ${invoice.invoiceNo}`)}`;
+    try {
+      const buffer = await QRCode.toBuffer(link, { type: 'png', width: 220, margin: 1 });
+      upiQr = { buffer, link };
+    } catch {
+      upiQr = null;
+    }
+  }
+
+  const currencyFmt = (n: number | string | Prisma.Decimal | null | undefined): string => {
+    if (n === null || n === undefined) return 'Rs. 0.00';
+    return `Rs. ${new D(n.toString()).toFixed(2)}`;
+  };
+  const numFmt = (n: number | string | Prisma.Decimal | null | undefined): string => {
+    if (n === null || n === undefined) return '0.00';
+    return new D(n.toString()).toFixed(2);
+  };
+  const signedRoundOff = (v: Prisma.Decimal | number | string | null | undefined): string => {
+    if (v === null || v === undefined) return '+0.00';
+    const d = new D(v.toString());
+    if (d.gte(0)) return `+${d.toFixed(2)}`;
+    return `−${d.abs().toFixed(2)}`;
+  };
+
+  const isSale = invoice.type === 'SALE';
+  const cpLabel = isSale ? 'Bill To' : 'Vendor';
+  const cpName = isSale
+    ? (invoice.customerName ?? invoice.party?.name ?? '-')
+    : (invoice.vendorName ?? invoice.vendor?.name ?? '-');
+  const cpAddress = isSale
+    ? composeAddress(invoice.customerAddress, invoice.customerCity, invoice.customerState, invoice.customerPinCode)
+    : composeAddress(invoice.vendorAddress, invoice.vendorCity, invoice.vendorState, invoice.vendorPinCode);
+  const cpGstin = isSale ? invoice.customerGstin : invoice.vendorGstin;
+  const cpPan = isSale ? invoice.customerPanNumber : invoice.vendorPanNumber;
+
+  const posStateName = stateNameFromCode(invoice.placeOfSupplyStateCode);
+  const placeOfSupply = invoice.placeOfSupplyStateCode
+    ? `${invoice.placeOfSupplyStateCode}${posStateName ? ` - ${posStateName}` : ''}`
+    : '-';
+
+  const isInter = invoice.isInterstate;
+  const taxCols = isInter ? ['IGST'] : ['CGST', 'SGST'];
+  const itemHeaders = ['Sr', 'Item / SKU', 'HSN', 'Qty', 'Rate', 'Disc', 'Taxable', 'GST%', ...taxCols, 'Total'];
+  const itemWidths = isInter
+    ? pct([22, 120, 42, 38, 46, 38, 52, 32, 65, 60])
+    : pct([22, 116, 40, 34, 42, 34, 50, 30, 45, 45, 57]);
+  const align = (i: number): 'left' | 'right' => (i <= 2 ? 'left' : 'right');
+
+  const itemRows = invoice.items.map((item, idx) => {
+    const taxValues = isInter ? [numFmt(item.igstAmount)] : [numFmt(item.cgstAmount), numFmt(item.sgstAmount)];
+    const cells = [
+      String(idx + 1),
+      `${item.productName}\n${item.productSku}`,
+      item.hsn ?? '-',
+      `${new D(item.quantity.toString()).toString()} ${item.unit}`,
+      numFmt(item.unitPrice),
+      numFmt(item.discount),
+      numFmt(item.taxableValue),
+      `${new D(item.taxPercent.toString()).toString()}%`,
+      ...taxValues,
+      numFmt(item.total),
+    ];
+    return { cells: cells.map((text, i) => ({ text, align: align(i) })) };
+  });
+
+  type HsnAgg = {
+    taxable: Prisma.Decimal;
+    igst: Prisma.Decimal;
+    cgst: Prisma.Decimal;
+    sgst: Prisma.Decimal;
+    cess: Prisma.Decimal;
+  };
+  const hsnMap = new Map<string, HsnAgg>();
+  for (const it of invoice.items) {
+    if (!it.hsn) continue;
+    const cur = hsnMap.get(it.hsn) ?? {
+      taxable: new D(0), igst: new D(0), cgst: new D(0), sgst: new D(0), cess: new D(0),
+    };
+    cur.taxable = cur.taxable.add(new D(it.taxableValue.toString()));
+    cur.igst = cur.igst.add(new D(it.igstAmount.toString()));
+    cur.cgst = cur.cgst.add(new D(it.cgstAmount.toString()));
+    cur.sgst = cur.sgst.add(new D(it.sgstAmount.toString()));
+    cur.cess = cur.cess.add(new D(it.cessAmount.toString()));
+    hsnMap.set(it.hsn, cur);
+  }
+  const hsnHeaders = isInter
+    ? ['HSN', 'Taxable Value', 'IGST', 'Cess', 'Total Tax']
+    : ['HSN', 'Taxable Value', 'CGST', 'SGST', 'Cess', 'Total Tax'];
+  const hsnWidths = isInter ? pct([80, 110, 100, 100, 125]) : pct([80, 100, 80, 80, 80, 95]);
+  const hsnAlign = (i: number): 'left' | 'right' => (i === 0 ? 'left' : 'right');
+  const hsnRows = Array.from(hsnMap.entries()).map(([hsn, agg]) => {
+    const totalTax = agg.igst.add(agg.cgst).add(agg.sgst).add(agg.cess);
+    const cells = isInter
+      ? [hsn, numFmt(agg.taxable), numFmt(agg.igst), numFmt(agg.cess), numFmt(totalTax)]
+      : [hsn, numFmt(agg.taxable), numFmt(agg.cgst), numFmt(agg.sgst), numFmt(agg.cess), numFmt(totalTax)];
+    return { cells: cells.map((text, i) => ({ text, align: hsnAlign(i) })) };
+  });
+
+  let lineDiscount = new D(0);
+  for (const it of invoice.items) lineDiscount = lineDiscount.add(new D(it.discount.toString()));
+  const totalDiscount = new D(invoice.discount.toString()).add(lineDiscount);
+
+  const totals: { label: string; value: string; bold?: boolean }[] = [
+    { label: 'Subtotal', value: currencyFmt(invoice.subtotal) },
+  ];
+  if (totalDiscount.gt(0)) totals.push({ label: 'Total Discount', value: `- ${currencyFmt(totalDiscount)}` });
+  totals.push({ label: 'Taxable Value', value: currencyFmt(invoice.taxableValue) });
+  if (isInter) {
+    totals.push({ label: 'IGST', value: currencyFmt(invoice.igstAmount) });
+  } else {
+    totals.push({ label: 'CGST', value: currencyFmt(invoice.cgstAmount) });
+    totals.push({ label: 'SGST', value: currencyFmt(invoice.sgstAmount) });
+  }
+  if (new D(invoice.cessAmount.toString()).gt(0)) totals.push({ label: 'Cess', value: currencyFmt(invoice.cessAmount) });
+  if (!new D(invoice.roundOff.toString()).eq(0)) totals.push({ label: 'Round-off', value: signedRoundOff(invoice.roundOff) });
+  totals.push({ label: 'Grand Total', value: currencyFmt(invoice.total), bold: true });
+
+  let declaration: string | undefined;
+  if (invoice.documentType === 'BILL_OF_SUPPLY') {
+    declaration =
+      'Bill of Supply — the supplier is not registered to collect GST / is under the composition scheme. No tax is charged on this document.';
+  } else if (invoice.documentType === 'TAX_INVOICE') {
+    const reverseCharge = (invoice as { reverseCharge?: boolean | null }).reverseCharge === true;
+    declaration = `Tax payable on reverse charge: ${reverseCharge ? 'Yes' : 'No'}`;
+  }
+
+  const shopName = owner?.shopName ?? owner?.name ?? 'Shop';
+  const model = {
+    kind: 'invoice' as const,
+    title: documentTypeLabel(invoice.documentType),
+    titleBadgeLines: ['Original for Recipient', 'Duplicate for Transporter', 'Triplicate for Supplier'],
+    shop: {
+      name: shopName,
+      addressLine: composeAddress(owner?.shopAddress, owner?.shopCity, owner?.shopState, owner?.shopPinCode),
+      gstin: owner?.shopGstin,
+      pan: owner?.shopPan,
+    },
+    counterpartyLabel: cpLabel,
+    counterparty: { name: cpName, addressLine: cpAddress, gstin: cpGstin, pan: cpPan },
+    meta: [
+      { label: 'Invoice No', value: invoice.invoiceNo },
+      { label: 'Date', value: formatDDMMYYYY(invoice.invoiceDate) },
+      { label: 'Place of Supply', value: placeOfSupply },
+      { label: 'FY', value: invoice.financialYear },
+    ],
+    metaSecondRow: originalRef
+      ? [
+          { label: 'Original Invoice No', value: originalRef.invoiceNo },
+          { label: 'Original Invoice Date', value: formatDDMMYYYY(originalRef.invoiceDate) },
+        ]
+      : undefined,
+    items: { headers: itemHeaders.map((text, i) => ({ text, align: align(i) })), widths: itemWidths, rows: itemRows },
+    hsnSummary: hsnMap.size > 0
+      ? { headers: hsnHeaders.map((text, i) => ({ text, align: hsnAlign(i) })), widths: hsnWidths, rows: hsnRows }
+      : undefined,
+    totals,
+    amountInWords: invoice.amountInWords ?? undefined,
+    declaration,
+    upiQr: upiQr
+      ? {
+          buffer: upiQr.buffer,
+          caption: 'Scan to pay with any UPI app',
+          vpaLine: owner?.upiVpa ? `UPI: ${owner.upiVpa}` : undefined,
+        }
+      : undefined,
+    signatureName: `For ${shopName}`,
+    note: invoice.note ?? undefined,
+  };
+
+  const engine = await loadPdfEngine();
+  if (out) {
+    await engine.renderPdfToStream(model, shopRow?.pdfTemplateId, out, onReady);
+    return null;
+  }
+  return engine.renderPdfToBuffer(model, shopRow?.pdfTemplateId);
 }

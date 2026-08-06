@@ -15,6 +15,8 @@ import vendorsRouter from '../../modules/vendors/vendors.routes.js';
 import partiesRouter from '../../modules/parties/parties.routes.js';
 import quotationsRouter from '../../modules/quotations/quotations.routes.js';
 import invoicesRouter from '../../modules/invoices/invoices.routes.js';
+import numberingRouter from '../../modules/numbering/numbering.routes.js';
+import pdfTemplatesRouter from '../../modules/pdfTemplates/pdfTemplates.routes.js';
 import challansRouter from '../../modules/challans/challans.routes.js';
 import uploadRouter from '../../modules/upload/upload.routes.js';
 import avatarUploadRouter from '../../modules/upload/upload-avatar.routes.js';
@@ -368,6 +370,8 @@ export function buildApp(): express.Express {
   mountMerchant('/parties', partiesRouter);
   mountMerchant('/quotations', quotationsRouter);
   mountMerchant('/invoices', invoicesRouter);
+  mountMerchant('/numbering', numberingRouter);
+  mountMerchant('/pdf-templates', pdfTemplatesRouter);
   mountMerchant('/challans', challansRouter);
   // Upload is shared infra (product images, etc.) — intentionally open to
   // any team member (see OPEN_MERCHANT_MOUNTS); not area-gated.

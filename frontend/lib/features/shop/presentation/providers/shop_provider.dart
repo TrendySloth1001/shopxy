@@ -83,6 +83,7 @@ class ShopProvider extends ChangeNotifier {
     Object? returnPolicyNote = _absent,
     Object? cancellationPolicy = _absent,
     Object? operatingHours = _absent,
+    Object? pdfTemplateId = _absent,
   }) async {
     _isSaving = true;
     _error = null;
@@ -106,6 +107,7 @@ class ShopProvider extends ChangeNotifier {
         returnPolicyNote: returnPolicyNote,
         cancellationPolicy: cancellationPolicy,
         operatingHours: operatingHours,
+        pdfTemplateId: pdfTemplateId,
       );
       return true;
     } catch (e) {

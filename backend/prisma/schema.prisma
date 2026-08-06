@@ -1880,6 +1880,34 @@ model Counter {
   @@map("counters")
 }
 
+/// Per-shop customization of a document-number series (prefix/suffix/
+/// separator/padding/yearly-reset) — see `backend/src/shared/numbering/
+/// sequences.ts`. Absence of a row for a (shopId, series) pair means "use
+/// the system default for that series" (same as today's hardcoded format),
+/// exactly like `User.gstEffectiveFrom == null` means ungated. `series` is
+/// one of SALE_INVOICE | PURCHASE_INVOICE | ESTIMATE | CREDIT_NOTE |
+/// DEBIT_NOTE | CHALLAN | QUOTATION. Never written by document creation
+/// itself — only by the merchant's numbering settings. The `Counter` row
+/// this scheme's numbers are allocated from is keyed by `series` (plus the
+/// financial year when `resetYearly` is true), NOT by `prefix` — renaming
+/// the prefix/suffix must never reset the running sequence.
+model NumberingScheme {
+  id          Int      @id @default(autoincrement())
+  shopId      Int      @map("shop_id")
+  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  series      String
+  prefix      String   @default("")
+  suffix      String   @default("")
+  separator   String   @default("/")
+  padding     Int      @default(5)
+  resetYearly Boolean  @default(true) @map("reset_yearly")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([shopId, series])
+  @@map("numbering_schemes")
+}
+
 /// Customer-authored review of a marketplace product. Gated server-side
 /// to users who have at least one CONFIRMED InvoiceItem for the product
 /// — see reviews.service.canReview. One row per (productId, userId)
@@ -2061,6 +2089,13 @@ model Shop {
   /// products created before the flip stay single-variant until edited.
   variantsEnabled Boolean @default(true) @map("variants_enabled")
 
+  /// Which of the ~7 preset PDF look-and-feels (`TEMPLATE_PRESETS` in
+  /// `shared/pdf/presets.ts`) this shop's invoices/quotations/challans
+  /// render with. Plain string, not an enum — adding/retiring a preset
+  /// later needs no migration. A retired/unknown id falls back to
+  /// "classic" at render time rather than ever failing a real download.
+  pdfTemplateId String @default("classic") @map("pdf_template_id")
+
   /// Trust signals surfaced on the customer-side shop profile. Each
   /// is independently optional so a half-filled shop still renders.
   ///
@@ -2112,6 +2147,7 @@ model Shop {
   customFieldSections    CustomFieldSection[]
   customFieldDefinitions CustomFieldDefinition[]
   counters               Counter[]
+  numberingSchemes       NumberingScheme[]
   returnRequests         ReturnRequest[]
   coupons                Coupon[]
   quotations             Quotation[]

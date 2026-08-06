@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/router/app_shell.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
+import 'package:shopxy/features/invoice_numbering/presentation/pages/invoice_numbering_page.dart';
+import 'package:shopxy/features/pdf_templates/presentation/pages/pdf_templates_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/edit_profile_page.dart'
     show ProfileField;
 import 'package:shopxy/features/profile/presentation/widgets/gst_effective_date_sheet.dart';
@@ -32,9 +34,9 @@ class InvoiceSettingsPage extends StatefulWidget {
   /// [ProfileField.shopPan] and [ProfileField.upiVpa] apply here.
   final ProfileField? focusField;
 
-  /// Scrolls straight to the GST-effective-date row instead — used by the
-  /// dashboard startup nudge's "Skip for now", which has no text field to
-  /// focus but still wants the merchant looking at exactly this control.
+  /// Scrolls straight to the GST-effective-date row and opens its date
+  /// picker — used when the dashboard startup nudge's "Declare the date"
+  /// hands the merchant off here instead of picking inline itself.
   final bool focusGstEffectiveDate;
 
   @override
@@ -96,8 +98,10 @@ class _InvoiceSettingsPageState extends State<InvoiceSettingsPage> {
         if (mounted) _focusNodes[target]!.requestFocus();
       });
     } else if (widget.focusGstEffectiveDate) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _scrollToGstEffectiveDate();
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        _scrollToGstEffectiveDate();
+        await _pickGstEffectiveFrom();
       });
     }
   }
@@ -300,6 +304,138 @@ class _InvoiceSettingsPageState extends State<InvoiceSettingsPage> {
               l10n.profileInvoiceSettingsHint,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: AppColors.muted,
+              ),
+            ),
+            const SizedBox(height: AppSizes.lg),
+            Material(
+              color: AppColors.surface,
+              shape: AppShapes.squircle(
+                AppSizes.radiusMd,
+                side: BorderSide(color: AppColors.hairline),
+              ),
+              child: InkWell(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const InvoiceNumberingPage()),
+                ),
+                customBorder: AppShapes.squircle(AppSizes.radiusMd),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSizes.md,
+                    vertical: AppSizes.md,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: ShapeDecoration(
+                          color: AppColors.brandSoft,
+                          shape: AppShapes.squircle(10),
+                        ),
+                        alignment: Alignment.center,
+                        child: AppIcon(
+                          AppIcons.tuneRounded,
+                          size: 22,
+                          color: AppColors.brandStrong,
+                        ),
+                      ),
+                      const SizedBox(width: AppSizes.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n.numberingEntryTitle,
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                color: AppColors.black,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: AppSizes.xxs),
+                            Text(
+                              l10n.numberingEntrySubtitle,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: AppColors.muted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      AppIcon(
+                        AppIcons.chevronRightRounded,
+                        size: 20,
+                        color: AppColors.subtle,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSizes.md),
+            Material(
+              color: AppColors.surface,
+              shape: AppShapes.squircle(
+                AppSizes.radiusMd,
+                side: BorderSide(color: AppColors.hairline),
+              ),
+              child: InkWell(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const PdfTemplatesPage()),
+                ),
+                customBorder: AppShapes.squircle(AppSizes.radiusMd),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSizes.md,
+                    vertical: AppSizes.md,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: ShapeDecoration(
+                          color: AppColors.brandSoft,
+                          shape: AppShapes.squircle(10),
+                        ),
+                        alignment: Alignment.center,
+                        child: AppIcon(
+                          AppIcons.gridViewRounded,
+                          size: 22,
+                          color: AppColors.brandStrong,
+                        ),
+                      ),
+                      const SizedBox(width: AppSizes.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n.pdfTemplatesEntryTitle,
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                color: AppColors.black,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: AppSizes.xxs),
+                            Text(
+                              l10n.pdfTemplatesEntrySubtitle,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: AppColors.muted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      AppIcon(
+                        AppIcons.chevronRightRounded,
+                        size: 20,
+                        color: AppColors.subtle,
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: AppSizes.xl),

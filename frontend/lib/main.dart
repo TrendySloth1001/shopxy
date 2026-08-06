@@ -29,6 +29,10 @@ import 'package:shopxy/features/dashboard/data/datasources/dashboard_remote_data
 import 'package:shopxy/features/dashboard/presentation/providers/dashboard_provider.dart';
 import 'package:shopxy/features/invoices/data/datasources/invoices_remote_data_source.dart';
 import 'package:shopxy/features/invoices/presentation/providers/invoices_provider.dart';
+import 'package:shopxy/features/invoice_numbering/data/datasources/invoice_numbering_remote_data_source.dart';
+import 'package:shopxy/features/invoice_numbering/presentation/providers/invoice_numbering_provider.dart';
+import 'package:shopxy/features/pdf_templates/data/datasources/pdf_templates_remote_data_source.dart';
+import 'package:shopxy/features/pdf_templates/presentation/providers/pdf_templates_provider.dart';
 import 'package:shopxy/features/notifications/data/datasources/notifications_remote_data_source.dart';
 import 'package:shopxy/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:shopxy/features/orders/data/datasources/orders_remote_data_source.dart';
@@ -159,6 +163,8 @@ void main() async {
   final stockDs = StockRemoteDataSource(apiClient);
   final dashboardDs = DashboardRemoteDataSource(apiClient);
   final invoicesDs = InvoicesRemoteDataSource(apiClient);
+  final invoiceNumberingDs = InvoiceNumberingRemoteDataSource(apiClient);
+  final pdfTemplatesDs = PdfTemplatesRemoteDataSource(apiClient);
   final vendorsDs = VendorsRemoteDataSource(apiClient);
   final partiesDs = PartiesRemoteDataSource(apiClient);
   final challansDs = ChallansRemoteDataSource(apiClient);
@@ -200,6 +206,8 @@ void main() async {
   // first; refreshed by the cache listener below when products change.
   final productCatalogue = ProductCatalogue(productsDs);
   final invoicesProvider = InvoicesProvider(invoicesDs);
+  final invoiceNumberingProvider = InvoiceNumberingProvider(invoiceNumberingDs);
+  final pdfTemplatesProvider = PdfTemplatesProvider(pdfTemplatesDs);
   final vendorsProvider = VendorsProvider(vendorsDs);
   final partiesProvider = PartiesProvider(partiesDs);
   final challansProvider = ChallansProvider(challansDs);
@@ -227,6 +235,8 @@ void main() async {
   authProvider.registerOnClear(productsProvider.reset);
   authProvider.registerOnClear(productCatalogue.reset);
   authProvider.registerOnClear(invoicesProvider.reset);
+  authProvider.registerOnClear(invoiceNumberingProvider.reset);
+  authProvider.registerOnClear(pdfTemplatesProvider.reset);
   authProvider.registerOnClear(vendorsProvider.reset);
   authProvider.registerOnClear(partiesProvider.reset);
   authProvider.registerOnClear(challansProvider.reset);
@@ -339,6 +349,10 @@ void main() async {
         Provider<ProductsRemoteDataSource>.value(value: productsDs),
         Provider<StockRemoteDataSource>.value(value: stockDs),
         Provider<InvoicesRemoteDataSource>.value(value: invoicesDs),
+        Provider<InvoiceNumberingRemoteDataSource>.value(
+          value: invoiceNumberingDs,
+        ),
+        Provider<PdfTemplatesRemoteDataSource>.value(value: pdfTemplatesDs),
         Provider<VendorsRemoteDataSource>.value(value: vendorsDs),
         Provider<PartiesRemoteDataSource>.value(value: partiesDs),
         Provider<PaymentsRemoteDataSource>.value(value: paymentsDs),
@@ -366,6 +380,12 @@ void main() async {
         ChangeNotifierProvider<ProductCatalogue>.value(value: productCatalogue),
         ChangeNotifierProvider<StockProvider>.value(value: stockProvider),
         ChangeNotifierProvider<InvoicesProvider>.value(value: invoicesProvider),
+        ChangeNotifierProvider<InvoiceNumberingProvider>.value(
+          value: invoiceNumberingProvider,
+        ),
+        ChangeNotifierProvider<PdfTemplatesProvider>.value(
+          value: pdfTemplatesProvider,
+        ),
         ChangeNotifierProvider<VendorsProvider>.value(value: vendorsProvider),
         ChangeNotifierProvider<PartiesProvider>.value(value: partiesProvider),
         ChangeNotifierProvider(create: (_) => PaymentsProvider(paymentsDs)),

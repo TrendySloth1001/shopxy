@@ -75,6 +75,7 @@ export const shopSchema = z
       .transform((m) => (m === "WALLET" ? "ORIGINAL" : m)),
     returnPolicyNote: z.string().max(2048).nullish(),
     cancellationPolicy: z.enum(CANCELLATION_POLICIES).default("UNTIL_SHIPPED"),
+    pdfTemplateId: z.string().default("classic"),
     operatingHours: hours.nullish(),
     createdAt: z.string().nullish(),
     updatedAt: z.string().nullish(),

@@ -23,7 +23,6 @@ import 'package:shopxy/features/notifications/presentation/providers/notificatio
 import 'package:shopxy/features/notifications/presentation/widgets/notification_bell.dart';
 import 'package:shopxy/features/orders/presentation/providers/orders_provider.dart';
 import 'package:shopxy/features/profile/presentation/widgets/gst_effective_date_sheet.dart';
-import 'package:intl/intl.dart';
 import 'package:shopxy/features/shop/presentation/providers/linked_account_provider.dart';
 import 'package:shopxy/features/shop/presentation/widgets/payout_setup_sheet.dart';
 import 'package:shopxy/l10n/app_localizations.dart';
@@ -52,6 +51,10 @@ class _DashboardPageState extends State<DashboardPage> {
   /// Guards the one-time startup-nudge sequence so a rebuild can't stack
   /// sheets or re-run the chain mid-way.
   bool _startupNudgesScheduled = false;
+  /// Whether this merchant can see payouts at all — if not, [LinkedAccountProvider]
+  /// never loads and its `loaded` flag never flips, so the nudge gate below
+  /// must not wait on it forever.
+  bool _canViewPayouts = false;
   final _scrollCtrl = ScrollController();
   late final ScrollBoundaryHaptics _scrollHaptics;
 
@@ -59,6 +62,13 @@ class _DashboardPageState extends State<DashboardPage> {
   void initState() {
     super.initState();
     _scrollHaptics = ScrollBoundaryHaptics(_scrollCtrl);
+    // Read synchronously (no provider mutation, safe pre-frame) so the
+    // nudge gate in build() has the right answer from the very first frame
+    // — deferring this into the postFrameCallback below left a one-frame
+    // window where it read as false even for merchants who CAN view
+    // payouts, letting the GST nudge jump the queue.
+    _canViewPayouts =
+        context.read<AuthProvider>().user?.canView('payouts') ?? false;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final user = context.read<AuthProvider>().user;
@@ -69,7 +79,7 @@ class _DashboardPageState extends State<DashboardPage> {
       if (user?.canView('orders') ?? false) {
         context.read<OrdersProvider>().refreshPendingCount();
       }
-      if (user?.canView('payouts') ?? false) {
+      if (_canViewPayouts) {
         context.read<LinkedAccountProvider>().load();
       }
     });
@@ -85,8 +95,16 @@ class _DashboardPageState extends State<DashboardPage> {
   /// Runs the startup nudge sheets ONE AT A TIME, never stacked — payout
   /// setup first (if due), then the GST-effective-date declaration (if
   /// due), only after the payout sheet has fully resolved either way.
+  ///
+  /// Waits for [LinkedAccountProvider.load] to settle before deciding
+  /// anything (unless this merchant can't view payouts at all, in which
+  /// case it never will). Deciding early off the GST condition alone used
+  /// to latch [_startupNudgesScheduled] permanently while the payout status
+  /// was still mid-flight — the payout sheet then never got its turn for
+  /// the rest of the session.
   void _maybeRunStartupNudges(LinkedAccountProvider payouts, AuthProvider auth) {
     if (_startupNudgesScheduled) return;
+    if (_canViewPayouts && !payouts.loaded) return;
     if (!payouts.shouldPrompt && !auth.shouldPromptGstEffectiveDate) return;
     _startupNudgesScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -96,23 +114,10 @@ class _DashboardPageState extends State<DashboardPage> {
         if (mounted) payouts.dismissPrompt();
       }
       if (!mounted || !auth.shouldPromptGstEffectiveDate) return;
-      final declared = await showGstEffectiveDateSheet(context);
+      final declared = await showGstEffectiveDateNudgeSheet(context);
       if (!mounted) return;
-      if (declared != null) {
-        try {
-          await auth.updateProfile(
-            gstEffectiveFrom: DateFormat('yyyy-MM-dd').format(declared),
-          );
-        } catch (_) {
-          // Best-effort — the merchant can still set it from Edit profile;
-          // don't block the dashboard on a transient save failure here.
-        }
-        if (mounted) auth.dismissGstEffectiveDatePrompt();
-        return;
-      }
-      // Skipped — take them straight to the exact setting instead of just
-      // dropping the nudge, so declaring the date is still one tap away.
       auth.dismissGstEffectiveDatePrompt();
+      if (!declared) return; // "Skip for now" — just dismiss, nothing else.
       await Navigator.push(
         context,
         MaterialPageRoute(

@@ -39,6 +39,7 @@ export type ShopUpdate = {
   returnPolicyNote?: string | null;
   cancellationPolicy?: CancellationPolicy;
   operatingHours?: Record<string, [string, string]> | null;
+  pdfTemplateId?: string;
 };
 
 export function getShop(): Promise<Shop> {

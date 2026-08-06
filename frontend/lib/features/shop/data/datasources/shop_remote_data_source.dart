@@ -51,6 +51,7 @@ class ShopRemoteDataSource {
     Object? returnPolicyNote = _absent,
     Object? cancellationPolicy = _absent,
     Object? operatingHours = _absent,
+    Object? pdfTemplateId = _absent,
   }) async {
     final body = <String, dynamic>{};
     if (name != null) body['name'] = name;
@@ -95,6 +96,9 @@ class ShopRemoteDataSource {
     }
     if (!identical(operatingHours, _absent)) {
       body['operatingHours'] = operatingHours;
+    }
+    if (!identical(pdfTemplateId, _absent)) {
+      body['pdfTemplateId'] = pdfTemplateId;
     }
     final res = await _client.put('/me/shop', body: body);
     if (res.statusCode != 200) {

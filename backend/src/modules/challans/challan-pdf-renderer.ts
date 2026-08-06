@@ -8,6 +8,7 @@ import {
   isValidStateCode,
 } from '../../shared/validation/indian.js';
 import { isOutputGstRegistered } from '../invoices/gst-registration-gate.js';
+import { loadPdfEngine } from '../../shared/pdfEngineLoader.js';
 
 /// The Rule 55 tax figures for one challan line. CGST + SGST + IGST + cess is
 /// the tax portion of `total`; `taxable` is the value of the goods.
@@ -77,7 +78,23 @@ export function computeChallanLineTax(input: {
 /// (exclusive) convention `convertToInvoice` uses, so the challan and the tax
 /// invoice eventually raised from it reconcile. Interstate is derived from the
 /// consignor's state vs the consignee's (the place of supply).
+///
+/// Dispatches to the react-pdf engine by default; set `PDF_ENGINE=pdfkit` to
+/// roll back to the original layout below.
 export async function renderChallanPdf(
+  shopId: number,
+  id: number,
+  out: Writable | null,
+  onReady?: () => void,
+): Promise<Buffer | null | { error: string }> {
+  if (process.env.PDF_ENGINE === 'pdfkit') {
+    return renderChallanPdfPdfKit(shopId, id, out, onReady);
+  }
+  return renderChallanPdfReactPdf(shopId, id, out, onReady);
+}
+
+/// The original hand-drawn PDFKit layout — kept verbatim as the rollback path.
+async function renderChallanPdfPdfKit(
   shopId: number,
   id: number,
   out: Writable | null,
@@ -492,4 +509,200 @@ function formatDDMMYYYY(d: Date | string): string {
   const mm = String(dt.getMonth() + 1).padStart(2, '0');
   const yy = dt.getFullYear();
   return `${dd}/${mm}/${yy}`;
+}
+
+/// Converts PDFKit-style absolute point widths into percentages summing to
+/// 100 — see the identical helper in `invoice-pdf-renderer.ts`.
+function pct(points: number[]): number[] {
+  const total = points.reduce((a, b) => a + b, 0);
+  return points.map((p) => (p / total) * 100);
+}
+
+async function renderChallanPdfReactPdf(
+  shopId: number,
+  id: number,
+  out: Writable | null,
+  onReady?: () => void,
+): Promise<Buffer | null | { error: string }> {
+  const challan = await prisma.challan.findFirst({
+    where: { id, shopId },
+    include: {
+      items: { orderBy: { id: 'asc' } },
+      party: {
+        select: {
+          name: true,
+          address: true,
+          city: true,
+          state: true,
+          stateCode: true,
+          pinCode: true,
+          gstin: true,
+          panNumber: true,
+        },
+      },
+    },
+  });
+  if (!challan) return { error: 'Challan not found' };
+
+  const shopRow = await prisma.shop.findUnique({
+    where: { id: shopId },
+    select: {
+      pdfTemplateId: true,
+      owner: {
+        select: {
+          shopName: true,
+          shopAddress: true,
+          shopCity: true,
+          shopState: true,
+          shopStateCode: true,
+          shopPinCode: true,
+          shopGstin: true,
+          shopPan: true,
+          registrationType: true,
+          gstEffectiveFrom: true,
+          name: true,
+        },
+      },
+    },
+  });
+  const owner = shopRow?.owner ?? null;
+
+  const productIds = [...new Set(challan.items.map((i) => i.productId))];
+  const products = productIds.length
+    ? await prisma.product.findMany({
+        where: { id: { in: productIds }, shopId },
+        select: { id: true, hsnCode: true, sellingPrice: true, taxPercent: true, cessRate: true },
+      })
+    : [];
+  const productMap = new Map(products.map((p) => [p.id, p]));
+
+  const shopStateCode = owner?.shopStateCode ?? (owner?.shopGstin ? owner.shopGstin.slice(0, 2) : null);
+  let partyStateCode = challan.party?.stateCode ?? null;
+  if (!partyStateCode && challan.party?.gstin) {
+    const prefix = challan.party.gstin.slice(0, 2);
+    if (isValidStateCode(prefix)) partyStateCode = prefix;
+  }
+  const isInter = isInterstateSupply(shopStateCode, partyStateCode);
+  const chargesGst = owner ? isOutputGstRegistered(owner, challan.createdAt) : false;
+
+  const D = Prisma.Decimal;
+  const round2 = (v: Prisma.Decimal) => v.toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);
+  const numFmt = (n: Prisma.Decimal): string => n.toFixed(2);
+  const money = (n: Prisma.Decimal): string => `Rs. ${n.toFixed(2)}`;
+
+  type Row = {
+    name: string;
+    sku: string;
+    hsn: string;
+    qty: Prisma.Decimal;
+    unit: string;
+    rate: Prisma.Decimal;
+  } & ChallanLineTax;
+  const rows: Row[] = challan.items.map((it) => {
+    const p = productMap.get(it.productId);
+    const tax = computeChallanLineTax({
+      quantity: it.quantity,
+      sellingPrice: p?.sellingPrice,
+      taxPercent: p?.taxPercent,
+      cessRate: p?.cessRate,
+      isInterstate: isInter,
+      chargesGst,
+    });
+    return {
+      name: it.productName,
+      sku: it.productSku,
+      hsn: p?.hsnCode ?? '-',
+      qty: new D(it.quantity.toString()),
+      unit: it.unit,
+      rate: p?.sellingPrice != null ? new D(p.sellingPrice.toString()) : new D(0),
+      ...tax,
+    };
+  });
+
+  const sum = (pick: (r: Row) => Prisma.Decimal) => rows.reduce((s, r) => s.add(pick(r)), new D(0));
+  const totTaxable = round2(sum((r) => r.taxable));
+  const totIgst = round2(sum((r) => r.igst));
+  const totCgst = round2(sum((r) => r.cgst));
+  const totSgst = round2(sum((r) => r.sgst));
+  const totCess = round2(sum((r) => r.cess));
+  const grandTotal = round2(sum((r) => r.total));
+
+  const taxCols = isInter ? ['IGST'] : ['CGST', 'SGST'];
+  const itemHeaders = ['Sr', 'Item / SKU', 'HSN', 'Qty', 'Rate', 'Taxable', 'GST%', ...taxCols, 'Total'];
+  const itemWidths = isInter
+    ? pct([22, 132, 46, 44, 50, 56, 33, 66, 66])
+    : pct([22, 120, 44, 40, 46, 52, 31, 53, 53, 54]);
+  const align = (i: number): 'left' | 'right' => (i <= 2 ? 'left' : 'right');
+  const itemRows = rows.map((r, idx) => {
+    const taxValues = isInter ? [numFmt(r.igst)] : [numFmt(r.cgst), numFmt(r.sgst)];
+    const cells = [
+      String(idx + 1),
+      `${r.name}\n${r.sku}`,
+      r.hsn,
+      `${r.qty.toString()} ${r.unit}`,
+      numFmt(r.rate),
+      numFmt(r.taxable),
+      `${r.taxPct.toString()}%`,
+      ...taxValues,
+      numFmt(r.total),
+    ];
+    return { cells: cells.map((text, i) => ({ text, align: align(i) })) };
+  });
+
+  const totals: { label: string; value: string; bold?: boolean }[] = [
+    { label: 'Taxable Value', value: money(totTaxable) },
+  ];
+  if (isInter) {
+    if (totIgst.gt(0)) totals.push({ label: 'IGST', value: money(totIgst) });
+  } else {
+    if (totCgst.gt(0)) totals.push({ label: 'CGST', value: money(totCgst) });
+    if (totSgst.gt(0)) totals.push({ label: 'SGST', value: money(totSgst) });
+  }
+  if (totCess.gt(0)) totals.push({ label: 'Cess', value: money(totCess) });
+  totals.push({ label: 'Total Value of Goods', value: money(grandTotal), bold: true });
+
+  const posName = stateNameFromCode(partyStateCode);
+  const pos = partyStateCode ? `${partyStateCode}${posName ? ` - ${posName}` : ''}` : '-';
+  const shopName = owner?.shopName ?? owner?.name ?? 'Shop';
+  const party = challan.party;
+
+  const model = {
+    kind: 'challan' as const,
+    title: 'DELIVERY CHALLAN',
+    shop: {
+      name: shopName,
+      addressLine: composeAddress(owner?.shopAddress, owner?.shopCity, owner?.shopState, owner?.shopPinCode),
+      gstin: owner?.shopGstin,
+      pan: owner?.shopPan,
+    },
+    shopLabel: 'Consignor',
+    counterpartyLabel: 'Consignee',
+    counterparty: {
+      name: party?.name ?? challan.partyName ?? '-',
+      addressLine: composeAddress(party?.address, party?.city, party?.state, party?.pinCode),
+      gstin: party?.gstin,
+      pan: party?.panNumber,
+      extraLine: challan.partyPhone ?? undefined,
+    },
+    meta: [
+      { label: 'Challan No', value: challan.challanNo },
+      { label: 'Date', value: formatDDMMYYYY(challan.createdAt) },
+      { label: 'Place of Supply', value: pos },
+      { label: 'Supply Type', value: isInter ? 'Inter-State' : 'Intra-State' },
+    ],
+    items: { headers: itemHeaders.map((text, i) => ({ text, align: align(i) })), widths: itemWidths, rows: itemRows },
+    totals,
+    declaration: chargesGst
+      ? 'Delivery challan issued under Rule 55 of the CGST Rules. Not a tax invoice — goods are dispatched against this challan; the tax invoice follows on supply.'
+      : 'Delivery challan issued under Rule 55 of the CGST Rules. The consignor is not registered to collect GST, so no tax is charged on this document.',
+    signatureName: `For ${shopName}`,
+    note: challan.note ?? undefined,
+  };
+
+  const engine = await loadPdfEngine();
+  if (out) {
+    await engine.renderPdfToStream(model, shopRow?.pdfTemplateId, out, onReady);
+    return null;
+  }
+  return engine.renderPdfToBuffer(model, shopRow?.pdfTemplateId);
 }

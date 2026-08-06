@@ -54,6 +54,16 @@ const updateShopSchema = z
     cancellationPolicy: z
       .enum(['UNTIL_CONFIRMED', 'UNTIL_PACKED', 'UNTIL_SHIPPED', 'UNTIL_DELIVERED'])
       .optional(),
+    // Loosely validated (not a strict enum against `TEMPLATE_PRESETS`) —
+    // `resolveTemplateConfig` already falls back to "classic" for any id
+    // it doesn't recognize, so this is just a sane-shape check, not the
+    // source of truth for which ids are real.
+    pdfTemplateId: z
+      .string()
+      .min(1)
+      .max(40)
+      .regex(/^[a-z0-9-]+$/, 'Must be lowercase letters, numbers and dashes only')
+      .optional(),
   })
   .refine((d) => Object.keys(d).length > 0, {
     message: 'At least one field is required',

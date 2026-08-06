@@ -23,6 +23,10 @@
         "label": "Inventory",
         "blurb": "Catalogue configuration."
       },
+      "invoicing": {
+        "label": "Invoicing",
+        "blurb": "Document numbering."
+      },
       "notifications": {
         "label": "Notifications",
         "blurb": "What we email you about."
@@ -55,6 +59,10 @@
       "payoutsSub": "Bank settlement & KYC status",
       "customFields": "Custom fields",
       "customFieldsSub": "Extra product attributes and sections",
+      "invoiceNumbering": "Invoice numbering",
+      "invoiceNumberingSub": "Prefixes, suffixes and sequencing",
+      "invoiceTemplates": "Invoice templates",
+      "invoiceTemplatesSub": "Pick how your invoices, quotations and challans look",
       "appVersion": "App version",
       "privacyPolicy": "Privacy Policy",
       "privacyPolicySub": "How we handle your data",
@@ -2035,6 +2043,54 @@
       "deleteField": "Could not delete the field.",
       "saveSection": "Could not save the section.",
       "deleteSection": "Could not delete the section."
+    }
+  },
+  "numbering": {
+    "title": "Invoice numbering",
+    "subtitle": "Customize the prefix, suffix and sequencing of each document series. A series you haven't customized keeps its current format.",
+    "groups": {
+      "invoices": "Invoices",
+      "challan": "Challan",
+      "quotation": "Quotation"
+    },
+    "customized": "Customized",
+    "default": "Default",
+    "preview": "Next number",
+    "field": {
+      "prefix": "Prefix",
+      "suffix": "Suffix",
+      "separator": "Separator",
+      "separatorNone": "None",
+      "padding": "Digits",
+      "resetYearly": "Reset",
+      "resetYearlyOn": "Every financial year",
+      "resetYearlyOff": "Never — keep counting",
+      "resetYearlyHelper": "Turning this off changes the running sequence going forward — it does not renumber past documents."
+    },
+    "save": "Save",
+    "saving": "Saving…",
+    "startAt": {
+      "toggle": "Start numbering from a specific number",
+      "helper": "For migrating from another system. Sets the NEXT number only — it does not renumber past documents, and it will not stop you from picking a number you've already used elsewhere.",
+      "label": "Next number",
+      "confirm": "Set"
+    },
+    "errors": {
+      "load": "Could not load numbering settings.",
+      "save": "Could not save numbering settings.",
+      "invalid": "Check the highlighted field.",
+      "invalidStartAt": "Enter a whole number greater than 0.",
+      "retry": "Try again"
+    }
+  },
+  "pdfTemplates": {
+    "title": "Invoice templates",
+    "subtitle": "Pick one look for your invoices, quotations and challans.",
+    "preview": "Preview sample",
+    "errors": {
+      "load": "Could not load templates.",
+      "save": "Could not save your template choice.",
+      "retry": "Try again"
     }
   },
   "auth": {

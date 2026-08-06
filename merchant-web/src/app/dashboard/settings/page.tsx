@@ -9,8 +9,10 @@ import {
   FileText,
   IndianRupee,
   Info,
+  LayoutGrid,
   LogOut,
   Palette,
+  Receipt,
   ShieldAlert,
   ShieldCheck,
   SlidersHorizontal,
@@ -35,6 +37,7 @@ type SectionKey =
   | "account"
   | "shop"
   | "inventory"
+  | "invoicing"
   | "notifications"
   | "security"
   | "preferences"
@@ -47,6 +50,7 @@ const SECTIONS: { key: SectionKey; icon: LucideIcon }[] = [
   { key: "account", icon: UserPen },
   { key: "shop", icon: Store },
   { key: "inventory", icon: SlidersHorizontal },
+  { key: "invoicing", icon: Receipt },
   { key: "notifications", icon: Bell },
   { key: "security", icon: ShieldCheck },
   { key: "preferences", icon: Palette },
@@ -148,6 +152,13 @@ export default function SettingsPage() {
             {active === "inventory" ? (
               <TileGrid>
                 <SettingRow tile icon={SlidersHorizontal} title={t("rows.customFields")} subtitle={t("rows.customFieldsSub")} href="/dashboard/custom-fields" />
+              </TileGrid>
+            ) : null}
+
+            {active === "invoicing" ? (
+              <TileGrid>
+                <SettingRow tile icon={Receipt} title={t("rows.invoiceNumbering")} subtitle={t("rows.invoiceNumberingSub")} href="/dashboard/invoice-numbering" />
+                <SettingRow tile icon={LayoutGrid} title={t("rows.invoiceTemplates")} subtitle={t("rows.invoiceTemplatesSub")} href="/dashboard/invoice-templates" />
               </TileGrid>
             ) : null}
 

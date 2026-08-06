@@ -12,8 +12,8 @@ class AppConfig {
 
   static String get apiBaseUrl {
     if (_envBaseUrl.isNotEmpty) return _envBaseUrl;
-    //return 'https://qjhcp0ph-3003.inc1.devtunnels.ms/';
-    return 'https://backendshopxy.cloudnsofts.com/';
+    return 'https://qjhcp0ph-3003.inc1.devtunnels.ms/';
+    //return 'https://backendshopxy.cloudnsofts.com/';
   }
 
   /// Google sign-in client IDs. Override at build time:

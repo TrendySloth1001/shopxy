@@ -133,16 +133,20 @@ export class InvoicesService {
     if ('error' in resolved) return resolved;
 
     const { header, itemsData } = resolved;
-    const { invoiceNo, financialYear } = await nextInvoiceNo(
-      data.shopId,
-      data.type,
-      header.documentType,
-      header.invoiceDate,
-    );
 
-    // Wrapping in $transaction keeps the create atomic and gives us a
-    // boundary for future per-create side effects (e.g. auto-confirm).
+    // Number allocation runs INSIDE the same transaction as the insert —
+    // previously it ran on the bare client before this block even opened,
+    // so a failed create still burned a sequence number (a permanent gap
+    // with no document to explain it). Enrolling it here means a rollback
+    // rolls back the counter bump too.
     const invoice = await prisma.$transaction(async (tx) => {
+      const { invoiceNo, financialYear } = await nextInvoiceNo(
+        data.shopId,
+        data.type,
+        header.documentType,
+        header.invoiceDate,
+        tx,
+      );
       return tx.invoice.create({
         data: {
           ...header,

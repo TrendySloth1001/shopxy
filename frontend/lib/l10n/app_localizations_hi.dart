@@ -2504,6 +2504,124 @@ class AppLocalizationsHi extends AppLocalizations {
   String get profileSectionInvoicing => 'इनवॉइसिंग';
 
   @override
+  String get numberingEntryTitle => 'क्रमांकन';
+
+  @override
+  String get numberingEntrySubtitle => 'प्रीफ़िक्स, सफ़िक्स और क्रम';
+
+  @override
+  String get pdfTemplatesEntryTitle => 'टेम्पलेट';
+
+  @override
+  String get pdfTemplatesEntrySubtitle => 'अपने दस्तावेज़ों का रूप चुनें';
+
+  @override
+  String get pdfTemplatesTitle => 'इनवॉइस टेम्पलेट';
+
+  @override
+  String get pdfTemplatesPreview => 'पूर्वावलोकन';
+
+  @override
+  String get numberingTitle => 'इनवॉइस क्रमांकन';
+
+  @override
+  String get numberingSubtitle =>
+      'हर दस्तावेज़ श्रृंखला का प्रीफ़िक्स, सफ़िक्स और क्रम अपनी पसंद के अनुसार सेट करें। जिस श्रृंखला में आपने बदलाव नहीं किया, वह अपने मौजूदा फ़ॉर्मेट में ही रहेगी।';
+
+  @override
+  String get numberingGroupInvoices => 'इनवॉइस';
+
+  @override
+  String get numberingGroupChallan => 'चालान';
+
+  @override
+  String get numberingGroupQuotation => 'कोटेशन';
+
+  @override
+  String get numberingCustomized => 'कस्टमाइज़्ड';
+
+  @override
+  String get numberingDefault => 'डिफ़ॉल्ट';
+
+  @override
+  String get numberingSeriesSaleInvoice => 'बिक्री इनवॉइस';
+
+  @override
+  String get numberingSeriesPurchaseInvoice => 'खरीद इनवॉइस';
+
+  @override
+  String get numberingSeriesEstimate => 'अनुमान / प्रोफ़ॉर्मा';
+
+  @override
+  String get numberingSeriesCreditNote => 'क्रेडिट नोट';
+
+  @override
+  String get numberingSeriesDebitNote => 'डेबिट नोट';
+
+  @override
+  String get numberingSeriesChallan => 'चालान';
+
+  @override
+  String get numberingSeriesQuotation => 'कोटेशन';
+
+  @override
+  String get numberingFieldPrefix => 'प्रीफ़िक्स';
+
+  @override
+  String get numberingFieldSuffix => 'सफ़िक्स';
+
+  @override
+  String get numberingFieldSeparator => 'सेपरेटर';
+
+  @override
+  String get numberingFieldSeparatorNone => 'कोई नहीं';
+
+  @override
+  String get numberingFieldPadding => 'अंक';
+
+  @override
+  String get numberingFieldResetYearly => 'रीसेट';
+
+  @override
+  String get numberingResetYearlyOn => 'हर वित्तीय वर्ष';
+
+  @override
+  String get numberingResetYearlyOff => 'कभी नहीं — गिनती जारी रखें';
+
+  @override
+  String get numberingResetYearlyHelper =>
+      'इसे बंद करने से आगे की क्रम संख्या बदल जाती है — यह पुराने दस्तावेज़ों को दोबारा नंबर नहीं देता।';
+
+  @override
+  String get numberingPreviewLabel => 'अगला नंबर';
+
+  @override
+  String get numberingStartAtToggle => 'किसी खास नंबर से क्रमांकन शुरू करें';
+
+  @override
+  String get numberingStartAtHelper =>
+      'किसी दूसरे सिस्टम से माइग्रेट करने के लिए। यह सिर्फ़ अगला नंबर सेट करता है — यह पुराने दस्तावेज़ों को दोबारा नंबर नहीं देता, और अगर आपने वह नंबर कहीं और पहले से इस्तेमाल किया है तो यह आपको रोकेगा नहीं।';
+
+  @override
+  String get numberingStartAtLabel => 'अगला नंबर';
+
+  @override
+  String get numberingStartAtConfirm => 'सेट करें';
+
+  @override
+  String get numberingErrorLoad => 'क्रमांकन सेटिंग्स लोड नहीं हो सकीं।';
+
+  @override
+  String get numberingErrorSave => 'क्रमांकन सेटिंग्स सहेजी नहीं जा सकीं।';
+
+  @override
+  String get numberingErrorInvalid => 'हाइलाइट किए गए फ़ील्ड को जांचें।';
+
+  @override
+  String get numberingErrorInvalidStartAt =>
+      '0 से बड़ी एक पूर्ण संख्या दर्ज करें।';
+
+  @override
   String get profileSectionAccount => 'खाता';
 
   @override

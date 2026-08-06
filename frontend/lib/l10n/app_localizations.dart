@@ -4790,6 +4790,234 @@ abstract class AppLocalizations {
   /// **'INVOICING'**
   String get profileSectionInvoicing;
 
+  /// No description provided for @numberingEntryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Numbering'**
+  String get numberingEntryTitle;
+
+  /// No description provided for @numberingEntrySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Prefixes, suffixes and sequencing'**
+  String get numberingEntrySubtitle;
+
+  /// No description provided for @pdfTemplatesEntryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Templates'**
+  String get pdfTemplatesEntryTitle;
+
+  /// No description provided for @pdfTemplatesEntrySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick how your documents look'**
+  String get pdfTemplatesEntrySubtitle;
+
+  /// No description provided for @pdfTemplatesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice templates'**
+  String get pdfTemplatesTitle;
+
+  /// No description provided for @pdfTemplatesPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get pdfTemplatesPreview;
+
+  /// No description provided for @numberingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice numbering'**
+  String get numberingTitle;
+
+  /// No description provided for @numberingSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Customize the prefix, suffix and sequencing of each document series. A series you haven\'t customized keeps its current format.'**
+  String get numberingSubtitle;
+
+  /// No description provided for @numberingGroupInvoices.
+  ///
+  /// In en, this message translates to:
+  /// **'INVOICES'**
+  String get numberingGroupInvoices;
+
+  /// No description provided for @numberingGroupChallan.
+  ///
+  /// In en, this message translates to:
+  /// **'CHALLAN'**
+  String get numberingGroupChallan;
+
+  /// No description provided for @numberingGroupQuotation.
+  ///
+  /// In en, this message translates to:
+  /// **'QUOTATION'**
+  String get numberingGroupQuotation;
+
+  /// No description provided for @numberingCustomized.
+  ///
+  /// In en, this message translates to:
+  /// **'Customized'**
+  String get numberingCustomized;
+
+  /// No description provided for @numberingDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get numberingDefault;
+
+  /// No description provided for @numberingSeriesSaleInvoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Sale invoice'**
+  String get numberingSeriesSaleInvoice;
+
+  /// No description provided for @numberingSeriesPurchaseInvoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase invoice'**
+  String get numberingSeriesPurchaseInvoice;
+
+  /// No description provided for @numberingSeriesEstimate.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimate / Proforma'**
+  String get numberingSeriesEstimate;
+
+  /// No description provided for @numberingSeriesCreditNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Credit note'**
+  String get numberingSeriesCreditNote;
+
+  /// No description provided for @numberingSeriesDebitNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Debit note'**
+  String get numberingSeriesDebitNote;
+
+  /// No description provided for @numberingSeriesChallan.
+  ///
+  /// In en, this message translates to:
+  /// **'Challan'**
+  String get numberingSeriesChallan;
+
+  /// No description provided for @numberingSeriesQuotation.
+  ///
+  /// In en, this message translates to:
+  /// **'Quotation'**
+  String get numberingSeriesQuotation;
+
+  /// No description provided for @numberingFieldPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Prefix'**
+  String get numberingFieldPrefix;
+
+  /// No description provided for @numberingFieldSuffix.
+  ///
+  /// In en, this message translates to:
+  /// **'Suffix'**
+  String get numberingFieldSuffix;
+
+  /// No description provided for @numberingFieldSeparator.
+  ///
+  /// In en, this message translates to:
+  /// **'Separator'**
+  String get numberingFieldSeparator;
+
+  /// No description provided for @numberingFieldSeparatorNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get numberingFieldSeparatorNone;
+
+  /// No description provided for @numberingFieldPadding.
+  ///
+  /// In en, this message translates to:
+  /// **'Digits'**
+  String get numberingFieldPadding;
+
+  /// No description provided for @numberingFieldResetYearly.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get numberingFieldResetYearly;
+
+  /// No description provided for @numberingResetYearlyOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Every financial year'**
+  String get numberingResetYearlyOn;
+
+  /// No description provided for @numberingResetYearlyOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Never — keep counting'**
+  String get numberingResetYearlyOff;
+
+  /// No description provided for @numberingResetYearlyHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Turning this off changes the running sequence going forward — it does not renumber past documents.'**
+  String get numberingResetYearlyHelper;
+
+  /// No description provided for @numberingPreviewLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Next number'**
+  String get numberingPreviewLabel;
+
+  /// No description provided for @numberingStartAtToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Start numbering from a specific number'**
+  String get numberingStartAtToggle;
+
+  /// No description provided for @numberingStartAtHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'For migrating from another system. Sets the NEXT number only — it does not renumber past documents, and it will not stop you from picking a number you\'ve already used elsewhere.'**
+  String get numberingStartAtHelper;
+
+  /// No description provided for @numberingStartAtLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Next number'**
+  String get numberingStartAtLabel;
+
+  /// No description provided for @numberingStartAtConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Set'**
+  String get numberingStartAtConfirm;
+
+  /// No description provided for @numberingErrorLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load numbering settings.'**
+  String get numberingErrorLoad;
+
+  /// No description provided for @numberingErrorSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save numbering settings.'**
+  String get numberingErrorSave;
+
+  /// No description provided for @numberingErrorInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the highlighted field.'**
+  String get numberingErrorInvalid;
+
+  /// No description provided for @numberingErrorInvalidStartAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a whole number greater than 0.'**
+  String get numberingErrorInvalidStartAt;
+
   /// No description provided for @profileSectionAccount.
   ///
   /// In en, this message translates to:

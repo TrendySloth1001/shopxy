@@ -56,7 +56,7 @@ export const HSN_RATE_RULES: Record<string, HsnRateRule> = {
   // Accommodation.
   '996311': HOTEL,
 };
- 
+
 /// Code → advisory caveat, for conditions we can't decide. Deliberately short:
 /// prefer a rule whenever the condition is data we hold, because a note is a
 /// request for the merchant to do the work.

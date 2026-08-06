@@ -2505,6 +2505,124 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileSectionInvoicing => 'INVOICING';
 
   @override
+  String get numberingEntryTitle => 'Numbering';
+
+  @override
+  String get numberingEntrySubtitle => 'Prefixes, suffixes and sequencing';
+
+  @override
+  String get pdfTemplatesEntryTitle => 'Templates';
+
+  @override
+  String get pdfTemplatesEntrySubtitle => 'Pick how your documents look';
+
+  @override
+  String get pdfTemplatesTitle => 'Invoice templates';
+
+  @override
+  String get pdfTemplatesPreview => 'Preview';
+
+  @override
+  String get numberingTitle => 'Invoice numbering';
+
+  @override
+  String get numberingSubtitle =>
+      'Customize the prefix, suffix and sequencing of each document series. A series you haven\'t customized keeps its current format.';
+
+  @override
+  String get numberingGroupInvoices => 'INVOICES';
+
+  @override
+  String get numberingGroupChallan => 'CHALLAN';
+
+  @override
+  String get numberingGroupQuotation => 'QUOTATION';
+
+  @override
+  String get numberingCustomized => 'Customized';
+
+  @override
+  String get numberingDefault => 'Default';
+
+  @override
+  String get numberingSeriesSaleInvoice => 'Sale invoice';
+
+  @override
+  String get numberingSeriesPurchaseInvoice => 'Purchase invoice';
+
+  @override
+  String get numberingSeriesEstimate => 'Estimate / Proforma';
+
+  @override
+  String get numberingSeriesCreditNote => 'Credit note';
+
+  @override
+  String get numberingSeriesDebitNote => 'Debit note';
+
+  @override
+  String get numberingSeriesChallan => 'Challan';
+
+  @override
+  String get numberingSeriesQuotation => 'Quotation';
+
+  @override
+  String get numberingFieldPrefix => 'Prefix';
+
+  @override
+  String get numberingFieldSuffix => 'Suffix';
+
+  @override
+  String get numberingFieldSeparator => 'Separator';
+
+  @override
+  String get numberingFieldSeparatorNone => 'None';
+
+  @override
+  String get numberingFieldPadding => 'Digits';
+
+  @override
+  String get numberingFieldResetYearly => 'Reset';
+
+  @override
+  String get numberingResetYearlyOn => 'Every financial year';
+
+  @override
+  String get numberingResetYearlyOff => 'Never — keep counting';
+
+  @override
+  String get numberingResetYearlyHelper =>
+      'Turning this off changes the running sequence going forward — it does not renumber past documents.';
+
+  @override
+  String get numberingPreviewLabel => 'Next number';
+
+  @override
+  String get numberingStartAtToggle => 'Start numbering from a specific number';
+
+  @override
+  String get numberingStartAtHelper =>
+      'For migrating from another system. Sets the NEXT number only — it does not renumber past documents, and it will not stop you from picking a number you\'ve already used elsewhere.';
+
+  @override
+  String get numberingStartAtLabel => 'Next number';
+
+  @override
+  String get numberingStartAtConfirm => 'Set';
+
+  @override
+  String get numberingErrorLoad => 'Could not load numbering settings.';
+
+  @override
+  String get numberingErrorSave => 'Could not save numbering settings.';
+
+  @override
+  String get numberingErrorInvalid => 'Check the highlighted field.';
+
+  @override
+  String get numberingErrorInvalidStartAt =>
+      'Enter a whole number greater than 0.';
+
+  @override
   String get profileSectionAccount => 'ACCOUNT';
 
   @override
