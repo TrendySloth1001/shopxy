@@ -35,6 +35,54 @@ import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
+bool _sameDay(DateTime a, DateTime b) =>
+    a.year == b.year && a.month == b.month && a.day == b.day;
+
+/// A dated section break in the invoice list — a centered pill flanked by
+/// hairlines, grouping consecutive invoices issued on the same day.
+class _DateDivider extends StatelessWidget {
+  const _DateDivider(this.date);
+  final DateTime date;
+
+  static final _fmt = DateFormat('EEEE, MMMM d');
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
+      child: Row(
+        children: [
+          const Expanded(child: AppDivider.flush()),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm),
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSizes.md,
+                vertical: AppSizes.xs,
+              ),
+              decoration: ShapeDecoration(
+                color: AppColors.surface,
+                shape: AppShapes.squircle(
+                  AppSizes.radiusFull,
+                  side: BorderSide(color: AppColors.hairline),
+                ),
+              ),
+              child: Text(
+                _fmt.format(date),
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: AppColors.muted,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          const Expanded(child: AppDivider.flush()),
+        ],
+      ),
+    );
+  }
+}
+
 class InvoicesPage extends StatefulWidget {
   const InvoicesPage({super.key});
 
@@ -46,6 +94,15 @@ class _InvoicesPageState extends State<InvoicesPage> {
   final _searchCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
   late final ScrollBoundaryHaptics _scrollHaptics;
+  bool _searchOpen = false;
+
+  void _toggleSearch(InvoicesProvider provider) {
+    setState(() => _searchOpen = !_searchOpen);
+    if (!_searchOpen && _searchCtrl.text.isNotEmpty) {
+      _searchCtrl.clear();
+      provider.updateSearch('');
+    }
+  }
 
   @override
   void initState() {
@@ -126,6 +183,13 @@ class _InvoicesPageState extends State<InvoicesPage> {
         title: l10n.invoicesNavTitle,
         actions: [
           IconButton(
+            icon: AppIcon(
+              _searchOpen ? AppIcons.closeRounded : AppIcons.searchRounded,
+            ),
+            tooltip: l10n.invoicesSearchTooltip,
+            onPressed: () => _toggleSearch(provider),
+          ),
+          IconButton(
             icon: const AppIcon(AppIcons.settingsRounded),
             tooltip: l10n.profileInvoiceSettingsTitle,
             onPressed: () => Navigator.push(
@@ -174,18 +238,26 @@ class _InvoicesPageState extends State<InvoicesPage> {
         child: Column(
           children: [
             SizedBox(height: FloatingAppBar.contentTopInset(context)),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSizes.lg,
-                AppSizes.md,
-                AppSizes.lg,
-                0,
-              ),
-              child: AppSearchBar(
-                hint: l10n.invoicesSearchHint,
-                controller: _searchCtrl,
-                onChanged: provider.updateSearch,
-              ),
+            AnimatedSize(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOut,
+              alignment: Alignment.topCenter,
+              child: _searchOpen
+                  ? Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSizes.lg,
+                        AppSizes.md,
+                        AppSizes.lg,
+                        0,
+                      ),
+                      child: AppSearchBar(
+                        hint: l10n.invoicesSearchHint,
+                        controller: _searchCtrl,
+                        autofocus: true,
+                        onChanged: provider.updateSearch,
+                      ),
+                    )
+                  : const SizedBox(width: double.infinity),
             ),
             // Primary axis filter — direction of money. Document type +
             // status live in the filter sheet (tune icon in the AppBar)
@@ -273,7 +345,16 @@ class _InvoicesPageState extends State<InvoicesPage> {
                             return const _InvoicesLoadMoreFooter();
                           }
                           final invoice = provider.invoices[i];
-                          return _InvoiceTile(
+                          // Grouped by invoiceDate (when it was issued), not
+                          // createdAt — a backdated invoice belongs under the
+                          // day printed on it, not the day someone typed it in.
+                          final newDay =
+                              i == 0 ||
+                              !_sameDay(
+                                invoice.invoiceDate,
+                                provider.invoices[i - 1].invoiceDate,
+                              );
+                          final tile = _InvoiceTile(
                             invoice: invoice,
                             onTap: () => Navigator.push(
                               context,
@@ -283,6 +364,14 @@ class _InvoicesPageState extends State<InvoicesPage> {
                               ),
                             ),
                             onDownload: () => _downloadPdf(context, invoice),
+                          );
+                          if (!newDay) return tile;
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _DateDivider(invoice.invoiceDate),
+                              tile,
+                            ],
                           );
                         },
                       ),

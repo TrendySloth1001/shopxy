@@ -463,6 +463,7 @@
   "invoicesNavTitle": "चालान",
   "invoicesCreateTitle": "चालान बनाएं",
   "invoicesSearchHint": "चालान नंबर, पार्टी, वेंडर खोजें",
+  "invoicesSearchTooltip": "खोजें",
   "invoicesFiltersTooltip": "फ़िल्टर",
   "invoicesFilterAll": "सभी",
   "invoicesFilterSales": "बिक्री",

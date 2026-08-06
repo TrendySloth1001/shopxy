@@ -1432,6 +1432,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get invoicesSearchHint => 'चालान नंबर, पार्टी, वेंडर खोजें';
 
   @override
+  String get invoicesSearchTooltip => 'खोजें';
+
+  @override
   String get invoicesFiltersTooltip => 'फ़िल्टर';
 
   @override

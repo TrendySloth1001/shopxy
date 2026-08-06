@@ -1430,6 +1430,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invoicesSearchHint => 'Search invoice no, party, vendor';
 
   @override
+  String get invoicesSearchTooltip => 'Search';
+
+  @override
   String get invoicesFiltersTooltip => 'Filters';
 
   @override

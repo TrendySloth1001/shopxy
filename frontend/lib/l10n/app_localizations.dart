@@ -2750,6 +2750,12 @@ abstract class AppLocalizations {
   /// **'Search invoice no, party, vendor'**
   String get invoicesSearchHint;
 
+  /// No description provided for @invoicesSearchTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get invoicesSearchTooltip;
+
   /// No description provided for @invoicesFiltersTooltip.
   ///
   /// In en, this message translates to:

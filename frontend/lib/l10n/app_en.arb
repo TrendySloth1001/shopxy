@@ -678,6 +678,7 @@
   "invoicesNavTitle": "Invoices",
   "invoicesCreateTitle": "Create Invoice",
   "invoicesSearchHint": "Search invoice no, party, vendor",
+  "invoicesSearchTooltip": "Search",
   "invoicesFiltersTooltip": "Filters",
   "invoicesFilterAll": "All",
   "invoicesFilterSales": "Sales",
