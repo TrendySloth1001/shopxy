@@ -554,6 +554,10 @@ async function renderQuotationPdfReactPdf(
     declaration:
       'This is a quotation, not a tax invoice. Prices are an estimate and may change until confirmed. Taxes are computed on acceptance.',
     note: quotation.note ?? undefined,
+    traditionalMeta: {
+      documentNo: quotation.quotationNo,
+      documentDate: formatDDMMYYYY(quotation.createdAt),
+    },
   };
 
   const engine = await loadPdfEngine();

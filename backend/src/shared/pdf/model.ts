@@ -63,6 +63,25 @@ export interface PdfDocumentModel {
   upiQr?: { buffer: Buffer; caption: string; vpaLine?: string };
   signatureName?: string; // "For <Shop Name>" — absent = no signature block
   note?: string;
+  /// Buyer's-order / dispatch / delivery-terms metadata for the "traditional"
+  /// (bordered-ledger) preset's info box — only that preset reads this.
+  /// ShopXY doesn't capture most of these today, so they're individually
+  /// optional; the preset renders those cells blank rather than omitting
+  /// them, matching how real ledger-format invoices commonly look in
+  /// practice (see `tallyShell.tsx`).
+  traditionalMeta?: {
+    documentNo: string;
+    documentDate: string;
+    deliveryNote?: string;
+    paymentTerms?: string;
+    buyersOrderNo?: string;
+    buyersOrderDate?: string;
+    dispatchDocNo?: string;
+    dispatchNoteDate?: string;
+    dispatchedThrough?: string;
+    destination?: string;
+    termsOfDelivery?: string;
+  };
 }
 
 /// Converts PDFKit-style absolute point widths (which summed to the old

@@ -697,6 +697,10 @@ async function renderChallanPdfReactPdf(
       : 'Delivery challan issued under Rule 55 of the CGST Rules. The consignor is not registered to collect GST, so no tax is charged on this document.',
     signatureName: `For ${shopName}`,
     note: challan.note ?? undefined,
+    traditionalMeta: {
+      documentNo: challan.challanNo,
+      documentDate: formatDDMMYYYY(challan.createdAt),
+    },
   };
 
   const engine = await loadPdfEngine();

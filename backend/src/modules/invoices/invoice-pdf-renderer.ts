@@ -910,6 +910,10 @@ async function renderInvoicePdfReactPdf(
       : undefined,
     signatureName: `For ${shopName}`,
     note: invoice.note ?? undefined,
+    traditionalMeta: {
+      documentNo: invoice.invoiceNo,
+      documentDate: formatDDMMYYYY(invoice.invoiceDate),
+    },
   };
 
   const engine = await loadPdfEngine();

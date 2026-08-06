@@ -104,6 +104,14 @@ export function sampleInvoiceModel(): PdfDocumentModel {
     upiQr: undefined, // sample endpoint skips a live QR — no real VPA to encode
     signatureName: 'For Aanya Fashion House',
     note: 'Thank you for your business!',
+    traditionalMeta: {
+      documentNo: 'INV/25-26/00042',
+      documentDate: '05/08/2026',
+      paymentTerms: 'Cheque',
+      buyersOrderNo: '00789',
+      buyersOrderDate: '04/08/2026',
+      termsOfDelivery: '45 days credit from invoice date',
+    },
   };
 }
 
@@ -158,6 +166,11 @@ export function sampleQuotationModel(): PdfDocumentModel {
     declaration:
       'This is a quotation, not a tax invoice. Prices are an estimate and may change until confirmed. Taxes are computed on acceptance.',
     note: 'Valid for 7 days from the date above.',
+    traditionalMeta: {
+      documentNo: 'QUO/25-26/00017',
+      documentDate: '05/08/2026',
+      termsOfDelivery: 'Valid for 7 days from the date above',
+    },
   };
 }
 
@@ -193,6 +206,12 @@ export function sampleChallanModel(): PdfDocumentModel {
     declaration: 'Goods dispatched for delivery — not a tax invoice, no payment is due against this document.',
     signatureName: 'For Aanya Fashion House',
     note: 'Please verify item count on receipt.',
+    traditionalMeta: {
+      documentNo: 'CH/25-26/00009',
+      documentDate: '05/08/2026',
+      buyersOrderNo: '00789',
+      buyersOrderDate: '04/08/2026',
+    },
   };
 }
 

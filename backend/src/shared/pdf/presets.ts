@@ -1,7 +1,10 @@
-/// The single source of truth for the 7 selectable PDF look-and-feels. Each
+/// The single source of truth for the 8 selectable PDF look-and-feels. Each
 /// preset is a `{shellId, palette, fonts, borderStyle, density}` config fed
 /// into the shared blocks (`./blocks.tsx`) — NOT a bespoke hand-built design
-/// per preset. Only the standard 14 PDF base fonts are used (Helvetica/
+/// per preset. The exception is `traditional` (shellId `'C'`): a fully
+/// bordered ledger grid different enough from the other two shells that it
+/// has its own render path (`tallyShell.tsx`) instead of reusing the shared
+/// blocks. Only the standard 14 PDF base fonts are used (Helvetica/
 /// Times/Courier families) so no font files need to be bundled/registered.
 export interface TemplatePalette {
   text: string;
@@ -26,7 +29,7 @@ export interface TemplateConfig {
   name: string;
   description: string;
   order: number;
-  shellId: 'A' | 'B';
+  shellId: 'A' | 'B' | 'C';
   palette: TemplatePalette;
   fonts: TemplateFonts;
   borderStyle: 'hairline' | 'none' | 'bold';
@@ -150,6 +153,18 @@ export const TEMPLATE_PRESETS: TemplateConfig[] = [
     borderStyle: 'hairline',
     density: 'normal',
     rowAltStripe: true,
+  },
+  {
+    id: 'traditional',
+    name: 'Traditional',
+    description: 'The classic all-boxes ledger format, with delivery & dispatch details.',
+    order: 7,
+    shellId: 'C',
+    palette: NEUTRAL_PALETTE,
+    fonts: HELVETICA,
+    borderStyle: 'bold',
+    density: 'normal',
+    rowAltStripe: false,
   },
 ];
 

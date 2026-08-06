@@ -15,9 +15,9 @@ import {
   TotalsBlock,
 } from './blocks.js';
 
-const PAGE_PADDING = { top: 40, bottom: 56, left: 40, right: 40 };
+export const PAGE_PADDING = { top: 40, bottom: 56, left: 40, right: 40 };
 // Usable A4 content height (841.89pt) minus the reserved top/bottom padding.
-const CONTENT_HEIGHT = 841.89 - PAGE_PADDING.top - PAGE_PADDING.bottom;
+export const CONTENT_HEIGHT = 841.89 - PAGE_PADDING.top - PAGE_PADDING.bottom;
 const TABLE_HEADER_HEIGHT = 22;
 // Generous per-row estimates (item cells can wrap to two lines) — an
 // underestimate of capacity only ever costs an occasional un-headered
@@ -25,8 +25,10 @@ const TABLE_HEADER_HEIGHT = 22;
 // overflow onto a fresh page regardless of our chunk boundaries.
 const ROW_HEIGHT = { normal: 32, compact: 24 };
 // Reserved space for the title/badge/parties/meta block that only appears
-// once, above the table, on the first page.
-const HEADER_AREA = { A: 230, B: 250 };
+// once, above the table, on the first page. ShellC (the "traditional"
+// preset) never reaches this — it has its own render path in
+// `tallyShell.tsx` — the entry exists only to satisfy the shellId union.
+const HEADER_AREA = { A: 230, B: 250, C: 0 };
 
 function headerAreaHeight(model: PdfDocumentModel, config: TemplateConfig): number {
   let h = HEADER_AREA[config.shellId];
