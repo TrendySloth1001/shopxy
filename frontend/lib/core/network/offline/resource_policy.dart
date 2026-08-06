@@ -17,7 +17,9 @@ class ResourcePolicy {
   /// Reads that must always hit the network and are never cached / offline-
   /// served: the live device-session list, token refresh, live counts, and the
   /// barcode lookup (which must reflect current stock). Binary/PDF downloads
-  /// bypass `ApiClient` entirely, so they never reach the cache regardless.
+  /// go through `ApiClient` like any other GET, but `ApiClient` itself
+  /// refuses to cache a non-JSON response body (see `_isJsonResponse` there),
+  /// so they never reach the cache regardless of what's listed here.
   ///
   /// NOTE: `/auth/me` is deliberately NOT here — it's cached so the app can
   /// cold-boot into the shell offline (restoring the last-known profile). A

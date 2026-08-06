@@ -61,7 +61,11 @@ void main() {
     final client = build(MockClient((req) async {
       if (fail) throw const SocketException('offline');
       getCalls++;
-      return http.Response('{"v":1}', 200);
+      return http.Response(
+        '{"v":1}',
+        200,
+        headers: const {'content-type': 'application/json'},
+      );
     }));
 
     final first = await client.get('/products');
@@ -96,7 +100,11 @@ void main() {
     final client = build(MockClient((req) async {
       if (req.method == 'GET') {
         getCalls++;
-        return http.Response('{"v":$getCalls}', 200);
+        return http.Response(
+          '{"v":$getCalls}',
+          200,
+          headers: const {'content-type': 'application/json'},
+        );
       }
       return http.Response('{}', 200); // PATCH ok
     }));

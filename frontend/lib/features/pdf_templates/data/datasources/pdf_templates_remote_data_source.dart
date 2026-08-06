@@ -32,12 +32,4 @@ class PdfTemplatesRemoteDataSource {
         .map((e) => PdfTemplate.fromJson(e as Map<String, dynamic>))
         .toList();
   }
-
-  /// Raw PDF bytes for a canned sample document in [templateId] — used by
-  /// the "Preview" action so a merchant can see a template before picking
-  /// it, without needing an in-app PDF viewer (handed off to the OS the
-  /// same way a real invoice download is).
-  Future<http.Response> sample(String templateId, {String kind = 'invoice'}) {
-    return _client.get('/pdf-templates/$templateId/sample?kind=$kind');
-  }
 }

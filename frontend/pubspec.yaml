@@ -115,6 +115,7 @@ flutter:
   assets:
     - assets/
     - assets/template_thumbnails/
+    - assets/template_samples/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

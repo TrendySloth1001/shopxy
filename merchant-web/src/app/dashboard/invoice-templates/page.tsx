@@ -99,7 +99,7 @@ export default function InvoiceTemplatesPage() {
                     disabled={!canEdit || isSaving}
                     className="block w-full text-left disabled:cursor-default"
                   >
-                    <div className="relative bg-surface-tint">
+                    <div className="relative bg-white">
                       <Image
                         src={`/template-thumbnails/${tpl.id}.png`}
                         alt={tpl.name}

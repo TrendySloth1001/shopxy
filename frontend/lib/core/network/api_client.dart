@@ -15,6 +15,18 @@ import 'package:shopxy/core/network/offline/resource_policy.dart';
 /// we expect (PDF generation), while still bounded.
 const Duration _kDefaultTimeout = Duration(seconds: 20);
 
+/// The disk cache stores `response.body` (a String) and replays cache hits
+/// as `http.Response(cached.body, ..., headers: {'content-type':
+/// 'application/json'})`. `package:http` picks the decode/encode charset from
+/// the Content-Type header — utf8 for `application/json`, latin1 for
+/// anything else (including `application/pdf`) — so caching a binary
+/// response and replaying it with a hardcoded JSON content-type would
+/// re-encode it with the wrong charset and corrupt every byte ≥ 0x80 on the
+/// next cache hit. Guard every cache write with this so only genuine JSON
+/// bodies are ever stored, regardless of what `ResourcePolicy` allows.
+bool _isJsonResponse(http.Response response) =>
+    (response.headers['content-type'] ?? '').contains('application/json');
+
 class ApiClient {
   ApiClient(
     this._tokenManager, {
@@ -196,7 +208,10 @@ class ApiClient {
     try {
       final response = await _withRetry(() => _rawSend('GET', uri));
       networkStatus?.markOnline();
-      if (cacheable && key != null && response.statusCode == 200) {
+      if (cacheable &&
+          key != null &&
+          response.statusCode == 200 &&
+          _isJsonResponse(response)) {
         unawaited(
           cache!.write(
             key: key,
@@ -226,7 +241,9 @@ class ApiClient {
     try {
       final live = await _withRetry(() => _rawSend('GET', uri));
       networkStatus?.markOnline();
-      if (live.statusCode == 200 && live.body != previousBody) {
+      if (live.statusCode == 200 &&
+          live.body != previousBody &&
+          _isJsonResponse(live)) {
         await cache!.write(
           key: key,
           userId: userId,

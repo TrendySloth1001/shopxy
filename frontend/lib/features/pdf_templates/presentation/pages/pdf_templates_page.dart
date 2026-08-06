@@ -1,11 +1,11 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
-import 'package:shopxy/features/pdf_templates/data/datasources/pdf_templates_remote_data_source.dart';
 import 'package:shopxy/features/pdf_templates/domain/entities/pdf_template.dart';
 import 'package:shopxy/features/pdf_templates/presentation/providers/pdf_templates_provider.dart';
 import 'package:shopxy/features/shop/presentation/providers/shop_provider.dart';
@@ -53,17 +53,22 @@ class _PdfTemplatesPageState extends State<PdfTemplatesPage> {
     }
   }
 
+  // Bundled rather than fetched from `/pdf-templates/:id/sample` — a static
+  // sample per preset rendered once at build time (see
+  // `assets/template_samples/`). Avoids a network round trip for what's
+  // always the same canned document, and sidesteps needing the backend up
+  // just to browse templates.
   Future<void> _preview(PdfTemplate tpl) async {
     setState(() => _previewingId = tpl.id);
     try {
-      final ds = context.read<PdfTemplatesRemoteDataSource>();
-      final response = await ds.sample(tpl.id);
-      if (response.statusCode != 200) {
-        throw Exception('Failed to generate preview');
-      }
+      final bytes = await rootBundle.load(
+        'assets/template_samples/${tpl.id}.pdf',
+      );
       final dir = await getApplicationDocumentsDirectory();
       final file = File('${dir.path}/template-${tpl.id}-sample.pdf');
-      await file.writeAsBytes(response.bodyBytes);
+      await file.writeAsBytes(
+        bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes),
+      );
       await OpenFilex.open(file.path);
     } catch (e) {
       if (mounted) {
@@ -160,10 +165,24 @@ class _TemplateCard extends StatelessWidget {
               children: [
                 AspectRatio(
                   aspectRatio: 480 / 284,
-                  child: Image.asset(
-                    'assets/template_thumbnails/${template.id}.png',
-                    fit: BoxFit.cover,
-                    alignment: Alignment.topCenter,
+                  // Thumbnails are page previews (white paper, regardless of
+                  // app theme) — force a light backing so a slow/failed
+                  // decode reads as "blank page", never a black hole against
+                  // the dark theme's near-black card surface.
+                  child: ColoredBox(
+                    color: Colors.white,
+                    child: Image.asset(
+                      'assets/template_thumbnails/${template.id}.png',
+                      fit: BoxFit.cover,
+                      alignment: Alignment.topCenter,
+                      errorBuilder: (context, error, stackTrace) => Center(
+                        child: AppIcon(
+                          AppIcons.brokenImageOutlined,
+                          size: 28,
+                          color: AppColors.muted,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
                 if (selected)
