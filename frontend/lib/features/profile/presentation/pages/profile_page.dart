@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:intl/intl.dart';
@@ -324,6 +326,10 @@ class _ProfileHero extends StatelessWidget {
     final shopRole = user?.shopRole;
     final memberSince = user?.createdAt;
     final shopName = user?.shopName;
+    final avatarUrl = user?.avatarUrl;
+    final bgImage = (avatarUrl == null || avatarUrl.isEmpty)
+        ? null
+        : resolveImageUrl(avatarUrl);
 
     return Container(
       margin: const EdgeInsets.fromLTRB(
@@ -332,117 +338,165 @@ class _ProfileHero extends StatelessWidget {
         AppSizes.lg,
         0,
       ),
-      padding: const EdgeInsets.fromLTRB(
-        AppSizes.lg,
-        AppSizes.xl,
-        AppSizes.lg,
-        AppSizes.lg,
-      ),
       decoration: ShapeDecoration(
         shape: AppShapes.squircle(AppSizes.radiusLg),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.brandSoft, AppColors.heroPanel],
-        ),
         shadows: AppShadows.floating,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Slightly larger avatar with a ring to feel like a portrait.
-              Container(
-                padding: const EdgeInsets.all(AppSizes.xs),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.surface,
-                  boxShadow: AppShadows.floating,
-                ),
-                child: ProfileAvatar(
-                  name: name,
-                  imageUrl: user?.avatarUrl,
-                  size: 76,
+          // The user's own photo, blown up and blurred past recognition —
+          // just enough colour/light bleeding through to feel like an aura
+          // behind the card, never a legible picture. Scaled up so the blur
+          // doesn't sample transparent edges into the visible area.
+          if (bgImage != null)
+            Positioned.fill(
+              child: Transform.scale(
+                scale: 1.4,
+                child: ImageFiltered(
+                  imageFilter: ImageFilter.blur(
+                    sigmaX: 60,
+                    sigmaY: 60,
+                    tileMode: TileMode.decal,
+                  ),
+                  child: Image.network(
+                    bgImage,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                  ),
                 ),
               ),
-              const SizedBox(width: AppSizes.lg),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      style: theme.textTheme.titleLarge?.extraBold,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+            ),
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.brandSoft.withValues(
+                      alpha: bgImage != null ? 0.78 : 1,
                     ),
-                    if (shopName != null && shopName.trim().isNotEmpty) ...[
-                      const SizedBox(height: AppSizes.xxs),
-                      Text(
-                        shopName,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          color: AppColors.brandStrong,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                    const SizedBox(height: AppSizes.xs),
-                    Text(
-                      email,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColors.muted,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: AppSizes.sm),
-                    Wrap(
-                      spacing: AppSizes.xs,
-                      runSpacing: AppSizes.xs,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        _RoleChip(shopRole: shopRole),
-                        if (memberSince != null)
-                          _MetaChip(
-                            icon: AppIcons.calendarTodayOutlined,
-                            label:
-                                '${l10n.profileMemberSince} ${MaterialLocalizations.of(context).formatMonthYear(memberSince)}',
-                          ),
-                      ],
+                    AppColors.heroPanel.withValues(
+                      alpha: bgImage != null ? 0.88 : 1,
                     ),
                   ],
                 ),
               ),
-            ],
+            ),
           ),
-          const SizedBox(height: AppSizes.lg),
-          // Edit profile as a proper pill button — more discoverable than
-          // the old inline text link, but still subtle (outlined, not
-          // primary, so it doesn't fight the Settings gear above).
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const EditProfilePage()),
-              ),
-              icon: const AppIcon(AppIcons.editOutlined, size: AppSizes.iconSm),
-              label: Text(l10n.profileEditProfile),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.brandStrong,
-                backgroundColor: AppColors.surface,
-                side: BorderSide(color: AppColors.hairline),
-                shape: AppShapes.squircle(AppSizes.radiusFull),
-                padding: const EdgeInsets.symmetric(
-                  vertical: AppSizes.md,
-                  horizontal: AppSizes.lg,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSizes.lg,
+              AppSizes.xl,
+              AppSizes.lg,
+              AppSizes.lg,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Slightly larger avatar with a ring to feel like a portrait.
+                    Container(
+                      padding: const EdgeInsets.all(AppSizes.xs),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.surface,
+                        boxShadow: AppShadows.floating,
+                      ),
+                      child: ProfileAvatar(
+                        name: name,
+                        imageUrl: user?.avatarUrl,
+                        size: 76,
+                      ),
+                    ),
+                    const SizedBox(width: AppSizes.lg),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            name,
+                            style: theme.textTheme.titleLarge?.extraBold,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (shopName != null &&
+                              shopName.trim().isNotEmpty) ...[
+                            const SizedBox(height: AppSizes.xxs),
+                            Text(
+                              shopName,
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                color: AppColors.brandStrong,
+                                fontWeight: FontWeight.w700,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                          const SizedBox(height: AppSizes.xs),
+                          Text(
+                            email,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: AppColors.muted,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: AppSizes.sm),
+                          Wrap(
+                            spacing: AppSizes.xs,
+                            runSpacing: AppSizes.xs,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              _RoleChip(shopRole: shopRole),
+                              if (memberSince != null)
+                                _MetaChip(
+                                  icon: AppIcons.calendarTodayOutlined,
+                                  label:
+                                      '${l10n.profileMemberSince} ${MaterialLocalizations.of(context).formatMonthYear(memberSince)}',
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                textStyle: theme.textTheme.labelLarge?.bold,
-              ),
+                const SizedBox(height: AppSizes.lg),
+                // Edit profile as a proper pill button — more discoverable than
+                // the old inline text link, but still subtle (outlined, not
+                // primary, so it doesn't fight the Settings gear above).
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const EditProfilePage(),
+                      ),
+                    ),
+                    icon: const AppIcon(
+                      AppIcons.editOutlined,
+                      size: AppSizes.iconSm,
+                    ),
+                    label: Text(l10n.profileEditProfile),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.brandStrong,
+                      backgroundColor: AppColors.surface,
+                      side: BorderSide(color: AppColors.hairline),
+                      shape: AppShapes.squircle(AppSizes.radiusFull),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSizes.md,
+                        horizontal: AppSizes.lg,
+                      ),
+                      textStyle: theme.textTheme.labelLarge?.bold,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -697,7 +751,8 @@ class _ProfileCompletion extends StatelessWidget {
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => _kInvoiceSettingsFields.contains(m.target)
+                          builder: (_) =>
+                              _kInvoiceSettingsFields.contains(m.target)
                               ? InvoiceSettingsPage(focusField: m.target)
                               : EditProfilePage(focusField: m.target),
                         ),
