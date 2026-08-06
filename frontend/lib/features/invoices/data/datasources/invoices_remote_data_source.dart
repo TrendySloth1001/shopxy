@@ -43,6 +43,8 @@ class InvoicesRemoteDataSource {
     String? vendorId,
     String? productId,
     String? search,
+    DateTime? dateFrom,
+    DateTime? dateTo,
     int page = 1,
     int limit = 20,
   }) async {
@@ -53,6 +55,8 @@ class InvoicesRemoteDataSource {
     if (vendorId != null) params['vendorId'] = vendorId;
     if (productId != null) params['productId'] = productId;
     if (search != null && search.isNotEmpty) params['search'] = search;
+    if (dateFrom != null) params['dateFrom'] = dateFrom.toUtc().toIso8601String();
+    if (dateTo != null) params['dateTo'] = dateTo.toUtc().toIso8601String();
     final res = await _client.get('/invoices', queryParameters: params);
     if (res.statusCode != 200) {
       throw Exception('Failed to load invoices: ${res.statusCode}');

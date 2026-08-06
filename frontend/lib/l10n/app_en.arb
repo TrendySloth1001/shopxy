@@ -683,6 +683,7 @@
   "invoicesFilterAll": "All",
   "invoicesFilterSales": "Sales",
   "invoicesFilterPurchases": "Purchases",
+  "invoicesFilterDateRange": "Date range",
   "invoicesErrorTitle": "Something went wrong",
   "invoicesRetry": "Retry",
   "invoicesEmptyTitle": "No invoices found",

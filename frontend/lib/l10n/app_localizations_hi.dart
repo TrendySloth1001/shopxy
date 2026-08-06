@@ -1447,6 +1447,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get invoicesFilterPurchases => 'खरीद';
 
   @override
+  String get invoicesFilterDateRange => 'दिनांक सीमा';
+
+  @override
   String get invoicesErrorTitle => 'कुछ गड़बड़ हो गई';
 
   @override

@@ -2780,6 +2780,12 @@ abstract class AppLocalizations {
   /// **'Purchases'**
   String get invoicesFilterPurchases;
 
+  /// No description provided for @invoicesFilterDateRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Date range'**
+  String get invoicesFilterDateRange;
+
   /// No description provided for @invoicesErrorTitle.
   ///
   /// In en, this message translates to:

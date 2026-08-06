@@ -468,6 +468,7 @@
   "invoicesFilterAll": "सभी",
   "invoicesFilterSales": "बिक्री",
   "invoicesFilterPurchases": "खरीद",
+  "invoicesFilterDateRange": "दिनांक सीमा",
   "invoicesErrorTitle": "कुछ गड़बड़ हो गई",
   "invoicesRetry": "पुनः प्रयास करें",
   "invoicesEmptyTitle": "कोई चालान नहीं मिला",

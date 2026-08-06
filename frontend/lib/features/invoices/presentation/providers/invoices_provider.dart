@@ -19,6 +19,8 @@ class InvoicesProvider extends ChangeNotifier {
   String? _statusFilter;
   String? _documentTypeFilter;
   String _search = '';
+  DateTime? _dateFrom;
+  DateTime? _dateTo;
 
   List<Invoice> get invoices => _invoices;
   bool get isLoading => _isLoading;
@@ -28,6 +30,8 @@ class InvoicesProvider extends ChangeNotifier {
   String? get typeFilter => _typeFilter;
   String? get statusFilter => _statusFilter;
   String? get documentTypeFilter => _documentTypeFilter;
+  DateTime? get dateFrom => _dateFrom;
+  DateTime? get dateTo => _dateTo;
 
   /// Returns the provider to its post-construction state. Wired to
   /// AuthProvider.clearAuth so logout / 401-refresh failure drops the
@@ -43,6 +47,8 @@ class InvoicesProvider extends ChangeNotifier {
     _statusFilter = null;
     _documentTypeFilter = null;
     _search = '';
+    _dateFrom = null;
+    _dateTo = null;
     notifyListeners();
   }
 
@@ -60,6 +66,8 @@ class InvoicesProvider extends ChangeNotifier {
         status: _statusFilter,
         documentType: _documentTypeFilter,
         search: _search.isNotEmpty ? _search : null,
+        dateFrom: _dateFrom,
+        dateTo: _dateTo,
         page: _page,
         limit: _pageSize,
       );
@@ -86,6 +94,8 @@ class InvoicesProvider extends ChangeNotifier {
         status: _statusFilter,
         documentType: _documentTypeFilter,
         search: _search.isNotEmpty ? _search : null,
+        dateFrom: _dateFrom,
+        dateTo: _dateTo,
         page: next,
         limit: _pageSize,
       );
@@ -112,6 +122,14 @@ class InvoicesProvider extends ChangeNotifier {
 
   void setDocumentTypeFilter(String? documentType) {
     _documentTypeFilter = documentType;
+    loadInvoices(refresh: true);
+  }
+
+  /// [to] should already be end-of-day — the range is inclusive on both
+  /// ends, and invoiceDate carries a time component.
+  void setDateRange(DateTime? from, DateTime? to) {
+    _dateFrom = from;
+    _dateTo = to;
     loadInvoices(refresh: true);
   }
 

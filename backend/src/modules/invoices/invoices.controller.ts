@@ -213,6 +213,8 @@ const listQuerySchema = z.object({
   partyId: zPublicId.optional(),
   productId: zPublicId.optional(),
   search: z.string().optional(),
+  dateFrom: z.string().datetime().optional(),
+  dateTo: z.string().datetime().optional(),
 });
 
 function parseId(raw: string): number | null {
@@ -266,6 +268,8 @@ export class InvoicesController {
       partyId: query.partyId,
       productId: query.productId,
       search: query.search ?? '',
+      dateFrom: query.dateFrom,
+      dateTo: query.dateTo,
       page,
       limit,
       skip,

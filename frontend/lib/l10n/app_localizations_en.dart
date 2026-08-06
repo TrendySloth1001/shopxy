@@ -1445,6 +1445,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invoicesFilterPurchases => 'Purchases';
 
   @override
+  String get invoicesFilterDateRange => 'Date range';
+
+  @override
   String get invoicesErrorTitle => 'Something went wrong';
 
   @override

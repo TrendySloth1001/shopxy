@@ -1401,6 +1401,8 @@ export class InvoicesService {
     partyId?: number;
     productId?: number;
     search: string;
+    dateFrom?: string;
+    dateTo?: string;
     page: number;
     limit: number;
     skip: number;
@@ -1413,6 +1415,13 @@ export class InvoicesService {
     if (options.partyId) where.partyId = options.partyId;
     if (options.productId) {
       where.items = { some: { productId: options.productId } };
+    }
+    // invoiceDate — when the document was issued, not createdAt.
+    if (options.dateFrom || options.dateTo) {
+      where.invoiceDate = {
+        ...(options.dateFrom && { gte: new Date(options.dateFrom) }),
+        ...(options.dateTo && { lte: new Date(options.dateTo) }),
+      };
     }
     if (options.search) {
       where.OR = [

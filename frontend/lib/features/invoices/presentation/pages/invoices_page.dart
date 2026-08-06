@@ -35,6 +35,8 @@ import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
+final _rangeDf = DateFormat('d MMM');
+
 bool _sameDay(DateTime a, DateTime b) =>
     a.year == b.year && a.month == b.month && a.day == b.day;
 
@@ -142,6 +144,29 @@ class _InvoicesPageState extends State<InvoicesPage> {
     if (created == true && mounted) {
       context.read<InvoicesProvider>().loadInvoices(refresh: true);
     }
+  }
+
+  Future<void> _pickDateRange(InvoicesProvider provider) async {
+    final now = DateTime.now();
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2015),
+      lastDate: now.add(const Duration(days: 365)),
+      initialDateRange: provider.dateFrom != null
+          ? DateTimeRange(start: provider.dateFrom!, end: provider.dateTo!)
+          : null,
+    );
+    if (picked == null) return;
+    final end = DateTime(
+      picked.end.year,
+      picked.end.month,
+      picked.end.day,
+      23,
+      59,
+      59,
+      999,
+    );
+    provider.setDateRange(picked.start, end);
   }
 
   Future<void> _openFilterSheet(InvoicesProvider provider) async {
@@ -285,14 +310,26 @@ class _InvoicesPageState extends State<InvoicesPage> {
                     provider.typeFilter == 'PURCHASE' ? null : 'PURCHASE',
                   ),
                 ),
+                AppFilterPill(
+                  label: provider.dateFrom == null
+                      ? l10n.invoicesFilterDateRange
+                      : '${_rangeDf.format(provider.dateFrom!)} – ${_rangeDf.format(provider.dateTo!)}',
+                  icon: AppIcons.calendarTodayRounded,
+                  selected: provider.dateFrom != null,
+                  onTap: () => _pickDateRange(provider),
+                ),
               ],
             ),
-            if (activeSecondary.isNotEmpty)
+            if (activeSecondary.isNotEmpty || provider.dateFrom != null)
               _ActiveSecondaryFiltersRow(
                 documentType: provider.documentTypeFilter,
                 status: provider.statusFilter,
+                dateRangeLabel: provider.dateFrom == null
+                    ? null
+                    : '${_rangeDf.format(provider.dateFrom!)} – ${_rangeDf.format(provider.dateTo!)}',
                 onClearDocumentType: () => provider.setDocumentTypeFilter(null),
                 onClearStatus: () => provider.setStatusFilter(null),
+                onClearDateRange: () => provider.setDateRange(null, null),
               ),
             const AppDivider.flush(),
             Expanded(
@@ -414,14 +451,18 @@ class _ActiveSecondaryFiltersRow extends StatelessWidget {
   const _ActiveSecondaryFiltersRow({
     this.documentType,
     this.status,
+    this.dateRangeLabel,
     required this.onClearDocumentType,
     required this.onClearStatus,
+    required this.onClearDateRange,
   });
 
   final String? documentType;
   final String? status;
+  final String? dateRangeLabel;
   final VoidCallback onClearDocumentType;
   final VoidCallback onClearStatus;
+  final VoidCallback onClearDateRange;
 
   String _documentLabel(AppLocalizations l10n, String d) => switch (d) {
     'TAX_INVOICE' => l10n.invoicesDocTaxInvoice,
@@ -522,6 +563,9 @@ class _ActiveSecondaryFiltersRow extends StatelessWidget {
           soft: s,
         ),
       );
+    }
+    if (dateRangeLabel != null) {
+      chips.add(_chip(context, dateRangeLabel!, onClearDateRange));
     }
     return Padding(
       padding: const EdgeInsets.fromLTRB(
