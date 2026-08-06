@@ -91,7 +91,8 @@ async function renderInvoicePdfPdfKit(
     if (
       invoice.type === 'SALE' &&
       owner?.upiVpa &&
-      total.gt(0)
+      total.gt(0) &&
+      (await hasOutstandingBalance(shopId, invoice.id, total))
     ) {
       const payeeName = owner.shopName ?? owner.name ?? 'Merchant';
       const link =
@@ -645,6 +646,19 @@ function documentTypeLabel(docType: string): string {
   }
 }
 
+/// A "Scan to pay" QR only makes sense while money is still owed — once
+/// receipts allocated against the invoice cover its total, showing a
+/// payment QR on an already-settled invoice would prompt the customer to
+/// pay twice. Mirrors the outstanding calc in `payments.service.ts`.
+async function hasOutstandingBalance(shopId: number, invoiceId: number, total: Prisma.Decimal): Promise<boolean> {
+  const allocated = await prisma.payment.aggregate({
+    where: { invoiceId, shopId, voidedAt: null },
+    _sum: { amount: true },
+  });
+  const applied = new Prisma.Decimal(allocated._sum.amount?.toString() ?? '0');
+  return total.minus(applied).gt(0);
+}
+
 /// Compose a one-line address "addr, city, state - pin", skipping empties.
 function composeAddress(
   addr: string | null | undefined,
@@ -736,7 +750,12 @@ async function renderInvoicePdfReactPdf(
   const D = Prisma.Decimal;
   const total = new D(invoice.total.toString());
   let upiQr: { buffer: Buffer; link: string } | null = null;
-  if (invoice.type === 'SALE' && owner?.upiVpa && total.gt(0)) {
+  if (
+    invoice.type === 'SALE' &&
+    owner?.upiVpa &&
+    total.gt(0) &&
+    (await hasOutstandingBalance(shopId, invoice.id, total))
+  ) {
     const payeeName = owner.shopName ?? owner.name ?? 'Merchant';
     const link =
       `upi://pay?pa=${encodeURIComponent(owner.upiVpa)}` +
