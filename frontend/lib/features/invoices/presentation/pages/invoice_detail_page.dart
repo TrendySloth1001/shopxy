@@ -498,11 +498,12 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                           tone: AppStatusTone.neutral,
                           dense: true,
                         ),
-                        AppStatusBadge(
-                          label: invoice.isInterstate ? 'IGST' : 'CGST+SGST',
-                          tone: AppStatusTone.neutral,
-                          dense: true,
-                        ),
+                        if (invoice.igstAmount + invoice.cgstAmount + invoice.sgstAmount > 0)
+                          AppStatusBadge(
+                            label: invoice.isInterstate ? 'IGST' : 'CGST+SGST',
+                            tone: AppStatusTone.neutral,
+                            dense: true,
+                          ),
                       ],
                     ),
                     const SizedBox(height: AppSizes.xs),
@@ -1323,12 +1324,15 @@ class _InfoRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(top: AppSizes.xs),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             '$label: ',
             style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
           ),
-          Text(value, style: theme.textTheme.bodySmall?.medium),
+          Expanded(
+            child: Text(value, style: theme.textTheme.bodySmall?.medium),
+          ),
         ],
       ),
     );
@@ -1362,7 +1366,7 @@ class _ItemTile extends StatelessWidget {
                   // HSN sits next to the rate it explains — the printed PDF
                   // shows both per line plus an HSN summary, and the on-screen
                   // copy shouldn't be harder to reconcile than the print.
-                  '${item.quantity} ${item.unit} × ${AppStrings.currencySymbol}${item.unitPrice.toStringAsFixed(2)}'
+                  '${item.quantity.truncateToDouble() == item.quantity ? item.quantity.toInt() : item.quantity.toStringAsFixed(2)} ${item.unit} × ${AppStrings.currencySymbol}${item.unitPrice.toStringAsFixed(2)}'
                   '${item.taxPercent > 0 ? ' + ${item.taxPercent.toStringAsFixed(0)}% GST' : ''}'
                   '${item.hsn != null && item.hsn!.isNotEmpty ? ' · HSN ${item.hsn}' : ''}',
                   style: theme.textTheme.bodySmall?.copyWith(
