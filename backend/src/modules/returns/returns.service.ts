@@ -5,6 +5,7 @@ import { invoicesService, PosInvoiceError } from '../invoices/invoices.service.j
 import { reverseTransferForReturn } from '../payment-gateway/settlement/transfer-actions.js';
 import { paymentGatewayService } from '../payment-gateway/index.js';
 import { enqueueOutbox } from '../../infra/outbox/outbox.js';
+import { notifyShopOwner } from '../purchase-requests/purchase-requests.service.js';
 
 /// Canonical return reasons. Kept loose (string) on the DB so adding
 /// a new category later doesn't require a migration; the enum below
@@ -273,6 +274,30 @@ export class ReturnsService {
       });
       return row;
     });
+
+    // Merchant-facing alert — mirrors notifyShopOwner's use in the orders
+    // flow. Names the actual returned product(s) rather than a bare id so
+    // the bell reads like the real order-received notification.
+    const returnedNames = [
+      ...new Set(
+        opts.items
+          .map((i) => itemMap.get(i.purchaseRequestItemId)?.productName)
+          .filter((n): n is string => !!n),
+      ),
+    ];
+    const summary =
+      returnedNames.length <= 1
+        ? returnedNames[0]
+        : `${returnedNames[0]} and ${returnedNames.length - 1} more item${returnedNames.length > 2 ? 's' : ''}`;
+    void notifyShopOwner(child.shopId, {
+      kind: 'RETURN_REQUESTED',
+      title: 'Return requested',
+      body: summary
+        ? `A return was requested for ${summary}.`
+        : `A return was requested on order #${child.id}.`,
+      data: { returnId: created.id, requestId: child.id },
+    }).catch(() => {});
+
     return { id: created.id };
   }
 

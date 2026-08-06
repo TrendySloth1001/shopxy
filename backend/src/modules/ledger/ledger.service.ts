@@ -6,6 +6,7 @@ import {
   type LedgerSourceType,
   type PurchasePriceMode,
 } from '../../shared/constants/index.js';
+import { notificationsService } from '../notifications/notifications.service.js';
 
 export interface PostLineInput {
   productId: number;
@@ -183,13 +184,55 @@ export class LedgerService {
     };
 
     try {
-      if (tx) {
-        return await runPosting(tx);
-      }
-      return await prisma.$transaction(runPosting);
+      const result = tx ? await runPosting(tx) : await prisma.$transaction(runPosting);
+      // Best-effort bell alert — never let a notification hiccup fail a stock
+      // post; the money/stock write above already succeeded.
+      void this.notifyLowStock(input.shopId, result.entries).catch(() => {});
+      return result;
     } catch (err) {
       if (err && typeof err === 'object' && 'error' in err) return err as PostError;
       throw err;
+    }
+  }
+
+  /// Fires a "low stock" bell alert for each OUT line whose stockAfter just
+  /// crossed BELOW the product's lowStockThreshold (was above it before this
+  /// post). Only the crossing itself notifies — every further sale while
+  /// already-low stays silent, so the merchant isn't spammed on every unit
+  /// sold. Restocking above the threshold re-arms it for the next crossing.
+  private async notifyLowStock(shopId: number, entries: PostedEntry[]): Promise<void> {
+    const outEntries = entries.filter((e) => e.direction === 'OUT');
+    if (outEntries.length === 0) return;
+
+    const productIds = [...new Set(outEntries.map((e) => e.productId))];
+    const products = await prisma.product.findMany({
+      where: { id: { in: productIds } },
+      select: { id: true, name: true, unit: true, lowStockThreshold: true },
+    });
+    const byId = new Map(products.map((p) => [p.id, p]));
+
+    const crossed = outEntries.filter((e) => {
+      const product = byId.get(e.productId);
+      if (!product) return false;
+      const threshold = Number(product.lowStockThreshold);
+      return e.stockBefore > threshold && e.stockAfter <= threshold;
+    });
+    if (crossed.length === 0) return;
+
+    const shop = await prisma.shop.findUnique({ where: { id: shopId }, select: { ownerUserId: true } });
+    if (!shop) return;
+
+    for (const e of crossed) {
+      const product = byId.get(e.productId)!;
+      await notificationsService
+        .create({
+          userId: shop.ownerUserId,
+          kind: 'LOW_STOCK',
+          title: 'Low stock alert',
+          body: `${product.name} is running low — ${e.stockAfter} ${product.unit} left.`,
+          data: { productId: e.productId, stockAfter: e.stockAfter },
+        })
+        .catch(() => {});
     }
   }
 

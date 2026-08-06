@@ -190,10 +190,14 @@ export class PurchaseRequestsController {
     // replay so a network-retried POST doesn't double-notify.
     if (!result.deduplicated) {
       for (const child of result.order.shopOrders) {
+        const items = child.itemCount ?? 1;
+        const itemsLabel = `${items} item${items === 1 ? '' : 's'}`;
         void notifyShopOwner(child.shopId, {
           kind: 'ORDER_RECEIVED',
-          title: 'New order',
-          body: `Order #${child.id}`,
+          title: 'New order received',
+          body: child.customerName
+            ? `${child.customerName} placed an order for ${itemsLabel}.`
+            : `New order for ${itemsLabel}.`,
           data: { requestId: child.id, customerOrderId: result.order.id },
         }).catch(() => {});
       }

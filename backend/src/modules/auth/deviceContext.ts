@@ -17,7 +17,14 @@ export function maskIp(ip?: string | null): string | null {
   if (!ip) return null;
   const v = ip.replace(/^::ffff:/, '');
   if (v.includes('.')) return v.split('.').slice(0, 3).join('.') + '.x';
-  if (v.includes(':')) return v.split(':').slice(0, 3).join(':') + ':…';
+  if (v.includes(':')) {
+    // Loopback/link-local shorthand (::1, ::) has nothing left to mask —
+    // showing it as-is is clearer than the old code's `::1:…`, which
+    // reconstituted the same address plus a nonsensical trailing ellipsis.
+    const groups = v.split(':').filter(Boolean);
+    if (groups.length <= 1) return v;
+    return groups.slice(0, 3).join(':') + ':…';
+  }
   return null;
 }
 

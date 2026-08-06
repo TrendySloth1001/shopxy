@@ -30,6 +30,7 @@ import { Prisma } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
 import { nextPaymentRef } from '../../shared/numbering/sequences.js';
 import { toNumber, round2 } from '../../shared/numbering/decimal.js';
+import { notificationsService } from '../notifications/notifications.service.js';
 import {
   allocateProportional,
   toMinorUnits,
@@ -198,6 +199,17 @@ export async function ensureOrderInvoiceReceipts(
     gatewayShareById.set(c.id, fromMinorUnits(gatewayAllocMinor[i] ?? 0));
   });
 
+  // Per-shop "payment received" bell alert — one per shop for whatever this run
+  // actually posted (never re-fires on a redelivered webhook, since the amount
+  // only accumulates when postReceiptOnce created a NEW row above).
+  const receivedByShop = new Map<number, { amount: number; modes: Set<string> }>();
+  function trackReceived(shopId: number, amount: number, mode: string): void {
+    const row = receivedByShop.get(shopId) ?? { amount: 0, modes: new Set<string>() };
+    row.amount = round2(row.amount + amount);
+    row.modes.add(mode);
+    receivedByShop.set(shopId, row);
+  }
+
   let created = 0;
   let postedTotal = 0; // Σ of every receipt actually written (capped at outstanding).
   for (const child of order.shopOrders) {
@@ -222,7 +234,11 @@ export async function ensureOrderInvoiceReceipts(
         note: 'Wallet payment',
         idempotencyKey: `wltrcpt:o${orderId}:i${invoice.id}`,
       });
-      if (n > 0) postedTotal += round2(Math.min(desired, before));
+      if (n > 0) {
+        const posted = round2(Math.min(desired, before));
+        postedTotal += posted;
+        trackReceived(child.shopId, posted, 'wallet');
+      }
       created += n;
     }
 
@@ -240,9 +256,34 @@ export async function ensureOrderInvoiceReceipts(
         note: `Online payment (${gw.provider})`,
         idempotencyKey: `gwrcpt:o${orderId}:i${invoice.id}`,
       });
-      if (n > 0) postedTotal += round2(Math.min(desired, before));
+      if (n > 0) {
+        const posted = round2(Math.min(desired, before));
+        postedTotal += posted;
+        trackReceived(child.shopId, posted, gw.provider);
+      }
       created += n;
     }
+  }
+
+  // Fire the alerts. Best-effort/fire-and-forget, same convention as every other
+  // notifyShopOwner call site in this codebase — a notification hiccup must never
+  // fail (or roll back) the money path above.
+  for (const [shopId, row] of receivedByShop) {
+    if (!(row.amount > 0)) continue;
+    const modeLabel = [...row.modes].join(' + ');
+    prisma.shop
+      .findUnique({ where: { id: shopId }, select: { ownerUserId: true } })
+      .then((shop) => {
+        if (!shop) return;
+        return notificationsService.create({
+          userId: shop.ownerUserId,
+          kind: 'PAYMENT_RECEIVED',
+          title: 'Payment received',
+          body: `₹${row.amount.toFixed(0)} received via ${modeLabel}.`,
+          data: { orderId, shopId, amount: row.amount },
+        });
+      })
+      .catch(() => {});
   }
 
   // PR-C1 reconciliation guard — for a fully-paid order, Σ receipts (across every

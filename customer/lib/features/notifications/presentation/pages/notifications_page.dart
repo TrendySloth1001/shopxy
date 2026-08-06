@@ -132,6 +132,7 @@ enum _NotificationBucket {
       k.startsWith('ORDER_') ||
       k.startsWith('PURCHASE_REQUEST_') ||
       k.startsWith('QUOTATION_') ||
+      k.startsWith('RETURN_') ||
       k == 'BACK_IN_STOCK' ||
       k == 'REVIEW_REQUEST';
 
@@ -146,7 +147,8 @@ enum _NotificationBucket {
       k == 'PAYMENT_SUCCESS' ||
       k == 'PAYMENT_FAILED' ||
       k == 'REFUND' ||
-      k == 'ADDRESS_VERIFIED';
+      k == 'ADDRESS_VERIFIED' ||
+      k == 'SECURITY';
 }
 
 class _TabView extends StatelessWidget {
@@ -195,13 +197,59 @@ class _TabView extends StatelessWidget {
         ],
       );
     }
+    // Bucket filtering happens client-side over whatever page(s) have been
+    // fetched, so a short filtered list can't rely on scroll position alone
+    // to know more might exist server-side — a trailing "Load more" row
+    // (rather than a scroll-triggered fetch) works for every bucket, short
+    // or long, since it only depends on `hasMoreInbox`, not list length.
+    final showLoadMore = provider.hasMoreInbox;
     return ListView.separated(
       padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
-      itemCount: items.length,
+      itemCount: items.length + (showLoadMore ? 1 : 0),
       separatorBuilder: (_, _) =>
           const Divider(height: 1, color: AppColors.hairline),
-      itemBuilder: (_, i) =>
-          _NotificationTile(item: items[i], provider: provider),
+      itemBuilder: (_, i) {
+        if (i >= items.length) {
+          return _LoadMoreRow(provider: provider);
+        }
+        return _NotificationTile(item: items[i], provider: provider);
+      },
+    );
+  }
+}
+
+class _LoadMoreRow extends StatelessWidget {
+  const _LoadMoreRow({required this.provider});
+  final NotificationsProvider provider;
+
+  @override
+  Widget build(BuildContext context) {
+    if (provider.isLoadingMore) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: AppSizes.lg),
+        child: Center(
+          child: SizedBox(
+            width: AppSizes.lg,
+            height: AppSizes.lg,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+    return InkWell(
+      onTap: provider.loadMoreInbox,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
+        child: Center(
+          child: Text(
+            'Load more',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppColors.brandStrong,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -488,6 +536,34 @@ class _NotificationTile extends StatelessWidget {
         icon: AppIcons.inventory2Outlined,
         tint: AppColors.accentRoseSoft,
         accent: AppColors.accentRose,
+      );
+    }
+    if (kind == 'RETURN_APPROVED' || kind == 'RETURN_REFUNDED') {
+      return const _IconSpec(
+        icon: AppIcons.assignmentReturnOutlined,
+        tint: AppColors.successSoft,
+        accent: AppColors.success,
+      );
+    }
+    if (kind == 'RETURN_REJECTED') {
+      return const _IconSpec(
+        icon: AppIcons.assignmentReturnOutlined,
+        tint: AppColors.errorSoft,
+        accent: AppColors.error,
+      );
+    }
+    if (kind == 'RETURN_REQUESTED' || kind == 'RETURN_UPDATE') {
+      return const _IconSpec(
+        icon: AppIcons.assignmentReturnOutlined,
+        tint: AppColors.infoSoft,
+        accent: AppColors.info,
+      );
+    }
+    if (kind == 'SECURITY') {
+      return const _IconSpec(
+        icon: AppIcons.shieldOutlined,
+        tint: AppColors.errorSoft,
+        accent: AppColors.error,
       );
     }
     return const _IconSpec(

@@ -45,6 +45,7 @@ class _NotificationsPageState extends State<NotificationsPage>
     _inboxHaptics = ScrollBoundaryHaptics(_inboxScrollCtrl);
     _incomingHaptics = ScrollBoundaryHaptics(_incomingScrollCtrl);
     _outgoingHaptics = ScrollBoundaryHaptics(_outgoingScrollCtrl);
+    _inboxScrollCtrl.addListener(_maybeLoadMoreInbox);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final p = context.read<NotificationsProvider>();
@@ -54,10 +55,23 @@ class _NotificationsPageState extends State<NotificationsPage>
     });
   }
 
+  /// Fetches the next inbox page once the user scrolls within one screen
+  /// of the bottom — avoids the merchant hitting a hard wall at 50 items
+  /// with no way to see older notifications.
+  void _maybeLoadMoreInbox() {
+    if (!_inboxScrollCtrl.hasClients) return;
+    final position = _inboxScrollCtrl.position;
+    if (position.pixels < position.maxScrollExtent - position.viewportDimension) {
+      return;
+    }
+    context.read<NotificationsProvider>().loadMoreInbox();
+  }
+
   @override
   void dispose() {
     _tabs.dispose();
     _inboxHaptics.dispose();
+    _inboxScrollCtrl.removeListener(_maybeLoadMoreInbox);
     _inboxScrollCtrl.dispose();
     _incomingHaptics.dispose();
     _incomingScrollCtrl.dispose();
@@ -69,7 +83,12 @@ class _NotificationsPageState extends State<NotificationsPage>
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final p = context.watch<NotificationsProvider>();
+    // Scoped selects — the app bar only cares about the two badge counts,
+    // so an incoming/outgoing-only mutation elsewhere doesn't repaint it.
+    final unread = context.select<NotificationsProvider, int>((p) => p.unread);
+    final pendingInvites = context.select<NotificationsProvider, int>(
+      (p) => p.pendingIncoming.length,
+    );
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: FloatingAppBar(
@@ -78,13 +97,13 @@ class _NotificationsPageState extends State<NotificationsPage>
           controller: _tabs,
           tabs: [
             Tab(
-              text: p.unread > 0
-                  ? '${l10n.notificationsTabInbox} (${p.unread})'
+              text: unread > 0
+                  ? '${l10n.notificationsTabInbox} ($unread)'
                   : l10n.notificationsTabInbox,
             ),
             Tab(
-              text: p.pendingIncoming.isNotEmpty
-                  ? '${l10n.notificationsTabInvites} (${p.pendingIncoming.length})'
+              text: pendingInvites > 0
+                  ? '${l10n.notificationsTabInvites} ($pendingInvites)'
                   : l10n.notificationsTabInvites,
             ),
             Tab(text: l10n.notificationsTabSent),
@@ -94,7 +113,9 @@ class _NotificationsPageState extends State<NotificationsPage>
           IconButton(
             tooltip: l10n.notificationsMarkAllRead,
             icon: const AppIcon(AppIcons.doneAllRounded),
-            onPressed: p.unread == 0 ? null : p.markAllRead,
+            onPressed: unread == 0
+                ? null
+                : context.read<NotificationsProvider>().markAllRead,
           ),
         ],
       ),
@@ -122,6 +143,12 @@ class _NotificationsPageState extends State<NotificationsPage>
 // Inbox
 // ─────────────────────────────────────────────────────────────────────
 
+typedef _InboxSlice = ({
+  List<AppNotification> items,
+  bool loading,
+  bool loadingMore,
+});
+
 class _InboxTab extends StatelessWidget {
   const _InboxTab({required this.controller});
   final ScrollController controller;
@@ -129,19 +156,28 @@ class _InboxTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final p = context.watch<NotificationsProvider>();
-    if (p.isLoadingInbox && p.items.isEmpty) {
+    // Scoped to just the inbox slice — an incoming/outgoing invite mutation
+    // no longer repaints this tab (and vice versa for _IncomingTab/_OutgoingTab).
+    final slice = context.select<NotificationsProvider, _InboxSlice>(
+      (p) => (
+        items: p.items,
+        loading: p.isLoadingInbox,
+        loadingMore: p.isLoadingMore,
+      ),
+    );
+    if (slice.loading && slice.items.isEmpty) {
       return const _InboxSkeleton();
     }
-    if (p.items.isEmpty) {
+    if (slice.items.isEmpty) {
       return _EmptyHint(
         icon: AppIcons.notificationsNoneRounded,
         title: l10n.notificationsInboxEmptyTitle,
         body: l10n.notificationsInboxEmptyBody,
       );
     }
+    final itemCount = slice.items.length + (slice.loadingMore ? 1 : 0);
     return RefreshIndicator(
-      onRefresh: () => p.loadInbox(),
+      onRefresh: () => context.read<NotificationsProvider>().loadInbox(),
       color: AppColors.brand,
       child: ListView.separated(
         controller: controller,
@@ -152,10 +188,24 @@ class _InboxTab extends StatelessWidget {
               kTextTabBarHeight,
           bottom: AppSizes.massive + AppSizes.xxxl,
         ),
-        itemCount: p.items.length,
+        itemCount: itemCount,
         separatorBuilder: (_, _) =>
             Container(height: 1, color: AppColors.hairline),
-        itemBuilder: (_, i) => _NotificationTile(notification: p.items[i]),
+        itemBuilder: (_, i) {
+          if (i >= slice.items.length) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: AppSizes.lg),
+              child: Center(
+                child: SizedBox(
+                  width: AppSizes.lg,
+                  height: AppSizes.lg,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            );
+          }
+          return _NotificationTile(notification: slice.items[i]);
+        },
       ),
     );
   }
@@ -328,6 +378,63 @@ class _NotificationTile extends StatelessWidget {
           AppColors.warningSoft,
           AppIcons.requestQuoteOutlined,
         );
+      case 'ORDER_RECEIVED':
+      case 'ORDER_CONFIRMED':
+      case 'ORDER_UPDATE':
+        return (
+          AppColors.info,
+          AppColors.infoSoft,
+          AppIcons.localShippingOutlined,
+        );
+      case 'ORDER_REJECTED':
+        return (
+          AppColors.warning,
+          AppColors.warningSoft,
+          AppIcons.localShippingOutlined,
+        );
+      case 'PAYMENT_RECEIVED':
+        return (
+          AppColors.success,
+          AppColors.successSoft,
+          AppIcons.paymentsOutlined,
+        );
+      case 'LOW_STOCK':
+        return (
+          AppColors.warning,
+          AppColors.warningSoft,
+          AppIcons.inventory2Outlined,
+        );
+      case 'RETURN_REQUESTED':
+        return (
+          AppColors.warning,
+          AppColors.warningSoft,
+          AppIcons.assignmentReturnOutlined,
+        );
+      case 'RETURN_APPROVED':
+      case 'RETURN_REFUNDED':
+        return (
+          AppColors.success,
+          AppColors.successSoft,
+          AppIcons.assignmentReturnOutlined,
+        );
+      case 'RETURN_REJECTED':
+        return (
+          AppColors.error,
+          AppColors.errorSoft,
+          AppIcons.assignmentReturnOutlined,
+        );
+      case 'RETURN_UPDATE':
+        return (
+          AppColors.info,
+          AppColors.infoSoft,
+          AppIcons.assignmentReturnOutlined,
+        );
+      case 'SECURITY':
+        return (
+          AppColors.error,
+          AppColors.errorSoft,
+          AppIcons.shieldOutlined,
+        );
       default:
         return (
           AppColors.accentIndigo,
@@ -416,8 +523,12 @@ class _IncomingTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final p = context.watch<NotificationsProvider>();
-    if (p.incoming.isEmpty) {
+    // Scoped to just `incoming` — an inbox/outgoing mutation elsewhere
+    // doesn't repaint this tab.
+    final incoming = context.select<NotificationsProvider, List<Invitation>>(
+      (p) => p.incoming,
+    );
+    if (incoming.isEmpty) {
       return _EmptyHint(
         icon: AppIcons.markEmailUnreadOutlined,
         title: l10n.notificationsIncomingEmptyTitle,
@@ -425,7 +536,7 @@ class _IncomingTab extends StatelessWidget {
       );
     }
     return RefreshIndicator(
-      onRefresh: () => p.loadIncoming(),
+      onRefresh: () => context.read<NotificationsProvider>().loadIncoming(),
       color: AppColors.brand,
       child: ListView.separated(
         controller: controller,
@@ -436,10 +547,10 @@ class _IncomingTab extends StatelessWidget {
               kTextTabBarHeight,
           bottom: AppSizes.massive + AppSizes.xxxl,
         ),
-        itemCount: p.incoming.length,
+        itemCount: incoming.length,
         separatorBuilder: (_, _) =>
             Container(height: 1, color: AppColors.hairline),
-        itemBuilder: (_, i) => _IncomingInviteTile(invite: p.incoming[i]),
+        itemBuilder: (_, i) => _IncomingInviteTile(invite: incoming[i]),
       ),
     );
   }
@@ -610,8 +721,12 @@ class _OutgoingTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final p = context.watch<NotificationsProvider>();
-    if (p.outgoing.isEmpty) {
+    // Scoped to just `outgoing` — an inbox/incoming mutation elsewhere
+    // doesn't repaint this tab.
+    final outgoing = context.select<NotificationsProvider, List<Invitation>>(
+      (p) => p.outgoing,
+    );
+    if (outgoing.isEmpty) {
       return _EmptyHint(
         icon: AppIcons.outboxOutlined,
         title: l10n.notificationsOutgoingEmptyTitle,
@@ -619,7 +734,7 @@ class _OutgoingTab extends StatelessWidget {
       );
     }
     return RefreshIndicator(
-      onRefresh: () => p.loadOutgoing(),
+      onRefresh: () => context.read<NotificationsProvider>().loadOutgoing(),
       color: AppColors.brand,
       child: ListView.separated(
         controller: controller,
@@ -630,11 +745,11 @@ class _OutgoingTab extends StatelessWidget {
               kTextTabBarHeight,
           bottom: AppSizes.massive + AppSizes.xxxl,
         ),
-        itemCount: p.outgoing.length,
+        itemCount: outgoing.length,
         separatorBuilder: (_, _) =>
             Container(height: 1, color: AppColors.hairline),
         itemBuilder: (_, i) {
-          final invite = p.outgoing[i];
+          final invite = outgoing[i];
           return _OutgoingInviteTile(invite: invite);
         },
       ),

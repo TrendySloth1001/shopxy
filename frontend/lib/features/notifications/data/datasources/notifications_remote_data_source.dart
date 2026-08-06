@@ -27,7 +27,13 @@ class NotificationsRemoteDataSource {
     final data = (json['data'] as List)
         .map((e) => AppNotification.fromJson(e as Map<String, dynamic>))
         .toList();
-    return NotificationsPage(items: data, unread: (json['unread'] as int?) ?? 0);
+    final pagination = json['pagination'] as Map<String, dynamic>?;
+    return NotificationsPage(
+      items: data,
+      unread: (json['unread'] as int?) ?? 0,
+      page: (pagination?['page'] as int?) ?? page,
+      totalPages: (pagination?['totalPages'] as int?) ?? 1,
+    );
   }
 
   Future<int> unreadCount() async {
@@ -46,9 +52,18 @@ class NotificationsRemoteDataSource {
 }
 
 class NotificationsPage {
-  const NotificationsPage({required this.items, required this.unread});
+  const NotificationsPage({
+    required this.items,
+    required this.unread,
+    required this.page,
+    required this.totalPages,
+  });
   final List<AppNotification> items;
   final int unread;
+  final int page;
+  final int totalPages;
+
+  bool get hasMore => page < totalPages;
 }
 
 class InvitationsRemoteDataSource {

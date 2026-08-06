@@ -17,11 +17,16 @@ class NotificationsProvider extends ChangeNotifier {
   List<AppNotification> _items = const [];
   int _unread = 0;
   bool _loadingInbox = false;
+  bool _loadingMore = false;
+  int _page = 1;
+  bool _hasMore = false;
   String? _error;
 
   List<AppNotification> get items => _items;
   int get unread => _unread;
   bool get isLoadingInbox => _loadingInbox;
+  bool get isLoadingMore => _loadingMore;
+  bool get hasMoreInbox => _hasMore;
   String? get error => _error;
 
   /// Pending invitations addressed to current user. Populated by
@@ -58,18 +63,47 @@ class NotificationsProvider extends ChangeNotifier {
 
   // ── Loading ─────────────────────────────────────────────────────
 
+  bool _unreadOnly = false;
+
   Future<void> loadInbox({bool unreadOnly = false}) async {
+    _unreadOnly = unreadOnly;
     _loadingInbox = true;
     _error = null;
     notifyListeners();
     try {
-      final page = await _notifsDs.list(unreadOnly: unreadOnly);
+      final page = await _notifsDs.list(unreadOnly: unreadOnly, page: 1);
       _items = page.items;
       _unread = page.unread;
+      _page = page.page;
+      _hasMore = page.hasMore;
     } catch (e) {
       _error = friendlyError(e);
     } finally {
       _loadingInbox = false;
+      notifyListeners();
+    }
+  }
+
+  /// Fetches the next inbox page and appends it. No-op while a load is
+  /// already in flight or there's nothing further to fetch.
+  Future<void> loadMoreInbox() async {
+    if (_loadingInbox || _loadingMore || !_hasMore) return;
+    _loadingMore = true;
+    notifyListeners();
+    try {
+      final next = await _notifsDs.list(
+        unreadOnly: _unreadOnly,
+        page: _page + 1,
+      );
+      _items = [..._items, ...next.items];
+      _unread = next.unread;
+      _page = next.page;
+      _hasMore = next.hasMore;
+    } catch (_) {
+      // Best-effort — leave hasMore as-is so the user can retry by
+      // scrolling again or pulling to refresh.
+    } finally {
+      _loadingMore = false;
       notifyListeners();
     }
   }
@@ -208,6 +242,10 @@ class NotificationsProvider extends ChangeNotifier {
   void reset() {
     _items = const [];
     _unread = 0;
+    _page = 1;
+    _hasMore = false;
+    _loadingMore = false;
+    _unreadOnly = false;
     _incoming = const [];
     _outgoing = const [];
     _firstLoginPromptShown = false;

@@ -371,7 +371,15 @@ export class PurchaseRequestsService {
           actualUnitPrice: number;
         }[];
       }
-    | { order: { id: number; shopOrders: { id: number; shopId: number }[]; couponDiscount: number; walletPaid: number }; deduplicated?: true }
+    | {
+        order: {
+          id: number;
+          shopOrders: { id: number; shopId: number; customerName?: string; itemCount?: number }[];
+          couponDiscount: number;
+          walletPaid: number;
+        };
+        deduplicated?: true;
+      }
   > {
     if (opts.items.length === 0) return { error: 'EMPTY_CART' };
 
@@ -666,7 +674,7 @@ export class PurchaseRequestsService {
         // create children one-by-one with select — N small inserts in
         // exchange for the per-child id (used to fan out notifications
         // and surface per-shop slices in the response).
-        const childRecords: { id: number; shopId: number }[] = [];
+        const childRecords: { id: number; shopId: number; customerName?: string; itemCount?: number }[] = [];
         for (const child of childPayloads) {
           const created = await tx.purchaseRequest.create({
             data: {
@@ -694,9 +702,14 @@ export class PurchaseRequestsService {
                 create: { type: 'CREATED', actorId: opts.customerUserId },
               },
             },
-            select: { id: true, shopId: true },
+            select: { id: true, shopId: true, customerName: true, _count: { select: { items: true } } },
           });
-          childRecords.push(created);
+          childRecords.push({
+            id: created.id,
+            shopId: created.shopId,
+            customerName: created.customerName,
+            itemCount: created._count.items,
+          });
         }
 
         return {
