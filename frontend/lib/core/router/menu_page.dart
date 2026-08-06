@@ -14,6 +14,7 @@ import 'package:shopxy/features/auth/domain/entities/auth_user.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/banners/presentation/pages/merchant_banners_page.dart';
 import 'package:shopxy/features/cashier/presentation/pages/cashier_page.dart';
+import 'package:shopxy/features/notifications/presentation/pages/invitations_page.dart';
 import 'package:shopxy/features/notifications/presentation/widgets/notification_bell.dart';
 import 'package:shopxy/features/categories/presentation/pages/categories_page.dart';
 import 'package:shopxy/features/products/presentation/pages/hsn_codes_page.dart';
@@ -82,6 +83,15 @@ List<_MenuItem> get _manageItems => [
     accentSoft: AppColors.accentIndigoSoft,
     builder: (_) => const ShopTeamPage(),
     requires: (u) => u.canView('team'),
+  ),
+  _MenuItem(
+    label: (l) => l.invitationsTitle,
+    description: (l) => l.menuDescInvitations,
+    icon: AppIcons.markEmailUnreadOutlined,
+    accent: AppColors.accentTeal,
+    accentSoft: AppColors.accentTealSoft,
+    builder: (_) => const InvitationsPage(),
+    requires: (u) => u.canView('parties') || u.canView('vendors'),
   ),
   _MenuItem(
     label: (l) => l.navCategories,

@@ -9,23 +9,30 @@ import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/theme/app_text_styles.dart';
+import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
-import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
-import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// Owner-facing page. Two modes via a segmented switch:
-///   * **Existing contact** — search-pick a party / vendor; the FK
-///     goes onto the invitation.
-///   * **New contact** — type a name + email; no FK. The backend
-///     materialises the Party/Vendor row when the invitee accepts.
+/// Send an invitation — a guided, one-question-at-a-time flow.
 ///
-/// When opened from a party or vendor row, pass [initialParty] or
-/// [initialVendor] to pre-fill the picker + email field. The type
-/// switch is locked in that case so the user can't accidentally flip
-/// to the wrong side and lose the selection.
+/// The old version opened on two bare segmented toggles ("Party/Vendor",
+/// "Existing/New contact") with no explanation, which meant a merchant
+/// arriving with no context had to answer two abstract questions before
+/// anything made sense. Worse, "Existing vs New" was an implementation
+/// detail leaking into the UI — it only existed because the invitation
+/// either carries a contact FK or doesn't.
+///
+/// Now: pick WHO you're inviting (with the consequence spelled out), then
+/// name them in one field that searches your contacts and offers to create
+/// a new one inline. Each step only appears once the previous is answered,
+/// so there is never more than one question on screen.
+///
+/// Opened from a party/vendor row ([initialParty] / [initialVendor]), both
+/// of those steps are already answered — it opens straight on the email.
 class SendInvitePage extends StatefulWidget {
   const SendInvitePage({super.key, this.initialParty, this.initialVendor})
     : assert(
@@ -42,22 +49,35 @@ class SendInvitePage extends StatefulWidget {
 
 enum _LinkType { party, vendor }
 
-enum _SourceMode { existing, fresh }
+/// Who the invite is for. Exactly one of the three is set: an existing
+/// [party]/[vendor] the merchant picked, or a [newName] they typed that
+/// the backend materialises into a real contact when the invite is
+/// accepted. The UI never surfaces this distinction.
+class _Recipient {
+  const _Recipient.party(this.party) : vendor = null, newName = null;
+  const _Recipient.vendor(this.vendor) : party = null, newName = null;
+  const _Recipient.fresh(this.newName) : party = null, vendor = null;
+
+  final Party? party;
+  final Vendor? vendor;
+  final String? newName;
+
+  bool get isNew => newName != null;
+  String get label => party?.name ?? vendor?.name ?? newName ?? '';
+  String? get email => party?.email ?? vendor?.email;
+}
 
 class _SendInvitePageState extends State<SendInvitePage> {
-  late _LinkType _type;
-  _SourceMode _mode = _SourceMode.existing;
+  _LinkType? _type;
+  _Recipient? _recipient;
 
   final _emailCtl = TextEditingController();
-  final _nameCtl = TextEditingController();
   final _messageCtl = TextEditingController();
-
-  Party? _selectedParty;
-  Vendor? _selectedVendor;
 
   bool _sending = false;
   String? _error;
 
+  /// Launched from a contact row — the role is theirs, not a choice.
   bool get _lockedToType =>
       widget.initialParty != null || widget.initialVendor != null;
 
@@ -66,37 +86,56 @@ class _SendInvitePageState extends State<SendInvitePage> {
     super.initState();
     if (widget.initialVendor != null) {
       _type = _LinkType.vendor;
-      _selectedVendor = widget.initialVendor;
+      _recipient = _Recipient.vendor(widget.initialVendor);
       _emailCtl.text = widget.initialVendor!.email ?? '';
     } else if (widget.initialParty != null) {
       _type = _LinkType.party;
-      _selectedParty = widget.initialParty;
+      _recipient = _Recipient.party(widget.initialParty);
       _emailCtl.text = widget.initialParty!.email ?? '';
-    } else {
-      _type = _LinkType.party;
     }
   }
 
   @override
   void dispose() {
     _emailCtl.dispose();
-    _nameCtl.dispose();
     _messageCtl.dispose();
     super.dispose();
   }
 
-  bool get _canSend {
-    final emailOk = _emailCtl.text.trim().contains('@');
-    final selOk = _mode == _SourceMode.fresh
-        ? _nameCtl.text.trim().isNotEmpty
-        : _type == _LinkType.party
-        ? _selectedParty != null
-        : _selectedVendor != null;
-    return emailOk && selOk && !_sending;
+  bool get _emailOk => _emailCtl.text.trim().contains('@');
+  bool get _canSend => _recipient != null && _emailOk && !_sending;
+
+  /// One plain-language line telling the user what's still missing, shown
+  /// next to the disabled CTA. A dead button with no explanation was a big
+  /// part of why the old screen felt like a dead end.
+  String? _blockingHint(AppLocalizations l10n) {
+    if (_recipient == null) return l10n.inviteHintPickContact;
+    if (!_emailOk) return l10n.inviteHintNeedEmail;
+    return null;
   }
+
+  String _roleWord(AppLocalizations l10n) => _type == _LinkType.party
+      ? l10n.inviteWordCustomer
+      : l10n.inviteWordSupplier;
+
+  void _pickType(_LinkType t) => setState(() {
+    _type = t;
+    // Switching side invalidates a contact picked on the other side.
+    _recipient = null;
+    _emailCtl.clear();
+  });
+
+  void _pickRecipient(_Recipient r) => setState(() {
+    _recipient = r;
+    // Pre-fill the email we already hold for a known contact; the user can
+    // still correct it. A new contact has none, so leave it for them.
+    final known = r.email;
+    if (known != null && known.isNotEmpty) _emailCtl.text = known;
+  });
 
   Future<void> _send() async {
     final l10n = AppLocalizations.of(context);
+    final r = _recipient!;
     setState(() {
       _sending = true;
       _error = null;
@@ -105,13 +144,9 @@ class _SendInvitePageState extends State<SendInvitePage> {
       await context.read<NotificationsProvider>().sendInvite(
         toEmail: _emailCtl.text.trim(),
         linkType: _type == _LinkType.party ? 'PARTY' : 'VENDOR',
-        partyId: _mode == _SourceMode.existing && _type == _LinkType.party
-            ? _selectedParty?.id
-            : null,
-        vendorId: _mode == _SourceMode.existing && _type == _LinkType.vendor
-            ? _selectedVendor?.id
-            : null,
-        displayName: _mode == _SourceMode.fresh ? _nameCtl.text.trim() : null,
+        partyId: r.party?.id,
+        vendorId: r.vendor?.id,
+        displayName: r.isNew ? r.newName : null,
         message: _messageCtl.text.trim(),
       );
       if (!mounted) return;
@@ -130,88 +165,73 @@ class _SendInvitePageState extends State<SendInvitePage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
+    final hint = _blockingHint(l10n);
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: FloatingAppBar(title: l10n.notificationsSendInvitationTitle),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.all(AppSizes.lg),
-                children: [
-                  Text(
-                    l10n.notificationsInviteByEmail,
-                    style: theme.textTheme.titleLarge?.bold,
-                  ),
-                  const SizedBox(height: AppSizes.xs),
-                  Text(
-                    l10n.notificationsInviteByEmailHelp,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: AppColors.muted,
-                    ),
-                  ),
-                  const SizedBox(height: AppSizes.xl),
-                  _TypeSwitch(
-                    value: _type,
-                    locked: _lockedToType,
-                    onChanged: (v) => setState(() {
-                      _type = v;
-                      _selectedParty = null;
-                      _selectedVendor = null;
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.fromLTRB(
+                AppSizes.lg,
+                AppSizes.sm + FloatingAppBar.contentTopInset(context),
+                AppSizes.lg,
+                AppSizes.xl,
+              ),
+              children: [
+                // ── Step 1 — who are you inviting? ──────────────────
+                if (_type == null)
+                  _RoleChooser(onPick: _pickType)
+                else if (!_lockedToType)
+                  _ChosenRoleRow(
+                    type: _type!,
+                    onChange: () => setState(() {
+                      _type = null;
+                      _recipient = null;
+                      _emailCtl.clear();
                     }),
                   ),
-                  const SizedBox(height: AppSizes.lg),
-                  _ModeSwitch(
-                    value: _mode,
-                    onChanged: (v) => setState(() {
-                      _mode = v;
-                      _selectedParty = null;
-                      _selectedVendor = null;
-                      _nameCtl.clear();
-                    }),
-                  ),
+
+                // ── Step 2 — which contact? ─────────────────────────
+                if (_type != null) ...[
                   const SizedBox(height: AppSizes.xl),
-                  if (_mode == _SourceMode.existing)
-                    _ContactPicker(
-                      key: ValueKey('picker-${_type.name}'),
-                      type: _type,
-                      selectedParty: _selectedParty,
-                      selectedVendor: _selectedVendor,
-                      onPartyPicked: (p) => setState(() {
-                        _selectedParty = p;
-                        if ((p.email ?? '').isNotEmpty) {
-                          _emailCtl.text = p.email!;
-                        }
-                      }),
-                      onVendorPicked: (v) => setState(() {
-                        _selectedVendor = v;
-                        if ((v.email ?? '').isNotEmpty) {
-                          _emailCtl.text = v.email!;
-                        }
-                      }),
+                  if (_recipient == null)
+                    _ContactStep(
+                      key: ValueKey('contact-${_type!.name}'),
+                      type: _type!,
+                      roleWord: _roleWord(l10n),
+                      onPicked: _pickRecipient,
                     )
                   else
-                    TextField(
-                      controller: _nameCtl,
-                      textCapitalization: TextCapitalization.words,
-                      decoration: InputDecoration(
-                        labelText: _type == _LinkType.party
-                            ? l10n.notificationsCustomerName
-                            : l10n.notificationsVendorName,
-                        prefixIcon: AppIcon(
-                          _type == _LinkType.party
-                              ? AppIcons.groupsOutlined
-                              : AppIcons.storefrontOutlined,
-                        ),
-                      ),
-                      onChanged: (_) => setState(() {}),
+                    _ChosenContactRow(
+                      recipient: _recipient!,
+                      roleWord: _roleWord(l10n),
+                      // Opened from a contact row the recipient is fixed —
+                      // changing it there would be a different invite.
+                      onChange: _lockedToType
+                          ? null
+                          : () => setState(() {
+                              _recipient = null;
+                              _emailCtl.clear();
+                            }),
                     ),
+                ],
+
+                // ── Step 3 — email + message ────────────────────────
+                if (_recipient != null) ...[
                   const SizedBox(height: AppSizes.xl),
+                  _StepHeader(
+                    step: 3,
+                    title: l10n.inviteEmailTitle,
+                    subtitle: l10n.inviteEmailHelp,
+                  ),
+                  const SizedBox(height: AppSizes.md),
                   TextField(
                     controller: _emailCtl,
                     keyboardType: TextInputType.emailAddress,
                     autocorrect: false,
+                    autofocus: _emailCtl.text.isEmpty,
                     decoration: InputDecoration(
                       labelText: l10n.notificationsRecipientEmail,
                       prefixIcon: const AppIcon(AppIcons.alternateEmailRounded),
@@ -228,161 +248,258 @@ class _SendInvitePageState extends State<SendInvitePage> {
                       hintText: l10n.notificationsMessageHint,
                     ),
                   ),
-                  if (_error != null) ...[
-                    const SizedBox(height: AppSizes.sm),
-                    Container(
-                      padding: const EdgeInsets.all(AppSizes.md),
-                      decoration: ShapeDecoration(
-                        color: AppColors.errorSoft,
-                        shape: AppShapes.squircle(AppSizes.radiusMd),
-                      ),
-                      child: Row(
-                        children: [
-                          AppIcon(
-                            AppIcons.errorOutlineRounded,
-                            color: AppColors.error,
-                            size: AppSizes.iconMd,
-                          ),
-                          const SizedBox(width: AppSizes.sm),
-                          Expanded(
-                            child: Text(
-                              _error!,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: AppColors.error,
-                              ),
+                ],
+
+                if (_error != null) ...[
+                  const SizedBox(height: AppSizes.sm),
+                  Container(
+                    padding: const EdgeInsets.all(AppSizes.md),
+                    decoration: ShapeDecoration(
+                      color: AppColors.errorSoft,
+                      shape: AppShapes.squircle(AppSizes.radiusMd),
+                    ),
+                    child: Row(
+                      children: [
+                        AppIcon(
+                          AppIcons.errorOutlineRounded,
+                          color: AppColors.error,
+                          size: AppSizes.iconMd,
+                        ),
+                        const SizedBox(width: AppSizes.sm),
+                        Expanded(
+                          child: Text(
+                            _error!,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: AppColors.error,
                             ),
                           ),
-                        ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          // Sticky CTA. The hint above it says what's still missing rather
+          // than leaving a dead button unexplained.
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              border: Border(top: BorderSide(color: AppColors.hairline)),
+            ),
+            padding: EdgeInsets.fromLTRB(
+              AppSizes.lg,
+              AppSizes.md,
+              AppSizes.lg,
+              AppSizes.md + MediaQuery.of(context).padding.bottom,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (hint != null) ...[
+                  Row(
+                    children: [
+                      AppIcon(
+                        AppIcons.infoOutlineRounded,
+                        size: AppSizes.iconSm,
+                        color: AppColors.muted,
+                      ),
+                      const SizedBox(width: AppSizes.xs),
+                      Expanded(
+                        child: Text(
+                          hint,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppColors.muted,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSizes.sm),
+                ],
+                AppButton.primary(
+                  label: l10n.notificationsSendInvitationTitle,
+                  icon: AppIcons.sendRounded,
+                  isLoading: _sending,
+                  fullWidth: true,
+                  onPressed: _canSend ? _send : null,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Step 1 — role
+// ─────────────────────────────────────────────────────────────────────
+
+/// Two descriptive cards. Each states the CONSEQUENCE of the choice
+/// ("so they can see their invoices…") rather than the accounting term,
+/// because "Party" and "Vendor" mean nothing to most merchants.
+class _RoleChooser extends StatelessWidget {
+  const _RoleChooser({required this.onPick});
+  final ValueChanged<_LinkType> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _StepHeader(step: 1, title: l10n.inviteWhoTitle),
+        const SizedBox(height: AppSizes.md),
+        _RoleCard(
+          icon: AppIcons.groupsOutlined,
+          accent: AppColors.accentRose,
+          accentSoft: AppColors.accentRoseSoft,
+          title: l10n.inviteRoleCustomer,
+          body: l10n.inviteRoleCustomerDesc,
+          onTap: () => onPick(_LinkType.party),
+        ),
+        const SizedBox(height: AppSizes.sm),
+        _RoleCard(
+          icon: AppIcons.storefrontOutlined,
+          accent: AppColors.accentIndigo,
+          accentSoft: AppColors.accentIndigoSoft,
+          title: l10n.inviteRoleSupplier,
+          body: l10n.inviteRoleSupplierDesc,
+          onTap: () => onPick(_LinkType.vendor),
+        ),
+      ],
+    );
+  }
+}
+
+class _RoleCard extends StatelessWidget {
+  const _RoleCard({
+    required this.icon,
+    required this.accent,
+    required this.accentSoft,
+    required this.title,
+    required this.body,
+    required this.onTap,
+  });
+
+  final AppIconData icon;
+  final Color accent;
+  final Color accentSoft;
+  final String title;
+  final String body;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: AppColors.surface,
+      shape: AppShapes.squircle(
+        AppSizes.radiusLg,
+        side: BorderSide(color: AppColors.hairline),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        splashColor: AppColors.surfaceTint,
+        highlightColor: AppColors.surfaceTint,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSizes.lg),
+          child: Row(
+            children: [
+              Container(
+                width: AppSizes.xxxl,
+                height: AppSizes.xxxl,
+                decoration: ShapeDecoration(
+                  color: accentSoft,
+                  shape: AppShapes.squircle(AppSizes.radiusSm),
+                ),
+                alignment: Alignment.center,
+                child: AppIcon(icon, color: accent, size: AppSizes.iconMd),
+              ),
+              const SizedBox(width: AppSizes.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: theme.textTheme.titleSmall?.bold),
+                    const SizedBox(height: AppSizes.xxs),
+                    Text(
+                      body,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.muted,
+                        height: 1.4,
                       ),
                     ),
                   ],
-                ],
-              ),
-            ),
-            Container(
-              decoration: BoxDecoration(
-                border: Border(top: BorderSide(color: AppColors.hairline)),
-              ),
-              padding: const EdgeInsets.fromLTRB(
-                AppSizes.lg,
-                AppSizes.md,
-                AppSizes.lg,
-                AppSizes.md,
-              ),
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: _canSend ? _send : null,
-                  icon: _sending
-                      ? SizedBox(
-                          width: AppSizes.iconSm,
-                          height: AppSizes.iconSm,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppColors.onInverse,
-                          ),
-                        )
-                      : const AppIcon(
-                          AppIcons.sendRounded,
-                          size: AppSizes.iconMd,
-                        ),
-                  label: Text(l10n.notificationsSendInvitationTitle),
                 ),
               ),
-            ),
-          ],
+              const SizedBox(width: AppSizes.sm),
+              AppIcon(
+                AppIcons.chevronRightRounded,
+                size: AppSizes.iconSm,
+                color: AppColors.subtle,
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _TypeSwitch extends StatelessWidget {
-  const _TypeSwitch({
-    required this.value,
-    required this.onChanged,
-    this.locked = false,
-  });
-  final _LinkType value;
-  final ValueChanged<_LinkType> onChanged;
-  final bool locked;
+/// Collapsed summary of step 1 once answered, with a way back.
+class _ChosenRoleRow extends StatelessWidget {
+  const _ChosenRoleRow({required this.type, required this.onChange});
+  final _LinkType type;
+  final VoidCallback onChange;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return SegmentedButton<_LinkType>(
-      segments: [
-        ButtonSegment(
-          value: _LinkType.party,
-          icon: const AppIcon(AppIcons.groupsOutlined),
-          label: Text(l10n.notificationsRolePartyCustomer),
-        ),
-        ButtonSegment(
-          value: _LinkType.vendor,
-          icon: const AppIcon(AppIcons.storefrontOutlined),
-          label: Text(l10n.notificationsRoleVendorSupplier),
-        ),
-      ],
-      selected: {value},
-      onSelectionChanged: locked ? null : (s) => onChanged(s.first),
-    );
-  }
-}
-
-class _ModeSwitch extends StatelessWidget {
-  const _ModeSwitch({required this.value, required this.onChanged});
-  final _SourceMode value;
-  final ValueChanged<_SourceMode> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return SegmentedButton<_SourceMode>(
-      segments: [
-        ButtonSegment(
-          value: _SourceMode.existing,
-          icon: const AppIcon(AppIcons.contactsOutlined),
-          label: Text(l10n.notificationsModeExisting),
-        ),
-        ButtonSegment(
-          value: _SourceMode.fresh,
-          icon: const AppIcon(AppIcons.personAddAlt1Outlined),
-          label: Text(l10n.notificationsModeNewContact),
-        ),
-      ],
-      selected: {value},
-      onSelectionChanged: (s) => onChanged(s.first),
+    final isParty = type == _LinkType.party;
+    return _SummaryRow(
+      icon: isParty ? AppIcons.groupsOutlined : AppIcons.storefrontOutlined,
+      accent: isParty ? AppColors.accentRose : AppColors.accentIndigo,
+      accentSoft: isParty
+          ? AppColors.accentRoseSoft
+          : AppColors.accentIndigoSoft,
+      title: isParty ? l10n.inviteRoleCustomer : l10n.inviteRoleSupplier,
+      onChange: onChange,
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// Contact picker (existing-contact mode)
+// Step 2 — contact
 // ─────────────────────────────────────────────────────────────────────
 
-class _ContactPicker extends StatefulWidget {
-  const _ContactPicker({
+/// One field that both searches existing contacts and creates a new one.
+/// Typing filters the address book; if nothing matches what was typed, the
+/// last row becomes `Add "<whatever you typed>" as a new customer`. That
+/// single affordance replaces the old Existing/New toggle entirely.
+class _ContactStep extends StatefulWidget {
+  const _ContactStep({
     super.key,
     required this.type,
-    required this.selectedParty,
-    required this.selectedVendor,
-    required this.onPartyPicked,
-    required this.onVendorPicked,
+    required this.roleWord,
+    required this.onPicked,
   });
 
   final _LinkType type;
-  final Party? selectedParty;
-  final Vendor? selectedVendor;
-  final ValueChanged<Party> onPartyPicked;
-  final ValueChanged<Vendor> onVendorPicked;
+  final String roleWord;
+  final ValueChanged<_Recipient> onPicked;
 
   @override
-  State<_ContactPicker> createState() => _ContactPickerState();
+  State<_ContactStep> createState() => _ContactStepState();
 }
 
-class _ContactPickerState extends State<_ContactPicker> {
+class _ContactStepState extends State<_ContactStep> {
+  final _searchCtl = TextEditingController();
   late Future<List<dynamic>> _future;
-  String _search = '';
 
   @override
   void initState() {
@@ -390,13 +507,22 @@ class _ContactPickerState extends State<_ContactPicker> {
     _future = _load();
   }
 
-  Future<List<dynamic>> _load() async {
+  @override
+  void dispose() {
+    _searchCtl.dispose();
+    super.dispose();
+  }
+
+  Future<List<dynamic>> _load() {
+    final q = _searchCtl.text.trim();
     if (widget.type == _LinkType.party) {
-      final ds = context.read<PartiesRemoteDataSource>();
-      return ds.getParties(search: _search.isEmpty ? null : _search);
+      return context.read<PartiesRemoteDataSource>().getParties(
+        search: q.isEmpty ? null : q,
+      );
     }
-    final ds = context.read<VendorsRemoteDataSource>();
-    return ds.getVendors(search: _search.isEmpty ? null : _search);
+    return context.read<VendorsRemoteDataSource>().getVendors(
+      search: q.isEmpty ? null : q,
+    );
   }
 
   void _reload() => setState(() => _future = _load());
@@ -404,194 +530,396 @@ class _ContactPickerState extends State<_ContactPicker> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
+    final query = _searchCtl.text.trim();
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          widget.type == _LinkType.party
-              ? l10n.notificationsChooseParty
-              : l10n.notificationsChooseVendor,
-          style: theme.textTheme.labelLarge?.copyWith(
-            color: AppColors.muted,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1,
-          ),
-        ),
-        const SizedBox(height: AppSizes.sm),
+        _StepHeader(step: 2, title: l10n.inviteContactTitle),
+        const SizedBox(height: AppSizes.md),
         TextField(
+          controller: _searchCtl,
+          textCapitalization: TextCapitalization.words,
           decoration: InputDecoration(
-            hintText: widget.type == _LinkType.party
-                ? l10n.notificationsSearchParties
-                : l10n.notificationsSearchVendors,
+            hintText: l10n.inviteContactHint,
             prefixIcon: const AppIcon(AppIcons.searchRounded),
           ),
-          onChanged: (v) {
-            _search = v;
-            _reload();
-          },
+          onChanged: (_) => _reload(),
         ),
         const SizedBox(height: AppSizes.sm),
-        SizedBox(
-          height: 220,
-          child: FutureBuilder<List<dynamic>>(
-            future: _future,
-            builder: (context, snap) {
-              if (snap.connectionState != ConnectionState.done) {
-                return const _ContactListSkeleton();
-              }
-              if (snap.hasError) {
-                return Center(
-                  child: Text(
-                    friendlyError(snap.error!),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: AppColors.error,
-                    ),
+        FutureBuilder<List<dynamic>>(
+          future: _future,
+          builder: (context, snap) {
+            if (snap.connectionState != ConnectionState.done) {
+              return const _ContactListSkeleton();
+            }
+            final list = snap.hasError
+                ? const <dynamic>[]
+                : (snap.data ?? const <dynamic>[]);
+            // Offer "add as new" whenever the merchant has typed something
+            // that isn't already an exact contact name — that's precisely
+            // when a new contact is what they meant.
+            final exact = list.any(
+              (e) =>
+                  (e is Party ? e.name : (e as Vendor).name).toLowerCase() ==
+                  query.toLowerCase(),
+            );
+            final showAddNew = query.isNotEmpty && !exact;
+
+            if (list.isEmpty && !showAddNew) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSizes.lg),
+                child: Text(
+                  snap.hasError
+                      ? friendlyError(snap.error!)
+                      : l10n.notificationsNoContactsFound,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: snap.hasError ? AppColors.error : AppColors.muted,
                   ),
-                );
-              }
-              final list = snap.data ?? const [];
-              if (list.isEmpty) {
-                return Center(child: Text(l10n.notificationsNoContactsFound));
-              }
-              return Container(
-                decoration: ShapeDecoration(
-                  color: AppColors.surface,
-                  shape: AppShapes.squircle(
-                    AppSizes.radiusMd,
-                    side: BorderSide(color: AppColors.hairline),
-                  ),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: ListView.separated(
-                  itemCount: list.length,
-                  separatorBuilder: (context, index) =>
-                      Container(height: 1, color: AppColors.hairline),
-                  itemBuilder: (_, i) {
-                    final item = list[i];
-                    final name = item is Party
-                        ? item.name
-                        : (item as Vendor).name;
-                    final email = item is Party
-                        ? item.email
-                        : (item as Vendor).email;
-                    final selected = item is Party
-                        ? widget.selectedParty?.id == item.id
-                        : widget.selectedVendor?.id == (item as Vendor).id;
-                    return InkWell(
-                      onTap: () {
-                        if (item is Party) {
-                          widget.onPartyPicked(item);
-                        } else {
-                          widget.onVendorPicked(item as Vendor);
-                        }
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSizes.lg,
-                          vertical: AppSizes.md,
-                        ),
-                        color: selected ? AppColors.brandSoft : null,
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    name,
-                                    style: theme.textTheme.bodyMedium?.semibold,
-                                  ),
-                                  if (email != null && email.isNotEmpty)
-                                    Text(
-                                      email,
-                                      style: theme.textTheme.bodySmall
-                                          ?.copyWith(color: AppColors.muted),
-                                    ),
-                                ],
-                              ),
-                            ),
-                            if (selected)
-                              AppIcon(
-                                AppIcons.checkCircleRounded,
-                                color: AppColors.brand,
-                                size: AppSizes.iconMd,
-                              ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
                 ),
               );
-            },
-          ),
+            }
+
+            return Container(
+              decoration: ShapeDecoration(
+                color: AppColors.surface,
+                shape: AppShapes.squircle(
+                  AppSizes.radiusLg,
+                  side: BorderSide(color: AppColors.hairline),
+                ),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                children: [
+                  for (var i = 0; i < list.length; i++) ...[
+                    if (i > 0) Container(height: 1, color: AppColors.hairline),
+                    _ContactRow(
+                      item: list[i],
+                      onTap: () => widget.onPicked(
+                        list[i] is Party
+                            ? _Recipient.party(list[i] as Party)
+                            : _Recipient.vendor(list[i] as Vendor),
+                      ),
+                    ),
+                  ],
+                  if (showAddNew) ...[
+                    if (list.isNotEmpty)
+                      Container(height: 1, color: AppColors.hairline),
+                    _AddNewRow(
+                      label: l10n.inviteAddAsNew(query, widget.roleWord),
+                      onTap: () => widget.onPicked(_Recipient.fresh(query)),
+                    ),
+                  ],
+                ],
+              ),
+            );
+          },
         ),
       ],
     );
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// Skeleton widgets (loading state for _ContactPicker)
-// ─────────────────────────────────────────────────────────────────────
-
-/// Mirrors the 220 px squircle container that the real contact list uses.
-/// Renders 4 skeleton rows separated by hairlines.
-class _ContactListSkeleton extends StatelessWidget {
-  const _ContactListSkeleton();
+class _ContactRow extends StatelessWidget {
+  const _ContactRow({required this.item, required this.onTap});
+  final dynamic item;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final name = item is Party ? item.name : (item as Vendor).name;
+    final email = item is Party ? item.email : (item as Vendor).email;
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSizes.lg,
+          vertical: AppSizes.md,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name as String,
+                    style: theme.textTheme.bodyMedium?.semibold,
+                  ),
+                  if (email != null && (email as String).isNotEmpty)
+                    Text(
+                      email,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.muted,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            AppIcon(
+              AppIcons.chevronRightRounded,
+              size: AppSizes.iconSm,
+              color: AppColors.subtle,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AddNewRow extends StatelessWidget {
+  const _AddNewRow({required this.label, required this.onTap});
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSizes.lg,
+          vertical: AppSizes.md,
+        ),
+        child: Row(
+          children: [
+            AppIcon(
+              AppIcons.personAddAlt1Outlined,
+              size: AppSizes.iconMd,
+              color: AppColors.brand,
+            ),
+            const SizedBox(width: AppSizes.md),
+            Expanded(
+              child: Text(
+                label,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppColors.brandStrong,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Collapsed summary of step 2 once answered.
+class _ChosenContactRow extends StatelessWidget {
+  const _ChosenContactRow({
+    required this.recipient,
+    required this.roleWord,
+    required this.onChange,
+  });
+
+  final _Recipient recipient;
+  final String roleWord;
+  final VoidCallback? onChange;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return _SummaryRow(
+      icon: AppIcons.personOutlineRounded,
+      accent: AppColors.brandStrong,
+      accentSoft: AppColors.brandSoft,
+      title: recipient.label,
+      // Make it obvious this contact doesn't exist yet — it'll be created
+      // when they accept, which is otherwise invisible to the merchant.
+      badge: recipient.isNew ? l10n.inviteNewContactBadge(roleWord) : null,
+      onChange: onChange,
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Shared bits
+// ─────────────────────────────────────────────────────────────────────
+
+/// Numbered step heading — makes the flow read as a sequence rather than
+/// a wall of controls.
+class _StepHeader extends StatelessWidget {
+  const _StepHeader({required this.step, required this.title, this.subtitle});
+  final int step;
+  final String title;
+  final String? subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: AppSizes.xl,
+              height: AppSizes.xl,
+              decoration: ShapeDecoration(
+                color: AppColors.brandSoft,
+                shape: const CircleBorder(),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                '$step',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: AppColors.brandStrong,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSizes.sm),
+            Expanded(child: Text(title, style: theme.textTheme.titleMedium?.bold)),
+          ],
+        ),
+        if (subtitle != null) ...[
+          const SizedBox(height: AppSizes.xs),
+          Text(
+            subtitle!,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: AppColors.muted,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// An answered step, collapsed to one line with an optional "Change".
+class _SummaryRow extends StatelessWidget {
+  const _SummaryRow({
+    required this.icon,
+    required this.accent,
+    required this.accentSoft,
+    required this.title,
+    this.badge,
+    required this.onChange,
+  });
+
+  final AppIconData icon;
+  final Color accent;
+  final Color accentSoft;
+  final String title;
+  final String? badge;
+  final VoidCallback? onChange;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
     return Container(
-      height: 220,
       decoration: ShapeDecoration(
         color: AppColors.surface,
         shape: AppShapes.squircle(
-          AppSizes.radiusMd,
+          AppSizes.radiusLg,
           side: BorderSide(color: AppColors.hairline),
         ),
       ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.md,
+        AppSizes.sm,
+        AppSizes.sm,
+        AppSizes.sm,
+      ),
+      child: Row(
         children: [
-          const _ContactRowSkeleton(nameWidthFactor: 0.55),
-          Container(height: 1, color: AppColors.hairline),
-          const _ContactRowSkeleton(nameWidthFactor: 0.45),
-          Container(height: 1, color: AppColors.hairline),
-          const _ContactRowSkeleton(nameWidthFactor: 0.60),
-          Container(height: 1, color: AppColors.hairline),
-          const _ContactRowSkeleton(nameWidthFactor: 0.50),
+          Container(
+            width: AppSizes.xxl,
+            height: AppSizes.xxl,
+            decoration: ShapeDecoration(
+              color: accentSoft,
+              shape: AppShapes.squircle(AppSizes.radiusSm),
+            ),
+            alignment: Alignment.center,
+            child: AppIcon(icon, color: accent, size: AppSizes.iconSm),
+          ),
+          const SizedBox(width: AppSizes.md),
+          Expanded(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodyMedium?.semibold,
+            ),
+          ),
+          if (badge != null) ...[
+            const SizedBox(width: AppSizes.xs),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSizes.sm,
+                vertical: AppSizes.xxs,
+              ),
+              decoration: ShapeDecoration(
+                color: AppColors.brandSoft,
+                shape: AppShapes.squircle(AppSizes.radiusFull),
+              ),
+              child: Text(
+                badge!,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: AppColors.brandStrong,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+          if (onChange != null)
+            TextButton(onPressed: onChange, child: Text(l10n.inviteChange)),
         ],
       ),
     );
   }
 }
 
-/// One skeleton row: bold-width name line + narrower email line, matching
-/// the padding of the real list item.
-class _ContactRowSkeleton extends StatelessWidget {
-  const _ContactRowSkeleton({required this.nameWidthFactor});
-
-  final double nameWidthFactor;
+/// Placeholder rows while the contact list loads.
+class _ContactListSkeleton extends StatelessWidget {
+  const _ContactListSkeleton();
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.lg,
-          vertical: AppSizes.md,
+    return Container(
+      decoration: ShapeDecoration(
+        color: AppColors.surface,
+        shape: AppShapes.squircle(
+          AppSizes.radiusLg,
+          side: BorderSide(color: AppColors.hairline),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AppShimmerLine(widthFactor: nameWidthFactor, height: 14),
-            const SizedBox(height: AppSizes.xs),
-            AppShimmerLine(widthFactor: nameWidthFactor * 0.75, height: 11),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          for (var i = 0; i < 3; i++) ...[
+            if (i > 0) Container(height: 1, color: AppColors.hairline),
+            const _ContactRowSkeleton(),
           ],
-        ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ContactRowSkeleton extends StatelessWidget {
+  const _ContactRowSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.md,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppShimmerLine(widthFactor: 0.5, height: 14),
+          const SizedBox(height: AppSizes.xs),
+          AppShimmerLine(widthFactor: 0.35, height: 11),
+        ],
       ),
     );
   }

@@ -5357,7 +5357,7 @@ abstract class AppLocalizations {
   /// No description provided for @notificationsIncomingEmptyBody.
   ///
   /// In en, this message translates to:
-  /// **'When a shop invites you as a party or vendor, you\'ll see the request here.'**
+  /// **'When another shop invites you as a customer or supplier, the request lands here.'**
   String get notificationsIncomingEmptyBody;
 
   /// No description provided for @notificationsOutgoingEmptyTitle.
@@ -5369,7 +5369,7 @@ abstract class AppLocalizations {
   /// No description provided for @notificationsOutgoingEmptyBody.
   ///
   /// In en, this message translates to:
-  /// **'Tap the Invite button to invite a party or vendor by email.'**
+  /// **'Invite a customer or supplier so they can connect with your shop.'**
   String get notificationsOutgoingEmptyBody;
 
   /// No description provided for @notificationsAShop.
@@ -5605,6 +5605,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cancel invitation'**
   String get notificationsCancelInvitation;
+
+  /// No description provided for @invitationsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Invitations'**
+  String get invitationsTitle;
+
+  /// No description provided for @menuDescInvitations.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect customers and suppliers to your shop'**
+  String get menuDescInvitations;
+
+  /// No description provided for @invitationsTabReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'Received'**
+  String get invitationsTabReceived;
+
+  /// No description provided for @inviteWhoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Who are you inviting?'**
+  String get inviteWhoTitle;
+
+  /// No description provided for @inviteRoleCustomer.
+  ///
+  /// In en, this message translates to:
+  /// **'A customer'**
+  String get inviteRoleCustomer;
+
+  /// No description provided for @inviteRoleCustomerDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'So they can see their invoices and order from you'**
+  String get inviteRoleCustomerDesc;
+
+  /// No description provided for @inviteRoleSupplier.
+  ///
+  /// In en, this message translates to:
+  /// **'A supplier'**
+  String get inviteRoleSupplier;
+
+  /// No description provided for @inviteRoleSupplierDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'So they can send you stock and bills'**
+  String get inviteRoleSupplierDesc;
+
+  /// No description provided for @inviteWordCustomer.
+  ///
+  /// In en, this message translates to:
+  /// **'customer'**
+  String get inviteWordCustomer;
+
+  /// No description provided for @inviteWordSupplier.
+  ///
+  /// In en, this message translates to:
+  /// **'supplier'**
+  String get inviteWordSupplier;
+
+  /// No description provided for @inviteChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get inviteChange;
+
+  /// No description provided for @inviteContactTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Who exactly?'**
+  String get inviteContactTitle;
+
+  /// No description provided for @inviteContactHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search your contacts, or type a new name'**
+  String get inviteContactHint;
+
+  /// No description provided for @inviteAddAsNew.
+  ///
+  /// In en, this message translates to:
+  /// **'Add \"{name}\" as a new {role}'**
+  String inviteAddAsNew(Object name, Object role);
+
+  /// No description provided for @inviteNewContactBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'New {role}'**
+  String inviteNewContactBadge(Object role);
+
+  /// No description provided for @inviteEmailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Where should we send it?'**
+  String get inviteEmailTitle;
+
+  /// No description provided for @inviteEmailHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'They\'ll get the invite here. If they don\'t have a Shopxy account yet, it appears the moment they sign up with this email.'**
+  String get inviteEmailHelp;
+
+  /// No description provided for @inviteHintPickContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose who you\'re inviting'**
+  String get inviteHintPickContact;
+
+  /// No description provided for @inviteHintNeedEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter their email address'**
+  String get inviteHintNeedEmail;
 
   /// No description provided for @categoriesTitle.
   ///

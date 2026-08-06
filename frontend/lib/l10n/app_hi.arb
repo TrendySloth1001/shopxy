@@ -925,9 +925,9 @@
   "notificationsInboxEmptyTitle": "अभी कोई सूचना नहीं",
   "notificationsInboxEmptyBody": "जब कुछ होगा — जैसे किसी आमंत्रण का जवाब — तो वह आपको यहां दिखेगा।",
   "notificationsIncomingEmptyTitle": "कोई आमंत्रण नहीं",
-  "notificationsIncomingEmptyBody": "जब कोई दुकान आपको पार्टी या वेंडर के रूप में आमंत्रित करेगी, तो अनुरोध यहां दिखेगा।",
+  "notificationsIncomingEmptyBody": "जब कोई दूसरी दुकान आपको ग्राहक या सप्लायर के रूप में आमंत्रित करेगी, तो अनुरोध यहाँ आएगा।",
   "notificationsOutgoingEmptyTitle": "अभी तक कोई आमंत्रण नहीं भेजा गया",
-  "notificationsOutgoingEmptyBody": "किसी पार्टी या वेंडर को ईमेल से आमंत्रित करने के लिए आमंत्रित करें बटन दबाएं।",
+  "notificationsOutgoingEmptyBody": "किसी ग्राहक या सप्लायर को आमंत्रित करें ताकि वे आपकी दुकान से जुड़ सकें।",
   "notificationsAShop": "एक दुकान",
   "notificationsRolePartyCustomer": "पार्टी (ग्राहक)",
   "notificationsRoleVendorSupplier": "वेंडर (सप्लायर)",
@@ -967,6 +967,36 @@
   "notificationsDetailExpires": "समाप्ति",
   "notificationsDetailMessage": "संदेश",
   "notificationsCancelInvitation": "आमंत्रण रद्द करें",
+  "invitationsTitle": "आमंत्रण",
+  "menuDescInvitations": "ग्राहकों और सप्लायर को अपनी दुकान से जोड़ें",
+  "invitationsTabReceived": "प्राप्त",
+  "inviteWhoTitle": "आप किसे आमंत्रित कर रहे हैं?",
+  "inviteRoleCustomer": "एक ग्राहक",
+  "inviteRoleCustomerDesc": "ताकि वे अपने बिल देख सकें और आपसे ऑर्डर कर सकें",
+  "inviteRoleSupplier": "एक सप्लायर",
+  "inviteRoleSupplierDesc": "ताकि वे आपको स्टॉक और बिल भेज सकें",
+  "inviteWordCustomer": "ग्राहक",
+  "inviteWordSupplier": "सप्लायर",
+  "inviteChange": "बदलें",
+  "inviteContactTitle": "कौन?",
+  "inviteContactHint": "अपने संपर्क खोजें, या नया नाम लिखें",
+  "inviteAddAsNew": "\"{name}\" को नए {role} के रूप में जोड़ें",
+  "@inviteAddAsNew": {
+    "placeholders": {
+      "name": {},
+      "role": {}
+    }
+  },
+  "inviteNewContactBadge": "नया {role}",
+  "@inviteNewContactBadge": {
+    "placeholders": {
+      "role": {}
+    }
+  },
+  "inviteEmailTitle": "आमंत्रण कहाँ भेजें?",
+  "inviteEmailHelp": "उन्हें यहाँ आमंत्रण मिलेगा। अगर उनका Shopxy खाता नहीं है, तो इस ईमेल से साइन अप करते ही यह दिख जाएगा।",
+  "inviteHintPickContact": "चुनें कि आप किसे आमंत्रित कर रहे हैं",
+  "inviteHintNeedEmail": "उनका ईमेल पता दर्ज करें",
   "categoriesTitle": "श्रेणियाँ",
   "categoriesEmptyTitle": "अभी कोई श्रेणी नहीं",
   "categoriesEmptyHint": "श्रेणी जोड़ने के लिए + दबाएँ",

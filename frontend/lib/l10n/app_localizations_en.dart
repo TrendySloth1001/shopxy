@@ -2806,14 +2806,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notificationsIncomingEmptyBody =>
-      'When a shop invites you as a party or vendor, you\'ll see the request here.';
+      'When another shop invites you as a customer or supplier, the request lands here.';
 
   @override
   String get notificationsOutgoingEmptyTitle => 'No invitations sent yet';
 
   @override
   String get notificationsOutgoingEmptyBody =>
-      'Tap the Invite button to invite a party or vendor by email.';
+      'Invite a customer or supplier so they can connect with your shop.';
 
   @override
   String get notificationsAShop => 'A shop';
@@ -2934,6 +2934,70 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notificationsCancelInvitation => 'Cancel invitation';
+
+  @override
+  String get invitationsTitle => 'Invitations';
+
+  @override
+  String get menuDescInvitations =>
+      'Connect customers and suppliers to your shop';
+
+  @override
+  String get invitationsTabReceived => 'Received';
+
+  @override
+  String get inviteWhoTitle => 'Who are you inviting?';
+
+  @override
+  String get inviteRoleCustomer => 'A customer';
+
+  @override
+  String get inviteRoleCustomerDesc =>
+      'So they can see their invoices and order from you';
+
+  @override
+  String get inviteRoleSupplier => 'A supplier';
+
+  @override
+  String get inviteRoleSupplierDesc => 'So they can send you stock and bills';
+
+  @override
+  String get inviteWordCustomer => 'customer';
+
+  @override
+  String get inviteWordSupplier => 'supplier';
+
+  @override
+  String get inviteChange => 'Change';
+
+  @override
+  String get inviteContactTitle => 'Who exactly?';
+
+  @override
+  String get inviteContactHint => 'Search your contacts, or type a new name';
+
+  @override
+  String inviteAddAsNew(Object name, Object role) {
+    return 'Add \"$name\" as a new $role';
+  }
+
+  @override
+  String inviteNewContactBadge(Object role) {
+    return 'New $role';
+  }
+
+  @override
+  String get inviteEmailTitle => 'Where should we send it?';
+
+  @override
+  String get inviteEmailHelp =>
+      'They\'ll get the invite here. If they don\'t have a Shopxy account yet, it appears the moment they sign up with this email.';
+
+  @override
+  String get inviteHintPickContact => 'Choose who you\'re inviting';
+
+  @override
+  String get inviteHintNeedEmail => 'Enter their email address';
 
   @override
   String get categoriesTitle => 'Categories';

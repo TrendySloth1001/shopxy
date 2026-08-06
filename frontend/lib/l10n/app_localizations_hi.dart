@@ -2803,7 +2803,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get notificationsIncomingEmptyBody =>
-      'जब कोई दुकान आपको पार्टी या वेंडर के रूप में आमंत्रित करेगी, तो अनुरोध यहां दिखेगा।';
+      'जब कोई दूसरी दुकान आपको ग्राहक या सप्लायर के रूप में आमंत्रित करेगी, तो अनुरोध यहाँ आएगा।';
 
   @override
   String get notificationsOutgoingEmptyTitle =>
@@ -2811,7 +2811,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get notificationsOutgoingEmptyBody =>
-      'किसी पार्टी या वेंडर को ईमेल से आमंत्रित करने के लिए आमंत्रित करें बटन दबाएं।';
+      'किसी ग्राहक या सप्लायर को आमंत्रित करें ताकि वे आपकी दुकान से जुड़ सकें।';
 
   @override
   String get notificationsAShop => 'एक दुकान';
@@ -2933,6 +2933,70 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get notificationsCancelInvitation => 'आमंत्रण रद्द करें';
+
+  @override
+  String get invitationsTitle => 'आमंत्रण';
+
+  @override
+  String get menuDescInvitations =>
+      'ग्राहकों और सप्लायर को अपनी दुकान से जोड़ें';
+
+  @override
+  String get invitationsTabReceived => 'प्राप्त';
+
+  @override
+  String get inviteWhoTitle => 'आप किसे आमंत्रित कर रहे हैं?';
+
+  @override
+  String get inviteRoleCustomer => 'एक ग्राहक';
+
+  @override
+  String get inviteRoleCustomerDesc =>
+      'ताकि वे अपने बिल देख सकें और आपसे ऑर्डर कर सकें';
+
+  @override
+  String get inviteRoleSupplier => 'एक सप्लायर';
+
+  @override
+  String get inviteRoleSupplierDesc => 'ताकि वे आपको स्टॉक और बिल भेज सकें';
+
+  @override
+  String get inviteWordCustomer => 'ग्राहक';
+
+  @override
+  String get inviteWordSupplier => 'सप्लायर';
+
+  @override
+  String get inviteChange => 'बदलें';
+
+  @override
+  String get inviteContactTitle => 'कौन?';
+
+  @override
+  String get inviteContactHint => 'अपने संपर्क खोजें, या नया नाम लिखें';
+
+  @override
+  String inviteAddAsNew(Object name, Object role) {
+    return '\"$name\" को नए $role के रूप में जोड़ें';
+  }
+
+  @override
+  String inviteNewContactBadge(Object role) {
+    return 'नया $role';
+  }
+
+  @override
+  String get inviteEmailTitle => 'आमंत्रण कहाँ भेजें?';
+
+  @override
+  String get inviteEmailHelp =>
+      'उन्हें यहाँ आमंत्रण मिलेगा। अगर उनका Shopxy खाता नहीं है, तो इस ईमेल से साइन अप करते ही यह दिख जाएगा।';
+
+  @override
+  String get inviteHintPickContact => 'चुनें कि आप किसे आमंत्रित कर रहे हैं';
+
+  @override
+  String get inviteHintNeedEmail => 'उनका ईमेल पता दर्ज करें';
 
   @override
   String get categoriesTitle => 'श्रेणियाँ';

@@ -1217,9 +1217,9 @@
   "notificationsInboxEmptyTitle": "No notifications yet",
   "notificationsInboxEmptyBody": "When something happens — like an invitation reply — you'll see it here.",
   "notificationsIncomingEmptyTitle": "No invitations",
-  "notificationsIncomingEmptyBody": "When a shop invites you as a party or vendor, you'll see the request here.",
+  "notificationsIncomingEmptyBody": "When another shop invites you as a customer or supplier, the request lands here.",
   "notificationsOutgoingEmptyTitle": "No invitations sent yet",
-  "notificationsOutgoingEmptyBody": "Tap the Invite button to invite a party or vendor by email.",
+  "notificationsOutgoingEmptyBody": "Invite a customer or supplier so they can connect with your shop.",
   "notificationsAShop": "A shop",
   "notificationsRolePartyCustomer": "Party (customer)",
   "notificationsRoleVendorSupplier": "Vendor (supplier)",
@@ -1266,6 +1266,36 @@
   "notificationsDetailExpires": "Expires",
   "notificationsDetailMessage": "Message",
   "notificationsCancelInvitation": "Cancel invitation",
+  "invitationsTitle": "Invitations",
+  "menuDescInvitations": "Connect customers and suppliers to your shop",
+  "invitationsTabReceived": "Received",
+  "inviteWhoTitle": "Who are you inviting?",
+  "inviteRoleCustomer": "A customer",
+  "inviteRoleCustomerDesc": "So they can see their invoices and order from you",
+  "inviteRoleSupplier": "A supplier",
+  "inviteRoleSupplierDesc": "So they can send you stock and bills",
+  "inviteWordCustomer": "customer",
+  "inviteWordSupplier": "supplier",
+  "inviteChange": "Change",
+  "inviteContactTitle": "Who exactly?",
+  "inviteContactHint": "Search your contacts, or type a new name",
+  "inviteAddAsNew": "Add \"{name}\" as a new {role}",
+  "@inviteAddAsNew": {
+    "placeholders": {
+      "name": {},
+      "role": {}
+    }
+  },
+  "inviteNewContactBadge": "New {role}",
+  "@inviteNewContactBadge": {
+    "placeholders": {
+      "role": {}
+    }
+  },
+  "inviteEmailTitle": "Where should we send it?",
+  "inviteEmailHelp": "They'll get the invite here. If they don't have a Shopxy account yet, it appears the moment they sign up with this email.",
+  "inviteHintPickContact": "Choose who you're inviting",
+  "inviteHintNeedEmail": "Enter their email address",
   "categoriesTitle": "Categories",
   "categoriesEmptyTitle": "No categories yet",
   "categoriesEmptyHint": "Tap + to add a category",
