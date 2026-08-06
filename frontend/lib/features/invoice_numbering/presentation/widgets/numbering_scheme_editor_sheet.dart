@@ -82,15 +82,23 @@ class _NumberingSchemeEditorSheetState
 
   int get _paddingValue => int.tryParse(_padding.text) ?? widget.scheme.padding;
 
-  String get _preview => formatDocNoPreview(
-    prefix: _prefix.text,
-    suffix: _suffix.text,
-    separator: _separator,
-    padding: _paddingValue.clamp(1, 8),
-    resetYearly: _resetYearly,
-    seq: widget.scheme.nextSeq,
-    financialYear: widget.scheme.financialYear,
-  );
+  // Next 3, not just 1 — lets the merchant confirm the format looks right
+  // across a few numbers before committing, no extra round-trip (pure math
+  // on the already-fetched nextSeq).
+  List<String> get _previewNext => [
+    for (var i = 0; i < 3; i++)
+      formatDocNoPreview(
+        prefix: _prefix.text,
+        suffix: _suffix.text,
+        separator: _separator,
+        padding: _paddingValue.clamp(1, 8),
+        resetYearly: _resetYearly,
+        seq: widget.scheme.nextSeq + i,
+        financialYear: widget.scheme.financialYear,
+      ),
+  ];
+
+  bool get _changesResetKey => _resetYearly != widget.scheme.resetYearly;
 
   Future<void> _save() async {
     final l10n = AppLocalizations.of(context);
@@ -211,7 +219,7 @@ class _NumberingSchemeEditorSheetState
                   ),
                   const SizedBox(height: AppSizes.xxs),
                   Text(
-                    _preview,
+                    _previewNext.join('   ·   '),
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontFeatures: const [FontFeature.tabularFigures()],
                       fontWeight: FontWeight.w700,
@@ -220,6 +228,18 @@ class _NumberingSchemeEditorSheetState
                 ],
               ),
             ),
+            const SizedBox(height: AppSizes.sm),
+            Text(
+              l10n.numberingAffectedNote,
+              style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+            ),
+            if (_changesResetKey) ...[
+              const SizedBox(height: AppSizes.xs),
+              Text(
+                l10n.numberingResetKeyWarning,
+                style: theme.textTheme.bodySmall?.copyWith(color: AppColors.warning),
+              ),
+            ],
             if (_error != null) ...[
               const SizedBox(height: AppSizes.sm),
               Text(_error!, style: TextStyle(color: AppColors.error)),

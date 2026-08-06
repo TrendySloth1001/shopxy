@@ -2594,7 +2594,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'Turning this off changes the running sequence going forward — it does not renumber past documents.';
 
   @override
-  String get numberingPreviewLabel => 'Next number';
+  String get numberingPreviewLabel => 'Upcoming numbers';
+
+  @override
+  String get numberingAffectedNote =>
+      'Applies to new documents only — numbers you\'ve already issued never change.';
+
+  @override
+  String get numberingResetKeyWarning =>
+      'Changing when this resets switches to a different counter — the next number may not continue from your last one.';
 
   @override
   String get numberingStartAtToggle => 'Start numbering from a specific number';

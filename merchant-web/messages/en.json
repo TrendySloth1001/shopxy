@@ -2055,7 +2055,9 @@
     },
     "customized": "Customized",
     "default": "Default",
-    "preview": "Next number",
+    "preview": "Upcoming numbers",
+    "affectedNote": "Applies to new documents only — numbers you've already issued never change.",
+    "resetKeyWarning": "Changing when this resets switches to a different counter — the next number may not continue from your last one.",
     "field": {
       "prefix": "Prefix",
       "suffix": "Suffix",

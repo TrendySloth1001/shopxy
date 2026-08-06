@@ -187,11 +187,18 @@ function SchemeEditorModal({
   const [startError, setStartError] = useState<string | null>(null);
 
   const paddingNum = Number(padding) || scheme.padding;
-  const preview = formatDocNoPreview(
-    { prefix, suffix, separator, padding: paddingNum, resetYearly: resetYearly === "yearly" },
-    scheme.nextSeq,
-    scheme.financialYear,
+  const resetYearlyBool = resetYearly === "yearly";
+  // Next 3, not just 1 — lets the merchant confirm the format looks right
+  // across a few numbers before committing, no extra round-trip (pure math
+  // on the already-fetched nextSeq).
+  const previewNext = [0, 1, 2].map((i) =>
+    formatDocNoPreview(
+      { prefix, suffix, separator, padding: paddingNum, resetYearly: resetYearlyBool },
+      scheme.nextSeq + i,
+      scheme.financialYear,
+    ),
   );
+  const changesResetKey = resetYearlyBool !== scheme.resetYearly;
 
   async function onSave() {
     setError(null);
@@ -242,8 +249,10 @@ function SchemeEditorModal({
 
         <div className="rounded-md border border-hairline bg-hero-panel px-md py-sm">
           <p className="text-label-md text-muted">{t("preview")}</p>
-          <p className="mt-xxs font-mono text-title-sm text-ink">{preview}</p>
+          <p className="mt-xxs font-mono text-title-sm text-ink">{previewNext.join("   ·   ")}</p>
         </div>
+        <p className="text-body-sm text-muted">{t("affectedNote")}</p>
+        {changesResetKey ? <p className="text-body-sm text-warning">{t("resetKeyWarning")}</p> : null}
 
         <div className="grid grid-cols-2 gap-md">
           <Field label={t("field.prefix")} value={prefix} onChange={(e) => setPrefix(e.target.value)} maxLength={10} />

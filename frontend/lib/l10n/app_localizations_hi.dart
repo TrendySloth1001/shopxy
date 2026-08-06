@@ -2593,7 +2593,15 @@ class AppLocalizationsHi extends AppLocalizations {
       'इसे बंद करने से आगे की क्रम संख्या बदल जाती है — यह पुराने दस्तावेज़ों को दोबारा नंबर नहीं देता।';
 
   @override
-  String get numberingPreviewLabel => 'अगला नंबर';
+  String get numberingPreviewLabel => 'आगामी नंबर';
+
+  @override
+  String get numberingAffectedNote =>
+      'सिर्फ़ नए दस्तावेज़ों पर लागू होगा — जो नंबर पहले ही जारी हो चुके हैं वे कभी नहीं बदलेंगे।';
+
+  @override
+  String get numberingResetKeyWarning =>
+      'यह रीसेट होने का तरीका बदलने से एक अलग काउंटर शुरू हो जाता है — अगला नंबर आपके पिछले नंबर से आगे नहीं बढ़ सकता।';
 
   @override
   String get numberingStartAtToggle => 'किसी खास नंबर से क्रमांकन शुरू करें';

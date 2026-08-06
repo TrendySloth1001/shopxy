@@ -4967,8 +4967,20 @@ abstract class AppLocalizations {
   /// No description provided for @numberingPreviewLabel.
   ///
   /// In en, this message translates to:
-  /// **'Next number'**
+  /// **'Upcoming numbers'**
   String get numberingPreviewLabel;
+
+  /// No description provided for @numberingAffectedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Applies to new documents only — numbers you\'ve already issued never change.'**
+  String get numberingAffectedNote;
+
+  /// No description provided for @numberingResetKeyWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Changing when this resets switches to a different counter — the next number may not continue from your last one.'**
+  String get numberingResetKeyWarning;
 
   /// No description provided for @numberingStartAtToggle.
   ///
