@@ -15,6 +15,7 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
+import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
@@ -189,8 +190,7 @@ class _InboxTab extends StatelessWidget {
           bottom: AppSizes.massive + AppSizes.xxxl,
         ),
         itemCount: itemCount,
-        separatorBuilder: (_, _) =>
-            Container(height: 1, color: AppColors.hairline),
+        separatorBuilder: (_, _) => const SizedBox(height: AppSizes.sm),
         itemBuilder: (_, i) {
           if (i >= slice.items.length) {
             return const Padding(
@@ -204,8 +204,77 @@ class _InboxTab extends StatelessWidget {
               ),
             );
           }
-          return _NotificationTile(notification: slice.items[i]);
+          final notification = slice.items[i];
+          final newDay = i == 0 ||
+              !_sameDay(
+                notification.createdAt.toLocal(),
+                slice.items[i - 1].createdAt.toLocal(),
+              );
+          final tile = _NotificationTile(notification: notification);
+          if (!newDay) return tile;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [_DateDivider(notification.createdAt.toLocal()), tile],
+          );
         },
+      ),
+    );
+  }
+}
+
+bool _sameDay(DateTime a, DateTime b) =>
+    a.year == b.year && a.month == b.month && a.day == b.day;
+
+/// Dated section break above the first notification of each day — a
+/// centered "Today" / "Yesterday" / "12 Jul" pill flanked by hairlines.
+class _DateDivider extends StatelessWidget {
+  const _DateDivider(this.date);
+  final DateTime date;
+
+  static String _label(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final that = DateTime(date.year, date.month, date.day);
+    if (that == today) return 'Today';
+    if (today.difference(that).inDays == 1) return 'Yesterday';
+    final fmt = now.year == date.year
+        ? DateFormat('d MMM')
+        : DateFormat('d MMM yyyy');
+    return fmt.format(date);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
+      child: Row(
+        children: [
+          const Expanded(child: AppDivider.flush()),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm),
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSizes.md,
+                vertical: AppSizes.xs,
+              ),
+              decoration: ShapeDecoration(
+                color: AppColors.surface,
+                shape: AppShapes.squircle(
+                  AppSizes.radiusFull,
+                  side: BorderSide(color: AppColors.hairline),
+                ),
+              ),
+              child: Text(
+                _label(date),
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: AppColors.black,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+          const Expanded(child: AppDivider.flush()),
+        ],
       ),
     );
   }
@@ -220,24 +289,39 @@ class _NotificationTile extends StatelessWidget {
     final theme = Theme.of(context);
     final p = context.read<NotificationsProvider>();
     final accent = _accentFor(notification.kind);
-    return InkWell(
-      onTap: () {
-        if (notification.isUnread) p.markRead(notification.id);
-        // Quotation notifications deep-link into the quotations feature;
-        // other kinds remain informational (mark-read only) for now.
-        if (notification.kind.startsWith('QUOTATION_')) {
-          _openQuotation(context);
-        }
-      },
-      child: Container(
-        color: notification.isUnread
-            ? AppColors.brandSoft.withValues(alpha: 0.35)
-            : null,
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.lg,
-          vertical: AppSizes.md,
+    // Same rounded-surface-card recipe as _PartyTile/_InvoiceTile: a
+    // Material + squircle border, never a flat full-bleed background wash.
+    // Unread swaps to a brand-tinted fill + brand border (the same
+    // "needs attention" treatment _TemplatesCallout uses), light in light
+    // mode and a neutral dark puck in dark/OLED via AppColors.tileBg.
+    return Material(
+      color: notification.isUnread
+          ? AppColors.tileBg(AppColors.brandSoft)
+          : AppColors.surface,
+      shape: AppShapes.squircle(
+        AppSizes.radiusLg,
+        side: BorderSide(
+          color: notification.isUnread ? AppColors.brand : AppColors.hairline,
         ),
-        child: Row(
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        splashColor: AppColors.surfaceTint,
+        highlightColor: AppColors.surfaceTint,
+        onTap: () {
+          if (notification.isUnread) p.markRead(notification.id);
+          // Quotation notifications deep-link into the quotations feature;
+          // other kinds remain informational (mark-read only) for now.
+          if (notification.kind.startsWith('QUOTATION_')) {
+            _openQuotation(context);
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.lg,
+            vertical: AppSizes.md,
+          ),
+          child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
@@ -303,7 +387,8 @@ class _NotificationTile extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
               ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -463,8 +548,7 @@ class _InboxSkeleton extends StatelessWidget {
         bottom: AppSizes.massive + AppSizes.xxxl,
       ),
       itemCount: 6,
-      separatorBuilder: (_, _) =>
-          Container(height: 1, color: AppColors.hairline),
+      separatorBuilder: (_, _) => const SizedBox(height: AppSizes.sm),
       itemBuilder: (_, _) => const _NotificationTileSkeleton(),
     );
   }
@@ -475,7 +559,14 @@ class _NotificationTileSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return Container(
+      decoration: ShapeDecoration(
+        color: AppColors.surface,
+        shape: AppShapes.squircle(
+          AppSizes.radiusLg,
+          side: BorderSide(color: AppColors.hairline),
+        ),
+      ),
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.lg,
         vertical: AppSizes.md,
