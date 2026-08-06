@@ -7,6 +7,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shopxy/features/dashboard/domain/entities/dashboard_stats.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/features/dashboard/presentation/widgets/action_center.dart';
 import 'package:shopxy/features/dashboard/presentation/widgets/alerts.dart';
 import 'package:shopxy/features/dashboard/presentation/widgets/analytics.dart';
@@ -82,6 +83,11 @@ Future<void> _pump(WidgetTester tester, double width, Widget child) async {
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
     MaterialApp(
+      // These widgets all read AppLocalizations.of(context), which null-checks
+      // the Localizations lookup — without the delegates every one of them
+      // throws before it can paint.
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
         body: SingleChildScrollView(
           child: Padding(padding: const EdgeInsets.all(16), child: child),
@@ -117,7 +123,7 @@ void main() {
 
   for (final w in _widths) {
     testWidgets('KpiRow renders @${w.toInt()}', (t) async {
-      await _pump(t, w, KpiRow(kpis: _kpis()));
+      await _pump(t, w, KpiRow(kpis: _kpis(), period: DashboardPeriod.today));
     });
     testWidgets('TrendCard renders @${w.toInt()}', (t) async {
       await _pump(t, w, TrendCard(trend: _trend()));
