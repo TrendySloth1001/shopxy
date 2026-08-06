@@ -18,6 +18,7 @@ import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+import 'package:shopxy/shared/widgets/section_divider.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
@@ -130,9 +131,29 @@ class _StockAdjustmentsPageState extends State<StockAdjustmentsPage> {
           bottom: AppSizes.sm,
         ),
         itemCount: _items.length,
-        separatorBuilder: (_, _) => const AppDivider(),
-        itemBuilder: (_, i) => _AdjustmentTile(adjustment: _items[i]),
+        // Suppress the hairline directly above a day header — the pill
+        // divider already draws its own rules, and stacking both reads as
+        // a double line.
+        separatorBuilder: (_, i) =>
+            _startsNewDay(i + 1) ? const SizedBox.shrink() : const AppDivider(),
+        itemBuilder: (_, i) {
+          final date = _items[i].createdAt.toLocal();
+          final tile = _AdjustmentTile(adjustment: _items[i]);
+          if (!_startsNewDay(i)) return tile;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [SectionDivider.date(date), tile],
+          );
+        },
       ),
+    );
+  }
+
+  bool _startsNewDay(int i) {
+    if (i == 0) return true;
+    return !SectionDivider.isSameDay(
+      _items[i].createdAt.toLocal(),
+      _items[i - 1].createdAt.toLocal(),
     );
   }
 }
