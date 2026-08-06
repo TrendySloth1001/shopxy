@@ -160,7 +160,10 @@ function HeaderBox({ model, config }: { model: PdfDocumentModel; config: Templat
 
 function GridHeaderRow({ table, fontFamilyBold }: { table: Pick<PdfTable, 'headers' | 'widths'>; fontFamilyBold: string }) {
   return (
-    <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: BORDER, backgroundColor: '#F3F4F6' }}>
+    <View
+      wrap={false}
+      style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: BORDER, backgroundColor: '#F3F4F6' }}
+    >
       {table.headers.map((h, i) => (
         <Text
           key={`${h.text}-${i}`}
@@ -185,7 +188,10 @@ function GridHeaderRow({ table, fontFamilyBold }: { table: Pick<PdfTable, 'heade
 
 function GridDataRow({ row, widths, fontFamily }: { row: PdfTableRow; widths: number[]; fontFamily: string }) {
   return (
-    <View style={{ flexDirection: 'row', borderBottomWidth: 0.75, borderColor: BORDER, minHeight: ROW_HEIGHT }}>
+    <View
+      wrap={false}
+      style={{ flexDirection: 'row', borderBottomWidth: 0.75, borderColor: BORDER, minHeight: ROW_HEIGHT }}
+    >
       {row.cells.map((c, i) => (
         <Text
           key={i}
@@ -210,7 +216,10 @@ function GridDataRow({ row, widths, fontFamily }: { row: PdfTableRow; widths: nu
 
 function FooterBox({ model, config }: { model: PdfDocumentModel; config: TemplateConfig }) {
   return (
-    <View style={{ flexDirection: 'row', borderTopWidth: 1, borderColor: BORDER, minHeight: FOOTER_BOX_HEIGHT }}>
+    <View
+      wrap={false}
+      style={{ flexDirection: 'row', borderTopWidth: 1, borderColor: BORDER, minHeight: FOOTER_BOX_HEIGHT }}
+    >
       <View style={{ width: '50%', borderRightWidth: 1, borderColor: BORDER, padding: 6 }}>
         <Text style={{ fontFamily: config.fonts.body, fontSize: 8.5, color: '#111827' }}>
           Customer&apos;s seal and Signature

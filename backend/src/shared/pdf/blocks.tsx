@@ -233,6 +233,7 @@ function TableDataRow({
   const showBorders = config.borderStyle !== 'none';
   return (
     <View
+      wrap={false}
       style={[
         styles.row,
         {
