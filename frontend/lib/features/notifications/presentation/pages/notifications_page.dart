@@ -639,8 +639,7 @@ class _IncomingTab extends StatelessWidget {
           bottom: AppSizes.massive + AppSizes.xxxl,
         ),
         itemCount: incoming.length,
-        separatorBuilder: (_, _) =>
-            Container(height: 1, color: AppColors.hairline),
+        separatorBuilder: (_, _) => const SizedBox(height: AppSizes.sm),
         itemBuilder: (_, i) => _IncomingInviteTile(invite: incoming[i]),
       ),
     );
@@ -662,7 +661,14 @@ class _IncomingInviteTile extends StatelessWidget {
         ? l10n.notificationsRolePartyCustomer
         : l10n.notificationsRoleVendorSupplier;
 
-    return Padding(
+    return Container(
+      decoration: ShapeDecoration(
+        color: AppColors.surface,
+        shape: AppShapes.squircle(
+          AppSizes.radiusLg,
+          side: BorderSide(color: AppColors.hairline),
+        ),
+      ),
       padding: const EdgeInsets.fromLTRB(
         AppSizes.lg,
         AppSizes.md,
@@ -837,8 +843,7 @@ class _OutgoingTab extends StatelessWidget {
           bottom: AppSizes.massive + AppSizes.xxxl,
         ),
         itemCount: outgoing.length,
-        separatorBuilder: (_, _) =>
-            Container(height: 1, color: AppColors.hairline),
+        separatorBuilder: (_, _) => const SizedBox(height: AppSizes.sm),
         itemBuilder: (_, i) {
           final invite = outgoing[i];
           return _OutgoingInviteTile(invite: invite);
@@ -857,7 +862,18 @@ class _OutgoingInviteTile extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final p = context.read<NotificationsProvider>();
-    return Padding(
+    // Same rounded-surface-card recipe as the inbox tiles — a bare Padding
+    // row on the plain canvas made this float with no boundary, and the
+    // unstyled close icon read as an ambiguous "dismiss" rather than the
+    // destructive "cancel this invite" action it actually is.
+    return Container(
+      decoration: ShapeDecoration(
+        color: AppColors.surface,
+        shape: AppShapes.squircle(
+          AppSizes.radiusLg,
+          side: BorderSide(color: AppColors.hairline),
+        ),
+      ),
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.lg,
         vertical: AppSizes.md,
@@ -891,6 +907,8 @@ class _OutgoingInviteTile extends StatelessWidget {
               children: [
                 Text(
                   invite.toEmail,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: AppColors.black,
                     fontWeight: FontWeight.w600,
@@ -901,6 +919,8 @@ class _OutgoingInviteTile extends StatelessWidget {
                       (invite.isParty
                           ? l10n.notificationsRoleParty
                           : l10n.notificationsRoleVendor),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: AppColors.muted,
                   ),
@@ -908,28 +928,43 @@ class _OutgoingInviteTile extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(width: AppSizes.sm),
           _StatusChip(status: invite.status),
-          if (invite.isPending)
-            IconButton(
-              tooltip: l10n.notificationsCancel,
-              icon: const AppIcon(AppIcons.closeRounded, size: AppSizes.iconMd),
-              onPressed: () async {
-                try {
-                  await p.cancel(invite.id);
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(l10n.notificationsInvitationCancelled),
-                    ),
-                  );
-                } catch (e) {
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text(friendlyError(e))));
-                }
-              },
+          if (invite.isPending) ...[
+            const SizedBox(width: AppSizes.xs),
+            // errorSoft/error tint — the same negative-action pairing used
+            // everywhere else (out-of-stock, margin loss, etc.) — so this
+            // reads as a deliberate cancel, not a bare dismiss "x".
+            Material(
+              color: AppColors.errorSoft,
+              shape: const CircleBorder(),
+              clipBehavior: Clip.antiAlias,
+              child: IconButton(
+                tooltip: l10n.notificationsCancel,
+                icon: AppIcon(
+                  AppIcons.closeRounded,
+                  size: AppSizes.iconSm,
+                  color: AppColors.error,
+                ),
+                onPressed: () async {
+                  try {
+                    await p.cancel(invite.id);
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(l10n.notificationsInvitationCancelled),
+                      ),
+                    );
+                  } catch (e) {
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(friendlyError(e))));
+                  }
+                },
+              ),
             ),
+          ],
         ],
       ),
     );
