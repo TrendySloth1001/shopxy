@@ -94,7 +94,7 @@ List<_MenuItem> get _manageItems => [
   ),
   _MenuItem(
     label: (l) => l.hsnCodesTitle,
-    description: (l) => l.hsnSavedBlurb,
+    description: (l) => l.menuDescHsn,
     icon: AppIcons.percentRounded,
     accent: AppColors.accentAmber,
     accentSoft: AppColors.accentAmberSoft,
@@ -508,6 +508,8 @@ class _MenuRow extends StatelessWidget {
                   const SizedBox(height: AppSizes.xxs),
                   Text(
                     item.description(l10n),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: AppColors.muted,
                     ),

@@ -12773,6 +12773,12 @@ abstract class AppLocalizations {
   /// **'Product categories and grouping'**
   String get menuDescCategories;
 
+  /// No description provided for @menuDescHsn.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-filled from product names, no rate stored'**
+  String get menuDescHsn;
+
   /// No description provided for @menuDescVendors.
   ///
   /// In en, this message translates to:

@@ -6934,6 +6934,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get menuDescCategories => 'Product categories and grouping';
 
   @override
+  String get menuDescHsn => 'Auto-filled from product names, no rate stored';
+
+  @override
   String get menuDescVendors => 'Suppliers you buy from';
 
   @override

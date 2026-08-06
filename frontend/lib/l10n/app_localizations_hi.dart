@@ -6937,6 +6937,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get menuDescCategories => 'उत्पाद श्रेणियाँ और समूहन';
 
   @override
+  String get menuDescHsn =>
+      'उत्पाद नाम से अपने आप भरा जाता है, दर सहेजी नहीं जाती';
+
+  @override
   String get menuDescVendors => 'जिन आपूर्तिकर्ताओं से आप खरीदते हैं';
 
   @override
