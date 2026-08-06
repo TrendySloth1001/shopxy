@@ -15,7 +15,7 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
-import 'package:shopxy/shared/widgets/app_divider.dart';
+import 'package:shopxy/shared/widgets/section_divider.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
@@ -190,40 +190,7 @@ class _DateDivider extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
-      child: Row(
-        children: [
-          const Expanded(child: AppDivider.flush()),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm),
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSizes.md,
-                vertical: AppSizes.xs,
-              ),
-              decoration: ShapeDecoration(
-                color: AppColors.surface,
-                shape: AppShapes.squircle(
-                  AppSizes.radiusFull,
-                  side: BorderSide(color: AppColors.hairline),
-                ),
-              ),
-              child: Text(
-                _label(date),
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: AppColors.black,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ),
-          const Expanded(child: AppDivider.flush()),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => SectionDivider(label: _label(date));
 }
 
 class _NotificationTile extends StatelessWidget {

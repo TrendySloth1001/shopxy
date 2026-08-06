@@ -15,6 +15,7 @@ import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/banners/presentation/pages/merchant_banners_page.dart';
 import 'package:shopxy/features/cashier/presentation/pages/cashier_page.dart';
 import 'package:shopxy/features/notifications/presentation/pages/invitations_page.dart';
+import 'package:shopxy/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:shopxy/features/notifications/presentation/widgets/notification_bell.dart';
 import 'package:shopxy/features/categories/presentation/pages/categories_page.dart';
 import 'package:shopxy/features/products/presentation/pages/hsn_codes_page.dart';
@@ -38,6 +39,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
+import 'package:shopxy/shared/widgets/section_divider.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
@@ -52,6 +54,7 @@ class _MenuItem {
     required this.accentSoft,
     required this.builder,
     this.requires,
+    this.badgeCount,
   });
   final String Function(AppLocalizations l10n) label;
   final String Function(AppLocalizations l10n) description;
@@ -60,6 +63,13 @@ class _MenuItem {
   final Color accentSoft;
   final WidgetBuilder builder;
   final bool Function(AuthUser user)? requires;
+
+  /// Live count of things on this screen that need the user's attention,
+  /// rendered as a pill on the row so they don't have to open it to find
+  /// out. Called during the row's `build`, so use `context.select` in here
+  /// — that keeps the rebuild subscription scoped to this one row rather
+  /// than repainting the whole menu.
+  final int Function(BuildContext context)? badgeCount;
 
   bool visibleTo(AuthUser? user) =>
       requires == null || (user != null && requires!(user));
@@ -92,6 +102,12 @@ List<_MenuItem> get _manageItems => [
     accentSoft: AppColors.accentTealSoft,
     builder: (_) => const InvitationsPage(),
     requires: (u) => u.canView('parties') || u.canView('vendors'),
+    // Invites addressed to THIS shop that nobody has answered yet — the
+    // only genuinely actionable count here. Invites the merchant sent are
+    // waiting on the other side, so badging those would just be noise.
+    badgeCount: (c) => c.select<NotificationsProvider, int>(
+      (p) => p.pendingIncoming.length,
+    ),
   ),
   _MenuItem(
     label: (l) => l.navCategories,
@@ -410,7 +426,6 @@ class _MenuGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final rows = <Widget>[];
     for (var i = 0; i < items.length; i++) {
       if (i > 0) {
@@ -435,25 +450,8 @@ class _MenuGroup extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(AppSizes.md, 0, 0, AppSizes.sm),
-            child: Row(
-              children: [
-                AppIcon(
-                  sectionIcon,
-                  size: AppSizes.iconSm,
-                  color: AppColors.muted,
-                ),
-                const SizedBox(width: AppSizes.sm),
-                Text(
-                  title.toUpperCase(),
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: AppColors.muted,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-              ],
-            ),
+            padding: const EdgeInsets.only(bottom: AppSizes.sm),
+            child: SectionDivider(label: title, icon: sectionIcon),
           ),
           Container(
             clipBehavior: Clip.antiAlias,
@@ -480,6 +478,7 @@ class _MenuRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
+    final badge = item.badgeCount?.call(context) ?? 0;
     return InkWell(
       onTap: () {
         AppHaptics.selection();
@@ -528,12 +527,48 @@ class _MenuRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSizes.sm),
+            if (badge > 0) ...[
+              _MenuBadge(count: badge),
+              const SizedBox(width: AppSizes.sm),
+            ],
             AppIcon(
               AppIcons.chevronRightRounded,
               size: 20,
               color: AppColors.subtle,
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Count pill on a menu row — how many things behind it need attention.
+/// Uses the same error red as the notification bell's badge so "there is
+/// something waiting for you" reads identically wherever it appears.
+class _MenuBadge extends StatelessWidget {
+  const _MenuBadge({required this.count});
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minWidth: AppSizes.lg),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.xs,
+        vertical: AppSizes.xxs,
+      ),
+      decoration: ShapeDecoration(
+        color: AppColors.error,
+        shape: AppShapes.squircle(AppSizes.radiusFull),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        count > 99 ? '99+' : '$count',
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: AppColors.white,
+          fontWeight: FontWeight.w800,
+          height: 1.1,
         ),
       ),
     );
