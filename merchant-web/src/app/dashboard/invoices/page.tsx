@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
+  Archive,
   ArrowDownLeft,
   ArrowUpRight,
   Download,
@@ -150,6 +151,12 @@ function InvoicesPageInner() {
         >
           <RefreshCw size={16} />
         </button>
+        <Link
+          href="/dashboard/invoices/archived"
+          className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+        >
+          <Archive size={16} /> {t("actions.archived")}
+        </Link>
         <MaybeLocked area="invoices" label={t("docType.ESTIMATE")}>
           <Link
             href="/dashboard/invoices/new?doc=ESTIMATE"

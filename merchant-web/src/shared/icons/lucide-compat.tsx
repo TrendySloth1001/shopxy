@@ -85,6 +85,9 @@ import {
   Idea01Icon as _Idea01Icon,
   ImageAdd01Icon as _ImageAdd01Icon,
   ImageNotFound01Icon as _ImageNotFound01Icon,
+  Archive02Icon as _ArchiveIcon,
+  ArchiveArrowDownIcon as _ArchiveDownIcon,
+  ArchiveArrowUpIcon as _ArchiveRestoreIcon,
   InboxIcon as _InboxIcon,
   InformationCircleIcon as _InformationCircleIcon,
   KitchenUtensilsIcon as _KitchenUtensilsIcon,
@@ -363,6 +366,27 @@ export function ImagePlus(props: IconProps): ReactElement {
 }
 export function Images(props: IconProps): ReactElement {
   return <HugeiconsIcon icon={_Album01Icon} {...props} />;
+}
+/** The archive itself — a lidded box. A noun: page headers, nav links, empty
+ *  states. Same glyph the Flutter merchant app draws for `archiveOutlined`. */
+export function Archive(props: IconProps): ReactElement {
+  return <HugeiconsIcon icon={_ArchiveIcon} {...props} />;
+}
+/**
+ * "File this away" — a tray with the arrow going in. Deliberately the mirror
+ * of {@link ArchiveRestore} (same tray, arrow reversed) so a button toggling
+ * between the two reads as one control changing direction.
+ *
+ * Not a lucide name — lucide only has `Archive` for the action. Kept in this
+ * barrel anyway so both archive verbs resolve from `@/shared/icons` like
+ * everything else.
+ */
+export function ArchiveDown(props: IconProps): ReactElement {
+  return <HugeiconsIcon icon={_ArchiveDownIcon} {...props} />;
+}
+/** "Take it back out" — see {@link ArchiveDown}. */
+export function ArchiveRestore(props: IconProps): ReactElement {
+  return <HugeiconsIcon icon={_ArchiveRestoreIcon} {...props} />;
 }
 export function Inbox(props: IconProps): ReactElement {
   return <HugeiconsIcon icon={_InboxIcon} {...props} />;

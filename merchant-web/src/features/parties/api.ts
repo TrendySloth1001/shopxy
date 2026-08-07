@@ -71,6 +71,37 @@ export function createParty(input: ContactWrite): Promise<Party> {
   }).then((r) => jsonOrThrow(r, (raw) => partySchema.parse(raw), "Could not create the customer."));
 }
 
+/**
+ * Fill in a party's postal fields without touching anything else.
+ *
+ * `updateParty` sends a whole `ContactWrite`, so calling it with only the
+ * address fields would blank the party's phone, GSTIN and the rest. This
+ * re-reads the row first and merges, which is what the invoice form's
+ * "also save to this customer" needs: complete what's missing, disturb nothing.
+ */
+export async function fillPartyAddress(
+  id: string,
+  address: Partial<
+    Pick<ContactWrite, "address" | "city" | "state" | "stateCode" | "pinCode">
+  >,
+): Promise<void> {
+  const current = await getParty(id);
+  await updateParty(id, {
+    name: current.name,
+    contactName: current.contactName ?? null,
+    phone: current.phone ?? null,
+    email: current.email ?? null,
+    panNumber: current.panNumber ?? null,
+    gstin: current.gstin ?? null,
+    // Only overwrite a field the merchant actually supplied.
+    address: address.address ?? current.address ?? null,
+    city: address.city ?? current.city ?? null,
+    state: address.state ?? current.state ?? null,
+    stateCode: address.stateCode ?? current.stateCode ?? null,
+    pinCode: address.pinCode ?? current.pinCode ?? null,
+  });
+}
+
 export async function updateParty(id: string, input: ContactWrite): Promise<void> {
   const res = await fetch(`/api/parties/${id}`, {
     method: "PATCH",

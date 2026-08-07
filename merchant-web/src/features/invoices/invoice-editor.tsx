@@ -6,10 +6,18 @@ import { useTranslations } from "next-intl";
 import { ArrowDownLeft, ArrowUpRight, Package, Plus, Trash2, X } from "@/shared/icons";
 import { BackLink } from "@/shared/ui/page-header";
 import { SelectField, TextAreaField, TextField } from "@/shared/ui/form";
+import { derivePlaceOfSupply } from "./place-of-supply";
+import {
+  checkRecipient,
+  RecipientGateModal,
+  type RecipientDetails,
+} from "./recipient-gate";
+import { InvoicePreviewModal, type InvoicePreview } from "./invoice-preview";
+import { fillPartyAddress } from "@/features/parties/api";
 import { PickerModal } from "@/shared/ui/picker-modal";
 import { Monogram } from "@/shared/ui/monogram";
 import { formatINR2 } from "@/shared/money";
-import { INDIAN_STATES } from "@/shared/india";
+import { stateNameForCode } from "@/shared/india";
 import { useAuth } from "@/features/auth/auth-context";
 import { listProducts } from "@/features/products/api";
 import { listParties } from "@/features/parties/api";
@@ -41,11 +49,6 @@ export function InvoiceEditor({
   const shopStateCode = user?.shopStateCode ?? null;
   const isEdit = existing != null;
 
-  const stateOptions = [
-    { value: "", label: t("form.selectState") },
-    ...INDIAN_STATES.map((s) => ({ value: s.code, label: s.name })),
-  ];
-
   const [type, setType] = useState<"SALE" | "PURCHASE">((existing?.type as "SALE" | "PURCHASE") ?? "SALE");
   const [documentType, setDocumentType] = useState<string>(
     existing?.documentType ?? initialDocumentType ?? "TAX_INVOICE",
@@ -65,9 +68,6 @@ export function InvoiceEditor({
   const [walkInName, setWalkInName] = useState(existing && !existing.partyId ? (existing.customerName ?? "") : "");
   const [walkInPhone, setWalkInPhone] = useState(existing?.customerPhone ?? "");
   const [walkInGstin, setWalkInGstin] = useState(existing?.customerGstin ?? "");
-  const [walkInStateCode, setWalkInStateCode] = useState(
-    existing?.placeOfSupplyStateCode ?? existing?.customerStateCode ?? shopStateCode ?? "",
-  );
 
   const [lines, setLines] = useState<InvoiceLineDraft[]>(
     existing?.items.map((it) => ({
@@ -88,9 +88,24 @@ export function InvoiceEditor({
   const [picker, setPicker] = useState<"product" | "party" | "vendor" | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Pre-save gates. `pendingConfirm` remembers which button opened them so the
+  // flow can resume on the far side.
+  const [gate, setGate] = useState<ReturnType<typeof checkRecipient>>(null);
+  const [preview, setPreview] = useState<InvoicePreview | null>(null);
+  const [pendingConfirm, setPendingConfirm] = useState(false);
+  const [recipient, setRecipient] = useState<RecipientDetails | null>(null);
 
-  const placeOfSupply =
-    type === "SALE" ? (party?.stateCode ?? (walkInStateCode || null)) : (vendor?.stateCode ?? null);
+  // Place of supply is DERIVED, never asked: the first two digits of a GSTIN
+  // ARE the holder's state code, so asking again only invites a picked state
+  // that contradicts the number — and that puts tax under the wrong head.
+  const pos = derivePlaceOfSupply({
+    type,
+    party,
+    vendor,
+    typedGstin: walkInGstin,
+    shopStateCode,
+  });
+  const placeOfSupply = pos.code;
   const interstate = !!shopStateCode && !!placeOfSupply && shopStateCode !== placeOfSupply;
 
   const totals = useMemo(
@@ -136,7 +151,10 @@ export function InvoiceEditor({
     setLines((prev) => prev.filter((_, idx) => idx !== i));
   }
 
-  function buildPayload(confirm: boolean): InvoiceWrite | string {
+  function buildPayload(
+    confirm: boolean,
+    recipientOverride: RecipientDetails | null,
+  ): InvoiceWrite | string {
     if (lines.length === 0) return t("errors.noItems");
     if (type === "PURCHASE" && !vendor) return t("errors.needVendor");
     if (lines.some((l) => l.quantity <= 0)) return t("errors.qtyPositive");
@@ -160,6 +178,9 @@ export function InvoiceEditor({
       confirm,
     };
     if (placeOfSupply) payload.placeOfSupplyStateCode = placeOfSupply;
+    // Recipient postal fields the merchant completed at the gate (or the
+    // explicit "issue it incomplete" acknowledgement).
+    if (recipientOverride) Object.assign(payload, recipientOverride);
     if (type === "SALE") {
       if (party) payload.partyId = party.id;
       else {
@@ -173,9 +194,87 @@ export function InvoiceEditor({
     return payload;
   }
 
-  async function save(confirm: boolean) {
+  /// Entry point for both buttons. Runs the pre-save gates, then commits.
+  function onSave(confirm: boolean) {
     setError(null);
-    const payload = buildPayload(confirm);
+    // Validate before opening any modal, so a missing item doesn't surface
+    // behind a preview the merchant then has to dismiss.
+    const check = buildPayload(confirm, recipient);
+    if (typeof check === "string") return setError(check);
+
+    // Rule 46(e)/(f) — checked here because the server's rejection is
+    // unactionable from this screen.
+    if (!recipient) {
+      const needed = checkRecipient({
+        type,
+        documentType: type === "SALE" ? documentType : "TAX_INVOICE",
+        customerName: party?.name ?? walkInName,
+        customerGstin: party?.gstin ?? walkInGstin,
+        total: totals.total,
+        party: partyDetails,
+      });
+      if (needed) {
+        setPendingConfirm(confirm);
+        setGate(needed);
+        return;
+      }
+    }
+
+    // Confirming issues the document, posts stock and burns a number. Saving
+    // a draft does none of that, so only the irreversible path is reviewed.
+    if (confirm) {
+      setPendingConfirm(true);
+      setPreview(buildPreview());
+      return;
+    }
+    void commit(false, recipient);
+  }
+
+  /// Address fields of the attached party, for the recipient check. The
+  /// picker's Contact only carries id/name/phone/gstin/stateCode, so an edit
+  /// of an existing invoice reads them off its own snapshot instead.
+  const partyDetails = party
+    ? {
+        address: existing?.customerAddress ?? null,
+        city: existing?.customerCity ?? null,
+        pinCode: existing?.customerPinCode ?? null,
+      }
+    : null;
+
+  function buildPreview(): InvoicePreview {
+    const sale = type === "SALE";
+    const addressParts = sale
+      ? [existing?.customerAddress, existing?.customerCity, existing?.customerState, existing?.customerPinCode]
+      : [existing?.vendorAddress, existing?.vendorCity, existing?.vendorState, existing?.vendorPinCode];
+    const address = addressParts.filter((p) => (p ?? "").trim() !== "").join(", ");
+    const stateName = stateNameForCode(placeOfSupply);
+    return {
+      documentTypeLabel: sale ? t(`docType.${documentType}`) : t("list.purchase"),
+      counterpartyLabel: sale ? t("preview.billTo") : t("preview.from"),
+      counterpartyName: sale
+        ? (party?.name ?? (walkInName.trim() || t("form.walkInDefault")))
+        : (vendor?.name ?? "—"),
+      counterpartyAddress: address || null,
+      placeOfSupply: placeOfSupply
+        ? `${placeOfSupply}${stateName ? ` — ${stateName}` : ""}`
+        : null,
+      supplyTypeLabel: interstate ? t("form.supplyInterState") : t("form.supplyIntraState"),
+      lines: lines.map((l) => ({
+        name: l.productName,
+        quantityLabel: `${l.quantity} × ${formatINR2(l.unitPrice)}`,
+        amount: l.quantity * l.unitPrice,
+      })),
+      totals: [
+        { label: t("detail.subtotal"), value: formatINR2(totals.subtotal) },
+        { label: t("detail.tax"), value: formatINR2(totals.tax) },
+        { label: t("detail.total"), value: formatINR2(totals.total), emphasis: true },
+      ],
+    };
+  }
+
+  async function commit(confirm: boolean, recipientOverride: RecipientDetails | null) {
+    setError(null);
+    const payload = buildPayload(confirm, recipientOverride);
     if (typeof payload === "string") return setError(payload);
     setSaving(true);
     try {
@@ -265,7 +364,6 @@ export function InvoiceEditor({
                 <TextField label={t("form.walkInName")} value={walkInName} onChange={setWalkInName} placeholder={t("form.walkInDefault")} />
                 <TextField label={t("form.phone")} value={walkInPhone} onChange={setWalkInPhone} type="tel" />
                 <TextField label="GSTIN" value={walkInGstin} onChange={(v) => setWalkInGstin(v.toUpperCase())} />
-                <SelectField label={t("form.placeOfSupply")} value={walkInStateCode} onChange={setWalkInStateCode} options={stateOptions} />
               </div>
             </div>
           )
@@ -280,6 +378,34 @@ export function InvoiceEditor({
             <Plus size={16} /> {t("form.selectVendor")}
           </button>
         )}
+
+        {/* Derived, read-only. It's shown because it's the reason the tax
+            below splits into CGST+SGST or IGST — the old free-choice select
+            never told anyone that. */}
+        <div className="mt-md rounded-md bg-hero-panel px-md py-sm">
+          <p className="text-label-md uppercase tracking-wide text-subtle">
+            {t("form.placeOfSupply")}
+          </p>
+          <div className="mt-xs flex flex-wrap items-center gap-sm">
+            <span className="text-body-md font-semibold text-ink">
+              {placeOfSupply
+                ? `${placeOfSupply}${stateNameForCode(placeOfSupply) ? ` — ${stateNameForCode(placeOfSupply)}` : ""}`
+                : "—"}
+            </span>
+            <span
+              className={`inline-flex items-center rounded-full px-sm py-px text-body-sm font-semibold ${
+                interstate
+                  ? "bg-warning-soft text-warning"
+                  : "bg-info-soft text-info"
+              }`}
+            >
+              {interstate ? t("form.supplyInterState") : t("form.supplyIntraState")}
+            </span>
+          </div>
+          <p className="mt-xs text-body-sm text-muted">
+            {t(`form.posSource.${pos.source}`)}
+          </p>
+        </div>
       </div>
 
       {/* Items */}
@@ -357,7 +483,7 @@ export function InvoiceEditor({
       <div className="mt-xxl flex flex-wrap items-center gap-sm">
         <button
           type="button"
-          onClick={() => save(false)}
+          onClick={() => onSave(false)}
           disabled={saving}
           className="inline-flex h-11 items-center gap-sm rounded-button border border-hairline px-lg text-label-md text-ink transition-colors hover:bg-surface-tint disabled:text-disabled"
         >
@@ -365,7 +491,7 @@ export function InvoiceEditor({
         </button>
         <button
           type="button"
-          onClick={() => save(true)}
+          onClick={() => onSave(true)}
           disabled={saving}
           className="inline-flex h-11 items-center gap-sm rounded-button bg-brand px-lg text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-disabled"
         >
@@ -374,6 +500,57 @@ export function InvoiceEditor({
       </div>
 
       {/* Pickers */}
+      {gate ? (
+        <RecipientGateModal
+          requirement={gate.requirement}
+          nameMissing={gate.nameMissing}
+          addressMissing={gate.addressMissing}
+          canSaveToParty={party != null}
+          initialCity={existing?.customerCity}
+          initialStateCode={party?.stateCode ?? placeOfSupply}
+          initialPinCode={existing?.customerPinCode}
+          busy={saving}
+          onCancel={() => setGate(null)}
+          onFill={(details, saveToParty) => {
+            setGate(null);
+            setRecipient(details);
+            // Best-effort: the invoice is the thing being saved, so failing to
+            // also update the customer record must not block it. The details
+            // still travel on the invoice either way.
+            if (saveToParty && party) {
+              void fillPartyAddress(party.id, {
+                address: details.customerAddress ?? null,
+                city: details.customerCity ?? null,
+                state: details.customerState ?? null,
+                stateCode: details.customerStateCode ?? null,
+                pinCode: details.customerPinCode ?? null,
+              }).catch(() => {});
+            }
+            if (pendingConfirm) setPreview(buildPreview());
+            else void commit(false, details);
+          }}
+          onSkip={() => {
+            setGate(null);
+            const ack = { acknowledgeMissingRecipientDetails: true } as const;
+            setRecipient(ack);
+            if (pendingConfirm) setPreview(buildPreview());
+            else void commit(false, ack);
+          }}
+        />
+      ) : null}
+
+      {preview ? (
+        <InvoicePreviewModal
+          preview={preview}
+          busy={saving}
+          onCancel={() => setPreview(null)}
+          onConfirm={() => {
+            setPreview(null);
+            void commit(true, recipient);
+          }}
+        />
+      ) : null}
+
       {picker === "product" ? (
         <PickerModal
           title={t("form.addProduct")}

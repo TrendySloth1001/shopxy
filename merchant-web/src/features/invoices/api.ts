@@ -27,6 +27,9 @@ export type InvoiceListFilters = {
   vendorId?: string;
   partyId?: string;
   productId?: string;
+  /// The "Archived" view. Archived documents are out of every other list —
+  /// that's the point of archiving.
+  archived?: boolean;
 };
 
 export function listInvoices(filters: InvoiceListFilters): Promise<Invoice[]> {
@@ -38,6 +41,7 @@ export function listInvoices(filters: InvoiceListFilters): Promise<Invoice[]> {
   if (filters.vendorId) qs.set("vendorId", String(filters.vendorId));
   if (filters.partyId) qs.set("partyId", String(filters.partyId));
   if (filters.productId) qs.set("productId", String(filters.productId));
+  if (filters.archived) qs.set("archived", "true");
   return fetch(`/api/invoices?${qs.toString()}`, { cache: "no-store" }).then((r) =>
     jsonOrThrow(r, (raw) => invoiceListSchema.parse(raw).data, "Could not load invoices."),
   );
@@ -120,9 +124,27 @@ export function convertEstimate(id: string): Promise<Invoice> {
   );
 }
 
-export async function deleteInvoice(id: string): Promise<void> {
-  const res = await fetch(`/api/invoices/${id}`, { method: "DELETE" });
-  await okOrThrow(res, "Could not delete the invoice.");
+/**
+ * File a DRAFT or CANCELLED invoice out of the working list, or restore it.
+ *
+ * Replaces `deleteInvoice`, which could never succeed — a draft already owns
+ * its legal serial and Rule 46(b) needs the run consecutive, so the row can't
+ * be removed. Archiving keeps the number allocated against it.
+ */
+export async function setInvoiceArchived(
+  id: string,
+  archived: boolean,
+): Promise<void> {
+  const res = await fetch(
+    `/api/invoices/${id}/archive${archived ? "" : "?restore=1"}`,
+    { method: "POST" },
+  );
+  await okOrThrow(
+    res,
+    archived
+      ? "Could not archive the invoice."
+      : "Could not restore the invoice.",
+  );
 }
 
 /** Open the server-rendered PDF (download / print) in a new tab. */

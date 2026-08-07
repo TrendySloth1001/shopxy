@@ -83,6 +83,47 @@ export function formatDateTime(iso?: string | null): string {
   return dateTimeFmt.format(d);
 }
 
+/**
+ * True when two dates fall on the same calendar day — the day-boundary test a
+ * dated list uses to decide where a day divider goes.
+ */
+export function isSameDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+const dayFmt = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short" });
+const dayWithYearFmt = new Intl.DateTimeFormat("en-IN", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+});
+
+/**
+ * Day-group heading: "Today" / "Yesterday" / "12 Jul" (the year is appended
+ * once the date falls outside the current one).
+ *
+ * Kept beside {@link isSameDay} so grouping and labelling can never disagree
+ * about what "a day" means. The two relative words are passed in rather than
+ * translated here — this module is plain TypeScript with no locale context.
+ */
+export function dayLabel(
+  date: Date,
+  words: { today: string; yesterday: string },
+): string {
+  const now = new Date();
+  if (isSameDay(date, now)) return words.today;
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (isSameDay(date, yesterday)) return words.yesterday;
+  return date.getFullYear() === now.getFullYear()
+    ? dayFmt.format(date)
+    : dayWithYearFmt.format(date);
+}
+
 /** "5 Jun, 2:30 pm → 6 Jun, 8:00 pm". */
 export function formatDateRange(startIso?: string | null, endIso?: string | null): string {
   return `${formatDateTime(startIso)}  →  ${formatDateTime(endIso)}`;

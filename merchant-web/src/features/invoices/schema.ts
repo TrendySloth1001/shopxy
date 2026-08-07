@@ -96,6 +96,10 @@ export const invoiceSchema = z
     amountInWords: z.string().nullish(),
     note: z.string().nullish(),
     invoiceDate: z.string(),
+    /// Set when the merchant filed the document out of the working list.
+    /// Archiving never removes the row or frees its number — Rule 46(b) needs
+    /// the serial run consecutive — so this is the only marker.
+    archivedAt: z.string().nullish(),
     convertedToInvoiceId: z.coerce.string().nullish(),
     createdAt: z.string().optional(),
     updatedAt: z.string().optional(),

@@ -605,17 +605,17 @@
       "pdf": "PDF",
       "markPaid": "Mark as paid",
       "convert": "Convert to invoice",
-      "delete": "Delete",
       "cancelInvoice": "Cancel invoice",
       "confirmInvoice": "Confirm invoice",
-      "working": "Working…"
+      "working": "Working…",
+      "archive": "Archive",
+      "archived": "Archived"
     },
     "detail": {
       "back": "Invoices",
       "loadError": "Could not load the invoice.",
       "notFound": "Invoice not found.",
       "updateError": "Could not update the invoice.",
-      "deleteError": "Could not delete the invoice.",
       "convertError": "Could not convert to an invoice.",
       "sale": "Sale",
       "purchase": "Purchase",
@@ -624,7 +624,8 @@
       "note": "Note",
       "billTo": "Bill to",
       "supplier": "Supplier",
-      "productFallback": "Product"
+      "productFallback": "Product",
+      "archiveError": "Could not archive the invoice."
     },
     "totals": {
       "subtotal": "Subtotal",
@@ -638,10 +639,6 @@
     "cancelModal": {
       "title": "Cancel this invoice?",
       "body": "The draft is voided. Stock isn’t affected because it was never posted."
-    },
-    "deleteModal": {
-      "title": "Delete this invoice?",
-      "body": "Permanently removes this draft. This can’t be undone."
     },
     "edit": {
       "backOne": "Invoice",
@@ -684,7 +681,16 @@
       "priceExclusive": "Excl.",
       "priceInclusiveHint": "Price includes GST — tap to bill GST on top instead",
       "priceExclusiveHint": "GST added on top — tap to treat the price as already including GST",
-      "removeItem": "Remove item"
+      "removeItem": "Remove item",
+      "supplyIntraState": "Intra-state · CGST + SGST",
+      "supplyInterState": "Inter-state · IGST",
+      "posSource": {
+        "partyGstin": "From the customer's GSTIN",
+        "partyAddress": "From the customer's saved address",
+        "vendorGstin": "From the vendor's GSTIN",
+        "vendorAddress": "From the vendor's saved address",
+        "shopDefault": "No customer GSTIN — treated as a local supply in your own state"
+      }
     },
     "picker": {
       "searchProducts": "Search products by name or SKU",
@@ -703,6 +709,47 @@
       "discountNegative": "The discount can't be negative.",
       "confirmFailed": "The invoice was saved as a draft but could not be confirmed.",
       "saveFailed": "Could not save the invoice."
+    },
+    "archiveModal": {
+      "title": "Archive this invoice?",
+      "body": "Files it out of your invoice list. Its number stays allocated, so the serial run is unbroken — you can restore it later."
+    },
+    "archived": {
+      "title": "Archived invoices",
+      "subtitle": "Drafts and cancelled bills you filed away",
+      "backToList": "All invoices",
+      "restore": "Restore",
+      "restoring": "Restoring…",
+      "empty": "Nothing archived",
+      "emptyHint": "Drafts and cancelled invoices you file away land here. Their numbers stay allocated, so your serial run is never broken."
+    },
+    "recipient": {
+      "title": "Customer details are incomplete",
+      "whyB2b": "This is a GST invoice, so the law needs the customer's name and address on it.",
+      "whyHighValue": "Invoices of ₹50,000 or more must carry the customer's name and address.",
+      "missingIntro": "Missing:",
+      "missingName": "Name",
+      "missingAddress": "Address",
+      "address": "Address",
+      "city": "City",
+      "state": "State",
+      "pin": "PIN code",
+      "saveToParty": "Also save to this customer",
+      "saveToPartyHint": "So you don't have to fill this in again",
+      "fillAndContinue": "Save and continue",
+      "back": "Back",
+      "skip": "Issue without them",
+      "skipTitle": "Issue an incomplete invoice?",
+      "skipBody": "This invoice will go out without the customer’s full details, which GST rules require at this value. Do this only if you cannot get them.",
+      "skipConfirm": "Issue anyway"
+    },
+    "preview": {
+      "title": "Check before issuing",
+      "subtitle": "Once confirmed, this invoice is issued and can't be edited.",
+      "billTo": "Bill to",
+      "from": "From",
+      "noAddress": "No address on file",
+      "confirm": "Confirm and issue"
     }
   },
   "quotations": {
@@ -3398,6 +3445,10 @@
     "timeSelect": {
       "hour": "Hour",
       "minute": "Minute"
+    },
+    "day": {
+      "today": "Today",
+      "yesterday": "Yesterday"
     }
   },
   "dashboard": {

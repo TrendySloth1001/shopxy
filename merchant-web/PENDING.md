@@ -178,3 +178,36 @@ everyone but `DEVELOPER_EMAIL`. Mirrors the Flutter merchant app's
   backend there is nothing on screen to say so, which is easy to forget on a
   dev tunnel. A small persistent chip in the dashboard chrome (developer-only,
   driven by the same endpoint) would prevent "why is production empty".
+
+## Invoice parity: web caught up with Flutter (Aug 2026)
+
+Ported from the Flutter merchant app so both clients issue documents the same
+way: place of supply derived (never asked), the Rule 46(e)/(f) recipient gate,
+the pre-issue preview, and the archived-invoices view.
+
+- [x] **Place of supply is derived.** `features/invoices/place-of-supply.ts`
+  mirrors the backend's GST-10 fallback: counterparty state code → their GSTIN
+  prefix → typed GSTIN prefix → the shop's own state. The walk-in state
+  `SelectField` is gone; a read-only row shows the answer and why.
+- [x] **Recipient gate.** `recipient-gate.tsx` — fill the address (optionally
+  saving it back to the customer) or issue anyway with an explicit
+  acknowledgement. Warns in more cases than the server blocks, on purpose:
+  the server counts a GSTIN-derived state code as an address, so B2B never
+  trips its address branch.
+- [x] **Preview before confirm.** `invoice-preview.tsx`, on the confirm path
+  only — saving a draft stays one click.
+- [x] **Archived invoices** at `/dashboard/invoices/archived`, linked from the
+  invoices header. Replaces Delete, which the backend could never honour.
+
+Deferred / simplified:
+
+- [ ] **Party address in the gate is read off the invoice snapshot.** The
+  contact picker's `Contact` only carries id/name/phone/gstin/stateCode, so on
+  a NEW invoice `partyDetails` is null and the gate treats the address as
+  missing even when the party has one. Either widen `Contact` or fetch the
+  party on select. Flutter doesn't have this gap (its `Party` is the full row).
+- [ ] **Preview line amounts ignore per-line discounts.** The web editor has no
+  per-line discount field today, so `quantity × unitPrice` is exact — revisit
+  if one is added.
+- [ ] **No archived view for challans / quotations.** Archiving is invoice-only
+  on the backend too.

@@ -14,7 +14,8 @@ import {
   MapPin,
   Pencil,
   Phone,
-  Trash2,
+  ArchiveDown,
+  ArchiveRestore,
   Wallet,
 } from "@/shared/icons";
 import { BackLink } from "@/shared/ui/page-header";
@@ -27,7 +28,7 @@ import { listPayments } from "@/features/payments/api";
 import { PAYMENT_MODE_LABELS, type Payment } from "@/features/payments/schema";
 import {
   convertEstimate,
-  deleteInvoice,
+  setInvoiceArchived,
   getInvoice,
   invoicePdfUrl,
   updateInvoiceStatus,
@@ -109,15 +110,22 @@ export default function InvoiceDetailPage() {
     }
   }
 
-  async function onDelete() {
+  // Was onDelete. The backend could never honour a delete — a draft already
+  // owns its legal serial and Rule 46(b) needs the run consecutive — so this
+  // button only ever produced an error. Archiving does what was wanted: the
+  // document leaves the list, its number stays allocated.
+  async function onSetArchived(archived: boolean) {
     setBusy(true);
     setActionError(null);
     try {
-      await deleteInvoice(id);
+      await setInvoiceArchived(id, archived);
+      // Either way the document has left the list this page was opened from,
+      // so both land on the invoice list — where a restored document now
+      // reappears, and an archived one has gone.
       router.push(BACK);
       router.refresh();
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : t("detail.deleteError"));
+      setActionError(e instanceof Error ? e.message : t("detail.archiveError"));
       setBusy(false);
     }
   }
@@ -231,14 +239,26 @@ export default function InvoiceDetailPage() {
               <FileUp size={16} /> {t("actions.convert")}
             </button>
           ) : null}
-          {invoice.status !== "CONFIRMED" ? (
+          {invoice.archivedAt ? (
+            // Restoring needs no confirmation — it only puts the document back
+            // where it was. Archiving does, hence the modal below.
+            <button
+              type="button"
+              onClick={() => void onSetArchived(false)}
+              disabled={busy}
+              aria-label={t("archived.restore")}
+              className="inline-flex size-10 items-center justify-center rounded-button text-muted transition-colors hover:bg-surface-tint hover:text-ink disabled:text-disabled"
+            >
+              <ArchiveRestore size={16} />
+            </button>
+          ) : invoice.status !== "CONFIRMED" ? (
             <button
               type="button"
               onClick={() => setConfirmDelete(true)}
-              aria-label={t("actions.delete")}
-              className="inline-flex size-10 items-center justify-center rounded-button text-muted transition-colors hover:bg-error-soft hover:text-error"
+              aria-label={t("actions.archive")}
+              className="inline-flex size-10 items-center justify-center rounded-button text-muted transition-colors hover:bg-surface-tint hover:text-ink"
             >
-              <Trash2 size={16} />
+              <ArchiveDown size={16} />
             </button>
           ) : null}
         </div>
@@ -360,16 +380,15 @@ export default function InvoiceDetailPage() {
         </Modal>
       ) : null}
       {confirmDelete ? (
-        <Modal title={t("deleteModal.title")} onClose={() => setConfirmDelete(false)}>
+        <Modal title={t("archiveModal.title")} onClose={() => setConfirmDelete(false)}>
           <p className="text-body-md text-muted">
-            {t("deleteModal.body")}
+            {t("archiveModal.body")}
           </p>
           <ModalActions
             busy={busy}
-            danger
-            confirmLabel={t("actions.delete")}
+            confirmLabel={t("actions.archive")}
             onCancel={() => setConfirmDelete(false)}
-            onConfirm={onDelete}
+            onConfirm={() => void onSetArchived(true)}
           />
         </Modal>
       ) : null}
