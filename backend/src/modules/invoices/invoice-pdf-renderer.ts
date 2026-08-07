@@ -1,10 +1,12 @@
 import PDFDocument from 'pdfkit';
-import { Prisma } from '@prisma/client';
+import { Prisma, type RegistrationType } from '@prisma/client';
 import { Writable } from 'stream';
 import QRCode from 'qrcode';
 import prisma from '../../infra/db/prisma.js';
 import { stateNameFromCode } from '../../shared/validation/indian.js';
 import { loadPdfEngine } from '../../shared/pdfEngineLoader.js';
+import { buildPdfColumns } from '../../shared/pdfColumns.js';
+import { isOutputGstRegistered } from './gst-registration-gate.js';
 
 /// Render one invoice as a PDF — to a stream when `out` is set, or to a
 /// Buffer otherwise. Returns `{ error }` if the invoice can't be found or
@@ -57,6 +59,10 @@ async function renderInvoicePdfPdfKit(
             shopPinCode: true,
             shopGstin: true,
             shopPan: true,
+            // Drives whether the GST columns print at all — see
+            // `invoiceGstVisibility`.
+            registrationType: true,
+            gstEffectiveFrom: true,
             upiVpa: true,
             name: true,
             email: true,
@@ -65,6 +71,7 @@ async function renderInvoicePdfPdfKit(
       },
     });
     const owner = shopRow?.owner ?? null;
+    const { showGst, showHsn } = invoiceGstVisibility(invoice, owner);
 
     // GST-2 (Rule 53) — a credit/debit note MUST carry the serial number and
     // date of the original tax invoice it adjusts. Look it up (scoped to the
@@ -286,17 +293,25 @@ async function renderInvoicePdfPdfKit(
         : '-';
 
       doc.fillColor('#111827').font('Helvetica').fontSize(9);
-      const metaW = W / 4;
+      // Place of supply only means something under GST, and it printed a bare
+      // "-" whenever the state was unknown — omit it in both cases. The strip
+      // divides by the fields it actually has, so it stays evenly spread.
+      const metaFields: { label: string; value: string }[] = [
+        { label: 'Invoice No', value: invoice.invoiceNo },
+        { label: 'Date', value: invoiceDate },
+        ...(showGst && invoice.placeOfSupplyStateCode
+          ? [{ label: 'Place of Supply', value: placeOfSupply }]
+          : []),
+        { label: 'FY', value: invoice.financialYear },
+      ];
+      const metaW = W / metaFields.length;
       const metaRowY = y;
       const drawMeta = (label: string, value: string, idx: number) => {
         const x = LEFT + idx * metaW;
         doc.font('Helvetica').fontSize(7).fillColor('#6B7280').text(label.toUpperCase(), x, metaRowY, { width: metaW - 6 });
         doc.font('Helvetica-Bold').fontSize(9).fillColor('#111827').text(value, x, metaRowY + 9, { width: metaW - 6 });
       };
-      drawMeta('Invoice No', invoice.invoiceNo, 0);
-      drawMeta('Date', invoiceDate, 1);
-      drawMeta('Place of Supply', placeOfSupply, 2);
-      drawMeta('FY', invoice.financialYear, 3);
+      metaFields.forEach((f, i) => drawMeta(f.label, f.value, i));
       y = metaRowY + 28;
 
       // GST-2 (Rule 53) — second meta row carrying the original tax invoice's
@@ -318,23 +333,57 @@ async function renderInvoicePdfPdfKit(
 
       // ---------- Items table ----------
       const isInter = invoice.isInterstate;
-      // Column layout. With IGST we get 10 columns; with CGST/SGST split, 11.
-      // Sr | Item/SKU | HSN | Qty | Rate | Disc | Taxable | GST% | <tax cols...> | Total
-      const taxCols = isInter ? ['IGST'] : ['CGST', 'SGST'];
-      const headers = ['Sr', 'Item / SKU', 'HSN', 'Qty', 'Rate', 'Disc', 'Taxable', 'GST%', ...taxCols, 'Total'];
-
-      // Tuned widths so the row sums to W=515.
-      // Sr=22, Item=120, HSN=42, Qty=38, Rate=46, Disc=38, Taxable=52, GST%=32,
-      // then tax cols share remaining 65 (IGST) or 65 (CGST+SGST=64+1 padding).
-      const widths: number[] = isInter
-        ? [22, 120, 42, 38, 46, 38, 52, 32, 65, 60]
-        : [22, 116, 40, 34, 42, 34, 50, 30, 45, 45, 57];
+      // Column layout — Sr | Item/SKU | HSN | Qty | Rate | Disc | Taxable |
+      // GST% | <tax cols...> | Total, with the HSN and GST groups dropped
+      // outright when they don't apply. Widths are tuned so the kept columns
+      // always re-sum to W=515; the item column absorbs whatever is freed.
+      // Without GST the per-line "Taxable" column is just the line total
+      // again, so it travels with the tax columns.
+      const itemCols = buildPdfColumns<(typeof invoice.items)[number]>(W, [
+        { header: 'Sr', width: 22, align: 'left', cell: (_it, i) => String(i + 1) },
+        {
+          header: 'Item / SKU',
+          width: isInter ? 120 : 116,
+          align: 'left',
+          flex: true,
+          cell: (it) => `${it.productName}\n${it.productSku}`,
+        },
+        { header: 'HSN', width: isInter ? 42 : 40, align: 'left', show: showHsn, cell: (it) => it.hsn ?? '' },
+        {
+          header: 'Qty',
+          width: isInter ? 38 : 34,
+          align: 'right',
+          cell: (it) => `${new D(it.quantity.toString()).toString()} ${it.unit}`,
+        },
+        { header: 'Rate', width: isInter ? 46 : 42, align: 'right', cell: (it) => numFmt(it.unitPrice) },
+        { header: 'Disc', width: isInter ? 38 : 34, align: 'right', cell: (it) => numFmt(it.discount) },
+        {
+          header: 'Taxable',
+          width: isInter ? 52 : 50,
+          align: 'right',
+          show: showGst,
+          cell: (it) => numFmt(it.taxableValue),
+        },
+        {
+          header: 'GST%',
+          width: isInter ? 32 : 30,
+          align: 'right',
+          show: showGst,
+          cell: (it) => `${new D(it.taxPercent.toString()).toString()}%`,
+        },
+        { header: 'IGST', width: 65, align: 'right', show: showGst && isInter, cell: (it) => numFmt(it.igstAmount) },
+        { header: 'CGST', width: 45, align: 'right', show: showGst && !isInter, cell: (it) => numFmt(it.cgstAmount) },
+        { header: 'SGST', width: 45, align: 'right', show: showGst && !isInter, cell: (it) => numFmt(it.sgstAmount) },
+        { header: 'Total', width: isInter ? 60 : 57, align: 'right', cell: (it) => numFmt(it.total) },
+      ]);
+      const headers = itemCols.headers;
+      const widths = itemCols.widths;
       // Build cumulative x positions.
       const xs: number[] = [];
       let cx = LEFT;
       for (const w of widths) { xs.push(cx); cx += w; }
 
-      const align = (i: number): 'left' | 'right' => i <= 2 ? 'left' : 'right';
+      const align = itemCols.align;
 
       // Header row.
       doc.rect(LEFT, y, W, 18).fill('#F3F4F6');
@@ -361,21 +410,7 @@ async function renderInvoicePdfPdfKit(
           doc.font('Helvetica').fontSize(8);
         }
         doc.fillColor('#111827');
-        const taxValues: string[] = isInter
-          ? [numFmt(item.igstAmount)]
-          : [numFmt(item.cgstAmount), numFmt(item.sgstAmount)];
-        const row = [
-          String(sr),
-          `${item.productName}\n${item.productSku}`,
-          item.hsn ?? '-',
-          `${new D(item.quantity.toString()).toString()} ${item.unit}`,
-          numFmt(item.unitPrice),
-          numFmt(item.discount),
-          numFmt(item.taxableValue),
-          `${new D(item.taxPercent.toString()).toString()}%`,
-          ...taxValues,
-          numFmt(item.total),
-        ];
+        const row = itemCols.row(item, sr - 1);
         row.forEach((c, i) => {
           doc.text(c, xs[i] + 2, y + 4, { width: widths[i] - 4, align: align(i) });
         });
@@ -385,6 +420,8 @@ async function renderInvoicePdfPdfKit(
       }
 
       // ---------- HSN summary (skip rows with null hsn) ----------
+      // The summary exists for GSTR-1, so it is skipped entirely on a
+      // document that charges no tax.
       type HsnAgg = {
         taxable: Prisma.Decimal;
         igst: Prisma.Decimal;
@@ -393,7 +430,7 @@ async function renderInvoicePdfPdfKit(
         cess: Prisma.Decimal;
       };
       const hsnMap = new Map<string, HsnAgg>();
-      for (const it of invoice.items) {
+      for (const it of showGst ? invoice.items : []) {
         if (!it.hsn) continue;
         const cur = hsnMap.get(it.hsn) ?? {
           taxable: new D(0), igst: new D(0), cgst: new D(0), sgst: new D(0), cess: new D(0),
@@ -462,14 +499,18 @@ async function renderInvoicePdfPdfKit(
 
       totRow('Subtotal', currencyFmt(invoice.subtotal));
       if (totalDiscount.gt(0)) totRow('Total Discount', `- ${currencyFmt(totalDiscount)}`);
-      totRow('Taxable Value', currencyFmt(invoice.taxableValue));
-      if (isInter) {
-        totRow('IGST', currencyFmt(invoice.igstAmount));
-      } else {
-        totRow('CGST', currencyFmt(invoice.cgstAmount));
-        totRow('SGST', currencyFmt(invoice.sgstAmount));
+      // "Taxable Value" is a GST term of art, and without tax it just repeats
+      // the discounted subtotal — so it travels with the tax rows.
+      if (showGst) {
+        totRow('Taxable Value', currencyFmt(invoice.taxableValue));
+        if (isInter) {
+          totRow('IGST', currencyFmt(invoice.igstAmount));
+        } else {
+          totRow('CGST', currencyFmt(invoice.cgstAmount));
+          totRow('SGST', currencyFmt(invoice.sgstAmount));
+        }
+        if (new D(invoice.cessAmount.toString()).gt(0)) totRow('Cess', currencyFmt(invoice.cessAmount));
       }
-      if (new D(invoice.cessAmount.toString()).gt(0)) totRow('Cess', currencyFmt(invoice.cessAmount));
       if (!new D(invoice.roundOff.toString()).eq(0)) totRow('Round-off', signedRoundOff(invoice.roundOff));
       doc.moveTo(totalsX, y).lineTo(totalsX + totalsW, y).strokeColor('#9CA3AF').stroke();
       y += 4;
@@ -632,6 +673,53 @@ async function renderInvoicePdfPdfKit(
     });
 }
 
+/// Whether this invoice may print GST and HSN at all.
+///
+/// A merchant who isn't GST-registered (or whose registration starts after
+/// this invoice's own date) charges nothing, so the GST%, tax and HSN-summary
+/// blocks would print `0.00` down the page — and an empty tax column on a bill
+/// reads as a claim that tax was accounted for. Same for HSN: a column of
+/// dashes is worse than no column, so it is dropped unless at least one line
+/// actually carries a code.
+///
+/// `hasTaxFigures` is the safety net, and it is load-bearing. A shop can set
+/// or move `gstEffectiveFrom` *after* issuing invoices, and the registration
+/// gate alone would then hide the tax columns on a document that genuinely
+/// charged tax — leaving its totals visibly not adding up. What the invoice
+/// actually recorded always wins over what the shop's profile says today.
+///
+/// PURCHASE documents record the *vendor's* output tax, so our own
+/// registration is irrelevant there — only whether tax was charged to us.
+export function invoiceGstVisibility(
+  invoice: {
+    type: string;
+    invoiceDate: Date;
+    items: { hsn: string | null; taxPercent: Prisma.Decimal }[];
+    igstAmount: Prisma.Decimal;
+    cgstAmount: Prisma.Decimal;
+    sgstAmount: Prisma.Decimal;
+    cessAmount: Prisma.Decimal;
+  },
+  owner: {
+    shopGstin: string | null;
+    registrationType: RegistrationType;
+    gstEffectiveFrom: Date | null;
+  } | null,
+): { showGst: boolean; showHsn: boolean } {
+  const D = Prisma.Decimal;
+  const hasTaxFigures =
+    invoice.items.some((it) => new D(it.taxPercent.toString()).gt(0)) ||
+    [invoice.igstAmount, invoice.cgstAmount, invoice.sgstAmount, invoice.cessAmount].some((v) =>
+      new D(v.toString()).gt(0),
+    );
+  const registered =
+    invoice.type === 'SALE' && owner ? isOutputGstRegistered(owner, invoice.invoiceDate) : false;
+  return {
+    showGst: registered || hasTaxFigures,
+    showHsn: invoice.items.some((it) => (it.hsn ?? '').trim().length > 0),
+  };
+}
+
 /// "TAX_INVOICE" → "TAX INVOICE", etc. Defaults to the underscored value
 /// upper-cased and spaced so future document types still render readably.
 function documentTypeLabel(docType: string): string {
@@ -726,6 +814,10 @@ async function renderInvoicePdfReactPdf(
           shopPinCode: true,
           shopGstin: true,
           shopPan: true,
+          // Drives whether the GST columns print at all — see
+          // `invoiceGstVisibility`.
+          registrationType: true,
+          gstEffectiveFrom: true,
           upiVpa: true,
           name: true,
           email: true,
@@ -803,29 +895,54 @@ async function renderInvoicePdfReactPdf(
     : '-';
 
   const isInter = invoice.isInterstate;
-  const taxCols = isInter ? ['IGST'] : ['CGST', 'SGST'];
-  const itemHeaders = ['Sr', 'Item / SKU', 'HSN', 'Qty', 'Rate', 'Disc', 'Taxable', 'GST%', ...taxCols, 'Total'];
-  const itemWidths = isInter
-    ? pct([22, 120, 42, 38, 46, 38, 52, 32, 65, 60])
-    : pct([22, 116, 40, 34, 42, 34, 50, 30, 45, 45, 57]);
-  const align = (i: number): 'left' | 'right' => (i <= 2 ? 'left' : 'right');
+  const { showGst, showHsn } = invoiceGstVisibility(invoice, owner);
 
-  const itemRows = invoice.items.map((item, idx) => {
-    const taxValues = isInter ? [numFmt(item.igstAmount)] : [numFmt(item.cgstAmount), numFmt(item.sgstAmount)];
-    const cells = [
-      String(idx + 1),
-      `${item.productName}\n${item.productSku}`,
-      item.hsn ?? '-',
-      `${new D(item.quantity.toString()).toString()} ${item.unit}`,
-      numFmt(item.unitPrice),
-      numFmt(item.discount),
-      numFmt(item.taxableValue),
-      `${new D(item.taxPercent.toString()).toString()}%`,
-      ...taxValues,
-      numFmt(item.total),
-    ];
-    return { cells: cells.map((text, i) => ({ text, align: align(i) })) };
-  });
+  // Without GST the per-line "Taxable" column is just the line total again —
+  // drop it with the rest of the tax columns rather than printing the same
+  // number twice.
+  const itemCols = buildPdfColumns<(typeof invoice.items)[number]>(515, [
+    { header: 'Sr', width: 22, align: 'left', cell: (_it, i) => String(i + 1) },
+    {
+      header: 'Item / SKU',
+      width: isInter ? 120 : 116,
+      align: 'left',
+      flex: true,
+      cell: (it) => `${it.productName}\n${it.productSku}`,
+    },
+    { header: 'HSN', width: isInter ? 42 : 40, align: 'left', show: showHsn, cell: (it) => it.hsn ?? '' },
+    {
+      header: 'Qty',
+      width: isInter ? 38 : 34,
+      align: 'right',
+      cell: (it) => `${new D(it.quantity.toString()).toString()} ${it.unit}`,
+    },
+    { header: 'Rate', width: isInter ? 46 : 42, align: 'right', cell: (it) => numFmt(it.unitPrice) },
+    { header: 'Disc', width: isInter ? 38 : 34, align: 'right', cell: (it) => numFmt(it.discount) },
+    {
+      header: 'Taxable',
+      width: isInter ? 52 : 50,
+      align: 'right',
+      show: showGst,
+      cell: (it) => numFmt(it.taxableValue),
+    },
+    {
+      header: 'GST%',
+      width: isInter ? 32 : 30,
+      align: 'right',
+      show: showGst,
+      cell: (it) => `${new D(it.taxPercent.toString()).toString()}%`,
+    },
+    { header: 'IGST', width: 65, align: 'right', show: showGst && isInter, cell: (it) => numFmt(it.igstAmount) },
+    { header: 'CGST', width: 45, align: 'right', show: showGst && !isInter, cell: (it) => numFmt(it.cgstAmount) },
+    { header: 'SGST', width: 45, align: 'right', show: showGst && !isInter, cell: (it) => numFmt(it.sgstAmount) },
+    { header: 'Total', width: isInter ? 60 : 57, align: 'right', cell: (it) => numFmt(it.total) },
+  ]);
+  const itemWidths = pct(itemCols.widths);
+  const align = itemCols.align;
+
+  const itemRows = invoice.items.map((item, idx) => ({
+    cells: itemCols.row(item, idx).map((text, i) => ({ text, align: align(i) })),
+  }));
 
   type HsnAgg = {
     taxable: Prisma.Decimal;
@@ -868,14 +985,20 @@ async function renderInvoicePdfReactPdf(
     { label: 'Subtotal', value: currencyFmt(invoice.subtotal) },
   ];
   if (totalDiscount.gt(0)) totals.push({ label: 'Total Discount', value: `- ${currencyFmt(totalDiscount)}` });
-  totals.push({ label: 'Taxable Value', value: currencyFmt(invoice.taxableValue) });
-  if (isInter) {
-    totals.push({ label: 'IGST', value: currencyFmt(invoice.igstAmount) });
-  } else {
-    totals.push({ label: 'CGST', value: currencyFmt(invoice.cgstAmount) });
-    totals.push({ label: 'SGST', value: currencyFmt(invoice.sgstAmount) });
+  // "Taxable Value" is a GST term of art, and without tax it just repeats the
+  // discounted subtotal — so it travels with the tax rows.
+  if (showGst) {
+    totals.push({ label: 'Taxable Value', value: currencyFmt(invoice.taxableValue) });
+    if (isInter) {
+      totals.push({ label: 'IGST', value: currencyFmt(invoice.igstAmount) });
+    } else {
+      totals.push({ label: 'CGST', value: currencyFmt(invoice.cgstAmount) });
+      totals.push({ label: 'SGST', value: currencyFmt(invoice.sgstAmount) });
+    }
+    if (new D(invoice.cessAmount.toString()).gt(0)) {
+      totals.push({ label: 'Cess', value: currencyFmt(invoice.cessAmount) });
+    }
   }
-  if (new D(invoice.cessAmount.toString()).gt(0)) totals.push({ label: 'Cess', value: currencyFmt(invoice.cessAmount) });
   if (!new D(invoice.roundOff.toString()).eq(0)) totals.push({ label: 'Round-off', value: signedRoundOff(invoice.roundOff) });
   totals.push({ label: 'Grand Total', value: currencyFmt(invoice.total), bold: true });
 
@@ -901,10 +1024,14 @@ async function renderInvoicePdfReactPdf(
     },
     counterpartyLabel: cpLabel,
     counterparty: { name: cpName, addressLine: cpAddress, gstin: cpGstin, pan: cpPan },
+    // Place of supply only means something under GST, and it printed a bare
+    // "-" whenever the state was unknown — omit it in both cases.
     meta: [
       { label: 'Invoice No', value: invoice.invoiceNo },
       { label: 'Date', value: formatDDMMYYYY(invoice.invoiceDate) },
-      { label: 'Place of Supply', value: placeOfSupply },
+      ...(showGst && invoice.placeOfSupplyStateCode
+        ? [{ label: 'Place of Supply', value: placeOfSupply }]
+        : []),
       { label: 'FY', value: invoice.financialYear },
     ],
     metaSecondRow: originalRef
@@ -913,8 +1040,14 @@ async function renderInvoicePdfReactPdf(
           { label: 'Original Invoice Date', value: formatDDMMYYYY(originalRef.invoiceDate) },
         ]
       : undefined,
-    items: { headers: itemHeaders.map((text, i) => ({ text, align: align(i) })), widths: itemWidths, rows: itemRows },
-    hsnSummary: hsnMap.size > 0
+    items: {
+      headers: itemCols.headers.map((text, i) => ({ text, align: align(i) })),
+      widths: itemWidths,
+      rows: itemRows,
+    },
+    // The HSN summary is a tax table (it exists for GSTR-1) — pointless on a
+    // document that charges none.
+    hsnSummary: showGst && hsnMap.size > 0
       ? { headers: hsnHeaders.map((text, i) => ({ text, align: hsnAlign(i) })), widths: hsnWidths, rows: hsnRows }
       : undefined,
     totals,

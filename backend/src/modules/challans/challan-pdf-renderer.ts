@@ -8,6 +8,7 @@ import {
   isValidStateCode,
 } from '../../shared/validation/indian.js';
 import { isOutputGstRegistered } from '../invoices/gst-registration-gate.js';
+import { buildPdfColumns } from '../../shared/pdfColumns.js';
 import { loadPdfEngine } from '../../shared/pdfEngineLoader.js';
 
 /// The Rule 55 tax figures for one challan line. CGST + SGST + IGST + cess is
@@ -199,7 +200,7 @@ async function renderChallanPdfPdfKit(
     return {
       name: it.productName,
       sku: it.productSku,
-      hsn: p?.hsnCode ?? '-',
+      hsn: p?.hsnCode ?? '',
       qty: new D(it.quantity.toString()),
       unit: it.unit,
       rate: p?.sellingPrice != null ? new D(p.sellingPrice.toString()) : new D(0),
@@ -215,6 +216,15 @@ async function renderChallanPdfPdfKit(
   const totSgst = round2(sum((r) => r.sgst));
   const totCess = round2(sum((r) => r.cess));
   const grandTotal = round2(sum((r) => r.total));
+
+  // A consignor who charges no GST would otherwise get a GST%, tax and
+  // Taxable column of zeros, and a shop that never entered HSN codes a column
+  // of dashes — see the invoice engine's `invoiceGstVisibility` for the same
+  // rule. `chargesGst` alone isn't enough: the tax totals are the safety net
+  // for a challan whose figures were computed while the shop was registered.
+  const showGst =
+    chargesGst || totIgst.gt(0) || totCgst.gt(0) || totSgst.gt(0) || totCess.gt(0);
+  const showHsn = rows.some((r) => r.hsn.trim().length > 0);
 
   return new Promise<Buffer | null>((resolve, reject) => {
     const doc = new PDFDocument({ margin: 40, size: 'A4' });
@@ -331,31 +341,76 @@ async function renderChallanPdfPdfKit(
       const pos = partyStateCode
         ? `${partyStateCode}${posName ? ` - ${posName}` : ''}`
         : '-';
-      const metaW = W / 4;
+      // Place of supply and the inter/intra-state split are GST concepts, and
+      // the former printed a bare "-" whenever the state was unknown — omit
+      // both when there is no GST on this challan.
+      const metaFields: { label: string; value: string }[] = [
+        { label: 'Challan No', value: challan.challanNo },
+        { label: 'Date', value: formatDDMMYYYY(challan.createdAt) },
+        ...(showGst && partyStateCode ? [{ label: 'Place of Supply', value: pos }] : []),
+        ...(showGst
+          ? [{ label: 'Supply Type', value: isInter ? 'Inter-State' : 'Intra-State' }]
+          : []),
+      ];
+      const metaW = W / metaFields.length;
       const metaY = y;
       const drawMeta = (label: string, value: string, idx: number) => {
         const x = LEFT + idx * metaW;
         doc.font('Helvetica').fontSize(7).fillColor('#6B7280').text(label.toUpperCase(), x, metaY, { width: metaW - 6 });
         doc.font('Helvetica-Bold').fontSize(9).fillColor('#111827').text(value, x, metaY + 9, { width: metaW - 6 });
       };
-      drawMeta('Challan No', challan.challanNo, 0);
-      drawMeta('Date', formatDDMMYYYY(challan.createdAt), 1);
-      drawMeta('Place of Supply', pos, 2);
-      drawMeta('Supply Type', isInter ? 'Inter-State' : 'Intra-State', 3);
+      metaFields.forEach((f, i) => drawMeta(f.label, f.value, i));
       y = metaY + 28;
       doc.moveTo(LEFT, y).lineTo(RIGHT, y).strokeColor('#E5E7EB').lineWidth(0.7).stroke();
       y += 10;
 
       // ---------- Items table ----------
-      const taxCols = isInter ? ['IGST'] : ['CGST', 'SGST'];
-      const headers = ['Sr', 'Item / SKU', 'HSN', 'Qty', 'Rate', 'Taxable', 'GST%', ...taxCols, 'Total'];
-      const widths: number[] = isInter
-        ? [22, 132, 46, 44, 50, 56, 33, 66, 66]
-        : [22, 120, 44, 40, 46, 52, 31, 53, 53, 54];
+      // Rule 55 wants HSN, taxable value and the tax rate/amount "where
+      // applicable" — for an unregistered consignor none of it applies, so
+      // those columns are dropped rather than zero-filled. Without tax the
+      // Taxable column is just the Total column again, so it goes too.
+      const itemCols = buildPdfColumns<Row>(W, [
+        { header: 'Sr', width: 22, align: 'left', cell: (_r, i) => String(i + 1) },
+        {
+          header: 'Item / SKU',
+          width: isInter ? 132 : 120,
+          align: 'left',
+          flex: true,
+          cell: (r) => `${r.name}\n${r.sku}`,
+        },
+        { header: 'HSN', width: isInter ? 46 : 44, align: 'left', show: showHsn, cell: (r) => r.hsn },
+        {
+          header: 'Qty',
+          width: isInter ? 44 : 40,
+          align: 'right',
+          cell: (r) => `${r.qty.toString()} ${r.unit}`,
+        },
+        { header: 'Rate', width: isInter ? 50 : 46, align: 'right', cell: (r) => numFmt(r.rate) },
+        {
+          header: 'Taxable',
+          width: isInter ? 56 : 52,
+          align: 'right',
+          show: showGst,
+          cell: (r) => numFmt(r.taxable),
+        },
+        {
+          header: 'GST%',
+          width: isInter ? 33 : 31,
+          align: 'right',
+          show: showGst,
+          cell: (r) => `${r.taxPct.toString()}%`,
+        },
+        { header: 'IGST', width: 66, align: 'right', show: showGst && isInter, cell: (r) => numFmt(r.igst) },
+        { header: 'CGST', width: 53, align: 'right', show: showGst && !isInter, cell: (r) => numFmt(r.cgst) },
+        { header: 'SGST', width: 53, align: 'right', show: showGst && !isInter, cell: (r) => numFmt(r.sgst) },
+        { header: 'Total', width: isInter ? 66 : 54, align: 'right', cell: (r) => numFmt(r.total) },
+      ]);
+      const headers = itemCols.headers;
+      const widths = itemCols.widths;
       const xs: number[] = [];
       let cx = LEFT;
       for (const w of widths) { xs.push(cx); cx += w; }
-      const align = (i: number): 'left' | 'right' => (i <= 2 ? 'left' : 'right');
+      const align = itemCols.align;
 
       const paintHeader = () => {
         doc.rect(LEFT, y, W, 18).fill('#F3F4F6');
@@ -371,18 +426,7 @@ async function renderChallanPdfPdfKit(
         const rowH = 28;
         if (y + rowH > 720) { doc.addPage(); y = 40; paintHeader(); }
         doc.fillColor('#111827');
-        const taxValues = isInter ? [numFmt(r.igst)] : [numFmt(r.cgst), numFmt(r.sgst)];
-        const cells = [
-          String(sr),
-          `${r.name}\n${r.sku}`,
-          r.hsn,
-          `${r.qty.toString()} ${r.unit}`,
-          numFmt(r.rate),
-          numFmt(r.taxable),
-          `${r.taxPct.toString()}%`,
-          ...taxValues,
-          numFmt(r.total),
-        ];
+        const cells = itemCols.row(r, sr - 1);
         cells.forEach((c, i) => doc.text(c, xs[i] + 2, y + 4, { width: widths[i] - 4, align: align(i) }));
         doc.moveTo(LEFT, y + rowH).lineTo(RIGHT, y + rowH).strokeColor('#E5E7EB').stroke();
         y += rowH;
@@ -400,14 +444,16 @@ async function renderChallanPdfPdfKit(
         doc.text(value, totalsX + (totalsW - 90), y, { width: 90, align: 'right' });
         y += 15;
       };
-      totRow('Taxable Value', money(totTaxable));
-      if (isInter) {
-        if (totIgst.gt(0)) totRow('IGST', money(totIgst));
-      } else {
-        if (totCgst.gt(0)) totRow('CGST', money(totCgst));
-        if (totSgst.gt(0)) totRow('SGST', money(totSgst));
+      if (showGst) {
+        totRow('Taxable Value', money(totTaxable));
+        if (isInter) {
+          if (totIgst.gt(0)) totRow('IGST', money(totIgst));
+        } else {
+          if (totCgst.gt(0)) totRow('CGST', money(totCgst));
+          if (totSgst.gt(0)) totRow('SGST', money(totSgst));
+        }
+        if (totCess.gt(0)) totRow('Cess', money(totCess));
       }
-      if (totCess.gt(0)) totRow('Cess', money(totCess));
       doc.moveTo(totalsX, y).lineTo(totalsX + totalsW, y).strokeColor('#9CA3AF').stroke();
       y += 4;
       totRow('Total Value of Goods', money(grandTotal), true);
@@ -611,7 +657,7 @@ async function renderChallanPdfReactPdf(
     return {
       name: it.productName,
       sku: it.productSku,
-      hsn: p?.hsnCode ?? '-',
+      hsn: p?.hsnCode ?? '',
       qty: new D(it.quantity.toString()),
       unit: it.unit,
       rate: p?.sellingPrice != null ? new D(p.sellingPrice.toString()) : new D(0),
@@ -627,38 +673,72 @@ async function renderChallanPdfReactPdf(
   const totCess = round2(sum((r) => r.cess));
   const grandTotal = round2(sum((r) => r.total));
 
-  const taxCols = isInter ? ['IGST'] : ['CGST', 'SGST'];
-  const itemHeaders = ['Sr', 'Item / SKU', 'HSN', 'Qty', 'Rate', 'Taxable', 'GST%', ...taxCols, 'Total'];
-  const itemWidths = isInter
-    ? pct([22, 132, 46, 44, 50, 56, 33, 66, 66])
-    : pct([22, 120, 44, 40, 46, 52, 31, 53, 53, 54]);
-  const align = (i: number): 'left' | 'right' => (i <= 2 ? 'left' : 'right');
-  const itemRows = rows.map((r, idx) => {
-    const taxValues = isInter ? [numFmt(r.igst)] : [numFmt(r.cgst), numFmt(r.sgst)];
-    const cells = [
-      String(idx + 1),
-      `${r.name}\n${r.sku}`,
-      r.hsn,
-      `${r.qty.toString()} ${r.unit}`,
-      numFmt(r.rate),
-      numFmt(r.taxable),
-      `${r.taxPct.toString()}%`,
-      ...taxValues,
-      numFmt(r.total),
-    ];
-    return { cells: cells.map((text, i) => ({ text, align: align(i) })) };
-  });
+  // A consignor who charges no GST would otherwise get a GST%, tax and
+  // Taxable column of zeros, and a shop that never entered HSN codes a column
+  // of dashes — see the invoice engine's `invoiceGstVisibility` for the same
+  // rule. `chargesGst` alone isn't enough: the tax totals are the safety net
+  // for a challan whose figures were computed while the shop was registered.
+  const showGst =
+    chargesGst || totIgst.gt(0) || totCgst.gt(0) || totSgst.gt(0) || totCess.gt(0);
+  const showHsn = rows.some((r) => r.hsn.trim().length > 0);
 
-  const totals: { label: string; value: string; bold?: boolean }[] = [
-    { label: 'Taxable Value', value: money(totTaxable) },
-  ];
-  if (isInter) {
-    if (totIgst.gt(0)) totals.push({ label: 'IGST', value: money(totIgst) });
-  } else {
-    if (totCgst.gt(0)) totals.push({ label: 'CGST', value: money(totCgst) });
-    if (totSgst.gt(0)) totals.push({ label: 'SGST', value: money(totSgst) });
+  // Rule 55 wants HSN, taxable value and the tax rate/amount "where
+  // applicable" — for an unregistered consignor none of it applies, so those
+  // columns are dropped rather than zero-filled. Without tax the Taxable
+  // column is just the Total column again, so it goes too.
+  const itemCols = buildPdfColumns<Row>(515, [
+    { header: 'Sr', width: 22, align: 'left', cell: (_r, i) => String(i + 1) },
+    {
+      header: 'Item / SKU',
+      width: isInter ? 132 : 120,
+      align: 'left',
+      flex: true,
+      cell: (r) => `${r.name}\n${r.sku}`,
+    },
+    { header: 'HSN', width: isInter ? 46 : 44, align: 'left', show: showHsn, cell: (r) => r.hsn },
+    {
+      header: 'Qty',
+      width: isInter ? 44 : 40,
+      align: 'right',
+      cell: (r) => `${r.qty.toString()} ${r.unit}`,
+    },
+    { header: 'Rate', width: isInter ? 50 : 46, align: 'right', cell: (r) => numFmt(r.rate) },
+    {
+      header: 'Taxable',
+      width: isInter ? 56 : 52,
+      align: 'right',
+      show: showGst,
+      cell: (r) => numFmt(r.taxable),
+    },
+    {
+      header: 'GST%',
+      width: isInter ? 33 : 31,
+      align: 'right',
+      show: showGst,
+      cell: (r) => `${r.taxPct.toString()}%`,
+    },
+    { header: 'IGST', width: 66, align: 'right', show: showGst && isInter, cell: (r) => numFmt(r.igst) },
+    { header: 'CGST', width: 53, align: 'right', show: showGst && !isInter, cell: (r) => numFmt(r.cgst) },
+    { header: 'SGST', width: 53, align: 'right', show: showGst && !isInter, cell: (r) => numFmt(r.sgst) },
+    { header: 'Total', width: isInter ? 66 : 54, align: 'right', cell: (r) => numFmt(r.total) },
+  ]);
+  const itemWidths = pct(itemCols.widths);
+  const align = itemCols.align;
+  const itemRows = rows.map((r, idx) => ({
+    cells: itemCols.row(r, idx).map((text, i) => ({ text, align: align(i) })),
+  }));
+
+  const totals: { label: string; value: string; bold?: boolean }[] = [];
+  if (showGst) {
+    totals.push({ label: 'Taxable Value', value: money(totTaxable) });
+    if (isInter) {
+      if (totIgst.gt(0)) totals.push({ label: 'IGST', value: money(totIgst) });
+    } else {
+      if (totCgst.gt(0)) totals.push({ label: 'CGST', value: money(totCgst) });
+      if (totSgst.gt(0)) totals.push({ label: 'SGST', value: money(totSgst) });
+    }
+    if (totCess.gt(0)) totals.push({ label: 'Cess', value: money(totCess) });
   }
-  if (totCess.gt(0)) totals.push({ label: 'Cess', value: money(totCess) });
   totals.push({ label: 'Total Value of Goods', value: money(grandTotal), bold: true });
 
   const posName = stateNameFromCode(partyStateCode);
@@ -684,13 +764,20 @@ async function renderChallanPdfReactPdf(
       pan: party?.panNumber,
       extraLine: challan.partyPhone ?? undefined,
     },
+    // Place of supply and the inter/intra-state split are GST concepts, and
+    // the former printed a bare "-" whenever the state was unknown — omit
+    // both when there is no GST on this challan.
     meta: [
       { label: 'Challan No', value: challan.challanNo },
       { label: 'Date', value: formatDDMMYYYY(challan.createdAt) },
-      { label: 'Place of Supply', value: pos },
-      { label: 'Supply Type', value: isInter ? 'Inter-State' : 'Intra-State' },
+      ...(showGst && partyStateCode ? [{ label: 'Place of Supply', value: pos }] : []),
+      ...(showGst ? [{ label: 'Supply Type', value: isInter ? 'Inter-State' : 'Intra-State' }] : []),
     ],
-    items: { headers: itemHeaders.map((text, i) => ({ text, align: align(i) })), widths: itemWidths, rows: itemRows },
+    items: {
+      headers: itemCols.headers.map((text, i) => ({ text, align: align(i) })),
+      widths: itemWidths,
+      rows: itemRows,
+    },
     totals,
     declaration: chargesGst
       ? 'Delivery challan issued under Rule 55 of the CGST Rules. Not a tax invoice — goods are dispatched against this challan; the tax invoice follows on supply.'

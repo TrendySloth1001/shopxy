@@ -4,6 +4,7 @@ import { Writable } from 'stream';
 import prisma from '../../infra/db/prisma.js';
 import { stateNameFromCode, isInterstateSupply } from '../../shared/validation/indian.js';
 import { loadPdfEngine } from '../../shared/pdfEngineLoader.js';
+import { buildPdfColumns } from '../../shared/pdfColumns.js';
 
 /// One stored quotation line (the JSON shape priceItems writes).
 interface QuoteLine {
@@ -15,6 +16,31 @@ interface QuoteLine {
   cessRate?: number;
   discount?: number;
   lineTotal?: number;
+}
+
+/// Whether this quote may print GST at all — the same principle the invoice
+/// engine applies (`invoiceGstVisibility`): a merchant who charges no tax
+/// should get no GST% column and no tax rows, rather than a column of `0%`
+/// and a stack of `Rs. 0.00`. The quote's own stored figures decide it — the
+/// write path already ran the registration gate (`chargesOutputGstForSale`)
+/// when it priced the lines, so re-deriving it here could only disagree with
+/// the numbers actually on the page. Quotations carry no HSN column at all,
+/// so there is no HSN equivalent.
+function quotationChargesGst(
+  lines: QuoteLine[],
+  taxAmount: Prisma.Decimal | number | string | null | undefined,
+): boolean {
+  if (lines.some((it) => (it.taxPercent ?? 0) > 0)) return true;
+  return new Prisma.Decimal((taxAmount ?? 0).toString()).gt(0);
+}
+
+/// The quotation's closing disclaimer. The tax sentence is dropped for a
+/// merchant who charges none — promising that "taxes are computed on
+/// acceptance" would be a straightforwardly false statement to their customer.
+function quotationDeclaration(showGst: boolean): string {
+  const base =
+    'This is a quotation, not a tax invoice. Prices are an estimate and may change until confirmed.';
+  return showGst ? `${base} Taxes are computed on acceptance.` : base;
 }
 
 /// Render one quotation as a PDF — to a stream when `out` is set, or to a
@@ -88,6 +114,7 @@ async function renderQuotationPdfPdfKit(
   const owner = shopRow?.owner ?? null;
 
   const lines = (quotation.items as unknown as QuoteLine[]) ?? [];
+  const showGst = quotationChargesGst(lines, quotation.taxAmount);
   const num = (n: number | null | undefined): string => (n ?? 0).toFixed(2);
   const money = (n: Prisma.Decimal | number | string | null | undefined): string =>
     `Rs. ${Number((n ?? 0).toString()).toFixed(2)}`;
@@ -206,28 +233,67 @@ async function renderQuotationPdfPdfKit(
       const pos = quotation.placeOfSupplyStateCode
         ? `${quotation.placeOfSupplyStateCode}${posName ? ` - ${posName}` : ''}`
         : '-';
-      const metaW = W / 3;
+      // Place of supply only means something under GST, and it printed a bare
+      // "-" whenever the state was unknown — omit it in both cases.
+      const metaFields: { label: string; value: string }[] = [
+        { label: 'Quotation No', value: quotation.quotationNo },
+        { label: 'Date', value: formatDDMMYYYY(quotation.createdAt) },
+        ...(showGst && quotation.placeOfSupplyStateCode
+          ? [{ label: 'Place of Supply', value: pos }]
+          : []),
+      ];
+      const metaW = W / metaFields.length;
       const metaY = y;
       const drawMeta = (label: string, value: string, idx: number) => {
         const x = LEFT + idx * metaW;
         doc.font('Helvetica').fontSize(7).fillColor('#6B7280').text(label.toUpperCase(), x, metaY, { width: metaW - 6 });
         doc.font('Helvetica-Bold').fontSize(9).fillColor('#111827').text(value, x, metaY + 9, { width: metaW - 6 });
       };
-      drawMeta('Quotation No', quotation.quotationNo, 0);
-      drawMeta('Date', formatDDMMYYYY(quotation.createdAt), 1);
-      drawMeta('Place of Supply', pos, 2);
+      metaFields.forEach((f, i) => drawMeta(f.label, f.value, i));
       y = metaY + 28;
       doc.moveTo(LEFT, y).lineTo(RIGHT, y).strokeColor('#E5E7EB').lineWidth(0.7).stroke();
       y += 10;
 
       // ---------- Items table ----------
-      // Sr | Item / SKU | Qty | Rate | Disc | Taxable | GST% | Amount
-      const headers = ['Sr', 'Item / SKU', 'Qty', 'Rate', 'Disc', 'Taxable', 'GST%', 'Amount'];
-      const widths = [24, 191, 40, 56, 44, 60, 36, 64];
+      // Sr | Item / SKU | Qty | Rate | Disc | Taxable | GST% | Amount, with
+      // the GST pair dropped when the quote charges none. "Taxable" goes with
+      // them: untaxed, it only repeats the Amount column.
+      const itemCols = buildPdfColumns<QuoteLine>(W, [
+        { header: 'Sr', width: 24, align: 'left', cell: (_it, i) => String(i + 1) },
+        {
+          header: 'Item / SKU',
+          width: 191,
+          align: 'left',
+          flex: true,
+          cell: (it) => `${it.name ?? 'Item'}${it.sku ? `\n${it.sku}` : ''}`,
+        },
+        {
+          header: 'Qty',
+          width: 40,
+          align: 'right',
+          cell: (it) => {
+            const q = it.quantity ?? 0;
+            return q % 1 === 0 ? String(q) : q.toFixed(2);
+          },
+        },
+        { header: 'Rate', width: 56, align: 'right', cell: (it) => num(it.unitPrice) },
+        { header: 'Disc', width: 44, align: 'right', cell: (it) => num(it.discount) },
+        {
+          header: 'Taxable',
+          width: 60,
+          align: 'right',
+          show: showGst,
+          cell: (it) => num(Math.max(0, (it.quantity ?? 0) * (it.unitPrice ?? 0) - (it.discount ?? 0))),
+        },
+        { header: 'GST%', width: 36, align: 'right', show: showGst, cell: (it) => `${it.taxPercent ?? 0}%` },
+        { header: 'Amount', width: 64, align: 'right', cell: (it) => num(it.lineTotal) },
+      ]);
+      const headers = itemCols.headers;
+      const widths = itemCols.widths;
       const xs: number[] = [];
       let cx = LEFT;
       for (const w of widths) { xs.push(cx); cx += w; }
-      const align = (i: number): 'left' | 'right' => (i <= 1 ? 'left' : 'right');
+      const align = itemCols.align;
 
       const paintHeader = () => {
         doc.rect(LEFT, y, W, 18).fill('#F3F4F6');
@@ -243,20 +309,7 @@ async function renderQuotationPdfPdfKit(
         const rowH = 26;
         if (y + rowH > 720) { doc.addPage(); y = 40; paintHeader(); }
         doc.fillColor('#111827');
-        const qty = it.quantity ?? 0;
-        const unit = it.unitPrice ?? 0;
-        const disc = it.discount ?? 0;
-        const taxable = Math.max(0, qty * unit - disc);
-        const row = [
-          String(sr),
-          `${it.name ?? 'Item'}${it.sku ? `\n${it.sku}` : ''}`,
-          qty % 1 === 0 ? String(qty) : qty.toFixed(2),
-          num(unit),
-          num(disc),
-          num(taxable),
-          `${it.taxPercent ?? 0}%`,
-          num(it.lineTotal),
-        ];
+        const row = itemCols.row(it, sr - 1);
         row.forEach((c, i) => doc.text(c, xs[i] + 2, y + 4, { width: widths[i] - 4, align: align(i) }));
         doc.moveTo(LEFT, y + rowH).lineTo(RIGHT, y + rowH).strokeColor('#E5E7EB').stroke();
         y += rowH;
@@ -305,15 +358,17 @@ async function renderQuotationPdfPdfKit(
       }
       const gstTotal = taxTotal.sub(cessTotal);
       totRow('Subtotal', money(quotation.subtotal));
-      if (quoteInterstate) {
-        totRow('IGST', money(gstTotal));
-      } else {
-        const cgst = round2(gstTotal.div(2));
-        const sgst = gstTotal.sub(cgst);
-        totRow('CGST', money(cgst));
-        totRow('SGST', money(sgst));
+      if (showGst) {
+        if (quoteInterstate) {
+          totRow('IGST', money(gstTotal));
+        } else {
+          const cgst = round2(gstTotal.div(2));
+          const sgst = gstTotal.sub(cgst);
+          totRow('CGST', money(cgst));
+          totRow('SGST', money(sgst));
+        }
+        if (cessTotal.gt(0)) totRow('Cess', money(cessTotal));
       }
-      if (cessTotal.gt(0)) totRow('Cess', money(cessTotal));
       doc.moveTo(totalsX, y).lineTo(totalsX + totalsW, y).strokeColor('#9CA3AF').stroke();
       y += 4;
       totRow('Total', money(quotation.total), true);
@@ -325,13 +380,7 @@ async function renderQuotationPdfPdfKit(
         .font('Helvetica-Oblique')
         .fontSize(8)
         .fillColor('#6B7280')
-        .text(
-          'This is a quotation, not a tax invoice. Prices are an estimate and may '
-          + 'change until confirmed. Taxes are computed on acceptance.',
-          LEFT,
-          y,
-          { width: W },
-        );
+        .text(quotationDeclaration(showGst), LEFT, y, { width: W });
       y = doc.y + 6;
 
       if (quotation.note) {
@@ -470,26 +519,45 @@ async function renderQuotationPdfReactPdf(
   const money = (n: Prisma.Decimal | number | string | null | undefined): string =>
     `Rs. ${Number((n ?? 0).toString()).toFixed(2)}`;
 
-  const itemHeaders = ['Sr', 'Item / SKU', 'Qty', 'Rate', 'Disc', 'Taxable', 'GST%', 'Amount'];
-  const itemWidths = pct([24, 191, 40, 56, 44, 60, 36, 64]);
-  const align = (i: number): 'left' | 'right' => (i <= 1 ? 'left' : 'right');
-  const itemRows = lines.map((it, idx) => {
-    const qty = it.quantity ?? 0;
-    const unit = it.unitPrice ?? 0;
-    const disc = it.discount ?? 0;
-    const taxable = Math.max(0, qty * unit - disc);
-    const cells = [
-      String(idx + 1),
-      `${it.name ?? 'Item'}${it.sku ? `\n${it.sku}` : ''}`,
-      qty % 1 === 0 ? String(qty) : qty.toFixed(2),
-      num(unit),
-      num(disc),
-      num(taxable),
-      `${it.taxPercent ?? 0}%`,
-      num(it.lineTotal),
-    ];
-    return { cells: cells.map((text, i) => ({ text, align: align(i) })) };
-  });
+  const showGst = quotationChargesGst(lines, quotation.taxAmount);
+
+  // The GST pair is dropped when the quote charges none. "Taxable" goes with
+  // them: untaxed, it only repeats the Amount column.
+  const itemCols = buildPdfColumns<QuoteLine>(515, [
+    { header: 'Sr', width: 24, align: 'left', cell: (_it, i) => String(i + 1) },
+    {
+      header: 'Item / SKU',
+      width: 191,
+      align: 'left',
+      flex: true,
+      cell: (it) => `${it.name ?? 'Item'}${it.sku ? `\n${it.sku}` : ''}`,
+    },
+    {
+      header: 'Qty',
+      width: 40,
+      align: 'right',
+      cell: (it) => {
+        const q = it.quantity ?? 0;
+        return q % 1 === 0 ? String(q) : q.toFixed(2);
+      },
+    },
+    { header: 'Rate', width: 56, align: 'right', cell: (it) => num(it.unitPrice) },
+    { header: 'Disc', width: 44, align: 'right', cell: (it) => num(it.discount) },
+    {
+      header: 'Taxable',
+      width: 60,
+      align: 'right',
+      show: showGst,
+      cell: (it) => num(Math.max(0, (it.quantity ?? 0) * (it.unitPrice ?? 0) - (it.discount ?? 0))),
+    },
+    { header: 'GST%', width: 36, align: 'right', show: showGst, cell: (it) => `${it.taxPercent ?? 0}%` },
+    { header: 'Amount', width: 64, align: 'right', cell: (it) => num(it.lineTotal) },
+  ]);
+  const itemWidths = pct(itemCols.widths);
+  const align = itemCols.align;
+  const itemRows = lines.map((it, idx) => ({
+    cells: itemCols.row(it, idx).map((text, i) => ({ text, align: align(i) })),
+  }));
 
   const shopStateCode = owner?.shopStateCode ?? (owner?.shopGstin ? owner.shopGstin.slice(0, 2) : null);
   const quoteInterstate = isInterstateSupply(shopStateCode, quotation.placeOfSupplyStateCode);
@@ -510,15 +578,17 @@ async function renderQuotationPdfReactPdf(
   const totals: { label: string; value: string; bold?: boolean }[] = [
     { label: 'Subtotal', value: money(quotation.subtotal) },
   ];
-  if (quoteInterstate) {
-    totals.push({ label: 'IGST', value: money(gstTotal) });
-  } else {
-    const cgst = round2(gstTotal.div(2));
-    const sgst = gstTotal.sub(cgst);
-    totals.push({ label: 'CGST', value: money(cgst) });
-    totals.push({ label: 'SGST', value: money(sgst) });
+  if (showGst) {
+    if (quoteInterstate) {
+      totals.push({ label: 'IGST', value: money(gstTotal) });
+    } else {
+      const cgst = round2(gstTotal.div(2));
+      const sgst = gstTotal.sub(cgst);
+      totals.push({ label: 'CGST', value: money(cgst) });
+      totals.push({ label: 'SGST', value: money(sgst) });
+    }
+    if (cessTotal.gt(0)) totals.push({ label: 'Cess', value: money(cessTotal) });
   }
-  if (cessTotal.gt(0)) totals.push({ label: 'Cess', value: money(cessTotal) });
   totals.push({ label: 'Total', value: money(quotation.total), bold: true });
 
   const posName = stateNameFromCode(quotation.placeOfSupplyStateCode);
@@ -544,15 +614,22 @@ async function renderQuotationPdfReactPdf(
       gstin: party?.gstin,
       pan: party?.panNumber,
     },
+    // Place of supply only means something under GST, and it printed a bare
+    // "-" whenever the state was unknown — omit it in both cases.
     meta: [
       { label: 'Quotation No', value: quotation.quotationNo },
       { label: 'Date', value: formatDDMMYYYY(quotation.createdAt) },
-      { label: 'Place of Supply', value: pos },
+      ...(showGst && quotation.placeOfSupplyStateCode
+        ? [{ label: 'Place of Supply', value: pos }]
+        : []),
     ],
-    items: { headers: itemHeaders.map((text, i) => ({ text, align: align(i) })), widths: itemWidths, rows: itemRows },
+    items: {
+      headers: itemCols.headers.map((text, i) => ({ text, align: align(i) })),
+      widths: itemWidths,
+      rows: itemRows,
+    },
     totals,
-    declaration:
-      'This is a quotation, not a tax invoice. Prices are an estimate and may change until confirmed. Taxes are computed on acceptance.',
+    declaration: quotationDeclaration(showGst),
     note: quotation.note ?? undefined,
     traditionalMeta: {
       documentNo: quotation.quotationNo,
