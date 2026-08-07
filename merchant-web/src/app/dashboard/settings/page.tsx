@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import {
   AtSign,
   Bell,
+  Cpu,
   FileText,
   IndianRupee,
   Info,
@@ -32,6 +33,10 @@ import {
 } from "@/features/settings/components";
 import { ThemePicker } from "@/features/theme/theme-picker";
 import { LanguagePicker } from "@/features/i18n/language-picker";
+import {
+  EnvironmentPicker,
+  useDeveloperEnvironments,
+} from "@/features/settings/environment-picker";
 
 type SectionKey =
   | "account"
@@ -42,7 +47,8 @@ type SectionKey =
   | "security"
   | "preferences"
   | "privacy"
-  | "about";
+  | "about"
+  | "developer";
 
 // Labels + blurbs come from the message catalog (settings.sections.<key>); the
 // array carries only the stable key + icon.
@@ -69,6 +75,10 @@ export default function SettingsPage() {
   const t = useTranslations("settings");
   const [active, setActive] = useState<SectionKey>("account");
   const [signingOut, setSigningOut] = useState(false);
+  // Developer-only backend switcher. `available` is decided by the server
+  // (the endpoint 404s for everyone else), so the rail entry below simply
+  // doesn't exist for a normal merchant.
+  const { available: devAvailable, state: devState } = useDeveloperEnvironments();
 
   async function onSignOut() {
     setSigningOut(true);
@@ -80,7 +90,20 @@ export default function SettingsPage() {
     }
   }
 
-  const current = SECTIONS.find((s) => s.key === active) ?? SECTIONS[0];
+  const sections = devAvailable
+    ? [...SECTIONS, { key: "developer" as const, icon: Cpu }]
+    : SECTIONS;
+  const current = sections.find((s) => s.key === active) ?? sections[0];
+
+  // The developer section is deliberately absent from the message catalogs —
+  // it's gated to one hardcoded account, so a Hindi translation would be
+  // shipped weight nobody can ever read.
+  const sectionLabel = (key: SectionKey) =>
+    key === "developer" ? "Developer" : t(`sections.${key}.label`);
+  const sectionBlurb = (key: SectionKey) =>
+    key === "developer"
+      ? "Internal tools. Not shown to merchants."
+      : t(`sections.${key}.blurb`);
 
   return (
     <div className="w-full px-lg py-xxl md:px-xxl">
@@ -90,7 +113,7 @@ export default function SettingsPage() {
       <div className="mt-xl flex flex-col gap-xl md:flex-row md:gap-xxl">
         {/* Category rail */}
         <nav className="flex shrink-0 gap-xs overflow-x-auto md:w-60 md:flex-col md:overflow-visible">
-          {SECTIONS.map((s) => {
+          {sections.map((s) => {
             const on = s.key === active;
             const Icon = s.icon;
             return (
@@ -103,7 +126,7 @@ export default function SettingsPage() {
                 }`}
               >
                 <Icon size={18} className="shrink-0" />
-                {t(`sections.${s.key}.label`)}
+                {sectionLabel(s.key)}
               </button>
             );
           })}
@@ -128,8 +151,8 @@ export default function SettingsPage() {
               <current.icon size={20} />
             </span>
             <div>
-              <h2 className="text-title-md text-ink">{t(`sections.${current.key}.label`)}</h2>
-              <p className="text-body-sm text-muted">{t(`sections.${current.key}.blurb`)}</p>
+              <h2 className="text-title-md text-ink">{sectionLabel(current.key)}</h2>
+              <p className="text-body-sm text-muted">{sectionBlurb(current.key)}</p>
             </div>
           </div>
 
@@ -208,6 +231,10 @@ export default function SettingsPage() {
                 <SettingRow tile icon={ShieldAlert} title={t("rows.privacyPolicy")} subtitle={t("rows.privacyPolicySub")} href="/legal/privacy" />
                 <SettingRow tile icon={FileText} title={t("rows.terms")} subtitle={t("rows.termsSub")} href="/legal/terms" />
               </TileGrid>
+            ) : null}
+
+            {active === "developer" && devState ? (
+              <EnvironmentPicker state={devState} />
             ) : null}
           </div>
 

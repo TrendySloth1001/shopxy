@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:http/http.dart' as http;
 import 'package:shopxy/core/config/app_config.dart';
+import 'package:shopxy/core/config/app_environment.dart';
 import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/core/network/offline/http_cache.dart';
 import 'package:shopxy/core/network/offline/network_status.dart';
@@ -76,6 +77,39 @@ void main() async {
   // Fail-fast in release if API_BASE_URL was missed or points at a dev host.
   AppConfig.assertSafeForRelease();
 
+  // Read the developer environment choice BEFORE anything resolves a URL,
+  // otherwise the first requests of the run go to the previous backend.
+  await AppEnvironments.load();
+
+  await bootstrapShopxy();
+}
+
+/// Teardown hooks for the long-lived listeners the current object graph
+/// leaves running. Populated by [bootstrapShopxy] and drained by it on the
+/// next call — without this, switching environments would leave the previous
+/// graph's outbox processor and connectivity prober alive alongside the new
+/// one.
+final List<void Function()> _graphDisposers = [];
+
+/// Builds the entire object graph and hands it to `runApp`.
+///
+/// Extracted from [main] so the developer environment switcher
+/// ([AppEnvironments]) can tear the app down and build it again against a
+/// different backend. Everything stateful is a fresh instance — the token
+/// store, the offline response cache, the outbox and every provider — so no
+/// data from the previous environment's database can survive the switch. A
+/// key-swap style "restart" would not do: the providers live above `runApp`,
+/// so rebuilding the widget tree alone would re-attach the very state we're
+/// trying to discard.
+Future<void> bootstrapShopxy() async {
+  // Snapshot the outgoing graph's teardown hooks and run them only once the
+  // replacement root is mounted (bottom of this function). Disposing them here
+  // would kill ChangeNotifiers — NetworkStatus above all — that the still-live
+  // old widget tree is listening to, and the several awaits below give it
+  // plenty of frames to rebuild and throw "used after dispose".
+  final outgoing = List.of(_graphDisposers);
+  _graphDisposers.clear();
+
   // Load tokens from secure storage before rendering anything
   final tokenManager = TokenManager();
   await tokenManager.init();
@@ -128,12 +162,13 @@ void main() async {
   // a phone that slept through a network change wakes with the backoff already
   // at its 30s ceiling, and making someone watch a stale banner for half a
   // minute after they've opened the app is the visible half of this bug.
-  // Retained for the app's lifetime; nothing disposes it because nothing
-  // outlives it.
-  // ignore: unused_local_variable
+  // Retained for the graph's lifetime and torn down when the environment
+  // switcher rebuilds it (see [_graphDisposers]).
   final lifecycle = AppLifecycleListener(
     onResume: networkStatus.probeNow,
   );
+  _graphDisposers.add(lifecycle.dispose);
+  _graphDisposers.add(networkStatus.dispose);
 
   final httpCache = HttpCache();
   final outbox = Outbox();
@@ -255,15 +290,18 @@ void main() async {
   // anything left from a previous offline session). `currentUserId` comes from
   // the same source as the cache/outbox namespace (TokenManager), so they can't
   // disagree, and it's available at boot — before AuthProvider loads the user.
-  // This is an app-lifetime singleton: its NetworkStatus listener keeps it
-  // alive, and `dispose()` exists for teardown/tests.
-  OutboxProcessor(
+  // Lives as long as the object graph does: its NetworkStatus listener keeps
+  // it alive, and `dispose()` is called when the environment switcher rebuilds
+  // the graph — a leaked processor from the previous environment would replay
+  // its queued writes against the new backend.
+  final outboxProcessor = OutboxProcessor(
     outbox: outbox,
     networkStatus: networkStatus,
     currentUserId: () => tokenManager.currentUserId,
     replay: (e) =>
         apiClient.sendRaw(e.method, e.path, body: e.body, headers: e.headers),
-  ).start();
+  )..start();
+  _graphDisposers.add(outboxProcessor.dispose);
 
   // When ApiClient can't recover a 401 (refresh failed), force re-login
   // — the registered callbacks fan out via clearAuth().
@@ -289,7 +327,7 @@ void main() async {
   // a change made in another session, e.g. web). We reload the matching
   // provider so the screen refreshes in place. Single central listener → no
   // per-provider wiring. Errors are swallowed (background refresh).
-  apiClient.cacheEvents.listen((tag) {
+  final cacheEventsSub = apiClient.cacheEvents.listen((tag) {
     final Future<void>? reload = switch (tag) {
       // Both: the grid reloads its current page, and the in-memory catalogue
       // refetches so a product created on web is findable in the pickers here
@@ -309,6 +347,7 @@ void main() async {
     };
     if (reload != null) unawaited(reload.catchError((_) {}));
   });
+  _graphDisposers.add(() => unawaited(cacheEventsSub.cancel()));
 
   // Whenever the session changes (login or logout), refresh the bell
   // badge so it reflects the new user immediately. Single listener for
@@ -414,6 +453,17 @@ void main() async {
       child: const ShopxyApp(),
     ),
   );
+
+  // The replacement root is mounted — the previous graph is now detached and
+  // safe to tear down. Best-effort: a throwing disposer must not stop the app
+  // coming back up.
+  for (final dispose in outgoing.reversed) {
+    try {
+      dispose();
+    } catch (_) {
+      // already torn down, or never fully started
+    }
+  }
 
   // Restore session after runApp so the splash screen shows during init
   authProvider.init();

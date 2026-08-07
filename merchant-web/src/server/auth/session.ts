@@ -2,6 +2,11 @@ import "server-only";
 import { cookies } from "next/headers";
 import { env } from "@/shared/config/env";
 import {
+  DEFAULT_BACKEND_BASE_URL,
+  ENV_COOKIE,
+  environmentById,
+} from "@/shared/config/environments";
+import {
   authUserSchema,
   tokenPairSchema,
   type AuthUser,
@@ -75,15 +80,33 @@ async function getRefreshToken(): Promise<string | null> {
 }
 
 /**
+ * The backend this request proxies to: the environment picked in Settings
+ * (developer-only — see `shared/config/environments.ts`) when one is set for
+ * this browser, otherwise the deployment's configured `API_BASE_URL`.
+ *
+ * Scoped to the caller's own cookie, so a developer switching environments
+ * never moves anyone else's requests. An unrecognised id (a retired
+ * environment, or a hand-forged cookie) falls back to the default rather than
+ * being trusted.
+ */
+export async function resolveBackendBaseUrl(): Promise<string> {
+  const store = await cookies();
+  return (
+    environmentById(store.get(ENV_COOKIE)?.value)?.baseUrl ??
+    DEFAULT_BACKEND_BASE_URL
+  );
+}
+
+/**
  * Raw fetch to the backend. Never throws on non-2xx — returns the Response.
  * Defaults to a JSON content-type, but leaves FormData bodies alone so fetch
  * can set the multipart boundary itself (used by the avatar upload).
  */
-export function backendFetch(
+export async function backendFetch(
   path: string,
   init?: RequestInit,
 ): Promise<Response> {
-  const url = `${env.API_BASE_URL}/${path.replace(/^\/+/, "")}`;
+  const url = `${await resolveBackendBaseUrl()}/${path.replace(/^\/+/, "")}`;
   const headers: Record<string, string> = {
     ...(init?.headers as Record<string, string> | undefined),
   };

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { env } from "@/shared/config/env";
+import { resolveBackendBaseUrl } from "@/server/auth/session";
 
 /**
  * Public media proxy. Avatar/image URLs from the backend are stored relative
@@ -48,7 +48,12 @@ export async function GET(
 
   // Defence-in-depth: build the upstream URL so the resolved path provably
   // stays under `/images/` even if the filename check is ever loosened.
-  const upstreamUrl = new URL(filename, `${env.API_BASE_URL}/images/`);
+  // Follows the same environment choice as the rest of the BFF, so images
+  // resolve against whichever backend served the record that references them.
+  const upstreamUrl = new URL(
+    filename,
+    `${await resolveBackendBaseUrl()}/images/`,
+  );
   if (!upstreamUrl.pathname.startsWith("/images/")) {
     return new NextResponse(null, { status: 404 });
   }

@@ -5,6 +5,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shopxy/core/auth/shop_capabilities.dart';
+import 'package:shopxy/core/config/app_config.dart';
+import 'package:shopxy/core/config/app_environment.dart';
 import 'package:shopxy/core/haptics/app_haptics.dart';
 import 'package:shopxy/core/haptics/haptics_prefs.dart';
 import 'package:shopxy/core/prefs/locale_prefs.dart';
@@ -14,6 +16,7 @@ import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/auth/presentation/widgets/logout_confirm_sheet.dart';
 import 'package:shopxy/features/custom_fields/presentation/pages/custom_fields_settings_page.dart';
+import 'package:shopxy/features/developer/presentation/pages/environment_page.dart';
 import 'package:shopxy/features/auth/presentation/pages/sessions_page.dart';
 import 'package:shopxy/features/invoices/presentation/pages/invoice_settings_page.dart';
 import 'package:shopxy/features/profile/presentation/pages/change_password_page.dart';
@@ -334,6 +337,31 @@ class _SettingsPageState extends State<SettingsPage> {
               MaterialPageRoute(builder: (_) => const LegalPage.terms()),
             ),
           ),
+
+          // ── Developer ───────────────────────────────────────
+          // Only for the developer account (see [kDeveloperEmail]); every
+          // other merchant sees the About section run straight into the
+          // danger zone, exactly as before.
+          if (isDeveloperAccount(user?.email)) ...[
+            const _Gap(),
+            const _Eyebrow('DEVELOPER'),
+            const SizedBox(height: AppSizes.sm),
+            _SettingRow(
+              icon: AppIcons.settingsOutlined,
+              title: 'Environment',
+              subtitle:
+                  AppEnvironments.matching(AppConfig.apiBaseUrl)?.label ??
+                  AppConfig.apiBaseUrl,
+              trailing: AppIcon(
+                AppIcons.chevronRightRounded,
+                color: AppColors.subtle,
+              ),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const EnvironmentPage()),
+              ),
+            ),
+          ],
 
           const _Gap(),
 

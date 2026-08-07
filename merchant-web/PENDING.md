@@ -153,3 +153,28 @@ Deferred / open:
 - [ ] **Hindi copy is machine-drafted.** `hsn.copy.hi.json` needs a native
   review, especially the trade vocabulary — a shopkeeper's word for a thing is
   often not the dictionary word.
+
+## Developer environment switcher (Aug 2026)
+
+Settings → Developer lets the developer account point this browser at a
+different backend (production / dev tunnel / local). The choice lives in an
+httpOnly `sxm_env` cookie read by `resolveBackendBaseUrl()`, so it is scoped to
+one browser and never moves another merchant's requests; the allow-list is
+`src/shared/config/environments.ts` and `GET|POST /api/dev/environment` 404s for
+everyone but `DEVELOPER_EMAIL`. Mirrors the Flutter merchant app's
+`frontend/lib/features/developer/`.
+
+- [ ] **`customer-web` has no switcher.** It runs the same BFF shape and would
+  need the same three pieces (allow-list, cookie resolver, gated route). Only
+  merchant-web and the Flutter merchant app were asked for.
+- [ ] **Deliberately not localised.** The section label, blurb and picker copy
+  are hardcoded English and skipped in `messages/*.json` — the whole surface is
+  gated to one hardcoded address. If it ever opens up to more accounts, these
+  strings need catalog entries.
+- [ ] **Uses `window.confirm`.** The switch confirmation is a native dialog
+  rather than the app's own modal. Fine for an internal tool; swap it if this
+  surface ever becomes user-facing.
+- [ ] **No environment badge outside Settings.** Once pointed at a non-default
+  backend there is nothing on screen to say so, which is easy to forget on a
+  dev tunnel. A small persistent chip in the dashboard chrome (developer-only,
+  driven by the same endpoint) would prevent "why is production empty".

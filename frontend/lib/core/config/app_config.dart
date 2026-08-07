@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:shopxy/core/config/app_environment.dart';
 
 class AppConfig {
   /// Override at build time:
@@ -10,10 +11,16 @@ class AppConfig {
   /// the value MUST come via dart-define — see [assertSafeForRelease].
   static const String _envBaseUrl = String.fromEnvironment('API_BASE_URL');
 
+  /// Resolution order: the environment picked in Settings (developer-only,
+  /// see [AppEnvironments]) → the build-time dart-define → production.
+  ///
+  /// Read at call time, never cached, so a switch takes effect on the next
+  /// request without anything having to re-read it.
   static String get apiBaseUrl {
+    final picked = AppEnvironments.overrideBaseUrl;
+    if (picked != null) return picked;
     if (_envBaseUrl.isNotEmpty) return _envBaseUrl;
-    return 'https://qjhcp0ph-3003.inc1.devtunnels.ms/';
-    //return 'https://backendshopxy.cloudnsofts.com/';
+    return AppEnvironments.production.baseUrl;
   }
 
   /// Google sign-in client IDs. Override at build time:
@@ -52,6 +59,12 @@ class AppConfig {
   /// Throws on release builds that didn't get an explicit API_BASE_URL
   /// or that were misconfigured to a developer's personal tunnel.
   /// Call once from `main()` before [runApp].
+  ///
+  /// Deliberately checks the dart-define only, not [apiBaseUrl]: this guards
+  /// against a *build* that was shipped pointing at a dev host, which is a
+  /// mistake. An environment picked in Settings is the opposite — a signed-in
+  /// developer deliberately choosing one from a fixed list — so it stays
+  /// honoured in release builds, which is where it's actually useful.
   static void assertSafeForRelease() {
     if (kReleaseMode) {
       if (_envBaseUrl.isEmpty) {
