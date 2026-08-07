@@ -509,24 +509,38 @@ export async function forgetRemember(req: Request, res: Response) {
   res.status(204).end();
 }
 
+/// Attach the caller's team scope to a current-user payload.
+///
+/// `shopId` / `shopRole` / `shopRoleName` / `shopPermissions` are not columns
+/// on User and are deliberately not baked into the JWT — `requireAuth`
+/// hydrates them onto `req.user` from the ShopMember row (null / empty for an
+/// account on no team). That means EVERY endpoint returning "the current user"
+/// has to re-attach them, and `GET /me` and `PATCH /me` must agree: they
+/// describe the same resource, and a client can't tell a missing field from a
+/// genuinely shopless account.
+///
+/// They disagreed. `PATCH /me` returned the bare profile row, so the Flutter
+/// merchant app — which assigns the response straight onto its session user —
+/// saw `shopRole: null` after a profile save and its auth gate dropped a shop
+/// owner onto the "set up your shop" screen. merchant-web papered over it by
+/// re-reading `GET /me` after every PATCH (see its `api/auth/me` route).
+function withShopScope<T extends object>(req: Request, user: T) {
+  return {
+    ...user,
+    shopId: req.user!.shopId ?? null,
+    shopRole: req.user!.shopRole ?? null,
+    shopRoleName: req.user!.shopRoleName ?? null,
+    shopPermissions: req.user!.shopPermissions ?? [],
+  };
+}
+
 export async function getMe(req: Request, res: Response) {
   const user = await authService.getMe(req.user!.sub);
   if (!user) {
     res.status(404).json({ error: 'User not found' });
     return;
   }
-  // Surface the caller's team scope alongside the profile so the
-  // merchant app can gate role-sensitive UI (Team & roles actions,
-  // hiding write affordances staff can't use). Both are hydrated onto
-  // req.user by requireAuth from the ShopMember row; null for accounts
-  // not on any team.
-  res.json({
-    ...user,
-    shopId: req.user!.shopId ?? null,
-    shopRole: req.user!.shopRole ?? null,
-    shopRoleName: req.user!.shopRoleName ?? null,
-    shopPermissions: req.user!.shopPermissions ?? [],
-  });
+  res.json(withShopScope(req, user));
 }
 
 export async function updateProfile(req: Request, res: Response) {
@@ -544,7 +558,7 @@ export async function updateProfile(req: Request, res: Response) {
     res.status(422).json({ error: result.error });
     return;
   }
-  res.json(result);
+  res.json(withShopScope(req, result));
 }
 
 export async function exportData(req: Request, res: Response) {

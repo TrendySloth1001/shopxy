@@ -65,8 +65,11 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: message }, { status: 400 });
   }
 
-  // PATCH returns the safe user without team scope — re-read /auth/me so the
-  // client keeps shopId/shopRole/permissions.
+  // The backend's PATCH now re-attaches the team scope itself (see its
+  // `withShopScope` — it used to return the bare profile row, which is what
+  // this re-read was working around). Kept as belt-and-braces so a merchant-web
+  // deploy running against an older backend still hands the client a complete
+  // user rather than one with no shop.
   const enriched = await getCurrentUser();
   if (enriched) return NextResponse.json({ user: enriched });
   const fallback = authUserSchema.safeParse(await res.json());
