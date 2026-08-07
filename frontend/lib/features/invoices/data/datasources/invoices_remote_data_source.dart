@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/features/invoices/data/models/invoice_dto.dart';
 import 'package:shopxy/features/invoices/domain/entities/invoice.dart';
+import 'package:shopxy/features/invoices/domain/entities/recipient_details.dart';
 
 /// Outcome of POST /invoices when the caller asked for a one-shot
 /// create + confirm. The invoice always exists (we never roll the
@@ -45,10 +46,14 @@ class InvoicesRemoteDataSource {
     String? search,
     DateTime? dateFrom,
     DateTime? dateTo,
+    /// The "Archived" view. Archived documents are out of every other list —
+    /// that's the point of archiving.
+    bool archived = false,
     int page = 1,
     int limit = 20,
   }) async {
     final params = <String, String>{'page': '$page', 'limit': '$limit'};
+    if (archived) params['archived'] = 'true';
     if (type != null) params['type'] = type;
     if (status != null) params['status'] = status;
     if (documentType != null) params['documentType'] = documentType;
@@ -120,6 +125,7 @@ class InvoicesRemoteDataSource {
     String? note,
     String? documentType,
     String? placeOfSupplyStateCode,
+    RecipientDetails? recipient,
     required List<Map<String, dynamic>> items,
     bool confirm = false,
   }) async {
@@ -136,6 +142,7 @@ class InvoicesRemoteDataSource {
         note: note,
         documentType: documentType,
         placeOfSupplyStateCode: placeOfSupplyStateCode,
+        recipient: recipient,
         items: items,
         confirm: confirm,
       ),
@@ -171,6 +178,7 @@ class InvoicesRemoteDataSource {
     String? note,
     String? documentType,
     String? placeOfSupplyStateCode,
+    RecipientDetails? recipient,
     required List<Map<String, dynamic>> items,
   }) async {
     final res = await _client.patch(
@@ -186,6 +194,7 @@ class InvoicesRemoteDataSource {
         note: note,
         documentType: documentType,
         placeOfSupplyStateCode: placeOfSupplyStateCode,
+        recipient: recipient,
         items: items,
       ),
     );
@@ -254,12 +263,18 @@ class InvoicesRemoteDataSource {
     );
   }
 
-  Future<void> deleteInvoice(String id) async {
-    final res = await _client.delete('/invoices/$id');
-    if (res.statusCode != 204) {
+  /// File a DRAFT or CANCELLED document out of the working list, or bring it
+  /// back. Replaces `deleteInvoice`, which could never succeed: a draft
+  /// already owns its legal serial and Rule 46(b) needs the run consecutive,
+  /// so the row can't go away. Archiving keeps the number allocated.
+  Future<Invoice> setArchived(String id, bool archived) async {
+    final path = archived ? 'archive' : 'unarchive';
+    final res = await _client.post('/invoices/$id/$path');
+    if (res.statusCode != 200) {
       final body = jsonDecode(res.body) as Map<String, dynamic>;
-      throw Exception(body['error'] ?? 'Failed to delete invoice');
+      throw Exception(body['error'] ?? 'Failed to archive invoice');
     }
+    return InvoiceDto.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
   /// Returns the raw HTTP response so the caller can read [bodyBytes]

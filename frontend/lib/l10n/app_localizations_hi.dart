@@ -99,6 +99,28 @@ class AppLocalizationsHi extends AppLocalizations {
       'किसी दुकान मालिक से अपनी टीम में आमंत्रित करने को कहें, फिर स्वीकार करने के लिए दोबारा साइन इन करें।';
 
   @override
+  String get productsPickerTitle => 'उत्पाद जोड़ें';
+
+  @override
+  String get productsPickerSearchHint => 'नाम या SKU से खोजें';
+
+  @override
+  String get productsPickerEmpty => 'आपकी सूची में अभी कोई उत्पाद नहीं है';
+
+  @override
+  String get productsPickerNoMatches => 'इस खोज से कोई उत्पाद मेल नहीं खाता';
+
+  @override
+  String productsPickerDone(int count) {
+    return 'हो गया ($count)';
+  }
+
+  @override
+  String productsPickerInStock(String qty, String unit) {
+    return '$qty $unit स्टॉक में';
+  }
+
+  @override
   String get productsTitle => 'उत्पाद';
 
   @override
@@ -1570,17 +1592,125 @@ class AppLocalizationsHi extends AppLocalizations {
   String get invoicesPlaceOfSupply => 'आपूर्ति का स्थान (राज्य)';
 
   @override
-  String get invoicesPlaceOfSupplyHelper =>
-      'खरीदार का राज्य — CGST/SGST या IGST तय करता है';
+  String get invoicesPlaceOfSupplyFromPartyGstin => 'ग्राहक के GSTIN से';
 
   @override
-  String get invoicesSelectDash => '— चुनें —';
+  String get invoicesPlaceOfSupplyFromPartyAddress =>
+      'ग्राहक के सहेजे गए पते से';
+
+  @override
+  String get invoicesPlaceOfSupplyFromVendorGstin => 'विक्रेता के GSTIN से';
+
+  @override
+  String get invoicesPlaceOfSupplyFromVendorAddress =>
+      'विक्रेता के सहेजे गए पते से';
+
+  @override
+  String get invoicesPlaceOfSupplyDefaultsToShop =>
+      'ग्राहक का GSTIN नहीं — इसे आपके अपने राज्य में स्थानीय आपूर्ति माना गया है';
+
+  @override
+  String get invoicesSupplyIntraState => 'राज्य के भीतर · CGST + SGST';
+
+  @override
+  String get invoicesSupplyInterState => 'अंतर-राज्यीय · IGST';
 
   @override
   String get invoicesInvoiceItems => 'चालान की वस्तुएं';
 
   @override
-  String get invoicesSearchToAddProduct => 'जोड़ने के लिए उत्पाद खोजें';
+  String get invoicesRecipientTitle => 'ग्राहक का विवरण अधूरा है';
+
+  @override
+  String get invoicesRecipientWhyB2b =>
+      'यह एक GST चालान है, इसलिए कानून के अनुसार इस पर ग्राहक का नाम और पता होना ज़रूरी है।';
+
+  @override
+  String get invoicesRecipientWhyHighValue =>
+      '₹50,000 या उससे अधिक के चालान पर ग्राहक का नाम और पता होना ज़रूरी है।';
+
+  @override
+  String get invoicesRecipientMissingIntro => 'अनुपस्थित:';
+
+  @override
+  String get invoicesRecipientMissingName => 'नाम';
+
+  @override
+  String get invoicesRecipientMissingAddress => 'पता';
+
+  @override
+  String get invoicesRecipientAddress => 'पता';
+
+  @override
+  String get invoicesRecipientCity => 'शहर';
+
+  @override
+  String get invoicesRecipientState => 'राज्य';
+
+  @override
+  String get invoicesRecipientPin => 'पिन कोड';
+
+  @override
+  String get invoicesRecipientSaveToParty => 'इस ग्राहक में भी सहेजें';
+
+  @override
+  String get invoicesRecipientSaveToPartyHint =>
+      'ताकि आपको यह दोबारा न भरना पड़े';
+
+  @override
+  String get invoicesRecipientFillAndContinue => 'सहेजें और आगे बढ़ें';
+
+  @override
+  String get invoicesRecipientSkip => 'इनके बिना जारी करें';
+
+  @override
+  String get invoicesRecipientSkipWarnTitle => 'अधूरा चालान जारी करें?';
+
+  @override
+  String get invoicesRecipientSkipWarnBody =>
+      'यह चालान ग्राहक के पूरे विवरण के बिना जाएगा, जो इस राशि पर GST नियमों के अनुसार आवश्यक है। ऐसा तभी करें जब आपको ये विवरण मिल ही न सकें।';
+
+  @override
+  String get invoicesRecipientSkipConfirm => 'फिर भी जारी करें';
+
+  @override
+  String get invoicesPreviewTitle => 'जारी करने से पहले जाँचें';
+
+  @override
+  String get invoicesPreviewSubtitle =>
+      'पुष्टि के बाद यह चालान जारी हो जाएगा और इसे बदला नहीं जा सकेगा।';
+
+  @override
+  String get invoicesPreviewBillTo => 'ग्राहक';
+
+  @override
+  String get invoicesPreviewFrom => 'विक्रेता';
+
+  @override
+  String get invoicesPreviewNoAddress => 'कोई पता दर्ज नहीं है';
+
+  @override
+  String invoicesPreviewItemCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count वस्तुएँ',
+      one: '1 वस्तु',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get invoicesPreviewBack => 'संपादन जारी रखें';
+
+  @override
+  String get invoicesPreviewConfirm => 'पुष्टि करें और जारी करें';
+
+  @override
+  String get invoicesAddProducts => 'उत्पाद जोड़ें';
+
+  @override
+  String get invoicesAddProductsHint => 'अपनी सूची देखें या खोजें';
 
   @override
   String get invoicesScanBarcode => 'बारकोड स्कैन करें';
@@ -1717,17 +1847,42 @@ class AppLocalizationsHi extends AppLocalizations {
   String get invoicesShare => 'साझा करें';
 
   @override
-  String get invoicesDelete => 'हटाएं';
+  String get invoicesArchive => 'संग्रहित करें';
 
   @override
-  String invoicesDeleteConfirmBody(Object invoiceNo) {
-    return '$invoiceNo हटाएं? इसे पूर्ववत नहीं किया जा सकता।';
+  String invoicesArchiveConfirmBody(Object invoiceNo) {
+    return '$invoiceNo को संग्रहित करें? यह आपकी चालान सूची से हट जाएगा लेकिन इसका नंबर बना रहेगा, जिससे क्रम अटूट रहता है। आप इसे बाद में वापस ला सकते हैं।';
   }
 
   @override
-  String invoicesDeletedNamed(Object invoiceNo) {
-    return '$invoiceNo हटाया गया';
+  String invoicesArchivedNamed(Object invoiceNo) {
+    return '$invoiceNo संग्रहित किया गया';
   }
+
+  @override
+  String get invoicesRestore => 'वापस लाएँ';
+
+  @override
+  String invoicesRestoredNamed(Object invoiceNo) {
+    return '$invoiceNo वापस लाया गया';
+  }
+
+  @override
+  String get invoicesArchivedEmptyTitle => 'कुछ भी संग्रहित नहीं है';
+
+  @override
+  String get invoicesArchivedEmptyBody =>
+      'आपके द्वारा संग्रहित किए गए ड्राफ़्ट और रद्द चालान यहाँ आते हैं। उनके नंबर आवंटित रहते हैं, इसलिए आपका क्रम कभी नहीं टूटता।';
+
+  @override
+  String get navArchivedInvoices => 'संग्रहित चालान';
+
+  @override
+  String get menuDescArchivedInvoices =>
+      'आपके द्वारा संग्रहित ड्राफ़्ट और रद्द बिल';
+
+  @override
+  String get invoicesArchivedFilter => 'संग्रहित';
 
   @override
   String get invoicesCustomer => 'ग्राहक';

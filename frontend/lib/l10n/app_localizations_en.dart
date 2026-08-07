@@ -99,6 +99,28 @@ class AppLocalizationsEn extends AppLocalizations {
       'Ask a shop owner to invite you to their team, then sign in again to accept.';
 
   @override
+  String get productsPickerTitle => 'Add products';
+
+  @override
+  String get productsPickerSearchHint => 'Search by name or SKU';
+
+  @override
+  String get productsPickerEmpty => 'No products in your catalogue yet';
+
+  @override
+  String get productsPickerNoMatches => 'No products match that search';
+
+  @override
+  String productsPickerDone(int count) {
+    return 'Done ($count)';
+  }
+
+  @override
+  String productsPickerInStock(String qty, String unit) {
+    return '$qty $unit in stock';
+  }
+
+  @override
   String get productsTitle => 'Products';
 
   @override
@@ -1568,17 +1590,126 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invoicesPlaceOfSupply => 'Place of supply (state)';
 
   @override
-  String get invoicesPlaceOfSupplyHelper =>
-      'Buyer state — drives CGST/SGST vs IGST';
+  String get invoicesPlaceOfSupplyFromPartyGstin =>
+      'From the customer\'s GSTIN';
 
   @override
-  String get invoicesSelectDash => '— Select —';
+  String get invoicesPlaceOfSupplyFromPartyAddress =>
+      'From the customer\'s saved address';
+
+  @override
+  String get invoicesPlaceOfSupplyFromVendorGstin => 'From the vendor\'s GSTIN';
+
+  @override
+  String get invoicesPlaceOfSupplyFromVendorAddress =>
+      'From the vendor\'s saved address';
+
+  @override
+  String get invoicesPlaceOfSupplyDefaultsToShop =>
+      'No customer GSTIN — treated as a local supply in your own state';
+
+  @override
+  String get invoicesSupplyIntraState => 'Intra-state · CGST + SGST';
+
+  @override
+  String get invoicesSupplyInterState => 'Inter-state · IGST';
 
   @override
   String get invoicesInvoiceItems => 'Invoice Items';
 
   @override
-  String get invoicesSearchToAddProduct => 'Search product to add';
+  String get invoicesRecipientTitle => 'Customer details are incomplete';
+
+  @override
+  String get invoicesRecipientWhyB2b =>
+      'This is a GST invoice, so the law needs the customer\'s name and address on it.';
+
+  @override
+  String get invoicesRecipientWhyHighValue =>
+      'Invoices of ₹50,000 or more must carry the customer\'s name and address.';
+
+  @override
+  String get invoicesRecipientMissingIntro => 'Missing:';
+
+  @override
+  String get invoicesRecipientMissingName => 'Name';
+
+  @override
+  String get invoicesRecipientMissingAddress => 'Address';
+
+  @override
+  String get invoicesRecipientAddress => 'Address';
+
+  @override
+  String get invoicesRecipientCity => 'City';
+
+  @override
+  String get invoicesRecipientState => 'State';
+
+  @override
+  String get invoicesRecipientPin => 'PIN code';
+
+  @override
+  String get invoicesRecipientSaveToParty => 'Also save to this customer';
+
+  @override
+  String get invoicesRecipientSaveToPartyHint =>
+      'So you don\'t have to fill this in again';
+
+  @override
+  String get invoicesRecipientFillAndContinue => 'Save and continue';
+
+  @override
+  String get invoicesRecipientSkip => 'Issue without them';
+
+  @override
+  String get invoicesRecipientSkipWarnTitle => 'Issue an incomplete invoice?';
+
+  @override
+  String get invoicesRecipientSkipWarnBody =>
+      'This invoice will go out without the customer\'s full details, which GST rules require at this value. Do this only if you cannot get them.';
+
+  @override
+  String get invoicesRecipientSkipConfirm => 'Issue anyway';
+
+  @override
+  String get invoicesPreviewTitle => 'Check before issuing';
+
+  @override
+  String get invoicesPreviewSubtitle =>
+      'Once confirmed, this invoice is issued and can\'t be edited.';
+
+  @override
+  String get invoicesPreviewBillTo => 'Bill to';
+
+  @override
+  String get invoicesPreviewFrom => 'From';
+
+  @override
+  String get invoicesPreviewNoAddress => 'No address on file';
+
+  @override
+  String invoicesPreviewItemCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items',
+      one: '1 item',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get invoicesPreviewBack => 'Keep editing';
+
+  @override
+  String get invoicesPreviewConfirm => 'Confirm and issue';
+
+  @override
+  String get invoicesAddProducts => 'Add products';
+
+  @override
+  String get invoicesAddProductsHint => 'Browse or search your catalogue';
 
   @override
   String get invoicesScanBarcode => 'Scan barcode';
@@ -1715,17 +1846,42 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invoicesShare => 'Share';
 
   @override
-  String get invoicesDelete => 'Delete';
+  String get invoicesArchive => 'Archive';
 
   @override
-  String invoicesDeleteConfirmBody(Object invoiceNo) {
-    return 'Delete $invoiceNo? This can\'t be undone.';
+  String invoicesArchiveConfirmBody(Object invoiceNo) {
+    return 'File $invoiceNo away? It leaves your invoice list but keeps its number, so the serial run stays unbroken. You can restore it later.';
   }
 
   @override
-  String invoicesDeletedNamed(Object invoiceNo) {
-    return '$invoiceNo deleted';
+  String invoicesArchivedNamed(Object invoiceNo) {
+    return '$invoiceNo archived';
   }
+
+  @override
+  String get invoicesRestore => 'Restore';
+
+  @override
+  String invoicesRestoredNamed(Object invoiceNo) {
+    return '$invoiceNo restored';
+  }
+
+  @override
+  String get invoicesArchivedEmptyTitle => 'Nothing archived';
+
+  @override
+  String get invoicesArchivedEmptyBody =>
+      'Drafts and cancelled invoices you file away land here. Their numbers stay allocated, so your serial run is never broken.';
+
+  @override
+  String get navArchivedInvoices => 'Archived invoices';
+
+  @override
+  String get menuDescArchivedInvoices =>
+      'Drafts and cancelled bills you filed away';
+
+  @override
+  String get invoicesArchivedFilter => 'Archived';
 
   @override
   String get invoicesCustomer => 'Customer';

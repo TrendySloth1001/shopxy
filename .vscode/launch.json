@@ -28,7 +28,12 @@
             "cwd": "frontend",
             "request": "launch",
             "type": "dart",
-            "flutterMode": "release"
+            "flutterMode": "release",
+            // AppConfig.assertSafeForRelease() throws unless release builds get
+            // an explicit API_BASE_URL — the debug fallback is not used here.
+            "toolArgs": [
+                "--dart-define=API_BASE_URL=https://backendshopxy.cloudnsofts.com/"
+            ]
         }
     ]
 }

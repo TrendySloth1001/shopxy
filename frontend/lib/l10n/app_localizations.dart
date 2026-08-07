@@ -272,6 +272,42 @@ abstract class AppLocalizations {
   /// **'Ask a shop owner to invite you to their team, then sign in again to accept.'**
   String get noShopBody;
 
+  /// No description provided for @productsPickerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add products'**
+  String get productsPickerTitle;
+
+  /// No description provided for @productsPickerSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by name or SKU'**
+  String get productsPickerSearchHint;
+
+  /// No description provided for @productsPickerEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No products in your catalogue yet'**
+  String get productsPickerEmpty;
+
+  /// No description provided for @productsPickerNoMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'No products match that search'**
+  String get productsPickerNoMatches;
+
+  /// No description provided for @productsPickerDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done ({count})'**
+  String productsPickerDone(int count);
+
+  /// No description provided for @productsPickerInStock.
+  ///
+  /// In en, this message translates to:
+  /// **'{qty} {unit} in stock'**
+  String productsPickerInStock(String qty, String unit);
+
   /// No description provided for @productsTitle.
   ///
   /// In en, this message translates to:
@@ -3026,17 +3062,47 @@ abstract class AppLocalizations {
   /// **'Place of supply (state)'**
   String get invoicesPlaceOfSupply;
 
-  /// No description provided for @invoicesPlaceOfSupplyHelper.
+  /// No description provided for @invoicesPlaceOfSupplyFromPartyGstin.
   ///
   /// In en, this message translates to:
-  /// **'Buyer state — drives CGST/SGST vs IGST'**
-  String get invoicesPlaceOfSupplyHelper;
+  /// **'From the customer\'s GSTIN'**
+  String get invoicesPlaceOfSupplyFromPartyGstin;
 
-  /// No description provided for @invoicesSelectDash.
+  /// No description provided for @invoicesPlaceOfSupplyFromPartyAddress.
   ///
   /// In en, this message translates to:
-  /// **'— Select —'**
-  String get invoicesSelectDash;
+  /// **'From the customer\'s saved address'**
+  String get invoicesPlaceOfSupplyFromPartyAddress;
+
+  /// No description provided for @invoicesPlaceOfSupplyFromVendorGstin.
+  ///
+  /// In en, this message translates to:
+  /// **'From the vendor\'s GSTIN'**
+  String get invoicesPlaceOfSupplyFromVendorGstin;
+
+  /// No description provided for @invoicesPlaceOfSupplyFromVendorAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'From the vendor\'s saved address'**
+  String get invoicesPlaceOfSupplyFromVendorAddress;
+
+  /// No description provided for @invoicesPlaceOfSupplyDefaultsToShop.
+  ///
+  /// In en, this message translates to:
+  /// **'No customer GSTIN — treated as a local supply in your own state'**
+  String get invoicesPlaceOfSupplyDefaultsToShop;
+
+  /// No description provided for @invoicesSupplyIntraState.
+  ///
+  /// In en, this message translates to:
+  /// **'Intra-state · CGST + SGST'**
+  String get invoicesSupplyIntraState;
+
+  /// No description provided for @invoicesSupplyInterState.
+  ///
+  /// In en, this message translates to:
+  /// **'Inter-state · IGST'**
+  String get invoicesSupplyInterState;
 
   /// No description provided for @invoicesInvoiceItems.
   ///
@@ -3044,11 +3110,167 @@ abstract class AppLocalizations {
   /// **'Invoice Items'**
   String get invoicesInvoiceItems;
 
-  /// No description provided for @invoicesSearchToAddProduct.
+  /// No description provided for @invoicesRecipientTitle.
   ///
   /// In en, this message translates to:
-  /// **'Search product to add'**
-  String get invoicesSearchToAddProduct;
+  /// **'Customer details are incomplete'**
+  String get invoicesRecipientTitle;
+
+  /// No description provided for @invoicesRecipientWhyB2b.
+  ///
+  /// In en, this message translates to:
+  /// **'This is a GST invoice, so the law needs the customer\'s name and address on it.'**
+  String get invoicesRecipientWhyB2b;
+
+  /// No description provided for @invoicesRecipientWhyHighValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoices of ₹50,000 or more must carry the customer\'s name and address.'**
+  String get invoicesRecipientWhyHighValue;
+
+  /// No description provided for @invoicesRecipientMissingIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Missing:'**
+  String get invoicesRecipientMissingIntro;
+
+  /// No description provided for @invoicesRecipientMissingName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get invoicesRecipientMissingName;
+
+  /// No description provided for @invoicesRecipientMissingAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get invoicesRecipientMissingAddress;
+
+  /// No description provided for @invoicesRecipientAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get invoicesRecipientAddress;
+
+  /// No description provided for @invoicesRecipientCity.
+  ///
+  /// In en, this message translates to:
+  /// **'City'**
+  String get invoicesRecipientCity;
+
+  /// No description provided for @invoicesRecipientState.
+  ///
+  /// In en, this message translates to:
+  /// **'State'**
+  String get invoicesRecipientState;
+
+  /// No description provided for @invoicesRecipientPin.
+  ///
+  /// In en, this message translates to:
+  /// **'PIN code'**
+  String get invoicesRecipientPin;
+
+  /// No description provided for @invoicesRecipientSaveToParty.
+  ///
+  /// In en, this message translates to:
+  /// **'Also save to this customer'**
+  String get invoicesRecipientSaveToParty;
+
+  /// No description provided for @invoicesRecipientSaveToPartyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'So you don\'t have to fill this in again'**
+  String get invoicesRecipientSaveToPartyHint;
+
+  /// No description provided for @invoicesRecipientFillAndContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Save and continue'**
+  String get invoicesRecipientFillAndContinue;
+
+  /// No description provided for @invoicesRecipientSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Issue without them'**
+  String get invoicesRecipientSkip;
+
+  /// No description provided for @invoicesRecipientSkipWarnTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Issue an incomplete invoice?'**
+  String get invoicesRecipientSkipWarnTitle;
+
+  /// No description provided for @invoicesRecipientSkipWarnBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This invoice will go out without the customer\'s full details, which GST rules require at this value. Do this only if you cannot get them.'**
+  String get invoicesRecipientSkipWarnBody;
+
+  /// No description provided for @invoicesRecipientSkipConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Issue anyway'**
+  String get invoicesRecipientSkipConfirm;
+
+  /// No description provided for @invoicesPreviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Check before issuing'**
+  String get invoicesPreviewTitle;
+
+  /// No description provided for @invoicesPreviewSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Once confirmed, this invoice is issued and can\'t be edited.'**
+  String get invoicesPreviewSubtitle;
+
+  /// No description provided for @invoicesPreviewBillTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Bill to'**
+  String get invoicesPreviewBillTo;
+
+  /// No description provided for @invoicesPreviewFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'From'**
+  String get invoicesPreviewFrom;
+
+  /// No description provided for @invoicesPreviewNoAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'No address on file'**
+  String get invoicesPreviewNoAddress;
+
+  /// No description provided for @invoicesPreviewItemCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item} other{{count} items}}'**
+  String invoicesPreviewItemCount(int count);
+
+  /// No description provided for @invoicesPreviewBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep editing'**
+  String get invoicesPreviewBack;
+
+  /// No description provided for @invoicesPreviewConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm and issue'**
+  String get invoicesPreviewConfirm;
+
+  /// No description provided for @invoicesAddProducts.
+  ///
+  /// In en, this message translates to:
+  /// **'Add products'**
+  String get invoicesAddProducts;
+
+  /// No description provided for @invoicesAddProductsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse or search your catalogue'**
+  String get invoicesAddProductsHint;
 
   /// No description provided for @invoicesScanBarcode.
   ///
@@ -3296,23 +3518,65 @@ abstract class AppLocalizations {
   /// **'Share'**
   String get invoicesShare;
 
-  /// No description provided for @invoicesDelete.
+  /// No description provided for @invoicesArchive.
   ///
   /// In en, this message translates to:
-  /// **'Delete'**
-  String get invoicesDelete;
+  /// **'Archive'**
+  String get invoicesArchive;
 
-  /// No description provided for @invoicesDeleteConfirmBody.
+  /// No description provided for @invoicesArchiveConfirmBody.
   ///
   /// In en, this message translates to:
-  /// **'Delete {invoiceNo}? This can\'t be undone.'**
-  String invoicesDeleteConfirmBody(Object invoiceNo);
+  /// **'File {invoiceNo} away? It leaves your invoice list but keeps its number, so the serial run stays unbroken. You can restore it later.'**
+  String invoicesArchiveConfirmBody(Object invoiceNo);
 
-  /// No description provided for @invoicesDeletedNamed.
+  /// No description provided for @invoicesArchivedNamed.
   ///
   /// In en, this message translates to:
-  /// **'{invoiceNo} deleted'**
-  String invoicesDeletedNamed(Object invoiceNo);
+  /// **'{invoiceNo} archived'**
+  String invoicesArchivedNamed(Object invoiceNo);
+
+  /// No description provided for @invoicesRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get invoicesRestore;
+
+  /// No description provided for @invoicesRestoredNamed.
+  ///
+  /// In en, this message translates to:
+  /// **'{invoiceNo} restored'**
+  String invoicesRestoredNamed(Object invoiceNo);
+
+  /// No description provided for @invoicesArchivedEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing archived'**
+  String get invoicesArchivedEmptyTitle;
+
+  /// No description provided for @invoicesArchivedEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Drafts and cancelled invoices you file away land here. Their numbers stay allocated, so your serial run is never broken.'**
+  String get invoicesArchivedEmptyBody;
+
+  /// No description provided for @navArchivedInvoices.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived invoices'**
+  String get navArchivedInvoices;
+
+  /// No description provided for @menuDescArchivedInvoices.
+  ///
+  /// In en, this message translates to:
+  /// **'Drafts and cancelled bills you filed away'**
+  String get menuDescArchivedInvoices;
+
+  /// No description provided for @invoicesArchivedFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get invoicesArchivedFilter;
 
   /// No description provided for @invoicesCustomer.
   ///

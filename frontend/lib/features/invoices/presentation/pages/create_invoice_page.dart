@@ -5,11 +5,15 @@ import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy/features/invoices/domain/entities/invoice.dart';
 import 'package:shopxy/features/invoices/presentation/pages/invoice_detail_page.dart';
 import 'package:shopxy/features/invoices/presentation/providers/invoices_provider.dart';
+import 'package:shopxy/features/invoices/domain/entities/recipient_details.dart';
+import 'package:shopxy/features/invoices/presentation/widgets/invoice_preview_sheet.dart';
+import 'package:shopxy/features/invoices/presentation/widgets/recipient_details_sheet.dart';
+import 'package:shopxy/features/parties/data/datasources/parties_remote_data_source.dart';
 import 'package:shopxy/features/parties/domain/entities/party.dart';
 import 'package:shopxy/features/parties/presentation/widgets/party_picker.dart';
-import 'package:shopxy/features/products/data/datasources/products_remote_data_source.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
 import 'package:shopxy/features/products/presentation/pages/qr_scanner_page.dart';
+import 'package:shopxy/features/products/presentation/widgets/product_picker.dart';
 import 'package:shopxy/features/products/presentation/providers/product_catalogue.dart';
 import 'package:shopxy/features/vendors/domain/entities/vendor.dart';
 import 'package:shopxy/features/vendors/presentation/widgets/vendor_picker.dart';
@@ -18,6 +22,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/constants/indian.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/widgets/app_card.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
@@ -28,10 +33,20 @@ import 'package:shopxy/shared/illustrations/line_illustrations.dart';
 import 'package:shopxy/shared/widgets/glass_widgets.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
-import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
+
+/// Where the derived place of supply came from. Shown under the read-only
+/// row so the merchant can see WHY they're being charged IGST rather than
+/// CGST+SGST — the one thing the old free-choice dropdown never told them.
+enum _PosSource {
+  partyGstin,
+  partyAddress,
+  vendorGstin,
+  vendorAddress,
+  shopDefault,
+}
 
 /// Height of the sticky Save-as-draft / Save-&-confirm action buttons. Taller
 /// than a stock button so the two labels stay on one line and the bar reads as
@@ -80,18 +95,20 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
   // the displayed tax isn't double-added.
   bool _isPriceInclusive = false;
 
-  // Walk-in place-of-supply (used when no party is selected on a SALE).
-  // Defaults to the shop's own state code once auth has loaded, which
-  // gives the intrastate split out of the box.
-  String? _walkInStateCode;
+  // Place of supply is no longer held in state — it's derived on every build
+  // from the counterparty's GSTIN / address, falling back to the shop's own
+  // state. See [_placeOfSupply].
 
   final List<InvoiceItemDraft> _items = [];
 
-  // product search
-  List<Product> _productResults = [];
-  bool _isSearchingProducts = false;
-  final _productSearch = TextEditingController();
-  Timer? _searchDebounce;
+
+  /// The place-of-supply row AND the CGST/SGST-vs-IGST split are both derived
+  /// from this field, so it has to repaint on every keystroke. [_markDirty]
+  /// alone won't do it — it only rebuilds the first time it's called.
+  void _onGstinChanged() {
+    _markDirty();
+    if (mounted) setState(() {});
+  }
 
   void _markDirty() {
     // Trigger a rebuild so PopScope.canPop sees the flipped flag —
@@ -114,6 +131,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     _customerName.addListener(_markDirty);
     _note.addListener(_markDirty);
     _discount.addListener(_markDirty);
+    _customerGstin.addListener(_onGstinChanged);
 
     // Edit mode: rehydrate every control from the persisted invoice so
     // the user sees exactly what's on file before tweaking.
@@ -128,7 +146,8 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
           ? existing.discount.toStringAsFixed(2)
           : '0';
       _note.text = existing.note ?? '';
-      _walkInStateCode = existing.placeOfSupplyStateCode;
+      // `existing.placeOfSupplyStateCode` is deliberately not restored — it's
+      // re-derived from the counterparty below, which is where it came from.
       // Reconstruct minimal Party/Vendor stubs from the invoice's address
       // snapshot. They're enough for the picker cards to render + for
       // IGST detection (state code drives that). If the user wants the
@@ -144,16 +163,10 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
       _dirty = false;
     }
 
-    // Seed the walk-in dropdown to the shop's own state so a fresh
-    // SALE without a party defaults to intrastate CGST+SGST.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final shopCode = context.read<AuthProvider>().user?.shopStateCode;
-      if (shopCode != null && _walkInStateCode == null) {
-        setState(() => _walkInStateCode = shopCode);
-      }
       // Warm the catalogue while the merchant is still picking a customer, so
-      // the first character typed into product search already has an answer.
+      // the product sheet opens on a list instead of a spinner.
       // No-op if another page loaded it already.
       unawaited(context.read<ProductCatalogue>().ensureLoaded());
     });
@@ -205,8 +218,6 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     _customerGstin.dispose();
     _discount.dispose();
     _note.dispose();
-    _searchDebounce?.cancel();
-    _productSearch.dispose();
     super.dispose();
   }
 
@@ -260,15 +271,45 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
   double get _roundOff => _roundedTotal - _rawTotal;
   double get _total => _roundedTotal;
 
-  /// Counterparty state code for IGST-vs-CGST/SGST. SALE uses the
-  /// selected party (or the walk-in picker); PURCHASE uses the vendor.
-  /// Null if nothing is selected yet → defaults to intrastate.
-  String? get _placeOfSupplyStateCode {
+  /// Where this supply is deemed to take place, and why. Mirrors the backend's
+  /// derivation (`invoices.service.ts` — GST-10 and the place-of-supply
+  /// default) so the split shown here can't disagree with the one saved.
+  ///
+  /// Order: the counterparty's own state code → their GSTIN prefix → for a
+  /// SALE, the shop's own state, because an unregistered walk-in with no
+  /// address is a local supply.
+  ({String? code, _PosSource source}) get _placeOfSupply {
     if (_type == 'SALE') {
-      return _selectedParty?.stateCode ?? _walkInStateCode;
+      final party = _selectedParty;
+      if (party?.stateCode != null) {
+        return (code: party!.stateCode, source: _PosSource.partyAddress);
+      }
+      final fromPartyGstin = IndianStates.stateCodeFromGstin(party?.gstin);
+      if (fromPartyGstin != null) {
+        return (code: fromPartyGstin, source: _PosSource.partyGstin);
+      }
+      final fromTypedGstin = IndianStates.stateCodeFromGstin(_customerGstin.text);
+      if (fromTypedGstin != null) {
+        return (code: fromTypedGstin, source: _PosSource.partyGstin);
+      }
+      return (code: _shopStateCode, source: _PosSource.shopDefault);
     }
-    return _selectedVendor?.stateCode;
+
+    final vendor = _selectedVendor;
+    if (vendor?.stateCode != null) {
+      return (code: vendor!.stateCode, source: _PosSource.vendorAddress);
+    }
+    final fromVendorGstin = IndianStates.stateCodeFromGstin(vendor?.gstin);
+    if (fromVendorGstin != null) {
+      return (code: fromVendorGstin, source: _PosSource.vendorGstin);
+    }
+    return (code: _shopStateCode, source: _PosSource.shopDefault);
   }
+
+  String? get _shopStateCode =>
+      context.read<AuthProvider>().user?.shopStateCode;
+
+  String? get _placeOfSupplyStateCode => _placeOfSupply.code;
 
   /// True if the counterparty's state differs from the shop's. Mirrors
   /// backend `isInterstateSupply` — both halves must be present, else
@@ -280,47 +321,14 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     return shop != pos;
   }
 
-  void _onProductSearchChanged(String value) {
-    // The catalogue answers in this frame, so there is nothing to debounce —
-    // debouncing a local list would only add lag the merchant can feel.
-    final catalogue = context.read<ProductCatalogue>();
-    if (catalogue.isSearchable) {
-      _searchDebounce?.cancel();
-      setState(() {
-        _productResults = catalogue.search(value, limit: 10);
-        _isSearchingProducts = false;
-      });
-      return;
-    }
-
-    // Catalogue cold or too large for this shop — the server is still the
-    // answer, and it still needs debouncing so "sol" costs one round-trip.
-    _searchDebounce?.cancel();
-    _searchDebounce = Timer(AppDurations.searchDebounce, () {
-      if (!mounted) return;
-      _searchProducts(value);
-    });
-  }
-
-  Future<void> _searchProducts(String query) async {
-    if (query.trim().isEmpty) {
-      setState(() => _productResults = []);
-      return;
-    }
-    setState(() => _isSearchingProducts = true);
-    try {
-      final ds = context.read<ProductsRemoteDataSource>();
-      final result = await ds.getProducts(search: query, limit: 10);
-      // If the catalogue finished loading while this was in flight, the local
-      // results on screen are newer than this response — dropping it stops an
-      // old query's rows replacing what the merchant is looking at now.
-      if (!mounted || context.read<ProductCatalogue>().isSearchable) return;
-      setState(() => _productResults = result.products);
-    } catch (_) {
-      // ignore
-    } finally {
-      if (mounted) setState(() => _isSearchingProducts = false);
-    }
+  /// Opens the shared catalogue sheet. It calls back per tap rather than
+  /// returning one product, so several lines can be added in one sitting.
+  Future<void> _openProductPicker() {
+    return showProductPicker(
+      context,
+      sale: _type == 'SALE',
+      onAdd: _addItem,
+    );
   }
 
   void _addItem(Product product) {
@@ -355,8 +363,6 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
         );
       });
     }
-    _productSearch.clear();
-    setState(() => _productResults = []);
   }
 
   Future<void> _pickParty() async {
@@ -400,6 +406,173 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     if (picked != null && mounted) _addItem(picked);
   }
 
+  /// The ₹50,000 named-recipient threshold in Rule 46(f). Mirrors `FIFTY_K`
+  /// in `invoices.service.ts`.
+  static const _namedRecipientThreshold = 50000;
+
+  /// Checks the recipient is complete enough to issue, and if not, offers to
+  /// complete it. Returns whether to carry on, plus anything the merchant
+  /// filled in.
+  ///
+  /// This warns in MORE cases than the server blocks, on purpose. The server
+  /// backfills `customerStateCode` from a recipient GSTIN and then counts a
+  /// bare state code as an address, so a B2B invoice never actually trips its
+  /// address branch however empty the customer's record is — it would happily
+  /// issue a tax invoice with no postal address at all. The question worth
+  /// asking the merchant is "do we know where this customer is?", not "will
+  /// the server let this through?".
+  Future<({bool proceed, RecipientDetails? details})> _recipientGate() async {
+    const carryOn = (proceed: true, details: null);
+    if (_type != 'SALE') return carryOn;
+    // CREDIT/DEBIT notes inherit their recipient from the original invoice,
+    // and ESTIMATE/PROFORMA are pre-supply offers Rule 46 doesn't govern.
+    if (_documentType != 'TAX_INVOICE' && _documentType != 'BILL_OF_SUPPLY') {
+      return carryOn;
+    }
+
+    final hasGstin = _customerGstin.text.trim().isNotEmpty;
+    final RecipientRequirement? requirement = hasGstin
+        ? RecipientRequirement.b2b
+        : (_total >= _namedRecipientThreshold
+              ? RecipientRequirement.highValue
+              : null);
+    if (requirement == null) return carryOn;
+
+    final party = _selectedParty;
+    bool filled(String? v) => (v ?? '').trim().isNotEmpty;
+    final nameMissing = !filled(_customerName.text);
+    // State code is deliberately NOT counted — see the note above. What's
+    // being asked is whether a postal address exists.
+    final addressMissing =
+        !filled(party?.address) &&
+        !filled(party?.city) &&
+        !filled(party?.pinCode);
+    if (!nameMissing && !addressMissing) return carryOn;
+
+    final outcome = await showRecipientDetailsSheet(
+      context,
+      requirement: requirement,
+      nameMissing: nameMissing,
+      addressMissing: addressMissing,
+      canSaveToParty: party != null,
+      initialCity: party?.city,
+      initialStateCode: party?.stateCode ?? _placeOfSupplyStateCode,
+      initialPinCode: party?.pinCode,
+    );
+
+    switch (outcome) {
+      case null:
+        // Dismissed. Back to the form — skipping has to be chosen, never
+        // fallen into.
+        return (proceed: false, details: null);
+      case RecipientSkipped():
+        return (proceed: true, details: const RecipientDetails.acknowledgedMissing());
+      case RecipientFilled(:final details, :final saveToParty):
+        if (saveToParty && party != null) {
+          // Best-effort: the invoice is the thing being saved, so a failure to
+          // also update the customer record must not block it. The details
+          // still travel on the invoice either way.
+          await _saveDetailsToParty(party.id, details);
+        }
+        return (proceed: true, details: details);
+    }
+  }
+
+  Future<void> _saveDetailsToParty(
+    String partyId,
+    RecipientDetails details,
+  ) async {
+    try {
+      final ds = context.read<PartiesRemoteDataSource>();
+      final updated = await ds.updateParty(partyId, {
+        if (details.address != null) 'address': details.address,
+        if (details.city != null) 'city': details.city,
+        if (details.state != null) 'state': details.state,
+        if (details.stateCode != null) 'stateCode': details.stateCode,
+        if (details.pinCode != null) 'pinCode': details.pinCode,
+      });
+      if (mounted) setState(() => _selectedParty = updated);
+    } catch (_) {
+      // Swallowed on purpose — see the call site.
+    }
+  }
+
+  /// Snapshot of what is about to be sent, for the pre-issue review. Built
+  /// from the live form rather than re-read from anywhere, so it can't show
+  /// something different from what gets saved.
+  InvoicePreviewData _previewData() {
+    final l10n = AppLocalizations.of(context);
+    final isSale = _type == 'SALE';
+    final party = _selectedParty;
+    final vendor = _selectedVendor;
+
+    final addressParts = isSale
+        ? [party?.address, party?.city, party?.state, party?.pinCode]
+        : [vendor?.address, vendor?.city, vendor?.state, vendor?.pinCode];
+    final address = addressParts
+        .where((p) => (p ?? '').trim().isNotEmpty)
+        .join(', ');
+
+    final pos = _placeOfSupply;
+    final posName = IndianStates.stateNameFromCode(pos.code);
+
+    String money(double v) =>
+        '${AppStrings.currencySymbol}${v.toStringAsFixed(2)}';
+
+    return InvoicePreviewData(
+      documentTypeLabel: isSale ? _documentTypeLabel(_documentType) : _type,
+      counterpartyLabel: isSale
+          ? l10n.invoicesPreviewBillTo
+          : l10n.invoicesPreviewFrom,
+      counterpartyName: isSale
+          ? (_customerName.text.trim().isNotEmpty
+                ? _customerName.text.trim()
+                : (party?.name ?? '—'))
+          : (vendor?.name ?? '—'),
+      counterpartyAddress: address.isEmpty ? null : address,
+      placeOfSupply: pos.code == null
+          ? null
+          : '${pos.code}${posName != null ? ' — $posName' : ''}',
+      supplyTypeLabel: _isInterstate
+          ? l10n.invoicesSupplyInterState
+          : l10n.invoicesSupplyIntraState,
+      lines: [
+        for (final i in _items)
+          InvoicePreviewLine(
+            name: i.productName,
+            quantityLabel: '${_qtyLabel(i.quantity)} × ${money(i.unitPrice)}',
+            amount: i.subtotal,
+          ),
+      ],
+      totals: [
+        InvoicePreviewTotal(l10n.invoicesSubtotal, money(_subtotal)),
+        if (_headerDiscount > 0)
+          InvoicePreviewTotal(
+            l10n.invoicesDiscount,
+            '- ${money(_headerDiscount)}',
+          ),
+        InvoicePreviewTotal(l10n.invoicesTax, money(_totalTax)),
+        InvoicePreviewTotal(l10n.invoicesTotal, money(_total), emphasis: true),
+      ],
+    );
+  }
+
+  static String _qtyLabel(double q) =>
+      q == q.roundToDouble() ? q.toStringAsFixed(0) : q.toStringAsFixed(2);
+
+  /// Same labels the document-type pills use, so the preview names the
+  /// document exactly as the form did.
+  String _documentTypeLabel(String value) {
+    final l10n = AppLocalizations.of(context);
+    return switch (value) {
+      'TAX_INVOICE' => l10n.invoicesDocTaxInvoice,
+      'BILL_OF_SUPPLY' => l10n.invoicesDocBillOfSupply,
+      'ESTIMATE' => l10n.invoicesDocEstimate,
+      'PROFORMA' => l10n.invoicesDocProforma,
+      _ => value.replaceAll('_', ' '),
+    };
+  }
+
   /// Saves the form. When [confirm] is true the backend (create path)
   /// or this method (edit path) immediately posts the stock movement
   /// too — saves the merchant a separate Confirm round-trip.
@@ -419,6 +592,22 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
       ).showSnackBar(SnackBar(content: Text(l10n.invoicesNeedsItems)));
       return;
     }
+
+    // Recipient completeness is checked HERE, before the request, because the
+    // server's Rule 46(e)/(f) rejection is unactionable from this screen — the
+    // merchant would just see "Recipient address is required" with nowhere to
+    // put one.
+    final gate = await _recipientGate();
+    if (!gate.proceed || !mounted) return;
+
+    // Confirming issues the document, posts the stock movement and burns an
+    // invoice number. Saving a draft does none of that, so only the
+    // irreversible path gets a review step.
+    if (confirm) {
+      final approved = await showInvoicePreviewSheet(context, _previewData());
+      if (!approved || !mounted) return;
+    }
+
     setState(() => _isSaving = true);
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
@@ -454,6 +643,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
           note: _note.text.isNotEmpty ? _note.text : null,
           documentType: docType,
           placeOfSupplyStateCode: _placeOfSupplyStateCode,
+          recipient: gate.details,
           items: itemsPayload,
         );
         _dirty = false;
@@ -490,6 +680,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
         note: _note.text.isNotEmpty ? _note.text : null,
         documentType: docType,
         placeOfSupplyStateCode: _placeOfSupplyStateCode,
+        recipient: gate.details,
         items: itemsPayload,
         confirm: confirm,
       );
@@ -776,32 +967,20 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: AppSizes.md),
-                          // Walk-in place-of-supply picker. Drives the GST split
-                          // when no party is attached to the invoice.
-                          DropdownButtonFormField<String>(
-                            initialValue: _walkInStateCode,
-                            isExpanded: true,
-                            decoration: InputDecoration(
-                              labelText: l10n.invoicesPlaceOfSupply,
-                              helperText: l10n.invoicesPlaceOfSupplyHelper,
-                            ),
-                            items: [
-                              DropdownMenuItem<String>(
-                                value: null,
-                                child: Text(l10n.invoicesSelectDash),
-                              ),
-                              for (final s in IndianStates.all)
-                                DropdownMenuItem<String>(
-                                  value: s.code,
-                                  child: Text('${s.code} — ${s.name}'),
-                                ),
-                            ],
-                            onChanged: (v) =>
-                                setState(() => _walkInStateCode = v),
-                          ),
                         ],
                       ],
+
+                      // Place of supply is DERIVED, never asked: the first two
+                      // digits of a GSTIN are the holder's state code, so
+                      // asking for it again invites a mismatch between what
+                      // the merchant picked and what the number says. Shown
+                      // read-only because it's the reason the tax below splits
+                      // into CGST+SGST or IGST.
+                      const SizedBox(height: AppSizes.md),
+                      _PlaceOfSupplyRow(
+                        placeOfSupply: _placeOfSupply,
+                        isInterstate: _isInterstate,
+                      ),
 
                       const SizedBox(height: AppSizes.xxl),
 
@@ -810,28 +989,53 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                         padding: const EdgeInsets.only(bottom: AppSizes.sm),
                       ),
 
-                      // Product search + scan
+                      // Opens the catalogue as a sheet rather than searching
+                      // inline: the sheet browses the whole list without
+                      // typing, and stays up across several taps so building
+                      // a multi-line invoice doesn't reopen it per product.
                       Row(
                         children: [
                           Expanded(
-                            child: TextField(
-                              controller: _productSearch,
-                              decoration: InputDecoration(
-                                labelText: l10n.invoicesSearchToAddProduct,
-                                prefixIcon: _isSearchingProducts
-                                    ? const Padding(
-                                        padding: EdgeInsets.all(AppSizes.md),
-                                        child: SizedBox(
-                                          width: AppSizes.iconSm,
-                                          height: AppSizes.iconSm,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                          ),
-                                        ),
-                                      )
-                                    : const AppIcon(AppIcons.searchRounded),
+                            child: AppCard(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSizes.lg,
+                                vertical: AppSizes.md,
                               ),
-                              onChanged: _onProductSearchChanged,
+                              onTap: _openProductPicker,
+                              child: Row(
+                                children: [
+                                  AppIcon(
+                                    AppIcons.searchRounded,
+                                    color: AppColors.muted,
+                                    size: AppSizes.iconMd,
+                                  ),
+                                  const SizedBox(width: AppSizes.md),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          l10n.invoicesAddProducts,
+                                          style: theme.textTheme.bodyMedium
+                                              ?.semibold,
+                                        ),
+                                        Text(
+                                          l10n.invoicesAddProductsHint,
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(
+                                                color: AppColors.muted,
+                                              ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  AppIcon(
+                                    AppIcons.chevronRightRounded,
+                                    color: AppColors.subtle,
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                           const SizedBox(width: AppSizes.sm),
@@ -842,34 +1046,6 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                           ),
                         ],
                       ),
-
-                      if (_productResults.isNotEmpty) ...[
-                        const SizedBox(height: AppSizes.sm),
-                        AppCard(
-                          padding: EdgeInsets.zero,
-                          child: Column(
-                            children: [
-                              for (
-                                int i = 0;
-                                i < _productResults.length;
-                                i++
-                              ) ...[
-                                if (i > 0) const AppDivider.flush(),
-                                ListTile(
-                                  dense: true,
-                                  title: Text(_productResults[i].name),
-                                  subtitle: Text(_productResults[i].sku),
-                                  trailing: Text(
-                                    '${AppStrings.currencySymbol}${(_type == 'SALE' ? _productResults[i].sellingPrice : _productResults[i].purchasePrice).toStringAsFixed(2)}',
-                                    style: theme.textTheme.bodySmall,
-                                  ),
-                                  onTap: () => _addItem(_productResults[i]),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ],
 
                       const SizedBox(height: AppSizes.md),
 
@@ -1104,6 +1280,89 @@ class _SelectedVendorCard extends StatelessWidget {
             icon: const AppIcon(AppIcons.closeRounded),
             onPressed: onClear,
             visualDensity: VisualDensity.compact,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Read-only place-of-supply row. Styled as a disabled form field so it sits
+/// in the same rhythm as the inputs above it, while making it obvious there's
+/// nothing here to fill in.
+class _PlaceOfSupplyRow extends StatelessWidget {
+  const _PlaceOfSupplyRow({
+    required this.placeOfSupply,
+    required this.isInterstate,
+  });
+
+  final ({String? code, _PosSource source}) placeOfSupply;
+  final bool isInterstate;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
+    final code = placeOfSupply.code;
+    final name = code == null
+        ? null
+        : IndianStates.all
+              .where((s) => s.code == code)
+              .map((s) => s.name)
+              .firstOrNull;
+
+    final helper = switch (placeOfSupply.source) {
+      _PosSource.partyGstin => l10n.invoicesPlaceOfSupplyFromPartyGstin,
+      _PosSource.partyAddress => l10n.invoicesPlaceOfSupplyFromPartyAddress,
+      _PosSource.vendorGstin => l10n.invoicesPlaceOfSupplyFromVendorGstin,
+      _PosSource.vendorAddress => l10n.invoicesPlaceOfSupplyFromVendorAddress,
+      _PosSource.shopDefault => l10n.invoicesPlaceOfSupplyDefaultsToShop,
+    };
+
+    return InputDecorator(
+      decoration: InputDecoration(
+        labelText: l10n.invoicesPlaceOfSupply,
+        helperText: helper,
+        helperMaxLines: 2,
+        // A filled, non-focusable box reads as "computed for you" rather than
+        // an input someone forgot to enable.
+        filled: true,
+        fillColor: AppColors.heroPanel,
+        enabled: false,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              code == null
+                  ? '—'
+                  : name == null
+                  ? code
+                  : '$code — $name',
+              style: theme.textTheme.bodyLarge?.semibold,
+            ),
+          ),
+          const SizedBox(width: AppSizes.sm),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSizes.sm,
+              vertical: 2,
+            ),
+            decoration: ShapeDecoration(
+              color: isInterstate
+                  ? AppColors.tileBg(AppColors.warningSoft)
+                  : AppColors.tileBg(AppColors.infoSoft),
+              shape: AppShapes.squircle(AppSizes.radiusFull),
+            ),
+            child: Text(
+              isInterstate
+                  ? l10n.invoicesSupplyInterState
+                  : l10n.invoicesSupplyIntraState,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: isInterstate ? AppColors.warning : AppColors.info,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         ],
       ),

@@ -39,6 +39,29 @@
   },
   "noShopTitle": "No shop linked yet",
   "noShopBody": "Ask a shop owner to invite you to their team, then sign in again to accept.",
+  "productsPickerTitle": "Add products",
+  "productsPickerSearchHint": "Search by name or SKU",
+  "productsPickerEmpty": "No products in your catalogue yet",
+  "productsPickerNoMatches": "No products match that search",
+  "productsPickerDone": "Done ({count})",
+  "@productsPickerDone": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "productsPickerInStock": "{qty} {unit} in stock",
+  "@productsPickerInStock": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
   "productsTitle": "Products",
   "productsSwitchToCardView": "Switch to card view",
   "productsSwitchToCompactView": "Switch to compact view",
@@ -724,10 +747,48 @@
   "invoicesPhone": "Phone",
   "invoicesGstin": "GSTIN",
   "invoicesPlaceOfSupply": "Place of supply (state)",
-  "invoicesPlaceOfSupplyHelper": "Buyer state — drives CGST/SGST vs IGST",
-  "invoicesSelectDash": "— Select —",
+  "invoicesPlaceOfSupplyFromPartyGstin": "From the customer's GSTIN",
+  "invoicesPlaceOfSupplyFromPartyAddress": "From the customer's saved address",
+  "invoicesPlaceOfSupplyFromVendorGstin": "From the vendor's GSTIN",
+  "invoicesPlaceOfSupplyFromVendorAddress": "From the vendor's saved address",
+  "invoicesPlaceOfSupplyDefaultsToShop": "No customer GSTIN — treated as a local supply in your own state",
+  "invoicesSupplyIntraState": "Intra-state · CGST + SGST",
+  "invoicesSupplyInterState": "Inter-state · IGST",
   "invoicesInvoiceItems": "Invoice Items",
-  "invoicesSearchToAddProduct": "Search product to add",
+  "invoicesRecipientTitle": "Customer details are incomplete",
+  "invoicesRecipientWhyB2b": "This is a GST invoice, so the law needs the customer's name and address on it.",
+  "invoicesRecipientWhyHighValue": "Invoices of ₹50,000 or more must carry the customer's name and address.",
+  "invoicesRecipientMissingIntro": "Missing:",
+  "invoicesRecipientMissingName": "Name",
+  "invoicesRecipientMissingAddress": "Address",
+  "invoicesRecipientAddress": "Address",
+  "invoicesRecipientCity": "City",
+  "invoicesRecipientState": "State",
+  "invoicesRecipientPin": "PIN code",
+  "invoicesRecipientSaveToParty": "Also save to this customer",
+  "invoicesRecipientSaveToPartyHint": "So you don't have to fill this in again",
+  "invoicesRecipientFillAndContinue": "Save and continue",
+  "invoicesRecipientSkip": "Issue without them",
+  "invoicesRecipientSkipWarnTitle": "Issue an incomplete invoice?",
+  "invoicesRecipientSkipWarnBody": "This invoice will go out without the customer's full details, which GST rules require at this value. Do this only if you cannot get them.",
+  "invoicesRecipientSkipConfirm": "Issue anyway",
+  "invoicesPreviewTitle": "Check before issuing",
+  "invoicesPreviewSubtitle": "Once confirmed, this invoice is issued and can't be edited.",
+  "invoicesPreviewBillTo": "Bill to",
+  "invoicesPreviewFrom": "From",
+  "invoicesPreviewNoAddress": "No address on file",
+  "invoicesPreviewItemCount": "{count, plural, =1{1 item} other{{count} items}}",
+  "@invoicesPreviewItemCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "invoicesPreviewBack": "Keep editing",
+  "invoicesPreviewConfirm": "Confirm and issue",
+  "invoicesAddProducts": "Add products",
+  "invoicesAddProductsHint": "Browse or search your catalogue",
   "invoicesScanBarcode": "Scan barcode",
   "invoicesNoItemsYet": "No items added yet",
   "invoicesTotals": "Totals",
@@ -797,23 +858,37 @@
   "invoicesKeepDraft": "Keep draft",
   "invoicesEdit": "Edit",
   "invoicesShare": "Share",
-  "invoicesDelete": "Delete",
-  "invoicesDeleteConfirmBody": "Delete {invoiceNo}? This can't be undone.",
-  "@invoicesDeleteConfirmBody": {
+  "invoicesArchive": "Archive",
+  "invoicesArchiveConfirmBody": "File {invoiceNo} away? It leaves your invoice list but keeps its number, so the serial run stays unbroken. You can restore it later.",
+  "@invoicesArchiveConfirmBody": {
     "placeholders": {
       "invoiceNo": {
         "type": "Object"
       }
     }
   },
-  "invoicesDeletedNamed": "{invoiceNo} deleted",
-  "@invoicesDeletedNamed": {
+  "invoicesArchivedNamed": "{invoiceNo} archived",
+  "@invoicesArchivedNamed": {
     "placeholders": {
       "invoiceNo": {
         "type": "Object"
       }
     }
   },
+  "invoicesRestore": "Restore",
+  "invoicesRestoredNamed": "{invoiceNo} restored",
+  "@invoicesRestoredNamed": {
+    "placeholders": {
+      "invoiceNo": {
+        "type": "Object"
+      }
+    }
+  },
+  "invoicesArchivedEmptyTitle": "Nothing archived",
+  "invoicesArchivedEmptyBody": "Drafts and cancelled invoices you file away land here. Their numbers stay allocated, so your serial run is never broken.",
+  "navArchivedInvoices": "Archived invoices",
+  "menuDescArchivedInvoices": "Drafts and cancelled bills you filed away",
+  "invoicesArchivedFilter": "Archived",
   "invoicesCustomer": "Customer",
   "invoicesVendor": "Vendor",
   "invoicesAddress": "Address",

@@ -1,4 +1,5 @@
 import 'package:shopxy/features/invoices/domain/entities/invoice.dart';
+import 'package:shopxy/features/invoices/domain/entities/recipient_details.dart';
 
 class InvoiceDto {
   static InvoiceItem _itemFromJson(Map<String, dynamic> json) => InvoiceItem(
@@ -77,6 +78,9 @@ class InvoiceDto {
       isInterstate: (json['isInterstate'] as bool?) ?? false,
       note: json['note'] as String?,
       invoiceDate: DateTime.parse(json['invoiceDate'] as String),
+      archivedAt: json['archivedAt'] != null
+          ? DateTime.parse(json['archivedAt'] as String)
+          : null,
       createdAt: createdAt,
       updatedAt: json['updatedAt'] is String
           ? DateTime.parse(json['updatedAt'] as String)
@@ -108,10 +112,15 @@ class InvoiceDto {
     String? note,
     String? documentType,
     String? placeOfSupplyStateCode,
+    RecipientDetails? recipient,
     required List<Map<String, dynamic>> items,
     bool? confirm,
   }) {
     final payload = <String, dynamic>{'type': type, 'items': items};
+    // Recipient postal fields + the explicit "issue it incomplete" flag. Each
+    // is omitted when empty so the server keeps falling back to the party for
+    // whatever the merchant didn't fill in.
+    if (recipient != null) payload.addAll(recipient.toJson());
     if (confirm == true) payload['confirm'] = true;
     if (vendorId != null) payload['vendorId'] = vendorId;
     if (partyId != null) payload['partyId'] = partyId;

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shopxy/features/invoices/data/datasources/invoices_remote_data_source.dart';
 import 'package:shopxy/features/invoices/domain/entities/invoice.dart';
+import 'package:shopxy/features/invoices/domain/entities/recipient_details.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 
 class InvoicesProvider extends ChangeNotifier {
@@ -149,6 +150,7 @@ class InvoicesProvider extends ChangeNotifier {
     String? note,
     String? documentType,
     String? placeOfSupplyStateCode,
+    RecipientDetails? recipient,
     required List<Map<String, dynamic>> items,
     bool confirm = false,
   }) async {
@@ -163,6 +165,7 @@ class InvoicesProvider extends ChangeNotifier {
       note: note,
       documentType: documentType,
       placeOfSupplyStateCode: placeOfSupplyStateCode,
+      recipient: recipient,
       items: items,
       confirm: confirm,
     );
@@ -183,6 +186,7 @@ class InvoicesProvider extends ChangeNotifier {
     String? note,
     String? documentType,
     String? placeOfSupplyStateCode,
+    RecipientDetails? recipient,
     required List<Map<String, dynamic>> items,
   }) async {
     final invoice = await _ds.updateInvoice(
@@ -197,6 +201,7 @@ class InvoicesProvider extends ChangeNotifier {
       note: note,
       documentType: documentType,
       placeOfSupplyStateCode: placeOfSupplyStateCode,
+      recipient: recipient,
       items: items,
     );
     _invoices = _invoices.map((i) => i.id == id ? invoice : i).toList();
@@ -211,9 +216,21 @@ class InvoicesProvider extends ChangeNotifier {
     return invoice;
   }
 
-  Future<void> deleteInvoice(String id) async {
-    await _ds.deleteInvoice(id);
-    _invoices = _invoices.where((i) => i.id != id).toList();
-    notifyListeners();
+  /// Archive (or restore) a document.
+  ///
+  /// Archiving: the server filters archived rows out of the default list, so
+  /// drop it locally too rather than paying for a refetch.
+  ///
+  /// Restoring: the row is by definition NOT in this list (it was archived),
+  /// so there is nothing to drop — and the list has to be refetched or the
+  /// restored document stays invisible until something else reloads it.
+  Future<void> setArchived(String id, bool archived) async {
+    await _ds.setArchived(id, archived);
+    if (archived) {
+      _invoices = _invoices.where((i) => i.id != id).toList();
+      notifyListeners();
+      return;
+    }
+    await loadInvoices(refresh: true);
   }
 }

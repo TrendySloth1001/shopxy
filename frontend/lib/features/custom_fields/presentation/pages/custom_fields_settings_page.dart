@@ -327,7 +327,7 @@ class _SectionCard extends StatelessWidget {
                   IconButton(
                     onPressed: onArchiveSection,
                     icon: AppIcon(
-                      AppIcons.archiveOutlined,
+                      AppIcons.archiveAddRounded,
                       color: AppColors.muted,
                     ),
                     tooltip: l10n.customFieldsArchive,
@@ -682,7 +682,7 @@ class _FieldRow extends StatelessWidget {
             ),
             IconButton(
               icon: AppIcon(
-                AppIcons.archiveOutlined,
+                AppIcons.archiveAddRounded,
                 color: AppColors.muted,
                 size: AppSizes.iconMd,
               ),

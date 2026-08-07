@@ -42,6 +42,11 @@ class InvoiceDetailPage extends StatefulWidget {
 }
 
 class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
+  /// Guards the archive button against a double tap while the request is in
+  /// flight — the page pops on success, so a second call would fire against a
+  /// dead context.
+  bool _archiving = false;
+
   Invoice? _invoice;
   bool _isLoading = true;
   bool _isDownloading = false;
@@ -284,6 +289,51 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
   /// Open the create form in edit mode for a DRAFT invoice. Once the user
   /// saves we reload the detail (totals + line items may have changed),
   /// so the page reflects the new state without a stale snapshot.
+
+  /// File this document out of the working list, or bring it back.
+  ///
+  /// It is never deleted and cannot be: the serial is allocated at create time
+  /// and Rule 46(b) needs the run consecutive, so the row and its number stay
+  /// put. The confirm dialog says exactly that, and is NOT styled destructive
+  /// — nothing is being destroyed. Restoring needs no confirmation at all;
+  /// it only puts the document back where it was.
+  Future<void> _setArchived(Invoice invoice, bool archived) async {
+    final l10n = AppLocalizations.of(context);
+    if (archived) {
+      final confirmed = await AppConfirmDialog.show(
+        context,
+        title: l10n.invoicesArchive,
+        message: l10n.invoicesArchiveConfirmBody(invoice.invoiceNo),
+        confirmLabel: l10n.invoicesArchive,
+      );
+      if (!confirmed || !mounted) return;
+    }
+
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    setState(() => _archiving = true);
+    try {
+      await context.read<InvoicesProvider>().setArchived(invoice.id, archived);
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            archived
+                ? l10n.invoicesArchivedNamed(invoice.invoiceNo)
+                : l10n.invoicesRestoredNamed(invoice.invoiceNo),
+          ),
+        ),
+      );
+      // Either way the document has left the list this page was opened from,
+      // so there's nothing here to return to.
+      navigator.pop();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _archiving = false);
+      messenger.showSnackBar(SnackBar(content: Text(friendlyError(e))));
+    }
+  }
+
   Future<void> _openEdit() async {
     final invoice = _invoice;
     if (invoice == null || !invoice.isDraft) return;
@@ -404,52 +454,30 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
             ),
-          // Draft actions (Confirm / Cancel) live in the sticky bottom
-          // bar so they're impossible to miss. The overflow menu is kept
-          // for the only remaining secondary action: hard-delete a
-          // not-yet-confirmed invoice.
-          if (!invoice.isConfirmed)
-            PopupMenuButton<String>(
-              itemBuilder: (_) => [
-                PopupMenuItem(
-                  value: 'delete',
-                  child: Text(l10n.invoicesDelete),
-                ),
-              ],
-              onSelected: (v) async {
-                if (v == 'delete') {
-                  // Hard delete is irreversible — gate it behind a
-                  // confirm like every other destructive action.
-                  final confirmed = await AppConfirmDialog.show(
-                    context,
-                    title: l10n.invoicesDelete,
-                    message: l10n.invoicesDeleteConfirmBody(invoice.invoiceNo),
-                    confirmLabel: l10n.invoicesDelete,
-                    danger: true,
-                  );
-                  if (!confirmed || !context.mounted) return;
-                  final messenger = ScaffoldMessenger.of(context);
-                  try {
-                    await context.read<InvoicesProvider>().deleteInvoice(
-                      invoice.id,
-                    );
-                    if (!context.mounted) return;
-                    messenger.showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          l10n.invoicesDeletedNamed(invoice.invoiceNo),
-                        ),
-                      ),
-                    );
-                    Navigator.pop(context);
-                  } catch (e) {
-                    if (!context.mounted) return;
-                    messenger.showSnackBar(
-                      SnackBar(content: Text(friendlyError(e))),
-                    );
-                  }
-                }
-              },
+          // Draft actions (Confirm / Cancel) live in the sticky bottom bar so
+          // they're impossible to miss. Archiving is a direct icon button
+          // rather than hidden behind an overflow menu — it's a single action,
+          // and burying one item under three dots costs a tap to discover
+          // nothing.
+          //
+          // This slot used to offer Delete, which the server could never
+          // honour: a draft already owns its legal serial and Rule 46(b) needs
+          // the run consecutive, so every delete came back as an error.
+          // Archiving does what the merchant actually wanted — the document
+          // leaves the list, its number stays put.
+          if (!_isDownloading && (invoice.isArchived || !invoice.isConfirmed))
+            IconButton(
+              icon: AppIcon(
+                invoice.isArchived
+                    ? AppIcons.unarchiveRounded
+                    : AppIcons.archiveAddRounded,
+              ),
+              tooltip: invoice.isArchived
+                  ? l10n.invoicesRestore
+                  : l10n.invoicesArchive,
+              onPressed: _archiving
+                  ? null
+                  : () => _setArchived(invoice, !invoice.isArchived),
             ),
         ],
       ),

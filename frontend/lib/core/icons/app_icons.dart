@@ -41,7 +41,21 @@ abstract final class AppIcons {
   static const AppIconData apps = HugeIcons.strokeRoundedDashboardSquare01;
   static const AppIconData appsOutlined =
       HugeIcons.strokeRoundedDashboardSquare01;
-  static const AppIconData archiveOutlined = HugeIcons.strokeRoundedArchive;
+  /// The archive itself — a lidded box. A noun: section headings, menu rows,
+  /// empty states. Same glyph merchant-web draws for `Archive`.
+  static const AppIconData archiveOutlined = HugeIcons.strokeRoundedArchive02;
+
+  /// "File this away" — a tray with the arrow going in.
+  ///
+  /// Deliberately the mirror of [unarchiveRounded] (same tray, arrow reversed)
+  /// so a button that toggles between the two reads as one control changing
+  /// direction rather than two unrelated icons.
+  static const AppIconData archiveAddRounded =
+      HugeIcons.strokeRoundedArchiveArrowDown;
+
+  /// "Take it back out" — see [archiveAddRounded].
+  static const AppIconData unarchiveRounded =
+      HugeIcons.strokeRoundedArchiveArrowUp;
   static const AppIconData arrowBackIosNewRounded =
       HugeIcons.strokeRoundedArrowLeft01;
   static const AppIconData arrowBackRounded =

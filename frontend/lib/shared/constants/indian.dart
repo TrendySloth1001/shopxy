@@ -126,6 +126,29 @@ class IndianStates {
     return null;
   }
 
+  /// The GST state code encoded in a GSTIN's first two digits.
+  ///
+  /// A GSTIN is constructed as state(2) + PAN(10) + entity(1) + Z + checksum,
+  /// so the holder's state is not a separate fact to be asked for — it is
+  /// already in the number. This is what lets the invoice form derive place of
+  /// supply instead of offering a dropdown that could contradict the GSTIN.
+  ///
+  /// Deliberately reads only the prefix rather than requiring a complete,
+  /// well-formed GSTIN: the merchant types left to right, and the state is
+  /// knowable from character three onward. Returns null unless the prefix is
+  /// two digits AND a real GST state code, so "99…" or "ab…" derive nothing.
+  ///
+  /// Mirrors the backend's GST-10 fallback in `invoices.service.ts`.
+  static String? stateCodeFromGstin(String? gstin) {
+    final trimmed = (gstin ?? '').trim();
+    if (trimmed.length < 2) return null;
+    final prefix = trimmed.substring(0, 2);
+    for (final s in all) {
+      if (s.code == prefix) return s.code;
+    }
+    return null;
+  }
+
   static String? stateCodeFromName(String? name) {
     if (name == null || name.isEmpty) return null;
     final lc = name.toLowerCase();

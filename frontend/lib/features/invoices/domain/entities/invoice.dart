@@ -93,6 +93,7 @@ class Invoice {
     this.isInterstate = false,
     this.note,
     required this.invoiceDate,
+    this.archivedAt,
     required this.createdAt,
     required this.updatedAt,
     this.items = const [],
@@ -147,10 +148,17 @@ class Invoice {
   final bool isInterstate;
   final String? note;
   final DateTime invoiceDate;
+
+  /// When the merchant filed this document out of the working list. Null while
+  /// it's live. Archiving never removes the row or frees its number — Rule
+  /// 46(b) needs the serial run consecutive — so this is the only marker.
+  final DateTime? archivedAt;
   final DateTime createdAt;
   final DateTime updatedAt;
   final List<InvoiceItem> items;
   final int? itemCount;
+
+  bool get isArchived => archivedAt != null;
 
   bool get isSale => type == 'SALE';
   bool get isPurchase => type == 'PURCHASE';
