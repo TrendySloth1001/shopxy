@@ -4,7 +4,7 @@ import { decodeId } from '../../shared/ids/publicId.js';
 import { z } from 'zod';
 import { parsePagination, paginatedResponse } from '../../shared/http/pagination.js';
 import { invoicesService } from './invoices.service.js';
-import { isValidStateCode } from '../../shared/validation/indian.js';
+import { isValidStateCode, PINCODE_REGEX } from '../../shared/validation/indian.js';
 
 /// GST-10 — the legal GST rate slabs an output tax invoice may carry. A client
 /// may legitimately override the product's configured rate to mark a line
@@ -162,6 +162,28 @@ const issueNoteSchema = z
     }
   });
 
+/// The recipient's postal identity (Rule 46(e)/(f)).
+///
+/// These used to come from the linked Party row and ONLY from it, which meant
+/// a party saved without an address made a B2B / ≥₹50,000 invoice unsavable
+/// from the invoice form — the guard below rejected it and there was nowhere
+/// in the request to put the missing address. They now behave like
+/// `customerName`/`customerPhone`/`customerGstin` already did: supplied here
+/// they win, omitted they fall back to the party.
+const recipientAddressFields = {
+  customerAddress: z.string().max(500).optional(),
+  customerCity: z.string().max(120).optional(),
+  customerState: z.string().max(120).optional(),
+  customerStateCode: z
+    .string()
+    .regex(/^\d{2}$/, 'must be 2-digit GST state code')
+    .optional(),
+  customerPinCode: z
+    .string()
+    .regex(PINCODE_REGEX, 'invalid Indian PIN code')
+    .optional(),
+} as const;
+
 const createInvoiceSchema = z.object({
   type: z.enum(['SALE', 'PURCHASE']),
   documentType: creatableDocumentTypeEnum.optional(),
@@ -171,6 +193,8 @@ const createInvoiceSchema = z.object({
   customerName: z.string().max(200).optional(),
   customerPhone: z.string().max(20).optional(),
   customerGstin: z.string().max(20).optional(),
+  ...recipientAddressFields,
+  acknowledgeMissingRecipientDetails: z.boolean().optional(),
   discount: z.number().nonnegative().optional(),
   note: z.string().max(1000).optional(),
   invoiceDate: z.string().datetime().optional(),
@@ -197,6 +221,8 @@ const updateInvoiceSchema = z.object({
   customerName: z.string().max(200).optional(),
   customerPhone: z.string().max(20).optional(),
   customerGstin: z.string().max(20).optional(),
+  ...recipientAddressFields,
+  acknowledgeMissingRecipientDetails: z.boolean().optional(),
   discount: z.number().nonnegative().optional(),
   note: z.string().max(1000).optional(),
   isPriceInclusive: z.boolean().optional(),
@@ -215,6 +241,8 @@ const listQuerySchema = z.object({
   search: z.string().optional(),
   dateFrom: z.string().datetime().optional(),
   dateTo: z.string().datetime().optional(),
+  /// "Archived" view. Absent/false lists only live documents.
+  archived: z.coerce.boolean().optional(),
 });
 
 function parseId(raw: string): number | null {
@@ -267,6 +295,7 @@ export class InvoicesController {
       vendorId: query.vendorId,
       partyId: query.partyId,
       productId: query.productId,
+      archived: query.archived,
       search: query.search ?? '',
       dateFrom: query.dateFrom,
       dateTo: query.dateTo,
@@ -362,18 +391,36 @@ export class InvoicesController {
     res.json(result.invoice);
   }
 
-  async delete(req: Request, res: Response): Promise<void> {
+  /// POST /invoices/:id/archive — file a DRAFT or CANCELLED document out of
+  /// the working list. Replaces the old DELETE, which could never succeed:
+  /// Rule 46(b) needs the serial run consecutive and the number is already
+  /// allocated by the time a draft exists, so the row can't go away. See
+  /// `invoicesService.setArchived`.
+  async archive(req: Request, res: Response): Promise<void> {
+    await this.setArchived(req, res, true);
+  }
+
+  /// POST /invoices/:id/unarchive — bring it back into the working list.
+  async unarchive(req: Request, res: Response): Promise<void> {
+    await this.setArchived(req, res, false);
+  }
+
+  private async setArchived(
+    req: Request,
+    res: Response,
+    archived: boolean,
+  ): Promise<void> {
     const shopId = requireShopId(req, res);
     if (!shopId) return;
     const id = parseId(req.params.id);
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
 
-    const result = await invoicesService.deleteInvoice(shopId, id);
+    const result = await invoicesService.setArchived(shopId, id, archived);
     if ('error' in result) {
       res.status(400).json({ error: result.error });
       return;
     }
-    res.status(204).send();
+    res.json(result.invoice);
   }
 
   async downloadPdf(req: Request, res: Response): Promise<void> {

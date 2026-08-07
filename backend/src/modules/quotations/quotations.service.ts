@@ -469,7 +469,9 @@ export class QuotationsService {
       await restorePending();
       // Best-effort cleanup of a left-over draft invoice.
       if (!('error' in result) && result.invoice?.id) {
-        await invoicesService.deleteInvoice(shopId, result.invoice.id).catch(() => {});
+        // See the note in challans.service — this was a no-op against the
+        // old `deleteInvoice`, leaving the orphan draft on the list.
+        await invoicesService.setArchived(shopId, result.invoice.id, true).catch(() => {});
       }
       const reason =
         'error' in result

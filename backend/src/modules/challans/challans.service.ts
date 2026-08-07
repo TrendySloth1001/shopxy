@@ -312,7 +312,11 @@ export class ChallansService {
         data: { status: 'CONVERTED', invoiceId: result.invoice.id },
       });
     } catch (err) {
-      await invoicesService.deleteInvoice(shopId, result.invoice.id).catch(() => {});
+      // File the orphan draft away. (This used to call `deleteInvoice`, which
+      // never had a success path — so the orphan was silently left sitting in
+      // the merchant's invoice list. Its serial is already allocated and can't
+      // be reclaimed; archiving at least gets it out of the way.)
+      await invoicesService.setArchived(shopId, result.invoice.id, true).catch(() => {});
       throw err;
     }
 

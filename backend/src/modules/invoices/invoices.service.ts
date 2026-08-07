@@ -86,6 +86,26 @@ interface ResolveInvoiceInput {
   /// details. NOTE: POS should still capture customer name+address for ≥₹50k
   /// sales per Rule 46(f) — deferred UI work, see FIX_REVIEW_AND_PLAN.md.
   skipRecipientDetailGuard?: boolean;
+  /// GST-6, merchant-facing twin of [skipRecipientDetailGuard]. Set only when
+  /// the merchant was shown exactly which details are missing, told the invoice
+  /// won't meet Rule 46(e)/(f) without them, and chose to issue it anyway.
+  ///
+  /// Kept as a separate flag rather than reusing the one above because the two
+  /// mean different things and only one of them is a deliberate compliance
+  /// exception: `skipRecipientDetailGuard` marks a caller whose recipient was
+  /// already validated elsewhere (POS walk-in, live preview), while this marks
+  /// a document a human knowingly issued incomplete.
+  acknowledgeMissingRecipientDetails?: boolean;
+  /// Recipient postal identity. Supplied here it wins; omitted it falls back to
+  /// the linked Party — same precedence `customerName`/`customerPhone`/
+  /// `customerGstin` already use. Before this existed the address came from the
+  /// Party and nowhere else, so a party saved without one made a B2B / ≥₹50,000
+  /// invoice impossible to save from the invoice form.
+  customerAddress?: string;
+  customerCity?: string;
+  customerState?: string;
+  customerStateCode?: string;
+  customerPinCode?: string;
 }
 
 /// Thrown by `createConfirmedSaleInTx` so a failed POS checkout rolls the whole
@@ -768,11 +788,11 @@ export class InvoicesService {
     let customerName = data.customerName ?? null;
     let customerPhone = data.customerPhone ?? null;
     let customerGstin = data.customerGstin ?? null;
-    let customerAddress: string | null = null;
-    let customerCity: string | null = null;
-    let customerState: string | null = null;
-    let customerStateCode: string | null = null;
-    let customerPinCode: string | null = null;
+    let customerAddress = data.customerAddress ?? null;
+    let customerCity = data.customerCity ?? null;
+    let customerState = data.customerState ?? null;
+    let customerStateCode = data.customerStateCode ?? null;
+    let customerPinCode = data.customerPinCode ?? null;
     let customerPanNumber: string | null = null;
 
     let vendorName: string | null = null;
@@ -800,11 +820,14 @@ export class InvoicesService {
       customerName = customerName ?? party.name;
       customerPhone = customerPhone ?? party.phone ?? null;
       customerGstin = customerGstin ?? party.gstin ?? null;
-      customerAddress = party.address ?? null;
-      customerCity = party.city ?? null;
-      customerState = party.state ?? null;
-      customerStateCode = party.stateCode ?? null;
-      customerPinCode = party.pinCode ?? null;
+      // `?? party.x` rather than a straight assignment: an address supplied on
+      // the request is the merchant completing details the party row is
+      // missing, and must not be thrown away by the party's own nulls.
+      customerAddress = customerAddress ?? party.address ?? null;
+      customerCity = customerCity ?? party.city ?? null;
+      customerState = customerState ?? party.state ?? null;
+      customerStateCode = customerStateCode ?? party.stateCode ?? null;
+      customerPinCode = customerPinCode ?? party.pinCode ?? null;
       customerPanNumber = party.panNumber ?? null;
     }
 
@@ -1253,7 +1276,14 @@ export class InvoicesService {
     // offers not governed by Rule 46(e)/(f).
     const isPrimarySupplyDoc =
       documentType === 'TAX_INVOICE' || documentType === 'BILL_OF_SUPPLY';
-    if (data.type === 'SALE' && isPrimarySupplyDoc && !data.skipRecipientDetailGuard) {
+    // Two ways past the guard, and they are not the same thing: the internal
+    // flag marks a caller whose recipient was validated elsewhere, the
+    // acknowledgement marks a merchant who was shown what was missing and
+    // chose to issue the document incomplete anyway.
+    const recipientGuardWaived =
+      data.skipRecipientDetailGuard === true ||
+      data.acknowledgeMissingRecipientDetails === true;
+    if (data.type === 'SALE' && isPrimarySupplyDoc && !recipientGuardWaived) {
       const FIFTY_K = new D(50000);
       const needsRecipientDetails = !!customerGstin || total.gte(FIFTY_K);
       if (needsRecipientDetails) {
@@ -1403,11 +1433,16 @@ export class InvoicesService {
     search: string;
     dateFrom?: string;
     dateTo?: string;
+    /// Archived documents are OUT of every list by default — that's the point
+    /// of archiving. Pass true for the "Archived" view; the rows are never
+    /// deleted, only filtered.
+    archived?: boolean;
     page: number;
     limit: number;
     skip: number;
   }) {
     const where: Record<string, unknown> = { shopId };
+    where.archivedAt = options.archived ? { not: null } : null;
     if (options.type) where.type = options.type;
     if (options.status) where.status = options.status;
     if (options.documentType) where.documentType = options.documentType;
@@ -1786,27 +1821,53 @@ export class InvoicesService {
     return result;
   }
 
-  async deleteInvoice(shopId: number, id: number) {
+  /// File a document out of the working list, or bring it back.
+  ///
+  /// This is what replaced deletion. GST-1 / Rule 46(b): the legal serial is
+  /// allocated at CREATE time (the per-shop FY counter is bumped in
+  /// `nextInvoiceNo`), so even an abandoned DRAFT already owns a consecutive
+  /// number, and removing the row would leave a permanent hole in a sequence
+  /// the rule requires to be consecutive. `deleteInvoice` therefore had no
+  /// success path at all — every branch returned an error — while both clients
+  /// still offered a Delete button that could only ever fail.
+  ///
+  /// Archiving keeps the number allocated against the row, so the run still
+  /// reads consecutively to an auditor, and merely hides the document from the
+  /// default lists.
+  ///
+  /// Only DRAFT and CANCELLED may be archived. A live CONFIRMED invoice is a
+  /// document the merchant has issued to someone else — hiding it would put
+  /// the app's own books out of step with the customer's copy. Cancel it
+  /// first; a cancelled invoice can then be filed away.
+  async setArchived(shopId: number, id: number, archived: boolean) {
     const invoice = await prisma.invoice.findFirst({
       where: { id, shopId },
-      select: { status: true },
+      select: { status: true, archivedAt: true },
     });
     if (!invoice) return { error: 'Invoice not found' as const };
-    // GST-1 / Rule 46(b): the legal invoice serial is allocated at create time
-    // (the per-shop FY counter is bumped in `nextInvoiceNo`), so even a DRAFT
-    // already owns a consecutive number. Hard-deleting it would leave a
-    // permanent hole in the issued sequence — which Rule 46(b) (consecutive
-    // serial numbers, not exceeding 16 chars) forbids. We therefore never
-    // hard-delete: a DRAFT the merchant wants to discard must be CANCELLED
-    // instead (the number is retained against the cancelled row, keeping the
-    // run consecutive). Supersedes the earlier INV-3 "DRAFT may be deleted".
-    return {
-      error: invoice.status === 'DRAFT'
-        ? ('Cannot delete a draft — its invoice number is already allocated. Cancel it instead so the serial stays consecutive.' as const)
-        : invoice.status === 'CONFIRMED'
-          ? ('Cannot delete a confirmed invoice. Cancel it first.' as const)
-          : ('Cannot delete an issued invoice — cancelled invoice numbers must be retained.' as const),
-    };
+
+    if (archived && invoice.status === 'CONFIRMED') {
+      return {
+        error:
+          'Cannot archive a confirmed invoice — cancel it first, then archive it.' as const,
+      };
+    }
+
+    // Idempotent: archiving an archived row (or restoring a live one) is a
+    // no-op rather than an error, so a retried tap can't fail.
+    const alreadyInState = archived === (invoice.archivedAt !== null);
+    const updated = alreadyInState
+      ? await prisma.invoice.findFirstOrThrow({
+          where: { id, shopId },
+          include: { items: { orderBy: { id: 'asc' } }, vendor: true, party: true },
+        })
+      : await prisma.invoice.update({
+          where: { id },
+          data: { archivedAt: archived ? new Date() : null },
+          include: { items: { orderBy: { id: 'asc' } }, vendor: true, party: true },
+        });
+
+    return { invoice: updated };
   }
 
   /// Stream the rendered PDF directly to an arbitrary writable (the

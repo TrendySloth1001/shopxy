@@ -1176,6 +1176,16 @@ model Invoice {
   /// back-relation, matching the rest of the till tables. Null for
   /// system/legacy-created invoices.
   createdById            Int?             @map("created_by_id")
+  /// When the merchant filed this document out of sight.
+  ///
+  /// Replaces deletion, which Rule 46(b) rules out: the serial is allocated at
+  /// CREATE time, so even an abandoned DRAFT already owns a number, and
+  /// removing the row would leave a permanent hole in a sequence the law
+  /// requires to be consecutive. Archiving hides the document from the working
+  /// list while the number stays allocated against it, so the run still reads
+  /// consecutively to an auditor. Only DRAFT and CANCELLED documents may be
+  /// archived — a live CONFIRMED invoice is not the merchant's to hide.
+  archivedAt             DateTime?        @map("archived_at")
   invoiceDate            DateTime         @default(now()) @map("invoice_date")
   createdAt              DateTime         @default(now()) @map("created_at")
   updatedAt              DateTime         @updatedAt @map("updated_at")
@@ -1189,6 +1199,8 @@ model Invoice {
   @@unique([shopId, invoiceNo])
   @@index([shopId, type])
   @@index([shopId, status])
+  /// Every default list query filters `archivedAt IS NULL`.
+  @@index([shopId, archivedAt])
   @@index([shopId, invoiceDate])
   @@index([vendorId])
   @@index([partyId])

@@ -14,6 +14,10 @@ router.patch('/:id/status', asyncHandler((req, res) => invoicesController.update
 router.patch('/:id', asyncHandler((req, res) => invoicesController.update(req, res)));
 router.post('/:id/convert', asyncHandler((req, res) => invoicesController.convert(req, res)));
 router.post('/:id/notes', asyncHandler((req, res) => invoicesController.issueNote(req, res)));
-router.delete('/:id', asyncHandler((req, res) => invoicesController.delete(req, res)));
+// Archive replaces DELETE. A draft already owns its legal serial, so the row
+// can never go away without breaking Rule 46(b)'s consecutive run — the old
+// DELETE had no success path and is gone.
+router.post('/:id/archive', asyncHandler((req, res) => invoicesController.archive(req, res)));
+router.post('/:id/unarchive', asyncHandler((req, res) => invoicesController.unarchive(req, res)));
 
 export default router;
