@@ -53,6 +53,7 @@ const quotationSelect = {
   requestedById: true,
   respondedAt: true,
   invoiceId: true,
+  archivedAt: true,
   createdAt: true,
   updatedAt: true,
   party: { select: { id: true, name: true } },
@@ -315,10 +316,18 @@ export class QuotationsService {
 
   async listForShop(
     shopId: number,
-    opts: { status?: QuotationStatus; skip: number; take: number },
+    opts: {
+      status?: QuotationStatus;
+      /// The "Archived" view. Archived quotations are out of every other
+      /// list — that's the point of archiving.
+      archived?: boolean;
+      skip: number;
+      take: number;
+    },
   ) {
     const where: Prisma.QuotationWhereInput = { shopId };
     if (opts.status) where.status = opts.status;
+    where.archivedAt = opts.archived ? { not: null } : null;
     const [rows, total] = await Promise.all([
       prisma.quotation.findMany({
         where,
@@ -332,6 +341,10 @@ export class QuotationsService {
     return { data: rows.map(toDTO), total };
   }
 
+  /// The CUSTOMER-facing list. Note the absence of an `archivedAt` filter:
+  /// archiving is the merchant's own filing decision and must not erase the
+  /// counterparty's record of what they were quoted. `listForShop` above is
+  /// the one that hides archived rows.
   async listForParty(
     shopId: number,
     partyId: number,
@@ -350,6 +363,40 @@ export class QuotationsService {
       prisma.quotation.count({ where }),
     ]);
     return { data: rows.map(toDTO), total };
+  }
+
+  /// File a settled quotation out of the merchant's working list, or bring it
+  /// back. There is no delete: the quotation number is a per-shop serial
+  /// allocated at create time, so removing a row leaves a hole in the run.
+  ///
+  /// REQUESTED and PENDING are refused. Both mean the customer still has a
+  /// decision to make, and a quotation the merchant can no longer see is one
+  /// nobody will chase — the accept would land against an invisible document.
+  /// Cancel it first if the intent is to withdraw it.
+  async setArchived(shopId: number, id: number, archived: boolean) {
+    const row = await prisma.quotation.findFirst({
+      where: { id, shopId },
+      select: { status: true, archivedAt: true },
+    });
+    if (!row) return { error: 'Quotation not found' as const };
+
+    if (archived && (row.status === 'REQUESTED' || row.status === 'PENDING')) {
+      return {
+        error:
+          'Cannot archive a quotation the customer can still act on — cancel it first, then archive it.' as const,
+      };
+    }
+
+    // Idempotent: archiving an archived row (or restoring a live one) is a
+    // no-op rather than an error, so a retried tap can't fail.
+    const alreadyInState = archived === (row.archivedAt !== null);
+    if (!alreadyInState) {
+      await prisma.quotation.update({
+        where: { id },
+        data: { archivedAt: archived ? new Date() : null },
+      });
+    }
+    return { quotation: await this.getForShop(shopId, id) };
   }
 
   async getForShop(shopId: number, id: number) {

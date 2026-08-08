@@ -34,6 +34,10 @@ export type InvoiceLineDraft = {
   /// TAX_INCLUSIVE product with a TAX_EXCLUSIVE one, same as the backend
   /// engine allows.
   isPriceInclusive: boolean;
+  /// Discount on this line, in rupees, off `quantity × unitPrice`. Applied
+  /// before the header discount is apportioned, matching the backend engine
+  /// and the Flutter editor. Absent on older drafts — treat as 0.
+  discount: number;
 };
 
 export type InvoiceTotals = {
@@ -69,13 +73,18 @@ export function computeInvoiceTotals(
   headerDiscount: number,
   interstate: boolean,
 ): InvoiceTotals {
-  const subtotal = lines.reduce((sum, l) => sum + l.quantity * l.unitPrice, 0);
+  // Each line's base is qty × price MINUS its own discount, floored at 0 —
+  // the same base the backend apportions the header discount over. Getting
+  // this wrong shows the merchant a total the saved invoice won't match.
+  const lineBaseOf = (l: InvoiceLineDraft) =>
+    Math.max(l.quantity * l.unitPrice - (l.discount || 0), 0);
+  const subtotal = lines.reduce((sum, l) => sum + lineBaseOf(l), 0);
   const discount = Math.min(Math.max(headerDiscount, 0), subtotal);
 
   let tax = 0;
   let taxable = 0;
   for (const l of lines) {
-    const lineBase = l.quantity * l.unitPrice;
+    const lineBase = lineBaseOf(l);
     const share = subtotal > 0 ? lineBase / subtotal : 0;
     const lineAmount = lineBase - share * discount;
     if (l.isPriceInclusive) {

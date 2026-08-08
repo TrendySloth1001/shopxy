@@ -21,6 +21,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
+import 'package:shopxy/features/developer/presentation/widgets/environment_badge.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -183,7 +184,20 @@ class AppShellState extends State<AppShell> {
       // folds the nav's height into the body's bottom MediaQuery padding, so
       // scrollables that honour it still clear the bar.
       extendBody: true,
-      body: IndexedStack(index: _currentIndex, children: pages),
+      body: Stack(
+        children: [
+          IndexedStack(index: _currentIndex, children: pages),
+          // Developer-only, and only when a non-production backend is in
+          // force. Silent for every real merchant. Sits above the floating
+          // nav so it can't be mistaken for page content.
+          Positioned(
+            left: AppSizes.lg,
+            bottom:
+                FloatingBottomNav.contentBottomInset(context) + AppSizes.xs,
+            child: const SafeArea(top: false, child: EnvironmentBadge()),
+          ),
+        ],
+      ),
       bottomNavigationBar: _FloatingBottomNav(
         destinations: _destinations,
         currentIndex: _currentIndex,

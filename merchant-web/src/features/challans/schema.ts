@@ -50,6 +50,9 @@ export const challanSchema = z
       .nullish()
       .transform((v) => v ?? []),
     _count: z.object({ items: z.coerce.number().default(0) }).nullish(),
+    /// Set once the merchant files this challan out of the working list. The
+    /// row and its number stay put — a challan is never deleted.
+    archivedAt: z.string().nullish(),
     createdAt: z.string(),
     updatedAt: z.string().optional(),
   })

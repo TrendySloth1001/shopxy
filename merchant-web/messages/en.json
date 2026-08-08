@@ -689,8 +689,12 @@
         "partyAddress": "From the customer's saved address",
         "vendorGstin": "From the vendor's GSTIN",
         "vendorAddress": "From the vendor's saved address",
-        "shopDefault": "No customer GSTIN — treated as a local supply in your own state"
-      }
+        "shopDefault": "No customer GSTIN — treated as a local supply in your own state",
+        "manual": "Set by you — the customer gave no GSTIN or address"
+      },
+      "lineDiscount": "Disc. ₹",
+      "posOverride": "Place of supply",
+      "posOverrideAuto": "Your own state (default)"
     },
     "picker": {
       "searchProducts": "Search products by name or SKU",
@@ -708,7 +712,8 @@
       "gstRange": "GST % must be between 0 and 100.",
       "discountNegative": "The discount can't be negative.",
       "confirmFailed": "The invoice was saved as a draft but could not be confirmed.",
-      "saveFailed": "Could not save the invoice."
+      "saveFailed": "Could not save the invoice.",
+      "lineDiscountTooBig": "A line's discount can't exceed its own amount."
     },
     "archiveModal": {
       "title": "Archive this invoice?",
@@ -780,7 +785,10 @@
       "new": "New quotation",
       "decline": "Decline",
       "priceAndSend": "Price & send",
-      "cancel": "Cancel quotation"
+      "cancel": "Cancel quotation",
+      "archive": "Archive",
+      "archived": "Archived",
+      "restore": "Restore"
     },
     "detail": {
       "loadError": "Could not load the quotation.",
@@ -795,7 +803,8 @@
       "pdf": "PDF",
       "itemsHeading": "Items ({count})",
       "customerNote": "Customer's note",
-      "note": "Note"
+      "note": "Note",
+      "archiveError": "Could not archive the quotation."
     },
     "totals": {
       "subtotal": "Subtotal",
@@ -854,6 +863,17 @@
       "placeholder": "Search linked customers",
       "linked": "Linked",
       "emptyHint": "No customers found. Quotes can only be sent to linked customers."
+    },
+    "archived": {
+      "title": "Archived quotations",
+      "subtitle": "Settled quotes you filed away",
+      "backToList": "All quotations",
+      "empty": "Nothing archived",
+      "emptyHint": "Quotes you file away land here once the customer has answered or you've cancelled them. Their numbers stay allocated."
+    },
+    "archiveModal": {
+      "title": "Archive this quotation?",
+      "body": "It leaves your quotation list but keeps its number. The customer still sees it in their own list, and you can restore it later."
     }
   },
   "parties": {
@@ -1284,7 +1304,10 @@
       "cancelled": "Cancelled"
     },
     "actions": {
-      "create": "Create challan"
+      "create": "Create challan",
+      "archive": "Archive",
+      "archived": "Archived",
+      "restore": "Restore"
     },
     "detail": {
       "loadError": "Could not load the challan.",
@@ -1296,7 +1319,8 @@
       "items": "Items",
       "product": "Product",
       "cancel": "Cancel challan",
-      "convert": "Convert to invoice"
+      "convert": "Convert to invoice",
+      "archiveError": "Could not archive the challan."
     },
     "convert": {
       "title": "Convert to invoice",
@@ -1335,6 +1359,17 @@
       "decrease": "Decrease",
       "increase": "Increase",
       "remove": "Remove"
+    },
+    "archived": {
+      "title": "Archived challans",
+      "subtitle": "Delivered and cancelled challans you filed away",
+      "backToList": "All challans",
+      "empty": "Nothing archived",
+      "emptyHint": "Challans you file away land here once they've been invoiced or cancelled. Their numbers stay allocated, so your serial run is never broken."
+    },
+    "archiveModal": {
+      "title": "Archive this challan?",
+      "body": "It leaves your challan list but keeps its number, so the serial run stays unbroken. You can restore it later."
     }
   },
   "stockAdjustments": {
@@ -3449,6 +3484,12 @@
     "day": {
       "today": "Today",
       "yesterday": "Yesterday"
+    },
+    "archived": {
+      "restore": "Restore",
+      "restoring": "Restoring…",
+      "refresh": "Refresh",
+      "actionFailed": "Could not update the document."
     }
   },
   "dashboard": {

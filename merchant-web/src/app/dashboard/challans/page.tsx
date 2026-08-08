@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ChevronRight, ClipboardList, Plus, RefreshCw, Search } from "@/shared/icons";
+import { Archive, ChevronRight, ClipboardList, Plus, RefreshCw, Search } from "@/shared/icons";
 import { PageHeader } from "@/shared/ui/page-header";
 import { formatDateTime } from "@/shared/datetime";
 import { listChallans } from "@/features/challans/api";
@@ -81,6 +81,12 @@ export default function ChallansPage() {
           <RefreshCw size={16} />
         </button>
         <MaybeLocked area="invoices" label={t("actions.create")}>
+          <Link
+            href="/dashboard/challans/archived"
+            className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+          >
+            <Archive size={16} /> {t("actions.archived")}
+          </Link>
           <Link
             href="/dashboard/challans/new"
             className="inline-flex h-10 items-center gap-sm rounded-button bg-brand px-md text-label-md text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"

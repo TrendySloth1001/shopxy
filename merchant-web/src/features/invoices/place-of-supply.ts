@@ -20,7 +20,12 @@ export type PosSource =
   | "partyAddress"
   | "vendorGstin"
   | "vendorAddress"
-  | "shopDefault";
+  | "shopDefault"
+  /**
+   * The merchant picked the state themselves. Only offered when nothing on
+   * the counterparty says where they are — see `canOverridePlaceOfSupply`.
+   */
+  | "manual";
 
 export type PlaceOfSupply = { code: string | null; source: PosSource };
 
@@ -74,4 +79,19 @@ export function derivePlaceOfSupply(args: {
   const fromVendorGstin = stateCodeFromGstin(vendor?.gstin);
   if (fromVendorGstin) return { code: fromVendorGstin, source: "vendorGstin" };
   return { code: shopStateCode ?? null, source: "shopDefault" };
+}
+
+/**
+ * Whether the merchant may set the place of supply by hand.
+ *
+ * Only when nothing on the counterparty tells us where they are. A GSTIN or a
+ * saved address IS the answer, and letting someone override those is exactly
+ * how tax ends up under the wrong head — which is what deriving this field
+ * was meant to prevent.
+ *
+ * The case this exists for: a walk-in with no GSTIN who is standing in
+ * another state. Without it that sale is silently billed as local.
+ */
+export function canOverridePlaceOfSupply(source: PosSource): boolean {
+  return source === "shopDefault" || source === "manual";
 }

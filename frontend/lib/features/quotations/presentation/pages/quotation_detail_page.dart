@@ -10,8 +10,10 @@ import 'package:shopxy/features/quotations/domain/entities/quotation.dart';
 import 'package:shopxy/features/quotations/presentation/pages/create_quotation_page.dart';
 import 'package:shopxy/features/quotations/presentation/providers/quotations_provider.dart';
 import 'package:shopxy/features/quotations/presentation/widgets/quote_line_thumb.dart';
+import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
+import 'package:shopxy/shared/widgets/app_dialog.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
@@ -74,25 +76,55 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
       setState(() {
         _busy = false;
         // Reflect the new status locally without refetching.
-        _q = Quotation(
-          id: _q.id,
-          quotationNo: _q.quotationNo,
-          status: 'CANCELLED',
-          partyName: _q.partyName,
-          subtotal: _q.subtotal,
-          taxAmount: _q.taxAmount,
-          total: _q.total,
-          items: _q.items,
-          createdAt: _q.createdAt,
-          note: _q.note,
-          declineNote: _q.declineNote,
-          invoiceId: _q.invoiceId,
-          invoiceNo: _q.invoiceNo,
-        );
+        _q = _q.copyWith(status: 'CANCELLED');
       });
       messenger.showSnackBar(
         SnackBar(content: Text('${_q.quotationNo} cancelled')),
       );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _busy = false);
+      messenger.showSnackBar(SnackBar(content: Text(friendlyError(e))));
+    }
+  }
+
+  /// File this quote away, or bring it back. Confirmation only when archiving
+  /// — restoring merely puts the document back where it was.
+  ///
+  /// There is no delete: the quotation number is a per-shop serial allocated
+  /// at create time. Archiving is merchant-side only; the customer keeps
+  /// seeing the quote in their own list.
+  Future<void> _setArchived(bool archived) async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    if (archived) {
+      final confirmed = await AppConfirmDialog.show(
+        context,
+        title: l10n.quotationsArchive,
+        message: l10n.quotationsArchiveConfirmBody(_q.quotationNo),
+        confirmLabel: l10n.actionArchive,
+      );
+      if (!confirmed || !mounted) return;
+    }
+
+    setState(() => _busy = true);
+    try {
+      final ds = context.read<QuotationsRemoteDataSource>();
+      await ds.setArchived(_q.id, archived);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            archived
+                ? l10n.documentArchivedNamed(_q.quotationNo)
+                : l10n.documentRestoredNamed(_q.quotationNo),
+          ),
+        ),
+      );
+      // The list this came from no longer holds it either way, so pop with a
+      // "reload me" result rather than leaving a stale row behind.
+      navigator.pop(true);
     } catch (e) {
       if (!mounted) return;
       setState(() => _busy = false);
@@ -194,12 +226,27 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final (fg, _, label) = _style(_q.status);
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: FloatingAppBar(
         title: _q.quotationNo,
         actions: [
+          // A settled quote can be filed away; an archived one brought back.
+          // While the customer can still act (REQUESTED / PENDING) neither is
+          // offered — the server refuses it, and an accept landing against a
+          // quote the merchant can't see is nobody's job to chase.
+          if (_q.isArchived || !_q.isAwaitingCounterparty)
+            IconButton(
+              icon: AppIcon(
+                _q.isArchived
+                    ? AppIcons.unarchiveRounded
+                    : AppIcons.archiveAddRounded,
+              ),
+              tooltip: _q.isArchived ? l10n.actionRestore : l10n.actionArchive,
+              onPressed: _busy ? null : () => _setArchived(!_q.isArchived),
+            ),
           Padding(
             padding: const EdgeInsets.only(right: AppSizes.sm),
             child: ActionChip(

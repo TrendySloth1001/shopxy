@@ -1,23 +1,23 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { ArrowDownLeft, ArrowUpRight, Package, Plus, Trash2, X } from "@/shared/icons";
 import { BackLink } from "@/shared/ui/page-header";
 import { SelectField, TextAreaField, TextField } from "@/shared/ui/form";
-import { derivePlaceOfSupply } from "./place-of-supply";
+import { canOverridePlaceOfSupply, derivePlaceOfSupply } from "./place-of-supply";
 import {
   checkRecipient,
   RecipientGateModal,
   type RecipientDetails,
 } from "./recipient-gate";
 import { InvoicePreviewModal, type InvoicePreview } from "./invoice-preview";
-import { fillPartyAddress } from "@/features/parties/api";
+import { fillPartyAddress, getParty } from "@/features/parties/api";
 import { PickerModal } from "@/shared/ui/picker-modal";
 import { Monogram } from "@/shared/ui/monogram";
 import { formatINR2 } from "@/shared/money";
-import { stateNameForCode } from "@/shared/india";
+import { INDIAN_STATES, stateNameForCode } from "@/shared/india";
 import { useAuth } from "@/features/auth/auth-context";
 import { listProducts } from "@/features/products/api";
 import { listParties } from "@/features/parties/api";
@@ -80,6 +80,7 @@ export function InvoiceEditor({
       unitPrice: it.unitPrice,
       taxPercent: it.taxPercent,
       isPriceInclusive: it.isPriceInclusive,
+      discount: it.discount ?? 0,
     })) ?? [],
   );
 
@@ -94,17 +95,80 @@ export function InvoiceEditor({
   const [preview, setPreview] = useState<InvoicePreview | null>(null);
   const [pendingConfirm, setPendingConfirm] = useState(false);
   const [recipient, setRecipient] = useState<RecipientDetails | null>(null);
+  /// A state the merchant set by hand, overriding the shop-state fallback.
+  /// Null in the ordinary case — see `canOverridePlaceOfSupply`.
+  const [posOverride, setPosOverride] = useState<string | null>(null);
+
+  // The attached customer's postal address, fetched on select.
+  //
+  // The contact picker's `Contact` carries only id/name/phone/gstin/stateCode,
+  // so without this a NEW invoice's recipient gate saw no address and warned
+  // even when the customer had one on file. Fetching is the fix rather than
+  // widening `Contact`, because the picker lists many contacts and only the
+  // chosen one needs its full row.
+  // Keyed by the party it belongs to, so switching customers reads as
+  // "not loaded yet" rather than briefly showing the previous customer's
+  // address. No clearing step, and nothing to get wrong on unmount.
+  const [fetchedParty, setFetchedParty] = useState<{
+    id: string;
+    address?: string | null;
+    city?: string | null;
+    pinCode?: string | null;
+    state?: string | null;
+    stateCode?: string | null;
+  } | null>(null);
+
+  // Pull the chosen customer's full row so the recipient gate and the preview
+  // can see their address. Async IIFE + `active` guard: no synchronous
+  // setState in the effect body, and a slow response for a customer the
+  // merchant has since switched away from can't overwrite the current one.
+  //
+  // A failure is swallowed on purpose — this only enriches a warning. The
+  // gate falls back to the invoice snapshot and, at worst, over-warns.
+  const partyId = party?.id ?? null;
+  useEffect(() => {
+    if (!partyId) return;
+    let active = true;
+    void (async () => {
+      try {
+        const full = await getParty(partyId);
+        if (!active) return;
+        setFetchedParty({
+          id: partyId,
+          address: full.address,
+          city: full.city,
+          pinCode: full.pinCode,
+          state: full.state,
+          stateCode: full.stateCode,
+        });
+      } catch {
+        /* Only enriches a warning — the snapshot fallback still applies. */
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [partyId]);
+
+  /// The fetched row, but only while it still describes the attached party.
+  const partyAddress = fetchedParty?.id === partyId ? fetchedParty : null;
 
   // Place of supply is DERIVED, never asked: the first two digits of a GSTIN
   // ARE the holder's state code, so asking again only invites a picked state
   // that contradicts the number — and that puts tax under the wrong head.
-  const pos = derivePlaceOfSupply({
+  const derived = derivePlaceOfSupply({
     type,
     party,
     vendor,
     typedGstin: walkInGstin,
     shopStateCode,
   });
+  // A manual answer beats the shop-state guess, and is only reachable when
+  // that guess was all we had.
+  const pos = posOverride
+    ? ({ code: posOverride, source: "manual" } as const)
+    : derived;
+  const canOverride = canOverridePlaceOfSupply(pos.source);
   const placeOfSupply = pos.code;
   const interstate = !!shopStateCode && !!placeOfSupply && shopStateCode !== placeOfSupply;
 
@@ -138,6 +202,7 @@ export function InvoiceEditor({
           unitPrice: type === "SALE" ? p.sellingPrice : p.purchasePrice,
           taxPercent: p.pricingMode === "NO_GST" ? 0 : p.taxPercent,
           isPriceInclusive: p.pricingMode === "TAX_INCLUSIVE",
+          discount: 0,
         },
       ];
     });
@@ -163,6 +228,10 @@ export function InvoiceEditor({
       return t("errors.gstRange");
     }
     if ((Number(discount) || 0) < 0) return t("errors.discountNegative");
+    if (lines.some((l) => l.discount < 0)) return t("errors.discountNegative");
+    if (lines.some((l) => l.discount > l.quantity * l.unitPrice)) {
+      return t("errors.lineDiscountTooBig");
+    }
     const payload: InvoiceWrite = {
       type,
       documentType: type === "SALE" ? documentType : "TAX_INVOICE",
@@ -172,6 +241,7 @@ export function InvoiceEditor({
         unitPrice: l.unitPrice,
         taxPercent: l.taxPercent,
         isPriceInclusive: l.isPriceInclusive,
+        discount: l.discount || 0,
       })),
       discount: Number(discount) || 0,
       note: note.trim() || undefined,
@@ -230,21 +300,32 @@ export function InvoiceEditor({
     void commit(false, recipient);
   }
 
-  /// Address fields of the attached party, for the recipient check. The
-  /// picker's Contact only carries id/name/phone/gstin/stateCode, so an edit
-  /// of an existing invoice reads them off its own snapshot instead.
+  /// Address fields of the attached party, for the recipient check.
+  ///
+  /// The freshly fetched party row wins; the invoice's own snapshot is the
+  /// fallback while that request is in flight, and for an edit whose party
+  /// has since been deleted.
   const partyDetails = party
     ? {
-        address: existing?.customerAddress ?? null,
-        city: existing?.customerCity ?? null,
-        pinCode: existing?.customerPinCode ?? null,
+        address: partyAddress?.address ?? existing?.customerAddress ?? null,
+        city: partyAddress?.city ?? existing?.customerCity ?? null,
+        pinCode: partyAddress?.pinCode ?? existing?.customerPinCode ?? null,
       }
     : null;
 
   function buildPreview(): InvoicePreview {
     const sale = type === "SALE";
+    // Prefer what the merchant just typed into the gate, then the fetched
+    // party row, then the invoice's own snapshot. Reading the snapshot alone
+    // made a NEW invoice's preview claim "no address on file" for a customer
+    // who had one.
     const addressParts = sale
-      ? [existing?.customerAddress, existing?.customerCity, existing?.customerState, existing?.customerPinCode]
+      ? [
+          recipient?.customerAddress ?? partyAddress?.address ?? existing?.customerAddress,
+          recipient?.customerCity ?? partyAddress?.city ?? existing?.customerCity,
+          recipient?.customerState ?? partyAddress?.state ?? existing?.customerState,
+          recipient?.customerPinCode ?? partyAddress?.pinCode ?? existing?.customerPinCode,
+        ]
       : [existing?.vendorAddress, existing?.vendorCity, existing?.vendorState, existing?.vendorPinCode];
     const address = addressParts.filter((p) => (p ?? "").trim() !== "").join(", ");
     const stateName = stateNameForCode(placeOfSupply);
@@ -261,8 +342,12 @@ export function InvoiceEditor({
       supplyTypeLabel: interstate ? t("form.supplyInterState") : t("form.supplyIntraState"),
       lines: lines.map((l) => ({
         name: l.productName,
-        quantityLabel: `${l.quantity} × ${formatINR2(l.unitPrice)}`,
-        amount: l.quantity * l.unitPrice,
+        quantityLabel: `${l.quantity} × ${formatINR2(l.unitPrice)}${
+          l.discount > 0 ? ` − ${formatINR2(l.discount)}` : ""
+        }`,
+        // Net of the line's own discount, so the preview adds up to the
+        // subtotal shown beneath it.
+        amount: Math.max(l.quantity * l.unitPrice - (l.discount || 0), 0),
       })),
       totals: [
         { label: t("detail.subtotal"), value: formatINR2(totals.subtotal) },
@@ -405,6 +490,25 @@ export function InvoiceEditor({
           <p className="mt-xs text-body-sm text-muted">
             {t(`form.posSource.${pos.source}`)}
           </p>
+          {/* Offered only when the shop's own state was a guess. A GSTIN or a
+              saved address IS the answer, and overriding those is how tax
+              lands under the wrong head. */}
+          {canOverride ? (
+            <div className="mt-sm flex flex-wrap items-center gap-sm">
+              <SelectField
+                label={t("form.posOverride")}
+                value={posOverride ?? ""}
+                onChange={(v) => setPosOverride(v || null)}
+                options={[
+                  { value: "", label: t("form.posOverrideAuto") },
+                  ...INDIAN_STATES.map((st) => ({
+                    value: st.code,
+                    label: `${st.code} — ${st.name}`,
+                  })),
+                ]}
+              />
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -435,6 +539,7 @@ export function InvoiceEditor({
                 onQty={(v) => patchLine(i, { quantity: v })}
                 onPrice={(v) => patchLine(i, { unitPrice: v })}
                 onTax={(v) => patchLine(i, { taxPercent: v })}
+                onDiscount={(v) => patchLine(i, { discount: v })}
                 onToggleInclusive={() => patchLine(i, { isPriceInclusive: !l.isPriceInclusive })}
                 onRemove={() => removeLine(i)}
               />
@@ -672,6 +777,7 @@ function LineRow({
   onQty,
   onPrice,
   onTax,
+  onDiscount,
   onToggleInclusive,
   onRemove,
 }: {
@@ -679,6 +785,7 @@ function LineRow({
   onQty: (v: number) => void;
   onPrice: (v: number) => void;
   onTax: (v: number) => void;
+  onDiscount: (v: number) => void;
   onToggleInclusive: () => void;
   onRemove: () => void;
 }) {
@@ -689,7 +796,7 @@ function LineRow({
   // totals level (computeInvoiceTotals), so showing a gross tax-on-top figure
   // per line wouldn't reconcile to the displayed Total. With this basis,
   // Σ(line amounts) = Subtotal, then − Discount + GST = Total. (FMD-5.)
-  const lineAmount = line.quantity * line.unitPrice;
+  const lineAmount = Math.max(line.quantity * line.unitPrice - (line.discount || 0), 0);
   return (
     <div className="flex flex-wrap items-end gap-md border-b border-hairline py-md">
       <div className="min-w-0 flex-1">
@@ -715,6 +822,15 @@ function LineRow({
           value={line.unitPrice}
           onChange={(e) => onPrice(Number(e.target.value) || 0)}
           className={`${numInput} w-24`}
+        />
+      </label>
+      <label className="flex flex-col gap-xs">
+        <span className="text-label-md text-subtle">{t("form.lineDiscount")}</span>
+        <input
+          inputMode="decimal"
+          value={line.discount}
+          onChange={(e) => onDiscount(Number(e.target.value) || 0)}
+          className={`${numInput} w-20`}
         />
       </label>
       <label className="flex flex-col gap-xs">

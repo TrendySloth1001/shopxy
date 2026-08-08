@@ -66,6 +66,7 @@ class Quotation {
     required this.total,
     required this.items,
     required this.createdAt,
+    this.archivedAt,
     this.note,
     this.declineNote,
     this.invoiceId,
@@ -88,6 +89,12 @@ class Quotation {
   final double total;
   final List<QuotationLine> items;
   final DateTime createdAt;
+
+  /// Set once the merchant files this quotation out of their working list.
+  /// The row and its number stay put — the quotation serial is allocated at
+  /// create time, so a quotation is never deleted. Merchant-side only: the
+  /// customer still sees it in their own list.
+  final DateTime? archivedAt;
   final String? note;
   final String? declineNote;
   final String? invoiceId;
@@ -97,6 +104,36 @@ class Quotation {
 
   /// A customer-initiated quote awaiting the merchant's pricing.
   bool get isRequested => status == 'REQUESTED';
+
+  bool get isArchived => archivedAt != null;
+
+  /// Whether the customer could still act on this — the states archiving is
+  /// refused in, because a quote the merchant can't see is one nobody chases.
+  bool get isAwaitingCounterparty => isPending || isRequested;
+
+  /// Local echo of a state change, so a screen can reflect one field without
+  /// refetching. Exists because the alternative — rebuilding the whole object
+  /// by hand at each call site — silently drops every field added later.
+  Quotation copyWith({String? status, DateTime? archivedAt, bool clearArchivedAt = false}) {
+    return Quotation(
+      id: id,
+      quotationNo: quotationNo,
+      status: status ?? this.status,
+      partyName: partyName,
+      partyId: partyId,
+      placeOfSupplyStateCode: placeOfSupplyStateCode,
+      subtotal: subtotal,
+      taxAmount: taxAmount,
+      total: total,
+      items: items,
+      createdAt: createdAt,
+      archivedAt: clearArchivedAt ? null : (archivedAt ?? this.archivedAt),
+      note: note,
+      declineNote: declineNote,
+      invoiceId: invoiceId,
+      invoiceNo: invoiceNo,
+    );
+  }
 
   static double _d(dynamic v) {
     if (v == null) return 0;
@@ -124,6 +161,9 @@ class Quotation {
       total: _d(j['total']),
       items: items,
       createdAt: DateTime.parse(j['createdAt'] as String),
+      archivedAt: j['archivedAt'] != null
+          ? DateTime.parse(j['archivedAt'] as String)
+          : null,
       note: j['note'] as String?,
       declineNote: j['declineNote'] as String?,
       invoiceId: invoice?['id']?.toString(),

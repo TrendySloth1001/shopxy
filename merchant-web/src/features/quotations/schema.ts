@@ -74,6 +74,10 @@ export const quotationSchema = z
     invoice: z.object({ id: z.coerce.string(), invoiceNo: z.string() }).nullish(),
     requestedById: z.coerce.string().nullish(),
     respondedAt: z.string().nullish(),
+    /// Set once the merchant files this quote out of THEIR working list. The
+    /// customer keeps seeing it in their own — archiving is a filing
+    /// decision, not a retraction.
+    archivedAt: z.string().nullish(),
     createdAt: z.string(),
     updatedAt: z.string().optional(),
   })
@@ -89,4 +93,13 @@ export const quotationListSchema = z.object({
 
 export function quotationPartyName(q: Quotation): string {
   return q.party?.name ?? "Customer";
+}
+
+/**
+ * Whether the customer could still act on this quote. Archiving is refused in
+ * these states: a quote the merchant can no longer see is one nobody chases,
+ * and the accept would land against an invisible document.
+ */
+export function quotationAwaitsCounterparty(q: Quotation): boolean {
+  return q.status === "PENDING" || q.status === "REQUESTED";
 }

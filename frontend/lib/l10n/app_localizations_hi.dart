@@ -1690,17 +1690,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get invoicesPreviewNoAddress => 'कोई पता दर्ज नहीं है';
 
   @override
-  String invoicesPreviewItemCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count वस्तुएँ',
-      one: '1 वस्तु',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String get invoicesPreviewBack => 'संपादन जारी रखें';
 
   @override
@@ -1847,24 +1836,8 @@ class AppLocalizationsHi extends AppLocalizations {
   String get invoicesShare => 'साझा करें';
 
   @override
-  String get invoicesArchive => 'संग्रहित करें';
-
-  @override
   String invoicesArchiveConfirmBody(Object invoiceNo) {
     return '$invoiceNo को संग्रहित करें? यह आपकी चालान सूची से हट जाएगा लेकिन इसका नंबर बना रहेगा, जिससे क्रम अटूट रहता है। आप इसे बाद में वापस ला सकते हैं।';
-  }
-
-  @override
-  String invoicesArchivedNamed(Object invoiceNo) {
-    return '$invoiceNo संग्रहित किया गया';
-  }
-
-  @override
-  String get invoicesRestore => 'वापस लाएँ';
-
-  @override
-  String invoicesRestoredNamed(Object invoiceNo) {
-    return '$invoiceNo वापस लाया गया';
   }
 
   @override
@@ -1880,9 +1853,6 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get menuDescArchivedInvoices =>
       'आपके द्वारा संग्रहित ड्राफ़्ट और रद्द बिल';
-
-  @override
-  String get invoicesArchivedFilter => 'संग्रहित';
 
   @override
   String get invoicesCustomer => 'ग्राहक';
@@ -7420,4 +7390,108 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get hsnOverridesConfirm => 'ओवरराइड सहेजें';
+
+  @override
+  String get actionArchive => 'संग्रहित करें';
+
+  @override
+  String get actionRestore => 'वापस लाएँ';
+
+  @override
+  String documentArchivedNamed(Object number) {
+    return '$number संग्रहित किया गया';
+  }
+
+  @override
+  String documentRestoredNamed(Object number) {
+    return '$number वापस लाया गया';
+  }
+
+  @override
+  String get archivedTitle => 'संग्रहित';
+
+  @override
+  String get navArchivedChallans => 'संग्रहित चालान';
+
+  @override
+  String get menuDescArchivedChallans =>
+      'पहुँचाए गए और रद्द किए गए चालान जो आपने संग्रहित किए';
+
+  @override
+  String get challansArchivedEmptyTitle => 'कुछ भी संग्रहित नहीं';
+
+  @override
+  String get challansArchivedEmptyBody =>
+      'चालान बिल बनने या रद्द होने के बाद संग्रहित किए जा सकते हैं और यहाँ दिखते हैं। उनके नंबर आवंटित रहते हैं, इसलिए क्रम कभी नहीं टूटता।';
+
+  @override
+  String get challansArchive => 'चालान संग्रहित करें';
+
+  @override
+  String challansArchiveConfirmBody(Object challanNo) {
+    return '$challanNo को संग्रहित करें? यह आपकी चालान सूची से हट जाएगा पर इसका नंबर बना रहेगा, इसलिए क्रम अटूट रहेगा। आप इसे बाद में वापस ला सकते हैं।';
+  }
+
+  @override
+  String get challansArchivePendingBlocked =>
+      'संग्रहित करने से पहले इस चालान का बिल बनाएँ या इसे रद्द करें — इसके विरुद्ध माल अभी बाहर है।';
+
+  @override
+  String get navArchivedQuotations => 'संग्रहित कोटेशन';
+
+  @override
+  String get menuDescArchivedQuotations =>
+      'निपटे हुए कोटेशन जो आपने संग्रहित किए';
+
+  @override
+  String get quotationsArchivedEmptyTitle => 'कुछ भी संग्रहित नहीं';
+
+  @override
+  String get quotationsArchivedEmptyBody =>
+      'ग्राहक के जवाब देने या आपके रद्द करने के बाद कोटेशन संग्रहित किए जा सकते हैं और यहाँ दिखते हैं। उनके नंबर आवंटित रहते हैं।';
+
+  @override
+  String get quotationsArchive => 'कोटेशन संग्रहित करें';
+
+  @override
+  String quotationsArchiveConfirmBody(Object quotationNo) {
+    return '$quotationNo को संग्रहित करें? यह आपकी कोटेशन सूची से हट जाएगा पर इसका नंबर बना रहेगा। ग्राहक को यह अपनी सूची में दिखता रहेगा, और आप इसे बाद में वापस ला सकते हैं।';
+  }
+
+  @override
+  String get quotationsArchivePendingBlocked =>
+      'पहले इस कोटेशन को रद्द करें — ग्राहक अभी भी इस पर कार्रवाई कर सकता है।';
+
+  @override
+  String documentItemCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count वस्तुएँ',
+      one: '1 वस्तु',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get quotationsFilterAll => 'सभी';
+
+  @override
+  String get quotationsFilterAccepted => 'स्वीकृत';
+
+  @override
+  String get quotationsFilterDeclined => 'अस्वीकृत';
+
+  @override
+  String get quotationsFilterCancelled => 'रद्द';
+
+  @override
+  String get invoicesPlaceOfSupplySetManually =>
+      'आपके द्वारा तय — ग्राहक ने GSTIN या पता नहीं दिया';
+
+  @override
+  String get invoicesPlaceOfSupplyChange => 'बदलें';
+
+  @override
+  String get invoicesPlaceOfSupplyReset => 'रीसेट';
 }

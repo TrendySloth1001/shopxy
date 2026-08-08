@@ -21,10 +21,13 @@ class QuotationsRemoteDataSource {
     }
   }
 
-  Future<List<Quotation>> list({String? status}) async {
+  Future<List<Quotation>> list({String? status, bool archived = false}) async {
     final res = await _client.get('/quotations', queryParameters: {
       'limit': '50',
       'status': ?status,
+      // The "Archived" view. Archived quotations are out of every other
+      // merchant list — that's the point of archiving.
+      if (archived) 'archived': 'true',
     });
     if (res.statusCode != 200) {
       throw Exception(_err(res.body, 'Failed to load quotations'));
@@ -70,6 +73,20 @@ class QuotationsRemoteDataSource {
     final res = await _client.post('/quotations/$id/cancel');
     if (res.statusCode != 200) {
       throw Exception(_err(res.body, 'Failed to cancel quotation'));
+    }
+    return Quotation.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+  }
+
+  /// File a settled quotation out of the merchant's working list, or bring it
+  /// back. There is no delete endpoint — the quotation number is a per-shop
+  /// serial allocated at create time. The backend refuses to archive one the
+  /// customer can still act on (REQUESTED / PENDING).
+  Future<Quotation> setArchived(String id, bool archived) async {
+    final res = await _client.post(
+      '/quotations/$id/${archived ? 'archive' : 'unarchive'}',
+    );
+    if (res.statusCode != 200) {
+      throw Exception(_err(res.body, 'Failed to update the quotation'));
     }
     return Quotation.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }

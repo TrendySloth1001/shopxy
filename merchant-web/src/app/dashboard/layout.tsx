@@ -4,6 +4,7 @@ import { SectionGuard } from "@/features/auth/components/section-guard";
 import { NotificationsProvider } from "@/features/notifications/notifications-context";
 import { Sidebar } from "@/features/dashboard/sidebar";
 import { PageTransition } from "@/features/dashboard/page-transition";
+import { EnvironmentBadge } from "@/features/settings/environment-badge";
 
 /**
  * Authenticated shell for the whole dashboard area. Persistent collapsible
@@ -21,6 +22,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               <SectionGuard>{children}</SectionGuard>
             </PageTransition>
           </main>
+          {/* Developer-only, and only when a non-default backend is in force.
+              Silent for every real merchant. */}
+          <EnvironmentBadge />
         </div>
       </NotificationsProvider>
     </RequireAuth>

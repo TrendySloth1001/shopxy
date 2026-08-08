@@ -1689,17 +1689,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invoicesPreviewNoAddress => 'No address on file';
 
   @override
-  String invoicesPreviewItemCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count items',
-      one: '1 item',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String get invoicesPreviewBack => 'Keep editing';
 
   @override
@@ -1846,24 +1835,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invoicesShare => 'Share';
 
   @override
-  String get invoicesArchive => 'Archive';
-
-  @override
   String invoicesArchiveConfirmBody(Object invoiceNo) {
     return 'File $invoiceNo away? It leaves your invoice list but keeps its number, so the serial run stays unbroken. You can restore it later.';
-  }
-
-  @override
-  String invoicesArchivedNamed(Object invoiceNo) {
-    return '$invoiceNo archived';
-  }
-
-  @override
-  String get invoicesRestore => 'Restore';
-
-  @override
-  String invoicesRestoredNamed(Object invoiceNo) {
-    return '$invoiceNo restored';
   }
 
   @override
@@ -1879,9 +1852,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get menuDescArchivedInvoices =>
       'Drafts and cancelled bills you filed away';
-
-  @override
-  String get invoicesArchivedFilter => 'Archived';
 
   @override
   String get invoicesCustomer => 'Customer';
@@ -7417,4 +7387,107 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get hsnOverridesConfirm => 'Save override';
+
+  @override
+  String get actionArchive => 'Archive';
+
+  @override
+  String get actionRestore => 'Restore';
+
+  @override
+  String documentArchivedNamed(Object number) {
+    return '$number archived';
+  }
+
+  @override
+  String documentRestoredNamed(Object number) {
+    return '$number restored';
+  }
+
+  @override
+  String get archivedTitle => 'Archived';
+
+  @override
+  String get navArchivedChallans => 'Archived challans';
+
+  @override
+  String get menuDescArchivedChallans =>
+      'Delivered and cancelled challans you filed away';
+
+  @override
+  String get challansArchivedEmptyTitle => 'Nothing archived';
+
+  @override
+  String get challansArchivedEmptyBody =>
+      'Challans you file away land here once they\'ve been invoiced or cancelled. Their numbers stay allocated, so your serial run is never broken.';
+
+  @override
+  String get challansArchive => 'Archive challan';
+
+  @override
+  String challansArchiveConfirmBody(Object challanNo) {
+    return 'File $challanNo away? It leaves your challan list but keeps its number, so the serial run stays unbroken. You can restore it later.';
+  }
+
+  @override
+  String get challansArchivePendingBlocked =>
+      'Convert this challan to an invoice or cancel it before archiving — goods are still out against it.';
+
+  @override
+  String get navArchivedQuotations => 'Archived quotations';
+
+  @override
+  String get menuDescArchivedQuotations => 'Settled quotes you filed away';
+
+  @override
+  String get quotationsArchivedEmptyTitle => 'Nothing archived';
+
+  @override
+  String get quotationsArchivedEmptyBody =>
+      'Quotes you file away land here once the customer has answered or you\'ve cancelled them. Their numbers stay allocated.';
+
+  @override
+  String get quotationsArchive => 'Archive quotation';
+
+  @override
+  String quotationsArchiveConfirmBody(Object quotationNo) {
+    return 'File $quotationNo away? It leaves your quotation list but keeps its number. The customer still sees it in their own list, and you can restore it later.';
+  }
+
+  @override
+  String get quotationsArchivePendingBlocked =>
+      'Cancel this quotation first — the customer can still act on it.';
+
+  @override
+  String documentItemCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items',
+      one: '1 item',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get quotationsFilterAll => 'All';
+
+  @override
+  String get quotationsFilterAccepted => 'Accepted';
+
+  @override
+  String get quotationsFilterDeclined => 'Declined';
+
+  @override
+  String get quotationsFilterCancelled => 'Cancelled';
+
+  @override
+  String get invoicesPlaceOfSupplySetManually =>
+      'Set by you — the customer gave no GSTIN or address';
+
+  @override
+  String get invoicesPlaceOfSupplyChange => 'Change';
+
+  @override
+  String get invoicesPlaceOfSupplyReset => 'Reset';
 }

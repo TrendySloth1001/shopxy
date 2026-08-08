@@ -43,6 +43,7 @@ class Challan {
     this.invoice,
     required this.items,
     required this.itemCount,
+    this.archivedAt,
     required this.createdAt,
   });
 
@@ -57,11 +58,17 @@ class Challan {
   final ChallanInvoiceRef? invoice;
   final List<ChallanItem> items;
   final int itemCount;
+
+  /// Set once the merchant files this challan out of the working list. The
+  /// row and its number stay put — Rule 55 wants the run serially numbered,
+  /// so a challan is never deleted.
+  final DateTime? archivedAt;
   final DateTime createdAt;
 
   bool get isPending => status == 'PENDING';
   bool get isConverted => status == 'CONVERTED';
   bool get isCancelled => status == 'CANCELLED';
+  bool get isArchived => archivedAt != null;
 }
 
 class ChallanItemDraft {

@@ -164,20 +164,21 @@ one browser and never moves another merchant's requests; the allow-list is
 everyone but `DEVELOPER_EMAIL`. Mirrors the Flutter merchant app's
 `frontend/lib/features/developer/`.
 
-- [ ] **`customer-web` has no switcher.** It runs the same BFF shape and would
-  need the same three pieces (allow-list, cookie resolver, gated route). Only
-  merchant-web and the Flutter merchant app were asked for.
+- [x] **`customer-web` has a switcher.** Same three pieces, ported:
+  `shared/config/environments.ts` (own `sxc_env` cookie — merchant and
+  customer share a host in dev and cookies are not port-scoped, so a shared
+  name would have one app's switch redirect the other's proxy),
+  `resolveBackendBaseUrl()` in `server/auth/session.ts`, and a gated
+  `/api/dev/environment`. Surfaced on `/account`.
 - [ ] **Deliberately not localised.** The section label, blurb and picker copy
   are hardcoded English and skipped in `messages/*.json` — the whole surface is
   gated to one hardcoded address. If it ever opens up to more accounts, these
   strings need catalog entries.
-- [ ] **Uses `window.confirm`.** The switch confirmation is a native dialog
-  rather than the app's own modal. Fine for an internal tool; swap it if this
-  surface ever becomes user-facing.
-- [ ] **No environment badge outside Settings.** Once pointed at a non-default
-  backend there is nothing on screen to say so, which is easy to forget on a
-  dev tunnel. A small persistent chip in the dashboard chrome (developer-only,
-  driven by the same endpoint) would prevent "why is production empty".
+- [x] **Uses the app's own modal**, not `window.confirm`.
+- [x] **Environment badge.** `features/settings/environment-badge.tsx`, in the
+  dashboard layout: a developer-only chip shown ONLY while a non-default
+  backend is in force. The Flutter merchant app has the same badge in
+  `AppShell` (`features/developer/presentation/widgets/environment_badge.dart`).
 
 ## Invoice parity: web caught up with Flutter (Aug 2026)
 
@@ -201,13 +202,43 @@ the pre-issue preview, and the archived-invoices view.
 
 Deferred / simplified:
 
-- [ ] **Party address in the gate is read off the invoice snapshot.** The
-  contact picker's `Contact` only carries id/name/phone/gstin/stateCode, so on
-  a NEW invoice `partyDetails` is null and the gate treats the address as
-  missing even when the party has one. Either widen `Contact` or fetch the
-  party on select. Flutter doesn't have this gap (its `Party` is the full row).
-- [ ] **Preview line amounts ignore per-line discounts.** The web editor has no
-  per-line discount field today, so `quantity × unitPrice` is exact — revisit
-  if one is added.
-- [ ] **No archived view for challans / quotations.** Archiving is invoice-only
-  on the backend too.
+- [x] **Party address is fetched on select.** `invoice-editor.tsx` pulls the
+  full party row when one is attached and keys the result to that party's id,
+  so switching customers reads as "not loaded yet" rather than briefly showing
+  the previous customer's address. The invoice snapshot remains the fallback.
+  The preview had the same gap and got the same fix.
+- [x] **Per-line discounts exist on web now.** They always existed in the
+  Flutter editor and the backend schema, so editing a Flutter-created invoice
+  on web silently zeroed them — a data-loss bug, not just a missing field.
+  `InvoiceLineDraft.discount` is loaded, edited, sent, and netted off in both
+  `computeInvoiceTotals` and the preview.
+- [x] **Challans and quotations archive too.** `archivedAt` on both models,
+  `POST /:id/archive|unarchive`, an `archived` list filter, and archived views
+  at `/dashboard/challans/archived` and `/dashboard/quotations/archived`.
+
+  Two rules differ from invoices, and are enforced server-side so the message
+  can explain itself: a PENDING challan is refused (goods are out against it,
+  and it has been neither invoiced nor cancelled), and a REQUESTED/PENDING
+  quotation is refused (the customer can still act on it, and an accept
+  landing against a document the merchant can't see is nobody's job to chase).
+
+  Quotation archiving is merchant-side ONLY — `listForParty` deliberately has
+  no `archivedAt` filter. Archiving is the merchant's filing decision and must
+  not erase the counterparty's record of what they were quoted. Invoices
+  already worked this way (`meService.listInvoicesForParty` ignores it too).
+
+- [x] **One archived-page implementation per platform.** `shared/ui/
+  archived-documents-page.tsx` and the Flutter `ArchivedDocumentsPage` back
+  all three document kinds, so the filter tabs, day grouping and restore
+  affordance can't drift apart.
+
+Deferred from this pass:
+
+- [ ] **Place-of-supply override is deliberately narrow.** Offered only when
+  the derivation fell back to the shop's own state. A GSTIN or a saved address
+  IS the answer, and overriding those is precisely how tax lands under the
+  wrong head — the thing deriving the field was meant to prevent. The case it
+  covers is a walk-in with no GSTIN standing in another state.
+- [ ] **`DayDivider` is only used by the archived pages.** The main invoices /
+  challans / quotations lists could adopt it (the Flutter side already groups
+  every dated list by day).

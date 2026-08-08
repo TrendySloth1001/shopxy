@@ -20,7 +20,9 @@ import 'package:shopxy/features/categories/presentation/pages/categories_page.da
 import 'package:shopxy/features/products/presentation/pages/hsn_codes_page.dart';
 import 'package:shopxy/features/challans/presentation/pages/challans_page.dart';
 import 'package:shopxy/features/coupons/presentation/pages/merchant_coupons_page.dart';
+import 'package:shopxy/features/challans/presentation/pages/archived_challans_page.dart';
 import 'package:shopxy/features/invoices/presentation/pages/archived_invoices_page.dart';
+import 'package:shopxy/features/quotations/presentation/pages/archived_quotations_page.dart';
 import 'package:shopxy/features/invoices/presentation/pages/invoice_settings_page.dart';
 import 'package:shopxy/features/parties/presentation/pages/parties_page.dart';
 import 'package:shopxy/features/pos/presentation/pages/pos_page.dart';
@@ -220,6 +222,24 @@ List<_MenuItem> get _operationItems => [
     accentSoft: AppColors.accentAmberSoft,
     builder: (_) => const ArchivedInvoicesPage(),
     requires: (u) => u.canView('invoices'),
+  ),
+  _MenuItem(
+    label: (l) => l.navArchivedChallans,
+    description: (l) => l.menuDescArchivedChallans,
+    icon: AppIcons.archiveOutlined,
+    accent: AppColors.accentAmber,
+    accentSoft: AppColors.accentAmberSoft,
+    builder: (_) => const ArchivedChallansPage(),
+    requires: (u) => u.canView('challans'),
+  ),
+  _MenuItem(
+    label: (l) => l.navArchivedQuotations,
+    description: (l) => l.menuDescArchivedQuotations,
+    icon: AppIcons.archiveOutlined,
+    accent: AppColors.accentAmber,
+    accentSoft: AppColors.accentAmberSoft,
+    builder: (_) => const ArchivedQuotationsPage(),
+    requires: (u) => u.canView('quotations'),
   ),
   _MenuItem(
     label: (l) => l.navChallans,

@@ -302,9 +302,9 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     if (archived) {
       final confirmed = await AppConfirmDialog.show(
         context,
-        title: l10n.invoicesArchive,
+        title: l10n.actionArchive,
         message: l10n.invoicesArchiveConfirmBody(invoice.invoiceNo),
-        confirmLabel: l10n.invoicesArchive,
+        confirmLabel: l10n.actionArchive,
       );
       if (!confirmed || !mounted) return;
     }
@@ -319,8 +319,8 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
         SnackBar(
           content: Text(
             archived
-                ? l10n.invoicesArchivedNamed(invoice.invoiceNo)
-                : l10n.invoicesRestoredNamed(invoice.invoiceNo),
+                ? l10n.documentArchivedNamed(invoice.invoiceNo)
+                : l10n.documentRestoredNamed(invoice.invoiceNo),
           ),
         ),
       );
@@ -473,8 +473,8 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                     : AppIcons.archiveAddRounded,
               ),
               tooltip: invoice.isArchived
-                  ? l10n.invoicesRestore
-                  : l10n.invoicesArchive,
+                  ? l10n.actionRestore
+                  : l10n.actionArchive,
               onPressed: _archiving
                   ? null
                   : () => _setArchived(invoice, !invoice.isArchived),

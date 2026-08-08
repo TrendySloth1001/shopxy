@@ -44,6 +44,9 @@ class ChallanDto {
       invoice: _invoiceRefFromJson(j['invoice'] as Map<String, dynamic>?),
       items: itemsList?.map((e) => _itemFromJson(e as Map<String, dynamic>)).toList() ?? [],
       itemCount: count ?? itemsList?.length ?? 0,
+      archivedAt: j['archivedAt'] != null
+          ? DateTime.parse(j['archivedAt'] as String)
+          : null,
       createdAt: DateTime.parse(j['createdAt'] as String),
     );
   }

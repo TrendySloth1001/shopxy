@@ -777,14 +777,6 @@
   "invoicesPreviewBillTo": "Bill to",
   "invoicesPreviewFrom": "From",
   "invoicesPreviewNoAddress": "No address on file",
-  "invoicesPreviewItemCount": "{count, plural, =1{1 item} other{{count} items}}",
-  "@invoicesPreviewItemCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "invoicesPreviewBack": "Keep editing",
   "invoicesPreviewConfirm": "Confirm and issue",
   "invoicesAddProducts": "Add products",
@@ -858,26 +850,8 @@
   "invoicesKeepDraft": "Keep draft",
   "invoicesEdit": "Edit",
   "invoicesShare": "Share",
-  "invoicesArchive": "Archive",
   "invoicesArchiveConfirmBody": "File {invoiceNo} away? It leaves your invoice list but keeps its number, so the serial run stays unbroken. You can restore it later.",
   "@invoicesArchiveConfirmBody": {
-    "placeholders": {
-      "invoiceNo": {
-        "type": "Object"
-      }
-    }
-  },
-  "invoicesArchivedNamed": "{invoiceNo} archived",
-  "@invoicesArchivedNamed": {
-    "placeholders": {
-      "invoiceNo": {
-        "type": "Object"
-      }
-    }
-  },
-  "invoicesRestore": "Restore",
-  "invoicesRestoredNamed": "{invoiceNo} restored",
-  "@invoicesRestoredNamed": {
     "placeholders": {
       "invoiceNo": {
         "type": "Object"
@@ -888,7 +862,6 @@
   "invoicesArchivedEmptyBody": "Drafts and cancelled invoices you file away land here. Their numbers stay allocated, so your serial run is never broken.",
   "navArchivedInvoices": "Archived invoices",
   "menuDescArchivedInvoices": "Drafts and cancelled bills you filed away",
-  "invoicesArchivedFilter": "Archived",
   "invoicesCustomer": "Customer",
   "invoicesVendor": "Vendor",
   "invoicesAddress": "Address",
@@ -3813,5 +3786,67 @@
   },
   "hsnOverridesReasonLabel": "Why",
   "hsnOverridesReasonHelper": "Required. An override with no stated basis can't be told apart from a typo.",
-  "hsnOverridesConfirm": "Save override"
+  "hsnOverridesConfirm": "Save override",
+  "actionArchive": "Archive",
+  "actionRestore": "Restore",
+  "documentArchivedNamed": "{number} archived",
+  "@documentArchivedNamed": {
+    "placeholders": {
+      "number": {
+        "type": "Object"
+      }
+    }
+  },
+  "documentRestoredNamed": "{number} restored",
+  "@documentRestoredNamed": {
+    "placeholders": {
+      "number": {
+        "type": "Object"
+      }
+    }
+  },
+  "archivedTitle": "Archived",
+  "navArchivedChallans": "Archived challans",
+  "menuDescArchivedChallans": "Delivered and cancelled challans you filed away",
+  "challansArchivedEmptyTitle": "Nothing archived",
+  "challansArchivedEmptyBody": "Challans you file away land here once they've been invoiced or cancelled. Their numbers stay allocated, so your serial run is never broken.",
+  "challansArchive": "Archive challan",
+  "challansArchiveConfirmBody": "File {challanNo} away? It leaves your challan list but keeps its number, so the serial run stays unbroken. You can restore it later.",
+  "@challansArchiveConfirmBody": {
+    "placeholders": {
+      "challanNo": {
+        "type": "Object"
+      }
+    }
+  },
+  "challansArchivePendingBlocked": "Convert this challan to an invoice or cancel it before archiving — goods are still out against it.",
+  "navArchivedQuotations": "Archived quotations",
+  "menuDescArchivedQuotations": "Settled quotes you filed away",
+  "quotationsArchivedEmptyTitle": "Nothing archived",
+  "quotationsArchivedEmptyBody": "Quotes you file away land here once the customer has answered or you've cancelled them. Their numbers stay allocated.",
+  "quotationsArchive": "Archive quotation",
+  "quotationsArchiveConfirmBody": "File {quotationNo} away? It leaves your quotation list but keeps its number. The customer still sees it in their own list, and you can restore it later.",
+  "@quotationsArchiveConfirmBody": {
+    "placeholders": {
+      "quotationNo": {
+        "type": "Object"
+      }
+    }
+  },
+  "quotationsArchivePendingBlocked": "Cancel this quotation first — the customer can still act on it.",
+  "documentItemCount": "{count, plural, =1{1 item} other{{count} items}}",
+  "@documentItemCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "quotationsFilterAll": "All",
+  "quotationsFilterAccepted": "Accepted",
+  "quotationsFilterDeclined": "Declined",
+  "quotationsFilterCancelled": "Cancelled",
+  "invoicesPlaceOfSupplySetManually": "Set by you — the customer gave no GSTIN or address",
+  "invoicesPlaceOfSupplyChange": "Change",
+  "invoicesPlaceOfSupplyReset": "Reset"
 }

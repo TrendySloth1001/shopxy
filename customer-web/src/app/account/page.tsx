@@ -29,6 +29,7 @@ import { Avatar } from "@/features/auth/components/avatar";
 import { useAuth } from "@/features/auth/auth-context";
 import { Divider } from "@/shared/ui/divider";
 import { BackButton } from "@/shared/ui/back-button";
+import { DeveloperEnvironmentSection } from "@/features/settings/environment-picker";
 
 /** A single destination in the account hub. */
 interface HubLink {
@@ -159,6 +160,8 @@ export default function AccountPage() {
         <BackButton fallback="/" className="mb-md" />
         <AccountIdentity />
         <AccountHub />
+        {/* Renders nothing unless this is the developer account. */}
+        <DeveloperEnvironmentSection />
       </main>
     </RequireAuth>
   );

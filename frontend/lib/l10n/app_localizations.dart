@@ -3242,12 +3242,6 @@ abstract class AppLocalizations {
   /// **'No address on file'**
   String get invoicesPreviewNoAddress;
 
-  /// No description provided for @invoicesPreviewItemCount.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{1 item} other{{count} items}}'**
-  String invoicesPreviewItemCount(int count);
-
   /// No description provided for @invoicesPreviewBack.
   ///
   /// In en, this message translates to:
@@ -3518,35 +3512,11 @@ abstract class AppLocalizations {
   /// **'Share'**
   String get invoicesShare;
 
-  /// No description provided for @invoicesArchive.
-  ///
-  /// In en, this message translates to:
-  /// **'Archive'**
-  String get invoicesArchive;
-
   /// No description provided for @invoicesArchiveConfirmBody.
   ///
   /// In en, this message translates to:
   /// **'File {invoiceNo} away? It leaves your invoice list but keeps its number, so the serial run stays unbroken. You can restore it later.'**
   String invoicesArchiveConfirmBody(Object invoiceNo);
-
-  /// No description provided for @invoicesArchivedNamed.
-  ///
-  /// In en, this message translates to:
-  /// **'{invoiceNo} archived'**
-  String invoicesArchivedNamed(Object invoiceNo);
-
-  /// No description provided for @invoicesRestore.
-  ///
-  /// In en, this message translates to:
-  /// **'Restore'**
-  String get invoicesRestore;
-
-  /// No description provided for @invoicesRestoredNamed.
-  ///
-  /// In en, this message translates to:
-  /// **'{invoiceNo} restored'**
-  String invoicesRestoredNamed(Object invoiceNo);
 
   /// No description provided for @invoicesArchivedEmptyTitle.
   ///
@@ -3571,12 +3541,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Drafts and cancelled bills you filed away'**
   String get menuDescArchivedInvoices;
-
-  /// No description provided for @invoicesArchivedFilter.
-  ///
-  /// In en, this message translates to:
-  /// **'Archived'**
-  String get invoicesArchivedFilter;
 
   /// No description provided for @invoicesCustomer.
   ///
@@ -13552,6 +13516,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save override'**
   String get hsnOverridesConfirm;
+
+  /// No description provided for @actionArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive'**
+  String get actionArchive;
+
+  /// No description provided for @actionRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get actionRestore;
+
+  /// No description provided for @documentArchivedNamed.
+  ///
+  /// In en, this message translates to:
+  /// **'{number} archived'**
+  String documentArchivedNamed(Object number);
+
+  /// No description provided for @documentRestoredNamed.
+  ///
+  /// In en, this message translates to:
+  /// **'{number} restored'**
+  String documentRestoredNamed(Object number);
+
+  /// No description provided for @archivedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get archivedTitle;
+
+  /// No description provided for @navArchivedChallans.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived challans'**
+  String get navArchivedChallans;
+
+  /// No description provided for @menuDescArchivedChallans.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered and cancelled challans you filed away'**
+  String get menuDescArchivedChallans;
+
+  /// No description provided for @challansArchivedEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing archived'**
+  String get challansArchivedEmptyTitle;
+
+  /// No description provided for @challansArchivedEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Challans you file away land here once they\'ve been invoiced or cancelled. Their numbers stay allocated, so your serial run is never broken.'**
+  String get challansArchivedEmptyBody;
+
+  /// No description provided for @challansArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive challan'**
+  String get challansArchive;
+
+  /// No description provided for @challansArchiveConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'File {challanNo} away? It leaves your challan list but keeps its number, so the serial run stays unbroken. You can restore it later.'**
+  String challansArchiveConfirmBody(Object challanNo);
+
+  /// No description provided for @challansArchivePendingBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Convert this challan to an invoice or cancel it before archiving — goods are still out against it.'**
+  String get challansArchivePendingBlocked;
+
+  /// No description provided for @navArchivedQuotations.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived quotations'**
+  String get navArchivedQuotations;
+
+  /// No description provided for @menuDescArchivedQuotations.
+  ///
+  /// In en, this message translates to:
+  /// **'Settled quotes you filed away'**
+  String get menuDescArchivedQuotations;
+
+  /// No description provided for @quotationsArchivedEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing archived'**
+  String get quotationsArchivedEmptyTitle;
+
+  /// No description provided for @quotationsArchivedEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Quotes you file away land here once the customer has answered or you\'ve cancelled them. Their numbers stay allocated.'**
+  String get quotationsArchivedEmptyBody;
+
+  /// No description provided for @quotationsArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive quotation'**
+  String get quotationsArchive;
+
+  /// No description provided for @quotationsArchiveConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'File {quotationNo} away? It leaves your quotation list but keeps its number. The customer still sees it in their own list, and you can restore it later.'**
+  String quotationsArchiveConfirmBody(Object quotationNo);
+
+  /// No description provided for @quotationsArchivePendingBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel this quotation first — the customer can still act on it.'**
+  String get quotationsArchivePendingBlocked;
+
+  /// No description provided for @documentItemCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item} other{{count} items}}'**
+  String documentItemCount(int count);
+
+  /// No description provided for @quotationsFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get quotationsFilterAll;
+
+  /// No description provided for @quotationsFilterAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Accepted'**
+  String get quotationsFilterAccepted;
+
+  /// No description provided for @quotationsFilterDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'Declined'**
+  String get quotationsFilterDeclined;
+
+  /// No description provided for @quotationsFilterCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get quotationsFilterCancelled;
+
+  /// No description provided for @invoicesPlaceOfSupplySetManually.
+  ///
+  /// In en, this message translates to:
+  /// **'Set by you — the customer gave no GSTIN or address'**
+  String get invoicesPlaceOfSupplySetManually;
+
+  /// No description provided for @invoicesPlaceOfSupplyChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get invoicesPlaceOfSupplyChange;
+
+  /// No description provided for @invoicesPlaceOfSupplyReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get invoicesPlaceOfSupplyReset;
 }
 
 class _AppLocalizationsDelegate

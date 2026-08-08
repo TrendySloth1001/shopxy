@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ChevronRight, FileText, Plus, RefreshCw } from "@/shared/icons";
+import { Archive, ChevronRight, FileText, Plus, RefreshCw } from "@/shared/icons";
 import { PageHeader } from "@/shared/ui/page-header";
 import { formatDateTime } from "@/shared/datetime";
 import { formatINR2 } from "@/shared/money";
@@ -69,6 +69,12 @@ export default function QuotationsPage() {
         >
           <RefreshCw size={16} />
         </button>
+        <Link
+          href="/dashboard/quotations/archived"
+          className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
+        >
+          <Archive size={16} /> {t("actions.archived")}
+        </Link>
         <MaybeLocked area="invoices" label={t("actions.new")}>
           <Link
             href="/dashboard/quotations/new"

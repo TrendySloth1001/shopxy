@@ -153,6 +153,9 @@ export class ChallansService {
     options: {
       status?: string;
       search: string;
+      /// The "Archived" view. Archived challans are out of every other list —
+      /// that's the point of archiving.
+      archived?: boolean;
       page: number;
       limit: number;
       skip: number;
@@ -160,6 +163,7 @@ export class ChallansService {
   ) {
     const where: Record<string, unknown> = { shopId };
     if (options.status) where.status = options.status;
+    where.archivedAt = options.archived ? { not: null } : null;
     if (options.search) {
       where.OR = [
         { challanNo: { contains: options.search, mode: 'insensitive' } },
@@ -183,6 +187,7 @@ export class ChallansService {
           partyPhone: true,
           party: { select: { id: true, name: true, phone: true } },
           invoiceId: true,
+          archivedAt: true,
           createdAt: true,
           _count: { select: { items: true } },
         },
@@ -202,6 +207,42 @@ export class ChallansService {
         invoice: { select: { id: true, invoiceNo: true, status: true } },
       },
     });
+  }
+
+  /// File a settled challan out of the working list, or bring it back.
+  ///
+  /// Deleting is not on offer, and can't be: the challan number is allocated
+  /// at create time and Rule 55 wants the run serially numbered, so removing
+  /// a row would leave a permanent hole. Archiving hides the document and
+  /// keeps its number.
+  ///
+  /// A PENDING challan is refused — goods are out against it and it has been
+  /// neither invoiced nor cancelled, so hiding it would lose track of stock
+  /// that has physically left. Settle it first (convert or cancel).
+  async setArchived(shopId: number, id: number, archived: boolean) {
+    const challan = await prisma.challan.findFirst({
+      where: { id, shopId },
+      select: { status: true, archivedAt: true },
+    });
+    if (!challan) return { error: 'Challan not found' as const };
+
+    if (archived && challan.status === 'PENDING') {
+      return {
+        error:
+          'Cannot archive a pending challan — convert it to an invoice or cancel it first.' as const,
+      };
+    }
+
+    // Idempotent: archiving an archived row (or restoring a live one) is a
+    // no-op rather than an error, so a retried tap can't fail.
+    const alreadyInState = archived === (challan.archivedAt !== null);
+    if (!alreadyInState) {
+      await prisma.challan.update({
+        where: { id },
+        data: { archivedAt: archived ? new Date() : null },
+      });
+    }
+    return { challan: await this.getChallanById(shopId, id) };
   }
 
   async cancelChallan(shopId: number, id: number, createdById?: number) {

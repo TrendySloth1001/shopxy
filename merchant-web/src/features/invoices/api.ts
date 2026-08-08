@@ -60,6 +60,8 @@ export type InvoiceItemWrite = {
   unitPrice: number;
   taxPercent?: number;
   isPriceInclusive?: boolean;
+  /** Rupees off this line, before the header discount is apportioned. */
+  discount?: number;
 };
 
 export type InvoiceWrite = {

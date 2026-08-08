@@ -1228,6 +1228,11 @@ model Challan {
   note       String?
   invoiceId  Int?          @unique @map("invoice_id")
   invoice    Invoice?      @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  /// Filed out of the working list. Rule 55 wants the challan run serially
+  /// numbered, so a challan can't be deleted — archiving hides it and keeps
+  /// the number allocated. Only a settled challan (CONVERTED / CANCELLED)
+  /// may be archived; a PENDING one still has goods out against it.
+  archivedAt DateTime?     @map("archived_at")
   createdAt  DateTime      @default(now()) @map("created_at")
   updatedAt  DateTime      @updatedAt @map("updated_at")
   items      ChallanItem[]
@@ -1235,6 +1240,7 @@ model Challan {
   @@unique([shopId, challanNo])
   @@index([shopId, status])
   @@index([shopId, createdAt])
+  @@index([shopId, archivedAt])
   @@index([partyId])
   @@map("challans")
 }
@@ -1871,11 +1877,21 @@ model Quotation {
   /// The CONFIRMED invoice spawned when the customer accepted.
   invoiceId              Int?      @unique @map("invoice_id")
   invoice                Invoice?  @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  /// Filed out of the MERCHANT's working list. Only a settled quotation may
+  /// be archived — while it is REQUESTED or PENDING the customer can still
+  /// act on it, and hiding it from the merchant would strand that decision.
+  ///
+  /// Deliberately not applied to the customer-facing list (`listForParty`):
+  /// archiving is the merchant's own filing decision, and it must not erase
+  /// the counterparty's record of what they were quoted. Same rule invoices
+  /// follow — `meService.listInvoicesForParty` ignores `archivedAt` too.
+  archivedAt             DateTime? @map("archived_at")
   createdAt              DateTime  @default(now()) @map("created_at")
   updatedAt              DateTime  @updatedAt @map("updated_at")
 
   @@unique([shopId, quotationNo])
   @@index([shopId, status, createdAt])
+  @@index([shopId, archivedAt])
   @@index([partyId, status])
   @@map("quotations")
 }

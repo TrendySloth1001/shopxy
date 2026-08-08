@@ -86,6 +86,7 @@ export class QuotationsController {
     const status = statusSchema.parse(req.query.status) as QuotationStatus | undefined;
     const { data, total } = await quotationsService.listForShop(shopId, {
       status,
+      archived: req.query.archived === 'true',
       skip,
       take: limit,
     });
@@ -109,6 +110,33 @@ export class QuotationsController {
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
     const quotation = await quotationsService.cancel(shopId, id);
     res.json(quotation);
+  }
+
+  /// POST /quotations/:id/archive — file a settled quotation out of the
+  /// merchant's working list. There is no DELETE and can't be: the quotation
+  /// number is a per-shop serial allocated at create time. See
+  /// `quotationsService.setArchived`.
+  async archive(req: Request, res: Response): Promise<void> {
+    await this.setArchived(req, res, true);
+  }
+
+  /// POST /quotations/:id/unarchive — bring it back into the working list.
+  async unarchive(req: Request, res: Response): Promise<void> {
+    await this.setArchived(req, res, false);
+  }
+
+  private async setArchived(
+    req: Request,
+    res: Response,
+    archived: boolean,
+  ): Promise<void> {
+    const shopId = requireShopId(req, res);
+    if (!shopId) return;
+    const id = parseId(req.params.id);
+    if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
+    const result = await quotationsService.setArchived(shopId, id, archived);
+    if ('error' in result) { res.status(400).json({ error: result.error }); return; }
+    res.json(result.quotation);
   }
 
   /// Merchant prices a customer's REQUESTED quote and sends it (→ PENDING).

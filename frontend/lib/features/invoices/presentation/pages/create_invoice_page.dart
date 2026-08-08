@@ -46,6 +46,10 @@ enum _PosSource {
   vendorGstin,
   vendorAddress,
   shopDefault,
+
+  /// The merchant picked the state themselves. Only offered when nothing on
+  /// the counterparty says where they are — see [_CreateInvoicePageState._posOverride].
+  manual,
 }
 
 /// Height of the sticky Save-as-draft / Save-&-confirm action buttons. Taller
@@ -98,6 +102,14 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
   // Place of supply is no longer held in state — it's derived on every build
   // from the counterparty's GSTIN / address, falling back to the shop's own
   // state. See [_placeOfSupply].
+
+  /// A state the merchant set by hand, overriding the shop-state fallback.
+  ///
+  /// Null in the ordinary case. Only settable when nothing on the
+  /// counterparty implies a state (see [_canOverridePlaceOfSupply]) — the
+  /// walk-in-from-another-state case, which would otherwise be billed as a
+  /// local supply.
+  String? _posOverride;
 
   final List<InvoiceItemDraft> _items = [];
 
@@ -279,6 +291,11 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
   /// SALE, the shop's own state, because an unregistered walk-in with no
   /// address is a local supply.
   ({String? code, _PosSource source}) get _placeOfSupply {
+    // A manual answer beats the shop-state guess, and is only reachable when
+    // that guess was all we had (see [_canOverridePlaceOfSupply]).
+    if (_posOverride != null) {
+      return (code: _posOverride, source: _PosSource.manual);
+    }
     if (_type == 'SALE') {
       final party = _selectedParty;
       if (party?.stateCode != null) {
@@ -308,6 +325,70 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
 
   String? get _shopStateCode =>
       context.read<AuthProvider>().user?.shopStateCode;
+
+  /// Ask for the state by hand. Only reachable via
+  /// [_canOverridePlaceOfSupply], so it can never contradict a GSTIN.
+  Future<void> _pickPlaceOfSupply() async {
+    final l10n = AppLocalizations.of(context);
+    final chosen = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSizes.lg,
+                0,
+                AppSizes.lg,
+                AppSizes.sm,
+              ),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  l10n.invoicesPlaceOfSupply,
+                  style: Theme.of(sheetContext).textTheme.titleMedium?.semibold,
+                ),
+              ),
+            ),
+            const AppDivider.flush(),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: IndianStates.all.length,
+                itemBuilder: (_, i) {
+                  final state = IndianStates.all[i];
+                  return ListTile(
+                    title: Text('${state.code} — ${state.name}'),
+                    onTap: () => Navigator.pop(sheetContext, state.code),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (chosen == null || !mounted) return;
+    setState(() => _posOverride = chosen);
+    _markDirty();
+  }
+
+  /// Whether the merchant may set the place of supply by hand.
+  ///
+  /// Only when nothing on the counterparty tells us where they are. A GSTIN
+  /// or a saved address IS the answer — letting someone override those is
+  /// exactly how tax ends up under the wrong head, which is what deriving
+  /// the field was meant to prevent.
+  ///
+  /// The case this exists for: a walk-in with no GSTIN who is standing in
+  /// another state. Without it that sale is silently billed as local.
+  bool get _canOverridePlaceOfSupply {
+    if (_posOverride != null) return true;
+    return _placeOfSupply.source == _PosSource.shopDefault;
+  }
 
   String? get _placeOfSupplyStateCode => _placeOfSupply.code;
 
@@ -980,6 +1061,11 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                       _PlaceOfSupplyRow(
                         placeOfSupply: _placeOfSupply,
                         isInterstate: _isInterstate,
+                        canOverride: _canOverridePlaceOfSupply,
+                        onOverride: _pickPlaceOfSupply,
+                        onClearOverride: _posOverride == null
+                            ? null
+                            : () => setState(() => _posOverride = null),
                       ),
 
                       const SizedBox(height: AppSizes.xxl),
@@ -1294,10 +1380,21 @@ class _PlaceOfSupplyRow extends StatelessWidget {
   const _PlaceOfSupplyRow({
     required this.placeOfSupply,
     required this.isInterstate,
+    required this.canOverride,
+    required this.onOverride,
+    this.onClearOverride,
   });
 
   final ({String? code, _PosSource source}) placeOfSupply;
   final bool isInterstate;
+
+  /// Whether to offer the manual picker at all — false whenever the
+  /// counterparty's own GSTIN or address already answers the question.
+  final bool canOverride;
+  final VoidCallback onOverride;
+
+  /// Non-null only while a manual answer is in force.
+  final VoidCallback? onClearOverride;
 
   @override
   Widget build(BuildContext context) {
@@ -1317,6 +1414,7 @@ class _PlaceOfSupplyRow extends StatelessWidget {
       _PosSource.vendorGstin => l10n.invoicesPlaceOfSupplyFromVendorGstin,
       _PosSource.vendorAddress => l10n.invoicesPlaceOfSupplyFromVendorAddress,
       _PosSource.shopDefault => l10n.invoicesPlaceOfSupplyDefaultsToShop,
+      _PosSource.manual => l10n.invoicesPlaceOfSupplySetManually,
     };
 
     return InputDecorator(
@@ -1364,6 +1462,29 @@ class _PlaceOfSupplyRow extends StatelessWidget {
               ),
             ),
           ),
+          // Offered only when the shop's own state was a guess. A GSTIN or a
+          // saved address IS the answer, and overriding those is how tax
+          // lands under the wrong head.
+          if (canOverride) ...[
+            const SizedBox(width: AppSizes.xs),
+            TextButton(
+              onPressed: onClearOverride ?? onOverride,
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(
+                onClearOverride != null
+                    ? l10n.invoicesPlaceOfSupplyReset
+                    : l10n.invoicesPlaceOfSupplyChange,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: AppColors.brandStrong,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

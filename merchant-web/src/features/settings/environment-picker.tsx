@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Check, TriangleAlert } from "@/shared/icons";
+import { Modal, ModalActions } from "@/shared/ui/modal";
 
 /**
  * Developer-only backend switcher — the web half of the Flutter merchant
@@ -50,38 +51,29 @@ export function useDeveloperEnvironments() {
 
 export function EnvironmentPicker({ state }: { state: EnvState }) {
   const [switching, setSwitching] = useState<string | null>(null);
+  const [pending, setPending] = useState<EnvOption | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const select = useCallback(
-    async (option: EnvOption) => {
-      if (switching) return;
-      const ok = window.confirm(
-        `Switch to ${option.label}?\n\n` +
-          "You will be signed out and the page will reload. " +
-          `${option.label} has its own database, so nothing from the current ` +
-          "environment carries over.",
-      );
-      if (!ok) return;
-
-      setSwitching(option.id);
-      setError(null);
-      try {
-        const res = await fetch("/api/dev/environment", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: option.id }),
-        });
-        if (!res.ok) throw new Error("Switch failed");
-        // A hard navigation, not router.push: every cached RSC payload on this
-        // page was rendered against the previous database.
-        window.location.href = "/login";
-      } catch {
-        setSwitching(null);
-        setError("Could not switch environments. Check the server logs.");
-      }
-    },
-    [switching],
-  );
+  const confirmSwitch = useCallback(async () => {
+    if (!pending || switching) return;
+    setSwitching(pending.id);
+    setError(null);
+    try {
+      const res = await fetch("/api/dev/environment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: pending.id }),
+      });
+      if (!res.ok) throw new Error("Switch failed");
+      // A hard navigation, not router.push: every cached RSC payload on this
+      // page was rendered against the previous database.
+      window.location.href = "/login";
+    } catch {
+      setSwitching(null);
+      setPending(null);
+      setError("Could not switch environments. Check the server logs.");
+    }
+  }, [pending, switching]);
 
   return (
     <div className="space-y-lg">
@@ -109,7 +101,7 @@ export function EnvironmentPicker({ state }: { state: EnvState }) {
               role="radio"
               aria-checked={selected}
               disabled={selected || switching !== null}
-              onClick={() => select(option)}
+              onClick={() => setPending(option)}
               className={`flex h-full flex-col gap-xs rounded-lg border p-md text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft disabled:cursor-default ${
                 selected
                   ? "border-brand ring-2 ring-brand-soft"
@@ -145,6 +137,25 @@ export function EnvironmentPicker({ state }: { state: EnvState }) {
       ) : null}
 
       {error ? <p className="text-body-sm text-error">{error}</p> : null}
+
+      {pending ? (
+        <Modal
+          title={`Switch to ${pending.label}?`}
+          onClose={() => (switching ? undefined : setPending(null))}
+        >
+          <p className="text-body-md text-muted">
+            You will be signed out and the page will reload. {pending.label} has
+            its own database, so nothing from the current environment carries
+            over.
+          </p>
+          <ModalActions
+            busy={switching !== null}
+            confirmLabel={switching ? "Signing out…" : "Switch and sign out"}
+            onCancel={() => setPending(null)}
+            onConfirm={() => void confirmSwitch()}
+          />
+        </Modal>
+      ) : null}
     </div>
   );
 }

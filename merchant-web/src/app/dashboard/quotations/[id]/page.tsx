@@ -2,9 +2,16 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Calculator, Download, ReceiptText, XCircle } from "@/shared/icons";
+import {
+  ArchiveDown,
+  ArchiveRestore,
+  Calculator,
+  Download,
+  ReceiptText,
+  XCircle,
+} from "@/shared/icons";
 import { BackLink } from "@/shared/ui/page-header";
 import { Divider } from "@/shared/ui/divider";
 import { Modal, ModalActions } from "@/shared/ui/modal";
@@ -13,6 +20,7 @@ import { formatDateTime } from "@/shared/datetime";
 import { formatINR2 } from "@/shared/money";
 import {
   cancelQuotation,
+  setQuotationArchived,
   declineQuotationRequest,
   getQuotation,
   quotationPdfUrl,
@@ -31,6 +39,7 @@ const BACK = "/dashboard/quotations";
 export default function QuotationDetailPage() {
   const t = useTranslations("quotations");
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const id = params.id;
 
   const [quote, setQuote] = useState<Quotation | null>(null);
@@ -39,6 +48,7 @@ export default function QuotationDetailPage() {
   const [nonce, setNonce] = useState(0);
 
   const [busy, setBusy] = useState(false);
+  const [confirmArchive, setConfirmArchive] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [declineOpen, setDeclineOpen] = useState(false);
@@ -63,6 +73,30 @@ export default function QuotationDetailPage() {
       active = false;
     };
   }, [id, nonce, t]);
+
+  /**
+   * File this quote away, or bring it back. There is no delete: the quotation
+   * number is a per-shop serial allocated at create time. The backend refuses
+   * one the customer can still act on (REQUESTED / PENDING).
+   *
+   * Merchant-side only — the customer keeps seeing the quote in their list.
+   *
+   * Either way we return to the list, where a restored quote reappears and an
+   * archived one has gone.
+   */
+  async function onSetArchived(archived: boolean) {
+    setBusy(true);
+    setActionError(null);
+    try {
+      await setQuotationArchived(id, archived);
+      setConfirmArchive(false);
+      router.push(BACK);
+      router.refresh();
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : t("detail.archiveError"));
+      setBusy(false);
+    }
+  }
 
   async function onCancel() {
     setBusy(true);
@@ -143,6 +177,30 @@ export default function QuotationDetailPage() {
           ) : null}
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-sm">
+          {/* A settled quote can be filed away; an archived one brought back.
+              While the customer can still act, neither is offered — an accept
+              landing against a quote the merchant can't see is nobody's job
+              to chase. */}
+          {quote.archivedAt ? (
+            // Restoring needs no confirmation: it only puts the quote back.
+            <button
+              type="button"
+              onClick={() => void onSetArchived(false)}
+              disabled={busy}
+              className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint disabled:text-disabled"
+            >
+              <ArchiveRestore size={16} /> {t("actions.restore")}
+            </button>
+          ) : !isRequested && !isPending ? (
+            <button
+              type="button"
+              onClick={() => setConfirmArchive(true)}
+              disabled={busy}
+              className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint disabled:text-disabled"
+            >
+              <ArchiveDown size={16} /> {t("actions.archive")}
+            </button>
+          ) : null}
           <Link
             href={`/dashboard/reports?tab=calculator&quotation=${id}`}
             className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint"
@@ -223,6 +281,18 @@ export default function QuotationDetailPage() {
             <XCircle size={16} /> {t("actions.cancel")}
           </button>
         </div>
+      ) : null}
+
+      {confirmArchive ? (
+        <Modal title={t("archiveModal.title")} onClose={() => setConfirmArchive(false)}>
+          <p className="text-body-md text-muted">{t("archiveModal.body")}</p>
+          <ModalActions
+            busy={busy}
+            confirmLabel={t("actions.archive")}
+            onCancel={() => setConfirmArchive(false)}
+            onConfirm={() => void onSetArchived(true)}
+          />
+        </Modal>
       ) : null}
 
       {confirmCancel ? (

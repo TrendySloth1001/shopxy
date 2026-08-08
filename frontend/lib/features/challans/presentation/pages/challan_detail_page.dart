@@ -20,6 +20,7 @@ import 'package:shopxy/shared/widgets/glass_widgets.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
@@ -35,6 +36,11 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
   Challan? _challan;
   bool _isLoading = true;
   bool _isConverting = false;
+
+  /// Guards the archive button against a double tap while the request is in
+  /// flight — the page pops on success, so a second call would fire against a
+  /// dead context.
+  bool _archiving = false;
 
   @override
   void initState() {
@@ -79,6 +85,49 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
           context,
         ).showSnackBar(SnackBar(content: Text(friendlyError(e))));
       }
+    }
+  }
+
+  /// File this challan away, or bring it back. Confirmation only when
+  /// archiving — restoring merely puts the document back where it was.
+  ///
+  /// There is no delete and can't be: the challan number is allocated at
+  /// create time and Rule 55 wants the run serially numbered.
+  Future<void> _setArchived(Challan challan, bool archived) async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    if (archived) {
+      final confirmed = await AppConfirmDialog.show(
+        context,
+        title: l10n.challansArchive,
+        message: l10n.challansArchiveConfirmBody(challan.challanNo),
+        confirmLabel: l10n.actionArchive,
+      );
+      if (!confirmed || !mounted) return;
+    }
+
+    setState(() => _archiving = true);
+    try {
+      final ds = context.read<ChallansRemoteDataSource>();
+      await ds.setArchived(challan.id, archived);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            archived
+                ? l10n.documentArchivedNamed(challan.challanNo)
+                : l10n.documentRestoredNamed(challan.challanNo),
+          ),
+        ),
+      );
+      // The list this came from no longer holds it either way, so pop with a
+      // "reload me" result rather than leaving a stale row behind.
+      navigator.pop(true);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _archiving = false);
+      messenger.showSnackBar(SnackBar(content: Text(friendlyError(e))));
     }
   }
 
@@ -145,6 +194,19 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
               onSelected: (v) {
                 if (v == 'cancel') _cancel();
               },
+            ),
+          // A settled challan can be filed away; an archived one brought
+          // back. A PENDING one offers neither — the server refuses it,
+          // because goods are still out against it.
+          if (c.isArchived || !c.isPending)
+            IconButton(
+              icon: AppIcon(
+                c.isArchived
+                    ? AppIcons.unarchiveRounded
+                    : AppIcons.archiveAddRounded,
+              ),
+              tooltip: c.isArchived ? l10n.actionRestore : l10n.actionArchive,
+              onPressed: _archiving ? null : () => _setArchived(c, !c.isArchived),
             ),
         ],
       ),

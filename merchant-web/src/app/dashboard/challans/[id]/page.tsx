@@ -4,12 +4,25 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ClipboardList, FileUp, Phone, ReceiptText, XCircle } from "@/shared/icons";
+import {
+  ArchiveDown,
+  ArchiveRestore,
+  ClipboardList,
+  FileUp,
+  Phone,
+  ReceiptText,
+  XCircle,
+} from "@/shared/icons";
 import { BackLink } from "@/shared/ui/page-header";
 import { Divider } from "@/shared/ui/divider";
 import { Modal, ModalActions } from "@/shared/ui/modal";
 import { formatDateTime } from "@/shared/datetime";
-import { cancelChallan, convertChallan, getChallan } from "@/features/challans/api";
+import {
+  cancelChallan,
+  convertChallan,
+  getChallan,
+  setChallanArchived,
+} from "@/features/challans/api";
 import {
   CHALLAN_STATUS_CLASSES,
   CHALLAN_STATUS_LABELS,
@@ -42,6 +55,7 @@ export default function ChallanDetailPage() {
   const [convertOpen, setConvertOpen] = useState(false);
   const [convertDiscount, setConvertDiscount] = useState("");
   const [convertNote, setConvertNote] = useState("");
+  const [confirmArchive, setConfirmArchive] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -73,6 +87,29 @@ export default function ChallanDetailPage() {
     } catch (e) {
       setActionError(e instanceof Error ? e.message : t("detail.cancelError"));
     } finally {
+      setBusy(false);
+    }
+  }
+
+  /**
+   * File this challan away, or bring it back. There is no delete and can't
+   * be: the number is allocated at create time and Rule 55 wants the run
+   * serially numbered. The backend refuses a PENDING challan — goods are
+   * still out against it.
+   *
+   * Either way we return to the list, where a restored challan reappears and
+   * an archived one has gone.
+   */
+  async function onSetArchived(archived: boolean) {
+    setBusy(true);
+    setActionError(null);
+    try {
+      await setChallanArchived(id, archived);
+      setConfirmArchive(false);
+      router.push(BACK);
+      router.refresh();
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : t("detail.archiveError"));
       setBusy(false);
     }
   }
@@ -134,6 +171,28 @@ export default function ChallanDetailPage() {
             <p className="mt-xs text-body-sm text-muted">{formatDateTime(challan.createdAt)}</p>
           </div>
         </div>
+        {/* A settled challan can be filed away; an archived one brought back.
+            A PENDING one offers neither — goods are still out against it. */}
+        {challan.archivedAt ? (
+          // Restoring needs no confirmation: it only puts the challan back.
+          <button
+            type="button"
+            onClick={() => void onSetArchived(false)}
+            disabled={busy}
+            className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint disabled:text-disabled"
+          >
+            <ArchiveRestore size={16} /> {t("actions.restore")}
+          </button>
+        ) : !isPending ? (
+          <button
+            type="button"
+            onClick={() => setConfirmArchive(true)}
+            disabled={busy}
+            className="inline-flex h-10 items-center gap-sm rounded-button border border-hairline px-md text-label-md text-ink transition-colors hover:bg-surface-tint disabled:text-disabled"
+          >
+            <ArchiveDown size={16} /> {t("actions.archive")}
+          </button>
+        ) : null}
       </div>
 
       {actionError ? (
@@ -190,6 +249,18 @@ export default function ChallanDetailPage() {
             <FileUp size={16} /> {t("detail.convert")}
           </button>
         </div>
+      ) : null}
+
+      {confirmArchive ? (
+        <Modal title={t("archiveModal.title")} onClose={() => setConfirmArchive(false)}>
+          <p className="text-body-md text-muted">{t("archiveModal.body")}</p>
+          <ModalActions
+            busy={busy}
+            confirmLabel={t("actions.archive")}
+            onCancel={() => setConfirmArchive(false)}
+            onConfirm={() => void onSetArchived(true)}
+          />
+        </Modal>
       ) : null}
 
       {convertOpen ? (

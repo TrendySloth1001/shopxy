@@ -78,11 +78,12 @@ export async function listChallans(req: Request, res: Response) {
   if (!shopId) return;
   const status = typeof req.query.status === 'string' ? req.query.status : undefined;
   const search = typeof req.query.search === 'string' ? req.query.search : '';
+  const archived = req.query.archived === 'true';
   const page = Math.max(1, Number(req.query.page) || 1);
   const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
   const skip = (page - 1) * limit;
 
-  const { challans, total } = await challansService.listChallans(shopId, { status, search, page, limit, skip });
+  const { challans, total } = await challansService.listChallans(shopId, { status, search, archived, page, limit, skip });
   res.json({ data: challans, pagination: { total, page, limit } });
 }
 
@@ -116,6 +117,35 @@ export async function cancelChallan(req: Request, res: Response) {
     return;
   }
   res.status(204).end();
+}
+
+/// POST /challans/:id/archive — file a settled challan out of the working
+/// list. There is no DELETE and can't be: the number is allocated at create
+/// time and Rule 55 wants the run serially numbered. See
+/// `challansService.setArchived`.
+export async function archiveChallan(req: Request, res: Response) {
+  await setChallanArchived(req, res, true);
+}
+
+/// POST /challans/:id/unarchive — bring it back into the working list.
+export async function unarchiveChallan(req: Request, res: Response) {
+  await setChallanArchived(req, res, false);
+}
+
+async function setChallanArchived(req: Request, res: Response, archived: boolean) {
+  const shopId = requireShopId(req, res);
+  if (!shopId) return;
+  const id = decodeId(req.params.id);
+  if (id === null) {
+    res.status(404).json({ error: 'Challan not found' });
+    return;
+  }
+  const result = await challansService.setArchived(shopId, id, archived);
+  if ('error' in result) {
+    res.status(400).json({ error: result.error });
+    return;
+  }
+  res.json(result.challan);
 }
 
 export async function downloadChallanPdf(req: Request, res: Response) {

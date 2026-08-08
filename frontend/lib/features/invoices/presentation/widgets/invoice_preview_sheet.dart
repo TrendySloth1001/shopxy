@@ -161,7 +161,7 @@ class _InvoicePreviewSheet extends StatelessWidget {
                 ],
 
                 const SizedBox(height: AppSizes.xl),
-                _Label(l10n.invoicesPreviewItemCount(data.lines.length)),
+                _Label(l10n.documentItemCount(data.lines.length)),
                 const SizedBox(height: AppSizes.xs),
                 for (var i = 0; i < data.lines.length; i++) ...[
                   if (i > 0) const AppDivider.flush(),
