@@ -80,7 +80,11 @@ export function LoginForm() {
         error={fieldErrors.password}
       />
       <SubmitButton loading={submitting} pill>{t("login.submit")}</SubmitButton>
-      <p className="text-center text-body-sm text-subtle">
+      <p className="flex flex-wrap items-center justify-center gap-x-sm gap-y-xs text-center text-body-sm text-subtle">
+        <Link href="/forgot-password" className="text-muted underline hover:text-brand">
+          {t("login.forgotPassword")}
+        </Link>
+        <span aria-hidden>·</span>
         <Link href="/login/recovery-pin" className="text-muted underline hover:text-brand">
           {t("login.usePinInstead")}
         </Link>

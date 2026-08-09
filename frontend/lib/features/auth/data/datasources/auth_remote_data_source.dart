@@ -185,6 +185,42 @@ class AuthRemoteDataSource {
     );
   }
 
+  /// Ask for a password-reset code.
+  ///
+  /// Succeeds whether or not the address has an account — the server answers
+  /// identically either way so this can't be used to test which emails are
+  /// registered. Don't "improve" this by surfacing a not-found.
+  Future<void> forgotPassword(String email) async {
+    final res = await _client.post(
+      '/auth/forgot-password',
+      body: {'email': email},
+    );
+    if (res.statusCode != 204) {
+      throw Exception(
+        _extractError(jsonDecode(res.body) as Map<String, dynamic>),
+      );
+    }
+  }
+
+  /// Confirm the reset code and set a new password. Returns nothing: the
+  /// server issues no session and has signed every device out, so the user
+  /// signs in again with the new password.
+  Future<void> resetPassword(
+    String email,
+    String otp,
+    String newPassword,
+  ) async {
+    final res = await _client.post(
+      '/auth/reset-password',
+      body: {'email': email, 'otp': otp, 'newPassword': newPassword},
+    );
+    if (res.statusCode != 204) {
+      throw Exception(
+        _extractError(jsonDecode(res.body) as Map<String, dynamic>),
+      );
+    }
+  }
+
   /// Re-send the signup verification code (rate-limited server-side).
   Future<void> resendOtp(String email) async {
     final res = await _client.post('/auth/resend-otp', body: {'email': email});

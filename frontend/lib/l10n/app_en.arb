@@ -3861,5 +3861,26 @@
   "otpLeaveStay": "Keep verifying",
   "otpLeaveDiscard": "Cancel sign-up",
   "otpCancelSignup": "Cancel sign-up",
-  "otpUnavailableTitle": "Verification unavailable"
+  "otpUnavailableTitle": "Verification unavailable",
+  "authForgotPassword": "Forgot password?",
+  "authResetTitle": "Reset your password",
+  "authResetSubtitle": "We'll email you a 6-digit code to confirm it's you.",
+  "authResetSendCode": "Send code",
+  "authResetSent": "If {email} has a ShopXY account, a 6-digit code is on its way. It expires in 15 minutes.",
+  "@authResetSent": {
+    "placeholders": {
+      "email": {
+        "type": "Object"
+      }
+    }
+  },
+  "authResetCodeLabel": "Verification code",
+  "authResetNewPassword": "New password",
+  "authResetConfirmPassword": "Confirm new password",
+  "authResetSubmit": "Reset password",
+  "authResetMismatch": "Those passwords don't match.",
+  "authResetSignOutWarning": "Resetting your password signs you out on every device.",
+  "authResetDone": "Password reset. Sign in with your new password.",
+  "authResetChangeEmail": "Use a different email",
+  "authResetInvalidCode": "Enter the 6-digit code"
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shopxy/core/auth/google_auth.dart';
+import 'package:shopxy/features/auth/presentation/pages/forgot_password_page.dart';
 import 'package:shopxy/features/auth/presentation/pages/recovery_pin_login_page.dart';
 import 'package:shopxy/features/auth/presentation/pages/register_page.dart';
 import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
@@ -61,6 +62,13 @@ class _LoginPageState extends State<LoginPage> {
     context,
     MaterialPageRoute(builder: (_) => const RegisterPage()),
   );
+
+  void _goToForgotPassword() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ForgotPasswordPage()),
+    );
+  }
 
   void _goToRecoveryPinLogin() => Navigator.push(
     context,
@@ -139,8 +147,15 @@ class _LoginPageState extends State<LoginPage> {
             loading: _isLoading,
             onPressed: _submit,
           ),
-          if (GoogleAuth.isConfigured) ...[
-            const SizedBox(height: AppSizes.lg),
+          const SizedBox(height: AppSizes.sm),
+          Center(
+            child: TextButton(
+              onPressed: _isLoading ? null : _goToForgotPassword,
+              style: TextButton.styleFrom(foregroundColor: AppColors.muted),
+              child: Text(l10n.authForgotPassword, textAlign: TextAlign.center),
+            ),
+          ),
+          if (GoogleAuth.isConfigured)
             Center(
               child: TextButton(
                 onPressed: _isLoading ? null : _goToRecoveryPinLogin,
@@ -151,7 +166,6 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
             ),
-          ],
           const SizedBox(height: AppSizes.lg),
           const _LegalFooter(),
         ],

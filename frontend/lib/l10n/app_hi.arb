@@ -2476,5 +2476,26 @@
   "otpLeaveStay": "सत्यापन जारी रखें",
   "otpLeaveDiscard": "साइन अप रद्द करें",
   "otpCancelSignup": "साइन अप रद्द करें",
-  "otpUnavailableTitle": "सत्यापन उपलब्ध नहीं"
+  "otpUnavailableTitle": "सत्यापन उपलब्ध नहीं",
+  "authForgotPassword": "पासवर्ड भूल गए?",
+  "authResetTitle": "अपना पासवर्ड रीसेट करें",
+  "authResetSubtitle": "यह पुष्टि करने के लिए कि यह आप ही हैं, हम आपको 6-अंकों का कोड ईमेल करेंगे।",
+  "authResetSendCode": "कोड भेजें",
+  "authResetSent": "यदि {email} पर ShopXY खाता है, तो 6-अंकों का कोड भेजा जा रहा है। यह 15 मिनट में समाप्त हो जाएगा।",
+  "@authResetSent": {
+    "placeholders": {
+      "email": {
+        "type": "Object"
+      }
+    }
+  },
+  "authResetCodeLabel": "सत्यापन कोड",
+  "authResetNewPassword": "नया पासवर्ड",
+  "authResetConfirmPassword": "नए पासवर्ड की पुष्टि करें",
+  "authResetSubmit": "पासवर्ड रीसेट करें",
+  "authResetMismatch": "ये पासवर्ड मेल नहीं खाते।",
+  "authResetSignOutWarning": "पासवर्ड रीसेट करने पर आप सभी डिवाइस से साइन आउट हो जाएंगे।",
+  "authResetDone": "पासवर्ड रीसेट हो गया। अपने नए पासवर्ड से साइन इन करें।",
+  "authResetChangeEmail": "दूसरा ईमेल इस्तेमाल करें",
+  "authResetInvalidCode": "6-अंकों का कोड दर्ज करें"
 }

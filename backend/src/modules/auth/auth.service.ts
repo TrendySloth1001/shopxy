@@ -38,6 +38,14 @@ import {
   resendCooldownRemaining,
   markResent,
 } from './emailVerification.js';
+import {
+  sendResetOtpEmail,
+  putPendingReset,
+  verifyResetOtp,
+  dropPendingReset,
+  resetCooldownRemaining,
+  markResetSent,
+} from './passwordReset.js';
 
 const REFRESH_EXPIRES_MS = 7 * 24 * 60 * 60 * 1000;
 // Device-remember credential lifetime (sliding — renewed on each use).
@@ -1114,6 +1122,124 @@ export class AuthService {
     }
 
     return { ok: true };
+  }
+
+  /**
+   * Start a password reset: email a 6-digit code.
+   *
+   * **Always reports success**, whether or not the address belongs to an
+   * account. Saying "no such user" here would turn this endpoint into a free
+   * account-enumeration oracle — anyone could test an email list against it.
+   * The caller therefore learns nothing; only a real mailbox owner sees the
+   * difference, which is the point.
+   *
+   * Silently no-ops (still reporting success) when the address is unknown,
+   * when a code was already sent inside the cooldown, or when the mail/Redis
+   * infra is down. Each case is logged so the absence of a code is
+   * diagnosable from the server side.
+   */
+  async requestPasswordReset(email: string) {
+    const norm = email.toLowerCase().trim();
+
+    if (!canVerifyEmail()) {
+      logger.error(
+        { event: 'pwreset_unavailable', redis: redisAvailable(), mailer: mailerEnabled() },
+        'Password reset requested but the OTP infra is unavailable',
+      );
+      return { ok: true as const };
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: norm },
+      select: { id: true, name: true, isActive: true },
+    });
+    if (!user || !user.isActive) {
+      logger.info({ event: 'pwreset_unknown_email' }, 'Password reset for an unknown/inactive address');
+      return { ok: true as const };
+    }
+
+    // Rate-limit: one code per cooldown window, so this can't be used to
+    // mail-bomb someone whose address an attacker happens to know.
+    if ((await resetCooldownRemaining(norm)) > 0) {
+      logger.info({ event: 'pwreset_cooldown', userId: user.id }, 'Password reset suppressed by cooldown');
+      return { ok: true as const };
+    }
+
+    const otp = generateOtp();
+    if (!(await sendResetOtpEmail(norm, user.name, otp))) {
+      logger.error({ event: 'pwreset_send_failed', userId: user.id }, 'Password reset email failed to send');
+      return { ok: true as const };
+    }
+    await putPendingReset(norm, otp);
+    await markResetSent(norm);
+    return { ok: true as const };
+  }
+
+  /**
+   * Finish a password reset: confirm the code, rewrite the password, and log
+   * every session out.
+   *
+   * The sweep is the whole point of a reset rather than a change — whoever
+   * prompted it may be locked out precisely because someone else is holding a
+   * live session. Mirrors `changePassword`'s transaction exactly (password +
+   * `tokensValidFrom` + refresh tokens + remembered devices), so an access
+   * token minted seconds ago is rejected inside its 15-minute TTL too.
+   *
+   * No session is issued here. The user signs in with the new password, which
+   * keeps this unauthenticated endpoint incapable of handing out credentials.
+   */
+  async resetPassword(email: string, otp: string, newPassword: string) {
+    const norm = email.toLowerCase().trim();
+
+    const check = await verifyResetOtp(norm, otp);
+    if (!check.ok) return { error: check.reason };
+
+    const user = await prisma.user.findUnique({
+      where: { email: norm },
+      select: { id: true, isActive: true },
+    });
+    // The account vanished (or was deactivated) between request and reset.
+    if (!user || !user.isActive) {
+      await dropPendingReset(norm);
+      return { error: 'expired' as const };
+    }
+
+    if (await isPasswordBreached(newPassword)) {
+      // Deliberately NOT dropping the pending code: the code was correct and
+      // the only problem is the chosen password. Burning it here would force
+      // a whole new email for a typo-grade mistake.
+      return { error: 'password_breached' as const };
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+    const stamp = new Date();
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: user.id },
+        data: { passwordHash, tokensValidFrom: stamp },
+      }),
+      prisma.refreshToken.deleteMany({ where: { userId: user.id } }),
+      prisma.rememberToken.deleteMany({ where: { userId: user.id } }),
+    ]);
+    bumpTokensValidFromCache(user.id, stamp);
+    // Only now is the code spent — see `verifyResetOtp`.
+    await dropPendingReset(norm);
+
+    try {
+      await notificationsService.create({
+        userId: user.id,
+        kind: 'SECURITY',
+        title: 'Password reset',
+        body: "Your password was reset and every device was signed out. If this wasn't you, contact support immediately.",
+      });
+    } catch (err) {
+      logger.warn(
+        { event: 'pwreset_notification_failed', userId: user.id, err },
+        'Failed to write password-reset notification',
+      );
+    }
+
+    return { ok: true as const };
   }
 
   /// DPDP §11 right-to-access: build a single JSON blob containing

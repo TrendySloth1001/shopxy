@@ -505,6 +505,7 @@ class AuthField extends StatefulWidget {
     this.helper,
     this.validator,
     this.onSubmitted,
+    this.enabled = true,
   });
 
   final String label;
@@ -518,6 +519,10 @@ class AuthField extends StatefulWidget {
   final String? helper;
   final String? Function(String?)? validator;
   final ValueChanged<String>? onSubmitted;
+
+  /// Greys the field out and blocks editing. Used where a value has been
+  /// committed to mid-flow (e.g. the address a reset code was mailed to).
+  final bool enabled;
 
   @override
   State<AuthField> createState() => _AuthFieldState();
@@ -575,6 +580,7 @@ class _AuthFieldState extends State<AuthField> {
           textCapitalization: widget.textCapitalization,
           validator: widget.validator,
           onFieldSubmitted: widget.onSubmitted,
+          enabled: widget.enabled,
           decoration: InputDecoration(
             helperText: widget.helper,
             helperMaxLines: 2,

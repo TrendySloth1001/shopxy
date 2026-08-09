@@ -13714,6 +13714,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Verification unavailable'**
   String get otpUnavailableTitle;
+
+  /// No description provided for @authForgotPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot password?'**
+  String get authForgotPassword;
+
+  /// No description provided for @authResetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset your password'**
+  String get authResetTitle;
+
+  /// No description provided for @authResetSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll email you a 6-digit code to confirm it\'s you.'**
+  String get authResetSubtitle;
+
+  /// No description provided for @authResetSendCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Send code'**
+  String get authResetSendCode;
+
+  /// No description provided for @authResetSent.
+  ///
+  /// In en, this message translates to:
+  /// **'If {email} has a ShopXY account, a 6-digit code is on its way. It expires in 15 minutes.'**
+  String authResetSent(Object email);
+
+  /// No description provided for @authResetCodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification code'**
+  String get authResetCodeLabel;
+
+  /// No description provided for @authResetNewPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'New password'**
+  String get authResetNewPassword;
+
+  /// No description provided for @authResetConfirmPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm new password'**
+  String get authResetConfirmPassword;
+
+  /// No description provided for @authResetSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset password'**
+  String get authResetSubmit;
+
+  /// No description provided for @authResetMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Those passwords don\'t match.'**
+  String get authResetMismatch;
+
+  /// No description provided for @authResetSignOutWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Resetting your password signs you out on every device.'**
+  String get authResetSignOutWarning;
+
+  /// No description provided for @authResetDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Password reset. Sign in with your new password.'**
+  String get authResetDone;
+
+  /// No description provided for @authResetChangeEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a different email'**
+  String get authResetChangeEmail;
+
+  /// No description provided for @authResetInvalidCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the 6-digit code'**
+  String get authResetInvalidCode;
 }
 
 class _AppLocalizationsDelegate

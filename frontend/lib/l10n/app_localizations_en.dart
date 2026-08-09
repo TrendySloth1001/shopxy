@@ -7510,4 +7510,50 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get otpUnavailableTitle => 'Verification unavailable';
+
+  @override
+  String get authForgotPassword => 'Forgot password?';
+
+  @override
+  String get authResetTitle => 'Reset your password';
+
+  @override
+  String get authResetSubtitle =>
+      'We\'ll email you a 6-digit code to confirm it\'s you.';
+
+  @override
+  String get authResetSendCode => 'Send code';
+
+  @override
+  String authResetSent(Object email) {
+    return 'If $email has a ShopXY account, a 6-digit code is on its way. It expires in 15 minutes.';
+  }
+
+  @override
+  String get authResetCodeLabel => 'Verification code';
+
+  @override
+  String get authResetNewPassword => 'New password';
+
+  @override
+  String get authResetConfirmPassword => 'Confirm new password';
+
+  @override
+  String get authResetSubmit => 'Reset password';
+
+  @override
+  String get authResetMismatch => 'Those passwords don\'t match.';
+
+  @override
+  String get authResetSignOutWarning =>
+      'Resetting your password signs you out on every device.';
+
+  @override
+  String get authResetDone => 'Password reset. Sign in with your new password.';
+
+  @override
+  String get authResetChangeEmail => 'Use a different email';
+
+  @override
+  String get authResetInvalidCode => 'Enter the 6-digit code';
 }

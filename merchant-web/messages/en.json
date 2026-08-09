@@ -2051,12 +2051,14 @@
       "usePinInstead": "Trouble with Google? Sign in with your recovery PIN",
       "legalConsent": "By signing in you agree to our <terms>Terms</terms> and acknowledge our <privacy>Privacy Policy</privacy>. We use a strictly-necessary session cookie to keep you signed in.",
       "troubleSigningIn": "Trouble signing in? <support>Contact support</support>",
-      "complianceLink": "Compliance, laws & formulas"
+      "complianceLink": "Compliance, laws & formulas",
+      "forgotPassword": "Forgot password?"
     },
     "notice": {
       "passwordChanged": "Password changed. Please sign in again.",
       "signedOutEverywhere": "Signed out of all devices.",
-      "accountDeleted": "Your account has been deleted."
+      "accountDeleted": "Your account has been deleted.",
+      "passwordReset": "Password reset. Sign in with your new password."
     },
     "register": {
       "title": "Create your account",
@@ -2254,6 +2256,26 @@
       "leaveStay": "Keep verifying",
       "leaveDiscard": "Cancel sign-up",
       "cancelSignup": "Cancel sign-up"
+    },
+    "forgot": {
+      "title": "Reset your password",
+      "subtitle": "We'll email you a 6-digit code to confirm it's you.",
+      "footerPrompt": "Remembered it?",
+      "footerCta": "Sign in",
+      "emailLabel": "Email address",
+      "sendCode": "Send code",
+      "sent": "If {email} has a ShopXY account, a 6-digit code is on its way. It expires in 15 minutes.",
+      "codeLabel": "Verification code",
+      "newPasswordLabel": "New password",
+      "confirmLabel": "Confirm new password",
+      "submit": "Reset password",
+      "mismatch": "Those passwords don't match.",
+      "resend": "Resend code",
+      "resendIn": "Resend in {seconds}s",
+      "noCode": "Didn't get the code?",
+      "changeEmail": "Use a different email",
+      "signOutWarning": "Resetting your password signs you out on every device.",
+      "failed": "Could not reset your password."
     }
   },
   "legal": {

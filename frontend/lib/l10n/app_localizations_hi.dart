@@ -7514,4 +7514,51 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get otpUnavailableTitle => 'सत्यापन उपलब्ध नहीं';
+
+  @override
+  String get authForgotPassword => 'पासवर्ड भूल गए?';
+
+  @override
+  String get authResetTitle => 'अपना पासवर्ड रीसेट करें';
+
+  @override
+  String get authResetSubtitle =>
+      'यह पुष्टि करने के लिए कि यह आप ही हैं, हम आपको 6-अंकों का कोड ईमेल करेंगे।';
+
+  @override
+  String get authResetSendCode => 'कोड भेजें';
+
+  @override
+  String authResetSent(Object email) {
+    return 'यदि $email पर ShopXY खाता है, तो 6-अंकों का कोड भेजा जा रहा है। यह 15 मिनट में समाप्त हो जाएगा।';
+  }
+
+  @override
+  String get authResetCodeLabel => 'सत्यापन कोड';
+
+  @override
+  String get authResetNewPassword => 'नया पासवर्ड';
+
+  @override
+  String get authResetConfirmPassword => 'नए पासवर्ड की पुष्टि करें';
+
+  @override
+  String get authResetSubmit => 'पासवर्ड रीसेट करें';
+
+  @override
+  String get authResetMismatch => 'ये पासवर्ड मेल नहीं खाते।';
+
+  @override
+  String get authResetSignOutWarning =>
+      'पासवर्ड रीसेट करने पर आप सभी डिवाइस से साइन आउट हो जाएंगे।';
+
+  @override
+  String get authResetDone =>
+      'पासवर्ड रीसेट हो गया। अपने नए पासवर्ड से साइन इन करें।';
+
+  @override
+  String get authResetChangeEmail => 'दूसरा ईमेल इस्तेमाल करें';
+
+  @override
+  String get authResetInvalidCode => '6-अंकों का कोड दर्ज करें';
 }

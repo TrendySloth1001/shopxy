@@ -5,6 +5,8 @@ import {
   register,
   verifyEmail,
   resendOtp,
+  forgotPassword,
+  resetPassword,
   login,
   googleAuth,
   setRecoveryPin,
@@ -40,6 +42,10 @@ router.post('/register', asyncHandler(register));
 router.post('/verify-email', asyncHandler(verifyEmail));
 router.post('/resend-otp', asyncHandler(resendOtp));
 router.post('/login', asyncHandler(login));
+// Public by necessity — someone who can't sign in can't authenticate first.
+// Enumeration-safe: forgot-password always 204s. See the controller.
+router.post('/forgot-password', asyncHandler(forgotPassword));
+router.post('/reset-password', asyncHandler(resetPassword));
 router.post('/google', asyncHandler(googleAuth));
 router.post('/recovery-pin/login', asyncHandler(recoveryPinLogin));
 router.post('/refresh', asyncHandler(refresh));

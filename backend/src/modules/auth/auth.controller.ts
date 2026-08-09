@@ -628,6 +628,70 @@ export async function changePassword(req: Request, res: Response) {
   res.status(204).end();
 }
 
+// ── Forgotten password (email OTP) ────────────────────────────────────
+
+const forgotPasswordSchema = z.object({
+  email: z.string().trim().email(),
+});
+
+/**
+ * POST /auth/forgot-password — email a reset code.
+ *
+ * Always 204, even for an address with no account. Any observable difference
+ * would make this an account-enumeration oracle; the honest answer ("we sent
+ * a code if that address has an account") is what the client shows.
+ */
+export async function forgotPassword(req: Request, res: Response) {
+  const parsed = forgotPasswordSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten() });
+    return;
+  }
+  await authService.requestPasswordReset(parsed.data.email);
+  res.status(204).end();
+}
+
+const resetPasswordSchema = z.object({
+  email: z.string().trim().email(),
+  otp: z.string().trim().regex(/^\d{6}$/, 'Enter the 6-digit code'),
+  // Same policy as register/change-password — single-sourced above.
+  newPassword: passwordSchema,
+});
+
+/// Friendly copy per failure reason. The sentinels stay machine-readable in
+/// `error`; `message` is what a person should be shown.
+const RESET_FAILURE_COPY: Record<string, string> = {
+  expired: 'That code has expired. Request a new one.',
+  invalid: 'That code is incorrect. Try again.',
+  too_many: 'Too many incorrect codes. Request a new one.',
+};
+
+/// POST /auth/reset-password — confirm the code and set a new password.
+export async function resetPassword(req: Request, res: Response) {
+  const parsed = resetPasswordSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten() });
+    return;
+  }
+  const result = await authService.resetPassword(
+    parsed.data.email,
+    parsed.data.otp,
+    parsed.data.newPassword,
+  );
+  if ('error' in result) {
+    if (handlePasswordBreached(res, result.error)) return;
+    const reason = result.error ?? 'invalid';
+    res.status(401).json({
+      error: reason,
+      message: RESET_FAILURE_COPY[reason] ?? 'Could not reset your password.',
+    });
+    return;
+  }
+  // 204, deliberately: no session is issued. The user signs in with the new
+  // password, so this unauthenticated endpoint never hands out credentials.
+  res.status(204).end();
+}
+
 // ── Two-factor auth (TOTP) ────────────────────────────────────────────
 
 const twoFactorCodeSchema = z.object({
