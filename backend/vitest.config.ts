@@ -7,6 +7,12 @@ export default defineConfig({
     // themselves so they're safe to run against the dev DB. If you wire
     // up a dedicated test DB later, override DATABASE_URL via .env.test.
     include: ['tests/**/*.test.ts'],
+    // Signup requires an emailed OTP, and CI has neither Redis nor a mail
+    // transport. Tests that exercise registration opt out here; the flag is
+    // refused when NODE_ENV=production, so it cannot weaken a real
+    // deployment (see `unverifiedSignupAllowed` in auth.service.ts). The
+    // suite that covers the gate itself sets its own env per-test.
+    env: { ALLOW_UNVERIFIED_SIGNUP: 'true' },
     globals: false,
     pool: 'forks',
     poolOptions: {

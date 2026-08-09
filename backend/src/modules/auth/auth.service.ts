@@ -23,6 +23,10 @@ import { revokeSession } from '../../shared/sessionRevocation.js';
 import { totpService } from './totp.service.js';
 import { verifyGoogleIdToken } from './googleAuth.js';
 import { maskIp, type DeviceContext } from './deviceContext.js';
+// Imported only to say WHICH half of the OTP gate is down when signup is
+// blocked — "verification unavailable" is useless in a log without it.
+import { redisAvailable } from '../../infra/redis.js';
+import { mailerEnabled } from '../../infra/mailer.js';
 import {
   canVerifyEmail,
   generateOtp,
@@ -122,6 +126,24 @@ async function issueSession(
 }
 
 const MAX_ACTIVE_REFRESH_TOKENS_PER_USER = 5;
+
+/**
+ * Development escape hatch for the mandatory signup OTP.
+ *
+ * Local dev and the test suite usually have neither Redis nor a mail
+ * transport, and blocking every signup there would make the app unusable
+ * offline. Opting out is explicit — you have to set the flag — and it is
+ * **refused outright in production**, so the guarantee that a password
+ * account cannot exist unverified can't be weakened by a stray env var on a
+ * real deployment. Prefer configuring SMTP locally (see `infra/mailer.ts`)
+ * over setting this.
+ */
+function unverifiedSignupAllowed(): boolean {
+  return (
+    process.env.ALLOW_UNVERIFIED_SIGNUP === 'true' &&
+    process.env.NODE_ENV !== 'production'
+  );
+}
 
 /// SHA-256 hex of a refresh token. We persist only this digest, never
 /// the raw JWT, so a read-only DB leak can't be replayed as a live
@@ -247,20 +269,40 @@ export class AuthService {
     const role: Role = data.role === 'OWNER' ? 'OWNER' : 'CUSTOMER';
     const shopName = (data.shopName ?? '').trim() || undefined;
 
-    // Email-OTP gate. Hold the signup + code in Redis and email it; the User
-    // row is minted only on verify. Fall back to direct creation if the OTP
-    // infra is unavailable (never block signups on an outage).
-    if (canVerifyEmail()) {
-      const otp = generateOtp();
-      const sent = await sendOtpEmail(email, name, otp);
-      if (sent) {
-        await putPending({ name, email, passwordHash, role, shopName }, otp);
-        return { pending: true as const, email };
+    // Email-OTP gate — MANDATORY for password signups. The signup is held in
+    // Redis and the User row is minted only once the code is confirmed, so an
+    // unverified password account cannot exist.
+    //
+    // There is deliberately NO fallback to direct creation. It used to fall
+    // through to `_finalizeRegistration` when the OTP infra was unavailable,
+    // which meant a missing mail transport silently downgraded the guarantee
+    // to nothing — and did so without an error anyone would notice. An outage
+    // now blocks signup loudly instead.
+    //
+    // Google SSO does not come through here (see `googleAuth`): Google has
+    // already verified the address, so there is nothing for an OTP to add.
+    if (!canVerifyEmail()) {
+      if (unverifiedSignupAllowed()) {
+        logger.warn(
+          { event: 'otp_bypassed_dev', email },
+          'ALLOW_UNVERIFIED_SIGNUP is on — creating the account without email verification',
+        );
+        return this._finalizeRegistration({ email, name, passwordHash, role, shopName }, device);
       }
-      logger.warn({ event: 'otp_send_failed', email }, 'OTP email failed — creating account directly');
+      logger.error(
+        { event: 'otp_unavailable', redis: redisAvailable(), mailer: mailerEnabled() },
+        'Signup blocked: email verification is unavailable',
+      );
+      return { error: 'verification_unavailable' as const };
     }
 
-    return this._finalizeRegistration({ email, name, passwordHash, role, shopName }, device);
+    const otp = generateOtp();
+    if (!(await sendOtpEmail(email, name, otp))) {
+      logger.error({ event: 'otp_send_failed', email }, 'Signup blocked: OTP email failed to send');
+      return { error: 'verification_unavailable' as const };
+    }
+    await putPending({ name, email, passwordHash, role, shopName }, otp);
+    return { pending: true as const, email };
   }
 
   /** Confirm the emailed OTP → create the account + sign in. */

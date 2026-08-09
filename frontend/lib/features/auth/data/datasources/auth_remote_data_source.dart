@@ -154,7 +154,8 @@ class AuthRemoteDataSource {
     if (res.statusCode != 201) {
       throw Exception(_extractError(body));
     }
-    // Fallback path (OTP infra down): signed in directly.
+    // Direct sign-in. Only reachable against a dev backend running with
+    // ALLOW_UNVERIFIED_SIGNUP — production always returns `pending` or 503.
     return (
       pending: false,
       email: email,
@@ -393,6 +394,11 @@ class AuthRemoteDataSource {
   }
 
   String _extractError(Map<String, dynamic> body) {
+    // Some errors ship a machine-readable sentinel in `error` plus human copy
+    // in `message` (e.g. `verification_unavailable`). Prefer the copy —
+    // showing a merchant a snake_case sentinel is worse than useless.
+    final message = body['message'];
+    if (message is String && message.isNotEmpty) return message;
     final err = body['error'];
     if (err is String) return err;
     if (err is Map) {

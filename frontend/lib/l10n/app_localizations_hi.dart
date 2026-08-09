@@ -7494,4 +7494,24 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get invoicesPlaceOfSupplyReset => 'रीसेट';
+
+  @override
+  String get otpLeaveTitle => 'जारी रखने के लिए अपना ईमेल सत्यापित करें';
+
+  @override
+  String otpLeaveBody(Object email) {
+    return 'जब तक आप $email पर भेजा गया कोड दर्ज नहीं करते, आपका खाता नहीं बनेगा। अभी छोड़ने पर कुछ भी सहेजा नहीं जाएगा — आपको दोबारा साइन अप करना होगा।';
+  }
+
+  @override
+  String get otpLeaveStay => 'सत्यापन जारी रखें';
+
+  @override
+  String get otpLeaveDiscard => 'साइन अप रद्द करें';
+
+  @override
+  String get otpCancelSignup => 'साइन अप रद्द करें';
+
+  @override
+  String get otpUnavailableTitle => 'सत्यापन उपलब्ध नहीं';
 }

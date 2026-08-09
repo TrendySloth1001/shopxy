@@ -178,16 +178,30 @@ export async function register(req: Request, res: Response) {
   const result = await authService.register(registerData, deviceFromReq(req));
   if ('error' in result) {
     if (handlePasswordBreached(res, result.error)) return;
+    // The OTP infra is down. 503, not 409: nothing is wrong with what the
+    // caller sent, and the distinct status is what lets the clients say
+    // "try again shortly" instead of "email already registered".
+    if (result.error === 'verification_unavailable') {
+      res.status(503).json({
+        error: 'verification_unavailable',
+        message:
+          "We couldn't send your verification code just now. Please try again in a few minutes.",
+      });
+      return;
+    }
     res.status(409).json({ error: result.error });
     return;
   }
-  // OTP gate: a verification code was emailed and no account exists yet — the
-  // client should collect the code and POST /auth/verify-email.
+  // The normal path: a code was emailed and NO account exists yet. The client
+  // collects the code and POSTs /auth/verify-email, which is where the account
+  // is actually created and the login recorded.
   if ('pending' in result) {
     res.status(200).json({ pending: true, email: result.email });
     return;
   }
-  // Fallback path (OTP infra down): the account was created directly.
+  // Only reachable via ALLOW_UNVERIFIED_SIGNUP, which is refused in
+  // production — see `unverifiedSignupAllowed`. On a real deployment a
+  // password signup can only ever come back `pending` or an error.
   if (result.user?.id) {
     void loginAlertsService.recordLogin({
       userId: result.user.id,

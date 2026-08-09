@@ -13678,6 +13678,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reset'**
   String get invoicesPlaceOfSupplyReset;
+
+  /// No description provided for @otpLeaveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your email to continue'**
+  String get otpLeaveTitle;
+
+  /// No description provided for @otpLeaveBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account isn\'t created until you enter the code we emailed to {email}. Leave now and nothing is saved — you\'d have to sign up again.'**
+  String otpLeaveBody(Object email);
+
+  /// No description provided for @otpLeaveStay.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep verifying'**
+  String get otpLeaveStay;
+
+  /// No description provided for @otpLeaveDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel sign-up'**
+  String get otpLeaveDiscard;
+
+  /// No description provided for @otpCancelSignup.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel sign-up'**
+  String get otpCancelSignup;
+
+  /// No description provided for @otpUnavailableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification unavailable'**
+  String get otpUnavailableTitle;
 }
 
 class _AppLocalizationsDelegate

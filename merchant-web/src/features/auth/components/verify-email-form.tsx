@@ -13,10 +13,21 @@ import { useTranslations } from "next-intl";
 import { useAuth } from "../auth-context";
 import { SubmitButton } from "./submit-button";
 import { AuthErrorBanner } from "./auth-shell";
+import { Modal, ModalActions } from "@/shared/ui/modal";
 
 const LENGTH = 6;
 const COOLDOWN = 30;
 
+/**
+ * Signup OTP entry. **Deliberately hard to leave by accident**: the account
+ * does not exist until the code is confirmed, so wandering off mid-flow
+ * silently discards the signup. Back-navigation and tab-close are both
+ * guarded, and there is exactly one explicit way out.
+ *
+ * The browser can't be prevented from navigating, only asked — so this is a
+ * confirmation, not a cage. That's the honest ceiling on the web; the Flutter
+ * app can and does intercept its back gesture outright.
+ */
 export function VerifyEmailForm({ email }: { email: string }) {
   const { verifyEmail, resendOtp } = useAuth();
   const router = useRouter();
@@ -26,7 +37,11 @@ export function VerifyEmailForm({ email }: { email: string }) {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [cooldown, setCooldown] = useState(COOLDOWN);
+  const [confirmLeave, setConfirmLeave] = useState(false);
   const inputs = useRef<Array<HTMLInputElement | null>>([]);
+  /// Set once the code is accepted, so the guards below stop firing while we
+  /// navigate on to onboarding — otherwise success itself trips the warning.
+  const done = useRef(false);
 
   const code = digits.join("");
 
@@ -45,6 +60,31 @@ export function VerifyEmailForm({ email }: { email: string }) {
     return () => clearInterval(id);
   }, [cooldown]);
 
+  // Refresh / tab-close warning. The browser shows its own generic copy; we
+  // only get to say that there IS unsaved work.
+  useEffect(() => {
+    function onBeforeUnload(e: BeforeUnloadEvent) {
+      if (done.current) return;
+      e.preventDefault();
+    }
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, []);
+
+  // Back-button guard. Push a throwaway history entry so the first Back lands
+  // here instead of leaving; on popstate, re-push it and ask. Declining keeps
+  // them on the page with history intact.
+  useEffect(() => {
+    window.history.pushState(null, "", window.location.href);
+    function onPopState() {
+      if (done.current) return;
+      window.history.pushState(null, "", window.location.href);
+      setConfirmLeave(true);
+    }
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
   async function submit(codeArg?: string, e?: FormEvent) {
     e?.preventDefault();
     const c = codeArg ?? code;
@@ -53,6 +93,7 @@ export function VerifyEmailForm({ email }: { email: string }) {
     setError(null);
     try {
       await verifyEmail(email, c);
+      done.current = true;
       router.replace("/onboarding");
     } catch (err) {
       setError(err instanceof Error ? err.message : t("verify.failed"));
@@ -136,6 +177,34 @@ export function VerifyEmailForm({ email }: { email: string }) {
       <SubmitButton loading={submitting} pill disabled={code.length !== LENGTH}>
         {t("verify.submit")}
       </SubmitButton>
+
+      {/* The one explicit way out. A screen with no exit at all is worse than
+          one whose exit costs a confirmation. */}
+      <button
+        type="button"
+        onClick={() => setConfirmLeave(true)}
+        disabled={submitting}
+        className="mx-auto text-body-md text-muted underline-offset-2 transition-colors hover:text-ink hover:underline focus-visible:outline-none focus-visible:underline disabled:text-disabled"
+      >
+        {t("verify.cancelSignup")}
+      </button>
+
+      {confirmLeave ? (
+        <Modal title={t("verify.leaveTitle")} onClose={() => setConfirmLeave(false)}>
+          <p className="text-body-md text-muted">{t("verify.leaveBody")}</p>
+          <ModalActions
+            busy={false}
+            danger
+            confirmLabel={t("verify.leaveDiscard")}
+            cancelLabel={t("verify.leaveStay")}
+            onCancel={() => setConfirmLeave(false)}
+            onConfirm={() => {
+              done.current = true;
+              router.replace("/login");
+            }}
+          />
+        </Modal>
+      ) : null}
     </form>
   );
 }

@@ -35,6 +35,21 @@ export async function POST(req: Request) {
     }),
   });
   if (!res.ok) {
+    // 503 = the OTP infra is down, so the backend refused to create an
+    // unverified account. Its body carries friendly copy in `message`;
+    // `extractError` would surface the raw `verification_unavailable`
+    // sentinel instead, which means nothing to a merchant.
+    if (res.status === 503) {
+      const body = (await res.json().catch(() => null)) as { message?: string } | null;
+      return NextResponse.json(
+        {
+          error:
+            body?.message ??
+            "We couldn't send your verification code just now. Please try again in a few minutes.",
+        },
+        { status: 503 },
+      );
+    }
     return NextResponse.json(
       { error: await extractError(res, "Could not create your account.") },
       { status: res.status === 409 ? 409 : 400 },
@@ -56,7 +71,8 @@ export async function POST(req: Request) {
     );
   }
 
-  // Fallback path (OTP infra down): the backend signed the user in directly.
+  // Direct sign-in. Only reachable on a dev backend running with
+  // ALLOW_UNVERIFIED_SIGNUP — production always returns `pending` or 503.
   const result = authResultSchema.safeParse(payload);
   if (!result.success) {
     return NextResponse.json(

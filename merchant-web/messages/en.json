@@ -2066,7 +2066,8 @@
       "submit": "Create account",
       "failed": "Could not create your account.",
       "acceptTerms": "I accept the <link>Terms of Service</link>",
-      "acceptPrivacy": "I accept the <link>Privacy Policy</link>"
+      "acceptPrivacy": "I accept the <link>Privacy Policy</link>",
+      "verificationUnavailable": "We couldn't send your verification code just now. Please try again in a few minutes."
     },
     "invite": {
       "title": "Join the team",
@@ -2247,7 +2248,12 @@
       "resent": "A new code is on its way.",
       "footerPrompt": "Wrong email?",
       "footerCta": "Start over",
-      "failed": "That code didn't work."
+      "failed": "That code didn't work.",
+      "leaveTitle": "Verify your email to continue",
+      "leaveBody": "Your account isn't created until you enter the code we emailed you. Leave now and nothing is saved — you'd have to sign up again.",
+      "leaveStay": "Keep verifying",
+      "leaveDiscard": "Cancel sign-up",
+      "cancelSignup": "Cancel sign-up"
     }
   },
   "legal": {

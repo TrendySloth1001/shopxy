@@ -75,6 +75,12 @@ export function ModalActions({
   busy,
   disabled,
   confirmLabel,
+  /**
+   * Overrides the default "Cancel". Worth setting when the CONFIRM action is
+   * itself a cancellation ("Cancel sign-up") — two buttons both reading
+   * "Cancel" but meaning opposite things is a trap.
+   */
+  cancelLabel,
   onCancel,
   onConfirm,
   danger,
@@ -82,6 +88,7 @@ export function ModalActions({
   busy: boolean;
   disabled?: boolean;
   confirmLabel: string;
+  cancelLabel?: string;
   onCancel: () => void;
   onConfirm: () => void;
   danger?: boolean;
@@ -95,7 +102,7 @@ export function ModalActions({
         disabled={busy}
         className="inline-flex h-10 items-center rounded-button px-md text-label-md text-muted transition-colors hover:text-ink disabled:text-disabled"
       >
-        {t("cancel")}
+        {cancelLabel ?? t("cancel")}
       </button>
       <button
         type="button"

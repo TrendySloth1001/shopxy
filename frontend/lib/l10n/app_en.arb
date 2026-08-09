@@ -3848,5 +3848,18 @@
   "quotationsFilterCancelled": "Cancelled",
   "invoicesPlaceOfSupplySetManually": "Set by you — the customer gave no GSTIN or address",
   "invoicesPlaceOfSupplyChange": "Change",
-  "invoicesPlaceOfSupplyReset": "Reset"
+  "invoicesPlaceOfSupplyReset": "Reset",
+  "otpLeaveTitle": "Verify your email to continue",
+  "otpLeaveBody": "Your account isn't created until you enter the code we emailed to {email}. Leave now and nothing is saved — you'd have to sign up again.",
+  "@otpLeaveBody": {
+    "placeholders": {
+      "email": {
+        "type": "Object"
+      }
+    }
+  },
+  "otpLeaveStay": "Keep verifying",
+  "otpLeaveDiscard": "Cancel sign-up",
+  "otpCancelSignup": "Cancel sign-up",
+  "otpUnavailableTitle": "Verification unavailable"
 }

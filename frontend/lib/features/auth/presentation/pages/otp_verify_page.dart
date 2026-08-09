@@ -9,11 +9,23 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
+import 'package:shopxy/shared/widgets/app_dialog.dart';
 
 /// Email-OTP verification for first-time signup. Uses an **in-app numeric
 /// keypad** (not the native keyboard) driving six code cells, then confirms via
 /// [AuthProvider.verifyEmail]. On success the auth gate has rebuilt underneath
 /// (→ onboarding), so we pop back to it.
+///
+/// **This screen cannot be dismissed.** There are exactly two ways out —
+/// enter the code, or explicitly cancel the sign-up — because a half-finished
+/// signup that the merchant can back out of leaves them on the login screen
+/// with no account and no explanation. The system back gesture is intercepted
+/// rather than blocked outright, so cancelling stays possible; it just has to
+/// be deliberate.
+///
+/// Nothing is lost by cancelling: the account does not exist yet. The pending
+/// signup lives only in Redis (15-minute TTL) until the code is confirmed,
+/// which is what makes "no unverified account can exist" true server-side.
 class OtpVerifyPage extends StatefulWidget {
   const OtpVerifyPage({super.key, required this.email});
 
@@ -106,76 +118,112 @@ class _OtpVerifyPageState extends State<OtpVerifyPage> {
     }
   }
 
+  /// Abandon the signup, on purpose. Nothing to clean up server-side — the
+  /// pending record expires on its own — so this is purely "are you sure?".
+  Future<void> _confirmLeave() async {
+    if (_isLoading) return;
+    final l10n = AppLocalizations.of(context);
+    final navigator = Navigator.of(context);
+    final leave = await AppConfirmDialog.show(
+      context,
+      title: l10n.otpLeaveTitle,
+      message: l10n.otpLeaveBody(widget.email),
+      confirmLabel: l10n.otpLeaveDiscard,
+      cancelLabel: l10n.otpLeaveStay,
+      danger: true,
+    );
+    if (leave && mounted) navigator.pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    return Scaffold(
-      backgroundColor: AppColors.canvas,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSizes.lg,
-                  AppSizes.xxl,
-                  AppSizes.lg,
-                  AppSizes.lg,
-                ),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 400),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          l10n.otpVerifyTitle,
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.headlineMedium?.copyWith(
-                            color: AppColors.black,
-                            fontWeight: FontWeight.w700,
+    return PopScope(
+      // The back gesture must not silently abandon the signup — intercept it
+      // and ask, same as the explicit Cancel action below.
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _confirmLeave();
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.canvas,
+        body: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSizes.lg,
+                    AppSizes.xxl,
+                    AppSizes.lg,
+                    AppSizes.lg,
+                  ),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 400),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            l10n.otpVerifyTitle,
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.headlineMedium?.copyWith(
+                              color: AppColors.black,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: AppSizes.sm),
-                        Text(
-                          l10n.otpVerifySubtitle(widget.email),
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: AppColors.muted,
-                            height: 1.4,
+                          const SizedBox(height: AppSizes.sm),
+                          Text(
+                            l10n.otpVerifySubtitle(widget.email),
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: AppColors.muted,
+                              height: 1.4,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: AppSizes.xxl),
-                        _OtpCells(code: _code, length: _length),
-                        const SizedBox(height: AppSizes.lg),
-                        if (_error != null) ...[
-                          AuthErrorBanner(message: _error!),
+                          const SizedBox(height: AppSizes.xxl),
+                          _OtpCells(code: _code, length: _length),
                           const SizedBox(height: AppSizes.lg),
+                          if (_error != null) ...[
+                            AuthErrorBanner(message: _error!),
+                            const SizedBox(height: AppSizes.lg),
+                          ],
+                          _ResendRow(
+                            prompt: l10n.otpNoCodePrompt,
+                            label: _resendIn > 0
+                                ? l10n.otpResendIn(_resendIn)
+                                : l10n.otpResend,
+                            enabled: _resendIn <= 0 && !_isLoading,
+                            onTap: _resend,
+                          ),
+                          const SizedBox(height: AppSizes.xl),
+                          AuthSubmitButton(
+                            label: l10n.otpVerifyCta,
+                            loading: _isLoading,
+                            onPressed: _code.length == _length ? _verify : null,
+                          ),
+                          const SizedBox(height: AppSizes.sm),
+                          // The only other way out. Quiet, but present — a
+                          // screen with no exit at all is worse than one whose
+                          // exit costs a confirmation.
+                          TextButton(
+                            onPressed: _isLoading ? null : _confirmLeave,
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.muted,
+                            ),
+                            child: Text(l10n.otpCancelSignup),
+                          ),
                         ],
-                        _ResendRow(
-                          prompt: l10n.otpNoCodePrompt,
-                          label: _resendIn > 0
-                              ? l10n.otpResendIn(_resendIn)
-                              : l10n.otpResend,
-                          enabled: _resendIn <= 0 && !_isLoading,
-                          onTap: _resend,
-                        ),
-                        const SizedBox(height: AppSizes.xl),
-                        AuthSubmitButton(
-                          label: l10n.otpVerifyCta,
-                          loading: _isLoading,
-                          onPressed: _code.length == _length ? _verify : null,
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-            // Our own keypad — no native keyboard.
-            _NumericKeypad(onDigit: _onDigit, onBackspace: _onBackspace),
-          ],
+              // Our own keypad — no native keyboard.
+              _NumericKeypad(onDigit: _onDigit, onBackspace: _onBackspace),
+            ],
+          ),
         ),
       ),
     );

@@ -7490,4 +7490,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get invoicesPlaceOfSupplyReset => 'Reset';
+
+  @override
+  String get otpLeaveTitle => 'Verify your email to continue';
+
+  @override
+  String otpLeaveBody(Object email) {
+    return 'Your account isn\'t created until you enter the code we emailed to $email. Leave now and nothing is saved — you\'d have to sign up again.';
+  }
+
+  @override
+  String get otpLeaveStay => 'Keep verifying';
+
+  @override
+  String get otpLeaveDiscard => 'Cancel sign-up';
+
+  @override
+  String get otpCancelSignup => 'Cancel sign-up';
+
+  @override
+  String get otpUnavailableTitle => 'Verification unavailable';
 }

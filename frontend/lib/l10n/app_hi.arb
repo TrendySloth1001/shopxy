@@ -2463,5 +2463,18 @@
   "quotationsFilterCancelled": "रद्द",
   "invoicesPlaceOfSupplySetManually": "आपके द्वारा तय — ग्राहक ने GSTIN या पता नहीं दिया",
   "invoicesPlaceOfSupplyChange": "बदलें",
-  "invoicesPlaceOfSupplyReset": "रीसेट"
+  "invoicesPlaceOfSupplyReset": "रीसेट",
+  "otpLeaveTitle": "जारी रखने के लिए अपना ईमेल सत्यापित करें",
+  "otpLeaveBody": "जब तक आप {email} पर भेजा गया कोड दर्ज नहीं करते, आपका खाता नहीं बनेगा। अभी छोड़ने पर कुछ भी सहेजा नहीं जाएगा — आपको दोबारा साइन अप करना होगा।",
+  "@otpLeaveBody": {
+    "placeholders": {
+      "email": {
+        "type": "Object"
+      }
+    }
+  },
+  "otpLeaveStay": "सत्यापन जारी रखें",
+  "otpLeaveDiscard": "साइन अप रद्द करें",
+  "otpCancelSignup": "साइन अप रद्द करें",
+  "otpUnavailableTitle": "सत्यापन उपलब्ध नहीं"
 }
