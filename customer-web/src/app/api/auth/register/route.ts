@@ -34,13 +34,40 @@ export async function POST(req: Request) {
     }),
   });
   if (!res.ok) {
+    // Pass the backend's wording through — `extractError` would surface the
+    // raw `verification_unavailable` sentinel.
+    if (res.status === 503) {
+      const body = (await res.json().catch(() => null)) as { message?: string } | null;
+      return NextResponse.json(
+        {
+          error:
+            body?.message ??
+            "We couldn't send your verification code just now. Please try again in a few minutes.",
+        },
+        { status: 503 },
+      );
+    }
     return NextResponse.json(
       { error: await extractError(res, "Could not create your account.") },
       { status: res.status === 409 ? 409 : 400 },
     );
   }
 
-  const result = authResultSchema.safeParse(await res.json());
+  const payload: unknown = await res.json();
+  // A code was emailed and no account exists yet — no cookies to set.
+  if (
+    payload &&
+    typeof payload === "object" &&
+    (payload as { pending?: unknown }).pending === true
+  ) {
+    const email = (payload as { email?: unknown }).email;
+    return NextResponse.json(
+      { pending: true, email: typeof email === "string" ? email : parsed.data.email },
+      { status: 200 },
+    );
+  }
+
+  const result = authResultSchema.safeParse(payload);
   if (!result.success) {
     return NextResponse.json(
       { error: "Unexpected response from the server." },

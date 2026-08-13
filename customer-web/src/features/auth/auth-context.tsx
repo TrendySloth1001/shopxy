@@ -21,13 +21,20 @@ export type RegisterPayload = {
   acceptedPrivacy: true;
 };
 
+export type RegisterOutcome =
+  | { pending: true; email: string }
+  | { pending: false };
+
 type Status = "loading" | "authed" | "guest";
 
 type AuthContextValue = {
   user: AuthUser | null;
   status: Status;
   login: (email: string, password: string) => Promise<void>;
-  register: (payload: RegisterPayload) => Promise<void>;
+  /** `{ pending: true }` normally — no account until {@link verifyEmail}. */
+  register: (payload: RegisterPayload) => Promise<RegisterOutcome>;
+  verifyEmail: (email: string, otp: string) => Promise<void>;
+  resendOtp: (email: string) => Promise<void>;
   logout: () => Promise<void>;
   /** Revoke every session (this device included). */
   logoutEverywhere: () => Promise<void>;
@@ -119,16 +126,42 @@ export function AuthProvider({
     setStatus("authed");
   }, []);
 
-  const register = useCallback(async (payload: RegisterPayload) => {
+  const register = useCallback(async (payload: RegisterPayload): Promise<RegisterOutcome> => {
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
     if (!res.ok) await throwApiError(res, "Could not create your account.");
+    const body = (await res.json()) as
+      | { pending: true; email: string }
+      | { user: AuthUser };
+    // No account yet — do NOT mark the session authed.
+    if ("pending" in body) return { pending: true, email: body.email };
+    setUser(body.user);
+    setStatus("authed");
+    return { pending: false };
+  }, []);
+
+  const verifyEmail = useCallback(async (email: string, otp: string) => {
+    const res = await fetch("/api/auth/verify-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, otp }),
+    });
+    if (!res.ok) await throwApiError(res, "That code didn't work.");
     const body = (await res.json()) as { user: AuthUser };
     setUser(body.user);
     setStatus("authed");
+  }, []);
+
+  const resendOtp = useCallback(async (email: string) => {
+    const res = await fetch("/api/auth/resend-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    if (!res.ok) await throwApiError(res, "Could not send a new code.");
   }, []);
 
   const logout = useCallback(async () => {
@@ -219,6 +252,8 @@ export function AuthProvider({
       status,
       login,
       register,
+      verifyEmail,
+      resendOtp,
       logout,
       logoutEverywhere,
       updateProfile,
@@ -234,6 +269,8 @@ export function AuthProvider({
       status,
       login,
       register,
+      verifyEmail,
+      resendOtp,
       logout,
       logoutEverywhere,
       updateProfile,

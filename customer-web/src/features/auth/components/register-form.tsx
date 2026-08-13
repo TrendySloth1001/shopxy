@@ -7,6 +7,7 @@ import { registerSchema } from "../schema";
 import { Field } from "./field";
 import { SubmitButton } from "./submit-button";
 import { AuthErrorBanner } from "./auth-shell";
+import { VerifyEmailForm } from "./verify-email-form";
 
 type FieldKey =
   | "name"
@@ -32,6 +33,8 @@ export function RegisterForm() {
   );
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // While set, the account does NOT exist yet.
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === "authed") router.replace("/");
@@ -64,13 +67,17 @@ export function RegisterForm() {
     setFieldErrors({});
     setSubmitting(true);
     try {
-      await register({
+      const outcome = await register({
         name: parsed.data.name,
         email: parsed.data.email,
         password: parsed.data.password,
         acceptedTerms: true,
         acceptedPrivacy: true,
       });
+      if (outcome.pending) {
+        setPendingEmail(outcome.email);
+        return;
+      }
       router.replace("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create your account.");
@@ -78,6 +85,8 @@ export function RegisterForm() {
       setSubmitting(false);
     }
   }
+
+  if (pendingEmail) return <VerifyEmailForm email={pendingEmail} />;
 
   const consentError = fieldErrors.acceptedTerms ?? fieldErrors.acceptedPrivacy;
 
