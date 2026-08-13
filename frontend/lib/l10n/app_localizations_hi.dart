@@ -879,10 +879,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get productsAddRow => 'पंक्ति जोड़ें';
 
   @override
-  String get productsBankOffersNote =>
-      'बैंक ऑफ़र प्लेटफ़ॉर्म-व्यापी हैं और केंद्रीय रूप से प्रबंधित होते हैं। यदि कोई प्लेटफ़ॉर्म ऑफ़र सक्रिय है तो ग्राहक इस उत्पाद के पृष्ठ पर HDFC / ICICI / SBI आदि देखेंगे।';
-
-  @override
   String get productsAddOffer => 'ऑफ़र जोड़ें';
 
   @override
@@ -5616,128 +5612,6 @@ class AppLocalizationsHi extends AppLocalizations {
       'category:slug | product:id | url:https://…';
 
   @override
-  String get adminBankOffersTitle => 'बैंक ऑफ़र';
-
-  @override
-  String get adminBankOfferNew => 'नया ऑफ़र';
-
-  @override
-  String get adminBankOffersEmpty =>
-      'अभी तक कोई बैंक ऑफ़र नहीं। पहला ऑफ़र बनाने के लिए \"नया ऑफ़र\" पर टैप करें।';
-
-  @override
-  String get adminBankOfferDeactivateTitle => 'ऑफ़र निष्क्रिय करें?';
-
-  @override
-  String get adminBankOfferDeactivateBody =>
-      'ग्राहकों को यह ऑफ़र किसी भी PDP पर नहीं दिखेगा। आप इसे बाद में इस पेज से फिर से सक्रिय कर सकते हैं।';
-
-  @override
-  String adminBankOfferPercentOff(Object value) {
-    return '$value% छूट';
-  }
-
-  @override
-  String adminBankOfferAmountOff(Object value) {
-    return '$value छूट';
-  }
-
-  @override
-  String adminBankOfferMinOrder(Object value) {
-    return 'न्यूनतम ऑर्डर $value';
-  }
-
-  @override
-  String adminBankOfferCap(Object value) {
-    return 'अधिकतम $value';
-  }
-
-  @override
-  String adminBankOfferValidRange(Object from, Object until) {
-    return 'मान्य $from – $until';
-  }
-
-  @override
-  String get adminBankOfferEditTitle => 'बैंक ऑफ़र संपादित करें';
-
-  @override
-  String get adminBankOfferNewTitle => 'नया बैंक ऑफ़र';
-
-  @override
-  String get adminBankOfferBankLabel => 'बैंक';
-
-  @override
-  String get adminBankOfferCardTypeLabel => 'कार्ड प्रकार';
-
-  @override
-  String get adminBankOfferTypeLabel => 'प्रकार';
-
-  @override
-  String get adminBankOfferTypePercent => 'प्रतिशत छूट';
-
-  @override
-  String get adminBankOfferTypeFlat => 'फ़्लैट ₹ छूट';
-
-  @override
-  String get adminBankOfferPercentField => '% छूट';
-
-  @override
-  String get adminBankOfferAmountField => '₹ छूट';
-
-  @override
-  String get adminBankOfferMaxDiscountLabel => 'अधिकतम छूट (₹) — % छूट की सीमा';
-
-  @override
-  String get adminBankOfferMinOrderLabel =>
-      'न्यूनतम ऑर्डर (₹) — पात्रता फ़िल्टर';
-
-  @override
-  String get adminBankOfferTermsLabel => 'शर्तें (वैकल्पिक)';
-
-  @override
-  String get adminBankOfferTermsHint =>
-      'जैसे, नो-कॉस्ट EMI पर मान्य नहीं। Apple उत्पाद शामिल नहीं।';
-
-  @override
-  String adminBankOfferFrom(Object date) {
-    return 'से  $date';
-  }
-
-  @override
-  String adminBankOfferUntil(Object date) {
-    return 'तक $date';
-  }
-
-  @override
-  String get adminBankOfferActiveSubtitle =>
-      'बंद होने पर, ऑफ़र किसी PDP पर कभी नहीं दिखता। इसका उपयोग ड्राफ़्ट रोकने या ऑफ़र को हटाए बिना जल्दी समाप्त करने के लिए करें।';
-
-  @override
-  String get adminBankOfferPdpPreview => 'PDP पूर्वावलोकन';
-
-  @override
-  String adminBankOfferPreviewCap(Object value) {
-    return ' ₹$value तक';
-  }
-
-  @override
-  String adminBankOfferPreviewPercent(
-    Object discount,
-    Object cap,
-    Object target,
-  ) {
-    return '$target पर $discount% छूट$cap';
-  }
-
-  @override
-  String adminBankOfferPreviewFlat(Object discount, Object target) {
-    return '$target पर ₹$discount छूट';
-  }
-
-  @override
-  String get adminBankOfferCreate => 'ऑफ़र बनाएं';
-
-  @override
   String get adminBannersTitle => 'बैनर प्रबंधक';
 
   @override
@@ -6543,9 +6417,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get navCollections => 'कलेक्शन';
 
   @override
-  String get navBankOffers => 'बैंक ऑफ़र';
-
-  @override
   String get navShopVerification => 'दुकान सत्यापन';
 
   @override
@@ -7160,9 +7031,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get menuDescCollections => 'क्यूरेटेड उत्पाद संग्रह';
-
-  @override
-  String get menuDescBankOffers => 'कार्ड और बैंक छूट';
 
   @override
   String get menuDescShopVerification => 'दुकानों की समीक्षा और सत्यापन';

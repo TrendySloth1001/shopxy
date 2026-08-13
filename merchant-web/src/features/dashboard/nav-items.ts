@@ -21,7 +21,6 @@ import {
   CreditCard,
   Calculator,
   Network,
-  Landmark,
   Percent,
   ShieldCheck,
   UserCog,
@@ -103,7 +102,6 @@ export const NAV_GROUPS: NavGroup[] = [
     adminOnly: true,
     items: [
       { key: "admin-taxonomy", label: "Category taxonomy", icon: Network },
-      { key: "admin-bank-offers", label: "Bank offers", icon: Landmark },
       { key: "admin-shops", label: "Shop verification", icon: ShieldCheck },
     ],
   },

@@ -877,10 +877,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get productsAddRow => 'Add row';
 
   @override
-  String get productsBankOffersNote =>
-      'Bank offers are platform-wide and managed centrally. Customers will still see HDFC / ICICI / SBI etc. on this product\'s page if a platform offer is active.';
-
-  @override
   String get productsAddOffer => 'Add offer';
 
   @override
@@ -5616,129 +5612,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'category:slug | product:id | url:https://…';
 
   @override
-  String get adminBankOffersTitle => 'Bank offers';
-
-  @override
-  String get adminBankOfferNew => 'New offer';
-
-  @override
-  String get adminBankOffersEmpty =>
-      'No bank offers yet. Tap \"New offer\" to curate the first one.';
-
-  @override
-  String get adminBankOfferDeactivateTitle => 'Deactivate offer?';
-
-  @override
-  String get adminBankOfferDeactivateBody =>
-      'Customers won\'t see this offer on any PDP. You can re-activate it later from this page.';
-
-  @override
-  String adminBankOfferPercentOff(Object value) {
-    return '$value% off';
-  }
-
-  @override
-  String adminBankOfferAmountOff(Object value) {
-    return '$value off';
-  }
-
-  @override
-  String adminBankOfferMinOrder(Object value) {
-    return 'min order $value';
-  }
-
-  @override
-  String adminBankOfferCap(Object value) {
-    return 'cap $value';
-  }
-
-  @override
-  String adminBankOfferValidRange(Object from, Object until) {
-    return 'Valid $from – $until';
-  }
-
-  @override
-  String get adminBankOfferEditTitle => 'Edit bank offer';
-
-  @override
-  String get adminBankOfferNewTitle => 'New bank offer';
-
-  @override
-  String get adminBankOfferBankLabel => 'Bank';
-
-  @override
-  String get adminBankOfferCardTypeLabel => 'Card type';
-
-  @override
-  String get adminBankOfferTypeLabel => 'Type';
-
-  @override
-  String get adminBankOfferTypePercent => 'Percent off';
-
-  @override
-  String get adminBankOfferTypeFlat => 'Flat ₹ off';
-
-  @override
-  String get adminBankOfferPercentField => '% off';
-
-  @override
-  String get adminBankOfferAmountField => '₹ off';
-
-  @override
-  String get adminBankOfferMaxDiscountLabel =>
-      'Max discount (₹) — caps the % off';
-
-  @override
-  String get adminBankOfferMinOrderLabel =>
-      'Minimum order (₹) — eligibility filter';
-
-  @override
-  String get adminBankOfferTermsLabel => 'Terms (optional)';
-
-  @override
-  String get adminBankOfferTermsHint =>
-      'e.g. Not valid on no-cost EMI. Excludes Apple products.';
-
-  @override
-  String adminBankOfferFrom(Object date) {
-    return 'From  $date';
-  }
-
-  @override
-  String adminBankOfferUntil(Object date) {
-    return 'Until $date';
-  }
-
-  @override
-  String get adminBankOfferActiveSubtitle =>
-      'When off, the offer never decorates a PDP. Use this to park a draft or expire an offer early without deleting it.';
-
-  @override
-  String get adminBankOfferPdpPreview => 'PDP preview';
-
-  @override
-  String adminBankOfferPreviewCap(Object value) {
-    return ' up to ₹$value';
-  }
-
-  @override
-  String adminBankOfferPreviewPercent(
-    Object discount,
-    Object cap,
-    Object target,
-  ) {
-    return '$discount% off$cap on $target';
-  }
-
-  @override
-  String adminBankOfferPreviewFlat(Object discount, Object target) {
-    return '₹$discount off on $target';
-  }
-
-  @override
-  String get adminBankOfferCreate => 'Create offer';
-
-  @override
   String get adminBannersTitle => 'Banner manager';
 
   @override
@@ -6542,9 +6415,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navCollections => 'Collections';
 
   @override
-  String get navBankOffers => 'Bank offers';
-
-  @override
   String get navShopVerification => 'Shop verification';
 
   @override
@@ -7157,9 +7027,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get menuDescCollections => 'Curated product collections';
-
-  @override
-  String get menuDescBankOffers => 'Card and bank discounts';
 
   @override
   String get menuDescShopVerification => 'Review and verify shops';

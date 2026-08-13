@@ -4,7 +4,6 @@ import 'package:shopxy/core/auth/shop_capabilities.dart';
 import 'package:shopxy/core/haptics/app_haptics.dart';
 import 'package:shopxy/core/haptics/scroll_boundary_haptics.dart';
 import 'package:shopxy/core/router/app_shell.dart';
-import 'package:shopxy/features/admin/presentation/pages/admin_bank_offers_page.dart';
 import 'package:shopxy/features/admin/presentation/pages/admin_banners_page.dart';
 import 'package:shopxy/features/admin/presentation/pages/admin_category_taxonomy_page.dart';
 import 'package:shopxy/features/admin/presentation/pages/admin_collections_page.dart';
@@ -303,14 +302,6 @@ List<_MenuItem> get _adminItems => [
     accent: AppColors.accentRose,
     accentSoft: AppColors.accentRoseSoft,
     builder: (_) => const AdminCollectionsPage(),
-  ),
-  _MenuItem(
-    label: (l) => l.navBankOffers,
-    description: (l) => l.menuDescBankOffers,
-    icon: AppIcons.accountBalanceOutlined,
-    accent: AppColors.info,
-    accentSoft: AppColors.infoSoft,
-    builder: (_) => const AdminBankOffersPage(),
   ),
   _MenuItem(
     label: (l) => l.navShopVerification,

@@ -1,6 +1,5 @@
 import prisma from '../../infra/db/prisma.js';
 import type { Prisma } from '@prisma/client';
-import { platformBankOffersService } from '../platform-bank-offers/platform-bank-offers.service.js';
 
 /// Detail-level projection for a public marketplace product page.
 /// Goes wide deliberately — the customer PDP needs gallery, shop
@@ -106,13 +105,6 @@ export class MarketplaceService {
     });
     if (!row) return null;
 
-    // Platform-curated bank offers — filtered to those whose
-    // minOrderAmount ≤ selling price so the customer never sees a
-    // tile they can't qualify for. Empty array if none are active.
-    const bankOffers = await platformBankOffersService.listEligibleForProduct(
-      Number(row.sellingPrice),
-    );
-
     // NEW_ARRIVAL is computed at response time rather than stored —
     // the freshness window slides daily and a stored column would
     // require its own scheduler tick + write storm. Merging happens
@@ -123,7 +115,7 @@ export class MarketplaceService {
     const systemTags = isNewArrival && !row.systemTags.includes('NEW_ARRIVAL')
       ? [...row.systemTags, 'NEW_ARRIVAL']
       : row.systemTags;
-    return { ...row, systemTags, bankOffers };
+    return { ...row, systemTags };
   }
 
   async listShopProducts(opts: {

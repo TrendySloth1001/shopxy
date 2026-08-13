@@ -2040,14 +2040,8 @@ class _GroupCard extends StatelessWidget {
   }
 }
 
-/// Add/remove per-product offers. Coupon / EMI / Exchange — bank
-/// offers deliberately omitted: those are platform-wide tie-ups
-/// curated centrally by admins (see `PlatformBankOffer` on the
-/// backend). Letting individual merchants invent their own bank
-/// offers would (a) let them promise discounts a bank never agreed
-/// to fund, and (b) force them to re-type the same HDFC strip on
-/// every product. The PDP merges these merchant-scoped offers with
-/// the platform bank feed at render time.
+/// Add/remove per-product offers. Coupon / EMI / Exchange only — bank offers
+/// were removed from the platform.
 class _OffersEditor extends StatefulWidget {
   const _OffersEditor({required this.offers, required this.onChange});
   final List<ProductOffer> offers;
@@ -2069,38 +2063,9 @@ class _OffersEditorState extends State<_OffersEditor> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    // Bank offers were removed from this editor — surface that to the
-    // merchant explicitly so they don't go looking for the option.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          margin: const EdgeInsets.only(bottom: AppSizes.md),
-          padding: const EdgeInsets.all(AppSizes.md),
-          decoration: BoxDecoration(
-            color: AppColors.infoSoft,
-            borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AppIcon(
-                AppIcons.accountBalanceOutlined,
-                size: AppSizes.iconSm,
-                color: AppColors.info,
-              ),
-              const SizedBox(width: AppSizes.sm),
-              Expanded(
-                child: Text(
-                  l10n.productsBankOffersNote,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: AppColors.info),
-                ),
-              ),
-            ],
-          ),
-        ),
         for (var i = 0; i < widget.offers.length; i++)
           _OfferRow(
             key: ValueKey('offer-$i-${widget.offers[i].kind}'),

@@ -44,7 +44,6 @@ import {
 import { scanConsoleMerchantRouter } from '../../modules/scan-console/scan-console.routes.js';
 import { posMerchantRouter } from '../../modules/pos/pos.routes.js';
 import { cashierMerchantRouter } from '../../modules/cashier/cashier.routes.js';
-import { platformBankOffersAdminRouter } from '../../modules/platform-bank-offers/platform-bank-offers.routes.js';
 import {
   eventsIngestRouter,
   recentlyViewedRouter,
@@ -309,11 +308,6 @@ export function buildApp(): express.Express {
   // category taxonomy, collections). Gated by User.isPlatformAdmin,
   // independent of merchant/customer role.
   app.use('/admin/banners', requirePlatformAdmin, bannersAdminRouter);
-  app.use(
-    '/admin/platform-bank-offers',
-    requirePlatformAdmin,
-    platformBankOffersAdminRouter,
-  );
   app.use('/admin/shops', requirePlatformAdmin, adminShopRouter);
 
   const ownerOnly = requireRole('OWNER');

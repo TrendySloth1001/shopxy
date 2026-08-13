@@ -45,11 +45,9 @@ import 'package:shopxy/features/shop/data/datasources/shop_remote_data_source.da
 import 'package:shopxy/features/shop/data/datasources/linked_account_remote_data_source.dart';
 import 'package:shopxy/features/shop/presentation/providers/shop_provider.dart';
 import 'package:shopxy/features/shop/presentation/providers/linked_account_provider.dart';
-import 'package:shopxy/features/admin/data/datasources/admin_bank_offers_remote_data_source.dart';
 import 'package:shopxy/features/admin/data/datasources/admin_banners_remote_data_source.dart';
 import 'package:shopxy/features/admin/data/datasources/admin_shops_remote_data_source.dart';
 import 'package:shopxy/features/admin/data/datasources/admin_collections_remote_data_source.dart';
-import 'package:shopxy/features/admin/presentation/providers/admin_bank_offers_provider.dart';
 import 'package:shopxy/features/admin/presentation/providers/admin_banners_provider.dart';
 import 'package:shopxy/features/admin/presentation/providers/admin_collections_provider.dart';
 import 'package:shopxy/features/banners/data/datasources/merchant_banners_remote_data_source.dart';
@@ -85,8 +83,7 @@ void main() async {
 
     await bootstrapShopxy();
   } catch (error, stack) {
-    debugPrint('ShopXY failed to start: $error
-$stack');
+    debugPrint('ShopXY failed to start: $error\n$stack');
     runApp(StartupFailureApp(error: error, stack: stack));
   }
 }
@@ -221,7 +218,6 @@ Future<void> bootstrapShopxy() async {
   final merchantBannersDs = MerchantBannersRemoteDataSource(apiClient);
   final merchantBannersProvider = MerchantBannersProvider(merchantBannersDs);
   final adminCollectionsDs = AdminCollectionsRemoteDataSource(apiClient);
-  final adminBankOffersDs = AdminBankOffersRemoteDataSource(apiClient);
   final adminShopsDs = AdminShopsRemoteDataSource(apiClient);
   final reviewsDs = ReviewsRemoteDataSource(apiClient);
   final couponsDs = MerchantCouponsRemoteDataSource(apiClient);
@@ -450,9 +446,6 @@ Future<void> bootstrapShopxy() async {
         ),
         ChangeNotifierProvider(
           create: (_) => AdminCollectionsProvider(adminCollectionsDs),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => AdminBankOffersProvider(adminBankOffersDs),
         ),
         Provider<AdminShopsRemoteDataSource>.value(value: adminShopsDs),
         ChangeNotifierProvider<OrdersProvider>.value(value: ordersProvider),

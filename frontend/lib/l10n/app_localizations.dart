@@ -1742,12 +1742,6 @@ abstract class AppLocalizations {
   /// **'Add row'**
   String get productsAddRow;
 
-  /// No description provided for @productsBankOffersNote.
-  ///
-  /// In en, this message translates to:
-  /// **'Bank offers are platform-wide and managed centrally. Customers will still see HDFC / ICICI / SBI etc. on this product\'s page if a platform offer is active.'**
-  String get productsBankOffersNote;
-
   /// No description provided for @productsAddOffer.
   ///
   /// In en, this message translates to:
@@ -10441,196 +10435,6 @@ abstract class AppLocalizations {
   /// **'category:slug | product:id | url:https://…'**
   String get adminLinkTargetHelper;
 
-  /// No description provided for @adminBankOffersTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Bank offers'**
-  String get adminBankOffersTitle;
-
-  /// No description provided for @adminBankOfferNew.
-  ///
-  /// In en, this message translates to:
-  /// **'New offer'**
-  String get adminBankOfferNew;
-
-  /// No description provided for @adminBankOffersEmpty.
-  ///
-  /// In en, this message translates to:
-  /// **'No bank offers yet. Tap \"New offer\" to curate the first one.'**
-  String get adminBankOffersEmpty;
-
-  /// No description provided for @adminBankOfferDeactivateTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Deactivate offer?'**
-  String get adminBankOfferDeactivateTitle;
-
-  /// No description provided for @adminBankOfferDeactivateBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Customers won\'t see this offer on any PDP. You can re-activate it later from this page.'**
-  String get adminBankOfferDeactivateBody;
-
-  /// No description provided for @adminBankOfferPercentOff.
-  ///
-  /// In en, this message translates to:
-  /// **'{value}% off'**
-  String adminBankOfferPercentOff(Object value);
-
-  /// No description provided for @adminBankOfferAmountOff.
-  ///
-  /// In en, this message translates to:
-  /// **'{value} off'**
-  String adminBankOfferAmountOff(Object value);
-
-  /// No description provided for @adminBankOfferMinOrder.
-  ///
-  /// In en, this message translates to:
-  /// **'min order {value}'**
-  String adminBankOfferMinOrder(Object value);
-
-  /// No description provided for @adminBankOfferCap.
-  ///
-  /// In en, this message translates to:
-  /// **'cap {value}'**
-  String adminBankOfferCap(Object value);
-
-  /// No description provided for @adminBankOfferValidRange.
-  ///
-  /// In en, this message translates to:
-  /// **'Valid {from} – {until}'**
-  String adminBankOfferValidRange(Object from, Object until);
-
-  /// No description provided for @adminBankOfferEditTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Edit bank offer'**
-  String get adminBankOfferEditTitle;
-
-  /// No description provided for @adminBankOfferNewTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'New bank offer'**
-  String get adminBankOfferNewTitle;
-
-  /// No description provided for @adminBankOfferBankLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Bank'**
-  String get adminBankOfferBankLabel;
-
-  /// No description provided for @adminBankOfferCardTypeLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Card type'**
-  String get adminBankOfferCardTypeLabel;
-
-  /// No description provided for @adminBankOfferTypeLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Type'**
-  String get adminBankOfferTypeLabel;
-
-  /// No description provided for @adminBankOfferTypePercent.
-  ///
-  /// In en, this message translates to:
-  /// **'Percent off'**
-  String get adminBankOfferTypePercent;
-
-  /// No description provided for @adminBankOfferTypeFlat.
-  ///
-  /// In en, this message translates to:
-  /// **'Flat ₹ off'**
-  String get adminBankOfferTypeFlat;
-
-  /// No description provided for @adminBankOfferPercentField.
-  ///
-  /// In en, this message translates to:
-  /// **'% off'**
-  String get adminBankOfferPercentField;
-
-  /// No description provided for @adminBankOfferAmountField.
-  ///
-  /// In en, this message translates to:
-  /// **'₹ off'**
-  String get adminBankOfferAmountField;
-
-  /// No description provided for @adminBankOfferMaxDiscountLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Max discount (₹) — caps the % off'**
-  String get adminBankOfferMaxDiscountLabel;
-
-  /// No description provided for @adminBankOfferMinOrderLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Minimum order (₹) — eligibility filter'**
-  String get adminBankOfferMinOrderLabel;
-
-  /// No description provided for @adminBankOfferTermsLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Terms (optional)'**
-  String get adminBankOfferTermsLabel;
-
-  /// No description provided for @adminBankOfferTermsHint.
-  ///
-  /// In en, this message translates to:
-  /// **'e.g. Not valid on no-cost EMI. Excludes Apple products.'**
-  String get adminBankOfferTermsHint;
-
-  /// No description provided for @adminBankOfferFrom.
-  ///
-  /// In en, this message translates to:
-  /// **'From  {date}'**
-  String adminBankOfferFrom(Object date);
-
-  /// No description provided for @adminBankOfferUntil.
-  ///
-  /// In en, this message translates to:
-  /// **'Until {date}'**
-  String adminBankOfferUntil(Object date);
-
-  /// No description provided for @adminBankOfferActiveSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'When off, the offer never decorates a PDP. Use this to park a draft or expire an offer early without deleting it.'**
-  String get adminBankOfferActiveSubtitle;
-
-  /// No description provided for @adminBankOfferPdpPreview.
-  ///
-  /// In en, this message translates to:
-  /// **'PDP preview'**
-  String get adminBankOfferPdpPreview;
-
-  /// No description provided for @adminBankOfferPreviewCap.
-  ///
-  /// In en, this message translates to:
-  /// **' up to ₹{value}'**
-  String adminBankOfferPreviewCap(Object value);
-
-  /// No description provided for @adminBankOfferPreviewPercent.
-  ///
-  /// In en, this message translates to:
-  /// **'{discount}% off{cap} on {target}'**
-  String adminBankOfferPreviewPercent(
-    Object discount,
-    Object cap,
-    Object target,
-  );
-
-  /// No description provided for @adminBankOfferPreviewFlat.
-  ///
-  /// In en, this message translates to:
-  /// **'₹{discount} off on {target}'**
-  String adminBankOfferPreviewFlat(Object discount, Object target);
-
-  /// No description provided for @adminBankOfferCreate.
-  ///
-  /// In en, this message translates to:
-  /// **'Create offer'**
-  String get adminBankOfferCreate;
-
   /// No description provided for @adminBannersTitle.
   ///
   /// In en, this message translates to:
@@ -12071,12 +11875,6 @@ abstract class AppLocalizations {
   /// **'Collections'**
   String get navCollections;
 
-  /// No description provided for @navBankOffers.
-  ///
-  /// In en, this message translates to:
-  /// **'Bank offers'**
-  String get navBankOffers;
-
   /// No description provided for @navShopVerification.
   ///
   /// In en, this message translates to:
@@ -13174,12 +12972,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Curated product collections'**
   String get menuDescCollections;
-
-  /// No description provided for @menuDescBankOffers.
-  ///
-  /// In en, this message translates to:
-  /// **'Card and bank discounts'**
-  String get menuDescBankOffers;
 
   /// No description provided for @menuDescShopVerification.
   ///

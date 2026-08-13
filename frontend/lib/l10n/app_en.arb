@@ -363,7 +363,6 @@
   "productsSpecValueLabel": "Value",
   "productsSpecValueHint": "e.g. Earbuds, charging case, cable, manual",
   "productsAddRow": "Add row",
-  "productsBankOffersNote": "Bank offers are platform-wide and managed centrally. Customers will still see HDFC / ICICI / SBI etc. on this product's page if a platform offer is active.",
   "productsAddOffer": "Add offer",
   "productsOfferKind": "Kind",
   "productsOfferHeadline": "Headline",
@@ -2676,119 +2675,6 @@
   "adminImageUploadFailed": "Image upload failed",
   "adminReplaceImage": "Replace image",
   "adminLinkTargetHelper": "category:slug | product:id | url:https://…",
-  "adminBankOffersTitle": "Bank offers",
-  "adminBankOfferNew": "New offer",
-  "adminBankOffersEmpty": "No bank offers yet. Tap \"New offer\" to curate the first one.",
-  "adminBankOfferDeactivateTitle": "Deactivate offer?",
-  "adminBankOfferDeactivateBody": "Customers won't see this offer on any PDP. You can re-activate it later from this page.",
-  "adminBankOfferPercentOff": "{value}% off",
-  "@adminBankOfferPercentOff": {
-    "placeholders": {
-      "value": {
-        "type": "Object"
-      }
-    }
-  },
-  "adminBankOfferAmountOff": "{value} off",
-  "@adminBankOfferAmountOff": {
-    "placeholders": {
-      "value": {
-        "type": "Object"
-      }
-    }
-  },
-  "adminBankOfferMinOrder": "min order {value}",
-  "@adminBankOfferMinOrder": {
-    "placeholders": {
-      "value": {
-        "type": "Object"
-      }
-    }
-  },
-  "adminBankOfferCap": "cap {value}",
-  "@adminBankOfferCap": {
-    "placeholders": {
-      "value": {
-        "type": "Object"
-      }
-    }
-  },
-  "adminBankOfferValidRange": "Valid {from} – {until}",
-  "@adminBankOfferValidRange": {
-    "placeholders": {
-      "from": {
-        "type": "Object"
-      },
-      "until": {
-        "type": "Object"
-      }
-    }
-  },
-  "adminBankOfferEditTitle": "Edit bank offer",
-  "adminBankOfferNewTitle": "New bank offer",
-  "adminBankOfferBankLabel": "Bank",
-  "adminBankOfferCardTypeLabel": "Card type",
-  "adminBankOfferTypeLabel": "Type",
-  "adminBankOfferTypePercent": "Percent off",
-  "adminBankOfferTypeFlat": "Flat ₹ off",
-  "adminBankOfferPercentField": "% off",
-  "adminBankOfferAmountField": "₹ off",
-  "adminBankOfferMaxDiscountLabel": "Max discount (₹) — caps the % off",
-  "adminBankOfferMinOrderLabel": "Minimum order (₹) — eligibility filter",
-  "adminBankOfferTermsLabel": "Terms (optional)",
-  "adminBankOfferTermsHint": "e.g. Not valid on no-cost EMI. Excludes Apple products.",
-  "adminBankOfferFrom": "From  {date}",
-  "@adminBankOfferFrom": {
-    "placeholders": {
-      "date": {
-        "type": "Object"
-      }
-    }
-  },
-  "adminBankOfferUntil": "Until {date}",
-  "@adminBankOfferUntil": {
-    "placeholders": {
-      "date": {
-        "type": "Object"
-      }
-    }
-  },
-  "adminBankOfferActiveSubtitle": "When off, the offer never decorates a PDP. Use this to park a draft or expire an offer early without deleting it.",
-  "adminBankOfferPdpPreview": "PDP preview",
-  "adminBankOfferPreviewCap": " up to ₹{value}",
-  "@adminBankOfferPreviewCap": {
-    "placeholders": {
-      "value": {
-        "type": "Object"
-      }
-    }
-  },
-  "adminBankOfferPreviewPercent": "{discount}% off{cap} on {target}",
-  "@adminBankOfferPreviewPercent": {
-    "placeholders": {
-      "discount": {
-        "type": "Object"
-      },
-      "cap": {
-        "type": "Object"
-      },
-      "target": {
-        "type": "Object"
-      }
-    }
-  },
-  "adminBankOfferPreviewFlat": "₹{discount} off on {target}",
-  "@adminBankOfferPreviewFlat": {
-    "placeholders": {
-      "discount": {
-        "type": "Object"
-      },
-      "target": {
-        "type": "Object"
-      }
-    }
-  },
-  "adminBankOfferCreate": "Create offer",
   "adminBannersTitle": "Banner manager",
   "adminBannerNew": "New banner",
   "adminBannerDeleteTitle": "Delete banner?",
@@ -3231,7 +3117,6 @@
   "navBannerManager": "Banner manager",
   "navCategoryTaxonomy": "Category taxonomy",
   "navCollections": "Collections",
-  "navBankOffers": "Bank offers",
   "navShopVerification": "Shop verification",
   "navSectionManage": "Manage",
   "navSectionOperations": "Operations",
@@ -3615,7 +3500,6 @@
   "menuDescBannerManager": "Marketplace home banners",
   "menuDescCategoryTaxonomy": "Global category tree",
   "menuDescCollections": "Curated product collections",
-  "menuDescBankOffers": "Card and bank discounts",
   "menuDescShopVerification": "Review and verify shops",
   "menuDescProfile": "Your account and shop",
   "menuDescSettings": "Currency, theme and language",

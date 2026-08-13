@@ -2627,50 +2627,6 @@ model CouponRedemption {
   @@map("coupon_redemptions")
 }
 
-/// Platform-wide bank offer. Curated centrally by platform admins, not
-/// by individual merchants — real bank tie-ups are negotiated once
-/// (e.g. "10% off, up to ₹1,500, min order ₹3,000, on HDFC Credit
-/// Cards, valid Jun 1–30") and decorate every eligible PDP across the
-/// marketplace. Merchants don't see this surface in their per-product
-/// editor.
-///
-/// Eligibility is computed at PDP read time: the offer is shown when
-/// the product's selling price ≥ minOrderAmount AND now() is inside
-/// [validFrom, validUntil] AND isActive. Actual discount application
-/// happens at the payment step (BIN → bank lookup), which is stubbed
-/// until a real gateway lands — the row's discount fields exist so
-/// that wiring is a one-evening job later.
-model PlatformBankOffer {
-  id             Int      @id @default(autoincrement())
-  /// Short bank code matching the customer PDP's recognised set:
-  /// HDFC, ICICI, SBI, AXIS, KOTAK, AMEX, YES, HSBC, SC, IDFC, BOB, RBL.
-  /// String (not enum) so adding a new bank doesn't require a migration.
-  bank           String
-  /// CREDIT | DEBIT | CREDIT_DEBIT | NET_BANKING | EMI | ANY.
-  cardType       String   @map("card_type")
-  /// PERCENT or FLAT — mirrors Coupon.discountType for consistency.
-  discountType   String   @map("discount_type")
-  /// For PERCENT: integer 1–100. For FLAT: rupee amount.
-  discountValue  Decimal  @map("discount_value") @db.Decimal(12, 2)
-  /// PERCENT-only — caps the absolute discount per transaction.
-  maxDiscount    Decimal? @map("max_discount") @db.Decimal(12, 2)
-  /// Minimum order amount to qualify. Drives PDP eligibility filter.
-  minOrderAmount Decimal  @default(0) @map("min_order_amount") @db.Decimal(12, 2)
-  /// Free-form terms ("Not valid on no-cost EMI", "Excludes Apple
-  /// products"). Rendered under the offer card on PDP.
-  terms          String?
-
-  validFrom  DateTime @map("valid_from")
-  validUntil DateTime @map("valid_until")
-  isActive   Boolean  @default(true) @map("is_active")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@index([isActive, validFrom, validUntil])
-  @@index([bank])
-  @@map("platform_bank_offers")
-}
 
 
 /// Raw activity stream — every customer interaction worth attributing
