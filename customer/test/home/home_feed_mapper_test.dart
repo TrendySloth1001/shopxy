@@ -9,7 +9,7 @@ void main() {
       // Hero banner → slim HeroSlide (id + imageUrl + optional link +
       // pinned-product count).
       expect(feed.heroSlides, hasLength(1));
-      expect(feed.heroSlides.first.id, 1);
+      expect(feed.heroSlides.first.id, '1');
       expect(feed.heroSlides.first.imageUrl, '/images/hero-md.webp');
       expect(feed.heroSlides.first.linkUrl, '/category/fashion');
       expect(feed.heroSlides.first.productCount, 5);
@@ -17,7 +17,7 @@ void main() {
       // Ad strip banner → slim HeroSlide. No link → null. No
       // productCount in the payload → defaults to 0.
       expect(feed.adStrip, hasLength(1));
-      expect(feed.adStrip.first.id, 2);
+      expect(feed.adStrip.first.id, '2');
       expect(feed.adStrip.first.imageUrl, '/images/myntra.webp');
       expect(feed.adStrip.first.linkUrl, isNull);
       expect(feed.adStrip.first.productCount, 0);
@@ -94,9 +94,9 @@ void main() {
           {'lastViewedAt': '2026-05-24T13:00:00Z', 'product': _sampleProduct(id: 7, name: 'Seen Earlier')},
         ],
       });
-      expect(result.recommended.single.productId, 42);
+      expect(result.recommended.single.productId, '42');
       expect(result.recommended.single.name, 'For You');
-      expect(result.recentlyViewed.single.productId, 7);
+      expect(result.recentlyViewed.single.productId, '7');
     });
   });
 }

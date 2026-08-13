@@ -22,6 +22,32 @@ Widget _wrap({required ShopsProvider shops, required NotificationsProvider notif
   );
 }
 
+
+/// Pushes MyShopsPage on top of a placeholder so `Navigator.canPop()` is true —
+/// the Profile entry point, as opposed to the bottom-nav tab.
+Widget _wrapPushed({
+  required ShopsProvider shops,
+  required NotificationsProvider notifs,
+}) {
+  return MultiProvider(
+    providers: [
+      ChangeNotifierProvider<ShopsProvider>.value(value: shops),
+      ChangeNotifierProvider<NotificationsProvider>.value(value: notifs),
+    ],
+    child: MaterialApp(
+      theme: AppTheme.light,
+      home: Builder(
+        builder: (context) => ElevatedButton(
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => const MyShopsPage()),
+          ),
+          child: const Text('open'),
+        ),
+      ),
+    ),
+  );
+}
+
 void main() {
   testWidgets('renders empty-state copy when no shops are linked', (tester) async {
     await tester.pumpWidget(_wrap(
@@ -32,7 +58,7 @@ void main() {
 
     expect(find.text('No linked merchants yet'), findsOneWidget);
     expect(
-      find.textContaining('When a shop adds you as a customer'),
+      find.textContaining('Order from a shop, or accept an invitation'),
       findsOneWidget,
     );
   });
@@ -106,5 +132,38 @@ void main() {
     await tester.pump();
 
     expect(find.text('3 pending invitations'), findsOneWidget);
+  });
+
+  // MyShopsPage is both a bottom-nav tab and a pushed route. Only the pushed
+  // instance can go back, and it used to offer no way to.
+  testWidgets('shows a back button only when it was pushed', (tester) async {
+    await tester.pumpWidget(_wrapPushed(
+      shops: FakeShopsProvider(),
+      notifs: FakeNotificationsProvider(),
+    ));
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Merchants'), findsOneWidget);
+    final back = find.byKey(const Key('merchants-back'));
+    expect(back, findsOneWidget);
+
+    await tester.tap(back);
+    await tester.pumpAndSettle();
+    // Back on the launcher screen — the page actually popped.
+    expect(find.text('open'), findsOneWidget);
+    expect(find.text('Merchants'), findsNothing);
+  });
+
+  testWidgets('as a root tab it renders no back affordance', (tester) async {
+    await tester.pumpWidget(_wrap(
+      shops: FakeShopsProvider(),
+      notifs: FakeNotificationsProvider(),
+    ));
+    await tester.pump();
+
+    expect(find.text('Merchants'), findsOneWidget);
+    // Nothing to pop to, so no back control is built at all.
+    expect(find.byKey(const Key('merchants-back')), findsNothing);
   });
 }

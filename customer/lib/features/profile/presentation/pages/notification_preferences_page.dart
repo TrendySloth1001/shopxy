@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:shopxy_customer/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
+import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
@@ -66,69 +67,77 @@ class _NotificationPreferencesPageState
       body: ListView(
         children: [
           const _SectionHeader(label: 'What we notify you about'),
-          _PrefTile(
-            title: 'Order updates',
-            subtitle: 'Confirmation, dispatch, delivery, returns.',
-            icon: AppIcons.localShippingOutlined,
-            tint: AppColors.infoSoft,
-            iconColor: AppColors.info,
-            value: user?.notifyOrders ?? true,
-            onChanged: (v) => _toggle(notifyOrders: v),
-          ),
-          _PrefTile(
-            title: 'Deals & price drops',
-            subtitle: 'Flash sales, coupons, wishlist deals.',
-            icon: AppIcons.localOfferOutlined,
-            tint: AppColors.accentAmberSoft,
-            iconColor: AppColors.accentAmber,
-            value: user?.notifyDeals ?? true,
-            onChanged: (v) => _toggle(notifyDeals: v),
-          ),
-          _PrefTile(
-            title: 'Account & security',
-            subtitle:
-                'Sign-ins from new devices, password changes, account '
-                'recovery.',
-            icon: AppIcons.shieldOutlined,
-            tint: AppColors.brandSoft,
-            iconColor: AppColors.brandStrong,
-            value: user?.notifyAccount ?? true,
-            onChanged: (v) => _toggle(notifyAccount: v),
-          ),
-          _PrefTile(
-            title: 'Messages from sellers',
-            subtitle:
-                'Shop replies and order-related questions. (Coming with '
-                'the chat surface.)',
-            icon: AppIcons.chatBubbleOutline,
-            tint: AppColors.accentRoseSoft,
-            iconColor: AppColors.accentRose,
-            value: user?.notifyMessages ?? true,
-            onChanged: (v) => _toggle(notifyMessages: v),
+          _PrefGroup(
+            children: [
+              _PrefTile(
+                title: 'Order updates',
+                subtitle: 'Confirmation, dispatch, delivery, returns.',
+                icon: AppIcons.localShippingOutlined,
+                tint: AppColors.infoSoft,
+                iconColor: AppColors.info,
+                value: user?.notifyOrders ?? true,
+                onChanged: (v) => _toggle(notifyOrders: v),
+              ),
+              _PrefTile(
+                title: 'Deals & price drops',
+                subtitle: 'Flash sales, coupons, wishlist deals.',
+                icon: AppIcons.localOfferOutlined,
+                tint: AppColors.accentAmberSoft,
+                iconColor: AppColors.accentAmber,
+                value: user?.notifyDeals ?? true,
+                onChanged: (v) => _toggle(notifyDeals: v),
+              ),
+              _PrefTile(
+                title: 'Account & security',
+                subtitle:
+                    'Sign-ins from new devices, password changes, account '
+                    'recovery.',
+                icon: AppIcons.shieldOutlined,
+                tint: AppColors.brandSoft,
+                iconColor: AppColors.brandStrong,
+                value: user?.notifyAccount ?? true,
+                onChanged: (v) => _toggle(notifyAccount: v),
+              ),
+              _PrefTile(
+                title: 'Messages from sellers',
+                subtitle:
+                    'Shop replies and order-related questions. (Coming with '
+                    'the chat surface.)',
+                icon: AppIcons.chatBubbleOutline,
+                tint: AppColors.accentRoseSoft,
+                iconColor: AppColors.accentRose,
+                value: user?.notifyMessages ?? true,
+                onChanged: (v) => _toggle(notifyMessages: v),
+              ),
+            ],
           ),
           const SizedBox(height: AppSizes.lg),
           const _SectionHeader(label: 'Channels'),
-          _PrefTile(
-            title: 'Push notifications',
-            subtitle:
-                'In-app + lockscreen alerts on this device. Turning '
-                'this off mutes every category above on push.',
-            icon: AppIcons.notificationsActiveOutlined,
-            tint: AppColors.surfaceTint,
-            iconColor: AppColors.black,
-            value: user?.pushEnabled ?? true,
-            onChanged: (v) => _toggle(pushEnabled: v),
-          ),
-          _PrefTile(
-            title: 'SMS',
-            subtitle:
-                'Only for time-sensitive order updates. Carrier rates may '
-                'apply. Off by default.',
-            icon: AppIcons.smsOutlined,
-            tint: AppColors.surfaceTint,
-            iconColor: AppColors.black,
-            value: user?.smsEnabled ?? false,
-            onChanged: (v) => _toggle(smsEnabled: v),
+          _PrefGroup(
+            children: [
+              _PrefTile(
+                title: 'Push notifications',
+                subtitle:
+                    'In-app + lockscreen alerts on this device. Turning '
+                    'this off mutes every category above on push.',
+                icon: AppIcons.notificationsActiveOutlined,
+                tint: AppColors.surfaceTint,
+                iconColor: AppColors.black,
+                value: user?.pushEnabled ?? true,
+                onChanged: (v) => _toggle(pushEnabled: v),
+              ),
+              _PrefTile(
+                title: 'SMS',
+                subtitle:
+                    'Only for time-sensitive order updates. Carrier rates may '
+                    'apply. Off by default.',
+                icon: AppIcons.smsOutlined,
+                tint: AppColors.surfaceTint,
+                iconColor: AppColors.black,
+                value: user?.smsEnabled ?? false,
+                onChanged: (v) => _toggle(smsEnabled: v),
+              ),
+            ],
           ),
           const SizedBox(height: AppSizes.xl),
         ],
@@ -159,6 +168,37 @@ class _SectionHeader extends StatelessWidget {
   );
 }
 
+/// One rounded surface per section, rows separated by inset rules — the card
+/// language the rest of the app uses. The rows used to be separate square
+/// white bands floating on the canvas, which matched nothing else.
+class _PrefGroup extends StatelessWidget {
+  const _PrefGroup({required this.children});
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      decoration: ShapeDecoration(
+        color: AppColors.white,
+        shape: AppShapes.squircle(AppSizes.radiusMd),
+      ),
+      child: Column(
+        children: [
+          for (var i = 0; i < children.length; i++) ...[
+            if (i != 0)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: AppSizes.md),
+                child: Divider(height: 1, color: AppColors.hairline),
+              ),
+            children[i],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _PrefTile extends StatelessWidget {
   const _PrefTile({
     required this.title,
@@ -181,13 +221,16 @@ class _PrefTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.lg,
+        horizontal: AppSizes.md,
         vertical: AppSizes.xs,
       ),
       child: SwitchListTile.adaptive(
         value: value,
         onChanged: onChanged,
         contentPadding: EdgeInsets.zero,
+        // The group behind supplies the surface; an opaque tile would square
+        // off the card's rounded corners.
+        tileColor: Colors.transparent,
         secondary: Container(
           width: AppSizes.avatarXs,
           height: AppSizes.avatarXs,
