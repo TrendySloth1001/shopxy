@@ -18,6 +18,7 @@ class CatalogProduct {
     this.shopId,
     this.shopName,
     this.shopSlug,
+    this.shopGstRegistered = false,
   });
 
   final String id;
@@ -40,6 +41,12 @@ class CatalogProduct {
   final String? shopId;
   final String? shopName;
   final String? shopSlug;
+
+  /// Whether this seller can issue a tax invoice. Only a GST-registered
+  /// seller can, so it decides whether a buyer claiming input credit gets a
+  /// claimable invoice or a bill of supply. Defaults false: payloads that
+  /// don't carry it must not imply a registration the seller may not have.
+  final bool shopGstRegistered;
 
   bool get inStock => stockQuantity > 0;
   bool get isDiscounted => mrp > 0 && mrp > sellingPrice;
@@ -65,6 +72,7 @@ class CatalogProduct {
         shopId: shopId,
         shopName: shopName,
         shopSlug: shopSlug,
+        shopGstRegistered: shopGstRegistered,
       );
 
   /// Tolerant of Prisma's `Decimal → JSON string` quirk.
@@ -100,6 +108,7 @@ class CatalogProduct {
       categoryIconName: category?['iconName'] as String?,
       shopId: (shop?['id']?.toString()) ?? (j['shopId']?.toString()),
       shopName: shop?['name'] as String?,
+      shopGstRegistered: shop?['gstRegistered'] == true,
       shopSlug: shop?['slug'] as String?,
     );
   }

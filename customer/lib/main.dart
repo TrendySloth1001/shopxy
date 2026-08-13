@@ -28,6 +28,8 @@ import 'package:shopxy_customer/features/home/presentation/services/tracking_ser
 import 'package:shopxy_customer/features/onboarding/presentation/providers/onboarding_controller.dart';
 import 'package:shopxy_customer/features/addresses/data/datasources/addresses_remote_data_source.dart';
 import 'package:shopxy_customer/features/addresses/presentation/providers/addresses_provider.dart';
+import 'package:shopxy_customer/features/gst/data/datasources/gst_profile_remote_data_source.dart';
+import 'package:shopxy_customer/features/gst/presentation/providers/gst_profile_provider.dart';
 import 'package:shopxy_customer/features/reviews/data/datasources/reviews_remote_data_source.dart';
 import 'package:shopxy_customer/features/banner_detail/data/datasources/banner_detail_remote_data_source.dart';
 import 'package:shopxy_customer/features/marketplace/data/datasources/marketplace_remote_data_source.dart';
@@ -70,6 +72,7 @@ Future<void> _bootstrap() async {
   final bannerDetailDs = BannerDetailRemoteDataSource(apiClient);
   final marketplaceSearchDs = MarketplaceSearchRemoteDataSource(apiClient);
   final addressesDs = AddressesRemoteDataSource(apiClient);
+  final gstProfileDs = GstProfileRemoteDataSource(apiClient);
   final categoriesDs = CategoriesRemoteDataSource(apiClient);
   final reviewsDs = ReviewsRemoteDataSource(apiClient);
   final recentlyViewedDs = RecentlyViewedRemoteDataSource(apiClient);
@@ -88,6 +91,7 @@ Future<void> _bootstrap() async {
   final ordersProvider = OrdersProvider(ordersDs);
   final wishlistProvider = WishlistProvider(wishlistDs);
   final addressesProvider = AddressesProvider(addressesDs);
+  final gstProfileProvider = GstProfileProvider(gstProfileDs);
   final categoriesProvider = CategoriesProvider(categoriesDs);
   // First-run onboarding gate. Read the persisted flag now so the root
   // view can decide onboarding-vs-shell on the very first frame.
@@ -105,6 +109,7 @@ Future<void> _bootstrap() async {
   authProvider.registerOnClear(ordersProvider.reset);
   authProvider.registerOnClear(wishlistProvider.reset);
   authProvider.registerOnClear(addressesProvider.reset);
+  authProvider.registerOnClear(gstProfileProvider.clear);
   authProvider.registerOnClear(linkedMerchantsProvider.reset);
   authProvider.registerOnClear(homeFeedProvider.clearPersonalized);
 
@@ -143,6 +148,7 @@ Future<void> _bootstrap() async {
         ordersProvider.load();
         wishlistProvider.load();
         addressesProvider.load();
+        gstProfileProvider.load();
       });
     } else {
       notificationsProvider.reset();
@@ -236,6 +242,7 @@ Future<void> _bootstrap() async {
         ChangeNotifierProvider<OrdersProvider>.value(value: ordersProvider),
         ChangeNotifierProvider<WishlistProvider>.value(value: wishlistProvider),
         ChangeNotifierProvider<AddressesProvider>.value(value: addressesProvider),
+        ChangeNotifierProvider<GstProfileProvider>.value(value: gstProfileProvider),
         // Search has no provider-level boot work; create lazily on first
         // open so we don't pay for it on every cold start.
         ChangeNotifierProvider<SearchProvider>(

@@ -16,6 +16,8 @@ import 'package:shopxy_customer/features/payments/razorpay_checkout.dart';
 import 'package:shopxy_customer/features/home/presentation/widgets/network_image_box.dart';
 import 'package:shopxy_customer/features/orders/presentation/pages/order_detail_page.dart';
 import 'package:shopxy_customer/features/orders/presentation/providers/orders_provider.dart';
+import 'package:shopxy_customer/features/gst/presentation/pages/gst_details_page.dart';
+import 'package:shopxy_customer/features/gst/presentation/providers/gst_profile_provider.dart';
 import 'package:shopxy_customer/features/shops/presentation/providers/shops_provider.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/format/app_format.dart';
@@ -59,6 +61,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   /// false = Cash on Delivery (default); true = pay now via Razorpay.
   bool _payOnline = false;
+
+  /// Buyer asked for the order to be invoiced to their own GSTIN. Off by
+  /// default: a saved GSTIN is not standing consent to use it, and a personal
+  /// purchase on a business account should not land in the business's books.
+  bool _claimGst = false;
 
   @override
   void initState() {
@@ -291,6 +298,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     final result = await cart.placeOrder(
       addressId: _selectedAddressId,
       couponCode: _appliedCoupon?.code,
+      claimGst: _claimGst,
     );
     if (!mounted) {
       _submitting = false;
@@ -509,6 +517,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
         return 'One of the shops in your cart is no longer available';
       case 'CROSS_SHOP_ITEM':
         return 'Cart had a wrong shop attribution — please re-add the items';
+      case 'GST_PROFILE_MISSING':
+        return 'Add your GSTIN under Profile → GST details before claiming '
+            'input credit';
       case 'PRODUCT_INACTIVE':
         return 'One of the items is no longer available';
       case 'PRODUCT_MISSING':
@@ -637,6 +648,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     coupon: _appliedCoupon,
                     onApply: _applyCoupon,
                     onRemove: _removeCoupon,
+                  ),
+                  const SizedBox(height: AppSizes.lg),
+                  const _SectionLabel(label: 'GST INPUT CREDIT'),
+                  _GstClaimCard(
+                    lines: cart.lines,
+                    claiming: _claimGst,
+                    onChanged: (v) => setState(() => _claimGst = v),
                   ),
                   const SizedBox(height: AppSizes.lg),
                   const _SectionLabel(label: 'PAYMENT METHOD'),
@@ -806,6 +824,191 @@ class _StepStrip extends StatelessWidget {
 }
 
 // ─── Section primitives ─────────────────────────────────────────────
+
+/// Opt-in to having this order invoiced to the buyer's own GSTIN.
+///
+/// Three states, because promising input credit the buyer will not get is
+/// worse than not offering it:
+///   * no saved GSTIN     -> a link to add one, no toggle
+///   * no registered seller in the cart -> explained, no toggle
+///   * otherwise          -> a toggle, plus a note about any seller in the
+///                           cart that cannot issue a tax invoice
+class _GstClaimCard extends StatelessWidget {
+  const _GstClaimCard({
+    required this.lines,
+    required this.claiming,
+    required this.onChanged,
+  });
+
+  final List<CartItem> lines;
+  final bool claiming;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final gst = context.watch<GstProfileProvider>();
+
+    final unregistered = <String>{
+      for (final l in lines)
+        if (!l.product.shopGstRegistered) l.product.shopName ?? 'One seller',
+    };
+    final anyRegistered = lines.any((l) => l.product.shopGstRegistered);
+
+    if (!gst.canClaimGst) {
+      return _Shell(
+        child: _Message(
+          key: const Key('gst-claim-add-profile'),
+          title: 'Buying for a business?',
+          body:
+              'Add your GSTIN and we can ask GST-registered sellers to '
+              "invoice this order in your business's name.",
+          action: 'Add GST details',
+          onAction: () async {
+            await Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const GstDetailsPage()));
+          },
+        ),
+      );
+    }
+
+    if (!anyRegistered) {
+      return _Shell(
+        child: _Message(
+          key: const Key('gst-claim-unavailable'),
+          title: 'No tax invoice for this order',
+          body:
+              'None of the sellers in this cart are registered under GST, '
+              'so no GST is charged and there is nothing to claim.',
+        ),
+      );
+    }
+
+    return _Shell(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Claim input credit',
+                      style: theme.textTheme.bodyMedium?.extraBold,
+                    ),
+                    const SizedBox(height: AppSizes.xxs),
+                    Text(
+                      'Invoice this order to ${gst.profile.legalName} '
+                      '(${gst.profile.gstin}).',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: AppColors.muted,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSizes.md),
+              Switch.adaptive(
+                key: const Key('gst-claim-switch'),
+                value: claiming,
+                onChanged: onChanged,
+              ),
+            ],
+          ),
+          if (claiming && unregistered.isNotEmpty) ...[
+            const SizedBox(height: AppSizes.sm),
+            Text(
+              unregistered.length == 1
+                  ? '${unregistered.first} is not registered under GST, so '
+                        'that part of your order gets a bill of supply with no '
+                        'GST to claim.'
+                  : '${unregistered.length} sellers in this cart are not '
+                        'registered under GST, so their part of the order gets '
+                        'a bill of supply with no GST to claim.',
+              key: const Key('gst-claim-partial-warning'),
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: AppColors.warning,
+                fontWeight: FontWeight.w600,
+                height: 1.35,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _Shell extends StatelessWidget {
+  const _Shell({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    margin: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+    padding: const EdgeInsets.all(AppSizes.md),
+    decoration: ShapeDecoration(
+      color: AppColors.white,
+      shape: AppShapes.squircle(AppSizes.radiusMd),
+    ),
+    child: child,
+  );
+}
+
+class _Message extends StatelessWidget {
+  const _Message({
+    super.key,
+    required this.title,
+    required this.body,
+    this.action,
+    this.onAction,
+  });
+  final String title;
+  final String body;
+  final String? action;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: theme.textTheme.bodyMedium?.extraBold),
+        const SizedBox(height: AppSizes.xxs),
+        Text(
+          body,
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: AppColors.muted,
+            height: 1.35,
+          ),
+        ),
+        if (action != null) ...[
+          const SizedBox(height: AppSizes.sm),
+          TextButton(
+            onPressed: onAction,
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.zero,
+              visualDensity: VisualDensity.compact,
+              foregroundColor: AppColors.brand,
+            ),
+            child: Text(
+              action!,
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: AppColors.brand,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
 
 class _SectionLabel extends StatelessWidget {
   const _SectionLabel({required this.label, this.trailing});

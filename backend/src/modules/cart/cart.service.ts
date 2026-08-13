@@ -1,5 +1,6 @@
 import prisma from '../../infra/db/prisma.js';
 import type { Prisma } from '@prisma/client';
+import { isOutputGstRegistered } from '../invoices/gst-registration-gate.js';
 
 /// Product fields the customer cart UI needs to render a line: name,
 /// pricing, primary image, stock, and the owning shop so the "Sold by"
@@ -23,7 +24,21 @@ const cartProductSelect = {
     orderBy: { sortOrder: 'asc' as const },
     take: 1,
   },
-  shop: { select: { id: true, name: true, slug: true } },
+  shop: {
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      // Drives `shopGstRegistered` below — see gstRegisteredShops().
+      owner: {
+        select: {
+          shopGstin: true,
+          registrationType: true,
+          gstEffectiveFrom: true,
+        },
+      },
+    },
+  },
 } satisfies Prisma.ProductSelect;
 
 /// Hard cap on a single line — matches the customer app's
@@ -64,13 +79,25 @@ export class CartService {
 
     return rows
       .filter((r) => r.product && r.product.isActive && r.product.isPublished)
-      .map((r) => ({
-        id: r.id,
-        productId: r.productId,
-        quantity: Number(r.quantity),
-        updatedAt: r.updatedAt,
-        product: r.product,
-      }));
+      .map((r) => {
+        // Never ship the merchant's own GSTIN / registration row to a buyer
+        // (DPDP §8 minimisation) — collapse it to the one bit the customer
+        // needs: can this seller issue a tax invoice I can claim credit on?
+        const { owner, ...shop } = r.product!.shop;
+        return {
+          id: r.id,
+          productId: r.productId,
+          quantity: Number(r.quantity),
+          updatedAt: r.updatedAt,
+          product: {
+            ...r.product!,
+            shop: {
+              ...shop,
+              gstRegistered: isOutputGstRegistered(owner, new Date()),
+            },
+          },
+        };
+      });
   }
 
   /// Set the absolute quantity on a line. Quantity ≤ 0 removes the

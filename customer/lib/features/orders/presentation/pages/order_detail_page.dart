@@ -1220,49 +1220,82 @@ class _InvoiceFooter extends StatelessWidget {
         AppSizes.lg,
         AppSizes.md,
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppIcon(
-            invoice.isPaid
-                ? AppIcons.verifiedRounded
-                : AppIcons.receiptLongOutlined,
-            size: AppSizes.iconSm,
-            color: color,
-          ),
-          const SizedBox(width: AppSizes.sm),
-          Expanded(
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: color,
-                fontWeight: FontWeight.w700,
+          if (invoice.supportsInputCredit)
+            Padding(
+              key: const Key('invoice-itc-note'),
+              padding: const EdgeInsets.only(bottom: AppSizes.xs),
+              child: Text(
+                'Tax invoice raised to ${invoice.customerGstin} — GST on this '
+                'order is claimable as input credit.',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppColors.brandStrong,
+                  fontWeight: FontWeight.w700,
+                  height: 1.3,
+                ),
+              ),
+            )
+          else if (invoice.documentType == 'BILL_OF_SUPPLY')
+            Padding(
+              key: const Key('invoice-no-itc-note'),
+              padding: const EdgeInsets.only(bottom: AppSizes.xs),
+              child: Text(
+                'Bill of supply — this seller is not registered under GST, so '
+                'no GST was charged and there is nothing to claim.',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppColors.muted,
+                  fontWeight: FontWeight.w600,
+                  height: 1.3,
+                ),
               ),
             ),
+          Row(
+            children: [
+              AppIcon(
+                invoice.isPaid
+                    ? AppIcons.verifiedRounded
+                    : AppIcons.receiptLongOutlined,
+                size: AppSizes.iconSm,
+                color: color,
+              ),
+              const SizedBox(width: AppSizes.sm),
+              Expanded(
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              IconButton(
+                tooltip: 'Download invoice',
+                onPressed: downloading ? null : onDownload,
+                iconSize: AppSizes.iconMd,
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minWidth: AppSizes.iconXl,
+                  minHeight: AppSizes.iconXl,
+                ),
+                icon: downloading
+                    ? const SizedBox(
+                        width: AppSizes.iconSm,
+                        height: AppSizes.iconSm,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : AppIcon(AppIcons.downloadRounded, color: color),
+              ),
+              if (canOpen)
+                AppIcon(
+                  AppIcons.chevronRightRounded,
+                  size: AppSizes.iconMd,
+                  color: color,
+                ),
+            ],
           ),
-          IconButton(
-            tooltip: 'Download invoice',
-            onPressed: downloading ? null : onDownload,
-            iconSize: AppSizes.iconMd,
-            visualDensity: VisualDensity.compact,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(
-              minWidth: AppSizes.iconXl,
-              minHeight: AppSizes.iconXl,
-            ),
-            icon: downloading
-                ? const SizedBox(
-                    width: AppSizes.iconSm,
-                    height: AppSizes.iconSm,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : AppIcon(AppIcons.downloadRounded, color: color),
-          ),
-          if (canOpen)
-            AppIcon(
-              AppIcons.chevronRightRounded,
-              size: AppSizes.iconMd,
-              color: color,
-            ),
         ],
       ),
     );
