@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- AppPalette dark `canvas` — keep in step with app_palette.dart. -->
+    <color name="launch_background">#0B141A</color>
+</resources>

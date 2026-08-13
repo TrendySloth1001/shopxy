@@ -29,8 +29,9 @@
             "request": "launch",
             "type": "dart",
             "flutterMode": "release",
-            // AppConfig.assertSafeForRelease() throws unless release builds get
-            // an explicit API_BASE_URL — the debug fallback is not used here.
+            // Optional — AppConfig.apiBaseUrl already falls back to this exact
+            // URL. Passed explicitly so the launch config states which backend
+            // it runs against instead of leaving it implicit.
             "toolArgs": [
                 "--dart-define=API_BASE_URL=https://backendshopxy.cloudnsofts.com/"
             ]

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopxy/core/app.dart';
 import 'package:shopxy/core/auth/token_manager.dart';
+import 'package:shopxy/core/startup_failure_app.dart';
 import 'dart:async';
 
 import 'package:http/http.dart' as http;
@@ -74,14 +75,20 @@ import 'package:shopxy/features/returns/data/datasources/merchant_returns_remote
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Fail-fast in release if API_BASE_URL was missed or points at a dev host.
-  AppConfig.assertSafeForRelease();
+  // A throw before `runApp` would leave the launch window up forever.
+  try {
+    AppConfig.assertSafeForRelease();
 
-  // Read the developer environment choice BEFORE anything resolves a URL,
-  // otherwise the first requests of the run go to the previous backend.
-  await AppEnvironments.load();
+    // Read the developer environment choice BEFORE anything resolves a URL,
+    // otherwise the first requests of the run go to the previous backend.
+    await AppEnvironments.load();
 
-  await bootstrapShopxy();
+    await bootstrapShopxy();
+  } catch (error, stack) {
+    debugPrint('ShopXY failed to start: $error
+$stack');
+    runApp(StartupFailureApp(error: error, stack: stack));
+  }
 }
 
 /// Teardown hooks for the long-lived listeners the current object graph

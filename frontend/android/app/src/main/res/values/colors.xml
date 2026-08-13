@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#F26A1B</color>
+
+    <!-- AppPalette light `canvas` — keep in step with app_palette.dart. -->
+    <color name="launch_background">#F0F2F5</color>
 </resources>

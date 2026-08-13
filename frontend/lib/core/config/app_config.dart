@@ -7,8 +7,7 @@ class AppConfig {
   /// The trailing slash matters — endpoints are concatenated as
   /// `${apiBaseUrl}auth/login`, not joined with a path separator.
   ///
-  /// In debug mode we fall through to a local dev URL. In release mode
-  /// the value MUST come via dart-define — see [assertSafeForRelease].
+  /// Optional — when absent [apiBaseUrl] falls back to production.
   static const String _envBaseUrl = String.fromEnvironment('API_BASE_URL');
 
   /// Resolution order: the environment picked in Settings (developer-only,
@@ -56,30 +55,38 @@ class AppConfig {
         '345405040836-lps9u0rducshks9kjtpb96t8u3365lui.apps.googleusercontent.com',
   );
 
-  /// Throws on release builds that didn't get an explicit API_BASE_URL
-  /// or that were misconfigured to a developer's personal tunnel.
-  /// Call once from `main()` before [runApp].
+  /// Hosts that must never back a release build (10.0.2.2 = emulator's host).
+  static const _devHostMarkers = [
+    'devtunnels.ms',
+    'localhost',
+    '127.0.0.1',
+    '10.0.2.2',
+  ];
+
+  /// Throws on a release build pointed at a developer host. Call once from
+  /// `main()` before [runApp].
   ///
-  /// Deliberately checks the dart-define only, not [apiBaseUrl]: this guards
-  /// against a *build* that was shipped pointing at a dev host, which is a
-  /// mistake. An environment picked in Settings is the opposite — a signed-in
-  /// developer deliberately choosing one from a fixed list — so it stays
-  /// honoured in release builds, which is where it's actually useful.
+  /// A *missing* API_BASE_URL is fine — [apiBaseUrl] falls back to production.
+  /// Requiring it used to throw here on every build that omitted the flag,
+  /// which shipped an app that could only render a blank window.
+  ///
+  /// Checks the dart-define only, not [apiBaseUrl]: an environment picked in
+  /// Settings is a deliberate choice and stays honoured.
   static void assertSafeForRelease() {
-    if (kReleaseMode) {
-      if (_envBaseUrl.isEmpty) {
-        throw StateError(
-          'API_BASE_URL dart-define is required for release builds.',
-        );
-      }
-      if (_envBaseUrl.contains('devtunnels.ms') ||
-          _envBaseUrl.contains('localhost') ||
-          _envBaseUrl.contains('127.0.0.1')) {
-        throw StateError(
-          'API_BASE_URL "$_envBaseUrl" looks like a development host — '
-          'refusing to launch a release build against it.',
-        );
-      }
+    if (!kReleaseMode || _envBaseUrl.isEmpty) return;
+    if (looksLikeDevHost(_envBaseUrl)) {
+      throw StateError(
+        'API_BASE_URL "$_envBaseUrl" looks like a development host — '
+        'refusing to launch a release build against it.',
+      );
     }
+  }
+
+  /// Split out so it's testable — [assertSafeForRelease] is gated on
+  /// [kReleaseMode], which is false under `flutter test`.
+  @visibleForTesting
+  static bool looksLikeDevHost(String url) {
+    final host = url.toLowerCase();
+    return _devHostMarkers.any(host.contains);
   }
 }
