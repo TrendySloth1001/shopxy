@@ -1,5 +1,4 @@
 import 'package:shopxy_customer/features/marketplace/domain/entities/marketplace_shop.dart';
-import 'package:shopxy_customer/shared/format/app_format.dart';
 
 /// Detail-level product as returned by `GET /marketplace/products/:id`.
 /// Carries enough fields to render the V2 PDP: gallery, price/MRP +
@@ -33,7 +32,6 @@ class MarketplaceProduct {
     this.contentBlocks = const [],
     this.variantAxes = const [],
     this.variants = const [],
-    this.bankOffers = const [],
   });
 
   final String id;
@@ -95,13 +93,6 @@ class MarketplaceProduct {
   /// products. The customer PDP renders a swatch picker only when
   /// `variants.length > 1`.
   final List<MarketplaceVariant> variants;
-
-  /// Platform-curated bank offers eligible for this product. Curated
-  /// centrally by admins, not by the owning shop — Amazon-style
-  /// platform tie-ups (HDFC, ICICI, SBI…). Filtered server-side to
-  /// offers whose `minOrderAmount` ≤ selling price + currently inside
-  /// their validity window. May be empty.
-  final List<PlatformBankOffer> bankOffers;
 
   /// Default variant — what the PDP shows before the customer picks
   /// anything. Always exists because every product has ≥1 variant.
@@ -193,130 +184,9 @@ class MarketplaceProduct {
               .map(MarketplaceVariant.fromJson)
               .toList() ??
           const [],
-      bankOffers: (j['bankOffers'] as List<dynamic>?)
-              ?.whereType<Map<String, dynamic>>()
-              .map(PlatformBankOffer.fromJson)
-              .toList() ??
-          const [],
     );
   }
 
-}
-
-/// Platform-curated bank offer surfaced on the PDP. Mirrors the
-/// `platform_bank_offers` row shape — bank code, card type, discount
-/// math and validity window. Discount application itself happens at
-/// payment time (BIN lookup), so the customer only sees this as a
-/// visible badge here.
-class PlatformBankOffer {
-  const PlatformBankOffer({
-    required this.id,
-    required this.bank,
-    required this.cardType,
-    required this.discountType,
-    required this.discountValue,
-    required this.minOrderAmount,
-    required this.validUntil,
-    this.maxDiscount,
-    this.terms,
-  });
-
-  final String id;
-  /// Short code matching the PDP renderer's bank set (HDFC, ICICI,
-  /// SBI, AXIS, KOTAK, AMEX, YES, HSBC, SC, IDFC, BOB, RBL).
-  final String bank;
-  /// CREDIT | DEBIT | CREDIT_DEBIT | NET_BANKING | EMI | ANY.
-  final String cardType;
-  /// PERCENT or FLAT.
-  final String discountType;
-  final double discountValue;
-  final double minOrderAmount;
-  final DateTime validUntil;
-  final double? maxDiscount;
-  final String? terms;
-
-  /// Friendly text for the offer card. Composed client-side so the
-  /// backend stores the structured pieces, not a duplicated string.
-  String get headline {
-    final discount = discountType == 'PERCENT'
-        ? '${discountValue.toStringAsFixed(0)}% off'
-        : '${AppFormat.rupees(discountValue)} off';
-    final capPart = (discountType == 'PERCENT' && maxDiscount != null)
-        ? ' up to ${AppFormat.rupees(maxDiscount!)}'
-        : '';
-    final cardPart = _cardTypeLabel(cardType);
-    return '$discount$capPart on ${bankDisplayName(bank)}$cardPart';
-  }
-
-  static String bankDisplayName(String code) {
-    switch (code) {
-      case 'HDFC':
-        return 'HDFC Bank';
-      case 'ICICI':
-        return 'ICICI Bank';
-      case 'SBI':
-        return 'State Bank of India';
-      case 'AXIS':
-        return 'Axis Bank';
-      case 'KOTAK':
-        return 'Kotak Mahindra Bank';
-      case 'AMEX':
-        return 'American Express';
-      case 'YES':
-        return 'YES Bank';
-      case 'HSBC':
-        return 'HSBC';
-      case 'SC':
-        return 'Standard Chartered';
-      case 'IDFC':
-        return 'IDFC First Bank';
-      case 'BOB':
-        return 'Bank of Baroda';
-      case 'RBL':
-        return 'RBL Bank';
-      default:
-        return code;
-    }
-  }
-
-  static String _cardTypeLabel(String code) {
-    switch (code) {
-      case 'CREDIT':
-        return ' Credit Cards';
-      case 'DEBIT':
-        return ' Debit Cards';
-      case 'CREDIT_DEBIT':
-        return ' Credit & Debit Cards';
-      case 'NET_BANKING':
-        return ' Net Banking';
-      case 'EMI':
-        return ' EMI';
-      case 'ANY':
-      default:
-        return '';
-    }
-  }
-
-  static double _asDouble(dynamic v) {
-    if (v == null) return 0;
-    if (v is num) return v.toDouble();
-    if (v is String) return double.tryParse(v) ?? 0;
-    return 0;
-  }
-
-  factory PlatformBankOffer.fromJson(Map<String, dynamic> j) =>
-      PlatformBankOffer(
-        id: j['id'].toString(),
-        bank: (j['bank'] as String?) ?? '',
-        cardType: (j['cardType'] as String?) ?? 'ANY',
-        discountType: (j['discountType'] as String?) ?? 'PERCENT',
-        discountValue: _asDouble(j['discountValue']),
-        minOrderAmount: _asDouble(j['minOrderAmount']),
-        validUntil: DateTime.parse(j['validUntil'] as String),
-        maxDiscount:
-            j['maxDiscount'] == null ? null : _asDouble(j['maxDiscount']),
-        terms: j['terms'] as String?,
-      );
 }
 
 /// Phase E — variant axis definition surfaced to the customer client.

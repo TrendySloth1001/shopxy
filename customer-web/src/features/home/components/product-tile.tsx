@@ -122,13 +122,6 @@ export function ProductTile({
           ) : null}
         </span>
 
-        {/* Bank offer — a second price hook when there's a deal */}
-        {discounted && p.bankPrice ? (
-          <span className="mt-[3px] truncate text-caption font-bold leading-tight text-info">
-            {p.bankPrice} with Bank offer
-          </span>
-        ) : null}
-
         {/* Delivery + assurance — pinned to the card bottom so every card aligns */}
         {p.freeDelivery || isAssured(p) ? (
           <span className="mt-auto flex items-center gap-[6px] pt-[6px]">

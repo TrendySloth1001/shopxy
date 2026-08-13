@@ -317,7 +317,7 @@ function PdpBody({ product }: BodyProps) {
 
       {/* Offers */}
       <div className="lg:[&>div]:px-0">
-        <PdpOffersStrip offers={offers} bankOffers={product.bankOffers} />
+        <PdpOffersStrip offers={offers} />
       </div>
 
       {/* Desktop-only buy actions (inline in right column, hidden on mobile) */}

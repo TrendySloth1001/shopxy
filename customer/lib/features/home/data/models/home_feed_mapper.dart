@@ -162,7 +162,6 @@ class HomeFeedMapper {
       name: (p['name'] ?? '') as String,
       price: _money(selling),
       originalPrice: mrp != null && mrp > selling ? _money(mrp) : '',
-      bankPrice: _money(selling * 0.95),
       rating: _asDouble(p['ratingAvg']) ?? 0,
       ratingCount: ratingCount > 999
           ? '${(ratingCount / 1000).toStringAsFixed(1)}k'

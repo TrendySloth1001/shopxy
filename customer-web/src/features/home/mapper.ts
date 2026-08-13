@@ -88,7 +88,6 @@ function productCardFromProduct(p: Json): ProductCard | null {
     name: asStr(p["name"]),
     price: rupees(selling),
     originalPrice: mrp !== null && mrp > selling ? rupees(mrp) : "",
-    bankPrice: rupees(selling * 0.95),
     rating: asNum(p["ratingAvg"]) ?? 0,
     ratingCount: ratingCount > 999 ? `${(ratingCount / 1000).toFixed(1)}k` : `${ratingCount}`,
     ratingCountRaw: ratingCount,
@@ -98,7 +97,9 @@ function productCardFromProduct(p: Json): ProductCard | null {
     shopName: shop ? asStrOrNull(shop["name"]) : null,
     brand: asStrOrNull(p["brand"]),
     discountPct,
-    freeDelivery: true,
+    // Nothing backs this yet — no per-shop or per-pincode shipping rule
+    // exists, so don't promise free delivery on every tile.
+    freeDelivery: false,
   };
 }
 

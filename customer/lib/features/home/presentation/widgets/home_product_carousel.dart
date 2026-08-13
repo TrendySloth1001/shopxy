@@ -151,10 +151,7 @@ class HomeProductTile extends StatelessWidget {
               // intrinsic height. The internal column is sized tight
               // (each spacing is the minimum that still reads cleanly)
               // so residual clip is at most 1–2px and never affects
-              // the visible content. The trust line is only shown when
-              // there's no bank-offer line (discounted products already
-              // have a third row from the bank-offer) — keeps the tile
-              // height bounded across both states.
+              // the visible content.
               ClipRect(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(
@@ -180,51 +177,7 @@ class HomeProductTile extends StatelessWidget {
                       ),
                       const SizedBox(height: AppSizes.xs),
                       _PriceRow(product: product, hasDiscount: hasDiscount),
-                      if (hasDiscount) ...[
-                        const SizedBox(height: AppSizes.xxs),
-                        // Same line carries both signals so the tile
-                        // keeps a 3-row body regardless of whether the
-                        // product is discounted or full-price.
-                        Row(
-                          children: [
-                            Flexible(
-                              child: Text(
-                                '${product.bankPrice} with Bank',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: AppColors.info,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  height: 1.1,
-                                ),
-                              ),
-                            ),
-                            if (product.freeDelivery) ...[
-                              const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 4),
-                                child: Text(
-                                  '·',
-                                  style: TextStyle(
-                                    color: AppColors.muted,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ),
-                              const Text(
-                                'FREE',
-                                style: TextStyle(
-                                  color: AppColors.success,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 0.2,
-                                  height: 1,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ] else if (product.freeDelivery || product.isAssured) ...[
+                      if (product.freeDelivery || product.isAssured) ...[
                         const SizedBox(height: AppSizes.xxs),
                         Row(
                           children: [
@@ -287,8 +240,7 @@ class HomeProductTile extends StatelessWidget {
 }
 
 /// Image area + every overlay chip. Layered top to bottom:
-///   - AD pill (only for sponsored cards) — top-left
-///   - Discount % chip — top-left (under AD) — only when `hasDiscount`
+///   - Discount % chip — top-left — only when `hasDiscount`
 ///   - Wishlist heart — top-right
 ///   - Tag pill (e.g. "Limited") — left, just above the rating
 ///   - Rating pill — bottom-left
@@ -315,11 +267,9 @@ class _Image extends StatelessWidget {
                   placeholderColor: product.bgColor,
                 ),
               ),
-              if (product.isAd)
-                const Positioned(top: 6, left: 6, child: _AdChip()),
               if (hasDiscount)
                 Positioned(
-                  top: product.isAd ? 28 : 6,
+                  top: 6,
                   left: 6,
                   child: _DiscountChip(percent: product.discountPct),
                 ),
@@ -392,29 +342,6 @@ class _DiscountChip extends StatelessWidget {
           color: AppColors.white,
           fontWeight: FontWeight.w800,
           fontSize: 10,
-          letterSpacing: 0.4,
-        ),
-      ),
-    );
-  }
-}
-
-class _AdChip extends StatelessWidget {
-  const _AdChip();
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-      decoration: BoxDecoration(
-        color: AppColors.white.withValues(alpha: 0.92),
-        borderRadius: BorderRadius.circular(AppSizes.radiusXs),
-      ),
-      child: const Text(
-        'AD',
-        style: TextStyle(
-          color: AppColors.muted,
-          fontSize: 9,
-          fontWeight: FontWeight.w800,
           letterSpacing: 0.4,
         ),
       ),

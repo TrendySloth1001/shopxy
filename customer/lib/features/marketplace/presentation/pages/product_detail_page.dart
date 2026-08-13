@@ -163,7 +163,7 @@ class _Body extends StatelessWidget {
           ),
         ),
         SliverToBoxAdapter(
-          child: PdpOffersStrip(offers: p.offers, bankOffers: p.bankOffers),
+          child: PdpOffersStrip(offers: p.offers),
         ),
         SliverToBoxAdapter(child: PdpFbtRail(productId: p.id)),
 

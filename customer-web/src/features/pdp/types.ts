@@ -55,20 +55,6 @@ export const productOfferSchema = z.object({
 });
 export type ProductOffer = z.infer<typeof productOfferSchema>;
 
-// ── Bank offer ────────────────────────────────────────────────────────────────
-
-export const bankOfferSchema = z.object({
-  id: z.coerce.string(),
-  headline: z.string(),
-  description: z.string().nullable().optional(),
-  bankName: z.string().nullable().optional(),
-  discountType: z.string().nullable().optional(),
-  discountValue: z.coerce.number().nullable().optional(),
-  minOrderAmount: z.coerce.number().nullable().optional(),
-  expiresAt: z.string().nullable().optional(),
-});
-export type BankOffer = z.infer<typeof bankOfferSchema>;
-
 // ── Shop summary ──────────────────────────────────────────────────────────────
 
 export const shopSummarySchema = z.object({
@@ -136,7 +122,6 @@ export const productDetailSchema = z.object({
   images: z.array(productImageSchema).default([]),
   shop: shopSummarySchema.nullable().optional(),
   category: categorySummarySchema.nullable().optional(),
-  bankOffers: z.array(bankOfferSchema).default([]),
 });
 export type ProductDetail = z.infer<typeof productDetailSchema>;
 
