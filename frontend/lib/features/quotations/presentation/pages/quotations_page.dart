@@ -10,6 +10,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
+import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
@@ -235,27 +236,27 @@ class _QuotationRow extends StatelessWidget {
   final DateFormat dateFmt;
   final VoidCallback onTap;
 
-  (Color, Color, String) _style() {
+  (AppStatusTone, String) _style() {
     switch (q.status) {
       case 'REQUESTED':
-        return (AppColors.brand, AppColors.brandSoft, 'New request');
+        return (AppStatusTone.info, 'New request');
       case 'PENDING':
-        return (AppColors.warning, AppColors.warningSoft, 'Awaiting customer');
+        return (AppStatusTone.warning, 'Awaiting customer');
       case 'ACCEPTED':
-        return (AppColors.success, AppColors.successSoft, 'Accepted');
+        return (AppStatusTone.success, 'Accepted');
       case 'DECLINED':
-        return (AppColors.error, AppColors.errorSoft, 'Declined');
+        return (AppStatusTone.error, 'Declined');
       case 'CANCELLED':
-        return (AppColors.muted, AppColors.heroPanel, 'Cancelled');
+        return (AppStatusTone.neutral, 'Cancelled');
       default:
-        return (AppColors.muted, AppColors.heroPanel, q.status);
+        return (AppStatusTone.neutral, q.status);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final (fg, bg, label) = _style();
+    final (tone, label) = _style();
     return Material(
       color: AppColors.surface,
       shape: AppShapes.squircle(
@@ -278,26 +279,24 @@ class _QuotationRow extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Text(
-                          q.quotationNo,
-                          style: theme.textTheme.titleMedium?.bold,
+                        Flexible(
+                          child: Text(
+                            q.quotationNo,
+                            style: theme.textTheme.titleSmall?.bold,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                         const SizedBox(width: AppSizes.sm),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSizes.sm,
-                            vertical: AppSizes.xs,
-                          ),
-                          decoration: ShapeDecoration(
-                            color: bg,
-                            shape: AppShapes.squircle(AppSizes.radiusXl),
-                          ),
-                          child: Text(
-                            label,
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: fg,
-                              fontWeight: FontWeight.w800,
-                            ),
+                        // Flexible: "Awaiting customer" next to a six-figure
+                        // total left no room, and a fixed-width pill overflowed
+                        // the row rather than giving way.
+                        Flexible(
+                          child: AppStatusBadge(
+                            label: label,
+                            tone: tone,
+                            weight: AppStatusWeight.soft,
+                            dense: true,
                           ),
                         ),
                       ],
@@ -314,9 +313,10 @@ class _QuotationRow extends StatelessWidget {
                   ],
                 ),
               ),
+              const SizedBox(width: AppSizes.md),
               Text(
                 currency.format(q.total),
-                style: theme.textTheme.titleMedium?.extraBold,
+                style: theme.textTheme.titleSmall?.bold,
               ),
               const SizedBox(width: AppSizes.xs),
               AppIcon(AppIcons.chevronRightRounded, color: AppColors.muted),
