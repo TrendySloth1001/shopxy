@@ -216,4 +216,85 @@ describe('purchase-requests.service — smoke', () => {
       await cleanupTestUser(owner);
     }
   });
+
+  it('createForCustomer — placing an order links the buyer to the shop', async () => {
+    const merchant = await createTestUser();
+    const buyer = await createBuyer();
+    try {
+      // createForCustomer refuses an unpublished shop, and the shared
+      // fixture leaves shops unpublished.
+      await prisma.shop.update({
+        where: { id: merchant.shopId },
+        data: { isPublished: true },
+      });
+      const product = await createTestProduct(merchant.shopId, {
+        sellingPrice: 100,
+      });
+      const before = await prisma.party.count({
+        where: { shopId: merchant.shopId, linkedUserId: buyer.userId },
+      });
+      expect(before).toBe(0);
+
+      const result = await purchaseRequestsService.createForCustomer({
+        customerUserId: buyer.userId,
+        items: [{ productId: product.id, quantity: 1, expectedUnitPrice: 100 }],
+      });
+      if ('error' in result) throw new Error(`unexpected ${result.error}`);
+
+      const party = await prisma.party.findFirst({
+        where: { shopId: merchant.shopId, linkedUserId: buyer.userId },
+        select: { id: true, isActive: true },
+      });
+      expect(party).not.toBeNull();
+      expect(party!.isActive).toBe(true);
+      // The request points at it, so confirm doesn't have to mint one.
+      const child = await prisma.purchaseRequest.findFirstOrThrow({
+        where: { customerOrderId: result.order.id },
+        select: { partyId: true, status: true },
+      });
+      expect(child.partyId).toBe(party!.id);
+      // Linked while still PENDING — no merchant action required.
+      expect(child.status).toBe('PENDING');
+
+      await prisma.customerOrder.delete({ where: { id: result.order.id } });
+    } finally {
+      await cleanupTestUser(merchant);
+      await cleanupTestUser(buyer);
+    }
+  });
+
+  it('createForCustomer — a repeat order reuses the same party row', async () => {
+    const merchant = await createTestUser();
+    const buyer = await createBuyer();
+    try {
+      await prisma.shop.update({
+        where: { id: merchant.shopId },
+        data: { isPublished: true },
+      });
+      const product = await createTestProduct(merchant.shopId, {
+        sellingPrice: 100,
+      });
+      const first = await purchaseRequestsService.createForCustomer({
+        customerUserId: buyer.userId,
+        items: [{ productId: product.id, quantity: 1, expectedUnitPrice: 100 }],
+      });
+      const second = await purchaseRequestsService.createForCustomer({
+        customerUserId: buyer.userId,
+        items: [{ productId: product.id, quantity: 2, expectedUnitPrice: 100 }],
+      });
+      if ('error' in first || 'error' in second) {
+        throw new Error('orders should not error');
+      }
+      const parties = await prisma.party.count({
+        where: { shopId: merchant.shopId, linkedUserId: buyer.userId },
+      });
+      expect(parties).toBe(1);
+
+      await prisma.customerOrder.delete({ where: { id: second.order.id } });
+      await prisma.customerOrder.delete({ where: { id: first.order.id } });
+    } finally {
+      await cleanupTestUser(merchant);
+      await cleanupTestUser(buyer);
+    }
+  });
 });
