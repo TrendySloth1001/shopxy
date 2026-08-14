@@ -81,41 +81,76 @@ class _NetworkImageBoxState extends State<NetworkImageBox> {
         : null,
   );
 
+  /// Pixel width to decode at, given the box's laid-out width.
+  ///
+  /// Without this every image is decoded at its full stored resolution and
+  /// scaled down at paint time. A 1600px hero decoded for a 180px grid tile
+  /// costs ~80× the memory it needs, and on a feed of them the image cache
+  /// evicts constantly — which is the re-decode churn that makes scrolling
+  /// stutter. Rounded up a little so a slightly-wider reuse of the same URL
+  /// hits the same cache entry instead of decoding twice.
+  int? _decodeWidth(BuildContext context, double logicalWidth) {
+    if (!logicalWidth.isFinite || logicalWidth <= 0) return null;
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    final target = logicalWidth * dpr;
+    const bucket = 64.0;
+    return ((target / bucket).ceil() * bucket).round();
+  }
+
+  Widget _image(BuildContext context, double logicalWidth) {
+    return Image.network(
+      widget.url,
+      width: widget.width,
+      height: widget.height,
+      fit: widget.fit,
+      cacheWidth: _decodeWidth(context, logicalWidth),
+      // Downscaling is what these all do; the default (low) shows aliasing on
+      // product photography.
+      filterQuality: FilterQuality.medium,
+      // Keep the old frame while a new URL decodes instead of flashing the
+      // placeholder — visible when a tile is recycled during a fast scroll.
+      gaplessPlayback: true,
+      frameBuilder: (context, child, frame, _) {
+        // First frame decoded → image loaded successfully, kill the
+        // pending timeout so a slow display thread doesn't trigger
+        // a false-positive fallback.
+        if (frame != null) _timeoutTimer?.cancel();
+        return child;
+      },
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) {
+          _timeoutTimer?.cancel();
+          return child;
+        }
+        return _placeholder();
+      },
+      errorBuilder: (context, error, stack) {
+        _timeoutTimer?.cancel();
+        return _placeholder(errorIcon: true);
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     Widget img;
     if (_timedOut) {
       img = _placeholder(errorIcon: true);
+    } else if (widget.width != null) {
+      img = _image(context, widget.width!);
     } else {
-      img = Image.network(
-        widget.url,
-        width: widget.width,
-        height: widget.height,
-        fit: widget.fit,
-        frameBuilder: (context, child, frame, _) {
-          // First frame decoded → image loaded successfully, kill the
-          // pending timeout so a slow display thread doesn't trigger
-          // a false-positive fallback.
-          if (frame != null) _timeoutTimer?.cancel();
-          return child;
-        },
-        loadingBuilder: (context, child, progress) {
-          if (progress == null) {
-            _timeoutTimer?.cancel();
-            return child;
-          }
-          return _placeholder();
-        },
-        errorBuilder: (context, error, stack) {
-          _timeoutTimer?.cancel();
-          return _placeholder(errorIcon: true);
-        },
+      // Width comes from the parent, so it can only be read at layout time.
+      img = LayoutBuilder(
+        builder: (context, constraints) =>
+            _image(context, constraints.maxWidth),
       );
     }
     if (widget.borderRadius != null) {
       img = ClipRRect(borderRadius: widget.borderRadius!, child: img);
     }
-    return img;
+    // Isolates each image's decode/paint from the surrounding list, so one
+    // tile arriving doesn't repaint the whole viewport mid-scroll.
+    return RepaintBoundary(child: img);
   }
 }
 

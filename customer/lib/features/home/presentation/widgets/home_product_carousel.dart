@@ -124,15 +124,18 @@ class HomeProductTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final hasDiscount = product.discountPct > 0;
     return Material(
       color: AppColors.white,
       shape: AppShapes.squircle(
-        AppSizes.radiusMd,
+        AppSizes.radiusLg,
         side: const BorderSide(color: AppColors.hairline),
       ),
+      // Clipping here is what lets the image sit full-bleed against the
+      // card's own corners, instead of the tile re-rounding its top itself.
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
-        customBorder: AppShapes.squircle(AppSizes.radiusMd),
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => ProductDetailPage(productId: product.productId),
@@ -145,95 +148,99 @@ class HomeProductTile extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               _Image(product: product, hasDiscount: hasDiscount),
-              // ClipRect prevents the debug "BOTTOM OVERFLOWED BY N
-              // PIXELS" yellow stripe on dense grids whose
-              // childAspectRatio doesn't quite match the tile's
-              // intrinsic height. The internal column is sized tight
-              // (each spacing is the minimum that still reads cleanly)
-              // so residual clip is at most 1–2px and never affects
-              // the visible content.
-              ClipRect(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSizes.sm,
-                    AppSizes.sm,
-                    AppSizes.sm,
-                    AppSizes.sm,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        product.name,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: AppColors.black,
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w600,
-                          height: 1.2,
-                        ),
+              Padding(
+                padding: const EdgeInsets.all(AppSizes.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      product.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: AppColors.black,
+                        fontWeight: FontWeight.w700,
+                        height: 1.2,
                       ),
+                    ),
+                    const SizedBox(height: AppSizes.xs),
+                    _PriceRow(product: product, hasDiscount: hasDiscount),
+                    if (product.freeDelivery || product.isAssured) ...[
                       const SizedBox(height: AppSizes.xs),
-                      _PriceRow(product: product, hasDiscount: hasDiscount),
-                      if (product.freeDelivery || product.isAssured) ...[
-                        const SizedBox(height: AppSizes.xxs),
-                        Row(
-                          children: [
-                            if (product.freeDelivery) ...[
-                              const AppIcon(
-                                AppIcons.localShippingOutlined,
-                                size: 10,
-                                color: AppColors.success,
-                              ),
-                              const SizedBox(width: 3),
-                              const Text(
-                                'FREE delivery',
-                                style: TextStyle(
-                                  color: AppColors.success,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 0.2,
-                                  height: 1,
-                                ),
-                              ),
-                            ],
-                            if (product.isAssured) ...[
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 4,
-                                  vertical: 1,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.info.withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(
-                                    AppSizes.radiusXs,
-                                  ),
-                                ),
-                                child: const Text(
-                                  'ASSURED',
-                                  style: TextStyle(
-                                    color: AppColors.info,
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: 0.3,
-                                    height: 1,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ],
+                      // Wrap, not Row: two signals plus a long delivery label
+                      // used to need a ClipRect to hide the overflow stripe.
+                      Wrap(
+                        spacing: AppSizes.xs,
+                        runSpacing: AppSizes.xxs,
+                        children: [
+                          if (product.freeDelivery)
+                            const TilePill(
+                              icon: AppIcons.localShippingOutlined,
+                              label: 'FREE delivery',
+                              fg: AppColors.success,
+                              bg: AppColors.successSoft,
+                            ),
+                          if (product.isAssured)
+                            const TilePill(
+                              label: 'ASSURED',
+                              fg: AppColors.info,
+                              bg: AppColors.infoSoft,
+                            ),
+                        ],
+                      ),
                     ],
-                  ),
+                  ],
                 ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Small signal chip. Mirrors the merchant grid card's `_Pill` so a product
+/// reads the same way on both sides of the platform.
+class TilePill extends StatelessWidget {
+  const TilePill({
+    super.key,
+    required this.label,
+    required this.fg,
+    required this.bg,
+    this.icon,
+  });
+  final String label;
+  final Color fg;
+  final Color bg;
+  final AppIconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.xs, vertical: 2),
+      decoration: ShapeDecoration(
+        color: bg,
+        shape: AppShapes.squircle(AppSizes.radiusXs),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            AppIcon(icon, size: 11, color: fg),
+            const SizedBox(width: 3),
+          ],
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: fg,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.2,
+              height: 1.1,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -253,61 +260,56 @@ class _Image extends StatelessWidget {
   Widget build(BuildContext context) {
     return AspectRatio(
       aspectRatio: 1,
-      child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(AppSizes.radiusMd),
-        ),
-        child: Container(
-          color: product.bgColor,
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: NetworkImageBox(
-                  url: resolveImageUrl(product.imageUrl),
-                  placeholderColor: product.bgColor,
+      child: Container(
+        color: product.bgColor,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: NetworkImageBox(
+                url: resolveImageUrl(product.imageUrl),
+                placeholderColor: product.bgColor,
+              ),
+            ),
+            if (hasDiscount)
+              Positioned(
+                top: 6,
+                left: 6,
+                child: _DiscountChip(percent: product.discountPct),
+              ),
+            const Positioned(top: 6, right: 6, child: _WishHeart()),
+            if (product.tag != null)
+              Positioned(
+                left: 6,
+                bottom: 30,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.black,
+                    borderRadius: BorderRadius.circular(AppSizes.radiusXs),
+                  ),
+                  child: Text(
+                    product.tag!,
+                    style: const TextStyle(
+                      color: AppColors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
               ),
-              if (hasDiscount)
-                Positioned(
-                  top: 6,
-                  left: 6,
-                  child: _DiscountChip(percent: product.discountPct),
+            if (product.ratingCountRaw > 0)
+              Positioned(
+                bottom: AppSizes.sm,
+                left: AppSizes.sm,
+                child: _RatingPill(
+                  rating: product.rating,
+                  count: product.ratingCount,
                 ),
-              const Positioned(top: 6, right: 6, child: _WishHeart()),
-              if (product.tag != null)
-                Positioned(
-                  left: 6,
-                  bottom: 30,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.black,
-                      borderRadius: BorderRadius.circular(AppSizes.radiusXs),
-                    ),
-                    child: Text(
-                      product.tag!,
-                      style: const TextStyle(
-                        color: AppColors.white,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-              if (product.ratingCountRaw > 0)
-                Positioned(
-                  bottom: 6,
-                  left: 6,
-                  child: _RatingPill(
-                    rating: product.rating,
-                    count: product.ratingCount,
-                  ),
-                ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );
@@ -441,6 +443,10 @@ class _PriceRow extends StatelessWidget {
     // intrinsic width can't host it. Stops the 1-4px horizontal
     // overflow seen in 3-col grids without dropping any signal —
     // tested with ₹64,990 + 28% off on a ~100px tile.
+    final theme = Theme.of(context);
+    // FittedBox scales the whole price line down a hair if the tile's
+    // intrinsic width can't host it. Stops the 1-4px horizontal
+    // overflow seen in 3-col grids without dropping any signal.
     return FittedBox(
       fit: BoxFit.scaleDown,
       alignment: AlignmentDirectional.centerStart,
@@ -451,11 +457,14 @@ class _PriceRow extends StatelessWidget {
           Text(
             product.price,
             maxLines: 1,
-            style: const TextStyle(
+            style: theme.textTheme.titleMedium?.copyWith(
               color: AppColors.black,
-              fontSize: 15,
               fontWeight: FontWeight.w800,
+              letterSpacing: -0.3,
               height: 1,
+              // Tabular figures so prices line up column-to-column in the
+              // grid instead of jittering on digit width.
+              fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
           if (product.originalPrice.isNotEmpty) ...[
@@ -465,16 +474,16 @@ class _PriceRow extends StatelessWidget {
               child: Text(
                 product.originalPrice,
                 maxLines: 1,
-                style: const TextStyle(
+                style: theme.textTheme.bodySmall?.copyWith(
                   color: AppColors.muted,
-                  fontSize: 11,
                   decoration: TextDecoration.lineThrough,
+                  fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
             ),
           ],
           // Inline "% off" intentionally dropped — the corner badge on
-          // the image already screams the discount, and the duplicate
+          // the image already carries the discount, and the duplicate
           // here was the main source of overflow on narrow tiles.
         ],
       ),
