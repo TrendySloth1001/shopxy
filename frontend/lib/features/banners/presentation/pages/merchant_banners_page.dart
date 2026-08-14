@@ -10,6 +10,7 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
+import 'package:shopxy/shared/widgets/app_status_badge.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
@@ -270,16 +271,16 @@ class _BannerTile extends StatelessWidget {
     }
   }
 
-  Color get _statusColor {
+  AppStatusTone get _statusTone {
     switch (_status) {
       case 'Live':
-        return AppColors.brand;
+        return AppStatusTone.success;
       case 'Scheduled':
-        return AppColors.info;
+        return AppStatusTone.info;
       case 'Expired':
-        return AppColors.warning;
+        return AppStatusTone.warning;
       default:
-        return AppColors.muted;
+        return AppStatusTone.neutral;
     }
   }
 
@@ -300,21 +301,33 @@ class _BannerTile extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(AppSizes.md),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 72,
-                  height: 56,
-                  decoration: ShapeDecoration(
-                    color: AppColors.heroPanel,
-                    shape: AppShapes.squircle(AppSizes.radiusSm),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Image.network(
-                    resolveImageUrl(banner.imageUrl),
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => AppIcon(
-                      AppIcons.brokenImageOutlined,
-                      color: AppColors.muted,
+                // 16:9 — the shape a banner is actually shown in, so the
+                // merchant previews the crop rather than a squashed square.
+                SizedBox(
+                  width: 96,
+                  child: AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: Container(
+                      decoration: ShapeDecoration(
+                        color: AppColors.heroPanel,
+                        shape: AppShapes.squircle(AppSizes.radiusSm),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Image.network(
+                        resolveImageUrl(banner.imageUrl),
+                        fit: BoxFit.cover,
+                        // Decode at the size actually drawn — a full hero
+                        // image decoded for a 96px thumb is pure waste, and
+                        // the downsample is what makes it look muddy.
+                        cacheWidth: 288,
+                        filterQuality: FilterQuality.medium,
+                        errorBuilder: (_, _, _) => AppIcon(
+                          AppIcons.brokenImageOutlined,
+                          color: AppColors.muted,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -327,79 +340,55 @@ class _BannerTile extends StatelessWidget {
                         banner.linkUrl?.isNotEmpty == true
                             ? banner.linkUrl!
                             : banner.placement.label,
-                        style: Theme.of(context).textTheme.titleSmall,
+                        style: Theme.of(context).textTheme.titleSmall?.bold,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: AppSizes.xxs),
-                      Row(
+                      const SizedBox(height: AppSizes.xs),
+                      // Wrap, not Row: status + sort + product count + a date
+                      // window is more than one line of a phone, and a Row
+                      // painted the overflow stripe instead of wrapping.
+                      Wrap(
+                        spacing: AppSizes.sm,
+                        runSpacing: AppSizes.xs,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppSizes.sm,
-                              vertical: 2,
-                            ),
-                            decoration: ShapeDecoration(
-                              color: _statusColor.withValues(alpha: 0.12),
-                              shape: AppShapes.squircle(AppSizes.radiusFull),
-                            ),
-                            child: Text(
-                              _statusLabel(l10n),
-                              style: Theme.of(context).textTheme.labelSmall
-                                  ?.copyWith(
-                                    color: _statusColor,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                            ),
+                          AppStatusBadge(
+                            label: _statusLabel(l10n),
+                            tone: _statusTone,
+                            weight: AppStatusWeight.soft,
+                            dense: true,
                           ),
-                          const SizedBox(width: AppSizes.sm),
-                          Text(
-                            l10n.bannersSortOrder('${banner.sortOrder}'),
-                            style: Theme.of(context).textTheme.labelSmall
-                                ?.copyWith(color: AppColors.muted),
+                          _Meta(
+                            label: l10n.bannersSortOrder('${banner.sortOrder}'),
                           ),
-                          if (banner.productCount > 0) ...[
-                            const SizedBox(width: AppSizes.sm),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                AppIcon(
-                                  AppIcons.inventory2Outlined,
-                                  size: AppSizes.iconSm,
-                                  color: AppColors.muted,
-                                ),
-                                const SizedBox(width: AppSizes.xxs),
-                                Text(
-                                  banner.productCount == 1
-                                      ? l10n.bannersProductCountOne(
-                                          '${banner.productCount}',
-                                        )
-                                      : l10n.bannersProductCountOther(
-                                          '${banner.productCount}',
-                                        ),
-                                  style: Theme.of(context).textTheme.labelSmall
-                                      ?.copyWith(color: AppColors.muted),
-                                ),
-                              ],
+                          if (banner.productCount > 0)
+                            _Meta(
+                              icon: AppIcons.inventory2Outlined,
+                              label: banner.productCount == 1
+                                  ? l10n.bannersProductCountOne(
+                                      '${banner.productCount}',
+                                    )
+                                  : l10n.bannersProductCountOther(
+                                      '${banner.productCount}',
+                                    ),
                             ),
-                          ],
-                          if (banner.startAt != null ||
-                              banner.endAt != null) ...[
-                            const SizedBox(width: AppSizes.sm),
-                            Text(
-                              _windowLabel(l10n, banner),
-                              style: Theme.of(context).textTheme.labelSmall
-                                  ?.copyWith(color: AppColors.muted),
+                          if (banner.startAt != null || banner.endAt != null)
+                            _Meta(
+                              icon: AppIcons.calendarTodayRounded,
+                              label: _windowLabel(l10n, banner),
                             ),
-                          ],
                         ],
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(width: AppSizes.xs),
                 IconButton(
                   tooltip: l10n.bannersDelete,
                   icon: const AppIcon(AppIcons.deleteOutline),
+                  color: AppColors.muted,
+                  visualDensity: VisualDensity.compact,
                   onPressed: onDelete,
                 ),
               ],
@@ -418,6 +407,30 @@ class _BannerTile extends StatelessWidget {
     if (b.startAt != null) return l10n.bannersWindowFrom(df.format(b.startAt!));
     if (b.endAt != null) return l10n.bannersWindowUntil(df.format(b.endAt!));
     return '';
+  }
+}
+
+/// One muted metadata chip in the tile's Wrap. A widget rather than a helper
+/// so every entry lines its icon and label up identically.
+class _Meta extends StatelessWidget {
+  const _Meta({required this.label, this.icon});
+  final String label;
+  final AppIconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = Theme.of(
+      context,
+    ).textTheme.labelSmall?.copyWith(color: AppColors.muted);
+    if (icon == null) return Text(label, style: style);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AppIcon(icon, size: AppSizes.iconSm, color: AppColors.muted),
+        const SizedBox(width: AppSizes.xxs),
+        Text(label, style: style),
+      ],
+    );
   }
 }
 

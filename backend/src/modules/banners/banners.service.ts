@@ -3,6 +3,7 @@ import prisma from '../../infra/db/prisma.js';
 import { getRedis, redisAvailable } from '../../infra/redis.js';
 import { logger } from '../../shared/logging/logger.js';
 import { HttpError } from '../../shared/http/errorHandler.js';
+import { urlFor } from '../upload/upload.service.js';
 import {
   clampDiscountValue,
   discountPerUnit,
@@ -35,11 +36,18 @@ const ownerBannerSelect = {
 } as const;
 
 /** Flatten Prisma's `_count.products` into a plain `productCount` field. */
-function withCount<T extends { _count: { products: number } }>(
+function withCount<T extends { _count: { products: number }; imageUrl: string }>(
   row: T,
 ): Omit<T, '_count'> & { productCount: number } {
   const { _count, ...rest } = row;
-  return { ...rest, productCount: _count.products };
+  return {
+    ...rest,
+    // Banners render full-bleed. The stored URL is the `md` variant, which is
+    // narrower than any phone we ship to, so serving it upscaled every hero
+    // image on the home screen. `lg` is the only variant wide enough.
+    imageUrl: urlFor(row.imageUrl, 'lg'),
+    productCount: _count.products,
+  };
 }
 
 export interface CreateBannerInput {

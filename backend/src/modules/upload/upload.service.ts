@@ -128,15 +128,20 @@ export async function deleteFile(key: string): Promise<void> {
   await s3.send(new DeleteObjectCommand({ Bucket: MINIO_BUCKET, Key: key }));
 }
 
-/// Size variants we generate from every uploaded image. Customer list
-/// cards never need more than `md`; product detail / shop banner uses
-/// `lg`; thumbnails and category pucks use `sm`. Keeping the set small
-/// means we only pay 3× encode cost on upload, and bandwidth on the
-/// hot path shrinks ~5–10× vs serving a 4MB JPEG to every grid card.
+/// Size variants we generate from every uploaded image. `sm` is for
+/// thumbnails and category pucks, `md` for grid/list cards, `lg` for anything
+/// that fills the screen width — hero banners, product detail.
+///
+/// `lg` used to be 800px, which is NARROWER than the physical width of every
+/// phone we ship to (1080–1440px). A full-bleed hero banner was therefore
+/// always upscaled, and since nothing ever called `urlFor`, every surface was
+/// actually rendering `md` at 400px — a hero banner upscaled better than 3×.
+/// That is the "uploaded banners look bad" report. 1600 covers a 3x-DPR phone
+/// at full bleed; `md` at 600 covers a 2-up grid card on the same device.
 const VARIANTS = {
   sm: 160,
-  md: 400,
-  lg: 800,
+  md: 600,
+  lg: 1600,
 } as const;
 type Variant = keyof typeof VARIANTS;
 
@@ -150,8 +155,9 @@ export interface UploadedImage {
 }
 
 /// Re-encode + resize the input buffer into three WebP variants and
-/// push all of them to object storage. Lossy q=75 is roughly the JPEG
-/// q=82 break-even point on visual quality but 25–35% smaller. EXIF
+/// push all of them to object storage. q=75 is roughly the JPEG q=82
+/// break-even and is fine for a thumbnail, but a full-bleed hero shows its
+/// artefacts, so `lg` gets q=82. EXIF
 /// is stripped by sharp by default — important for privacy on
 /// user-uploaded photos. Animated inputs render only their first frame
 /// (the marketplace doesn't surface video/GIF anywhere yet).
@@ -166,7 +172,7 @@ export async function uploadImageWithVariants(
       const out = await sharp(buffer, { failOn: 'truncated' })
         .rotate() // honour EXIF orientation before we strip metadata
         .resize({ width, withoutEnlargement: true })
-        .webp({ quality: 75, effort: 4 })
+        .webp({ quality: variant === 'lg' ? 82 : 75, effort: 4 })
         .toBuffer();
       const key = `${id}-${variant}.webp`;
       await s3.send(

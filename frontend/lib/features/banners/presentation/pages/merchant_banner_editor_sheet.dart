@@ -119,7 +119,11 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
     final picker = ImagePicker();
     final picked = await picker.pickImage(
       source: ImageSource.gallery,
-      maxWidth: 1600,
+      // Headroom over the 1600px `lg` variant the server generates: handing
+      // sharp a source at exactly the target width means two resamples for no
+      // gain, and anything under it ships a hero banner that gets upscaled on
+      // every phone. Left uncompressed here — the server re-encodes to WebP.
+      maxWidth: 2400,
     );
     if (picked == null || !mounted) return;
     final file = File(picked.path);
