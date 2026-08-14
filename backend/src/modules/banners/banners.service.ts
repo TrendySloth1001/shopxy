@@ -4,6 +4,8 @@ import { getRedis, redisAvailable } from '../../infra/redis.js';
 import { logger } from '../../shared/logging/logger.js';
 import { HttpError } from '../../shared/http/errorHandler.js';
 import { urlFor } from '../upload/upload.service.js';
+import { decodeId } from '../../shared/ids/publicId.js';
+import { BANNER_LINK_HELP, parseBannerLink } from './banner-link.js';
 import {
   clampDiscountValue,
   discountPerUnit,
@@ -140,7 +142,74 @@ export class BannersService {
     return row ? withCount(row) : null;
   }
 
+  /// A link is only useful if it lands somewhere. The grammar check in the
+  /// controller proves the shape; this proves the destination exists, so a
+  /// banner pointing at a deleted product or a mistyped slug is refused at
+  /// save time instead of dead-ending a customer who taps it.
+  ///
+  /// Throws HttpError(400) — the merchant is editing, and a targeted message
+  /// is more use than a silently-dropped link.
+  private async _assertLinkResolves(raw: string | null | undefined) {
+    if (raw == null || raw.length === 0) return;
+    const link = parseBannerLink(raw);
+    if (!link) throw new HttpError(400, 'BANNER_LINK_INVALID', BANNER_LINK_HELP);
+
+    switch (link.kind) {
+      case 'product': {
+        const id = decodeId(link.value);
+        const product = id
+          ? await prisma.product.findFirst({
+              where: { id, isActive: true, isPublished: true },
+              select: { id: true },
+            })
+          : null;
+        if (!product) {
+          throw new HttpError(
+            400,
+            'BANNER_LINK_TARGET_MISSING',
+            'That product is not published, so a customer tapping the banner ' +
+              'would land on nothing.',
+          );
+        }
+        return;
+      }
+      case 'category': {
+        const category = await prisma.category.findFirst({
+          where: { slug: link.value },
+          select: { id: true },
+        });
+        if (!category) {
+          throw new HttpError(
+            400,
+            'BANNER_LINK_TARGET_MISSING',
+            'No category has that slug.',
+          );
+        }
+        return;
+      }
+      case 'shop': {
+        const shop = await prisma.shop.findFirst({
+          where: { slug: link.value, isPublished: true },
+          select: { id: true },
+        });
+        if (!shop) {
+          throw new HttpError(
+            400,
+            'BANNER_LINK_TARGET_MISSING',
+            'No published shop has that slug.',
+          );
+        }
+        return;
+      }
+      case 'search':
+        // Any phrase is a legal search; an empty result set is a normal
+        // outcome, not a broken link.
+        return;
+    }
+  }
+
   async create(input: CreateBannerInput) {
+    await this._assertLinkResolves(input.linkUrl);
     const row = await prisma.banner.create({
       data: this._writeData(input, true),
       select: ownerBannerSelect,
@@ -155,6 +224,9 @@ export class BannersService {
       select: { placement: true },
     });
     if (!existing) return null;
+    if (input.linkUrl !== undefined) {
+      await this._assertLinkResolves(input.linkUrl);
+    }
     const row = await prisma.banner.update({
       where: { id },
       data: this._writeData(input, false),

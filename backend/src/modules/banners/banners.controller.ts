@@ -4,6 +4,11 @@ import { decodeId } from '../../shared/ids/publicId.js';
 import { BannerPlacement } from '@prisma/client';
 import { z } from 'zod';
 import { bannersService } from './banners.service.js';
+import {
+  BANNER_LINK_HELP,
+  formatBannerLink,
+  parseBannerLink,
+} from './banner-link.js';
 
 const PLACEMENTS: [BannerPlacement, ...BannerPlacement[]] = [
   'HERO',
@@ -20,13 +25,17 @@ const imageRef = z
     message: 'Must be an http(s) URL or a server-relative path',
   });
 
-// A click-through: an absolute http(s) URL or a relative app path.
+// A click-through, in the shared banner-link grammar. Parsed rather than
+// pattern-matched so the API, the merchant editor and the customer resolver
+// all agree on what a link means — they previously did not, and the result
+// was that no banner link worked at all. See banner-link.ts.
 const linkRef = z
   .string()
   .max(2048)
-  .refine((v) => /^https?:\/\//i.test(v) || v.startsWith('/'), {
-    message: 'Must be an http(s) URL or a relative path like /shop/acme',
-  });
+  .refine((v) => parseBannerLink(v) !== null, { message: BANNER_LINK_HELP })
+  // Store the canonical form, so a link typed as `Category: Home-Kitchen`
+  // reaches the client the same way as one picked from the dropdown.
+  .transform((v) => formatBannerLink(parseBannerLink(v)!));
 
 const createBannerSchema = z.object({
   placement: z.enum(PLACEMENTS),

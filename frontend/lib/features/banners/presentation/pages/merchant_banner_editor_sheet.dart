@@ -10,6 +10,9 @@ import 'package:shopxy/core/network/image_url.dart';
 import 'package:shopxy/features/admin/data/models/banner.dart';
 import 'package:shopxy/features/banners/data/datasources/merchant_banners_remote_data_source.dart';
 import 'package:shopxy/features/banners/data/models/banner_product.dart';
+import 'package:shopxy/features/banners/domain/banner_link.dart';
+import 'package:shopxy/features/categories/domain/entities/category.dart';
+import 'package:shopxy/features/categories/presentation/providers/categories_provider.dart';
 import 'package:shopxy/features/banners/presentation/providers/merchant_banners_provider.dart';
 import 'package:shopxy/features/products/data/datasources/products_remote_data_source.dart';
 import 'package:shopxy/features/products/domain/entities/product.dart';
@@ -58,8 +61,17 @@ class MerchantBannerEditorSheet extends StatefulWidget {
 
 class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
   late BannerPlacement _placement;
-  late final TextEditingController _linkUrl;
   late final TextEditingController _sortOrder;
+
+  /// Where the banner sends a customer. Free text before — with helper copy
+  /// documenting `category:slug | product:id | url:https://…`, all three of
+  /// which the API rejected, while the two forms it did accept were dropped
+  /// into the customer's search box verbatim. Nothing a merchant typed could
+  /// ever work, so it's a structured picker now.
+  BannerLinkKind? _linkKind;
+  String? _linkValue;
+  String? _linkLabel;
+  late final TextEditingController _searchQuery;
   String? _imageUrl;
   DateTime? _startAt;
   DateTime? _endAt;
@@ -77,8 +89,14 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
     super.initState();
     final e = widget.existing;
     _placement = e?.placement ?? BannerPlacement.hero;
-    _linkUrl = TextEditingController(text: e?.linkUrl ?? '');
     _sortOrder = TextEditingController(text: '${e?.sortOrder ?? 0}');
+    final link = BannerLink.parse(e?.linkUrl);
+    _linkKind = link?.kind;
+    _linkValue = link?.value;
+    _linkLabel = link?.value;
+    _searchQuery = TextEditingController(
+      text: link?.kind == BannerLinkKind.search ? link!.value : '',
+    );
     _imageUrl = e?.imageUrl;
     _startAt = e?.startAt;
     _endAt = e?.endAt;
@@ -88,12 +106,92 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
 
   @override
   void dispose() {
-    _linkUrl.dispose();
+    _searchQuery.dispose();
     _sortOrder.dispose();
     for (final p in _products) {
       p.dispose();
     }
     super.dispose();
+  }
+
+  /// The canonical `kind:value` string, or null when the banner is
+  /// decorative. Search reads its live text; the other kinds hold a value
+  /// chosen from a picker, so it can't be mistyped.
+  String? get _wireLink {
+    final kind = _linkKind;
+    if (kind == null) return null;
+    final value = kind == BannerLinkKind.search
+        ? _searchQuery.text.trim()
+        : _linkValue;
+    if (value == null || value.isEmpty) return null;
+    return BannerLink(kind, value).toString();
+  }
+
+  Future<void> _pickLinkProduct() async {
+    final picked = await _showProductPicker();
+    if (picked == null || !mounted) return;
+    setState(() {
+      _linkValue = picked.id;
+      _linkLabel = picked.name;
+    });
+  }
+
+  Future<void> _pickLinkCategory() async {
+    final categories = context
+        .read<CategoriesProvider>()
+        .categories
+        .where((c) => (c.slug ?? '').isNotEmpty)
+        .toList();
+    if (categories.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Categories are still loading.')),
+      );
+      return;
+    }
+    final picked = await showModalBottomSheet<Category>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.7,
+        builder: (_, controller) => Container(
+          decoration: ShapeDecoration(
+            color: AppColors.canvas,
+            shape: AppShapes.squircleTop(AppSizes.bottomSheetRadius),
+          ),
+          child: ListView.builder(
+            controller: controller,
+            padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
+            itemCount: categories.length,
+            itemBuilder: (context, i) => ListTile(
+              title: Text(categories[i].name),
+              subtitle: Text(categories[i].slug!),
+              onTap: () => Navigator.of(context).pop(categories[i]),
+            ),
+          ),
+        ),
+      ),
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      _linkValue = picked.slug;
+      _linkLabel = picked.name;
+    });
+  }
+
+  void _selectLinkKind(BannerLinkKind? kind) {
+    setState(() {
+      _linkKind = kind;
+      // A value only means something for the kind it was chosen under.
+      _linkValue = null;
+      _linkLabel = null;
+      if (kind == BannerLinkKind.shop) {
+        final shop = context.read<ShopProvider>().shop;
+        _linkValue = shop?.slug;
+        _linkLabel = shop?.name;
+      }
+    });
   }
 
   Future<void> _loadProducts() async {
@@ -202,7 +300,7 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
     final body = <String, dynamic>{
       'placement': _placement.wire,
       'imageUrl': _imageUrl,
-      if (_linkUrl.text.trim().isNotEmpty) 'linkUrl': _linkUrl.text.trim(),
+      if (_wireLink != null) 'linkUrl': _wireLink,
       'sortOrder': int.tryParse(_sortOrder.text) ?? 0,
       if (_startAt != null) 'startAt': _startAt!.toUtc().toIso8601String(),
       if (_endAt != null) 'endAt': _endAt!.toUtc().toIso8601String(),
@@ -251,9 +349,10 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
     Navigator.of(context).pop(true);
   }
 
-  Future<void> _addProduct() async {
-    final l10n = AppLocalizations.of(context);
-    final picked = await showModalBottomSheet<Product>(
+  /// Shared by "pin a product" and "link to a product" so both search the
+  /// same catalogue in the same sheet.
+  Future<Product?> _showProductPicker() {
+    return showModalBottomSheet<Product>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -269,6 +368,11 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
         ),
       ),
     );
+  }
+
+  Future<void> _addProduct() async {
+    final l10n = AppLocalizations.of(context);
+    final picked = await _showProductPicker();
     if (picked == null || !mounted) return;
     if (_products.any((p) => p.product.id == picked.id)) {
       ScaffoldMessenger.of(
@@ -280,6 +384,43 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
       _productsTouched = true;
       _products.add(_BannerProductDraft.fromProduct(picked));
     });
+  }
+
+  /// The control that names the destination, contextual to the chosen kind.
+  /// Product and category are pickers rather than text so a merchant can't
+  /// mistype an id the customer app would then fail to resolve.
+  Widget _linkValueField() {
+    switch (_linkKind!) {
+      case BannerLinkKind.search:
+        return TextField(
+          controller: _searchQuery,
+          decoration: const InputDecoration(
+            labelText: 'Search for',
+            helperText: 'Tapping the banner opens these results.',
+          ),
+          onChanged: (_) => setState(() {}),
+        );
+      case BannerLinkKind.shop:
+        return _LinkTargetRow(
+          label: _linkLabel ?? 'Your storefront',
+          icon: AppIcons.storefrontOutlined,
+          hint: 'Tapping the banner opens your shop page.',
+        );
+      case BannerLinkKind.product:
+        return _LinkTargetRow(
+          label: _linkLabel ?? 'Choose a product',
+          icon: AppIcons.inventory2Outlined,
+          chosen: _linkValue != null,
+          onTap: _pickLinkProduct,
+        );
+      case BannerLinkKind.category:
+        return _LinkTargetRow(
+          label: _linkLabel ?? 'Choose a category',
+          icon: AppIcons.categoryOutlined,
+          chosen: _linkValue != null,
+          onTap: _pickLinkCategory,
+        );
+    }
   }
 
   @override
@@ -330,13 +471,30 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
               Row(
                 children: [
                   Expanded(
-                    child: TextField(
-                      controller: _linkUrl,
-                      decoration: InputDecoration(
-                        labelText: l10n.bannersLink,
-                        helperText:
-                            'category:slug | product:id | url:https://…',
-                      ),
+                    child: DropdownButtonFormField<BannerLinkKind?>(
+                      initialValue: _linkKind,
+                      isExpanded: true,
+                      decoration: InputDecoration(labelText: l10n.bannersLink),
+                      items: const [
+                        DropdownMenuItem(value: null, child: Text('No link')),
+                        DropdownMenuItem(
+                          value: BannerLinkKind.product,
+                          child: Text('A product'),
+                        ),
+                        DropdownMenuItem(
+                          value: BannerLinkKind.category,
+                          child: Text('A category'),
+                        ),
+                        DropdownMenuItem(
+                          value: BannerLinkKind.shop,
+                          child: Text('My shop'),
+                        ),
+                        DropdownMenuItem(
+                          value: BannerLinkKind.search,
+                          child: Text('A search'),
+                        ),
+                      ],
+                      onChanged: _selectLinkKind,
                     ),
                   ),
                   const SizedBox(width: AppSizes.md),
@@ -350,6 +508,10 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
                   ),
                 ],
               ),
+              if (_linkKind != null) ...[
+                const SizedBox(height: AppSizes.md),
+                _linkValueField(),
+              ],
               const SizedBox(height: AppSizes.lg),
               _scheduleRow(),
               const SizedBox(height: AppSizes.lg),
@@ -919,6 +1081,89 @@ class _BannerProductPickerSheetState extends State<_BannerProductPickerSheet> {
                 ),
         ),
       ],
+    );
+  }
+}
+
+/// Row showing the chosen link destination. Tappable when there's a picker
+/// behind it; a plain statement of fact when the target is implied (my shop).
+class _LinkTargetRow extends StatelessWidget {
+  const _LinkTargetRow({
+    required this.label,
+    required this.icon,
+    this.onTap,
+    this.chosen = true,
+    this.hint,
+  });
+
+  final String label;
+  final AppIconData icon;
+  final VoidCallback? onTap;
+  final bool chosen;
+  final String? hint;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final row = Container(
+      padding: const EdgeInsets.all(AppSizes.md),
+      decoration: ShapeDecoration(
+        color: AppColors.surface,
+        shape: AppShapes.squircle(
+          AppSizes.radiusMd,
+          side: BorderSide(
+            color: chosen ? AppColors.hairline : AppColors.brand,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          AppIcon(
+            icon,
+            size: AppSizes.iconMd,
+            color: chosen ? AppColors.muted : AppColors.brand,
+          ),
+          const SizedBox(width: AppSizes.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: chosen ? AppColors.black : AppColors.brand,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if (hint != null) ...[
+                  const SizedBox(height: AppSizes.xxs),
+                  Text(
+                    hint!,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: AppColors.muted,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          if (onTap != null)
+            AppIcon(
+              AppIcons.chevronRightRounded,
+              size: AppSizes.iconMd,
+              color: AppColors.muted,
+            ),
+        ],
+      ),
+    );
+    if (onTap == null) return row;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
+      child: row,
     );
   }
 }

@@ -44,30 +44,74 @@ describe('banners — admin CRUD + cache invalidation', () => {
         .send({
           placement: 'HERO',
           imageUrl: '/images/banner-md.webp',
-          linkUrl: '/search?q=fashion',
+          linkUrl: 'search:fashion',
           sortOrder: 1,
         });
       expect(create.status).toBe(201);
       const id = create.body.id;
-      expect(typeof id).toBe('number');
+      // Ids are opaque strings since the public-id migration.
+      expect(typeof id).toBe('string');
 
       const get = await request(app)
         .get(`/admin/banners/${id}`)
         .set('Authorization', `Bearer ${admin.accessToken}`);
       expect(get.status).toBe(200);
-      expect(get.body.imageUrl).toBe('/images/banner-md.webp');
-      expect(get.body.linkUrl).toBe('/search?q=fashion');
+      // Served at the large variant: a banner renders full bleed, and the
+      // stored `md` was narrower than the screen it fills.
+      expect(get.body.imageUrl).toBe('/images/banner-lg.webp');
+      expect(get.body.linkUrl).toBe('search:fashion');
 
       const patch = await request(app)
         .patch(`/admin/banners/${id}`)
         .set('Authorization', `Bearer ${admin.accessToken}`)
-        .send({ linkUrl: '/shop/festive' });
-      expect(patch.body.linkUrl).toBe('/shop/festive');
+        .send({ linkUrl: 'search:festive' });
+      expect(patch.body.linkUrl).toBe('search:festive');
 
       const del = await request(app)
         .delete(`/admin/banners/${id}`)
         .set('Authorization', `Bearer ${admin.accessToken}`);
       expect(del.status).toBe(204);
+    } finally {
+      await cleanupTestUser(admin);
+    }
+  });
+
+  it('rejects the legacy link formats, which never resolved anywhere', async () => {
+    // These are what the old validator accepted. The customer app passed them
+    // to its search box verbatim, so `/shop/festive` opened an empty search
+    // and an absolute URL searched for its own text. Rejecting them on write
+    // is what stops a merchant saving a link that cannot work.
+    const admin = await createTestUser({ isPlatformAdmin: true });
+    try {
+      for (const linkUrl of [
+        '/shop/festive',
+        'https://example.com/sale',
+        'url:https://example.com',
+        'category:Not A Slug',
+      ]) {
+        const res = await request(app)
+          .post('/admin/banners')
+          .set('Authorization', `Bearer ${admin.accessToken}`)
+          .send({ placement: 'HERO', imageUrl: '/images/x-md.webp', linkUrl });
+        expect([400, 422]).toContain(res.status);
+      }
+    } finally {
+      await cleanupTestUser(admin);
+    }
+  });
+
+  it('rejects a link whose target does not exist', async () => {
+    const admin = await createTestUser({ isPlatformAdmin: true });
+    try {
+      const res = await request(app)
+        .post('/admin/banners')
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({
+          placement: 'HERO',
+          imageUrl: '/images/x-md.webp',
+          linkUrl: 'category:no-such-category-exists',
+        });
+      expect([400, 422]).toContain(res.status);
     } finally {
       await cleanupTestUser(admin);
     }
@@ -145,7 +189,11 @@ describe('banners — public read + scheduling window', () => {
     const res = await request(app).get('/banners?placement=HERO');
     expect(res.status).toBe(200);
     expect(res.body.data.length).toBe(1);
-    expect(res.body.data[0].id).toBe(live.id);
+    // Identified by image rather than id — ids are opaque strings now, so the
+    // raw row id no longer compares. `-lg` because banners render full bleed
+    // and are served the large variant, not the stored `md`.
+    expect(res.body.data[0].imageUrl).toBe('/images/a-lg.webp');
+    void live;
   });
 
   it('rejects missing/invalid placement', async () => {
