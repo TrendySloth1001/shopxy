@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopxy_customer/features/auth/presentation/pages/otp_verify_page.dart';
 import 'package:shopxy_customer/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy_customer/features/auth/presentation/widgets/auth_scaffold.dart';
 import 'package:shopxy_customer/features/auth/presentation/widgets/require_auth.dart';
@@ -72,7 +73,11 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   void _onAuthChanged() {
-    if (_auth.isAuthenticated && mounted) Navigator.of(context).pop(true);
+    if (!_auth.isAuthenticated || !mounted) return;
+    // `pop` removes the topmost route, so skip when the OTP step is above us
+    // — it owns the dismissal.
+    if (ModalRoute.of(context)?.isCurrent != true) return;
+    Navigator.of(context).pop(true);
   }
 
   bool get _isLast => _step == _stepCount - 1;
@@ -116,13 +121,20 @@ class _RegisterPageState extends State<RegisterPage> {
       _error = null;
     });
     try {
-      await context.read<AuthProvider>().register(
+      final result = await context.read<AuthProvider>().register(
         _name.text.trim(),
         _email.text.trim(),
         _password.text,
         acceptedTerms: _consentAccepted,
         acceptedPrivacy: _consentAccepted,
       );
+      if (result is RegisterPending && mounted) {
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => OtpVerifyPage(email: result.email),
+          ),
+        );
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _error = friendlyError(e));

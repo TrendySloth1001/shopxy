@@ -83,25 +83,39 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> register(
+  /// Returns [RegisterPending] normally — no account exists until
+  /// [verifyEmail] confirms the code.
+  Future<RegisterResult> register(
     String name,
     String email,
     String password, {
     required bool acceptedTerms,
     required bool acceptedPrivacy,
   }) async {
-    final result = await _dataSource.register(
+    final res = await _dataSource.register(
       name,
       email,
       password,
       acceptedTerms: acceptedTerms,
       acceptedPrivacy: acceptedPrivacy,
     );
+    if (res.pending) return RegisterPending(res.email);
+    await _applySession(res.session!);
+    return const RegisterSignedIn();
+  }
+
+  Future<void> verifyEmail(String email, String otp) async {
+    await _applySession(await _dataSource.verifyEmail(email, otp));
+  }
+
+  Future<void> resendOtp(String email) => _dataSource.resendOtp(email);
+
+  Future<void> _applySession(AuthResult session) async {
     await _tokenManager.saveTokens(
-      accessToken: result.accessToken,
-      refreshToken: result.refreshToken,
+      accessToken: session.accessToken,
+      refreshToken: session.refreshToken,
     );
-    _user = result.user;
+    _user = session.user;
     notifyListeners();
   }
 
@@ -219,4 +233,18 @@ class AuthProvider extends ChangeNotifier {
     }
     notifyListeners();
   }
+}
+
+/// Sealed because "registered" and "signed in" are no longer the same event.
+sealed class RegisterResult {
+  const RegisterResult();
+}
+
+class RegisterPending extends RegisterResult {
+  const RegisterPending(this.email);
+  final String email;
+}
+
+class RegisterSignedIn extends RegisterResult {
+  const RegisterSignedIn();
 }

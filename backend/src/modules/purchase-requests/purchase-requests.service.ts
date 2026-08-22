@@ -326,6 +326,56 @@ export async function notifyShopOwner(
   });
 }
 
+/// Find-or-create the Party row that links `userId` to `shopId`.
+///
+/// Buying from a shop *is* the relationship — before this, a merchant-sent
+/// invitation was the only way a customer could become linked, so a buyer sat
+/// unlinked (missing from their own "My shops", missing from the merchant's
+/// party list) until the merchant acted. Placing an order now links them.
+///
+/// Matches on `linkedUserId` regardless of `isActive`: a deactivated link still
+/// means "already linked", and creating a second row would duplicate the
+/// customer in the merchant's party list.
+export async function ensureLinkedParty(
+  db: Prisma.TransactionClient,
+  opts: {
+    shopId: number;
+    userId: number;
+    name: string;
+    phone?: string | null;
+    email?: string | null;
+    address?: string | null;
+    city?: string | null;
+    state?: string | null;
+    stateCode?: string | null;
+    pinCode?: string | null;
+  },
+): Promise<number> {
+  const existing = await db.party.findFirst({
+    where: { shopId: opts.shopId, linkedUserId: opts.userId },
+    select: { id: true },
+  });
+  if (existing) return existing.id;
+  const created = await db.party.create({
+    data: {
+      shopId: opts.shopId,
+      name: opts.name,
+      phone: opts.phone ?? null,
+      email: opts.email ?? null,
+      address: opts.address ?? null,
+      // Snapshot the structured delivery state so the merchant's party ledger
+      // carries the place of supply the order was quoted against.
+      city: opts.city ?? null,
+      state: opts.state ?? null,
+      stateCode: opts.stateCode ?? null,
+      pinCode: opts.pinCode ?? null,
+      linkedUserId: opts.userId,
+    },
+    select: { id: true },
+  });
+  return created.id;
+}
+
 export class PurchaseRequestsService {
   /// Customer submits a *whole cart* — possibly spanning multiple
   /// shops. Server groups by shop and creates one [CustomerOrder]
@@ -676,12 +726,28 @@ export class PurchaseRequestsService {
         // and surface per-shop slices in the response).
         const childRecords: { id: number; shopId: number; customerName?: string; itemCount?: number }[] = [];
         for (const child of childPayloads) {
+          // Link the buyer to this shop as we place the order, inside the same
+          // transaction — a rolled-back order leaves no stray party behind.
+          const partyId =
+            child.partyId ??
+            (await ensureLinkedParty(tx, {
+              shopId: child.shopId,
+              userId: opts.customerUserId,
+              name: child.customerName,
+              phone: child.customerPhone,
+              email: user.email,
+              address: child.customerAddress,
+              city: shipCity,
+              state: shipState,
+              stateCode: shipStateCode,
+              pinCode: shipPincode,
+            }));
           const created = await tx.purchaseRequest.create({
             data: {
               customerOrderId: parent.id,
               shopId: child.shopId,
               customerUserId: opts.customerUserId,
-              partyId: child.partyId,
+              partyId,
               customerName: child.customerName,
               customerPhone: child.customerPhone,
               customerEmail: user.email,
@@ -1473,43 +1539,24 @@ export class PurchaseRequestsService {
         return { error: 'NO_ITEMS' as const };
       }
 
-      // ── 3. Find-or-create Party for this customer in this shop ────
-      // Reuses an existing linked Party row if one already exists, so a
-      // repeat buyer doesn't accumulate N duplicate party rows (one per
-      // order). Falls back to create on first contact.
-      let partyId = request.partyId;
-      if (!partyId) {
-        const existing = await prisma.party.findFirst({
-          where: {
-            shopId: request.shopId,
-            linkedUserId: request.customerUserId,
-          },
-          select: { id: true },
-        });
-        if (existing) {
-          partyId = existing.id;
-        } else {
-          const created = await prisma.party.create({
-            data: {
-              shopId: request.shopId,
-              name: request.customerName,
-              phone: request.customerPhone,
-              email: request.customerEmail,
-              address: request.customerAddress,
-              // PR-C2 — snapshot the structured delivery state onto the party
-              // so the merchant's party ledger carries the place-of-supply the
-              // invoice was taxed against.
-              city: request.shipCity,
-              state: request.shipState,
-              stateCode: request.shipStateCode,
-              pinCode: request.shipPincode,
-              linkedUserId: request.customerUserId,
-            },
-            select: { id: true },
-          });
-          partyId = created.id;
-        }
-      }
+      // ── 3. Party for this customer in this shop ───────────────────
+      // Orders placed since the buy-links-you change already carry a partyId;
+      // this covers requests created before it (and any row whose party was
+      // deleted) so confirm can never mint an invoice without a party.
+      const partyId =
+        request.partyId ??
+        (await ensureLinkedParty(prisma, {
+          shopId: request.shopId,
+          userId: request.customerUserId,
+          name: request.customerName,
+          phone: request.customerPhone,
+          email: request.customerEmail,
+          address: request.customerAddress,
+          city: request.shipCity,
+          state: request.shipState,
+          stateCode: request.shipStateCode,
+          pinCode: request.shipPincode,
+        }));
 
       // ── 4. Mint + auto-confirm the invoice ───────────────────────
       // Runs in its own atomic transaction inside invoicesService —

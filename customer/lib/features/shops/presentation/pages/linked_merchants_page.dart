@@ -42,7 +42,7 @@ class _LinkedMerchantsPageState extends State<LinkedMerchantsPage> {
       backgroundColor: AppColors.canvas,
       appBar: const AppAppBar(
         title: 'Linked merchants',
-        subtitle: 'Browse the shops that invited you',
+        subtitle: 'Shops you\'ve bought from or been invited by',
       ),
       body: RefreshIndicator(
         onRefresh: p.load,
@@ -372,7 +372,8 @@ class _EmptyState extends StatelessWidget {
         ),
         const SizedBox(height: AppSizes.xs),
         Text(
-          "When a shop invites you and you accept, they'll appear here for you to browse.",
+          'Order from a shop, or accept an invitation, and it appears here '
+          'for you to browse.',
           textAlign: TextAlign.center,
           style: Theme.of(
             context,

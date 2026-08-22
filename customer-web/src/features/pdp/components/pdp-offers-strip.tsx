@@ -1,23 +1,18 @@
 "use client";
 
-import { Tag, CreditCard } from "@/shared/icons";
-import type { ProductOffer, BankOffer } from "../types";
+import { Tag } from "@/shared/icons";
+import type { ProductOffer } from "../types";
 
 interface Props {
   offers: ProductOffer[];
-  bankOffers: BankOffer[];
 }
 
-export function PdpOffersStrip({ offers, bankOffers }: Props) {
-  const allOffers = [
-    ...offers.filter((o) => o.kind !== "COUPON"),
-    ...bankOffers.map((b) => ({
-      kind: "BANK",
-      headline: b.headline,
-      code: null,
-      description: b.description ?? null,
-    })),
-  ];
+/**
+ * Merchant-entered offers. Legacy `kind: "BANK"` rows are filtered out —
+ * bank offers were removed from the platform.
+ */
+export function PdpOffersStrip({ offers }: Props) {
+  const allOffers = offers.filter((o) => o.kind !== "COUPON" && o.kind !== "BANK");
 
   if (allOffers.length === 0) return null;
 
@@ -27,11 +22,7 @@ export function PdpOffersStrip({ offers, bankOffers }: Props) {
       <div className="flex flex-col gap-sm">
         {allOffers.slice(0, 4).map((offer, i) => (
           <div key={i} className="flex items-start gap-sm">
-            {offer.kind === "BANK" ? (
-              <CreditCard size={14} className="mt-xxs shrink-0 text-info" aria-hidden />
-            ) : (
-              <Tag size={14} className="mt-xxs shrink-0 text-success" aria-hidden />
-            )}
+            <Tag size={14} className="mt-xxs shrink-0 text-success" aria-hidden />
             <div className="flex-1">
               <span className="text-body-md font-semibold text-ink">{offer.headline}</span>
               {offer.code ? (

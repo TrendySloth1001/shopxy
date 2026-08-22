@@ -34,7 +34,6 @@ class RecentlyViewedMapper {
       name: (product['name'] ?? '') as String,
       price: _money(selling),
       originalPrice: mrp != null && mrp > selling ? _money(mrp) : '',
-      bankPrice: _money(selling * 0.95),
       rating: _asDouble(product['ratingAvg']) ?? 0,
       ratingCount: ratingCount > 999
           ? '${(ratingCount / 1000).toStringAsFixed(1)}k'

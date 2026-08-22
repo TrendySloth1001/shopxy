@@ -6,8 +6,7 @@ class AppConfig {
   /// The trailing slash matters — endpoints are concatenated as
   /// `${apiBaseUrl}auth/login`, not joined with a path separator.
   ///
-  /// In debug mode we fall through to a local dev URL. In release mode
-  /// the value MUST come via dart-define — see [assertSafeForRelease].
+  /// Optional — when absent [apiBaseUrl] picks a default by build mode.
   static const String _envBaseUrl = String.fromEnvironment('API_BASE_URL');
 
   /// Escape hatch for on-device testing: build with
@@ -17,34 +16,53 @@ class AppConfig {
   static const bool _allowDevHost =
       bool.fromEnvironment('ALLOW_DEV_HOST', defaultValue: false);
 
+  static const String productionBaseUrl =
+      'https://backendshopxy.cloudnsofts.com/';
+
+  /// The shared dev backend. This is where the test catalogue lives, so it
+  /// stays the debug default — pointing `flutter run` at production shows an
+  /// almost-empty app.
+  static const String devBaseUrl = 'https://qjhcp0ph-3003.inc1.devtunnels.ms/';
+
+  /// Default by build mode: debug gets the dev backend and its test data,
+  /// release gets production. It used to be the dev tunnel in both, so a
+  /// release built without a dart-define shipped against a developer's tunnel.
   static String get apiBaseUrl {
     if (_envBaseUrl.isNotEmpty) return _envBaseUrl;
-    // Debug-only fall-through: a known local URL is far safer than
-    // pointing at a developer's personal devtunnel.
-    return 'https://qjhcp0ph-3003.inc1.devtunnels.ms/';
+    return kReleaseMode ? productionBaseUrl : devBaseUrl;
   }
 
-  /// Throws on release builds that didn't get an explicit API_BASE_URL, or
-  /// that were misconfigured to a developer's personal tunnel — unless
-  /// ALLOW_DEV_HOST is set for deliberate on-device testing.
-  /// Call once from `main()` before [runApp].
+  /// Hosts that must never back a release build (10.0.2.2 = emulator's host).
+  static const _devHostMarkers = [
+    'devtunnels.ms',
+    'localhost',
+    '127.0.0.1',
+    '10.0.2.2',
+  ];
+
+  /// Throws on a release build pointed at a developer host. Call once from
+  /// `main()` before [runApp].
+  ///
+  /// A *missing* API_BASE_URL is fine — [apiBaseUrl] falls back to production.
+  /// Requiring it used to throw here on every build that omitted the flag,
+  /// which shipped an app that could only render a blank window.
   static void assertSafeForRelease() {
-    if (!kReleaseMode || _allowDevHost) return;
-    if (_envBaseUrl.isEmpty) {
-      throw StateError(
-        'API_BASE_URL dart-define is required for release builds '
-        '(or pass --dart-define=ALLOW_DEV_HOST=true for device testing).',
-      );
-    }
-    if (_envBaseUrl.contains('devtunnels.ms') ||
-        _envBaseUrl.contains('localhost') ||
-        _envBaseUrl.contains('127.0.0.1')) {
+    if (!kReleaseMode || _allowDevHost || _envBaseUrl.isEmpty) return;
+    if (looksLikeDevHost(_envBaseUrl)) {
       throw StateError(
         'API_BASE_URL "$_envBaseUrl" looks like a development host — '
         'refusing to launch a release build against it '
         '(pass --dart-define=ALLOW_DEV_HOST=true to override).',
       );
     }
+  }
+
+  /// Split out so it's testable — [assertSafeForRelease] is gated on
+  /// [kReleaseMode], which is false under `flutter test`.
+  @visibleForTesting
+  static bool looksLikeDevHost(String url) {
+    final host = url.toLowerCase();
+    return _devHostMarkers.any(host.contains);
   }
 
   /// Public base URL the marketplace uses for shareable links. Universal

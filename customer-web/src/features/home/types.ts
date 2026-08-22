@@ -32,7 +32,6 @@ export interface ProductCard {
   price: string;
   /** Empty string when there's no MRP above the selling price. */
   originalPrice: string;
-  bankPrice: string;
   rating: number;
   /** Pretty-printed count ("1.2k", "37"). */
   ratingCount: string;

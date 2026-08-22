@@ -92,6 +92,14 @@ class _CustomerShellState extends State<CustomerShell> {
   }
 
   bool _onScroll(ScrollNotification n) {
+    // Resting at the top always means the nav is back. Without this the only
+    // way to recover it was an upward drag, which a page that fits on screen
+    // can never produce — the nav stayed hidden with no way to reach it.
+    if (n is ScrollEndNotification &&
+        n.metrics.pixels <= n.metrics.minScrollExtent) {
+      _navVisible.value = true;
+      return false;
+    }
     if (n is UserScrollNotification) {
       switch (n.direction) {
         case ScrollDirection.reverse:
@@ -101,6 +109,18 @@ class _CustomerShellState extends State<CustomerShell> {
         case ScrollDirection.idle:
           break;
       }
+    }
+    return false;
+  }
+
+  /// A page whose content fits on screen has nothing to scroll, so it can
+  /// never send the notification that reveals the nav. Emptying the cart
+  /// while scrolled down used to strand the user with no navigation at all.
+  bool _onScrollMetrics(ScrollMetricsNotification n) {
+    if (n.metrics.maxScrollExtent <= 0 && !_navVisible.value) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _navVisible.value = true;
+      });
     }
     return false;
   }
@@ -147,28 +167,34 @@ class _CustomerShellState extends State<CustomerShell> {
           select: _select,
           child: Scaffold(
             backgroundColor: AppColors.canvas,
-            body: NotificationListener<ScrollNotification>(
-              onNotification: _onScroll,
-              child: Stack(
-                children: [
-                  MediaQuery(
-                    data: MediaQuery.of(
-                      context,
-                    ).copyWith(padding: extendedPadding),
-                    child: IndexedStack(index: _currentIndex, children: pages),
-                  ),
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    child: _FloatingNav(
-                      currentIndex: _currentIndex,
-                      onSelect: _select,
-                      visible: _navVisible,
-                      linked: linked,
+            body: NotificationListener<ScrollMetricsNotification>(
+              onNotification: _onScrollMetrics,
+              child: NotificationListener<ScrollNotification>(
+                onNotification: _onScroll,
+                child: Stack(
+                  children: [
+                    MediaQuery(
+                      data: MediaQuery.of(
+                        context,
+                      ).copyWith(padding: extendedPadding),
+                      child: IndexedStack(
+                        index: _currentIndex,
+                        children: pages,
+                      ),
                     ),
-                  ),
-                ],
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: _FloatingNav(
+                        currentIndex: _currentIndex,
+                        onSelect: _select,
+                        visible: _navVisible,
+                        linked: linked,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

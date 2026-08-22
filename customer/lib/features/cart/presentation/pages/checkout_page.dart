@@ -16,6 +16,7 @@ import 'package:shopxy_customer/features/payments/razorpay_checkout.dart';
 import 'package:shopxy_customer/features/home/presentation/widgets/network_image_box.dart';
 import 'package:shopxy_customer/features/orders/presentation/pages/order_detail_page.dart';
 import 'package:shopxy_customer/features/orders/presentation/providers/orders_provider.dart';
+import 'package:shopxy_customer/features/shops/presentation/providers/shops_provider.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/format/app_format.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
@@ -309,6 +310,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
     final orderId = result.orderId!;
     // ignore: unawaited_futures
     context.read<OrdersProvider>().load();
+    // Ordering links the buyer to the shop, so a first purchase adds a new
+    // entry to My Shops — reload or it stays missing until the next launch.
+    // ignore: unawaited_futures
+    context.read<ShopsProvider>().loadShops();
 
     // Online payment: open the Razorpay sheet for the order's payable
     // remainder, then land on the order detail regardless of outcome (the
@@ -405,20 +410,25 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   /// Cash-on-Delivery vs Pay-Online selector. Toggles [_payOnline].
   Widget _buildPaymentMethod() {
-    return Column(
-      children: [
-        _payOption(
-          title: 'Cash on Delivery',
-          subtitle: 'Pay the shop when your order arrives.',
-          value: false,
-        ),
-        const SizedBox(height: AppSizes.sm),
-        _payOption(
-          title: 'Pay Online',
-          subtitle: 'UPI, cards & netbanking via Razorpay.',
-          value: true,
-        ),
-      ],
+    // Same horizontal inset as every other card on the page — without it these
+    // two ran edge to edge and broke the page's margin.
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+      child: Column(
+        children: [
+          _payOption(
+            title: 'Cash on Delivery',
+            subtitle: 'Pay the shop when your order arrives.',
+            value: false,
+          ),
+          const SizedBox(height: AppSizes.sm),
+          _payOption(
+            title: 'Pay Online',
+            subtitle: 'UPI, cards & netbanking via Razorpay.',
+            value: true,
+          ),
+        ],
+      ),
     );
   }
 
@@ -428,49 +438,64 @@ class _CheckoutPageState extends State<CheckoutPage> {
     required bool value,
   }) {
     final selected = _payOnline == value;
-    return InkWell(
-      onTap: () => setState(() => _payOnline = value),
-      borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
-      child: Container(
-        padding: const EdgeInsets.all(AppSizes.lg),
-        decoration: ShapeDecoration(
-          shape: AppShapes.squircle(
-            AppSizes.radiusMd,
-            side: BorderSide(
-              color: selected ? AppColors.brandStrong : AppColors.hairline,
-              width: selected ? 1.5 : 1,
-            ),
-          ),
-        ),
-        child: Row(
-          children: [
-            AppIcon(
-              selected
-                  ? AppIcons.radioButtonCheckedRounded
-                  : AppIcons.radioButtonUncheckedRounded,
-              color: selected ? AppColors.brandStrong : AppColors.muted,
-              size: AppSizes.iconMd,
-            ),
-            const SizedBox(width: AppSizes.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.bodyMedium?.extraBold,
-                  ),
-                  const SizedBox(height: AppSizes.xxs),
-                  Text(
-                    subtitle,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.labelMedium?.copyWith(color: AppColors.muted),
-                  ),
-                ],
+    // Both stay white like every other card here: `brandSoft` is so close to
+    // the canvas that tinting the selected one made it recede behind the
+    // unselected white one. Selection reads off the border, radio and title.
+    return Semantics(
+      inMutuallyExclusiveGroup: true,
+      selected: selected,
+      button: true,
+      label: '$title. $subtitle',
+      child: InkWell(
+        onTap: () => setState(() => _payOnline = value),
+        borderRadius: AppShapes.squircleRadius(AppSizes.radiusMd),
+        child: Container(
+          padding: const EdgeInsets.all(AppSizes.lg),
+          decoration: ShapeDecoration(
+            color: AppColors.white,
+            shape: AppShapes.squircle(
+              AppSizes.radiusMd,
+              side: BorderSide(
+                color: selected ? AppColors.brand : AppColors.hairline,
+                width: selected ? 1.5 : 1,
               ),
             ),
-          ],
+          ),
+          child: Row(
+            children: [
+              ExcludeSemantics(
+                child: AppIcon(
+                  selected
+                      ? AppIcons.radioButtonCheckedRounded
+                      : AppIcons.radioButtonUncheckedRounded,
+                  color: selected ? AppColors.brand : AppColors.subtle,
+                  size: AppSizes.iconMd,
+                ),
+              ),
+              const SizedBox(width: AppSizes.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.bodyMedium?.extraBold
+                          .copyWith(
+                            color: selected ? AppColors.brand : AppColors.black,
+                          ),
+                    ),
+                    const SizedBox(height: AppSizes.xxs),
+                    Text(
+                      subtitle,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.labelMedium?.copyWith(color: AppColors.muted),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -641,6 +666,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
               savings: totalSavings,
               isPlacing: cart.isPlacing,
               canPlace: selected != null && !cart.isPlacing,
+              blockedHint: selected == null ? 'Add a delivery address' : null,
+              onBlockedTap: _pickAddress,
               onPlace: _placeOrder,
             ),
           ],
@@ -1286,18 +1313,15 @@ class _ShopGroupCard extends StatelessWidget {
             ),
           if (showHeader)
             const Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSizes.md,
-                vertical: AppSizes.sm,
-              ),
-              child: Divider(height: 1, color: AppColors.hairline),
+              padding: EdgeInsets.symmetric(vertical: AppSizes.sm),
+              child: _RowDivider(),
             ),
           for (var i = 0; i < lines.length; i++) ...[
-            if (i != 0) const Divider(height: 1, color: AppColors.hairline),
+            if (i != 0) const _RowDivider(),
             _ItemRow(line: lines[i]),
           ],
           if (showHeader) ...[
-            const Divider(height: 1, color: AppColors.hairline),
+            const _RowDivider(),
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSizes.md,
@@ -1327,6 +1351,17 @@ class _ShopGroupCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Inset to the card's content padding — a full-bleed rule cuts the card in
+/// two instead of separating the rows inside it.
+class _RowDivider extends StatelessWidget {
+  const _RowDivider();
+  @override
+  Widget build(BuildContext context) => const Padding(
+    padding: EdgeInsets.symmetric(horizontal: AppSizes.md),
+    child: Divider(height: 1, color: AppColors.hairline),
+  );
 }
 
 class _MultiShopBanner extends StatelessWidget {
@@ -1757,7 +1792,9 @@ class _CouponCardState extends State<_CouponCard> {
                     _ctrl.clear();
                     widget.onRemove();
                   },
-                  style: TextButton.styleFrom(foregroundColor: AppColors.error),
+                  // Not error-red: dropping a coupon is reversible, and red
+                  // next to the discount read as a warning about the offer.
+                  style: TextButton.styleFrom(foregroundColor: AppColors.muted),
                   child: const Text('Remove'),
                 )
               : FilledButton(
@@ -2044,12 +2081,19 @@ class _Footer extends StatelessWidget {
     required this.isPlacing,
     required this.canPlace,
     required this.onPlace,
+    this.blockedHint,
+    this.onBlockedTap,
   });
   final double total;
   final double savings;
   final bool isPlacing;
   final bool canPlace;
   final VoidCallback onPlace;
+
+  /// Why [canPlace] is false, shown above the disabled CTA. Without it the
+  /// greyed-out button is a dead end — the reason is scrolled off-screen.
+  final String? blockedHint;
+  final VoidCallback? onBlockedTap;
 
   @override
   Widget build(BuildContext context) {
@@ -2068,60 +2112,102 @@ class _Footer extends StatelessWidget {
         decoration: const BoxDecoration(
           border: Border(top: BorderSide(color: AppColors.hairline)),
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Flexible(
-              flex: 4,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // "Estimate" — the coupon is re-validated server-side at
-                  // place-order; the order confirmation shows the final charged
-                  // amount (CP E-Commerce Rules r.4(3)).
-                  Text(
-                    'Total payable (est.)',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.labelSmall?.copyWith(color: AppColors.muted),
+            if (blockedHint != null && !isPlacing) ...[
+              InkWell(
+                onTap: onBlockedTap,
+                borderRadius: AppShapes.squircleRadius(AppSizes.radiusSm),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSizes.sm,
+                    vertical: AppSizes.xs,
                   ),
-                  AppPriceText.precise(
-                    total,
-                    fontWeight: FontWeight.w800,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  if (savings > 0)
-                    Wrap(
-                      children: [
-                        Text(
-                          'You save ',
-                          style: Theme.of(context).textTheme.labelSmall
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const AppIcon(
+                        AppIcons.infoOutlineRounded,
+                        size: AppSizes.iconSm,
+                        color: AppColors.warning,
+                      ),
+                      const SizedBox(width: AppSizes.xs),
+                      Flexible(
+                        child: Text(
+                          blockedHint!,
+                          style: Theme.of(context).textTheme.labelMedium
                               ?.copyWith(
-                                color: AppColors.success,
+                                color: AppColors.warning,
                                 fontWeight: FontWeight.w700,
                               ),
                         ),
-                        AppPriceText.precise(
-                          savings,
-                          color: AppColors.success,
-                          fontWeight: FontWeight.w800,
-                          style: Theme.of(context).textTheme.labelSmall,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSizes.xs),
+            ],
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Flexible(
+                  flex: 4,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // "Estimate" — the coupon is re-validated server-side at
+                      // place-order; the order confirmation shows the final charged
+                      // amount (CP E-Commerce Rules r.4(3)).
+                      Text(
+                        'Total payable (est.)',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: AppColors.muted,
                         ),
-                      ],
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(width: AppSizes.md),
-            Flexible(
-              flex: 6,
-              child: AppButton.primary(
-                label: 'Place order',
-                onPressed: canPlace ? onPlace : null,
-                isLoading: isPlacing,
-                trailingIcon: AppIcons.arrowForwardRounded,
-              ),
+                      ),
+                      AppPriceText.precise(
+                        total,
+                        fontWeight: FontWeight.w800,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      if (savings > 0)
+                        Wrap(
+                          children: [
+                            Text(
+                              'You save ',
+                              style: Theme.of(context).textTheme.labelSmall
+                                  ?.copyWith(
+                                    color: AppColors.success,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                            AppPriceText.precise(
+                              savings,
+                              color: AppColors.success,
+                              fontWeight: FontWeight.w800,
+                              style: Theme.of(context).textTheme.labelSmall,
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: AppSizes.md),
+                // See cart_page: Flexible let the button size to its content
+                // and strand the rest of the slot as dead space on the right.
+                Expanded(
+                  flex: 6,
+                  child: AppButton.primary(
+                    label: 'Place order',
+                    onPressed: canPlace ? onPlace : null,
+                    isLoading: isPlacing,
+                    trailingIcon: AppIcons.arrowForwardRounded,
+                    fullWidth: true,
+                  ),
+                ),
+              ],
             ),
           ],
         ),

@@ -4,6 +4,9 @@ import 'package:shopxy_customer/features/auth/domain/entities/auth_user.dart';
 
 typedef AuthResult = ({AuthUser user, String accessToken, String refreshToken});
 
+/// `session` is non-null only on a dev backend with ALLOW_UNVERIFIED_SIGNUP.
+typedef RegisterResponse = ({bool pending, String email, AuthResult? session});
+
 class AuthRemoteDataSource {
   const AuthRemoteDataSource(this._client);
   final ApiClient _client;
@@ -29,7 +32,7 @@ class AuthRemoteDataSource {
   /// (an opt-in checkbox linking the Terms + Privacy notice) — never assumed.
   /// The backend rejects the signup if either is not true. (DPDP Act 2023 s.6
   /// — consent must be free, specific, informed and unambiguous.)
-  Future<AuthResult> register(
+  Future<RegisterResponse> register(
     String name,
     String email,
     String password, {
@@ -51,6 +54,34 @@ class AuthRemoteDataSource {
       },
     );
     final body = jsonDecode(res.body) as Map<String, dynamic>;
+    if (res.statusCode == 200 && body['pending'] == true) {
+      return (
+        pending: true,
+        email: body['email'] as String? ?? email,
+        session: null,
+      );
+    }
+    if (res.statusCode != 201) {
+      throw Exception(_extractError(body));
+    }
+    return (
+      pending: false,
+      email: email,
+      session: (
+        user: AuthUser.fromJson(body['user'] as Map<String, dynamic>),
+        accessToken: body['accessToken'] as String,
+        refreshToken: body['refreshToken'] as String,
+      ),
+    );
+  }
+
+  /// Where the account is actually created.
+  Future<AuthResult> verifyEmail(String email, String otp) async {
+    final res = await _client.post(
+      '/auth/verify-email',
+      body: {'email': email, 'otp': otp},
+    );
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
     if (res.statusCode != 201) {
       throw Exception(_extractError(body));
     }
@@ -59,6 +90,15 @@ class AuthRemoteDataSource {
       accessToken: body['accessToken'] as String,
       refreshToken: body['refreshToken'] as String,
     );
+  }
+
+  Future<void> resendOtp(String email) async {
+    final res = await _client.post('/auth/resend-otp', body: {'email': email});
+    if (res.statusCode != 204) {
+      throw Exception(
+        _extractError(jsonDecode(res.body) as Map<String, dynamic>),
+      );
+    }
   }
 
   Future<AuthUser> getMe() async {

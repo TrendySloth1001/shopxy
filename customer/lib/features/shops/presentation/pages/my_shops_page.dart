@@ -197,6 +197,16 @@ class _HeroHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // This page is both a bottom-nav tab and a pushed route (from
+          // Profile). Only the pushed instance can go back.
+          if (Navigator.of(context).canPop())
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSizes.sm),
+              child: _HeaderBack(
+              key: const Key('merchants-back'),
+              onTap: () => Navigator.of(context).pop(),
+            ),
+            ),
           Text(
             'YOUR MERCHANTS',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -228,6 +238,38 @@ class _HeroHeader extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _HeaderBack extends StatelessWidget {
+  const _HeaderBack({super.key, required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    // No Align: the parent Column is start-aligned, so this sizes to the
+    // 40×40 button. Wrapping it stretched the tap target across the full
+    // header width while only the left corner was actually hittable.
+    return Material(
+      color: AppColors.white,
+      shape: AppShapes.squircle(
+        AppSizes.radiusMd,
+        side: const BorderSide(color: AppColors.hairline, width: 0.8),
+      ),
+      child: InkWell(
+        customBorder: AppShapes.squircle(AppSizes.radiusMd),
+        onTap: onTap,
+        child: const SizedBox(
+          width: AppSizes.avatarSm,
+          height: AppSizes.avatarSm,
+          child: AppIcon(
+            AppIcons.arrowBackRounded,
+            color: AppColors.black,
+            size: AppSizes.iconMd,
+          ),
+        ),
       ),
     );
   }
@@ -821,8 +863,8 @@ class _EmptyShops extends StatelessWidget {
           ),
           const SizedBox(height: AppSizes.xs),
           Text(
-            'When a shop adds you as a customer, they\'ll appear here '
-            'with all their invoices.',
+            'Order from a shop, or accept an invitation, and it appears '
+            'here with all its invoices.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: AppColors.muted,

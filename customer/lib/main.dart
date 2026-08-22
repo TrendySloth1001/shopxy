@@ -37,13 +37,22 @@ import 'package:shopxy_customer/features/recently_viewed/data/datasources/recent
 import 'package:shopxy_customer/features/returns/data/datasources/returns_remote_data_source.dart';
 import 'package:shopxy_customer/features/coupons/data/datasources/coupons_remote_data_source.dart';
 import 'package:shopxy_customer/features/profile/data/datasources/avatar_remote_data_source.dart';
+import 'package:shopxy_customer/core/startup_failure_app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Fail-fast in release if API_BASE_URL was missed or points at a dev host.
-  AppConfig.assertSafeForRelease();
+  // A throw before `runApp` would leave the launch window up forever.
+  try {
+    AppConfig.assertSafeForRelease();
+    await _bootstrap();
+  } catch (error, stack) {
+    debugPrint('Shopxy failed to start: $error\n$stack');
+    runApp(StartupFailureApp(error: error, stack: stack));
+  }
+}
 
+Future<void> _bootstrap() async {
   final tokenManager = TokenManager();
   await tokenManager.init();
 

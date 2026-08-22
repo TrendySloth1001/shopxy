@@ -64,25 +64,22 @@ class ProductCard {
     required this.name,
     required this.price,
     required this.originalPrice,
-    required this.bankPrice,
     required this.rating,
     required this.ratingCount,
     required this.ratingCountRaw,
     required this.imageUrl,
     required this.bgColor,
     this.tag,
-    this.isAd = false,
     this.shopSlug,
     this.brand,
     this.discountPct = 0,
-    this.freeDelivery = true,
+    this.freeDelivery = false,
   });
 
   final String productId;
   final String name;
   final String price;
   final String originalPrice;
-  final String bankPrice;
   final double rating;
   /// Pretty-printed count for the chip ("1.2k", "37"). Kept separate
   /// from [ratingCountRaw] so the badge formatting doesn't lose the
@@ -92,10 +89,6 @@ class ProductCard {
   final String imageUrl;
   final Color bgColor;
   final String? tag;
-  /// Legacy sponsored-slot flag. The backend no longer returns ad rows
-  /// in the home feed, so this stays false in practice — kept only so
-  /// the product carousel's optional "AD" chip path still compiles.
-  final bool isAd;
   /// Slug of the shop owning this product — lets the PDP and any
   /// inline "Visit shop" link route without a second API call.
   final String? shopSlug;
@@ -109,10 +102,9 @@ class ProductCard {
   /// two-digit-clean.
   final int discountPct;
 
-  /// Hint that this product qualifies for free delivery — drives the
-  /// "FREE Delivery" trust line under the price. True for now until a
-  /// per-shop / per-pincode shipping rule exists; flipping the default
-  /// later is the only change needed downstream.
+  /// Drives the "FREE delivery" line. Defaults to false and nothing sets it
+  /// yet — it used to default to true, promising free delivery on every tile
+  /// with no shipping rule behind it.
   final bool freeDelivery;
 
   /// "Assured" / verified-seller-style trust mark eligibility. Cards

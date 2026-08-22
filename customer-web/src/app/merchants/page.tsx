@@ -82,8 +82,8 @@ function EmptyState() {
       </div>
       <p className="text-title-md font-extrabold text-ink">No linked merchants yet</p>
       <p className="mt-xs max-w-narrow text-body-md text-muted">
-        When a shop adds you as a customer or supplier, they&apos;ll appear here with
-        all their invoices.
+        Order from a shop, or accept an invitation, and it appears here with all
+        its invoices.
       </p>
       <div className="mt-xl">
         <Link

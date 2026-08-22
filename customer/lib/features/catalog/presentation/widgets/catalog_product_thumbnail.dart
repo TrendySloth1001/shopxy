@@ -46,7 +46,8 @@ class CatalogProductThumbnail extends StatelessWidget {
     final raw = product.imageUrl ?? '';
     final hasImage = raw.isNotEmpty;
     final resolved = hasImage ? resolveImageUrl(raw) : '';
-    final radius = cornerRadius ??
+    final radius =
+        cornerRadius ??
         (size <= AppSizes.massive ? AppSizes.radiusMd : AppSizes.radiusLg);
     final shape = AppShapes.squircle(radius);
     final (bg, fg) = _palette;
@@ -64,12 +65,13 @@ class CatalogProductThumbnail extends StatelessWidget {
               child: Image.network(
                 resolved,
                 fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => _Monogram(
-                  initial: _initial,
-                  bg: bg,
-                  fg: fg,
-                  size: size,
-                ),
+                // Decode at thumbnail size, not at the stored resolution —
+                // this widget appears once per row in long lists.
+                cacheWidth: (size * MediaQuery.devicePixelRatioOf(context))
+                    .round(),
+                filterQuality: FilterQuality.medium,
+                errorBuilder: (_, _, _) =>
+                    _Monogram(initial: _initial, bg: bg, fg: fg, size: size),
               ),
             )
           : _Monogram(initial: _initial, bg: bg, fg: fg, size: size),

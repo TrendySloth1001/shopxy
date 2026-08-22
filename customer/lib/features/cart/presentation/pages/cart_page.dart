@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:shopxy_customer/core/network/image_url.dart';
+import 'package:shopxy_customer/core/router/app_shell.dart';
 import 'package:shopxy_customer/features/auth/presentation/widgets/require_auth.dart';
 import 'package:shopxy_customer/features/cart/presentation/pages/checkout_page.dart';
 import 'package:shopxy_customer/features/catalog/domain/entities/cart_item.dart';
@@ -644,47 +645,61 @@ class _EmptyCart extends StatelessWidget {
   const _EmptyCart();
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSizes.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: AppSizes.productImageSize,
-              height: AppSizes.productImageSize,
-              decoration: ShapeDecoration(
-                color: AppColors.heroPanel,
-                shape: AppShapes.squircle(AppSizes.radiusLg),
-              ),
-              alignment: Alignment.center,
-              child: const AppIcon(
-                AppIcons.shoppingCartOutlined,
-                size: AppSizes.iconHuge,
-                color: AppColors.muted,
-              ),
+    final shell = CustomerShellScope.of(context);
+    // Scrollable so the shell sees "nothing to scroll" and un-hides the
+    // floating nav; a bare Center sends no scroll metrics at all.
+    return CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      slivers: [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSizes.xl),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: AppSizes.productImageSize,
+                  height: AppSizes.productImageSize,
+                  decoration: ShapeDecoration(
+                    color: AppColors.heroPanel,
+                    shape: AppShapes.squircle(AppSizes.radiusLg),
+                  ),
+                  alignment: Alignment.center,
+                  child: const AppIcon(
+                    AppIcons.shoppingCartOutlined,
+                    size: AppSizes.iconHuge,
+                    color: AppColors.muted,
+                  ),
+                ),
+                const SizedBox(height: AppSizes.lg),
+                Text(
+                  'Your cart is empty',
+                  style: Theme.of(context).textTheme.titleMedium?.extraBold,
+                ),
+                const SizedBox(height: AppSizes.xs),
+                Text(
+                  'Browse the marketplace and add items to start checkout.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
+                ),
+                const SizedBox(height: AppSizes.lg),
+                AppButton.primary(
+                  label: 'Continue shopping',
+                  // Inside the tab shell there is nothing to pop, so the
+                  // button used to do nothing at all — jump to Home instead.
+                  onPressed: shell != null
+                      ? () => shell.select(0)
+                      : () => Navigator.of(context).maybePop(),
+                ),
+              ],
             ),
-            const SizedBox(height: AppSizes.lg),
-            Text(
-              'Your cart is empty',
-              style: Theme.of(context).textTheme.titleMedium?.extraBold,
-            ),
-            const SizedBox(height: AppSizes.xs),
-            Text(
-              'Browse the marketplace and add items to start checkout.',
-              textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
-            ),
-            const SizedBox(height: AppSizes.lg),
-            AppButton.primary(
-              label: 'Continue shopping',
-              onPressed: () => Navigator.of(context).maybePop(),
-            ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }
@@ -765,13 +780,17 @@ class _Footer extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSizes.md),
-            Flexible(
+            // Expanded + fullWidth, not Flexible: a Flexible child sizes to its
+            // content, so the button left the rest of its slot as dead space
+            // on the right instead of ending at the bar's margin.
+            Expanded(
               flex: 6,
               child: AppButton.primary(
                 label: 'Proceed to checkout',
                 onPressed: isPlacing ? null : onProceed,
                 isLoading: isPlacing,
                 trailingIcon: AppIcons.arrowForwardRounded,
+                fullWidth: true,
               ),
             ),
           ],
