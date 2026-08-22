@@ -10,6 +10,14 @@ router.get(
   asyncHandler((req, res) => meController.linkedShops(req, res)),
 );
 router.get(
+  '/gst-profile',
+  asyncHandler((req, res) => meController.gstProfile(req, res)),
+);
+router.patch(
+  '/gst-profile',
+  asyncHandler((req, res) => meController.updateGstProfile(req, res)),
+);
+router.get(
   '/catalog/products',
   asyncHandler((req, res) => meController.catalog(req, res)),
 );

@@ -1,5 +1,6 @@
 import prisma from '../../infra/db/prisma.js';
 import type { Prisma } from '@prisma/client';
+import { isValidGstin } from '../../shared/validation/indian.js';
 
 // Shop branding (logo/banner/slug) is included so the customer-side
 // "Merchants" tab can render real shop identity instead of an initial
@@ -389,6 +390,56 @@ export class MeService {
       where: { id: opts.invoiceId, vendorId: opts.vendorId, status: 'CONFIRMED' },
       select: invoiceDetailSelect,
     });
+  }
+
+  /// The customer's own GST registration, used to claim input tax credit on
+  /// marketplace purchases. Null on both fields = B2C, which is the default.
+  async gstProfile(userId: number) {
+    const user = await prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: { buyerGstin: true, buyerLegalName: true },
+    });
+    return {
+      gstin: user.buyerGstin,
+      legalName: user.buyerLegalName,
+    };
+  }
+
+  /// Save or clear the buyer's GST identity.
+  ///
+  /// Both fields move together: a GSTIN with no registered name cannot be put
+  /// on a Rule 46 tax invoice, and a name alone claims nothing. Passing null
+  /// for the GSTIN clears both, which is how a customer goes back to B2C.
+  async updateGstProfile(
+    userId: number,
+    input: { gstin: string | null; legalName?: string | null },
+  ): Promise<
+    | { error: 'INVALID_GSTIN' | 'LEGAL_NAME_REQUIRED' }
+    | { gstin: string | null; legalName: string | null }
+  > {
+    if (input.gstin == null || input.gstin.trim().length === 0) {
+      const cleared = await prisma.user.update({
+        where: { id: userId },
+        data: { buyerGstin: null, buyerLegalName: null },
+        select: { buyerGstin: true, buyerLegalName: true },
+      });
+      return { gstin: cleared.buyerGstin, legalName: cleared.buyerLegalName };
+    }
+
+    const gstin = input.gstin.trim().toUpperCase();
+    // Checksum, not just shape — see isValidGstin. A typo here surfaces months
+    // later as the buyer's ITC denied and the seller's GSTR-1 mismatched.
+    if (!isValidGstin(gstin)) return { error: 'INVALID_GSTIN' };
+
+    const legalName = input.legalName?.trim() ?? '';
+    if (legalName.length === 0) return { error: 'LEGAL_NAME_REQUIRED' };
+
+    const saved = await prisma.user.update({
+      where: { id: userId },
+      data: { buyerGstin: gstin, buyerLegalName: legalName },
+      select: { buyerGstin: true, buyerLegalName: true },
+    });
+    return { gstin: saved.buyerGstin, legalName: saved.buyerLegalName };
   }
 }
 

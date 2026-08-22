@@ -96,6 +96,41 @@ export function isValidStateCode(code: string | null | undefined): boolean {
   return STATE_NAME_BY_CODE.has(code);
 }
 
+/// Base-36 alphabet the GSTIN check digit is computed over.
+const GSTIN_CHARSET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+/// The 15th character of a GSTIN is a mod-36 check digit over the first 14.
+/// Each character's base-36 value is multiplied by an alternating 1/2 weight,
+/// the product's base-36 digits are summed, and the digit that rounds the
+/// total up to a multiple of 36 is the check character.
+export function gstinCheckDigit(first14: string): string | null {
+  if (first14.length !== 14) return null;
+  let sum = 0;
+  for (let i = 0; i < 14; i++) {
+    const value = GSTIN_CHARSET.indexOf(first14[i]);
+    if (value < 0) return null;
+    const product = value * (i % 2 === 0 ? 1 : 2);
+    sum += Math.floor(product / 36) + (product % 36);
+  }
+  return GSTIN_CHARSET[(36 - (sum % 36)) % 36];
+}
+
+/// Full GSTIN validation: shape, a real state code in the first two digits,
+/// and the mod-36 check digit.
+///
+/// [GSTIN_REGEX] alone accepts any 15 characters in the right shape, so a
+/// mistyped GSTIN passes it. That matters where the value is self-declared by
+/// a buyer claiming input credit: an invalid GSTIN on a tax invoice is the
+/// recipient's ITC denied and the supplier's return mismatched, and neither
+/// party finds out until filing.
+export function isValidGstin(value: string | null | undefined): boolean {
+  if (!value) return false;
+  const gstin = value.trim().toUpperCase();
+  if (!GSTIN_REGEX.test(gstin)) return false;
+  if (!isValidStateCode(gstin.slice(0, 2))) return false;
+  return gstinCheckDigit(gstin.slice(0, 14)) === gstin[14];
+}
+
 /// Predicate: do we cross a state boundary (IGST) or stay inside one (CGST+SGST)?
 /// Defaults to intrastate when either side is unknown — safer than mis-charging IGST.
 export function isInterstateSupply(

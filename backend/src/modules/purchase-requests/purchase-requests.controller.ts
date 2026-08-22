@@ -42,6 +42,10 @@ const createSchema = z.object({
   couponCode: z.string().max(40).optional(),
   /// Apply wallet balance against the cart total (after coupon).
   useWallet: z.boolean().optional(),
+  /// Raise each shop's invoice against the buyer's own GSTIN so the GST is
+  /// claimable as input credit. Intent only — the GSTIN itself comes from the
+  /// account's saved profile, never from this payload.
+  claimGst: z.boolean().optional(),
 });
 
 const decisionSchema = z.object({ note: z.string().max(500).optional() });
@@ -164,6 +168,7 @@ export class PurchaseRequestsController {
       addressId: payload.addressId,
       couponCode: payload.couponCode,
       useWallet: payload.useWallet,
+      claimGst: payload.claimGst,
     });
     if ('error' in result) {
       const status =
@@ -174,6 +179,9 @@ export class PurchaseRequestsController {
         result.error === 'CROSS_SHOP_ITEM' ? 422 :
         result.error === 'COUPON_INVALID' ? 400 :
         result.error === 'PRICE_DRIFT' ? 409 :
+        // The account has no saved GSTIN to raise the invoice against; the
+        // client sends the user to their GST profile rather than retrying.
+        result.error === 'GST_PROFILE_MISSING' ? 422 :
         400;
       res.status(status).json({
         error: result.error,

@@ -14,6 +14,13 @@ const quotationStatusSchema = z
   .enum(['REQUESTED', 'PENDING', 'ACCEPTED', 'DECLINED', 'CANCELLED', 'EXPIRED'])
   .optional();
 
+/// Buyer's own GST identity. `gstin: null` clears the profile (back to B2C);
+/// the checksum itself is validated in the service, which owns the rule.
+const gstProfileSchema = z.object({
+  gstin: z.string().trim().max(15).nullable(),
+  legalName: z.string().trim().max(200).nullable().optional(),
+});
+
 const declineQuotationSchema = z.object({
   declineNote: z.string().max(500).nullable().optional(),
 });
@@ -72,6 +79,30 @@ export class MeController {
   async linkedShops(req: Request, res: Response): Promise<void> {
     const data = await meService.linkedShops(req.user!.sub);
     res.json({ data });
+  }
+
+  async gstProfile(req: Request, res: Response): Promise<void> {
+    res.json(await meService.gstProfile(req.user!.sub));
+  }
+
+  async updateGstProfile(req: Request, res: Response): Promise<void> {
+    const parsed = gstProfileSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: 'Invalid GST details' });
+      return;
+    }
+    const result = await meService.updateGstProfile(req.user!.sub, parsed.data);
+    if ('error' in result) {
+      res.status(400).json({
+        error:
+          result.error === 'INVALID_GSTIN'
+            ? 'That GSTIN is not valid. Check it against your registration certificate.'
+            : 'Enter the business name registered against this GSTIN.',
+        code: result.error,
+      });
+      return;
+    }
+    res.json(result);
   }
 
   async partyInvoices(req: Request, res: Response): Promise<void> {

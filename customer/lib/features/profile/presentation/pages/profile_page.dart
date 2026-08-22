@@ -8,6 +8,7 @@ import 'package:shopxy_customer/features/auth/presentation/widgets/require_auth.
 import 'package:shopxy_customer/features/profile/presentation/pages/edit_profile_page.dart';
 import 'package:shopxy_customer/features/profile/presentation/pages/help_page.dart';
 import 'package:shopxy_customer/features/profile/presentation/pages/info_pages.dart';
+import 'package:shopxy_customer/features/gst/presentation/pages/gst_details_page.dart';
 import 'package:shopxy_customer/features/profile/presentation/pages/notification_preferences_page.dart';
 import 'package:shopxy_customer/features/recently_viewed/presentation/pages/recently_viewed_page.dart';
 import 'package:shopxy_customer/features/returns/presentation/pages/my_returns_page.dart';
@@ -194,6 +195,14 @@ class CustomerProfilePage extends StatelessWidget {
           ).push(MaterialPageRoute(builder: (_) => const RecentlyViewedPage())),
         ),
         const _SectionLabel(label: 'Settings'),
+        _Row(
+          icon: AppIcons.receiptLongOutlined,
+          title: 'GST details',
+          subtitle: 'Claim input credit on business purchases',
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const GstDetailsPage())),
+        ),
         _Row(
           icon: AppIcons.notificationsActiveOutlined,
           title: 'Notification preferences',

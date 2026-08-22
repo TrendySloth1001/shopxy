@@ -152,6 +152,8 @@ const detailSelect = {
   customerUserId: true,
   decisionNote: true,
   decidedBy: { select: { id: true, name: true } },
+  buyerGstin: true,
+  buyerLegalName: true,
   invoice: {
     select: {
       id: true,
@@ -160,6 +162,12 @@ const detailSelect = {
       status: true,
       total: true,
       invoiceDate: true,
+      /// TAX_INVOICE vs BILL_OF_SUPPLY, plus the GSTIN it was actually raised
+      /// against. A buyer who asked to claim credit needs to see which they
+      /// got: only a tax invoice carrying their GSTIN supports an ITC claim,
+      /// and an unregistered seller can issue only a bill of supply.
+      documentType: true,
+      customerGstin: true,
       /// Pull payment amounts so the per-vendor card on the customer's
       /// order detail can show "Paid" / "Partially paid (₹A of ₹B)"
       /// without a follow-up fetch. PR-M3 — bounded so a pathological
@@ -349,13 +357,28 @@ export async function ensureLinkedParty(
     state?: string | null;
     stateCode?: string | null;
     pinCode?: string | null;
+    /// Buyer's own GSTIN when they are claiming input credit. Written onto the
+    /// party so the merchant's ledger shows a B2B customer, and so the invoice
+    /// engine's party fallback finds it.
+    gstin?: string | null;
   },
 ): Promise<number> {
   const existing = await db.party.findFirst({
     where: { shopId: opts.shopId, linkedUserId: opts.userId },
-    select: { id: true },
+    select: { id: true, gstin: true },
   });
-  if (existing) return existing.id;
+  if (existing) {
+    // A customer who registers for GST after their first order should not have
+    // to be re-added by the merchant. Fill a missing GSTIN, but never overwrite
+    // one the merchant already recorded — theirs is the authoritative record.
+    if (opts.gstin && !existing.gstin) {
+      await db.party.update({
+        where: { id: existing.id },
+        data: { gstin: opts.gstin },
+      });
+    }
+    return existing.id;
+  }
   const created = await db.party.create({
     data: {
       shopId: opts.shopId,
@@ -369,6 +392,7 @@ export async function ensureLinkedParty(
       state: opts.state ?? null,
       stateCode: opts.stateCode ?? null,
       pinCode: opts.pinCode ?? null,
+      gstin: opts.gstin ?? null,
       linkedUserId: opts.userId,
     },
     select: { id: true },
@@ -401,6 +425,11 @@ export class PurchaseRequestsService {
     /// When true, attempts to debit the user's wallet for as much of
     /// the order total as it covers (after any coupon discount).
     useWallet?: boolean;
+    /// Buyer wants a tax invoice against their own GSTIN so the GST on this
+    /// order is claimable as input credit. Reads the identity off their saved
+    /// profile — the client never supplies the GSTIN at checkout, so it cannot
+    /// put someone else's registration on an invoice.
+    claimGst?: boolean;
   }): Promise<
     | {
         error:
@@ -414,6 +443,7 @@ export class PurchaseRequestsService {
           | 'SHOP_ON_VACATION'
           | 'CROSS_SHOP_ITEM'
           | 'COUPON_INVALID'
+          | 'GST_PROFILE_MISSING'
           | 'PRICE_DRIFT';
         priceDrift?: {
           productId: number;
@@ -547,6 +577,8 @@ export class PurchaseRequestsService {
         id: true,
         name: true,
         email: true,
+        buyerGstin: true,
+        buyerLegalName: true,
         linkedParties: {
           where: { isActive: true, shopId: { in: shopIds } },
           select: { id: true, shopId: true, name: true, phone: true, address: true },
@@ -554,6 +586,18 @@ export class PurchaseRequestsService {
       },
     });
     const linkedByShop = new Map(user.linkedParties.map((p) => [p.shopId, p]));
+
+    // ── Buyer's GST identity ─────────────────────────────────────────
+    // Snapshotted from the saved profile, never from the request body, so the
+    // GSTIN on the invoice is one this account proved it owns. Refuse rather
+    // than silently dropping the claim: the customer asked for a tax invoice
+    // and would only find out it never came at filing time.
+    const claimGst = opts.claimGst === true;
+    if (claimGst && (!user.buyerGstin || !user.buyerLegalName)) {
+      return { error: 'GST_PROFILE_MISSING' };
+    }
+    const buyerGstin = claimGst ? user.buyerGstin : null;
+    const buyerLegalName = claimGst ? user.buyerLegalName : null;
 
     // ── Address snapshot (one for the parent, mirrored to children) ─
     let snapshotName: string | null = null;
@@ -667,6 +711,8 @@ export class PurchaseRequestsService {
             shipStateCode,
             shipPincode,
             note: opts.note ?? null,
+            buyerGstin,
+            buyerLegalName,
             estimatedTotal: round2(parentTotal),
             idempotencyKey: opts.idempotencyKey ?? null,
           },
@@ -728,20 +774,25 @@ export class PurchaseRequestsService {
         for (const child of childPayloads) {
           // Link the buyer to this shop as we place the order, inside the same
           // transaction — a rolled-back order leaves no stray party behind.
-          const partyId =
-            child.partyId ??
-            (await ensureLinkedParty(tx, {
-              shopId: child.shopId,
-              userId: opts.customerUserId,
-              name: child.customerName,
-              phone: child.customerPhone,
-              email: user.email,
-              address: child.customerAddress,
-              city: shipCity,
-              state: shipState,
-              stateCode: shipStateCode,
-              pinCode: shipPincode,
-            }));
+          // Always through ensureLinkedParty, never short-circuited on the
+          // party the cart lookup already found: a customer who registers for
+          // GST after their first order has an existing party row, and only
+          // this path backfills the GSTIN onto it.
+          const partyId = await ensureLinkedParty(tx, {
+            shopId: child.shopId,
+            userId: opts.customerUserId,
+            // On a B2B order the party IS the registered business, so the
+            // ledger entry carries that name rather than the buyer's own.
+            name: buyerLegalName ?? child.customerName,
+            phone: child.customerPhone,
+            email: user.email,
+            address: child.customerAddress,
+            city: shipCity,
+            state: shipState,
+            stateCode: shipStateCode,
+            pinCode: shipPincode,
+            gstin: buyerGstin,
+          });
           const created = await tx.purchaseRequest.create({
             data: {
               customerOrderId: parent.id,
@@ -759,6 +810,8 @@ export class PurchaseRequestsService {
               shipStateCode,
               shipPincode,
               note: opts.note ?? null,
+              buyerGstin,
+              buyerLegalName,
               estimatedTotal: child.estimatedTotal,
               items: { create: child.items },
               // Seed the timeline with a CREATED row so the customer
@@ -1548,7 +1601,8 @@ export class PurchaseRequestsService {
         (await ensureLinkedParty(prisma, {
           shopId: request.shopId,
           userId: request.customerUserId,
-          name: request.customerName,
+          gstin: request.buyerGstin,
+          name: request.buyerLegalName ?? request.customerName,
           phone: request.customerPhone,
           email: request.customerEmail,
           address: request.customerAddress,
@@ -1593,11 +1647,21 @@ export class PurchaseRequestsService {
       // state. The invoice engine decides IGST vs CGST/SGST from this (Sec 10).
       const placeOfSupplyStateCode = request.shipStateCode ?? undefined;
 
+      // Rule 46 — a tax invoice a buyer can claim input credit against must
+      // carry the RECIPIENT's registered name and GSTIN, not the name of
+      // whoever tapped Place order. Both come from the order's own snapshot;
+      // undefined on a B2C order, which leaves the invoice exactly as before.
+      //
+      // Place of supply is deliberately NOT taken from the GSTIN's state. For
+      // goods it is where the movement terminates (IGST Sec 10(1)(a)) — the
+      // shipping address — so a Delhi-registered buyer shipping to Mumbai is
+      // still an intra-Maharashtra supply from a Mumbai seller.
       const result = await invoicesService.createInvoice({
         shopId: request.shopId,
         type: 'SALE',
         partyId,
-        customerName: request.customerName,
+        customerName: request.buyerLegalName ?? request.customerName,
+        customerGstin: request.buyerGstin ?? undefined,
         customerPhone: request.customerPhone ?? undefined,
         placeOfSupplyStateCode,
         note: opts.note ?? request.note ?? undefined,

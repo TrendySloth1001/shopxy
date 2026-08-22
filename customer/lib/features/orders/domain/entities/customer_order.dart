@@ -63,6 +63,8 @@ class OrderInvoiceRef {
     this.paidAmount = 0,
     this.outstanding = 0,
     this.paymentStatus = 'UNPAID',
+    this.documentType = 'TAX_INVOICE',
+    this.customerGstin,
   });
 
   final String id;
@@ -77,6 +79,19 @@ class OrderInvoiceRef {
   final double outstanding;
   /// One of UNPAID / PARTIALLY_PAID / PAID.
   final String paymentStatus;
+
+  /// TAX_INVOICE or BILL_OF_SUPPLY. Only a tax invoice carrying the buyer's
+  /// own GSTIN supports an input-credit claim.
+  final String documentType;
+
+  /// The GSTIN this document was raised against, when the buyer asked for it.
+  final String? customerGstin;
+
+  /// Whether this document actually supports an ITC claim: a tax invoice, in
+  /// the buyer's registered name. A bill of supply carries no GST, and a tax
+  /// invoice with no recipient GSTIN is a B2C sale.
+  bool get supportsInputCredit =>
+      documentType == 'TAX_INVOICE' && (customerGstin?.isNotEmpty ?? false);
 
   bool get isPaid => paymentStatus == 'PAID';
   bool get isPartiallyPaid => paymentStatus == 'PARTIALLY_PAID';
@@ -98,6 +113,8 @@ class OrderInvoiceRef {
       paidAmount: _d(j['paidAmount']),
       outstanding: _d(j['outstanding']),
       paymentStatus: (j['paymentStatus'] as String?) ?? 'UNPAID',
+      documentType: (j['documentType'] as String?) ?? 'TAX_INVOICE',
+      customerGstin: j['customerGstin'] as String?,
     );
   }
 }

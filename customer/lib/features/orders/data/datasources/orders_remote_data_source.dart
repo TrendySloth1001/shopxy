@@ -69,6 +69,9 @@ class OrdersRemoteDataSource {
     String? idempotencyKey,
     String? addressId,
     String? couponCode,
+    /// Ask each GST-registered seller to invoice this order to the buyer's own
+    /// GSTIN. Intent only — the GSTIN comes from the saved profile server-side.
+    bool claimGst = false,
   }) async {
     final key = idempotencyKey ?? _newIdempotencyKey();
     final res = await _client.post(
@@ -86,6 +89,7 @@ class OrdersRemoteDataSource {
         if (note != null && note.isNotEmpty) 'note': note,
         'addressId': ?addressId,
         if (couponCode != null && couponCode.isNotEmpty) 'couponCode': couponCode,
+        if (claimGst) 'claimGst': true,
       },
     );
     if (res.statusCode != 200 && res.statusCode != 201) {

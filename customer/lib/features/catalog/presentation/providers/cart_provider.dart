@@ -255,6 +255,7 @@ class CartProvider extends ChangeNotifier {
   Future<PlaceOrderResult> placeOrder({
     String? addressId,
     String? couponCode,
+    bool claimGst = false,
   }) async {
     if (_lines.isEmpty) {
       return const PlaceOrderResult.failure('EMPTY_CART');
@@ -283,6 +284,7 @@ class CartProvider extends ChangeNotifier {
         idempotencyKey: _idempotencyKey,
         addressId: addressId,
         couponCode: couponCode,
+        claimGst: claimGst,
       );
       // Whole cart placed — clear local state and persist the empty
       // snapshot so a cold-boot doesn't restore the just-submitted
