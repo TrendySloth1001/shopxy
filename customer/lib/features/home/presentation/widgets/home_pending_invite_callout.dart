@@ -9,10 +9,6 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
 
-/// Home-screen preview of the user's first pending invitation. Wraps
-/// the shared [InviteCard] with: a tap-through to the dedicated
-/// [InvitationsPage], inline accept/decline, a session-local dismiss
-/// button, and a "+N more" counter when multiple invites are queued.
 class HomePendingInviteCallout extends StatefulWidget {
   const HomePendingInviteCallout({super.key});
 

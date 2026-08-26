@@ -38,7 +38,6 @@ import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 final _rangeDf = DateFormat('d MMM');
 
-
 class InvoicesPage extends StatefulWidget {
   const InvoicesPage({super.key});
 
@@ -79,9 +78,6 @@ class _InvoicesPageState extends State<InvoicesPage> {
     super.dispose();
   }
 
-  /// Fetch the next page once the user scrolls within ~600px of the end.
-  /// The provider guards against concurrent/exhausted loads, so an eager
-  /// threshold is safe and keeps the list feeling continuous.
   void _onScroll() {
     if (!_scrollCtrl.hasClients) return;
     final pos = _scrollCtrl.position;
@@ -238,9 +234,6 @@ class _InvoicesPageState extends State<InvoicesPage> {
                     )
                   : const SizedBox(width: double.infinity),
             ),
-            // Primary axis filter — direction of money. Document type +
-            // status live in the filter sheet (tune icon in the AppBar)
-            // since they're orthogonal and would crowd the header.
             AppFilterStrip(
               children: [
                 AppFilterPill(
@@ -336,9 +329,6 @@ class _InvoicesPageState extends State<InvoicesPage> {
                             return const _InvoicesLoadMoreFooter();
                           }
                           final invoice = provider.invoices[i];
-                          // Grouped by invoiceDate (when it was issued), not
-                          // createdAt — a backdated invoice belongs under the
-                          // day printed on it, not the day someone typed it in.
                           final newDay =
                               i == 0 ||
                               !SectionDivider.isSameDay(
@@ -398,9 +388,6 @@ class _InvoicesPageState extends State<InvoicesPage> {
   }
 }
 
-/// Inline row showing the secondary filters (document type + status) as
-/// removable chips so the user can see at a glance what's filtered and
-/// kill any single facet without re-opening the sheet.
 class _ActiveSecondaryFiltersRow extends StatelessWidget {
   const _ActiveSecondaryFiltersRow({
     this.documentType,
@@ -537,10 +524,6 @@ class _ActiveSecondaryFiltersRow extends StatelessWidget {
   }
 }
 
-/// Bottom sheet that consolidates the orthogonal invoice filters
-/// (document type + status). Picks are buffered locally and only
-/// pushed to the provider on Apply, so the user can experiment
-/// without spamming reloads.
 class _InvoiceFilterSheet extends StatefulWidget {
   const _InvoiceFilterSheet({
     required this.documentType,
@@ -570,8 +553,6 @@ class _InvoiceFilterSheetState extends State<_InvoiceFilterSheet> {
     ('DEBIT_NOTE', AppIcons.redoRounded),
   ];
 
-  // Getter, not `static final`: the status colours are theme-aware getters, so
-  // a cached list would freeze the light-mode values and not flip in dark.
   static List<(String?, Color?)> get _statusOptions => [
     (null, null),
     ('DRAFT', AppColors.warning),
@@ -708,13 +689,6 @@ class _InvoiceFilterSheetState extends State<_InvoiceFilterSheet> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton loading state — mirrors the _InvoiceTile layout
-// ---------------------------------------------------------------------------
-
-/// Trailing item in the invoice list while more pages exist. Shows a
-/// compact spinner during a fetch and a quiet placeholder otherwise, so
-/// the scroll position stays stable as the next page streams in.
 class _InvoicesLoadMoreFooter extends StatelessWidget {
   const _InvoicesLoadMoreFooter();
 
@@ -780,14 +754,12 @@ class _InvoiceTileSkeleton extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Icon avatar placeholder
           AppShimmerBox(
             width: AppSizes.iconHuge,
             height: AppSizes.iconHuge,
             radius: AppSizes.radiusMd,
           ),
           const SizedBox(width: AppSizes.md),
-          // Left column: invoice number + badge, party name, date
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -816,7 +788,6 @@ class _InvoiceTileSkeleton extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSizes.md),
-          // Right column: amount and item count
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -824,7 +795,6 @@ class _InvoiceTileSkeleton extends StatelessWidget {
               const SizedBox(height: AppSizes.xs),
               AppShimmerLine(widthFactor: 0.7, height: AppSizes.sm),
               const SizedBox(height: AppSizes.xs),
-              // Placeholder for the download icon button area
               AppShimmerBox(
                 width: AppSizes.iconMd + AppSizes.sm,
                 height: AppSizes.iconMd + AppSizes.sm,
@@ -838,8 +808,6 @@ class _InvoiceTileSkeleton extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-
 class _InvoiceTile extends StatelessWidget {
   const _InvoiceTile({
     required this.invoice,
@@ -851,8 +819,6 @@ class _InvoiceTile extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onDownload;
 
-  // Hoisted: DateFormat parses its pattern on construction, so building it per
-  // row on every rebuild was needless work for every visible invoice.
   static final DateFormat _df = DateFormat('dd MMM yyyy');
 
   AppStatusTone get _statusTone {

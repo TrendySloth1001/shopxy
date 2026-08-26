@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 
 type Ctx = { params: Promise<{ slug: string }> };
 
-/** GET /marketplace/shops/:slug/products — shop storefront listing. */
 export async function GET(req: Request, { params }: Ctx) {
   const { slug } = await params;
   const qs = new URL(req.url).searchParams.toString();

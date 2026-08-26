@@ -18,13 +18,8 @@ import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// Which KPI card was tapped — mirrors the web `KpiDrawerKind`.
 enum KpiDrillKind { sales, profit, receivables, payables }
 
-/// Opens the KPI drill-down as a draggable bottom sheet — the mobile
-/// equivalent of merchant-web's right-side `KpiDrawer` slide-over. Each kind
-/// shows the breakdown behind that exact headline number (see the web
-/// `components/kpi-drawers.tsx`).
 Future<void> showKpiDrillSheet(
   BuildContext context, {
   required KpiDrillKind kind,
@@ -45,9 +40,6 @@ Future<void> showKpiDrillSheet(
   );
 }
 
-/// The dashboard window mapped to an explicit date range for the range-scoped
-/// bodies (sales / profit). Balances (receivables / payables) are not
-/// range-scoped — they show the full outstanding position, matching web.
 DateTimeRange _rangeFor(DashboardPeriod p) {
   final now = DateTime.now();
   final to = DateTime(now.year, now.month, now.day, 23, 59, 59);
@@ -162,8 +154,6 @@ class _KpiDrillSheet extends StatelessWidget {
   }
 }
 
-// ── Sales: products sold + a name/SKU filter ───────────────────────────
-
 class _SalesBody extends StatefulWidget {
   const _SalesBody({
     required this.controller,
@@ -209,7 +199,6 @@ class _SalesBodyState extends State<_SalesBody> {
   }
 
   void _onSearchChanged(String value) {
-    // Debounce: re-query 300ms after the last keystroke.
     final query = value.trim();
     Future<void>.delayed(const Duration(milliseconds: 300), () {
       if (!mounted || query != _searchController.text.trim()) return;
@@ -367,8 +356,6 @@ class _SoldRow extends StatelessWidget {
   }
 }
 
-// ── Net profit: the traced calculation ─────────────────────────────────
-
 class _ProfitBody extends StatefulWidget {
   const _ProfitBody({
     required this.controller,
@@ -489,8 +476,6 @@ class _TraceRow extends StatelessWidget {
   }
 }
 
-// ── Receivables / Payables: debtors / creditors + their documents ──────
-
 class _BreakdownBody extends StatefulWidget {
   const _BreakdownBody({
     required this.controller,
@@ -582,7 +567,6 @@ class _CounterpartyTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Theme(
-      // Strip the default ExpansionTile dividers so it sits flush on canvas.
       data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
       child: ExpansionTile(
         tilePadding: EdgeInsets.zero,
@@ -637,8 +621,6 @@ class _CounterpartyTile extends StatelessWidget {
     );
   }
 }
-
-// ── shared status blocks ───────────────────────────────────────────────
 
 class _Grabber extends StatelessWidget {
   const _Grabber();
@@ -767,9 +749,7 @@ String _fmtDate(String iso) {
   return d == null ? '—' : _dateFmt.format(d);
 }
 
-/// Close the sheet, then navigate on the host (dashboard) navigator — the
-/// "View full …" footer link out to the relevant full-page screen.
 void _pushFull(BuildContext hostContext, Widget page) {
-  Navigator.of(hostContext).pop(); // dismiss the sheet
+  Navigator.of(hostContext).pop();
   dashPush(hostContext, page);
 }

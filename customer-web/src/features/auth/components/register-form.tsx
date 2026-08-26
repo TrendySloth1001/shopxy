@@ -33,7 +33,6 @@ export function RegisterForm() {
   );
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  // While set, the account does NOT exist yet.
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
 
   useEffect(() => {

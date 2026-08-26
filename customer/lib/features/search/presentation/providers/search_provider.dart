@@ -6,17 +6,8 @@ import 'package:shopxy_customer/features/search/data/datasources/marketplace_sea
 import 'package:shopxy_customer/shared/constants/app_durations.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
 
-/// Marketplace product search. Hits the public `/search` endpoint
-/// (hybrid semantic + FTS ranker on the backend; falls back to
-/// pure FTS when the embedding service is disabled).
-///
-/// The provider also prefetches `/search/hints` once per cold start
-/// so the idle state can render a "what people are searching" chip
-/// strip without paying a per-open round trip.
 class SearchProvider extends ChangeNotifier {
   SearchProvider(this._ds) {
-    // Best-effort prime — null on failure leaves the chip strip
-    // hidden rather than blowing up the page.
     _ds.hints().then((h) {
       _hints = h;
       notifyListeners();
@@ -35,9 +26,6 @@ class SearchProvider extends ChangeNotifier {
   ListingFilters _filters = ListingFilters.none;
   ListingFacets? _facets;
 
-  /// Sequence number used to discard stale responses when the user
-  /// types faster than the network. Only the latest in-flight request
-  /// is allowed to write to [_results].
   int _seq = 0;
   Timer? _debounce;
 
@@ -51,9 +39,6 @@ class SearchProvider extends ChangeNotifier {
   ListingFilters get filters => _filters;
   ListingFacets? get facets => _facets;
 
-  /// True when a non-empty query has been submitted (Enter or chip
-  /// tap). Used by the page to decide whether to render the idle
-  /// "recent + hints" panel or the results list.
   bool get hasCommittedQuery => _query.trim().isNotEmpty;
 
   void setQuery(String q) {
@@ -68,10 +53,6 @@ class SearchProvider extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    // Mark `_loading` synchronously so the UI doesn't flash a stale
-    // "No matches for '<q>'" empty-state during the debounce window —
-    // [hasCommittedQuery] would already be true while [_results] is
-    // still empty if we left _loading=false.
     _loading = true;
     notifyListeners();
     _debounce = Timer(AppDurations.searchDebounce, () => _runSearch(trimmed));
@@ -91,8 +72,6 @@ class SearchProvider extends ChangeNotifier {
   void applyTerm(String value) {
     _debounce?.cancel();
     _query = value;
-    // A new term resets filters + facets so the chip counts match the
-    // new candidate set; we'll fetch fresh facets on the next call.
     _filters = ListingFilters.none;
     _facets = null;
     notifyListeners();
@@ -126,10 +105,6 @@ class SearchProvider extends ChangeNotifier {
   }
 
   Future<void> _runSearch(String trimmed) async {
-    // Belt-and-braces: callers like `applyTerm` and `setFilters` invoke
-    // `_runSearch` directly and would otherwise leave a stale debounced
-    // tick scheduled. Cancelling here keeps the seq guard from having
-    // to do double duty.
     _debounce?.cancel();
     if (trimmed.isEmpty) return;
     final seq = ++_seq;
@@ -137,10 +112,6 @@ class SearchProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      // Ask for facets only when we don't yet have them for this query.
-      // Subsequent filter tweaks reuse the cached facet payload — facets
-      // are computed off the unfiltered candidate set so they don't
-      // change when filters change.
       final res = await _ds.search(
         trimmed,
         filters: _filters,

@@ -47,10 +47,6 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   final _formKey = GlobalKey<FormState>();
   bool _isSaving = false;
   bool _isScanning = false;
-  // Heuristic unsaved-changes guard. Flipped true by any tracked text
-  // controller listener or explicit mutation; reset to false right
-  // before a successful Navigator.pop. Not exact — we only watch a
-  // handful of representative fields to keep the wiring minimal.
   bool _dirty = false;
 
   late final TextEditingController _name;
@@ -66,21 +62,11 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   late final TextEditingController _stockQuantity;
   late final TextEditingController _lowStockThreshold;
 
-  /// What the HSN master last said, and which code it said it about. The pair
-  /// is what separates "no rate on file for this code" from "haven't looked
-  /// this one up yet" — only the former is worth warning about.
   HsnResolution? _hsnRate;
   String? _hsnCheckedFor;
 
-  /// Whether the merchant has taken the rate off the code. Editing an existing
-  /// product starts manual only when its stored rate was hand-typed — anything
-  /// the master derived stays derived, so a re-save re-derives it.
   bool _taxManual = false;
 
-  /// Whether mrp/sellingPrice already contain GST ('TAX_INCLUSIVE'), have it
-  /// added on top when billed ('TAX_EXCLUSIVE', the default), or the product
-  /// is exempt/nil-rated ('NO_GST'). The single source of truth every
-  /// invoice/quotation resolves its tax convention from.
   String _pricingMode = 'TAX_EXCLUSIVE';
 
   String _selectedUnit = 'PCS';
@@ -89,34 +75,19 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   final List<String> _tags = [];
   final _tagController = TextEditingController();
 
-  // V2 PDP descriptive fields. Mutable lists so the editor can add /
-  // reorder / drop rows in place. Empty lists serialise as null (DTO
-  // strips), so a merchant who doesn't touch these sections doesn't
-  // ship empty arrays.
   final List<String> _highlights = [];
   final _highlightController = TextEditingController();
   final List<SpecGroup> _specs = [];
   final List<ProductOffer> _offers = [];
-  // Phase C — A+ content blocks. Empty list serialises as null (DTO
-  // strips), so a merchant who never opens the section ships no
-  // payload. Block types are HERO/FEATURE/COMPARISON/GALLERY/TEXT;
-  // see backend `contentBlockSchema` for the per-kind shape.
   final List<ContentBlock> _contentBlocks = [];
-  // Phase E — variant axes + variants. The default variant is created
-  // server-side on first product create, so [_variants] is empty until
-  // an existing product is being edited.
   final List<VariantAxis> _variantAxes = [];
   final List<ProductVariant> _variants = [];
-  // For edit mode: maps url → existing image ID so we can call deleteImage
   final Map<String, String> _existingImageIdByUrl = {};
   final Set<String> _removedImageIds = {};
   final _imageUrlController = TextEditingController();
 
   bool _isUploading = false;
 
-  // Custom field values, keyed by definition id. Loaded on init for
-  // edit mode; written in one bulk call after product create/update
-  // so the existing _save's success/error semantics still apply.
   final Map<String, String> _customFieldValues = {};
 
   bool get isEditing => widget.product != null;
@@ -152,9 +123,6 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
           p?.taxPercent.toString() ??
           _formatDouble(draft?.taxPercent, fallback: '0'),
     );
-    // Open the GST field as an input only for a rate that was genuinely typed
-    // by hand against a real code. A derived rate stays a readout, and a
-    // product with no code at all has nothing to derive from yet.
     _taxManual = p != null &&
         p.taxSource == 'MANUAL' &&
         (p.hsnCode?.isNotEmpty ?? false);
@@ -188,10 +156,6 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       }
     }
 
-    // Heuristic dirty-tracker — single listener shared across the
-    // representative text fields. Avoids instrumenting every input.
-    // setState the first time so PopScope.canPop reflects the flipped
-    // flag; subsequent edits skip the rebuild (already dirty).
     void markDirty() {
       if (_dirty) return;
       if (mounted) {
@@ -226,9 +190,6 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         }
       });
     } catch (_) {
-      // Values are non-critical for editing the core product fields —
-      // a transient fetch failure shouldn't block the form. The user
-      // will see empty inputs and can refill or retry by reopening.
     }
   }
 
@@ -271,8 +232,6 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     final raw = _highlightController.text.trim();
     if (raw.isEmpty) return;
     if (_highlights.length >= 8) return;
-    // Backend caps each highlight at 140 chars; truncate so a long
-    // entry doesn't turn into a 400 at save time.
     final entry = raw.length > 140 ? raw.substring(0, 140) : raw;
     setState(() {
       _highlights.add(entry);
@@ -281,9 +240,6 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     });
   }
 
-  // Mirrors the per-kind required fields in backend `contentBlockSchema`.
-  // Anything missing here would 400 the whole product save — so we filter
-  // these out at submit time rather than let one stale block block the user.
   bool _isContentBlockShippable(ContentBlock b) {
     final d = b.data;
     switch (b.kind) {
@@ -320,16 +276,11 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
-    // Capture before any awaits so we don't have to reach back through
-    // context after async gaps.
     final l10n = AppLocalizations.of(context);
     final provider = context.read<ProductsProvider>();
     final ds = context.read<ProductsRemoteDataSource>();
     final customFieldsDs = context.read<CustomFieldsRemoteDataSource>();
     final messenger = ScaffoldMessenger.of(context);
-    // Soft guard: warn (don't block) if the typed SKU or barcode already
-    // belongs to a different product. Backend's unique constraints still
-    // own correctness; this just gives the user a chance to notice.
     final currentId = widget.product?.id;
     final skuText = _sku.text.trim();
     final barcodeText = _barcode.text.trim();
@@ -343,17 +294,12 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
           );
         }
       } catch (_) {
-        // Lookup failures are non-critical; never block the save on them.
       }
     }
 
     await warnIfDuplicate(skuText, 'SKU');
     await warnIfDuplicate(barcodeText, l10n.productsBarcodeLower);
     if (!mounted) return;
-    // Drop content blocks whose per-kind required fields are missing.
-    // Backend Zod will 400 on a malformed block even if the merchant
-    // never touched it this session — e.g. a legacy COMPARISON block
-    // saved before columns/rows became required.
     final droppedBlocks =
         _contentBlocks.length -
         _contentBlocks.where(_isContentBlockShippable).length;
@@ -389,23 +335,16 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
           categoryId: _selectedCategoryId,
           tags: _tags,
           highlights: _highlights,
-          // Send empty list explicitly when the merchant deleted all
-          // rows so the backend can clear the JSONB column — DTO would
-          // otherwise drop the key.
           specs: _specs,
           offers: _offers,
           contentBlocks: _contentBlocks,
           variantAxes: _variantAxes,
-          // Send the full variants array — backend diffs by id and
-          // soft-deletes (isActive=false) variants we drop.
           variants: _variants,
         );
         await provider.updateProduct(productId, data);
-        // Sync image deletions
         for (final imageId in _removedImageIds) {
           await ds.deleteImage(productId, imageId);
         }
-        // Sync new image additions
         for (final url in _imageUrls) {
           if (!_existingImageIdByUrl.containsKey(url)) {
             await ds.addImage(productId, url);
@@ -440,9 +379,6 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         productId = created.id;
       }
 
-      // One bulk call regardless of create/edit. Empty-string values
-      // get treated as "clear" server-side, so retiring a previously
-      // set custom field is just leaving its input blank.
       if (_customFieldValues.isNotEmpty) {
         await customFieldsDs.bulkSetValuesForProduct(
           productId,
@@ -574,11 +510,6 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         : value.toStringAsFixed(2);
   }
 
-  /// Pick + upload an image and return its stored URL. Used by the
-  /// variants editor and the A+ content editor — they don't want to
-  /// mutate the page's `_imageUrls` list, just attach the returned URL
-  /// to their own row. Returns null on cancel / failure so the caller
-  /// can no-op gracefully.
   Future<String?> _pickAndUploadVariantImage(ImageSource source) async {
     if (_isUploading) return null;
     final picker = ImagePicker();
@@ -614,8 +545,6 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     }
   }
 
-  /// Cap on what the product gallery can carry — mirrors the backend
-  /// `imageUrls.max(10)` validator on createProductSchema.
   static const int _maxGalleryImages = 10;
 
   Future<void> _pickAndUploadImage(ImageSource source) async {
@@ -630,11 +559,6 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     await _uploadOne(File(picked.path));
   }
 
-  /// Multi-pick path for the gallery — most merchants want to drop
-  /// 5–8 product shots in a single tap, not babysit a one-at-a-time
-  /// picker. iOS/Android both support multi-select natively. Files are
-  /// uploaded sequentially so a slow connection produces visible
-  /// progress, and one failure doesn't abort the rest of the batch.
   Future<void> _pickAndUploadMultiple() async {
     if (_isUploading) return;
     final picker = ImagePicker();
@@ -649,13 +573,8 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       return;
     }
     final List<XFile> picked = await picker.pickMultiImage(
-      // Match the single-pick path's compression so multi vs single
-      // produce identically sized assets.
       maxWidth: 1200,
       imageQuality: 85,
-      // Available on iOS — caps the system picker so the user can't
-      // overshoot remaining capacity. Android falls back to client-
-      // side trimming below.
       limit: remaining,
     );
     if (picked.isEmpty || !mounted) return;
@@ -709,13 +628,6 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     }
   }
 
-  /// Upload one file and attach its URL to the gallery. Shared by
-  /// single, multi, and camera paths. Returns true on success.
-  ///
-  /// `externallyManaged` lets the multi-batch caller drive the
-  /// `_isUploading` flag itself (it wraps the whole batch in one busy
-  /// window); the single-shot callers leave it false and we toggle
-  /// inline.
   Future<bool> _uploadOne(File file, {bool externallyManaged = false}) async {
     const maxBytes = 5 * 1024 * 1024;
     if (file.lengthSync() > maxBytes) {
@@ -732,10 +644,6 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       final url = await ds.uploadImage(file);
 
       if (isEditing) {
-        // In edit mode the image is persisted immediately so it
-        // survives a mid-edit crash. We also need to remember the
-        // returned ImageId — otherwise the save handler treats this
-        // URL as "new" and posts it again, duplicating the row.
         final image = await ds.addImage(widget.product!.id, url);
         _existingImageIdByUrl[url] = image.id;
       }
@@ -796,22 +704,11 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
 
   void _markDirty() => _dirty = true;
 
-  /// The HSN → GST auto-fill.
-  ///
-  /// The rate is a consequence of the classification, so a resolved code
-  /// overwrites whatever is in the GST field. It stays editable afterwards:
-  /// the conditional slabs are real (apparel over ₹2,500 is 18%, not 5%) and
-  /// the note under the field says when that applies.
-  ///
-  /// A code with no rate on file deliberately leaves the field untouched — a
-  /// silent 0% is an under-charged invoice, which is the failure this whole
-  /// feature exists to prevent.
   void _applyHsnRate(HsnResolution? hit) {
     if (!mounted) return;
     setState(() {
       _hsnRate = hit;
       _hsnCheckedFor = hit?.requestedCode ?? normalizeHsnCode(_hsnCode.text);
-      // Never overwrite a rate the merchant has taken responsibility for.
       if (hit != null && !_taxManual) {
         _taxPercent.text = formatHsnRate(hit.gstRate);
         _dirty = true;
@@ -819,28 +716,17 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     });
   }
 
-  /// The resolved rate, but only while it still describes what's in the field.
-  /// Guarding on the code stops a stale answer from explaining a number the
-  /// merchant has since changed the code out from under.
   HsnResolution? get _rateForCurrentCode {
     final digits = normalizeHsnCode(_hsnCode.text);
     final rate = _hsnRate;
     return rate != null && rate.requestedCode == digits ? rate : null;
   }
 
-  /// A code was entered and looked up, and the master had nothing. Distinct
-  /// from "not looked up yet" — only the former is worth warning about.
   bool get _hsnUnknown {
     final digits = normalizeHsnCode(_hsnCode.text);
     return _hsnCheckedFor == digits && digits.length >= 4 && _hsnRate == null;
   }
 
-  /// Push a focused, full-screen editor for one advanced section, then
-  /// refresh the hub summaries when it returns. The [builder] receives a
-  /// `refresh` callback so stateless editors (highlights, tags) can
-  /// re-render the pushed page on add/remove. Stateful editors (specs,
-  /// offers, A+ blocks, variants) manage their own rebuilds and can
-  /// ignore it.
   Future<void> _openEditor({
     required String title,
     String? intro,
@@ -852,7 +738,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
             _EditorScaffold(title: title, intro: intro, builder: builder),
       ),
     );
-    if (mounted) setState(() {}); // refresh the hub tile summaries
+    if (mounted) setState(() {});
   }
 
   @override
@@ -920,21 +806,16 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
               AppSizes.lg,
             ),
             children: [
-              // ── Photos ────────────────────────────────────────────────
               ..._photosSection(),
 
               const SizedBox(height: AppSizes.xl),
 
-              // ── The essentials — everything required to publish ───────
               AppSectionHeader(
                 title: l10n.productsSectionBasics,
                 padding: const EdgeInsets.only(bottom: AppSizes.sm),
               ),
               TextFormField(
                 controller: _name,
-                // Mirrors the backend zod limit (products.controller.ts
-                // caps name at 200 chars) so the user hits the wall here
-                // instead of on save.
                 maxLength: 200,
                 decoration: InputDecoration(
                   labelText: l10n.productsProductName,
@@ -965,11 +846,6 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
               ),
 
               const SizedBox(height: AppSizes.lg),
-              // ── Identity & stock ──────────────────────────────────────
-              //
-              // Ahead of Price on purpose: the HSN code decides the GST rate,
-              // and the rate readout sits in the price block below. Asking for
-              // the rate before the field that determines it read backwards.
               AppSectionHeader(
                 title: l10n.productsSectionIdentityStock,
                 padding: const EdgeInsets.only(bottom: AppSizes.sm),
@@ -992,11 +868,6 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
                 ),
               ),
               const SizedBox(height: AppSizes.md),
-              // The classifier suggests codes from the product name and
-              // re-resolves when the price crosses a threshold slab, so it has
-              // to see both as they're typed. A ListenableBuilder on those two
-              // controllers rebuilds this field alone — a page-level setState
-              // per keystroke would rebuild the entire form.
               ListenableBuilder(
                 listenable: Listenable.merge([_name, _sellingPrice]),
                 builder: (context, _) => HsnCodeField(
@@ -1045,7 +916,6 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
               _categoryField(categories),
 
               const SizedBox(height: AppSizes.lg),
-              // ── Price ─────────────────────────────────────────────────
               AppSectionHeader(
                 title: l10n.productsSectionPrice,
                 padding: const EdgeInsets.only(bottom: AppSizes.sm),
@@ -1099,11 +969,6 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
               const SizedBox(height: AppSizes.md),
               _pricingModeField(),
               const SizedBox(height: AppSizes.md),
-              // GST is derived from the HSN code, not typed — so it gets its
-              // own full-width row rather than sharing one with cost price.
-              // It carries a provenance line and, when a threshold rule
-              // applies, the price it was decided against; none of that fits
-              // in half a row next to another field.
               if (_pricingMode != 'NO_GST')
                 GstRateField(
                   controller: _taxPercent,
@@ -1118,7 +983,6 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
 
               const SizedBox(height: AppSizes.xxl),
 
-              // ── More details — optional, each opens full-screen ───────
               AppSectionHeader(
                 title: l10n.productsSectionMoreDetails,
                 padding: const EdgeInsets.only(bottom: AppSizes.xs),
@@ -1142,10 +1006,6 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     );
   }
 
-  // ── Essentials sub-builders ─────────────────────────────────────────
-
-  /// Unit dropdown — shows the short code when collapsed (so it fits a
-  /// half-width slot) and the full label inside the menu.
   Widget _unitField() {
     final l10n = AppLocalizations.of(context);
     final value = AppUnits.all.contains(_selectedUnit)
@@ -1171,10 +1031,6 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     );
   }
 
-  /// Pricing mode — decides whether mrp/sellingPrice already contain GST,
-  /// have it added on top when billed, or the product is exempt. The single
-  /// source of truth every invoice/quotation resolves its tax convention
-  /// from (see resolveProductPricing on the backend).
   Widget _pricingModeField() {
     final l10n = AppLocalizations.of(context);
     final options = <String, String>{
@@ -1197,10 +1053,6 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         setState(() {
           _pricingMode = v;
           _dirty = true;
-          // NO_GST is exempt/nil-rated — the tax field has nothing to show,
-          // so switching into this mode clears it rather than leaving a
-          // stale rate sitting on a now-hidden field (mirrors the backend's
-          // own normalization).
           if (v == 'NO_GST') {
             _taxPercent.text = '0';
             _taxManual = false;
@@ -1323,9 +1175,6 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         ),
         const SizedBox(height: AppSizes.md),
       ],
-      // Gallery uses pickMultiImage so the merchant can drop a whole
-      // product shoot in one tap; camera stays single because you can't
-      // capture a batch in one shutter press.
       Row(
         children: [
           Expanded(
@@ -1366,8 +1215,6 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         const LinearProgressIndicator(),
       ],
       const SizedBox(height: AppSizes.sm),
-      // URL fallback — collapsed behind an expansion so it doesn't clutter
-      // the common gallery/camera path.
       Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
@@ -1406,8 +1253,6 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       ),
     ];
   }
-
-  // ── "More details" hub ──────────────────────────────────────────────
 
   List<Widget> _detailTiles() {
     final l10n = AppLocalizations.of(context);
@@ -1544,9 +1389,6 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   }
 }
 
-/// One row in the "More details" hub — icon, title, helper line, a count
-/// badge when the section already has content, and a chevron. Tapping
-/// opens that section full-screen.
 class _DetailTile extends StatelessWidget {
   const _DetailTile({
     required this.icon,
@@ -1632,10 +1474,6 @@ class _DetailTile extends StatelessWidget {
   }
 }
 
-/// Full-screen host for an advanced section. A plain app bar with a Done
-/// button, an optional intro line, and the section's editor below. The
-/// [builder] gets a `refresh` callback so editors that don't manage
-/// their own state can ask this scaffold to rebuild.
 class _EditorScaffold extends StatefulWidget {
   const _EditorScaffold({
     required this.title,
@@ -1692,9 +1530,6 @@ class _EditorScaffoldState extends State<_EditorScaffold> {
   }
 }
 
-/// Chip-input tags editor — type a tag + comma / enter to add. Caps
-/// at 20 (server also enforces); duplicates ignored case-insensitively
-/// in `_addTagFromInput` above.
 class _TagsEditor extends StatelessWidget {
   const _TagsEditor({
     required this.tags,
@@ -1744,9 +1579,6 @@ class _TagsEditor extends StatelessWidget {
   }
 }
 
-/// Bulleted list editor for the V2 PDP highlights — drop a sentence
-/// in, hit + to add. Capped at 8 because the customer surface only
-/// renders the top few; more is just noise.
 class _HighlightsEditor extends StatelessWidget {
   const _HighlightsEditor({
     required this.items,
@@ -1812,10 +1644,6 @@ class _HighlightsEditor extends StatelessWidget {
   }
 }
 
-/// Stateful spec-sheet editor. Each group has a title + N rows; the
-/// inline state is intentional — wrapping a nested editor in callbacks
-/// is fiddlier than mutating in place + telling the parent the form
-/// is dirty via [onChange].
 class _SpecsEditor extends StatefulWidget {
   const _SpecsEditor({required this.groups, required this.onChange});
   final List<SpecGroup> groups;
@@ -1955,10 +1783,6 @@ class _GroupCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSizes.sm),
-          // Optional subtab — when any group on a product carries one,
-          // the customer PDP chips the unique tabs above the spec
-          // table and filters groups by selection. Leave blank for a
-          // flat spec list (the default).
           TextFormField(
             initialValue: group.tab ?? '',
             onChanged: onChangeTab,
@@ -1969,9 +1793,6 @@ class _GroupCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSizes.md),
-          // Each attribute stacks label-over-value full width so long
-          // labels ("In the box") and long values aren't clipped the way
-          // the old side-by-side layout cut them off.
           for (var i = 0; i < group.rows.length; i++)
             Container(
               margin: const EdgeInsets.only(bottom: AppSizes.sm),
@@ -2040,8 +1861,6 @@ class _GroupCard extends StatelessWidget {
   }
 }
 
-/// Add/remove per-product offers. Coupon / EMI / Exchange only — bank offers
-/// were removed from the platform.
 class _OffersEditor extends StatefulWidget {
   const _OffersEditor({required this.offers, required this.onChange});
   final List<ProductOffer> offers;
@@ -2090,10 +1909,6 @@ class _OffersEditorState extends State<_OffersEditor> {
   }
 }
 
-/// One offer row in the editor — freeform headline / detail / code.
-/// Kept as its own widget (rather than inlined into the editor's
-/// build) so each row owns its TextEditingControllers and the kind
-/// dropdown doesn't fight other rows for focus on rebuild.
 class _OfferRow extends StatefulWidget {
   const _OfferRow({
     super.key,
@@ -2150,10 +1965,6 @@ class _OfferRowState extends State<_OfferRow> {
               SizedBox(
                 width: 130,
                 child: DropdownButtonFormField<String>(
-                  // Legacy BANK rows fall back to COUPON in the picker
-                  // (the on-wire `kind` stays as-is until the merchant
-                  // picks something explicitly). The PDP filters BANK
-                  // out of per-product offers regardless.
                   initialValue: widget.kinds.contains(widget.offer.kind)
                       ? widget.offer.kind
                       : 'COUPON',

@@ -1,20 +1,7 @@
-/**
- * Shimmer placeholders shown while a screen loads. Built from the house
- * convention — `animate-pulse` over `bg-hairline` blocks at token radii — so a
- * skeleton matches the geometry of the real content it stands in for. Apply
- * `animate-pulse` to the outer container, not every block.
- */
-
-/** A single pulsing block. Pass width/height/radius via `className`. */
 export function Skeleton({ className = "" }: { className?: string }) {
   return <div className={`rounded-xs bg-hairline ${className}`} />;
 }
 
-/**
- * List rows matching the standard `border-b border-hairline py-md` row: an
- * optional leading puck, one or two text lines, an optional trailing chip.
- * Drop this into a list page's loading branch (the PageHeader is already shown).
- */
 export function ListRowsSkeleton({
   rows = 8,
   leading = true,
@@ -44,7 +31,6 @@ export function ListRowsSkeleton({
   );
 }
 
-/** A responsive tile grid skeleton (categories, settings, KPI strips). */
 export function CardsSkeleton({ count = 6 }: { count?: number }) {
   return (
     <div className="grid animate-pulse grid-cols-1 gap-md sm:grid-cols-2 xl:grid-cols-3">
@@ -58,11 +44,6 @@ export function CardsSkeleton({ count = 6 }: { count?: number }) {
   );
 }
 
-/**
- * Full-page skeleton for a detail screen: a back-link bar, a header (puck +
- * title + subtitle), then a couple of sections of rows. Generic enough for the
- * invoice / quotation / challan / return / adjustment / party / vendor details.
- */
 export function DetailSkeleton() {
   return (
     <div className="w-full animate-pulse px-lg py-xxl md:px-xxl">
@@ -92,7 +73,6 @@ export function DetailSkeleton() {
   );
 }
 
-/** Full-page skeleton for a focused form / editor (edit pages, settings forms). */
 export function FormSkeleton() {
   return (
     <div className="w-full animate-pulse px-lg py-xxl md:px-xxl">

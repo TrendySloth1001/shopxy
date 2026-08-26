@@ -74,8 +74,6 @@ function RecentlyViewedBody() {
   );
 }
 
-// ── Product tile ────────────────────────────────────────────────────────────
-
 function ProductTile({ item }: { item: RecentlyViewedItem }) {
   const p = item.product;
   const imageUrl = resolveImageUrl(p.images[0]?.url);
@@ -87,7 +85,6 @@ function ProductTile({ item }: { item: RecentlyViewedItem }) {
       href={`/p/${p.id}`}
       className="group flex flex-col rounded-md transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
     >
-      {/* Image */}
       <div className="relative aspect-square overflow-hidden rounded-md bg-hero-panel">
         {imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- same-origin media proxy; next/image remote config not wired
@@ -107,11 +104,9 @@ function ProductTile({ item }: { item: RecentlyViewedItem }) {
         )}
       </div>
 
-      {/* Info */}
       <div className="mt-sm px-xs pb-xs">
         <p className="line-clamp-2 text-body-sm font-semibold text-ink">{p.name}</p>
 
-        {/* Rating badge */}
         {p.ratingCount > 0 && p.ratingAvg != null && (
           <div className="mt-xs flex items-center gap-xs">
             <span className="inline-flex items-center gap-xxs rounded-xs bg-success px-xs py-xxs text-label-md text-white">
@@ -121,7 +116,6 @@ function ProductTile({ item }: { item: RecentlyViewedItem }) {
           </div>
         )}
 
-        {/* Pricing */}
         <div className="mt-xs flex flex-wrap items-baseline gap-xs">
           <span className="text-title-sm text-ink">{formatINR(p.sellingPrice)}</span>
           {discountPct > 0 && (
@@ -132,8 +126,6 @@ function ProductTile({ item }: { item: RecentlyViewedItem }) {
     </Link>
   );
 }
-
-// ── Skeleton ─────────────────────────────────────────────────────────────────
 
 function RecentlyViewedSkeleton() {
   return (

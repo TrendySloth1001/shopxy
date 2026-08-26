@@ -25,10 +25,6 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
-/// Modal sheet for creating or editing a merchant banner. A banner is just
-/// an image + placement + optional link + optional schedule, so the editor
-/// is lean: upload the artwork, pick where it shows, and (optionally) when
-/// and where it links.
 class MerchantBannerEditorSheet extends StatefulWidget {
   const MerchantBannerEditorSheet({super.key, this.existing});
   final AdminBanner? existing;
@@ -63,11 +59,6 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
   late BannerPlacement _placement;
   late final TextEditingController _sortOrder;
 
-  /// Where the banner sends a customer. Free text before — with helper copy
-  /// documenting `category:slug | product:id | url:https://…`, all three of
-  /// which the API rejected, while the two forms it did accept were dropped
-  /// into the customer's search box verbatim. Nothing a merchant typed could
-  /// ever work, so it's a structured picker now.
   BannerLinkKind? _linkKind;
   String? _linkValue;
   String? _linkLabel;
@@ -114,9 +105,6 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
     super.dispose();
   }
 
-  /// The canonical `kind:value` string, or null when the banner is
-  /// decorative. Search reads its live text; the other kinds hold a value
-  /// chosen from a picker, so it can't be mistyped.
   String? get _wireLink {
     final kind = _linkKind;
     if (kind == null) return null;
@@ -183,7 +171,6 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
   void _selectLinkKind(BannerLinkKind? kind) {
     setState(() {
       _linkKind = kind;
-      // A value only means something for the kind it was chosen under.
       _linkValue = null;
       _linkLabel = null;
       if (kind == BannerLinkKind.shop) {
@@ -206,7 +193,6 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
           ..addAll(rows.map(_BannerProductDraft.fromRow));
       });
     } catch (_) {
-      // Non-fatal: the merchant can still edit the rest of the banner.
     } finally {
       if (mounted) setState(() => _loadingProducts = false);
     }
@@ -217,10 +203,6 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
     final picker = ImagePicker();
     final picked = await picker.pickImage(
       source: ImageSource.gallery,
-      // Headroom over the 1600px `lg` variant the server generates: handing
-      // sharp a source at exactly the target width means two resamples for no
-      // gain, and anything under it ships a hero banner that gets upscaled on
-      // every phone. Left uncompressed here — the server re-encodes to WebP.
       maxWidth: 2400,
     );
     if (picked == null || !mounted) return;
@@ -240,9 +222,6 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
     setState(() => _imageUrl = url);
   }
 
-  /// Hard 5 MB ceiling — anything bigger usually means a raw camera
-  /// capture, which both blows past the backend limit and stalls on
-  /// slow connections.
   bool _validateImageSize(File file) {
     const maxBytes = 5 * 1024 * 1024;
     if (file.lengthSync() > maxBytes) {
@@ -317,9 +296,6 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
       );
       return;
     }
-    // Persist the curated product list only for existing banners — the
-    // product section is hidden until the banner has an id. Skip the PUT
-    // entirely if the merchant never touched it.
     if (_isEdit && _productsTouched) {
       final items = _products
           .asMap()
@@ -349,8 +325,6 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
     Navigator.of(context).pop(true);
   }
 
-  /// Shared by "pin a product" and "link to a product" so both search the
-  /// same catalogue in the same sheet.
   Future<Product?> _showProductPicker() {
     return showModalBottomSheet<Product>(
       context: context,
@@ -386,9 +360,6 @@ class _MerchantBannerEditorSheetState extends State<MerchantBannerEditorSheet> {
     });
   }
 
-  /// The control that names the destination, contextual to the chosen kind.
-  /// Product and category are pickers rather than text so a merchant can't
-  /// mistype an id the customer app would then fail to resolve.
   Widget _linkValueField() {
     switch (_linkKind!) {
       case BannerLinkKind.search:
@@ -735,8 +706,6 @@ class _Hint extends StatelessWidget {
   }
 }
 
-/// Mutable editor state for one pinned product. Wraps a slim product
-/// summary, the chosen discount, and its editable value controller.
 class _BannerProductDraft {
   _BannerProductDraft({
     required this.product,
@@ -781,8 +750,6 @@ class _BannerProductDraft {
   double get discountValueOrZero =>
       double.tryParse(valueController.text.trim()) ?? 0;
 
-  /// Live preview of the sale price as the merchant types — mirrors the
-  /// backend's salePrice = sellingPrice - perUnitDiscount.
   double get salePrice {
     final base = product.sellingPrice;
     final v = discountValueOrZero;
@@ -931,8 +898,6 @@ class _ProductRow extends StatelessWidget {
   }
 }
 
-/// Searches the merchant's own catalogue (`ProductsRemoteDataSource`) and
-/// returns the tapped [Product] to the editor.
 class _BannerProductPickerSheet extends StatefulWidget {
   const _BannerProductPickerSheet();
   @override
@@ -1085,8 +1050,6 @@ class _BannerProductPickerSheetState extends State<_BannerProductPickerSheet> {
   }
 }
 
-/// Row showing the chosen link destination. Tappable when there's a picker
-/// behind it; a plain statement of fact when the target is implied (my shop).
 class _LinkTargetRow extends StatelessWidget {
   const _LinkTargetRow({
     required this.label,

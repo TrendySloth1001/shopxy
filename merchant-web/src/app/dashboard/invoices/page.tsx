@@ -32,8 +32,6 @@ import { INVOICE_STATUS_CLASSES } from "@/features/invoices/format";
 import { MaybeLocked } from "@/features/auth/components/maybe-locked";
 import { ListRowsSkeleton } from "@/shared/ui/skeleton";
 
-// Labels come from the message catalog (invoices.*) at render time; the arrays
-// carry only stable keys.
 const TYPE_TABS: { key: string; labelKey: string }[] = [
   { key: "", labelKey: "list.typeAll" },
   { key: "SALE", labelKey: "list.typeSales" },
@@ -57,7 +55,6 @@ const DOC_OPTION_VALUES = [
 ];
 
 export default function InvoicesPage() {
-  // useSearchParams needs a Suspense boundary during prerender.
   return (
     <Suspense fallback={null}>
       <InvoicesPageInner />
@@ -73,7 +70,6 @@ function InvoicesPageInner() {
     { value: "", label: t("list.docAll") },
     ...DOC_OPTION_VALUES.map((d) => ({ value: d, label: t(`docType.${d}`) })),
   ];
-  // Deep-link filters (e.g. "View all bills" from a vendor) — read once on mount.
   const vendorId = toId(searchParams.get("vendorId"));
   const partyId = toId(searchParams.get("partyId"));
 
@@ -87,7 +83,6 @@ function InvoicesPageInner() {
   const [type, setType] = useState(() => normalizeType(searchParams.get("type")));
   const [status, setStatus] = useState("");
   const [documentType, setDocumentType] = useState("");
-  // Resolved name of the entity we're scoped to, for the filter banner.
   const [scopeName, setScopeName] = useState<string | null>(null);
 
   useEffect(() => {
@@ -96,8 +91,6 @@ function InvoicesPageInner() {
   }, [searchInput]);
 
   useEffect(() => {
-    // The banner is gated on the ids, not the name, so a stale name when the
-    // scope clears is harmless — only fetch when actually scoped.
     if (!vendorId && !partyId) return;
     let active = true;
     void (async () => {
@@ -183,7 +176,6 @@ function InvoicesPageInner() {
         </MaybeLocked>
       </PageHeader>
 
-      {/* Scope banner — shown when deep-linked from a vendor / party. */}
       {scoped ? (
         <div className="mt-lg flex flex-wrap items-center gap-sm rounded-md bg-brand-soft px-md py-sm text-body-sm text-brand-strong">
           <span>
@@ -199,7 +191,6 @@ function InvoicesPageInner() {
         </div>
       ) : null}
 
-      {/* Search */}
       <div className="mt-xl flex items-center gap-sm rounded-input border border-hairline bg-field px-md focus-within:border-brand focus-within:ring-2 focus-within:ring-brand-soft">
         <Search size={16} className="shrink-0 text-subtle" />
         <input
@@ -210,7 +201,6 @@ function InvoicesPageInner() {
         />
       </div>
 
-      {/* Filters */}
       <div className="mt-md flex flex-wrap items-end gap-md">
         <div className="flex flex-wrap items-center gap-sm">
           {TYPE_TABS.map((tab) => (
@@ -269,18 +259,15 @@ function InvoicesPageInner() {
   );
 }
 
-/** Take an opaque id token from a query param, else undefined. */
 function toId(raw: string | null): string | undefined {
   const trimmed = raw?.trim();
   return trimmed ? trimmed : undefined;
 }
 
-/** Only SALE / PURCHASE are valid type filters; anything else means "All". */
 function normalizeType(raw: string | null): string {
   return raw === "SALE" || raw === "PURCHASE" ? raw : "";
 }
 
-/** Localized status badge label; falls back to the raw status for unknowns. */
 function statusLabel(t: ReturnType<typeof useTranslations>, status: string): string {
   const key = { DRAFT: "status.draft", CONFIRMED: "status.confirmed", CANCELLED: "status.cancelled" }[status];
   return key ? t(key) : status;

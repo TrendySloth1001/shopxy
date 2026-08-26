@@ -1,13 +1,3 @@
-/**
- * Pure mappers: backend JSON → presentation models. Ported from the Flutter
- * `HomeFeedMapper` (`customer/lib/features/home/data/models/home_feed_mapper.dart`).
- *
- * Reads dynamic wire data as `unknown` and narrows through small typed helpers
- * (`asInt`/`asNum`/`asList` …) so the rest of the app never touches `any`.
- * Prisma `Decimal` fields serialise as strings ("199.00"), so every numeric
- * read accepts both strings and numbers.
- */
-
 import { color } from "@/shared/ui/tokens";
 import { CATEGORY_TINTS } from "@/shared/ui/category-tints";
 import { rupees } from "./format";
@@ -44,7 +34,6 @@ function asStr(v: unknown): string {
 function asStrOrNull(v: unknown): string | null {
   return typeof v === "string" ? v : null;
 }
-/** Resource ids may arrive as a numeric id or an opaque string token. */
 function asId(v: unknown): string {
   if (typeof v === "string") return v;
   if (typeof v === "number" && Number.isFinite(v)) return String(v);
@@ -61,8 +50,6 @@ function firstImage(product: Json): string {
   return "";
 }
 
-// ── Banner → HeroSlide ──────────────────────────────────────────────────────
-
 function heroFromBanner(raw: unknown): HeroSlide {
   const m = isObj(raw) ? raw : {};
   return {
@@ -72,8 +59,6 @@ function heroFromBanner(raw: unknown): HeroSlide {
     productCount: asInt(m["productCount"]) ?? 0,
   };
 }
-
-// ── Product cards ───────────────────────────────────────────────────────────
 
 function productCardFromProduct(p: Json): ProductCard | null {
   const mrp = asNum(p["mrp"]);
@@ -97,13 +82,10 @@ function productCardFromProduct(p: Json): ProductCard | null {
     shopName: shop ? asStrOrNull(shop["name"]) : null,
     brand: asStrOrNull(p["brand"]),
     discountPct,
-    // Nothing backs this yet — no per-shop or per-pincode shipping rule
-    // exists, so don't promise free delivery on every tile.
     freeDelivery: false,
   };
 }
 
-/** `{score, product}` wrapper → card. */
 function productCardFromTrending(row: unknown): ProductCard | null {
   const m = isObj(row) ? row : {};
   const product = isObj(m["product"]) ? (m["product"] as Json) : null;
@@ -115,22 +97,18 @@ function mapTrendingList(rows: unknown[]): ProductCard[] {
   return rows.map(productCardFromTrending).filter((x): x is ProductCard => x !== null);
 }
 
-/** Endless page rows are raw products. */
 export function mapEndlessProducts(rows: unknown[]): ProductCard[] {
   return rows
     .map((r) => (isObj(r) ? productCardFromProduct(r as Json) : null))
     .filter((x): x is ProductCard => x !== null);
 }
 
-/** Route a list whose rows might be raw products or trending wrappers. */
 function mapMaybeWrapped(rows: unknown[]): ProductCard[] {
   if (rows.length === 0) return [];
   const first = rows[0];
   if (isObj(first) && isObj(first["product"])) return mapTrendingList(rows);
   return mapEndlessProducts(rows);
 }
-
-// ── Category pucks ──────────────────────────────────────────────────────────
 
 function categoryPuck(raw: unknown, index: number): CategoryPuck {
   const m = isObj(raw) ? raw : {};
@@ -142,8 +120,6 @@ function categoryPuck(raw: unknown, index: number): CategoryPuck {
     tint: PUCK_TINTS[index % PUCK_TINTS.length],
   };
 }
-
-// ── Top-level mappers ───────────────────────────────────────────────────────
 
 export function mapFeed(json: unknown): HomeFeed {
   const j = isObj(json) ? json : {};

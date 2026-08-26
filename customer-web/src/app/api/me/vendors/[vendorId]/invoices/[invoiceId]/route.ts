@@ -2,7 +2,6 @@ import { proxyAuthed } from "@/server/bff";
 
 type Ctx = { params: Promise<{ vendorId: string; invoiceId: string }> };
 
-/** GET /me/vendors/:vendorId/invoices/:invoiceId — invoice detail for a linked vendor. Auth required. */
 export async function GET(_req: Request, { params }: Ctx) {
   const { vendorId, invoiceId } = await params;
   return proxyAuthed(

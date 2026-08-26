@@ -9,9 +9,6 @@ class AppTypography {
   static TextTheme get dark => _build(AppColors.black);
 
   static TextTheme _build(Color textColor) {
-    // WhatsApp uses the PLATFORM system font (SF Pro on iOS, Roboto on Android)
-    // — lighter and calmer than a bundled geometric face. Same Material-3 sizes;
-    // headings sit at w600 (not w700) with near-0 tracking.
     final base = Typography.material2021(platform: defaultTargetPlatform).black;
     return base
         .copyWith(

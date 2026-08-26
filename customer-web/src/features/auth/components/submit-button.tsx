@@ -2,15 +2,6 @@
 
 import type { ButtonHTMLAttributes } from "react";
 
-/**
- * Primary action button. Brand fill, restrained radius, clear disabled and
- * loading states (states are mandatory — CLAUDE.md §9b).
- *
- * `block` (default) stretches to the container width — correct for the single
- * primary submit of a focused `max-w-form` form (sign in / register). Pass
- * `block={false}` for settings forms embedded in a larger page, where the
- * button must size to its label and sit left-aligned (CLAUDE.md §layout).
- */
 export function SubmitButton({
   loading = false,
   block = true,

@@ -66,7 +66,6 @@ describe('product reviews — gating', () => {
     const buyer = await createTestUser({ role: 'CUSTOMER' });
     try {
       const product = await createTestProduct(merchant.shopId);
-      // Backdoor: write a DRAFT invoice directly. Service must reject.
       const party = await prisma.party.create({
         data: {
           shopId: merchant.shopId,
@@ -244,7 +243,6 @@ describe('product reviews — denorms + listing', () => {
     const product = await createTestProduct(merchant.shopId);
     const buyers: Array<Awaited<ReturnType<typeof createTestUser>>> = [];
     try {
-      // Seed 3 reviews → expect public list to return all 3 newest-first.
       for (let i = 0; i < 3; i++) {
         const b = await createTestUser({ role: 'CUSTOMER' });
         buyers.push(b);
@@ -312,8 +310,6 @@ describe('product tags', () => {
         .patch(`/products/${product.id}`)
         .set('Authorization', `Bearer ${merchant.accessToken}`)
         .send({ tags: tooMany });
-      // zod parse fails → ZodError → 500 by default unless handled. Our
-      // errorHandler maps zod issues to 400; verify either 400 or 422.
       expect([400, 422]).toContain(res.status);
     } finally {
       await cleanupTestUser(merchant);

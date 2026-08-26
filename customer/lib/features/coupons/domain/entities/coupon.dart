@@ -19,7 +19,6 @@ class CouponShop {
       );
 }
 
-/// A redeemable coupon as surfaced on the "My coupons" page.
 class Coupon {
   const Coupon({
     required this.id,
@@ -41,26 +40,16 @@ class Coupon {
   final String code;
   final String title;
   final String? description;
-  /// PERCENT or FLAT.
   final String discountType;
   final double discountValue;
   final double? maxDiscount;
   final double minOrderAmount;
   final DateTime validUntil;
-  /// Platform-wide coupons have a null shop.
   final CouponShop? shop;
-  /// True when the per-user redemption limit has already been hit. The
-  /// card stays on the list (with a "Used" badge) so the customer
-  /// knows the coupon exists but is no longer redeemable for them.
   final bool exhausted;
-  /// Public coupons auto-apply on checkout — no manual code entry.
-  /// Private coupons (default) require typing the code.
   final bool isPublic;
-  /// Restricted to first-time customers. Surfaces a "First order only"
-  /// pill on the card.
   final bool firstOrderOnly;
 
-  /// "10% off (max ₹200)" / "Flat ₹100 off"
   String get headline {
     if (discountType == 'PERCENT') {
       final pct = discountValue == discountValue.roundToDouble()
@@ -74,7 +63,6 @@ class Coupon {
     return 'Flat ${AppFormat.rupees(discountValue)} off';
   }
 
-  /// "Min cart ₹X" subtitle — empty when the coupon has no minimum.
   String get minOrderLabel =>
       minOrderAmount > 0 ? 'Min cart ${AppFormat.rupees(minOrderAmount)}' : '';
 
@@ -98,12 +86,6 @@ class Coupon {
       );
 }
 
-/// Result of `POST /me/coupons/validate` and `…/auto-apply` — either
-/// an `ok: true` row carrying the effective discount or an `ok: false`
-/// row with a human-readable reason. `autoApplied` is true when the
-/// coupon came from the auto-apply endpoint (a public coupon picked
-/// for the customer without a code entry); UI uses it to show the
-/// "Auto-applied" badge instead of the manual chip.
 class CouponPreview {
   const CouponPreview({
     required this.ok,

@@ -5,21 +5,8 @@ import { invoicesService, PosInvoiceError } from '../invoices/invoices.service.j
 import { paymentsService } from '../payments/payments.service.js';
 import { saleBus } from './pos.bus.js';
 
-/// POS (point-of-sale) — the server-authoritative shopping cart the till(s)
-/// mutate via intents, plus the single-transaction checkout that turns a cart
-/// into a confirmed GST invoice + receipt. See POS_DESIGN.md.
-///
-/// The cart (`Sale`/`SaleLine`) lives in Postgres so phone + web share one cart
-/// and a disconnect/crash never loses it. Every mutation bumps `sale.version`.
-/// Totals use the exact invoice math (`invoicesService`) so the till preview
-/// always matches the bill. Module of plain functions — no classes.
-
-// ── DTOs ──────────────────────────────────────────────────────────────────────
-
 export type TenderMode = 'CASH' | 'UPI' | 'CARD' | 'NEFT' | 'RTGS' | 'CHEQUE' | 'OTHER';
 
-/// §269ST cash-receipt ceiling (Income Tax Act): receiving this much or more in
-/// cash for one transaction is barred. The POS blocks a cash tender at/above it.
 const CASH_LIMIT_269ST = 200_000;
 
 export interface SaleLineDto {
@@ -90,8 +77,6 @@ export interface PosError {
 
 export type UnknownScan = { unknown: true; code: string };
 
-// ── helpers ─────────────────────────────────────────────────────────────────
-
 type SaleWithLines = Prisma.SaleGetPayload<{
   include: { lines: { include: { product: { select: { id: true; name: true; sku: true; images: true } } } } };
 }>;
@@ -116,7 +101,6 @@ function loadSale(shopId: number, saleId: number): Promise<SaleWithLines | null>
   });
 }
 
-/// Re-read the sale and compute its totals with the real invoice math.
 export async function snapshot(shopId: number, saleId: number): Promise<SaleSnapshot | PosError> {
   const sale = await loadSale(shopId, saleId);
   if (!sale) return { error: 'Sale not found' };
@@ -193,8 +177,6 @@ export async function snapshot(shopId: number, saleId: number): Promise<SaleSnap
   };
 }
 
-/// Run a line mutation against an OPEN sale, bump its version, then return the
-/// fresh snapshot + notify the room (version nudge only — no PII on the wire).
 async function mutate(
   shopId: number,
   saleId: number,
@@ -216,9 +198,6 @@ async function mutate(
   return snap;
 }
 
-/// Open a till: reuse the caller's most recent empty OPEN sale if one exists,
-/// else create one. Reuse stops a fresh empty Sale leaking on every page open /
-/// refresh / StrictMode double-mount (review H4).
 export async function openSale(
   shopId: number,
   openedById: number,
@@ -244,7 +223,6 @@ export async function openSale(
   return snapshot(shopId, sale.id);
 }
 
-/// Held/parked carts: OPEN sales with items (empty = abandoned), newest first, capped.
 export async function listOpenSales(shopId: number): Promise<OpenSaleSummaryDto[]> {
   const sales = await prisma.sale.findMany({
     where: { shopId, status: 'OPEN', lines: { some: {} } },
@@ -260,7 +238,6 @@ export async function listOpenSales(shopId: number): Promise<OpenSaleSummaryDto[
   }));
 }
 
-/// Void OPEN carts with no lines older than the cutoff (scheduler sweep, H4).
 export async function sweepStaleSales(olderThan: Date): Promise<number> {
   const res = await prisma.sale.updateMany({
     where: { status: 'OPEN', lines: { none: {} }, updatedAt: { lt: olderThan } },
@@ -269,8 +246,6 @@ export async function sweepStaleSales(olderThan: Date): Promise<number> {
   return res.count;
 }
 
-/// Add a scanned code: resolve to a product and bump its line qty. Returns
-/// `{ unknown }` when no product matches — the till then offers Quick add.
 export async function addScan(
   shopId: number,
   saleId: number,
@@ -284,7 +259,6 @@ export async function addScan(
   return addProduct(shopId, saleId, product.id, quantity, addedById, opId);
 }
 
-/// Catalogue search for the till's "add without a barcode" picker.
 export function searchProducts(shopId: number, term: string) {
   return productsService.posSearch(shopId, term);
 }
@@ -304,10 +278,6 @@ export async function addProduct(
   });
   if (!product) return { error: 'Product not found in this shop' };
 
-  // Op-id dedupe (P3): scan/add bump quantity, so a retried-after-timeout request
-  // must not apply twice. Pre-check the opId (a constraint hit INSIDE the tx would
-  // abort it). The in-tx insert is the race backstop. Scope to the user so one
-  // till on a shared cart can't shadow another's op by colliding ids (review L).
   const scopedOpId = opId ? `${addedById}:${opId}` : undefined;
   if (scopedOpId) {
     const seen = await prisma.saleOp.findUnique({ where: { saleId_opId: { saleId, opId: scopedOpId } } });
@@ -342,12 +312,8 @@ export async function setLineDiscount(shopId: number, saleId: number, productId:
   });
 }
 
-/// Unit-price override — gated behind `invoices:manage` at the edge (cashiers can
-/// discount but not silently reprice; POS_DESIGN.md §13).
 export async function setUnitPrice(shopId: number, saleId: number, productId: number, unitPrice: number): Promise<SaleSnapshot | PosError> {
   if (unitPrice < 0) return { error: 'Price cannot be negative' };
-  // Legal Metrology (Packaged Commodities) Rules: a packaged good must not be
-  // sold ABOVE its declared MRP. Cap the cashier's price override at the MRP.
   const product = await prisma.product.findFirst({ where: { id: productId, shopId }, select: { mrp: true } });
   if (product && unitPrice > num(product.mrp)) {
     return { error: `Cannot sell above MRP (₹${num(product.mrp).toFixed(2)}) — Legal Metrology Act.` };
@@ -372,9 +338,6 @@ export async function setHeaderDiscount(shopId: number, saleId: number, discount
 
 type Db = Prisma.TransactionClient | typeof prisma;
 
-/// Get-or-create this shop's system "Walk-in Customer" party (migration seeds it;
-/// this self-heals if missing). Accepts a tx so the gateway-settled path can
-/// resolve it inside the settlement transaction.
 async function ensureWalkInParty(shopId: number, db: Db = prisma): Promise<number> {
   const existing = await db.party.findFirst({
     where: { shopId, isSystem: true, name: 'Walk-in Customer' },
@@ -385,16 +348,11 @@ async function ensureWalkInParty(shopId: number, db: Db = prisma): Promise<numbe
   return created.id;
 }
 
-/// Shop owner — the fallback `createdById` when a gateway-settled sale has no
-/// cashier on record (its opener left, etc.). The owner always exists.
 async function shopOwnerId(shopId: number, db: Db = prisma): Promise<number | null> {
   const shop = await db.shop.findUnique({ where: { id: shopId }, select: { ownerUserId: true } });
   return shop?.ownerUserId ?? null;
 }
 
-/// The cashier's currently-open shift id (stamped onto a sale at checkout so the
-/// Z-report can reconcile cash). Null when no shift is open. Inlined here rather
-/// than importing the cashier service to keep pos.service's import graph minimal.
 async function currentShiftId(shopId: number, userId: number | null, db: Db = prisma): Promise<number | null> {
   if (userId == null) return null;
   const shift = await db.cashierShift.findFirst({
@@ -405,10 +363,6 @@ async function currentShiftId(shopId: number, userId: number | null, db: Db = pr
   return shift?.id ?? null;
 }
 
-/// The shared money path: turn a sale's lines into a confirmed SALE invoice + a
-/// receipt for the tender, and flip the sale to CHECKED_OUT — all inside the
-/// caller's tx. Manual `checkout` and the POS-QR settlement handler BOTH call
-/// this, so the billing logic is single-sourced (no per-tender copy).
 async function commitSaleInTx(
   tx: Prisma.TransactionClient,
   args: {
@@ -443,8 +397,6 @@ async function commitSaleInTx(
     mode: args.tender.mode,
     modeReference: args.tender.modeReference ?? null,
     invoiceId: invoice.id,
-    // Same counterparty as the invoice (incl. walk-in) so the receipt nets
-    // against the bill in the party ledger (review H1).
     partyId: args.partyId,
     createdById: args.userId,
     idempotencyKey: `POS:${args.saleId}:PAY`,
@@ -456,9 +408,6 @@ async function commitSaleInTx(
   return { invoice, payment };
 }
 
-/// Quick-add (P2): unknown scan → create a minimal catalog product (opening stock
-/// posted via the ledger so it's sellable at checkout) and add it. Gated on
-/// `products:manage` at the edge.
 export async function quickAddProduct(
   shopId: number,
   saleId: number,
@@ -478,9 +427,6 @@ export async function quickAddProduct(
         barcode: input.code,
         mrp: input.sellingPrice,
         sellingPrice: input.sellingPrice,
-        // Opening stock funds a FIFO cost layer at this price; default the cost
-        // basis to the selling price (zero margin) not 0 — a ₹0 cost would book
-        // 100% phantom margin and ₹0 inventory value (review M1).
         purchasePrice: input.costPrice ?? input.sellingPrice,
         taxPercent: input.taxPercent ?? 0,
         stockQuantity: input.openingStock ?? 1,
@@ -489,14 +435,12 @@ export async function quickAddProduct(
       { shopId, createdById: userId },
     );
   } catch (e) {
-    // Most likely a duplicate sku/barcode (the code already exists in some shop).
     return { error: e instanceof Error ? e.message : 'Could not create the product' };
   }
   return addProduct(shopId, saleId, product.id, 1, userId);
 }
 
 export async function voidSale(shopId: number, saleId: number): Promise<{ ok: true } | PosError> {
-  // Atomic status-guarded void — no TOCTOU vs a concurrent checkout.
   const res = await prisma.sale.updateMany({
     where: { id: saleId, shopId, status: 'OPEN' },
     data: { status: 'VOIDED', version: { increment: 1 } },
@@ -524,7 +468,6 @@ function buildCheckoutResult(
   };
 }
 
-/// Idempotent checkout replay: the sale's existing invoice + (live) receipt.
 async function replayCheckout(invoiceId: number): Promise<CheckoutResultDto | PosError> {
   const invoice = await prisma.invoice.findUnique({
     where: { id: invoiceId },
@@ -539,9 +482,6 @@ async function replayCheckout(invoiceId: number): Promise<CheckoutResultDto | Po
   return buildCheckoutResult(invoice, payment, true);
 }
 
-/// Single-transaction checkout: confirm invoice (+ stock) and record the tender
-/// all-or-nothing. Idempotent on `sale.invoiceId` — a retried checkout returns
-/// the same invoice, never double-bills.
 export async function checkout(
   shopId: number,
   saleId: number,
@@ -554,9 +494,6 @@ export async function checkout(
   if (sale.status !== 'OPEN') return { error: 'Sale is not open' };
   if (sale.lines.length === 0) return { error: 'Cannot check out an empty sale' };
 
-  // §269ST (Income Tax Act): no person may RECEIVE ₹2,00,000 or more in cash in
-  // respect of a single transaction. Block a cash tender at/above the limit — the
-  // cashier must collect via UPI/bank/online (or split). Non-cash tenders are exempt.
   if (input.tender.mode === 'CASH') {
     const snap = await snapshot(shopId, saleId);
     if (!isError(snap) && snap.totals.total >= CASH_LIMIT_269ST) {
@@ -566,16 +503,11 @@ export async function checkout(
     }
   }
 
-  // SALE invoices require a party (DB XOR constraint); a walk-in maps to the
-  // shop's system party. Resolve/commit it BEFORE the tx so the resolver sees it.
   const partyId = sale.partyId ?? (await ensureWalkInParty(shopId));
 
   try {
     const outcome = await prisma.$transaction(
       async (tx) => {
-        // Lock + re-check INSIDE the tx (the check above ran on another
-        // connection, advisory). Two simultaneous checkouts on a shared cart
-        // serialise here: the loser sees invoiceId set and replays.
         const locked = await tx.$queryRaw<Array<{ invoice_id: number | null; status: string; header_discount: string; customer_name: string | null; customer_phone: string | null }>>`
           SELECT invoice_id, status, header_discount, customer_name, customer_phone FROM sales WHERE id = ${saleId} AND shop_id = ${shopId} FOR UPDATE
         `;
@@ -584,8 +516,6 @@ export async function checkout(
         if (row.invoice_id != null) return { kind: 'replay' as const, invoiceId: row.invoice_id };
         if (row.status !== 'OPEN') return { kind: 'error' as const, error: 'Sale is not open' };
 
-        // Re-read the lines INSIDE the lock so the bill reflects the cart as it
-        // is at commit (not a pre-lock snapshot) — correct under concurrent edits.
         const freshLines = await tx.saleLine.findMany({
           where: { saleId },
           select: { productId: true, quantity: true, unitPrice: true, lineDiscount: true },
@@ -621,31 +551,12 @@ export async function checkout(
     return buildCheckoutResult(outcome.invoice, outcome.payment, false);
   } catch (e) {
     if (e instanceof PosInvoiceError) return { error: e.message, detail: e.detail };
-    // A concurrent winner can surface as a unique/serialization failure — re-read
-    // and replay rather than 500 on an already-successful sale.
     const fresh = await prisma.sale.findUnique({ where: { id: saleId }, select: { invoiceId: true } });
     if (fresh?.invoiceId) return replayCheckout(fresh.invoiceId);
     throw e;
   }
 }
 
-// ── POS online payment (P5) ────────────────────────────────────────────────────
-//
-// An online tender: the till opens Razorpay Checkout (which itself offers a UPI
-// QR + cards), the cart is LOCKED (OPEN → AWAITING_PAYMENT) so its total can't
-// drift under the outstanding order, and the `payment.captured`/`order.paid`
-// webhook settles the sale via `settlePaidSaleInTx` (the gateway settlement
-// handler). Cancel/abandon unlock back to OPEN.
-
-/// Lock an OPEN, non-empty sale for an online payment and return its frozen
-/// snapshot (totals.total is the amount the order is created for). Idempotent:
-/// re-locking an already-AWAITING_PAYMENT sale just returns its snapshot.
-///
-/// CASH-4 — stamp the ORIGINATING shift onto the sale here, at ring/lock time
-/// (when the cashier is present and their open shift is the correct one). The
-/// deferred webhook/sync settlement reuses this stored id instead of re-resolving
-/// `currentShiftId` later, so an online receipt always lands on the shift it was
-/// rung in — even if the cashier has since closed it / opened another / has none.
 export async function lockSaleForPayment(shopId: number, saleId: number): Promise<SaleSnapshot | PosError> {
   const res = await prisma.$transaction(async (tx) => {
     const sale = await tx.sale.findFirst({
@@ -654,7 +565,7 @@ export async function lockSaleForPayment(shopId: number, saleId: number): Promis
     });
     if (!sale) return { ok: false as const, error: 'Sale not found' };
     if (sale.invoiceId) return { ok: false as const, error: 'Sale is already checked out' };
-    if (sale.status === 'AWAITING_PAYMENT') return { ok: true as const }; // idempotent re-lock
+    if (sale.status === 'AWAITING_PAYMENT') return { ok: true as const };
     if (sale.status !== 'OPEN') return { ok: false as const, error: 'Sale is not open' };
     if (sale._count.lines === 0) return { ok: false as const, error: 'Cannot charge an empty sale' };
     await tx.sale.update({
@@ -673,12 +584,10 @@ export async function lockSaleForPayment(shopId: number, saleId: number): Promis
   return snap;
 }
 
-/// Store the gateway intent backing an outstanding online payment on the sale.
 export async function attachSaleGatewayPayment(shopId: number, saleId: number, gatewayPaymentId: number): Promise<void> {
   await prisma.sale.updateMany({ where: { id: saleId, shopId }, data: { gatewayPaymentId } });
 }
 
-/// The intent id of an outstanding online payment for this sale, or null when none.
 export async function getOutstandingIntent(shopId: number, saleId: number): Promise<number | null> {
   const sale = await prisma.sale.findFirst({
     where: { id: saleId, shopId },
@@ -688,9 +597,6 @@ export async function getOutstandingIntent(shopId: number, saleId: number): Prom
   return sale.gatewayPaymentId;
 }
 
-/// Release a locked cart: AWAITING_PAYMENT → OPEN and drop the intent link.
-/// Idempotent — a no-op (returns the live snapshot) when the sale isn't locked
-/// (already paid, voided, or never locked).
 export async function unlockSale(shopId: number, saleId: number): Promise<SaleSnapshot | PosError> {
   await prisma.sale.updateMany({
     where: { id: saleId, shopId, status: 'AWAITING_PAYMENT' },
@@ -701,15 +607,10 @@ export async function unlockSale(shopId: number, saleId: number): Promise<SaleSn
   return snap;
 }
 
-/// Settle a captured POS online payment INSIDE the gateway settlement tx: turn
-/// the locked sale into a confirmed invoice + UPI receipt. Idempotent on `sale.invoiceId` —
-/// a redelivered webhook / reconcile replay returns the existing invoice without
-/// re-billing. Mirrors manual `checkout` exactly via `commitSaleInTx`.
 export async function settlePaidSaleInTx(
   tx: Prisma.TransactionClient,
   args: { shopId: number; saleId: number; modeReference: string | null },
 ): Promise<{ invoiceId: number; replayed: boolean }> {
-  // Lock the sale row so two settlement attempts (webhook + reconcile) serialise.
   const locked = await tx.$queryRaw<
     Array<{
       invoice_id: number | null;
@@ -727,7 +628,7 @@ export async function settlePaidSaleInTx(
   `;
   const row = locked[0];
   if (!row) throw new Error(`POS settlement: sale ${args.saleId} not found`);
-  if (row.invoice_id != null) return { invoiceId: row.invoice_id, replayed: true }; // already settled
+  if (row.invoice_id != null) return { invoiceId: row.invoice_id, replayed: true };
 
   const lines = await tx.saleLine.findMany({
     where: { saleId: args.saleId },
@@ -749,16 +650,10 @@ export async function settlePaidSaleInTx(
     partyId,
     customerName: row.customer_name,
     customerPhone: row.customer_phone,
-    // $queryRaw returns numeric columns as strings — coerce for the math path.
     headerDiscount: Number(row.header_discount),
     items,
     tender: { mode: 'UPI', modeReference: args.modeReference },
     userId,
-    // CASH-4 — bind to the ORIGINATING shift captured on the sale at ring/lock
-    // time (lockSaleForPayment), NOT the opener's current shift at webhook time.
-    // A deferred settlement (cashier since closed/reopened/no shift) must not move
-    // the receipt onto the wrong shift's Z-report. Falls back to a live resolve
-    // only for a legacy locked sale that predates the stamp.
     shiftId: row.shift_id ?? (await currentShiftId(args.shopId, row.opened_by_id, tx)),
   });
   return { invoiceId: invoice.id, replayed: false };

@@ -5,14 +5,6 @@ import 'package:shopxy_customer/features/categories/data/models/category_dto.dar
 import 'package:shopxy_customer/shared/domain/entities/category.dart';
 import 'package:shopxy_customer/features/marketplace/domain/entities/marketplace_product.dart';
 
-/// Adapter for the customer-facing category surfaces:
-///
-///   GET /categories/tree?active=true               → full parent→child tree
-///   GET /marketplace/categories/:slug/products     → products inside a slug
-///
-/// The category listing endpoint deliberately accepts a parent slug
-/// too — it rolls up children server-side so "Electronics" surfaces
-/// laptops, cameras, etc. without the customer having to drill in.
 class CategoriesRemoteDataSource {
   const CategoriesRemoteDataSource(this._client);
   final ApiClient _client;

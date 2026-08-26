@@ -10,24 +10,10 @@ import { resolveMembershipForUser } from '../../shared/http/requireAuth.js';
 import { zPublicId } from '../../shared/ids/zPublicId.js';
 import { logger } from '../../shared/logging/logger.js';
 
-/// POS over WebSocket — the till sends `{ t:'cmd', reqId, op, saleId?, … }` and
-/// gets back `{ t:'res', reqId, ok, data | error }`. The socket is already
-/// authed (ticket → shopId/userId/perms); cart-change broadcasts to the other
-/// tills are emitted by pos.service via the SaleBus. Functional, no classes.
-
 const TENDER_MODES = ['CASH', 'UPI', 'CARD', 'NEFT', 'RTGS', 'CHEQUE', 'OTHER'] as const;
 
-/// CASH-10 — how long an open-shift-id resolution is trusted on a socket before
-/// re-querying. Short so a shift closed over REST is noticed promptly; the real
-/// money path (checkout/close) re-resolves the shift under its own transaction.
 const SHIFT_CACHE_TTL_MS = 10_000;
 
-// ── command arg schemas ──────────────────────────────────────────────────────
-// Entity ids (saleId/productId/partyId) use zPublicId — the same dual-mode decode
-// the REST layer uses — because the client now treats every id as an opaque
-// String (opaque-public-ids migration). WS frames bypass the res.json tokeniser,
-// so these arrive as plain-int strings today; zPublicId accepts a string OR a
-// number (and a token, should WS output ever be tokenised) → positive int.
 const qty = z.number().positive().max(100_000);
 const opId = z.string().trim().min(1).max(64).optional();
 const saleId = zPublicId;
@@ -72,7 +58,6 @@ function send(ws: WebSocket, payload: Record<string, unknown>): void {
 const isError = (r: unknown): r is { error: string; detail?: unknown } =>
   typeof r === 'object' && r !== null && 'error' in r && typeof (r as { error?: unknown }).error === 'string';
 
-/// Run a service call and reply with its result (or its `{error}`) under reqId.
 async function reply(ws: WebSocket, reqId: string, run: () => Promise<unknown>): Promise<void> {
   try {
     const data = await run();
@@ -100,15 +85,6 @@ export function handlePosCommand(ws: WebSocket, ctx: WsAuthCtx, msg: Record<stri
   }
   const a = parsed.data as Record<string, never> & { [k: string]: number & string };
 
-  // Shift gate: no scanning or selling until the cashier has opened a till shift.
-  // POS runs entirely over this socket, so enforcing it here is authoritative.
-  //
-  // CASH-10 — cache the resolved open-shift id on the socket ctx for a short TTL
-  // so we don't run `cashierShift.findFirst` on every scan/setQty/etc. command.
-  // A negative result (no open shift) is NOT cached so a just-opened shift is
-  // picked up on the next command; a positive result is cached briefly (shifts
-  // close over REST, so a TTL bounds staleness — and checkout/close already
-  // re-resolve the shift id under their own tx).
   const requireShift = async <T>(run: () => Promise<T>): Promise<T | { error: string }> => {
     const now = Date.now();
     if (ctx._shiftId != null && ctx._shiftCheckedAt != null && now - ctx._shiftCheckedAt < SHIFT_CACHE_TTL_MS) {
@@ -125,31 +101,13 @@ export function handlePosCommand(ws: WebSocket, ctx: WsAuthCtx, msg: Record<stri
     return run();
   };
 
-  // CASH-9 — the ticket froze shopRole+permissions at connect time and the
-  // socket can stay open all day, so a permission revocation (manager demotes a
-  // cashier, revokes the override right) would never reach an open till. Before
-  // a sensitive op we re-resolve the caller's LIVE membership for THIS shop via
-  // `resolveMembershipForUser` (own 60s cache → cheap, but reflects revocations
-  // within the TTL) instead of trusting the frozen snapshot. Falls back to the
-  // ticket snapshot only if the live lookup yields nothing (membership gone →
-  // no rights anyway). Returns the role+permissions to gate against.
   const liveRights = async (): Promise<{ shopRole?: string; permissions: string[] }> => {
     const m = await resolveMembershipForUser(userId);
-    // A membership for a different shop than the ticket's must not grant rights
-    // on this till; only honour it when it matches the socket's shop.
     if (m && m.shopId === shopId) return { shopRole: m.shopRole, permissions: m.permissions };
     if (m) return { shopRole: undefined, permissions: [] };
     return { shopRole: ctx.shopRole, permissions: ctx.permissions ?? [] };
   };
 
-  // Privileged-action gate: discounts, price overrides, and voids require the
-  // `invoices:override` right OR a fresh manager-authorisation grant replayed by
-  // the client. Without either, reply OVERRIDE_REQUIRED so the till prompts.
-  //
-  // CASH-2 — the replayed grant is single-use and bound to THIS sale + op, so it
-  // can't be replayed twice or aimed at a different action. We resolve saleId
-  // here from the parsed command (the same id the op runs against).
-  // CASH-9 — gate on LIVE rights, not the frozen ticket snapshot.
   const requireOverride = async <T>(
     overrideOp: OverrideOp,
     run: () => Promise<T>,
@@ -197,9 +155,6 @@ export function handlePosCommand(ws: WebSocket, ctx: WsAuthCtx, msg: Record<stri
       void reply(ws, reqId, () => requireShift(() => requireOverride('setHeaderDiscount', () => pos.setHeaderDiscount(shopId, a.saleId, a.discount))));
       return;
     case 'quickAdd':
-      // Creating catalogue is products:manage — beyond the POS area's invoices
-      // gate. CASH-9 — re-check LIVE rights (not the frozen ticket) so a revoked
-      // products:manage takes effect on an already-open till within the TTL.
       void reply(ws, reqId, async () => {
         const rights = await liveRights();
         if (!hasRight(rights.shopRole as never, rights.permissions, manageRight('products'))) {
@@ -217,9 +172,6 @@ export function handlePosCommand(ws: WebSocket, ctx: WsAuthCtx, msg: Record<stri
       void reply(ws, reqId, () => requireShift(() => requireOverride('void', () => pos.voidSale(shopId, a.saleId))));
       return;
     case 'payOnline':
-      // Online tender: lock the cart + create a Razorpay order; the till opens
-      // Razorpay Checkout with the returned clientParams. The sale settles on the
-      // payment.captured webhook (or syncOnline) → broadcasts pos.checkout.
       void reply(ws, reqId, () => requireShift(() => posPay.payOnline(shopId, a.saleId)));
       return;
     case 'syncOnline':

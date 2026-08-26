@@ -6,14 +6,10 @@ import { handlePosCommand } from '../../src/modules/pos/pos.ws.js';
 import type { WsAuthCtx } from '../../src/modules/scan-console/scan-console.service.js';
 import { createTestUser, cleanupTestUser, createTestProduct } from '../helpers/setup.js';
 
-/// The WS command router dispatches to the (separately-tested) functional
-/// service and replies under reqId. These pin the wire protocol.
-
-// Minimal fake socket: captures the next sent frame as a resolved promise.
 function fakeWs() {
   let resolve!: (v: Record<string, unknown>) => void;
   const next = new Promise<Record<string, unknown>>((r) => (resolve = r));
-  const ws = { readyState: 1 /* WebSocket.OPEN */, send: (s: string) => resolve(JSON.parse(s)) };
+  const ws = { readyState: 1 , send: (s: string) => resolve(JSON.parse(s)) };
   return { ws, next };
 }
 
@@ -32,17 +28,14 @@ describe('pos.ws — command dispatch', () => {
   it('routes a command to the service and replies under reqId', async () => {
     const ctx0 = await createTestUser();
     try {
-      // Scanning/selling is gated on an open shift (enforced in the WS router).
       await cashier.openShift(ctx0.shopId, ctx0.userId, 0);
       const sale = snap(await pos.openSale(ctx0.shopId, ctx0.userId));
       const ctx: WsAuthCtx = { shopId: ctx0.shopId, userId: ctx0.userId, shopRole: 'OWNER', permissions: [] };
 
-      // Unknown scan → ok:true with { unknown }.
       const a = fakeWs();
       handlePosCommand(a.ws as never, ctx, { t: 'cmd', reqId: 'r1', op: 'scan', saleId: sale.sale.id, code: 'NO-SUCH' });
       expect(await a.next).toMatchObject({ t: 'res', reqId: 'r1', ok: true, data: { unknown: true, code: 'NO-SUCH' } });
 
-      // Real product scan → ok:true with a snapshot.
       const product = await createTestProduct(ctx0.shopId, { sellingPrice: 25, stockQuantity: 5 });
       const b = fakeWs();
       handlePosCommand(b.ws as never, ctx, { t: 'cmd', reqId: 'r2', op: 'scan', saleId: sale.sale.id, code: product.sku });
@@ -61,14 +54,12 @@ describe('pos.ws — command dispatch', () => {
       const ctx: WsAuthCtx = { shopId: ctx0.shopId, userId: ctx0.userId, shopRole: 'OWNER', permissions: [] };
       const product = await createTestProduct(ctx0.shopId, { sellingPrice: 25, stockQuantity: 5 });
 
-      // No shift open → scan is rejected.
       const a = fakeWs();
       handlePosCommand(a.ws as never, ctx, { t: 'cmd', reqId: 'g1', op: 'scan', saleId: sale.sale.id, code: product.sku });
       const blocked = (await a.next) as { ok: boolean; error: string };
       expect(blocked.ok).toBe(false);
       expect(blocked.error).toMatch(/shift/i);
 
-      // Open a shift → scan now succeeds.
       await cashier.openShift(ctx0.shopId, ctx0.userId, 0);
       const b = fakeWs();
       handlePosCommand(b.ws as never, ctx, { t: 'cmd', reqId: 'g2', op: 'scan', saleId: sale.sale.id, code: product.sku });
@@ -90,7 +81,6 @@ describe('pos.ws — command dispatch', () => {
       handlePosCommand(s.ws as never, owner, { t: 'cmd', reqId: 's1', op: 'scan', saleId: sale.sale.id, code: product.sku });
       await s.next;
 
-      // A plain CASHIER (invoices:manage, no override) → discount blocked.
       const cashierCtx: WsAuthCtx = { shopId: ctx0.shopId, userId: ctx0.userId, shopRole: 'CASHIER', permissions: ['invoices:manage'] };
       const d = fakeWs();
       handlePosCommand(d.ws as never, cashierCtx, { t: 'cmd', reqId: 'd1', op: 'setLineDiscount', saleId: sale.sale.id, productId: product.id, discount: 10 });
@@ -98,7 +88,6 @@ describe('pos.ws — command dispatch', () => {
       expect(blocked.ok).toBe(false);
       expect(blocked.detail?.code).toBe('OVERRIDE_REQUIRED');
 
-      // OWNER (override via role) → allowed.
       const d2 = fakeWs();
       handlePosCommand(d2.ws as never, owner, { t: 'cmd', reqId: 'd2', op: 'setLineDiscount', saleId: sale.sale.id, productId: product.id, discount: 10 });
       expect(((await d2.next) as { ok: boolean }).ok).toBe(true);
@@ -112,18 +101,15 @@ describe('pos.ws — command dispatch', () => {
     try {
       const sale = snap(await pos.openSale(ctx0.shopId, ctx0.userId));
 
-      // Bad args → ok:false invalid.
       const bad = fakeWs();
       handlePosCommand(bad.ws as never, { shopId: ctx0.shopId, userId: ctx0.userId, permissions: [] }, {
         t: 'cmd',
         reqId: 'r3',
         op: 'setQty',
         saleId: sale.sale.id,
-        // missing productId/quantity
       });
       expect(await bad.next).toMatchObject({ t: 'res', reqId: 'r3', ok: false });
 
-      // quick-add without products:manage → 403-equivalent.
       const denied = fakeWs();
       handlePosCommand(denied.ws as never, { shopId: ctx0.shopId, userId: ctx0.userId, shopRole: 'CASHIER', permissions: ['invoices:manage'] }, {
         t: 'cmd',

@@ -11,8 +11,6 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
-/// Compact operations strip: open till (if the viewer has one), GST liability
-/// month-to-date, and current inventory value. Mirrors `components/operations.tsx`.
 class Operations extends StatelessWidget {
   const Operations({super.key, required this.operations});
   final DashboardOperations operations;

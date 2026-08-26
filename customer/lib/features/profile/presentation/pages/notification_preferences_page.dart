@@ -10,11 +10,6 @@ import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 
-/// Per-category notification preferences. Each row toggles a
-/// `notify*` flag on the user row; the channel rows at the bottom
-/// mute push / SMS entirely regardless of the category flags. The
-/// save call is per-toggle (no global "save" button) so the UI feels
-/// instant on a flaky network — failures pop a toast and revert.
 class NotificationPreferencesPage extends StatefulWidget {
   const NotificationPreferencesPage({super.key});
 
@@ -168,9 +163,6 @@ class _SectionHeader extends StatelessWidget {
   );
 }
 
-/// One rounded surface per section, rows separated by inset rules — the card
-/// language the rest of the app uses. The rows used to be separate square
-/// white bands floating on the canvas, which matched nothing else.
 class _PrefGroup extends StatelessWidget {
   const _PrefGroup({required this.children});
   final List<Widget> children;
@@ -228,8 +220,6 @@ class _PrefTile extends StatelessWidget {
         value: value,
         onChanged: onChanged,
         contentPadding: EdgeInsets.zero,
-        // The group behind supplies the surface; an opaque tile would square
-        // off the card's rounded corners.
         tileColor: Colors.transparent,
         secondary: Container(
           width: AppSizes.avatarXs,

@@ -3,11 +3,6 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 
-/// A flat list section: an optional uppercase [title] followed by [children]
-/// rows laid directly on the page and separated by [AppDivider]s — no bordered
-/// "card" container. This is the standard way to present grouped rows
-/// (invoices, quotation items …) so screens stay flat and
-/// consistent. Rows should be full-width (e.g. a `Padding(Row(...))`).
 class AppListSection extends StatelessWidget {
   const AppListSection({
     super.key,
@@ -20,10 +15,8 @@ class AppListSection extends StatelessWidget {
   final String? title;
   final List<Widget> children;
 
-  /// Left indent for the row dividers, to align under text past a leading icon.
   final double dividerLeading;
 
-  /// Use edge-to-edge dividers instead of leading-inset ones.
   final bool flushDividers;
 
   @override

@@ -20,7 +20,6 @@ export function PdpGallery({ images, offers, productName }: Props) {
   const prev = useCallback(() => setIndex((i) => (i > 0 ? i - 1 : images.length - 1)), [images.length]);
   const next = useCallback(() => setIndex((i) => (i < images.length - 1 ? i + 1 : 0)), [images.length]);
 
-  // Empty / no-image placeholder — brand-soft tinted with a large muted initial
   if (images.length === 0) {
     const initial = (productName[0] ?? "?").toUpperCase();
     return (
@@ -38,7 +37,6 @@ export function PdpGallery({ images, offers, productName }: Props) {
 
   return (
     <div className="relative w-full select-none">
-      {/* Main image — on desktop cap at 420px so the buy-box stays visible above fold */}
       <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-brand-soft sm:aspect-[4/3] md:aspect-video lg:aspect-square lg:max-h-[420px]">
         {resolved ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -58,7 +56,6 @@ export function PdpGallery({ images, offers, productName }: Props) {
           </div>
         )}
 
-        {/* Coupon pill */}
         {couponOffer ? (
           <div className="absolute bottom-md left-md flex items-center gap-xs rounded-full bg-error px-md py-xs shadow-snackbar">
             <span className="text-label-md text-white">{couponOffer.headline}</span>
@@ -68,7 +65,6 @@ export function PdpGallery({ images, offers, productName }: Props) {
           </div>
         ) : null}
 
-        {/* Prev / next arrows — visible only when >1 image */}
         {images.length > 1 ? (
           <>
             <button
@@ -89,7 +85,6 @@ export function PdpGallery({ images, offers, productName }: Props) {
         ) : null}
       </div>
 
-      {/* Desktop: vertical/horizontal thumbnail strip — 56px rounded-sm thumbs with brand ring on selected */}
       {images.length > 1 ? (
         <div className="hidden gap-xs overflow-x-auto px-lg pb-sm pt-sm lg:flex lg:flex-wrap">
           {images.map((img, i) => {
@@ -126,7 +121,6 @@ export function PdpGallery({ images, offers, productName }: Props) {
         </div>
       ) : null}
 
-      {/* Mobile: dot indicators */}
       {images.length > 1 ? (
         <div className="flex items-center justify-center gap-xs py-sm lg:hidden">
           {images.map((_img, i) => (

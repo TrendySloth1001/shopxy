@@ -87,9 +87,6 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         child: ListView(
             padding: const EdgeInsets.all(AppSizes.lg),
             children: [
-              // AppTextField doesn't expose validators directly; for
-              // launch this page leans on the inline `_save` check +
-              // backend's password rules to surface errors after submit.
               AppTextField(
                 controller: _current,
                 label: AppStrings.currentPassword,

@@ -18,10 +18,6 @@ describe('marketplace — filters & facets', () => {
 
   beforeAll(async () => {
     merchant = await createTestUser();
-    // Use any existing category — the test only cares that we can
-    // hit /marketplace/categories/:slug/products with our fixture
-    // products attached. Picks the first canonical category if seeded,
-    // otherwise materialises a throwaway one so a fresh DB still runs.
     let cat = await prisma.category.findFirst({ select: { id: true, slug: true } });
     if (!cat) {
       const made = await prisma.category.create({
@@ -36,8 +32,6 @@ describe('marketplace — filters & facets', () => {
     }
     categorySlug = cat.slug;
 
-    // Fixture spread: prices 50/200/500/1500, ratings 0/2.5/4.2/4.8,
-    // stocks 0/10/10/10 — gives every filter axis something to bite on.
     const p1 = await createTestProduct(merchant.shopId, {
       name: 'FilterFixture A', sku: `FF-${Date.now()}-A`,
       sellingPrice: 50,  mrp: 60,   stockQuantity: 0,  isPublished: true,
@@ -56,9 +50,6 @@ describe('marketplace — filters & facets', () => {
     });
     productIds.push(p1.id, p2.id, p3.id, p4.id);
 
-    // Attach to the category and set ratings via direct updates — the
-    // service layer normally rolls these up through review writes, but
-    // for filter coverage we set them directly.
     await prisma.product.updateMany({
       where: { id: { in: productIds } },
       data: { categoryId: cat.id },
@@ -99,8 +90,6 @@ describe('marketplace — filters & facets', () => {
     const ourIds = res.body.data
       .filter((r: { id: number }) => productIds.includes(r.id))
       .map((r: { id: number }) => r.id);
-    // p2 has rating 2.5; p3 + p4 are >=4. p1 is null and must not
-    // sneak in via the >= comparison (Prisma maps null < anything).
     expect(ourIds).not.toContain(productIds[0]);
     expect(ourIds).not.toContain(productIds[1]);
     expect(ourIds).toEqual(expect.arrayContaining([productIds[2], productIds[3]]));
@@ -114,7 +103,7 @@ describe('marketplace — filters & facets', () => {
     const ourIds = res.body.data
       .filter((r: { id: number }) => productIds.includes(r.id))
       .map((r: { id: number }) => r.id);
-    expect(ourIds).not.toContain(productIds[0]); // zero-stock
+    expect(ourIds).not.toContain(productIds[0]);
     expect(ourIds).toEqual(
       expect.arrayContaining([productIds[1], productIds[2], productIds[3]]),
     );

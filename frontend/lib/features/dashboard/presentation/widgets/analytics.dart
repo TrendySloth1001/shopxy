@@ -10,9 +10,6 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
-/// Ranked analytics as infographic pie charts. Top categories + top products
-/// sit side by side on wide screens; slow movers spans full width.
-/// Mirrors `components/analytics.tsx`.
 class Analytics extends StatelessWidget {
   const Analytics({super.key, required this.insights});
   final DashboardInsights insights;
@@ -138,12 +135,6 @@ class _PieCard extends StatelessWidget {
   }
 }
 
-/// Corner affordance that opens the same chart in [_ExpandedChartPage] —
-/// the Flutter analog of the web `Card`'s Maximize2/Minimize2 toggle. Web
-/// toggles an inline overlay; here a full-screen route reuses the SAME
-/// [InfographicPie] widget instance, which is safe (and simpler) because
-/// Flutter builds an independent Element/State per subtree location a
-/// widget config appears in.
 class _ExpandButton extends StatelessWidget {
   const _ExpandButton({required this.tooltip, required this.onTap});
   final String tooltip;
@@ -169,11 +160,6 @@ class _ExpandButton extends StatelessWidget {
   }
 }
 
-/// Full-screen "expanded" view of a single analytics chart — the mobile
-/// analog of the web `Card`'s fixed-inset-0 overlay. Reuses [child] as-is,
-/// so [InfographicPie]'s own responsive `LayoutBuilder` (chart + "About
-/// this chart" side by side once there's ≥560 of width) kicks in for free
-/// on a wide phone/landscape/tablet screen, exactly like the web breakpoint.
 class _ExpandedChartPage extends StatelessWidget {
   const _ExpandedChartPage({
     required this.title,

@@ -1,11 +1,3 @@
-/**
- * Settlement webhook handlers — the event-driven complement to the reconcile
- * sweep. `transfer.*` sync GatewayTransfer state, `account.*` drive LinkedAccount
- * KYC, `payment.dispute.lost` claws back the seller's slice. Every state write is
- * claim-once / idempotent: the core already dedupes by event id, but money writes
- * get defence-in-depth so a replay can't double-act. The matching reconcile sweep
- * is the backstop when a webhook is missed.
- */
 import { Prisma } from '@prisma/client';
 import prisma from '../../../infra/db/prisma.js';
 import { toMinorUnits, fromMinorUnits } from '../helpers.js';
@@ -23,15 +15,10 @@ const SETTLEMENT_EVENT_TYPES = new Set<GatewayEventType>([
   'DISPUTE_OTHER',
 ]);
 
-/** True for the marketplace settlement events the core routes here. */
 export function isSettlementEvent(type: GatewayEventType): boolean {
   return SETTLEMENT_EVENT_TYPES.has(type);
 }
 
-/**
- * Ownership check (ack-and-ignore foreign events on a SHARED Razorpay account):
- * an event we don't recognise has no row here and must be 200-acked, not 500'd.
- */
 export async function ownsSettlementEvent(event: NormalizedEvent): Promise<boolean> {
   if (event.transfer) {
     return (
@@ -57,7 +44,6 @@ export async function ownsSettlementEvent(event: NormalizedEvent): Promise<boole
   return false;
 }
 
-/** Apply a settlement event. Assumes ownership + dedupe already passed. */
 export async function handleSettlementEvent(event: NormalizedEvent): Promise<void> {
   switch (event.type) {
     case 'TRANSFER_PROCESSED':
@@ -71,12 +57,10 @@ export async function handleSettlementEvent(event: NormalizedEvent): Promise<voi
     case 'DISPUTE_LOST':
       return handleDisputeLost(event);
     default:
-      return; // DISPUTE_OTHER etc. — recorded for audit, no state change.
+      return;
   }
 }
 
-// transfer.processed/settled → the slice settled to the seller = RELEASED.
-// PARTIALLY_REVERSED is excluded so a part-clawed-back row keeps its sub-state.
 async function handleTransferProcessed(event: NormalizedEvent): Promise<void> {
   const ref = event.transfer!.ref;
   await prisma.gatewayTransfer.updateMany({
@@ -98,9 +82,6 @@ async function handleTransferFailed(event: NormalizedEvent): Promise<void> {
   });
 }
 
-// transfer.reversed → sync reversedAmount/status up to what the event reports.
-// Only ever advances (never shrinks — a smaller value is stale or a discrepancy
-// the verify pass flags), so a replay is a no-op.
 async function handleTransferReversed(event: NormalizedEvent): Promise<void> {
   const ref = event.transfer!.ref;
   const reversedMinor = event.transfer!.amountReversedMinor;
@@ -111,7 +92,7 @@ async function handleTransferReversed(event: NormalizedEvent): Promise<void> {
   if (!row) return;
   const amountMinor = toMinorUnits(Number(row.amount));
   const dbReversedMinor = toMinorUnits(Number(row.reversedAmount));
-  if (reversedMinor <= dbReversedMinor + 1) return; // nothing new (idempotent on replay)
+  if (reversedMinor <= dbReversedMinor + 1) return;
   const fully = reversedMinor >= amountMinor;
   await prisma.gatewayTransfer.updateMany({
     where: { id: row.id, status: { in: ['HELD', 'PARTIALLY_REVERSED', 'RELEASED'] } },
@@ -127,22 +108,9 @@ async function handleTransferReversed(event: NormalizedEvent): Promise<void> {
   });
 }
 
-// account.* → mirror linked-account KYC. Activation is the gate the ORDER split
-// checks before creating a transfer; suspension/needs-clarification disables it.
-//
-// A dropped account.activated — or one that arrives BEFORE our LinkedAccount row
-// exists, which ownsSettlementEvent correctly disowns — does NOT strand the
-// seller: linkedAccountsService.reconcilePendingKyc() re-polls the provider for
-// every not-yet-payout-enabled account every 30 min (scheduler.ts,
-// 'gateway:reconcile-kyc'), claim-once on the `payoutsEnabled: false` gate so it
-// can't clobber a concurrent webhook. Once an account flips, the transfer sweep's
-// P7 step (retryKycGatedTransfers) promotes its KYC_GATED rows. This handler is
-// the fast path; that sweep is the net.
 async function handleAccountUpdated(event: NormalizedEvent): Promise<void> {
   const ref = event.account!.ref;
   const status = event.account!.status;
-  // Shared mapper — same KYC + payoutsEnabled derivation the adapter and the
-  // onboarding service use, so the webhook and the re-poll can never disagree.
   const { kycStatus, payoutsEnabled } = mapProviderKyc(status);
   await prisma.linkedAccount.updateMany({
     where: { providerAccountId: ref },
@@ -151,11 +119,6 @@ async function handleAccountUpdated(event: NormalizedEvent): Promise<void> {
   tracker.track({ step: 'ROUTE_SPLIT_EXECUTED', meta: { phase: 'webhook-account', accountRef: ref, status } });
 }
 
-// payment.dispute.lost → the platform is debited, so claw the seller back.
-// Reuses the claim-once reverse path: HELD/PARTIALLY_REVERSED reverse cleanly;
-// a RELEASED (already settled) transfer fails with insufficient balance and is
-// flagged REVERSAL_INSUFFICIENT_BALANCE for manual recovery (P5) — exactly the
-// "flag RELEASED for manual recovery" outcome.
 async function handleDisputeLost(event: NormalizedEvent): Promise<void> {
   const payRef = event.dispute?.providerPaymentRef;
   if (!payRef) return;

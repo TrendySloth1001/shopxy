@@ -3,10 +3,6 @@ import 'package:shopxy_customer/features/marketplace/domain/entities/marketplace
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 
-/// Phase E — variant swatch picker. Shows one chip row per axis. The
-/// currently-selected variant is whichever row matches all selected
-/// axis values. Returns null while the selection is incomplete so the
-/// caller can fall back to the default variant.
 class PdpVariantPicker extends StatefulWidget {
   const PdpVariantPicker({
     super.key,
@@ -27,15 +23,11 @@ class _PdpVariantPickerState extends State<PdpVariantPicker> {
   @override
   void initState() {
     super.initState();
-    // Seed selection from the default variant so we always have a
-    // canonical row to drive the price block.
     final def = widget.product.defaultVariant;
     _selected = {
       for (final a in widget.product.variantAxes)
         a.name: def?.attributes[a.name] ?? a.values.first,
     };
-    // Edge case — when default variant has empty attributes (single-
-    // variant product), seed from the first axis value of each axis.
   }
 
   MarketplaceVariant? _matchVariant() {

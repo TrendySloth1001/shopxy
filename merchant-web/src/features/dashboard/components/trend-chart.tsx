@@ -2,28 +2,16 @@
 
 import { useMemo, useState } from "react";
 
-/**
- * Rich multi-series trend chart (smooth curves, gridlines, axis labels,
- * toggleable legend, floating tooltip + crosshair) in the token palette. Lines
- * live in a stretched SVG (non-scaling stroke keeps them crisp); gridlines,
- * axis labels, markers and the tooltip are HTML overlays positioned by percent
- * so text stays sharp at any width. Accessible: role=img + aria-label, with the
- * caller providing an sr-only data table.
- */
-
 export type TrendSeries = {
   key: string;
   label: string;
-  /** Tailwind text-* class → drives the line colour via currentColor. */
   stroke: string;
-  /** Tailwind bg-* class → the legend/marker dot. */
   dot: string;
   values: number[];
 };
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 
-/** Catmull-Rom → cubic-bezier smoothing over points in the 0–100 plot space. */
 function smoothPath(pts: { x: number; y: number }[]): string {
   if (pts.length === 0) return "";
   if (pts.length === 1) return `M0,${pts[0].y} L100,${pts[0].y}`;
@@ -78,7 +66,6 @@ export function TrendChart({
     setHidden((prev) => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
-      // keep at least one series visible
       else if (series.length - next.size > 1) next.add(key);
       return next;
     });
@@ -93,7 +80,6 @@ export function TrendChart({
 
   return (
     <div>
-      {/* toggle legend */}
       <div className="flex flex-wrap items-center gap-sm">
         {series.map((s) => {
           const on = !hidden.has(s.key);
@@ -114,9 +100,7 @@ export function TrendChart({
         })}
       </div>
 
-      {/* plot */}
       <div className="mt-md flex gap-sm">
-        {/* y axis labels */}
         <div className="relative w-10 shrink-0">
           <div className="relative h-72">
             {ticks
@@ -142,7 +126,6 @@ export function TrendChart({
             onMouseMove={onMove}
             onMouseLeave={() => setHover(null)}
           >
-            {/* gridlines */}
             {ticks.map((_, i) => (
               <span
                 key={i}
@@ -151,7 +134,6 @@ export function TrendChart({
               />
             ))}
 
-            {/* lines */}
             <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 size-full overflow-visible">
               {visible.map((s) => (
                 <path
@@ -168,7 +150,6 @@ export function TrendChart({
               ))}
             </svg>
 
-            {/* crosshair + markers + tooltip */}
             {hover != null ? (
               <>
                 <span
@@ -184,9 +165,6 @@ export function TrendChart({
                     aria-hidden="true"
                   />
                 ))}
-                {/* Sit beside the crosshair (on whichever side has room) with a
-                    gap, so the card stays near the point without covering the
-                    lines being inspected. */}
                 <div
                   className="pointer-events-none absolute top-1 z-10 w-max max-w-[45%] rounded-lg border border-hairline bg-canvas px-md py-sm shadow-floating"
                   style={
@@ -210,7 +188,6 @@ export function TrendChart({
             ) : null}
           </div>
 
-          {/* x axis labels */}
           <div className="relative mt-xs h-4">
             {xLabels.map((lbl, i) =>
               i % xStep === 0 || i === n - 1 ? (

@@ -22,7 +22,6 @@ class ChallansProvider extends ChangeNotifier {
   String? get statusFilter => _statusFilter;
   String get search => _search;
 
-  /// Drop cached challans on logout.
   void reset() {
     _challans = [];
     _isLoading = false;

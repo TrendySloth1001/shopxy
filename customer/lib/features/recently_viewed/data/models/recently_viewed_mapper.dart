@@ -2,11 +2,6 @@ import 'package:shopxy_customer/features/home/data/models/home_feed_models.dart'
 import 'package:shopxy_customer/shared/format/app_format.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 
-/// Maps a row from `GET /me/recently-viewed` into a `ProductCard` so the
-/// recently-viewed page can render with the same widgets the home rail
-/// uses. Row shape:
-///   { id, lastViewedAt, product: { id, name, sellingPrice, mrp,
-///       ratingAvg, ratingCount, images: [{ url }], shop: { name, slug } } }
 class RecentlyViewedMapper {
   RecentlyViewedMapper._();
 
@@ -61,6 +56,5 @@ class RecentlyViewedMapper {
     return null;
   }
 
-  // MOD-1: shared formatter — see AppFormat.
   static String _money(double v) => AppFormat.rupees(v);
 }

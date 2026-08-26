@@ -5,9 +5,6 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
-/// One queued offline mutation. Only naturally-idempotent updates are ever
-/// enqueued (see `ApiClient._isQueueable`), so replaying an entry more than
-/// once is safe.
 class OutboxEntry {
   OutboxEntry({
     required this.id,
@@ -25,7 +22,6 @@ class OutboxEntry {
   final String method;
   final String path;
 
-  /// JSON-encoded request body (already a string), or null.
   final String? body;
   final Map<String, String> headers;
   final int createdAtMs;
@@ -61,19 +57,9 @@ class OutboxEntry {
   }
 }
 
-/// Single source of truth for pending offline writes: a per-user, FIFO,
-/// disk-persisted queue. Best-effort — an I/O failure degrades to an empty
-/// queue and never throws into the request path.
-///
-/// `pendingCount` is a [ValueListenable] the offline banner watches to show a
-/// "N changes waiting to sync" affordance.
 class Outbox {
   Outbox({int maxEntries = 500}) : _maxEntries = maxEntries;
 
-  /// Hard cap on queued writes. If a device stays offline through a very large
-  /// number of edits, the oldest are dropped (FIFO) rather than growing without
-  /// bound — the queue only ever holds idempotent updates, so the newest edit
-  /// to any record is the one that matters.
   final int _maxEntries;
 
   Directory? _dir;
@@ -85,15 +71,11 @@ class Outbox {
   int _seq = 0;
   Future<void> _write = Future.value();
 
-  /// Total queued entries across users (for the banner). Cheap + reactive.
   final ValueNotifier<int> pendingCount = ValueNotifier<int>(0);
 
   Future<void> init() async {
     try {
       final support = await getApplicationSupportDirectory();
-      // Its OWN directory — deliberately separate from HttpCache's `http_cache`
-      // dir, whose `wipe()` deletes recursively and would otherwise clobber the
-      // outbox file.
       final dir = Directory('${support.path}/offline_outbox');
       await dir.create(recursive: true);
       _dir = dir;
@@ -122,13 +104,11 @@ class Outbox {
     }
   }
 
-  /// A monotonic id — safe here (app runtime, not a workflow sandbox).
   String _newId() {
     _seq += 1;
     return '${DateTime.now().microsecondsSinceEpoch}-$_seq';
   }
 
-  /// Append a mutation. Returns the created entry (already persisted).
   Future<OutboxEntry> enqueue({
     required String userId,
     required String method,
@@ -147,7 +127,6 @@ class Outbox {
       createdAtMs: DateTime.now().millisecondsSinceEpoch,
     );
     _entries.add(entry);
-    // Enforce the cap: drop oldest-first if we're over.
     while (_entries.length > _maxEntries) {
       _entries.removeAt(0);
     }
@@ -156,7 +135,6 @@ class Outbox {
     return entry;
   }
 
-  /// Queued entries for one user, oldest first (FIFO replay order).
   List<OutboxEntry> pending(String userId) =>
       _entries.where((e) => e.userId == userId).toList();
 
@@ -167,8 +145,6 @@ class Outbox {
     _persist();
   }
 
-  /// Record a failed replay attempt for one entry and persist. Returns the new
-  /// attempt count so the processor can drop a poison entry after a cap.
   Future<int> recordFailure(String id) async {
     await _ready.future;
     final entry = _entries.firstWhere(
@@ -180,7 +156,6 @@ class Outbox {
     return entry.attempts;
   }
 
-  /// Drop everything (logout / clearAuth / account-delete).
   Future<void> wipe() async {
     await _ready.future;
     _entries.clear();

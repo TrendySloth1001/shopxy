@@ -14,20 +14,9 @@ import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
-/// Audit trail of edits to a Party's or Vendor's contact details.
-/// Fetches `<endpoint>/changes` and renders a timeline of
-/// "field: old → new · by user · timestamp" rows.
-///
-/// Single source of truth — used by both party_detail_page and
-/// vendor_detail_page. We render nothing (zero space) when the entity
-/// has never been edited, so detail pages can include this
-/// unconditionally without an empty-state hole.
 class ContactChangesSection extends StatefulWidget {
   const ContactChangesSection({super.key, required this.endpoint});
 
-  /// Path to the entity, e.g. `/parties/123` or `/vendors/456`. We
-  /// append `/changes` ourselves so callers don't have to remember the
-  /// suffix.
   final String endpoint;
 
   @override

@@ -8,16 +8,10 @@ import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
-/// One review row — used both inline in the PDP recent-reviews block
-/// and on the full all-reviews page. Designed to read like Flipkart:
-/// green rating pill, then title, then body, then author + date and
-/// a "Verified buyer" chip on the right.
 class ReviewTile extends StatelessWidget {
   const ReviewTile({super.key, required this.review, this.dense = false});
   final Review review;
 
-  /// Compact mode trims the body to 4 lines + drops the divider — used
-  /// in the PDP card stack where there's a hard height budget.
   final bool dense;
 
   static final DateFormat _df = DateFormat.yMMMMd();
@@ -92,9 +86,6 @@ class ReviewTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSizes.sm),
-              // The backend gates writes by purchase, so every review
-              // we show *was* posted by a buyer — surface that fact
-              // explicitly the way Flipkart/Amazon do.
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSizes.xs,
@@ -139,14 +130,11 @@ class ReviewTile extends StatelessWidget {
   }
 }
 
-/// "4 ★" green pill — same component Flipkart uses next to titles.
 class _RatingChip extends StatelessWidget {
   const _RatingChip({required this.rating});
   final int rating;
 
   Color get _color {
-    // 1-2 = red, 3 = amber, 4-5 = green — matches the convention most
-    // marketplaces use so first-time customers don't need to learn it.
     if (rating <= 2) return AppColors.error;
     if (rating == 3) return AppColors.warning;
     return AppColors.success;

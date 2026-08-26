@@ -4,13 +4,10 @@ import 'package:shopxy_customer/features/home/data/models/home_feed_models.dart'
 import 'package:shopxy_customer/features/home/presentation/widgets/home_banner_image.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 
-/// Full-width curated banner image. Like every other banner placement
-/// it's now just a plain tappable picture + optional link.
 class HomeCuratedRail extends StatelessWidget {
   const HomeCuratedRail({super.key, required this.slide});
   final HeroSlide slide;
 
-  // Wide banner strip aspect ratio.
   static const double _aspectRatio = 16 / 6;
 
   @override

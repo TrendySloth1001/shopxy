@@ -1,7 +1,6 @@
 import { authedFetch, extractError } from "@/server/auth/session";
 import { NextResponse } from "next/server";
 
-/** GET /me/reviews — cursor-paginated list of the caller's reviews. Auth required. */
 export async function GET(req: Request) {
   const qs = new URL(req.url).searchParams.toString();
   const res = await authedFetch(`/me/reviews${qs ? `?${qs}` : ""}`);

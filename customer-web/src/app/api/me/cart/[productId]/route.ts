@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 
 type Ctx = { params: Promise<{ productId: string }> };
 
-/** PUT /me/cart/:productId — set line quantity (0 removes). Auth required. */
 export async function PUT(req: Request, { params }: Ctx) {
   const { productId } = await params;
   const body = await req.json().catch(() => null);
@@ -23,7 +22,6 @@ export async function PUT(req: Request, { params }: Ctx) {
   return NextResponse.json(await res.json().catch(() => null), { status: res.status });
 }
 
-/** DELETE /me/cart/:productId — remove a single line. Auth required. */
 export async function DELETE(_req: Request, { params }: Ctx) {
   const { productId } = await params;
   const res = await authedFetch(`/me/cart/${encodeURIComponent(productId)}`, {

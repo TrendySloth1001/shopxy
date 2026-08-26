@@ -4,11 +4,6 @@ import { Boxes, Receipt, Store } from "@/shared/icons";
 import type { DashboardGstMtd, DashboardTill } from "../stats";
 import { inr } from "./ui";
 
-/**
- * Compact operations strip: open till (if the viewer has one), GST liability for
- * the month-to-date, and current inventory value. GST is null without
- * reports:view, in which case only the inventory (and till) tiles render.
- */
 export function Operations({
   till,
   gstMtd,

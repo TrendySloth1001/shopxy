@@ -10,17 +10,6 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
-/// Renders the right input for a [CustomFieldDefinition]'s type:
-///   TEXT       → single-line TextField
-///   LONG_TEXT  → multi-line TextField
-///   NUMBER     → numeric TextField with optional unit suffix
-///   DATE       → tap-to-pick using showDatePicker
-///   BOOLEAN    → SwitchListTile
-///   DROPDOWN   → DropdownButtonFormField
-///
-/// All values come in and out as strings — the backend normalises and
-/// validates against the declared type before persisting. The render
-/// layer here just picks the right control for ergonomics.
 class CustomFieldInput extends StatefulWidget {
   const CustomFieldInput({
     super.key,

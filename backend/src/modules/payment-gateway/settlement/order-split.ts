@@ -1,30 +1,3 @@
-/**
- * Route on-hold split for a captured ORDER — the per-shop held-transfer layer.
- *
- * Legal framing (do not lose this): this is Razorpay Route `on_hold`, NOT a
- * licensed escrow. Each seller's slice is parked in RAZORPAY's regulated
- * balance (Razorpay is custodian), never in a ShopXY-controlled account. We only
- * send create / release / reverse instructions. Customer-facing copy says
- * "released to the seller once you confirm delivery", never "escrow". The whole
- * path is gated by ROUTE_SPLIT_ENABLED (off by default) and must not move real
- * money until it is sandbox-verified and compliance/legal sign off the flag.
- *
- * Two phases, deliberately split across the settlement transaction boundary so a
- * crash can never leave money moved without a row, and so reconciliation can
- * heal a row whose provider call never landed:
- *
- *   writeHeldTransferRows(intent, tx)   — INSIDE the settlement tx
- *     Allocate the captured amount across child PurchaseRequests, gate each on
- *     its shop's LinkedAccount KYC, and upsert one GatewayTransfer row per child
- *     (HELD or KYC_GATED, providerTransferRef null, deterministic idempotencyKey).
- *     Idempotent via the (gatewayPaymentId, purchaseRequestId) unique — a
- *     redelivered capture is a no-op.
- *
- *   executeHeldTransfers(gatewayPaymentId) — AFTER commit, and from reconciliation
- *     Fetch-before-create against Razorpay (match existing transfers by the
- *     deterministic key in `notes`), then create only the missing ones on-hold
- *     and patch the ref. A retry/heal reconciles instead of double-paying.
- */
 import { Prisma } from '@prisma/client';
 import prisma from '../../../infra/db/prisma.js';
 import { getProvider } from '../providers/registry.js';
@@ -39,30 +12,20 @@ import { envOr } from '../../../shared/env.js';
 import { tracker } from '../tracker.js';
 import type { GatewayPaymentRecord } from '../ports/types.js';
 
-const MIN_TRANSFER_PAISE = 100; // Razorpay Route floor: ₹1.
+const MIN_TRANSFER_PAISE = 100;
 const SECONDS = 1000;
 const DAY_MS = 86_400 * SECONDS;
 
-/** The on-hold split path is OFF unless explicitly enabled. Until it is
- *  sandbox-verified and compliance signs off, this stays false in prod. */
 export function isRouteSplitEnabled(): boolean {
   return envOr('ROUTE_SPLIT_ENABLED', 'false') === 'true';
 }
 
-/** Deterministic, stable idempotency key for one child's transfer. Persisted on
- *  the row BEFORE any provider call and echoed into Razorpay transfer notes, so
- *  every retry/heal resolves to the same transfer. */
 function transferKey(gatewayPaymentId: number, purchaseRequestId: number): string {
   return `gw:${gatewayPaymentId}:pr:${purchaseRequestId}`;
 }
 
-/** Razorpay notes key carrying {@link transferKey} on the created transfer. */
 const NOTES_KEY = 'shopxy_transfer_key';
 
-/**
- * Phase 1 (in-tx): write one HELD/KYC_GATED row per child. No provider calls.
- * Only runs for split-capable providers (ORDER split is Route/Razorpay-specific).
- */
 export async function writeHeldTransferRows(
   intent: GatewayPaymentRecord,
   tx: Prisma.TransactionClient,
@@ -83,14 +46,12 @@ export async function writeHeldTransferRows(
         },
       },
     },
-    orderBy: { id: 'asc' }, // deterministic allocation order (rounding residue)
+    orderBy: { id: 'asc' },
   });
   if (children.length === 0) return;
 
   const totalMinor = toMinorUnits(intent.amount);
   const shares = children.map((c) => Number(c.estimatedTotal));
-  // Allocate exactly, then fold sub-₹1 slices into the largest so no transfer
-  // is created below Razorpay's floor. Sum is preserved == totalMinor.
   const alloc = foldBelowMinimum(allocateProportional(shares, totalMinor), MIN_TRANSFER_PAISE);
   const now = new Date();
 
@@ -98,14 +59,11 @@ export async function writeHeldTransferRows(
   let gated = 0;
   for (let i = 0; i < children.length; i++) {
     const amountMinor = alloc[i];
-    if (amountMinor <= 0) continue; // dust folded into a sibling — no row
+    if (amountMinor <= 0) continue;
 
     const c = children[i];
     const la = c.shop.linkedAccount;
     const payable = !!(la && la.payoutsEnabled && la.providerAccountId);
-    // Backstop auto-release at the return window close; buyer-confirm releases
-    // earlier. returnWindowDays === 0 ("return forever") → indefinite hold,
-    // released only by our flow (omit on_hold_until at the provider edge).
     const holdUntil =
       c.shop.returnWindowDays > 0
         ? new Date(now.getTime() + c.shop.returnWindowDays * DAY_MS)
@@ -129,8 +87,6 @@ export async function writeHeldTransferRows(
         holdUntil,
         failureReason: payable ? null : 'KYC_NOT_ACTIVATED',
       },
-      // Redelivered capture → no-op. We never rewrite amount/status here; a
-      // KYC_GATED row is promoted later by the account.activated retry path.
       update: {},
     });
     payable ? written++ : gated++;
@@ -143,12 +99,6 @@ export async function writeHeldTransferRows(
   });
 }
 
-/**
- * Phase 2 (post-commit / reconciliation): create the held transfers at the
- * provider for every HELD row that has no providerTransferRef yet, using
- * fetch-before-create so a retry can't double-pay. Never throws — a per-row
- * failure is recorded on the row and surfaced; the batch continues.
- */
 export interface ExecuteSummary {
   created: number;
   reconciled: number;
@@ -161,7 +111,6 @@ export async function executeHeldTransfers(gatewayPaymentId: number): Promise<Ex
     where: { id: gatewayPaymentId },
     select: { provider: true, providerPaymentRef: true },
   });
-  // No captured payment ref → nothing to split on (shouldn't happen post-capture).
   if (!intentRow?.providerPaymentRef) return empty;
 
   const provider = getProvider(intentRow.provider);
@@ -173,17 +122,13 @@ export async function executeHeldTransfers(gatewayPaymentId: number): Promise<Ex
   });
   if (pending.length === 0) return empty;
 
-  // Fetch-before-create: reconcile any transfer that already exists at the
-  // provider (we may have created it then crashed before patching the ref).
-  let existingByKey = new Map<string, string>(); // key → transferRef
+  let existingByKey = new Map<string, string>();
   try {
     for (const e of await provider.listTransfers(intentRow.providerPaymentRef)) {
       const k = e.notes?.[NOTES_KEY];
       if (k) existingByKey.set(k, e.transferRef);
     }
   } catch {
-    // If the list call fails we proceed to create; a true duplicate is still
-    // guarded by the next reconciliation tick re-listing. (Best-effort.)
     existingByKey = new Map();
   }
 

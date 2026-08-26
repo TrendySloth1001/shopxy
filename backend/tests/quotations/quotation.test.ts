@@ -3,16 +3,6 @@ import prisma from '../../src/infra/db/prisma.js';
 import { quotationsService } from '../../src/modules/quotations/quotations.service.js';
 import { createTestUser, cleanupTestUser } from '../helpers/setup.js';
 
-/// Smoke tests for the two GST gaps this quotation pass closes:
-///   (a) the preview (priceItems) didn't apply the registration gate, so a
-///       COMPOSITION/UNREGISTERED shop's quote showed GST the accepted
-///       invoice would then zero out;
-///   (b) there was no inclusive/no-GST support at all on a quotation line,
-///       so a TAX_INCLUSIVE or NO_GST product's quoted total could disagree
-///       with what accept() actually billed.
-/// Both are asserted end-to-end: quote → accept → compare the preview total
-/// against the real invoice total to the paisa.
-
 async function createBuyer() {
   return createTestUser({ role: 'CUSTOMER' as never });
 }
@@ -135,7 +125,6 @@ describe('quotations.service — GST gate + pricing mode', () => {
       });
       expect('error' in created).toBe(false);
       if ('error' in created) return;
-      // ₹118 already contains 18% GST → taxable 100, tax 18, total stays 118.
       expect(created.quotation.subtotal).toBeCloseTo(100, 2);
       expect(created.quotation.total).toBeCloseTo(118, 2);
 
@@ -151,13 +140,6 @@ describe('quotations.service — GST gate + pricing mode', () => {
   });
 
   it('create → accept — a quote priced before gstEffectiveFrom stays frozen at zero tax even if accepted after it', async () => {
-    // Quotations have no backdating concept — they're always gated as of
-    // "now" at create() time. If the shop's gstEffectiveFrom is still in the
-    // future when the quote is created, the quote is correctly priced
-    // ungated (zero tax). Simulate time passing by moving gstEffectiveFrom
-    // into the past before accept() — the per-line tax frozen at quote time
-    // must survive unchanged, so the quoted total the customer saw can never
-    // silently drift once they accept it.
     const merchant = await createTestUser();
     const buyer = await createBuyer();
     try {
@@ -192,7 +174,6 @@ describe('quotations.service — GST gate + pricing mode', () => {
       expect(created.quotation.taxAmount).toBe(0);
       expect(created.quotation.total).toBe(100);
 
-      // Time "passes" — the effective date is now in the past.
       await prisma.user.update({
         where: { id: merchant.userId },
         data: { gstEffectiveFrom: new Date('2020-01-01') },
@@ -200,8 +181,6 @@ describe('quotations.service — GST gate + pricing mode', () => {
 
       const accepted = await quotationsService.accept(merchant.shopId, party.id, created.quotation.id, buyer.userId);
       const invoice = await prisma.invoice.findUniqueOrThrow({ where: { id: accepted.invoice.id } });
-      // Frozen at quote time — must stay zero-tax despite the shop now
-      // resolving as registered-as-of-today.
       expect(Number(invoice.total)).toBe(created.quotation.total);
       expect(Number(invoice.cgstAmount)).toBe(0);
       expect(Number(invoice.sgstAmount)).toBe(0);

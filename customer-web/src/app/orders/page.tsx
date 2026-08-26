@@ -17,8 +17,6 @@ import {
   type CustomerOrder,
 } from "@/features/orders/types";
 
-// ─── Filter ──────────────────────────────────────────────────────────────────
-
 type OrderFilter = "all" | "pending" | "confirmed" | "cancelled" | "declined";
 
 const FILTERS: { key: OrderFilter; label: string }[] = [
@@ -52,8 +50,6 @@ function emptyLine(filter: OrderFilter): string {
   }
 }
 
-// ─── Page ────────────────────────────────────────────────────────────────────
-
 const PAGE_LIMIT = 20;
 
 function OrdersContent() {
@@ -86,7 +82,6 @@ function OrdersContent() {
     return () => { cancelled = true; };
   }, [load]);
 
-  // Counts per bucket
   const counts: Partial<Record<OrderFilter, number>> = { all: orders.length };
   for (const o of orders) {
     const bucket = filterBucket(o);
@@ -96,7 +91,6 @@ function OrdersContent() {
   const visible =
     filter === "all" ? orders : orders.filter((o) => filterBucket(o) === filter);
 
-  // Which filter chips to show
   const visibleFilters = FILTERS.filter(
     (f) => f.key === "all" || (counts[f.key] ?? 0) > 0 || filter === f.key,
   );
@@ -148,7 +142,6 @@ function OrdersContent() {
 
   return (
     <div className="mx-auto max-w-shell">
-      {/* Filter bar */}
       <div className="sticky top-0 z-10 border-b border-hairline bg-canvas">
         <div className="flex gap-sm overflow-x-auto px-lg py-sm scrollbar-hide">
           {visibleFilters.map((f) => (
@@ -172,7 +165,6 @@ function OrdersContent() {
         </div>
       </div>
 
-      {/* Order list */}
       <div className="px-lg py-sm">
         {visible.length === 0 ? (
           <div className="py-massive text-center">
@@ -186,7 +178,6 @@ function OrdersContent() {
           </div>
         )}
 
-        {/* Pagination */}
         {total > PAGE_LIMIT && (
           <div className="flex items-center justify-center gap-md py-md">
             <button

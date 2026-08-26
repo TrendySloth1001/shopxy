@@ -59,8 +59,6 @@ class _PartiesPageState extends State<PartiesPage> {
     super.dispose();
   }
 
-  /// Most recent invitation we've sent for this party, if any.
-  /// Outgoing is already createdAt DESC so first match wins.
   Invitation? _inviteFor(String partyId, List<Invitation> outgoing) {
     for (final i in outgoing) {
       if (i.linkType == InviteLinkType.party && i.partyId == partyId) {
@@ -177,8 +175,6 @@ class _PartiesPageState extends State<PartiesPage> {
   }
 
   Future<void> _openDetail(BuildContext context, Party p) async {
-    // Capture before await so the post-pop refresh doesn't reach back
-    // into a possibly-disposed BuildContext.
     final provider = context.read<PartiesProvider>();
     await Navigator.push(
       context,
@@ -189,8 +185,6 @@ class _PartiesPageState extends State<PartiesPage> {
 
   Future<void> _showPartySheet(BuildContext context, {Party? party}) async {
     final isEditing = party != null;
-    // The sheet pops with the saved Party on success (the provider has
-    // already patched its list) — close the loop with a success cue.
     final saved = await showModalBottomSheet<Party>(
       context: context,
       isScrollControlled: true,
@@ -217,8 +211,6 @@ class _PartiesPageState extends State<PartiesPage> {
       context,
       MaterialPageRoute(builder: (_) => SendInvitePage(initialParty: p)),
     );
-    // Refresh status chips after the send sheet closes. Provider grabbed
-    // before the await so we don't touch a possibly-disposed context.
     if (mounted) notifs.loadOutgoing();
   }
 
@@ -275,10 +267,6 @@ class _PartiesPageState extends State<PartiesPage> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton / shimmer loading state
-// ---------------------------------------------------------------------------
-
 class _PartiesListSkeleton extends StatelessWidget {
   const _PartiesListSkeleton();
 
@@ -319,23 +307,18 @@ class _PartyTileSkeleton extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Avatar placeholder — 48 dp circular
           AppShimmerBox(width: 48, height: 48, radius: 24),
           const SizedBox(width: AppSizes.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Party name line (~70 % width)
                 AppShimmerLine(widthFactor: 0.7, height: AppSizes.md),
                 const SizedBox(height: AppSizes.xs),
-                // Phone line (~50 % width)
                 AppShimmerLine(widthFactor: 0.5, height: AppSizes.sm),
                 const SizedBox(height: AppSizes.xs),
-                // GSTIN line (~60 % width)
                 AppShimmerLine(widthFactor: 0.6, height: AppSizes.sm),
                 const SizedBox(height: AppSizes.sm),
-                // Status badge placeholders — three small chips
                 Wrap(
                   spacing: AppSizes.xs,
                   runSpacing: AppSizes.xs,
@@ -360,7 +343,6 @@ class _PartyTileSkeleton extends StatelessWidget {
               ],
             ),
           ),
-          // Trailing menu-button icon placeholder
           const SizedBox(width: AppSizes.md),
           AppShimmerBox(width: 24, height: 24, radius: AppSizes.radiusSm),
         ],
@@ -368,8 +350,6 @@ class _PartyTileSkeleton extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
 
 class _PartyTile extends StatelessWidget {
   const _PartyTile({
@@ -489,9 +469,6 @@ class _PartyTile extends StatelessWidget {
                 onEdit();
               },
             ),
-            // Linked customers don't get a re-invite affordance — the
-            // chip on the tile already signals "Linked" and showing the
-            // button would imply a re-send is possible when it's not.
             if (invite?.isAccepted == true)
               ListTile(
                 leading: AppIcon(
@@ -589,8 +566,6 @@ class _PartyTile extends StatelessWidget {
   }
 }
 
-/// Status pill reflecting the most recent invitation sent for this
-/// party. Hidden when there's no invite so calm cases stay calm.
 class _InviteChip extends StatelessWidget {
   const _InviteChip({required this.invite});
   final Invitation invite;
@@ -717,8 +692,6 @@ class _PartyFormSheetState extends State<PartyFormSheet> {
     setState(() => _isSaving = true);
     try {
       final provider = context.read<PartiesProvider>();
-      // Resolve state name from picked code so the backend gets both
-      // halves of the GST state pair consistently.
       final stateName = IndianStates.stateNameFromCode(_stateCode);
       Party saved;
       if (isEditing) {

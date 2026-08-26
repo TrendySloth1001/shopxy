@@ -2,13 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { authedFetch, extractError } from "@/server/auth/session";
 import { hsnResolutionSchema } from "@/features/products/hsn";
 
-// GET /api/hsn/resolve?code=6205&price=2400 — the rate lookup behind the
-// auto-fill. `price` matters: apparel is 5% up to ₹2,500 a piece and 18% above,
-// so the same code answers differently depending on what's being charged.
-//
-// A 404 here means "no rate on file", which the field surfaces as a warning
-// rather than silently leaving the tax at 0 — a silent zero is an
-// under-charged invoice.
 export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get("code") ?? "";
   if (!code.trim()) {

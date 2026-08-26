@@ -3,12 +3,6 @@ import 'dart:convert';
 import 'package:shopxy_customer/core/network/api_client.dart';
 import 'package:shopxy_customer/features/addresses/domain/entities/user_address.dart';
 
-/// Talks to `/me/addresses` (auth-only). The backend owns:
-///   GET    /me/addresses
-///   POST   /me/addresses
-///   PATCH  /me/addresses/:id
-///   POST   /me/addresses/:id/default
-///   DELETE /me/addresses/:id
 class AddressesRemoteDataSource {
   const AddressesRemoteDataSource(this._client);
   final ApiClient _client;

@@ -20,25 +20,6 @@ import {
   type HsnShortcut,
 } from "@/features/products/hsn";
 
-/**
- * "My HSN codes" — the merchant's own view of the two things they can save
- * against the shared tariff.
- *
- * The product form asks *"save this as your code for X?"*, and until now that
- * was a one-way door: a saved shortcut silently won on every future product
- * with nowhere to see, correct, or remove it. This is that missing half.
- *
- * The two lists are deliberately not the same kind of thing, and the page is
- * built to keep them apart:
- *
- *  - **Saved codes** are classification only. They carry no rate — the live
- *    rate is joined on at read time — so they can never hold a merchant on a
- *    slab the Council has since changed. Low stakes, freely editable.
- *  - **Rate overrides** restate this shop's tax position on a code for the
- *    whole catalogue. They need `shop:manage`, demand a written reason, and
- *    delete softly, because they were the stated basis for invoices already
- *    raised.
- */
 export default function HsnCodesPage() {
   const t = useTranslations("hsnCodes");
   const [shortcuts, setShortcuts] = useState<HsnShortcut[]>([]);
@@ -53,8 +34,6 @@ export default function HsnCodesPage() {
   const [addingOverride, setAddingOverride] = useState(false);
 
   const canEditCodes = useCanManage("products");
-  // Overrides sit behind the shop area, matching the backend guard — a Cashier
-  // or Stockist can read the tariff and bill from it, but not move a rate.
   const canViewOverrides = useCanView("shop");
   const canEditOverrides = useCanManage("shop");
 
@@ -65,8 +44,6 @@ export default function HsnCodesPage() {
     void (async () => {
       setLoading(true);
       try {
-        // Overrides are fetched only when the role can see them; asking anyway
-        // would 403 and turn a normal page into an error for a Cashier.
         const [s, o] = await Promise.all([
           listShortcuts(),
           canViewOverrides ? listOverrides() : Promise.resolve<HsnOverride[]>([]),
@@ -86,7 +63,6 @@ export default function HsnCodesPage() {
     };
   }, [nonce, canViewOverrides, t]);
 
-  /** Run a mutation, surface its message, and refresh on success. */
   async function run(fn: () => Promise<void>, fallbackKey: string) {
     setBusy(true);
     setActionError(null);
@@ -129,7 +105,6 @@ export default function HsnCodesPage() {
         </div>
       ) : (
         <>
-          {/* ── Saved codes ─────────────────────────────────────────────── */}
           <section className="mt-xl">
             <h2 className="text-title-md text-ink">{t("saved.heading")}</h2>
             <p className="mt-xs max-w-content text-body-md text-muted">
@@ -163,8 +138,6 @@ export default function HsnCodesPage() {
                         ) : null}
                       </p>
                       <p className="truncate text-body-sm text-muted">
-                        {/* The rate is joined live, never stored — so what shows
-                            here is today's rate, not the one saved that day. */}
                         {s.code}
                         {s.name ? ` · ${s.name}` : ""}
                         {s.gstRate != null ? ` · ${s.gstRate}% GST` : ""}
@@ -202,7 +175,6 @@ export default function HsnCodesPage() {
             )}
           </section>
 
-          {/* ── Rate overrides ──────────────────────────────────────────── */}
           {canViewOverrides ? (
             <>
               <Divider className="my-xxl" />
@@ -299,21 +271,11 @@ export default function HsnCodesPage() {
   );
 }
 
-/** Server sends an ISO date; render it in the viewer's locale, date only. */
 function formatDate(iso: string): string {
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString();
 }
 
-/**
- * Re-point a saved code at a different HSN.
- *
- * Saving is an upsert keyed on the merchant's own normalised wording, so
- * re-saving the same label moves the shortcut rather than duplicating it. This
- * is the only cure for `needsAttention` — a tariff revision retired the code
- * and the successor is a judgement call the merchant has to make, not one we
- * can infer for them.
- */
 function RepointDialog({
   shortcut,
   busy,
@@ -341,8 +303,6 @@ function RepointDialog({
       />
       <ModalActions
         busy={busy}
-        // A code with no rate on file is exactly what got them here; saving
-        // another one would just re-arm the same trap.
         disabled={!resolved}
         confirmLabel={t("repoint.confirm")}
         onCancel={onClose}
@@ -352,13 +312,6 @@ function RepointDialog({
   );
 }
 
-/**
- * Record a rate override.
- *
- * The platform rate for the chosen code is resolved and shown as the merchant
- * types, so the dialog states the departure plainly — "we say 5%, you are
- * saying 18%" — rather than letting a number be entered against nothing.
- */
 function OverrideDialog({
   busy,
   onClose,

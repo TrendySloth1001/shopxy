@@ -15,7 +15,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-/** Category product browse page — `/c/[slug]`. Public. */
 export default async function CategoryPage({ params }: Props) {
   const { slug } = await params;
   return <CategoryProductsView slug={slug} />;

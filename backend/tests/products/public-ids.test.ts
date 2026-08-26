@@ -7,10 +7,6 @@ import { decodeId } from '../../src/shared/ids/publicId.js';
 
 const app = buildApp();
 
-// End-to-end proof of the opaque-id wiring on the products module with the
-// PUBLIC_IDS flag ON. The flag is read per-request, so we flip it for this
-// suite only and restore afterwards (files run serially in one worker, so this
-// can't bleed into the numeric-id assertions in products.test.ts).
 const ORIGINAL = process.env.PUBLIC_IDS;
 
 describe('products — opaque public IDs (PUBLIC_IDS on)', () => {
@@ -37,11 +33,9 @@ describe('products — opaque public IDs (PUBLIC_IDS on)', () => {
         (p: { id: unknown }) => decodeId(String(p.id)) === product.id,
       );
       expect(row).toBeDefined();
-      // Wire id is a string token, not the raw sequential integer.
       expect(typeof row.id).toBe('string');
       expect(row.id).not.toBe(String(product.id));
       expect(row.id).not.toMatch(/^\d+$/);
-      // Foreign keys in the payload are tokenised too.
       expect(typeof row.shopId).toBe('string');
       expect(decodeId(String(row.shopId))).toBe(shop.shopId);
     } finally {
@@ -76,7 +70,7 @@ describe('products — opaque public IDs (PUBLIC_IDS on)', () => {
     try {
       const product = await createTestProduct(shop.shopId);
       const res = await request(app)
-        .get(`/products/${product.id}`) // not-yet-migrated client
+        .get(`/products/${product.id}`)
         .set('Authorization', `Bearer ${shop.accessToken}`);
       expect(res.status).toBe(200);
       expect(decodeId(String(res.body.id))).toBe(product.id);

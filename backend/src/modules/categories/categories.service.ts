@@ -1,9 +1,6 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
 
-/// Normalises to URL-safe lowercase-with-dashes. Identical to the shop
-/// slugger but kept separate to avoid cross-feature coupling — if one
-/// rule diverges later it shouldn't drag the other.
 function slugify(input: string): string {
   return input
     .toLowerCase()
@@ -25,9 +22,6 @@ async function uniqueSlug(base: string, excludeId?: number): Promise<string> {
   }
 }
 
-/// Walks `parentId → grandparent → …` from `startId` looking for `targetId`.
-/// Used by updateCategory to reject re-parenting that would form a cycle.
-/// Bounded by `maxDepth` so a corrupted tree can't hang the request.
 async function wouldFormCycle(
   startId: number,
   targetId: number,
@@ -75,10 +69,6 @@ export class CategoriesService {
     limit: number;
     skip: number;
   }) {
-    // Composite filter: active flag + optional case-insensitive name
-    // contains-search. Needed once a shop has more categories than fit
-    // on a horizontal pill strip — the picker UI lazy-fetches matches
-    // as the user types.
     const where: Prisma.CategoryWhereInput = {};
     if (options.activeOnly) where.isActive = true;
     if (options.search && options.search.trim().length > 0) {
@@ -99,11 +89,6 @@ export class CategoriesService {
     return { categories, total };
   }
 
-  /// Full taxonomy tree in one query. Each row arrives with the flat
-  /// {id, parentId, …} fields; we assemble parent → children references
-  /// in O(N) memory client-side. For the depth we expect (<5 levels,
-  /// ~hundreds of leaves) this beats N recursive Postgres CTE calls
-  /// from the merchant editor.
   async getTree(options: { activeOnly?: boolean } = {}) {
     const rows = await prisma.category.findMany({
       where: options.activeOnly ? { isActive: true } : undefined,
@@ -141,9 +126,6 @@ export class CategoriesService {
       parentId?: number | null;
     },
   ) {
-    // Cycle check on re-parent: setting parentId to self or to any of
-    // our descendants would orphan the subtree. The startId for the
-    // walk is the NEW parent; if that walk ever revisits us, reject.
     if (data.parentId != null) {
       if (data.parentId === id) {
         return { error: 'cycle' as const };
@@ -153,7 +135,6 @@ export class CategoriesService {
       }
     }
 
-    // Re-slug on rename so customer-facing URLs match the new name.
     let slug: string | undefined;
     if (data.name !== undefined) {
       slug = await uniqueSlug(slugify(data.name), id);
@@ -175,13 +156,6 @@ export class CategoriesService {
     return { category: updated };
   }
 
-  /// CAT-H2 — the taxonomy is a single GLOBAL table every shop's products
-  /// hang off (`Product.categoryId → SetNull`). A hard delete silently nulls
-  /// the categoryId of EVERY shop's products in this category and orphans any
-  /// child categories — a catalog-wide, cross-tenant mis-categorisation. So we
-  /// refuse to delete a category that still has products (in any shop) or child
-  /// categories; the admin must re-home or deactivate (`isActive=false`) it
-  /// instead. (Write routes are already platform-admin gated in the routes.)
   async deleteCategory(
     id: number,
   ): Promise<

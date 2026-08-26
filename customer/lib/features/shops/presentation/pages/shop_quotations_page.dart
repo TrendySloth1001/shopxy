@@ -15,8 +15,6 @@ import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
-/// Clean list of quotations the shop sent the customer. Tapping a row opens the
-/// full detail page (line items, totals, Accept / Decline).
 class ShopQuotationsPage extends StatefulWidget {
   const ShopQuotationsPage({super.key, required this.shop});
   final LinkedShop shop;
@@ -120,10 +118,6 @@ class _ShopQuotationsPageState extends State<ShopQuotationsPage> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton widgets — shown while quotations are loading
-// ---------------------------------------------------------------------------
-
 class _QuotationListSkeleton extends StatelessWidget {
   const _QuotationListSkeleton();
 
@@ -160,14 +154,12 @@ class _QuotationRowSkeleton extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    // Quotation number pill
                     AppShimmerBox(
                       width: 80,
                       height: 20,
                       radius: AppSizes.radiusSm,
                     ),
                     const SizedBox(width: AppSizes.sm),
-                    // Status badge
                     AppShimmerBox(
                       width: 60,
                       height: 20,
@@ -176,23 +168,18 @@ class _QuotationRowSkeleton extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: AppSizes.xs),
-                // Date + items subtitle
                 const AppShimmerLine(widthFactor: 0.65, height: 13),
               ],
             ),
           ),
-          // Total price (right-aligned)
           AppShimmerBox(width: 70, height: 20, radius: AppSizes.radiusSm),
           const SizedBox(width: AppSizes.xs),
-          // Chevron placeholder
           AppShimmerBox(width: 20, height: 20, radius: AppSizes.radiusSm),
         ],
       ),
     );
   }
 }
-
-// ---------------------------------------------------------------------------
 
 class _QuotationRow extends StatelessWidget {
   const _QuotationRow({

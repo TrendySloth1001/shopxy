@@ -20,7 +20,6 @@ export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Already signed in → leave the auth screen.
   useEffect(() => {
     if (status === "authed") router.replace("/");
   }, [status, router]);

@@ -2,10 +2,6 @@ import 'dart:convert';
 
 import 'package:shopxy/core/network/api_client.dart';
 
-/// Adapter for `/admin/shops` (gated upstream by requirePlatformAdmin).
-/// Today it surfaces the verified-toggle; future iterations can add
-/// suspension, takedown, and review history here without changing the
-/// page shape.
 class AdminShopsRemoteDataSource {
   AdminShopsRemoteDataSource(this._client);
   final ApiClient _client;

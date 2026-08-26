@@ -4,15 +4,8 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Search, X } from "@/shared/icons";
 
-/** What each result row renders — derived from the picked entity. */
 export type PickerRow = { title: string; subtitle?: string; meta?: string };
 
-/**
- * Generic search-driven picker dialog reused by the invoice / quotation /
- * challan editors to choose a product, party or vendor. `load` runs (debounced)
- * on each query; `rowOf` maps a result to its display row; `onPick` returns the
- * full entity so the caller keeps every field it needs.
- */
 export function PickerModal<T extends { id: string }>({
   title,
   placeholder,

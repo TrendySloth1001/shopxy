@@ -10,7 +10,6 @@ const OFFER_KINDS = ["BANK", "COUPON", "EMI", "EXCHANGE"] as const;
 const cell =
   "h-10 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft";
 
-/** Bank / coupon / EMI / exchange offers shown beneath the price. */
 export function OffersEditor({
   offers,
   onChange,

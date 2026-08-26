@@ -11,18 +11,6 @@ import {
 import type { ShopOrderPreview } from "../types";
 import { isChildConfirmed, isChildRejected, isChildCancelled, isChildPending } from "../types";
 
-// ─── ChipStatus — single helper for all order-status chips ───────────────────
-//
-// Maps a shop-order status string to consistent pill styling.
-// PENDING    → amber/warning-soft
-// CONFIRMED  → success-soft
-// CANCELLED  → muted/surface-tint
-// REJECTED   → error-soft
-//
-// Usage:
-//   <ChipStatus status="CONFIRMED" />
-//   <ChipStatus status="PENDING" showIcon />
-
 type StatusKind = "PENDING" | "CONFIRMED" | "CANCELLED" | "REJECTED" | string;
 
 interface StatusVisual {
@@ -65,7 +53,6 @@ export function statusVisual(status: StatusKind): StatusVisual {
   }
 }
 
-/** Unified status chip — color-coded per status kind. */
 export function ChipStatus({
   status,
   showIcon = false,
@@ -84,13 +71,9 @@ export function ChipStatus({
   );
 }
 
-// ─── Shop-order (per-vendor slice) chip — now delegates to ChipStatus ─────────
-
 export function ShopOrderStatusChip({ status }: { status: string }) {
   return <ChipStatus status={status} />;
 }
-
-// ─── Aggregate parent order chip ─────────────────────────────────────────────
 
 function aggregateLabel(order: { shopOrders: ShopOrderPreview[] }): {
   label: string;
@@ -110,7 +93,6 @@ function aggregateLabel(order: { shopOrders: ShopOrderPreview[] }): {
   if (rejected === total) return { label: "DECLINED", statusKey: "REJECTED" };
   if (pending === total) return { label: "PENDING", statusKey: "PENDING" };
 
-  // Mixed: use the warning-soft pending palette, custom label
   return { label: `${confirmed}/${total} CONFIRMED`, statusKey: "PENDING" };
 }
 
@@ -126,8 +108,6 @@ export function AggregateStatusChip({ order }: { order: { shopOrders: ShopOrderP
     </span>
   );
 }
-
-// ─── Aggregate status headline (for detail page order summary) ────────────────
 
 export function aggregateStatusHeadline(order: { shopOrders: ShopOrderPreview[] }): {
   headline: string;

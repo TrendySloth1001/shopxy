@@ -11,19 +11,15 @@ import { returnStatusVisual, isReturnCancellable, reasonLabel, type ReturnReques
 import { formatINR } from "@/shared/format";
 import { formatDateTime } from "@/shared/datetime";
 
-// ─── Skeleton ────────────────────────────────────────────────────────────────
-
 function ReturnDetailSkeleton() {
   return (
     <div className="animate-pulse px-md space-y-md py-md">
-      {/* Hero card */}
       <div className="rounded-lg bg-white p-lg space-y-xs">
         <div className="h-4 w-36 rounded bg-surface-tint" />
         <div className="h-3 w-48 rounded bg-surface-tint" />
         <div className="mt-md h-3 w-16 rounded bg-surface-tint" />
         <div className="h-7 w-28 rounded bg-surface-tint" />
       </div>
-      {/* Items card */}
       <div className="rounded-lg bg-white p-md space-y-md">
         {Array.from({ length: 2 }).map((_, i) => (
           <div key={i} className="flex gap-md">
@@ -36,7 +32,6 @@ function ReturnDetailSkeleton() {
           </div>
         ))}
       </div>
-      {/* Timeline card */}
       <div className="rounded-lg bg-white p-md space-y-sm">
         {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="flex gap-md">
@@ -51,8 +46,6 @@ function ReturnDetailSkeleton() {
     </div>
   );
 }
-
-// ─── Detail content ────────────────────────────────────────────────────────
 
 function ReturnDetailContent({ returnId }: { returnId: string }) {
   const [data, setData] = useState<ReturnRequest | null>(null);
@@ -124,14 +117,12 @@ function ReturnDetailContent({ returnId }: { returnId: string }) {
 
   return (
     <div className="px-md pb-huge space-y-md pt-md">
-      {/* Cancel success toast */}
       {cancelSuccess && (
         <div className="rounded-md bg-success-soft p-md text-body-sm font-bold text-success">
           Return cancelled successfully.
         </div>
       )}
 
-      {/* Hero card */}
       <div className="rounded-lg bg-white p-lg">
         <div className="flex items-start justify-between gap-sm">
           <div>
@@ -159,7 +150,6 @@ function ReturnDetailContent({ returnId }: { returnId: string }) {
         </div>
       </div>
 
-      {/* Items */}
       <div className="rounded-lg bg-white overflow-hidden">
         {data.items.map((item, idx) => {
           const img = item.purchaseRequestItem.product?.images?.[0]?.url;
@@ -197,12 +187,10 @@ function ReturnDetailContent({ returnId }: { returnId: string }) {
         })}
       </div>
 
-      {/* Timeline */}
       <div className="rounded-lg bg-white p-md pb-sm">
         <ReturnTimeline events={data.events} status={data.status} />
       </div>
 
-      {/* Customer note */}
       {data.note && (
         <div className="rounded-lg bg-surface-tint p-md">
           <p className="text-caption font-extrabold tracking-[0.5px] text-muted/70 uppercase mb-xs">
@@ -212,7 +200,6 @@ function ReturnDetailContent({ returnId }: { returnId: string }) {
         </div>
       )}
 
-      {/* Seller decision note */}
       {data.decisionNote && (
         <div className={`rounded-lg p-md ${data.status === "REJECTED" ? "bg-error-soft" : "bg-surface-tint"}`}>
           <p
@@ -226,7 +213,6 @@ function ReturnDetailContent({ returnId }: { returnId: string }) {
         </div>
       )}
 
-      {/* Cancel button */}
       {canCancel && (
         <div>
           {cancelError && (
@@ -247,7 +233,6 @@ function ReturnDetailContent({ returnId }: { returnId: string }) {
         </div>
       )}
 
-      {/* Cancel confirm dialog */}
       {showCancelDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-lg">
           <div className="w-full max-w-narrow rounded-dialog bg-white p-xl">
@@ -275,8 +260,6 @@ function ReturnDetailContent({ returnId }: { returnId: string }) {
     </div>
   );
 }
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ReturnDetailPage({
   params,

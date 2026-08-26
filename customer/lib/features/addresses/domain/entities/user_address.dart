@@ -1,6 +1,3 @@
-/// Customer-owned delivery address. Mirrors `UserAddress` in the
-/// backend Prisma schema. `isDefault` is the partial-unique-indexed
-/// "ship here unless I pick a different one" flag.
 class UserAddress {
   const UserAddress({
     required this.id,
@@ -28,8 +25,6 @@ class UserAddress {
   final String? landmark;
   final bool isDefault;
 
-  /// Single-line representation for the top-bar location chip and
-  /// order-summary blocks. Skips null parts cleanly.
   String get oneLine {
     final parts = <String>[line1, if (line2 != null && line2!.isNotEmpty) line2!, '$city $pincode'];
     return parts.join(', ');
@@ -50,10 +45,6 @@ class UserAddress {
       );
 }
 
-/// Wire-format input for create + update. Nullable fields go on as
-/// `null` (not omitted) so the backend can explicitly clear them
-/// — distinguishing "leave alone" from "set to empty" is necessary
-/// once we add inline edit affordances.
 class UserAddressInput {
   const UserAddressInput({
     required this.fullName,

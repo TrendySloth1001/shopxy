@@ -3,7 +3,6 @@ import 'package:shopxy/features/dashboard/presentation/widgets/dashboard_ui.dart
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 
-/// One plotted line.
 class TrendSeriesData {
   const TrendSeriesData({
     required this.key,
@@ -17,9 +16,6 @@ class TrendSeriesData {
   final List<double> values;
 }
 
-/// Rich multi-series trend chart: smooth Catmull-Rom curves, gridlines, axis
-/// labels, a toggleable legend and a drag-to-inspect crosshair + tooltip.
-/// Mirrors `components/trend-chart.tsx` (hover → touch-drag on mobile).
 class TrendChart extends StatefulWidget {
   const TrendChart({
     super.key,
@@ -74,7 +70,6 @@ class _TrendChartState extends State<TrendChart> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Toggle legend.
         Wrap(
           spacing: AppSizes.sm,
           runSpacing: AppSizes.sm,
@@ -89,7 +84,6 @@ class _TrendChartState extends State<TrendChart> {
           ],
         ),
         const SizedBox(height: AppSizes.md),
-        // Plot row: y-axis + chart.
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -164,7 +158,6 @@ class _TrendChartState extends State<TrendChart> {
                         ),
                       ),
                       const SizedBox(height: AppSizes.xs),
-                      // X-axis labels.
                       SizedBox(
                         height: 16,
                         width: double.infinity,
@@ -357,7 +350,6 @@ class _TrendPainter extends CustomPainter {
     final w = size.width;
     final h = size.height;
 
-    // Gridlines (5).
     final grid = Paint()
       ..color = AppColors.hairline
       ..strokeWidth = 1;
@@ -369,7 +361,6 @@ class _TrendPainter extends CustomPainter {
     double xOf(int i) => n <= 1 ? 0 : (i / (n - 1)) * w;
     double yOf(double v) => h - (v / max) * h;
 
-    // Lines (smooth Catmull-Rom → cubic bezier).
     for (final s in series) {
       final pts = [
         for (var i = 0; i < s.values.length; i++)
@@ -405,10 +396,8 @@ class _TrendPainter extends CustomPainter {
       );
     }
 
-    // Crosshair + markers.
     if (hover != null && n > 1) {
       final hx = xOf(hover!);
-      // Dashed vertical line.
       final dash = Paint()
         ..color = AppColors.subtle
         ..strokeWidth = 1;

@@ -1,18 +1,12 @@
 import prisma from '../../infra/db/prisma.js';
 import type { Prisma } from '@prisma/client';
 
-/// Detail-level projection for a public marketplace product page.
-/// Goes wide deliberately — the customer PDP needs gallery, shop
-/// attribution, rating denorms, tags and an unwrapped category for
-/// breadcrumb rendering.
 const detailSelect = {
   id: true,
   name: true,
   description: true,
   sku: true,
   unit: true,
-  // CAT-C2 — country of origin shown on the PDP; mandatory for imported
-  // goods under Legal Metrology.
   countryOfOrigin: true,
   mrp: true,
   sellingPrice: true,
@@ -25,17 +19,10 @@ const detailSelect = {
   specs: true,
   offers: true,
   totalSold: true,
-  // Phase B additions — brand surfaces under the title, soldLast30d
-  // drives "200+ bought in past month", systemTags renders curated
-  // pills (BESTSELLER etc.) above the title.
   brand: true,
   soldLast30d: true,
   systemTags: true,
-  // Phase C — A+ content blocks rendered inside the PDP Details tab.
   contentBlocks: true,
-  // Phase E — variants + axis definition. Single-variant products
-  // ship one row with attributes = {} so the customer client always
-  // has at least one variantId to attach to add-to-cart.
   variantAxes: true,
   variants: {
     where: { isActive: true },
@@ -78,38 +65,22 @@ const listSelect = {
     take: 1,
   },
   shop: { select: { id: true, name: true, slug: true } },
-  // Category lets the customer client group/explore a shop's catalogue
-  // by the merchant's own categories (e.g. the request-a-quote browser).
   category: { select: { id: true, name: true, slug: true } },
 } satisfies Prisma.ProductSelect;
 
 export class MarketplaceService {
-  /// Public product detail. Returns null when the product is missing,
-  /// inactive, or unpublished — the three states are deliberately
-  /// indistinguishable from the caller's perspective so unpublished
-  /// items don't leak metadata via 200-vs-404 probing.
-  ///
-  /// `viewerUserId` (the customer making the request) is excluded from
-  /// reading their own shop's products — the "you can't buy from your
-  /// own shop" marketplace guard rail at the read boundary.
   async getPublicProduct(id: number, viewerUserId?: number) {
     const row = await prisma.product.findFirst({
       where: {
         id,
         isActive: true,
         isPublished: true,
-        // The owning shop must itself be published (hide unpublished shops).
         shop: { isPublished: true, ...(viewerUserId ? { ownerUserId: { not: viewerUserId } } : {}) },
       },
       select: detailSelect,
     });
     if (!row) return null;
 
-    // NEW_ARRIVAL is computed at response time rather than stored —
-    // the freshness window slides daily and a stored column would
-    // require its own scheduler tick + write storm. Merging happens
-    // here so the customer client only ever sees a single systemTags
-    // array.
     const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000;
     const isNewArrival = Date.now() - row.createdAt.getTime() < FOURTEEN_DAYS_MS;
     const systemTags = isNewArrival && !row.systemTags.includes('NEW_ARRIVAL')
@@ -162,19 +133,6 @@ export class MarketplaceService {
     return { shop, data, total };
   }
 
-  /// Public products in a category, identified by slug. Includes
-  /// products directly tagged with the category AND (when the slug
-  /// resolves to a parent in the canonical taxonomy) products tagged
-  /// with any of its children — so "Electronics" surfaces laptops,
-  /// cameras, headphones, etc. without forcing the customer to drill
-  /// down first. Returns null for an unknown slug.
-  ///
-  /// Filter axes (all optional, all server-validated upstream by the
-  /// controller's zod-equivalent guards): price range, rating floor,
-  /// in-stock-only toggle, shop id allowlist. `includeFacets` returns
-  /// an additional aggregate payload describing the un-filtered set so
-  /// the customer's filter sheet can show price-range bounds, rating
-  /// histogram and brand list without a second round-trip.
   async listCategoryProducts(opts: {
     slug: string;
     skip: number;
@@ -205,14 +163,10 @@ export class MarketplaceService {
       : opts.sort === 'price_desc' ? { sellingPrice: 'desc' }
       :                              { totalSold: 'desc' };
 
-    // Base where (visibility + viewer-own-shop exclusion + category).
-    // Filters are layered on top via destructured spreads so an unset
-    // axis becomes a no-op rather than an explicit "match all" clause.
     const baseWhere: Prisma.ProductWhereInput = {
       categoryId: { in: ids },
       isActive: true,
       isPublished: true,
-      // Only products from published shops.
       shop: { isPublished: true, ...(opts.viewerUserId ? { ownerUserId: { not: opts.viewerUserId } } : {}) },
     };
     const filterWhere: Prisma.ProductWhereInput = {
@@ -223,9 +177,6 @@ export class MarketplaceService {
           ...(opts.priceMax !== undefined ? { lte: opts.priceMax } : {}),
         },
       }),
-      // Important: Prisma maps `gte` against a NULL column to "not
-      // matching" (null < anything is false), so this is the desired
-      // behaviour even though it looks too permissive at first glance.
       ...(opts.ratingMin !== undefined && {
         ratingAvg: { gte: opts.ratingMin },
       }),
@@ -243,9 +194,6 @@ export class MarketplaceService {
       prisma.product.count({ where: filterWhere }),
     ]);
 
-    // Facets reflect the BASE set (un-filtered) so the customer can
-    // see "if I drop this filter, here's what comes back." Computed in
-    // one parallel block to keep the cold-cache hit cheap.
     let facets: {
       priceMin: number;
       priceMax: number;
@@ -299,16 +247,6 @@ export class MarketplaceService {
     return { category, data, total, facets };
   }
 
-  /// Phase G — recompute the "frequently bought together" cache for
-  /// every product that's been on a CONFIRMED invoice in the last
-  /// 90 days. For each anchor product, we score other products by
-  /// co-occurrence count in the same invoice, filtered to the same
-  /// shop (no cross-tenant leaks), and keep the top 5 — that fits a
-  /// rail row nicely. Cold-start products (< 20 invoices in window)
-  /// fall through to category siblings at read time, not here.
-  ///
-  /// One CTE-based UPSERT keeps the whole job under a single round
-  /// trip and idempotent — re-running is safe.
   async recomputeFbtCache(): Promise<{ products: number }> {
     const rows = await prisma.$queryRaw<{ product_id: number; related_ids: number[] }[]>`
       WITH pair_counts AS (
@@ -345,9 +283,6 @@ export class MarketplaceService {
       SELECT product_id, related_ids FROM top5
     `;
 
-    // One write per anchor — cheap and the rows are bounded by the
-    // active catalogue size, so the loop stays small. Upsert lets the
-    // cron tick run safely after schema resets.
     for (const r of rows) {
       await prisma.fbtCache.upsert({
         where: { productId: r.product_id },
@@ -358,11 +293,6 @@ export class MarketplaceService {
     return { products: rows.length };
   }
 
-  /// Public read for the customer PDP rail. Returns up to 5 slim
-  /// product cards. Hits [FbtCache] first; on miss (cold-start) falls
-  /// back to same-category siblings ranked by a cheap quality proxy
-  /// (rating with a log-count smoother). Same-shop / same-tenant
-  /// invariants are enforced at the SQL level.
   async getFrequentlyBoughtTogether(productId: number, viewerUserId?: number) {
     const anchor = await prisma.product.findFirst({
       where: { id: productId, isActive: true, isPublished: true },
@@ -383,16 +313,12 @@ export class MarketplaceService {
         },
         select: listSelect,
       });
-      // Preserve the cache's order — Prisma's IN returns unordered.
       const byId = new Map(rows.map((r) => [r.id, r]));
       return cached.relatedIds
         .map((id) => byId.get(id))
         .filter((r): r is NonNullable<typeof r> => r !== undefined);
     }
 
-    // Cold-start fallback — category siblings in the same shop scope,
-    // ranked by rating with a log-count smoother to avoid one-review
-    // products dominating.
     if (anchor.categoryId == null) return [];
     return prisma.product.findMany({
       where: {

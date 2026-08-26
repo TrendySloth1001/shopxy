@@ -31,16 +31,14 @@ describe('numberingService', () => {
       });
       expect(updated.prefix).toBe('SALE');
       expect(updated.padding).toBe(6);
-      // Untouched fields keep the default.
       expect(updated.separator).toBe('/');
       expect(updated.resetYearly).toBe(true);
       expect(updated.isCustom).toBe(true);
 
-      // A second partial patch merges onto the SAVED row, not the default.
       const again = await numberingService.upsertScheme(ctx.shopId, 'SALE_INVOICE', {
         suffix: 'IN',
       });
-      expect(again.prefix).toBe('SALE'); // preserved from the first save
+      expect(again.prefix).toBe('SALE');
       expect(again.suffix).toBe('IN');
     } finally {
       await cleanupTestUser(ctx);
@@ -58,10 +56,6 @@ describe('numberingService', () => {
   });
 
   it('GET /numbering is registered and wired (not a 404)', async () => {
-    // Merchant-area routing smoke check — same harness limitation noted in
-    // challans.test.ts (a bare test token 403s past resolveShop-less
-    // routes), so this only proves the route is mounted; behavior above
-    // is covered at the service layer.
     const app = buildApp();
     const ctx = await createTestUser();
     try {

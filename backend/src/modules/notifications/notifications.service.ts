@@ -13,7 +13,6 @@ const notifSelect = {
 } satisfies Prisma.NotificationSelect;
 
 export class NotificationsService {
-  /// Paginated inbox. Uses the (userId, createdAt DESC) index, no N+1.
   async list(opts: {
     userId: number;
     unreadOnly: boolean;
@@ -32,13 +31,11 @@ export class NotificationsService {
         take: opts.limit,
       }),
       prisma.notification.count({ where }),
-      // Cheap because the (userId, readAt) partial scan returns immediately.
       prisma.notification.count({ where: { userId: opts.userId, readAt: null } }),
     ]);
     return { data, total, unread };
   }
 
-  /// Pure index-only scan via the (userId, readAt) compound index.
   unreadCount(userId: number) {
     return prisma.notification.count({ where: { userId, readAt: null } });
   }
@@ -51,8 +48,6 @@ export class NotificationsService {
     return result.count > 0;
   }
 
-  /// Write a single notification row. Used by other modules
-  /// (invitations, orders) when fanning out events to recipients.
   async create(opts: {
     userId: number;
     kind: string;

@@ -1,15 +1,8 @@
 import { z } from "zod";
 
-/**
- * Stock movements — the web mirror of the Flutter `StockBottomSheet`.
- * STOCK_IN = a purchase (counterparty: a vendor); STOCK_OUT = a sale
- * (counterparty: a party/customer). The backend (`POST /stock`) turns the
- * movement into a DRAFT invoice; stock only posts once that draft is confirmed.
- */
 export const STOCK_TYPES = ["STOCK_IN", "STOCK_OUT"] as const;
 export type StockType = (typeof STOCK_TYPES)[number];
 
-/** A selectable vendor from `GET /stock/suppliers`. */
 export const supplierVendorSchema = z.object({
   id: z.coerce.string(),
   name: z.string(),
@@ -29,7 +22,6 @@ export const suppliersResponseSchema = z.object({
 });
 export type SuppliersResponse = z.infer<typeof suppliersResponseSchema>;
 
-/** `POST /stock` returns the draft invoice it created — we only need its id. */
 export const stockDraftSchema = z.object({
   draftInvoice: z
     .object({ id: z.coerce.string(), invoiceNo: z.string().nullish() })
@@ -47,11 +39,6 @@ export type CreateStockInput = {
   note?: string;
 };
 
-/**
- * One stock-ledger row from `GET /stock`. Prisma serialises Decimal columns as
- * strings, so the numeric fields are coerced. Only the fields the supplier
- * price-history view needs are modelled; the rest pass through unread.
- */
 const decimalToNumber = z
   .union([z.string(), z.number()])
   .transform((v) => Number(v));
@@ -83,17 +70,14 @@ export const stockTxnSchema = z.object({
 });
 export type StockTxn = z.infer<typeof stockTxnSchema>;
 
-/** 'IN' side of the ledger (falls back to the legacy `type` column). */
 export function isStockIn(t: StockTxn): boolean {
   return t.direction ? t.direction === "IN" : t.type === "STOCK_IN";
 }
 
-/** This row reverses (cancels) an earlier one. */
 export function isReversal(t: StockTxn): boolean {
   return t.reversesId != null;
 }
 
-/** Whether the row has an openable source document (invoice / challan). */
 export function hasSourceDocument(t: StockTxn): boolean {
   return (
     t.sourceId != null &&
@@ -102,7 +86,6 @@ export function hasSourceDocument(t: StockTxn): boolean {
   );
 }
 
-/** Human label for a ledger reason code. */
 export function reasonCodeLabel(code: string | null | undefined): string {
   switch (code) {
     case "SALE":
@@ -132,7 +115,6 @@ export function reasonCodeLabel(code: string | null | undefined): string {
   }
 }
 
-/** Human label for the source-document type. */
 export function sourceTypeLabel(code: string | null | undefined): string {
   switch (code) {
     case "INVOICE":
@@ -149,7 +131,6 @@ export function sourceTypeLabel(code: string | null | undefined): string {
   }
 }
 
-/** `GET /stock` is paginated: `{ data, pagination }`. */
 export const stockTxnListSchema = z.object({
   data: z
     .array(stockTxnSchema)
@@ -158,12 +139,10 @@ export const stockTxnListSchema = z.object({
 });
 export type StockTxnList = z.infer<typeof stockTxnListSchema>;
 
-/** Structured vendor name wins over a free-typed supplier name. */
 export function displaySupplier(t: StockTxn): string | null {
   return t.vendor?.name ?? t.supplierName ?? null;
 }
 
-/** Human label for the per-supplier purchase-price policy. */
 export function purchasePolicyLabel(mode: string | null | undefined): string {
   switch (mode) {
     case "WEIGHTED_AVERAGE":

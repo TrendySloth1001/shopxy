@@ -17,9 +17,6 @@ import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// Merchant-facing list of coupons attached to the caller's shop.
-/// Tapping a row opens the editor sheet; the FAB opens the same sheet
-/// in create mode.
 class MerchantCouponsPage extends StatefulWidget {
   const MerchantCouponsPage({super.key});
 
@@ -84,9 +81,6 @@ class _MerchantCouponsPageState extends State<MerchantCouponsPage> {
   }
 
   Future<void> _deactivate(MerchantCoupon c) async {
-    // Snapshot the data source + messenger BEFORE any await so we
-    // don't read from `context` after an async gap (lint
-    // use_build_context_synchronously).
     final l10n = AppLocalizations.of(context);
     final ds = context.read<MerchantCouponsRemoteDataSource>();
     final messenger = ScaffoldMessenger.of(context);
@@ -290,11 +284,6 @@ class _CouponRow extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton loading widgets
-// ---------------------------------------------------------------------------
-
-/// A single skeleton card that mirrors the visual structure of [_CouponRow].
 class _CouponRowSkeleton extends StatelessWidget {
   const _CouponRowSkeleton();
 
@@ -314,7 +303,6 @@ class _CouponRowSkeleton extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header row: code + discount text on the left, status badge on right
               Row(
                 children: [
                   Expanded(
@@ -329,10 +317,8 @@ class _CouponRowSkeleton extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: AppSizes.xs),
-              // Title line
               AppShimmerLine(widthFactor: 0.75, height: 13),
               const SizedBox(height: AppSizes.xs),
-              // Optional feature badge row (Public / First order)
               Row(
                 children: [
                   AppShimmerBox(
@@ -349,7 +335,6 @@ class _CouponRowSkeleton extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: AppSizes.xs),
-              // Metadata line: dates + redemption count
               AppShimmerLine(widthFactor: 0.9, height: 11),
             ],
           ),
@@ -359,7 +344,6 @@ class _CouponRowSkeleton extends StatelessWidget {
   }
 }
 
-/// Renders 4 skeleton coupon cards inside the same padding as the real list.
 class _CouponListSkeleton extends StatelessWidget {
   const _CouponListSkeleton();
 
@@ -376,8 +360,6 @@ class _CouponListSkeleton extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
 
 class _EmptyBlock extends StatelessWidget {
   const _EmptyBlock();

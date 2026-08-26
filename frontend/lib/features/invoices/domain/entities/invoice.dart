@@ -32,9 +32,6 @@ class InvoiceItem {
   final double taxPercent;
   final double discount;
   final double total;
-  // GST-split fields. Backend computes these per line; older invoices
-  // saved before the split landed will read 0 (we just fall back to
-  // taxAmount / total in the UI in that case).
   final double taxableValue;
   final double igstAmount;
   final double cgstAmount;
@@ -102,23 +99,20 @@ class Invoice {
 
   final String id;
   final String invoiceNo;
-  final String type; // SALE | PURCHASE
-  final String status; // DRAFT | CONFIRMED | CANCELLED
+  final String type;
+  final String status;
   final String? partyId;
   final String? vendorId;
   final InvoiceVendorRef? vendor;
   final String? customerName;
   final String? customerPhone;
   final String? customerGstin;
-  // Snapshotted customer address — copied from Party at confirm time so
-  // the invoice keeps a stable record even if the party is later edited.
   final String? customerAddress;
   final String? customerCity;
   final String? customerState;
   final String? customerStateCode;
   final String? customerPinCode;
   final String? customerPanNumber;
-  // Same idea for the vendor side on purchase invoices.
   final String? vendorName;
   final String? vendorPhone;
   final String? vendorGstin;
@@ -129,12 +123,9 @@ class Invoice {
   final String? vendorPinCode;
   final String? vendorPanNumber;
   final double subtotal;
-  // Kept for backwards compat with any older callers; new code should
-  // read igstAmount/cgstAmount/sgstAmount instead.
   final double taxAmount;
   final double discount;
   final double total;
-  // GST-split totals computed by the backend.
   final double taxableValue;
   final double igstAmount;
   final double cgstAmount;
@@ -142,16 +133,13 @@ class Invoice {
   final double cessAmount;
   final double roundOff;
   final String? amountInWords;
-  final String documentType; // TAX_INVOICE | BILL_OF_SUPPLY | etc.
-  final String financialYear; // "25-26"
+  final String documentType;
+  final String financialYear;
   final String? placeOfSupplyStateCode;
   final bool isInterstate;
   final String? note;
   final DateTime invoiceDate;
 
-  /// When the merchant filed this document out of the working list. Null while
-  /// it's live. Archiving never removes the row or frees its number — Rule
-  /// 46(b) needs the serial run consecutive — so this is the only marker.
   final DateTime? archivedAt;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -183,9 +171,6 @@ class InvoiceItemDraft {
     this.discount = 0,
   });
 
-  /// Seed a draft from a persisted [InvoiceItem] when entering edit mode.
-  /// Preserves the exact qty / price the user originally entered — the
-  /// backend will recompute totals from these on save.
   factory InvoiceItemDraft.fromInvoiceItem(InvoiceItem item) {
     return InvoiceItemDraft(
       productId: item.productId,

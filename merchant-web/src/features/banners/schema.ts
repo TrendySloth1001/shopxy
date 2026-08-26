@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-/** Banner placement slots on the customer home page. */
 export const PLACEMENTS = ["HERO", "AD_STRIP", "PROMO", "CURATED_RAIL"] as const;
 export type Placement = (typeof PLACEMENTS)[number];
 
@@ -11,7 +10,6 @@ export const PLACEMENT_LABELS: Record<Placement, string> = {
   CURATED_RAIL: "Curated rail",
 };
 
-/** One banner row as returned by the backend `/me/banners` endpoints. */
 export const bannerSchema = z.object({
   id: z.coerce.string(),
   placement: z.enum(PLACEMENTS),
@@ -30,7 +28,6 @@ export const bannerListSchema = z.object({ data: z.array(bannerSchema) });
 export const DISCOUNT_TYPES = ["PERCENT", "AMOUNT"] as const;
 export type DiscountType = (typeof DISCOUNT_TYPES)[number];
 
-/** A product pinned to a banner, as returned by `/me/banners/:id/products`. */
 export const bannerProductSchema = z.object({
   id: z.coerce.string(),
   productId: z.coerce.string(),

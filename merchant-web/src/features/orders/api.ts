@@ -4,12 +4,6 @@ import type {
   OrderList,
 } from "./schema";
 
-/**
- * Surfaces the 409 INSUFFICIENT_STOCK detail (productId / available /
- * requested) without losing it in a generic Error string — the detail page
- * uses these fields to highlight the offending line. Mirrors the Flutter
- * `OrderConfirmException`.
- */
 export class OrderConfirmError extends Error {
   readonly code: string;
   readonly productId?: string;
@@ -39,7 +33,6 @@ async function jsonOrThrow<T>(res: Response, fallback: string): Promise<T> {
       const body = (await res.json()) as { error?: string };
       if (body?.error) message = body.error;
     } catch {
-      // keep fallback
     }
     throw new Error(message);
   }
@@ -66,7 +59,6 @@ export function pendingOrderCount(): Promise<number> {
     .catch(() => 0);
 }
 
-/** Confirm an order → materialises a SALE invoice. */
 export async function confirmOrder(
   id: string,
   note?: string,
@@ -87,7 +79,6 @@ export async function confirmOrder(
   try {
     body = (await res.json()) as typeof body;
   } catch {
-    // keep empty
   }
   const code = body.error ?? "CONFIRM_FAILED";
   throw new OrderConfirmError({
@@ -99,11 +90,6 @@ export async function confirmOrder(
   });
 }
 
-// PR-H3 — RETURNED is NOT a postable milestone. The backend raw
-// shipping-event path has no side effects (no refund / stock add-back /
-// credit-note GST reversal / transfer clawback), so returns go through
-// the dedicated returns flow, not this picker. Offering it here would
-// just 400 at the boundary.
 export const SHIPPING_MILESTONES = [
   "PACKED",
   "SHIPPED",
@@ -119,7 +105,6 @@ export const SHIPPING_MILESTONE_LABELS: Record<ShippingMilestone, string> = {
   DELIVERED: "Delivered",
 };
 
-/** Push a shipping milestone (PACKED…DELIVERED) with optional courier/awb/eta. */
 export async function addShippingEvent(
   id: string,
   input: { type: ShippingMilestone; courier?: string; awb?: string; eta?: string; note?: string },

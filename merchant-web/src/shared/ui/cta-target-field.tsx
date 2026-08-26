@@ -4,11 +4,6 @@ import { useTranslations } from "next-intl";
 import { ctaHintKey, CTA_KIND_OPTIONS, type CtaKind } from "@/shared/cta-target";
 import { SelectField, TextField } from "@/shared/ui/form";
 
-/**
- * Controlled CTA-target editor: a kind dropdown plus a value field that only
- * shows when the kind needs one. The parent owns {kind, value} state and
- * builds/validates the wire string with `buildCtaTarget` on save.
- */
 export function CtaTargetField({
   kind,
   value,

@@ -4,7 +4,6 @@ import 'package:shopxy_customer/features/auth/domain/entities/auth_user.dart';
 
 typedef AuthResult = ({AuthUser user, String accessToken, String refreshToken});
 
-/// `session` is non-null only on a dev backend with ALLOW_UNVERIFIED_SIGNUP.
 typedef RegisterResponse = ({bool pending, String email, AuthResult? session});
 
 class AuthRemoteDataSource {
@@ -27,11 +26,6 @@ class AuthRemoteDataSource {
     );
   }
 
-  /// Register a new customer. [acceptedTerms]/[acceptedPrivacy] carry the
-  /// user's explicit, affirmative consent captured on the register screen
-  /// (an opt-in checkbox linking the Terms + Privacy notice) — never assumed.
-  /// The backend rejects the signup if either is not true. (DPDP Act 2023 s.6
-  /// — consent must be free, specific, informed and unambiguous.)
   Future<RegisterResponse> register(
     String name,
     String email,
@@ -45,10 +39,7 @@ class AuthRemoteDataSource {
         'name': name,
         'email': email,
         'password': password,
-        // Customer app — explicitly tag the signup so the backend never
-        // defaults a merchant-app submission to CUSTOMER by accident.
         'role': 'CUSTOMER',
-        // Affirmative DPDP consent captured on the register screen.
         'acceptedTerms': acceptedTerms,
         'acceptedPrivacy': acceptedPrivacy,
       },
@@ -75,7 +66,6 @@ class AuthRemoteDataSource {
     );
   }
 
-  /// Where the account is actually created.
   Future<AuthResult> verifyEmail(String email, String otp) async {
     final res = await _client.post(
       '/auth/verify-email',
@@ -111,10 +101,6 @@ class AuthRemoteDataSource {
     await _client.post('/auth/logout', body: {'refreshToken': refreshToken});
   }
 
-  /// PATCH /auth/me. Send only the fields the user changed —
-  /// undefined keys are dropped so we don't accidentally clear
-  /// values the user hasn't touched. Pass an explicit `null` for a
-  /// field to clear it (e.g. removing the avatar).
   Future<AuthUser> updateProfile({
     String? name,
     String? avatarUrl,

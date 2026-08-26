@@ -8,9 +8,6 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/widgets/app_button.dart';
 import 'package:shopxy_customer/shared/widgets/app_snackbar.dart';
 
-/// Create-only form for now (the AddressesPage list doesn't surface
-/// an "edit" affordance yet; that's an iteration when product asks).
-/// Pops with `true` on success so the caller can show a snackbar.
 class EditAddressPage extends StatefulWidget {
   const EditAddressPage({super.key});
 
@@ -160,8 +157,6 @@ class _EditAddressPageState extends State<EditAddressPage> {
     );
   }
 
-  /// Indian pincode: 6 digits, first digit 1–9. PIN 000000 / 100000-with-
-  /// leading-zero patterns are not valid PINs.
   static final RegExp _kPincodeRe = RegExp(r'^[1-9][0-9]{5}$');
   static String? _pincodeValidator(String? v) {
     final s = v?.trim() ?? '';
@@ -170,9 +165,6 @@ class _EditAddressPageState extends State<EditAddressPage> {
     return null;
   }
 
-  /// Indian mobile: 10 digits starting 6/7/8/9. Strips a leading +91 or
-  /// "91 " so the user can paste either form. Accepts dashes and spaces
-  /// while typing (they're stripped before validation).
   static final RegExp _kPhoneRe = RegExp(r'^[6-9][0-9]{9}$');
   static String? _phoneValidator(String? v) {
     final raw = (v ?? '').trim().replaceAll(RegExp(r'[\s\-]'), '');

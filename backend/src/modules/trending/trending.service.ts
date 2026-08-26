@@ -2,25 +2,6 @@ import { Prisma } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
 import { logger } from '../../shared/logging/logger.js';
 
-/// Trending + recommendations (P6).
-///
-/// Two surfaces:
-///   * Trending — per-(category, product) score, recomputed every 15
-///     minutes from the last 24h of ProductEvent. Both a global
-///     ("all") bucket and per-category buckets are produced in the
-///     same pass so the home rail and category pages can query their
-///     own slice without re-aggregating.
-///   * Recommendations — per-user content-based shortlist (slot
-///     "for_you"). Rebuilt nightly + on-purchase; the GET endpoint
-///     reads cache first and falls back to global trending for cold-
-///     start users.
-///
-/// The recompute is intentionally one big SQL — Postgres handles
-/// per-product aggregation faster than streaming through JS, and
-/// concurrent writes from the ingest path don't bother us (we read a
-/// consistent snapshot, write a new windowEnd row, then sweep the
-/// stale ones).
-
 const TRENDING_FOR_YOU_SLOT = 'for_you';
 const TRENDING_WINDOW_HOURS = 24;
 const TRENDING_TAKE_GLOBAL = 60;
@@ -58,19 +39,10 @@ interface AggRow {
 }
 
 export class TrendingService {
-  /// Recompute the trending snapshot. Writes one row per (category,
-  /// product) plus one row per (null, product) for the global bucket.
-  /// Older snapshots are kept for ~7d as a fallback during deploys
-  /// (we never want the home rail to go dark) and swept by a separate
-  /// pass — same cron tick, different statement.
   async recomputeWindow(): Promise<{ windowEnd: Date; products: number }> {
     const now = new Date();
     const since = new Date(now.getTime() - TRENDING_WINDOW_HOURS * 3_600_000);
 
-    // One SQL aggregates everything we need per (product, category).
-    // The CASE expressions in SUM are cheaper than six separate
-    // queries and respect the (product_id, event_type, occurred_at)
-    // index we built in P5.
     const rows = await prisma.$queryRaw<AggRow[]>`
       SELECT
         pe.product_id::int AS product_id,
@@ -93,8 +65,6 @@ export class TrendingService {
       return { windowEnd: now, products: 0 };
     }
 
-    // Score + flatten: one upsert per (category, product) plus one
-    // global (categoryId=null) bucket per product.
     type Upsert = { categoryId: number | null; productId: number; score: number };
     const byProductGlobal = new Map<number, number>();
     const perCategory: Upsert[] = [];
@@ -125,10 +95,6 @@ export class TrendingService {
 
     const allUpserts = [...perCategory, ...globalRows];
 
-    // Re-check product existence right before write. Aggregation read
-    // the row but the product could have been hard-deleted in the
-    // gap (rare in prod, common in parallel tests). FK errors here
-    // would abort the whole transaction.
     const allProductIds = [...new Set(allUpserts.map((u) => u.productId))];
     const stillThere = await prisma.product.findMany({
       where: { id: { in: allProductIds } },
@@ -137,21 +103,9 @@ export class TrendingService {
     const stillThereSet = new Set(stillThere.map((r) => r.id));
     const filteredUpserts = allUpserts.filter((u) => stillThereSet.has(u.productId));
 
-    // Raw INSERT … ON CONFLICT — Prisma's composite-key upsert can't
-    // accept `categoryId: null` (NULLs are non-equal in unique
-    // constraints), and we want both nullable and non-null buckets
-    // in the same pass. Postgres handles both cleanly via the named
-    // index when categoryId is non-null; for the global bucket we
-    // simply DELETE the previous snapshot then INSERT.
-    // Clear previous global rows for this windowEnd (rare collision —
-    // recompute happens once per 15min, but safe).
     await prisma.trendingScore.deleteMany({
       where: { categoryId: null, windowEnd: now },
     });
-    // Per-row writes with allSettled — a product hard-deleted between
-    // the pre-flight existence check and the write (parallel-test
-    // races, or a merchant deleting a SKU mid-recompute) just causes
-    // that single row to fail; the rest of the snapshot still lands.
     const writes = filteredUpserts.map((u) =>
       u.categoryId === null
         ? prisma.trendingScore.create({
@@ -187,8 +141,6 @@ export class TrendingService {
       logger.warn({ failed }, 'trending: some upserts failed (likely FK race)');
     }
 
-    // Sweep snapshots older than the retention window so the table
-    // stays bounded. Same cron tick, separate statement.
     const cutoff = new Date(
       now.getTime() - TRENDING_SNAPSHOT_RETENTION_DAYS * 86_400_000,
     );
@@ -207,9 +159,6 @@ export class TrendingService {
     return { windowEnd: now, products: byProductGlobal.size };
   }
 
-  /// Public read — top N trending products. Picks the latest
-  /// snapshot windowEnd (covers deploy-time staleness) and orders
-  /// by score desc. categoryId=null → global bucket.
   async listTrending(opts: { categoryId?: number | null; take?: number } = {}) {
     const limit = Math.min(
       100,
@@ -236,20 +185,9 @@ export class TrendingService {
       },
     });
 
-    // Marketplace surface should never expose unpublished products or products
-    // from unpublished shops, even if they trended internally.
     return rows.filter((r) => r.product.isPublished && r.product.shop?.isPublished);
   }
 
-  // ── Recommendations ────────────────────────────────────────────
-
-  /// Compute the for-you slot for one user. Content-based:
-  ///   1. find user's top-5 categories from their VIEW + WISHLIST_ADD
-  ///      events in the last 30 days,
-  ///   2. candidates = published products in those categories,
-  ///   3. score = trending-rank-bonus + visited-shop bonus
-  ///                - already-purchased penalty,
-  ///   4. persist the top REC_CACHE_TAKE ids.
   async recomputeForUser(userId: number): Promise<{ count: number }> {
     const since = new Date(Date.now() - 30 * 86_400_000);
 
@@ -271,8 +209,6 @@ export class TrendingService {
       .map((r) => r.category_id)
       .filter((id): id is number => id !== null);
 
-    // Shops the user has interacted with — used as a small bonus
-    // multiplier to bias toward storefronts they already know.
     const shopRows = await prisma.$queryRaw<Array<{ shop_id: number }>>`
       SELECT DISTINCT p.shop_id
       FROM product_events pe
@@ -282,8 +218,6 @@ export class TrendingService {
     `;
     const visitedShops = new Set(shopRows.map((r) => r.shop_id));
 
-    // Already-purchased products — soft-penalised so we recommend
-    // refills only when nothing else fits.
     const purchasedRows = await prisma.invoiceItem.findMany({
       where: {
         invoice: { status: 'CONFIRMED', party: { linkedUserId: userId } },
@@ -295,16 +229,12 @@ export class TrendingService {
     );
 
     if (topCategoryIds.length === 0) {
-      // Cold-start user — wipe any stale cache so the GET endpoint
-      // cleanly falls back to global trending.
       await prisma.recommendationCache.deleteMany({
         where: { userId, slot: TRENDING_FOR_YOU_SLOT },
       });
       return { count: 0 };
     }
 
-    // Candidate pool: trending rows in the user's preferred categories.
-    // Reads the most recent snapshot per category to stay fresh.
     const candidateRows = await prisma.trendingScore.findMany({
       where: { categoryId: { in: topCategoryIds } },
       orderBy: { windowEnd: 'desc' },
@@ -353,9 +283,6 @@ export class TrendingService {
     return { count: top.length };
   }
 
-  /// Public read for a logged-in user. Cache first; cold start falls
-  /// back to global trending so the customer's first session still
-  /// gets a populated rail.
   async listRecommendations(userId: number, slot: string = TRENDING_FOR_YOU_SLOT) {
     const cache = await prisma.recommendationCache.findUnique({
       where: { userId_slot: { userId, slot } },
@@ -365,21 +292,15 @@ export class TrendingService {
         where: { id: { in: cache.productIds }, isPublished: true },
         select: productPublicSelect,
       });
-      // Preserve cache order — findMany returns in PK order otherwise.
       const byId = new Map(products.map((p) => [p.id, p]));
       return cache.productIds
         .map((id) => byId.get(id))
         .filter((p): p is NonNullable<typeof p> => p !== undefined);
     }
-    // Cold start — fall back to global trending so the rail isn't
-    // empty for new users.
     const trending = await this.listTrending({ categoryId: null });
     return trending.map((r) => r.product);
   }
 
-  /// Nightly cron — rebuild the for-you cache for any user who has
-  /// posted events in the last 30 days. Bounded by the unique user
-  /// count in that window; sequential is fine at our scale.
   async rebuildAllRecommendations(): Promise<{ users: number }> {
     const since = new Date(Date.now() - 30 * 86_400_000);
     const users = await prisma.$queryRaw<Array<{ user_id: number }>>`

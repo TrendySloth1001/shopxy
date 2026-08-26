@@ -35,19 +35,6 @@ import 'package:shopxy_customer/core/icons/app_icon.dart';
 import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 import 'package:shopxy_customer/shared/constants/app_curves.dart';
 
-/// Customer-facing order detail. One parent CustomerOrder = one
-/// checkout submission; per-vendor slices live as sections inside.
-///
-/// Visual model: a single white sheet split into divider-bounded
-/// sections (no floating cards) for a formal, statement-like read.
-/// Layout, top to bottom:
-///   1. Delivery snapshot (address as captured at place time)
-///   2. One section per vendor (shop + status + items + invoice/cancel)
-///   3. Buy again
-///   4. Order summary (items total / delivery / grand total)
-///   5. Customer's note, if present
-/// The online-payment call-to-action is pinned to a sticky bottom bar
-/// rather than living inline at the top.
 class OrderDetailPage extends StatefulWidget {
   const OrderDetailPage({super.key, required this.orderId});
   final String orderId;
@@ -61,19 +48,12 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
   bool _loading = true;
   String? _error;
 
-  /// Tracks which child id is mid-cancel so the right button shows the
-  /// spinner — multiple shops can be cancelled in sequence.
   String? _cancellingChildId;
 
-  /// Tracks which child id is mid-download so the right invoice icon
-  /// can render a spinner.
   String? _downloadingChildId;
 
-  /// In-flight reorder request — disables the "Buy again" button to
-  /// avoid double-submission.
   bool _reordering = false;
 
-  /// In-flight online payment — drives the Pay Now spinner.
   bool _paying = false;
 
   @override
@@ -105,9 +85,6 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
     }
   }
 
-  /// Resume/complete the online payment for this order. Opens the Razorpay
-  /// sheet for the payable remainder, then reloads so the new paymentStatus
-  /// (PAID, set by the backend webhook) is reflected.
   Future<void> _payNow() async {
     if (_paying) return;
     setState(() => _paying = true);
@@ -120,18 +97,13 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
       );
       String? syncedStatus;
       if (result.isSuccess) {
-        // Webhook can't reach localhost (and may lag in prod): confirm with the
-        // server now so the order flips to PAID immediately. Best-effort.
         try {
           syncedStatus = await cart.syncOrderPayment(widget.orderId);
         } catch (_) {
-          /* non-fatal — the reload below still reflects server state */
         }
       }
       if (!mounted) return;
       if (result.isSuccess) {
-        // Sheet succeeded but the server hasn't confirmed yet (webhook
-        // lag / sync miss) — that's normal, not an error.
         final confirmed = syncedStatus == 'PAID';
         showAppSnackbar(
           context,
@@ -141,8 +113,6 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
           tone: confirmed ? AppSnackbarTone.success : AppSnackbarTone.info,
         );
       } else if (result.outcome == RazorpayOutcome.dismissed) {
-        // The customer closed the sheet — nothing was charged. Calm copy
-        // that points at the retry path instead of an error tone.
         showAppSnackbar(
           context,
           message:
@@ -159,10 +129,6 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
       }
     } catch (e) {
       if (mounted) {
-        // The backend returns ALREADY_PAID (409) when a prior attempt already
-        // paid this order — reopening the sheet on a paid order is exactly what
-        // froze Razorpay. Surface it as success-ish, not a scary error; the
-        // reload below will drop the Pay button.
         final msg = e.toString();
         final alreadyPaid =
             msg.contains('ALREADY_PAID') || msg.contains('already paid');
@@ -176,7 +142,6 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
       }
     } finally {
       if (mounted) setState(() => _paying = false);
-      // Webhook may land a beat after the sheet closes — reload either way.
       await _load();
     }
   }
@@ -262,9 +227,6 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
   }
 
   Future<void> _cancelShop(ShopOrderDetail child) async {
-    // Re-entry guard: the capsule only shows its spinner *after* the
-    // confirm sheet resolves, so a double-tap on "Cancel items" could
-    // otherwise stack two confirm sheets.
     if (_cancellingChildId != null) return;
     final sellerName = child.shop?.displayName ?? 'this seller';
     final ok = await AppConfirmSheet.show(
@@ -293,10 +255,6 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
     } on CancelOrderException catch (e) {
       if (!mounted) return;
       if (e.code == 'NOT_CANCELLABLE') {
-        // The slice crossed the shop's cancellation cut-off between our
-        // last fetch and the tap — not an error on the customer's part.
-        // Surface the server's explanation gently and refetch so the
-        // now-stale Cancel button disappears.
         showAppSnackbar(
           context,
           message: e.message.isNotEmpty
@@ -327,17 +285,12 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
   @override
   Widget build(BuildContext context) {
     final order = _order;
-    // Place the "Placed on" date in the AppBar subtitle so the body
-    // doesn't need a standalone card just to surface a timestamp —
-    // Amazon/Flipkart do the same with their "Order placed on …" line.
     final subtitle = order == null
         ? null
         : DateFormat('d MMM y · h:mm a').format(order.createdAt);
     return Scaffold(
       backgroundColor: AppColors.white,
       appBar: AppAppBar(title: 'Order #${widget.orderId}', subtitle: subtitle),
-      // Online-payment CTA is pinned to the bottom of the screen rather
-      // than floating at the top of the scroll.
       bottomNavigationBar: (order != null && order.needsOnlinePayment)
           ? _PayNowBar(
               amount: order.payableRemainder,
@@ -403,10 +356,6 @@ class _Body extends StatelessWidget {
           _DeliverySnapshotCard(order: order),
           const _SectionDivider(),
         ],
-        // Heading only when the order genuinely splits — for a single
-        // seller we just let the section itself speak. Mirrors how Amazon
-        // and Flipkart treat a single-shipment order (no "Packages"
-        // heading) vs a multi-shipment one ("Packages in this order").
         if (children.length > 1)
           _SectionLabel(
             label:
@@ -444,8 +393,6 @@ class _Body extends StatelessWidget {
   }
 }
 
-// ─── Section primitives ──────────────────────────────────────────────
-
 class _SectionLabel extends StatelessWidget {
   const _SectionLabel({required this.label});
   final String label;
@@ -470,9 +417,6 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-/// Full-bleed hairline that separates one major section from the next.
-/// In-section row breaks (between items) use indented dividers instead,
-/// so the two read as distinct levels of the hierarchy.
 class _SectionDivider extends StatelessWidget {
   const _SectionDivider();
   @override
@@ -480,10 +424,6 @@ class _SectionDivider extends StatelessWidget {
       const Divider(height: 1, thickness: 1, color: AppColors.hairline);
 }
 
-/// Small soft-tinted capsule (pill) button for the per-section footer
-/// actions — Cancel items (danger) / Request a return (brand). A tinted
-/// fill with squircle-full corners reads as a deliberate button rather
-/// than a bare text link, while staying lighter than a solid CTA.
 class _CapsuleAction extends StatelessWidget {
   const _CapsuleAction({
     required this.icon,
@@ -544,10 +484,6 @@ class _CapsuleAction extends StatelessWidget {
   }
 }
 
-// ─── Aggregate status hero ───────────────────────────────────────────
-
-/// Picks the (color, icon, headline) for the aggregate status row in
-/// the Order Summary section.
 ({Color color, AppIconData icon, String headline, String? subtext})
 _statusVisuals(CustomerOrder o) {
   final children = o.shopOrders;
@@ -605,12 +541,6 @@ _statusVisuals(CustomerOrder o) {
   );
 }
 
-// ─── Delivery snapshot ───────────────────────────────────────────────
-
-/// Address row with a compact one-line glimpse by default. Tapping
-/// expands to reveal the full address + phone — keeps the hierarchy
-/// quiet for the common case where the customer just wants to know the
-/// order's destination at a glance.
 class _DeliverySnapshotCard extends StatefulWidget {
   const _DeliverySnapshotCard({required this.order});
   final CustomerOrderDetail order;
@@ -622,8 +552,6 @@ class _DeliverySnapshotCard extends StatefulWidget {
 class _DeliverySnapshotCardState extends State<_DeliverySnapshotCard> {
   bool _expanded = false;
 
-  /// First non-empty line of the address (street / locality) — what
-  /// the merchant snapshot has at line 0.
   String _glimpse() {
     final addr = (widget.order.customerAddress ?? '').trim();
     if (addr.isEmpty) return '';
@@ -767,11 +695,6 @@ class _DeliverySnapshotCardState extends State<_DeliverySnapshotCard> {
   }
 }
 
-// ─── Buy again ───────────────────────────────────────────────────────
-
-/// "Buy again" row at the foot of the order — repurchase a past order
-/// in one tap. Only rendered when at least one shop in the order
-/// produced an invoice (i.e. there's something to repeat).
 class _BuyAgainCard extends StatelessWidget {
   const _BuyAgainCard({required this.loading, required this.onPressed});
   final bool loading;
@@ -859,8 +782,6 @@ bool _anyReorderable(CustomerOrderDetail order) {
   return false;
 }
 
-// ─── Per-vendor section ──────────────────────────────────────────────
-
 class _ShopOrderCard extends StatelessWidget {
   const _ShopOrderCard({
     required this.child,
@@ -881,15 +802,9 @@ class _ShopOrderCard extends StatelessWidget {
   final String parentOrderId;
   final VoidCallback onReturnSubmitted;
 
-  /// 1-based package number when the order has multiple vendors. Null
-  /// for single-vendor orders (the "Package 1 of 1" eyebrow is noise).
   final int? packageIndex;
   final int packageCount;
 
-  /// One-liner shown when the Cancel button is absent but the slice is
-  /// still mid-fulfilment — explains *why* using the shop's
-  /// server-provided cancellation policy. Null when no note is needed
-  /// (cancellable, already cancelled/rejected, or delivered).
   String? get _cancelUnavailableNote {
     if (child.canCancel) return null;
     if (child.status != 'CONFIRMED') return null;
@@ -906,10 +821,6 @@ class _ShopOrderCard extends StatelessWidget {
     return 'This order can no longer be cancelled — $why.';
   }
 
-  /// One-liner shown when the slice is delivered but Request-a-return is
-  /// absent. Only covers the two cases we can explain with certainty
-  /// (returns disabled / window elapsed); stays quiet otherwise — e.g.
-  /// when a return was already filed — rather than guess wrong.
   String? get _returnUnavailableNote {
     if (child.canReturn) return null;
     if (child.status != 'CONFIRMED') return null;
@@ -933,8 +844,6 @@ class _ShopOrderCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Header: "Package N of M" eyebrow (multi only) + status pill
-        // on the right, then "Sold by X" as the title.
         Padding(
           padding: const EdgeInsets.fromLTRB(
             AppSizes.lg,
@@ -1009,7 +918,6 @@ class _ShopOrderCard extends StatelessWidget {
           indent: AppSizes.lg,
           endIndent: AppSizes.lg,
         ),
-        // Items
         for (var i = 0; i < child.items.length; i++) ...[
           _ItemRow(item: child.items[i]),
           if (i != child.items.length - 1)
@@ -1020,10 +928,6 @@ class _ShopOrderCard extends StatelessWidget {
               endIndent: AppSizes.lg,
             ),
         ],
-        // Tracking timeline — only when the slice has been confirmed or
-        // has any post-confirmation milestone. Hiding it for raw PENDING
-        // rows avoids a "Order placed → empty" strip that just repeats
-        // the header timestamp.
         if (child.events.isNotEmpty &&
             child.status != 'PENDING' &&
             child.status != 'REJECTED' &&
@@ -1036,8 +940,6 @@ class _ShopOrderCard extends StatelessWidget {
           ),
           OrderTimeline(events: child.events, status: child.status),
         ],
-        // Footer slot: invoice link (confirmed) / rejection note /
-        // cancel link (pending). Only one of these renders at a time.
         if (child.invoice != null)
           _InvoiceFooter(
             invoice: child.invoice!,
@@ -1083,11 +985,6 @@ class _ShopOrderCard extends StatelessWidget {
               ),
             ),
           ),
-        // "Cancel items" — gated purely on the server-computed flag
-        // (PENDING always; CONFIRMED until the shop's cancellation-
-        // policy cut-off). No client-side status derivation: when the
-        // flag is false and the slice is mid-fulfilment, no action
-        // renders at all.
         if (child.canCancel)
           Align(
             alignment: Alignment.centerRight,
@@ -1108,9 +1005,6 @@ class _ShopOrderCard extends StatelessWidget {
               ),
             ),
           ),
-        // "Request return" — gated purely on the server-computed flag:
-        // CONFIRMED + a DELIVERED event + returns enabled + within the
-        // shop's return window. The server is the source of truth.
         if (child.canReturn && child.items.isNotEmpty)
           Align(
             alignment: Alignment.centerRight,
@@ -1135,10 +1029,6 @@ class _ShopOrderCard extends StatelessWidget {
               ),
             ),
           ),
-        // When an action is absent but the customer would reasonably
-        // look for it, say why in one quiet line instead of leaving a
-        // silent gap. Still no client-side eligibility derivation — we
-        // only ever explain a server-computed `false`.
         if (_cancelUnavailableNote != null)
           _ActionUnavailableNote(text: _cancelUnavailableNote!),
         if (_returnUnavailableNote != null)
@@ -1148,8 +1038,6 @@ class _ShopOrderCard extends StatelessWidget {
   }
 }
 
-/// Muted single-line footnote under a vendor section explaining why a
-/// cancel/return action isn't offered.
 class _ActionUnavailableNote extends StatelessWidget {
   const _ActionUnavailableNote({required this.text});
   final String text;
@@ -1187,13 +1075,6 @@ class _ActionUnavailableNote extends StatelessWidget {
   }
 }
 
-/// Footer line under the items list when this vendor's slice has been
-/// invoiced. Surfaces three states (PAID green / PARTIALLY_PAID amber /
-/// UNPAID muted) and is tappable when [linkedPartyId] is set — taking
-/// the customer to the full invoice view at this seller's shop. We can
-/// only open the viewer once the customer is *linked* as a Party at
-/// the seller's shop (the per-party invoice route is auth-scoped that
-/// way); for unlinked rows the row stays as a non-interactive line.
 class _InvoiceFooter extends StatelessWidget {
   const _InvoiceFooter({
     required this.invoice,
@@ -1491,17 +1372,12 @@ class _ItemRow extends StatelessWidget {
   }
 }
 
-// ─── Order-wide bill summary ─────────────────────────────────────────
-
 class _OrderSummaryCard extends StatelessWidget {
   const _OrderSummaryCard({required this.order});
   final CustomerOrderDetail order;
 
   @override
   Widget build(BuildContext context) {
-    // Prefer the sum of confirmed invoice totals when at least one shop
-    // has been invoiced — that's the authoritative number the customer
-    // will pay. Otherwise show the estimated cart total.
     double total = 0;
     bool usedInvoices = false;
     for (final c in order.detailedShopOrders) {
@@ -1523,8 +1399,6 @@ class _OrderSummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Status row at the top of the summary — icon + headline +
-          // small subtext on a single line, matching the bill-row rhythm.
           Padding(
             padding: const EdgeInsets.only(bottom: AppSizes.sm),
             child: Row(
@@ -1640,8 +1514,6 @@ class _BillRow extends StatelessWidget {
   }
 }
 
-// ─── Note ────────────────────────────────────────────────────────────
-
 class _NoteCard extends StatelessWidget {
   const _NoteCard({required this.note});
   final String note;
@@ -1664,11 +1536,6 @@ class _NoteCard extends StatelessWidget {
   }
 }
 
-// ─── Skeleton loading state ──────────────────────────────────────────
-
-/// Full-page skeleton that mirrors the real order-detail layout while
-/// the API call is in flight. Rendered as a non-scrolling ListView so
-/// the layout proportions match exactly what appears once data loads.
 class _OrderDetailSkeleton extends StatelessWidget {
   const _OrderDetailSkeleton();
 
@@ -1678,16 +1545,13 @@ class _OrderDetailSkeleton extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.only(bottom: AppSizes.xl),
       children: const [
-        // ── Delivering to section ──────────────────────────────────
         _SkeletonSectionLabel(),
         _DeliveryAddressSkeleton(),
         _SectionDivider(),
-        // ── Vendor package section (2 packages) ───────────────────
         _ShopOrderSkeleton(),
         _SectionDivider(),
         _ShopOrderSkeleton(),
         _SectionDivider(),
-        // ── Order summary section ──────────────────────────────────
         _SkeletonSectionLabel(),
         _OrderSummarySkeleton(),
       ],
@@ -1695,7 +1559,6 @@ class _OrderDetailSkeleton extends StatelessWidget {
   }
 }
 
-/// Skeleton for the "DELIVERING TO" / "ORDER SUMMARY" section label.
 class _SkeletonSectionLabel extends StatelessWidget {
   const _SkeletonSectionLabel();
 
@@ -1713,8 +1576,6 @@ class _SkeletonSectionLabel extends StatelessWidget {
   }
 }
 
-/// Skeleton for the delivery-address row: location icon + customer-name
-/// line + address snippet line.
 class _DeliveryAddressSkeleton extends StatelessWidget {
   const _DeliveryAddressSkeleton();
 
@@ -1730,7 +1591,6 @@ class _DeliveryAddressSkeleton extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Location icon placeholder
           AppShimmerBox(
             width: AppSizes.iconMd,
             height: AppSizes.iconMd,
@@ -1741,10 +1601,8 @@ class _DeliveryAddressSkeleton extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Customer name
                 AppShimmerLine(widthFactor: 0.45, height: 14),
                 SizedBox(height: AppSizes.xs),
-                // Address snippet
                 AppShimmerLine(widthFactor: 0.7, height: 12),
               ],
             ),
@@ -1755,9 +1613,6 @@ class _DeliveryAddressSkeleton extends StatelessWidget {
   }
 }
 
-/// Skeleton for one vendor-package section:
-///   - status pill + "Sold by" row
-///   - 3 item rows (thumbnail + name line + qty/price line)
 class _ShopOrderSkeleton extends StatelessWidget {
   const _ShopOrderSkeleton();
 
@@ -1766,7 +1621,6 @@ class _ShopOrderSkeleton extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Header: status pill on the right + "Sold by" row
         Padding(
           padding: const EdgeInsets.fromLTRB(
             AppSizes.lg,
@@ -1780,7 +1634,6 @@ class _ShopOrderSkeleton extends StatelessWidget {
               Row(
                 children: [
                   const Spacer(),
-                  // Status pill
                   AppShimmerBox(
                     width: 72,
                     height: 20,
@@ -1792,14 +1645,12 @@ class _ShopOrderSkeleton extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Storefront icon
                   AppShimmerBox(
                     width: AppSizes.iconSm,
                     height: AppSizes.iconSm,
                     radius: AppSizes.radiusXs,
                   ),
                   const SizedBox(width: AppSizes.sm),
-                  // "Sold by <name>"
                   const AppShimmerLine(widthFactor: 0.5, height: 14),
                 ],
               ),
@@ -1812,7 +1663,6 @@ class _ShopOrderSkeleton extends StatelessWidget {
           indent: AppSizes.lg,
           endIndent: AppSizes.lg,
         ),
-        // 3 item rows
         const _ItemRowSkeleton(),
         const Divider(
           height: 1,
@@ -1833,8 +1683,6 @@ class _ShopOrderSkeleton extends StatelessWidget {
   }
 }
 
-/// Skeleton for a single item row: image thumbnail + two text lines +
-/// price block on the trailing edge.
 class _ItemRowSkeleton extends StatelessWidget {
   const _ItemRowSkeleton();
 
@@ -1850,7 +1698,6 @@ class _ItemRowSkeleton extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Product thumbnail
           AppShimmerBox(
             width: AppSizes.avatarMd,
             height: AppSizes.avatarMd,
@@ -1861,16 +1708,13 @@ class _ItemRowSkeleton extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Product name
                 AppShimmerLine(widthFactor: 0.8, height: 14),
                 SizedBox(height: AppSizes.xs),
-                // Qty / unit / price line
                 AppShimmerLine(widthFactor: 0.55, height: 11),
               ],
             ),
           ),
           const SizedBox(width: AppSizes.sm),
-          // Price on trailing edge
           const AppShimmerLine(widthFactor: 0.15, height: 13),
         ],
       ),
@@ -1878,9 +1722,6 @@ class _ItemRowSkeleton extends StatelessWidget {
   }
 }
 
-/// Skeleton for the order-summary section:
-///   - status icon + headline
-///   - 3 bill rows (items total, delivery, grand total)
 class _OrderSummarySkeleton extends StatelessWidget {
   const _OrderSummarySkeleton();
 
@@ -1896,7 +1737,6 @@ class _OrderSummarySkeleton extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Status row: icon + headline
           Row(
             children: [
               AppShimmerBox(
@@ -1911,13 +1751,10 @@ class _OrderSummarySkeleton extends StatelessWidget {
           const SizedBox(height: AppSizes.sm),
           const Divider(height: 1, color: AppColors.hairline),
           const SizedBox(height: AppSizes.sm),
-          // Bill row: items total
           const _BillRowSkeleton(labelFactor: 0.35, valueFactor: 0.2),
           const SizedBox(height: 6),
-          // Bill row: delivery
           const _BillRowSkeleton(labelFactor: 0.25, valueFactor: 0.15),
           const Divider(height: AppSizes.lg, color: AppColors.hairline),
-          // Bill row: grand total (slightly taller)
           const _BillRowSkeleton(labelFactor: 0.4, valueFactor: 0.25),
         ],
       ),
@@ -1925,8 +1762,6 @@ class _OrderSummarySkeleton extends StatelessWidget {
   }
 }
 
-/// One bill-row skeleton with a label on the left and a value on the
-/// right, sized by [labelFactor] / [valueFactor] of parent width.
 class _BillRowSkeleton extends StatelessWidget {
   const _BillRowSkeleton({
     required this.labelFactor,
@@ -1990,12 +1825,6 @@ class _ErrorState extends StatelessWidget {
   }
 }
 
-// ─── Pay-now bottom bar ──────────────────────────────────────────────
-
-/// Sticky bottom action bar shown on an order whose online payment is
-/// still pending or previously failed. Outstanding amount on the left,
-/// Pay Now on the right, separated from the body by a top hairline.
-/// Tapping Pay Now re-opens the Razorpay sheet for the payable remainder.
 class _PayNowBar extends StatelessWidget {
   const _PayNowBar({
     required this.amount,

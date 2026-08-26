@@ -7,13 +7,6 @@ import { ImageBox } from "@/features/home/components/image-box";
 import { mediaSrc } from "@/shared/media";
 import { formatINR } from "@/shared/format";
 
-/**
- * Compact product card used on shop-profile and category-browse pages.
- * Fills its parent grid cell. Tap links to /p/[id].
- *
- * Visual spec: white card, hairline border, rounded-lg, hover lift 2px + shadow-floating,
- * discount badge top-left brand green, rating chip success-green pill, bold price + line-through MRP.
- */
 export function CatalogProductCard({ product }: { product: CatalogProduct }) {
   const p = product;
   const imageUrl = p.images.length > 0 ? (mediaSrc(p.images[0].url) ?? "") : "";
@@ -27,7 +20,6 @@ export function CatalogProductCard({ product }: { product: CatalogProduct }) {
       href={`/p/${p.id}`}
       className="group rounded-lg border border-hairline bg-white overflow-hidden transition-all duration-200 hover:shadow-floating hover:-translate-y-xxs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft flex flex-col"
     >
-      {/* Image */}
       <span className="relative block aspect-square w-full overflow-hidden bg-canvas">
         {imageUrl ? (
           <span className="block size-full transition-transform duration-300 group-hover:scale-[1.04]">
@@ -43,7 +35,6 @@ export function CatalogProductCard({ product }: { product: CatalogProduct }) {
         ) : null}
       </span>
 
-      {/* Info */}
       <span className="flex flex-1 flex-col gap-xs p-sm">
         <span className="line-clamp-2 text-[12.5px] font-semibold leading-tight text-ink">
           {p.name}
@@ -83,9 +74,6 @@ export function CatalogProductCard({ product }: { product: CatalogProduct }) {
   );
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-/** Brand-soft tinted placeholder for products with no image — first letter of name. */
 function ProductImageFallback({ name }: { name: string }) {
   const initial = name.trim()[0]?.toUpperCase() ?? "?";
   return (

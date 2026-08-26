@@ -1,12 +1,3 @@
-// Geometry + fallback for the shared circular avatar.
-//
-// Both bugs this pins were silent. A border declared in a BoxDecoration is
-// reported as *padding*, so the content box shrank by the stroke on every edge
-// while the child was still asked for the full diameter — the picture spilled
-// past its box and got clipped, giving flat-bottomed discs. And a failed fetch
-// suppressed the monogram, leaving an empty coloured circle that looked exactly
-// like a user with no picture.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shopxy/features/profile/presentation/pages/profile_page.dart'
@@ -42,9 +33,6 @@ void main() {
           .first,
     );
 
-    // This is the whole bug: a border here is reported as padding, so the
-    // content box shrinks by the stroke on every edge and the picture inside
-    // gets clipped to fit. The ring has to live in foregroundDecoration.
     expect(
       (box.decoration as BoxDecoration?)?.border,
       isNull,
@@ -58,7 +46,6 @@ void main() {
   });
 
   testWidgets('a failed image falls back to the monogram', (tester) async {
-    // The harness answers every image request with a 400.
     await tester.pumpWidget(
       harness(
         const ProfileAvatar(

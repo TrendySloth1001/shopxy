@@ -15,29 +15,6 @@ import {
   type HsnSuggestion,
 } from "../hsn";
 
-/**
- * HSN/SAC classification field.
- *
- * The merchant answers one question — *what is this product?* — and the GST
- * rate follows. There is no rate input here at all; the tax field elsewhere in
- * the form is a readout of what this resolves to.
- *
- * Three ways in, in the order a merchant actually reaches for them:
- *
- *  1. **Suggested from the product name.** Nothing typed here at all — they
- *     name the product, we propose codes, they confirm.
- *  2. **Search**, by code or by word, including their own saved shortcuts and
- *     the Hindi/transliterated aliases ("kameez", "chappal", "sariya").
- *  3. **Typing a code directly**, for merchants who know theirs by heart.
- *
- * Every candidate shows its **chapter → heading breadcrumb** and definition,
- * because a four-digit code alone can't tell anyone that 62 is woven and 61 is
- * knitted — which is the single most common apparel misclassification.
- *
- * `onResolved(null)` means the code has no rate on file. The caller must leave
- * the tax alone rather than zeroing it: a silent 0% is an under-charged
- * invoice, the exact failure this feature exists to prevent.
- */
 export function HsnField({
   label,
   value,
@@ -52,10 +29,7 @@ export function HsnField({
   value: string;
   onChange: (v: string) => void;
   onResolved: (hit: HsnResolution | null) => void;
-  /// Drives the "suggested for this product" row. Empty disables it.
   productName: string;
-  /// Selling price, so a threshold slab (apparel over ₹2,500) resolves to the
-  /// rate this product will actually bill at rather than the headline one.
   price?: number;
   error?: string;
   helper?: string;
@@ -70,14 +44,8 @@ export function HsnField({
   const [saved, setSaved] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
-  // Latest-wins: a slow response for "620" must not overwrite the list for
-  // "62052", nor a stale rate overwrite a newer one.
   const seq = useRef(0);
-  // Which code we last resolved from, so a rerender can't re-fire the fill and
-  // clobber a manual rate the merchant just set.
   const filledFor = useRef<string | null>(null);
-  // The callback is a fresh closure each render; holding it in a ref keeps the
-  // search effect from re-running on every keystroke elsewhere in the form.
   const onResolvedRef = useRef(onResolved);
   useEffect(() => {
     onResolvedRef.current = onResolved;
@@ -96,9 +64,6 @@ export function HsnField({
     return () => document.removeEventListener("mousedown", onDoc);
   }, [open]);
 
-  // Suggestions from the product name. Debounced longer than search — the name
-  // is typed in full, not probed character by character, and each call may cost
-  // a semantic lookup on the server.
   useEffect(() => {
     const name = productName.trim();
     const mine = ++seq.current;
@@ -113,7 +78,6 @@ export function HsnField({
     return () => clearTimeout(timer);
   }, [productName]);
 
-  // Search + resolve on what's typed in this field.
   useEffect(() => {
     const q = value.trim();
     const digits = normalizeCode(q);
@@ -129,7 +93,6 @@ export function HsnField({
         return;
       }
       setLoading(true);
-      // 4 digits is the shortest real heading; below that a resolve is noise.
       const [matches, hit] = await Promise.all([
         searchHsn(q),
         digits.length >= 4 ? resolveHsn(digits, priceRef.current) : Promise.resolve(null),
@@ -147,9 +110,6 @@ export function HsnField({
     return () => clearTimeout(timer);
   }, [value]);
 
-  // Re-resolve when the price crosses a threshold the chosen code cares about.
-  // Without this, editing the price of a ₹2,400 shirt up to ₹2,600 would leave
-  // it billing at 5% — the rule would have been evaluated once and forgotten.
   useEffect(() => {
     const code = normalizeCode(value);
     if (code.length < 4 || !chosen?.rule) return;
@@ -208,8 +168,6 @@ export function HsnField({
         />
       </div>
 
-      {/* Suggested from the product name — the path where the merchant never
-          touches this field at all. */}
       {showSuggestions ? (
         <div className="flex flex-col gap-xs">
           <span className="text-body-sm text-subtle">{t("hsnSuggestedFor")}</span>
@@ -245,8 +203,6 @@ export function HsnField({
               onClick={() => pick(o)}
               className="flex w-full flex-col gap-xs border-b border-hairline px-md py-sm text-left last:border-b-0 hover:bg-field"
             >
-              {/* Chapter → heading. The line that prevents woven/knitted
-                  mix-ups, so it sits above the name, not below it. */}
               {o.breadcrumb.length > 0 ? (
                 <span className="flex flex-wrap items-center gap-xs text-body-sm text-subtle">
                   {o.breadcrumb.map((b, i) => (
@@ -285,7 +241,6 @@ export function HsnField({
         </div>
       ) : null}
 
-      {/* What was chosen, with its cross-references and a one-tap save. */}
       {chosen && !open ? (
         <div className="flex flex-col gap-xs rounded-input border border-hairline bg-field px-md py-sm">
           {chosen.breadcrumb.length > 0 ? (

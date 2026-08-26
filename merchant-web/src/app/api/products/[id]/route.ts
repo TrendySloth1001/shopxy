@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { authedFetch, extractError } from "@/server/auth/session";
 import { productSchema } from "@/features/products/schema";
 
-// GET /api/products/:id
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -23,7 +22,6 @@ export async function GET(
   return NextResponse.json(parsed.data);
 }
 
-// PATCH /api/products/:id — update.
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -51,7 +49,6 @@ export async function PATCH(
   return NextResponse.json(parsed.data);
 }
 
-// DELETE /api/products/:id
 export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },

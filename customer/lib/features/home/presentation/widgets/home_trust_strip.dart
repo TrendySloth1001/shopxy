@@ -9,8 +9,6 @@ import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 import 'package:shopxy_customer/shared/constants/app_curves.dart';
 
-/// One reassurance promise: the short [label] shown in the strip, plus
-/// the [title]/[detail] shown when a shopper taps through to learn more.
 class TrustItem {
   const TrustItem({
     required this.icon,
@@ -24,13 +22,6 @@ class TrustItem {
   final String detail;
 }
 
-/// Single source of truth for the promises — and the seam for making
-/// this **config-driven**: a remote-config / per-shop override can supply
-/// its own list and pass it to [HomeTrustStrip.items] so the claims stay
-/// truthful per region/shop and are A/B-testable without a release.
-///
-/// Copy is intentionally marketplace-level (no hardcoded thresholds or
-/// windows) so it never contradicts what a specific order actually shows.
 const List<TrustItem> kDefaultTrustItems = [
   TrustItem(
     icon: AppIcons.localShippingOutlined,
@@ -62,23 +53,12 @@ const List<TrustItem> kDefaultTrustItems = [
   ),
 ];
 
-// Matches the home search-hint rotator's cadence so the app speaks one
-// motion language.
 const Duration _kRotateInterval = Duration(seconds: 3);
 const Duration _kSlideDuration = Duration(milliseconds: 420);
 
-/// Reassurance badges under the categories rail.
-///
-/// When motion is allowed, a quiet single-line carousel auto-rotates
-/// through the badges (one centred, neighbours peeking and dimmed). It
-/// respects OS reduce-motion (static all-four fallback), pauses while
-/// backgrounded or touched, scales labels down rather than clipping, and
-/// every badge taps through to an explainer sheet.
 class HomeTrustStrip extends StatefulWidget {
   const HomeTrustStrip({super.key, this.items = kDefaultTrustItems});
 
-  /// Defaults to [kDefaultTrustItems]; inject a config/remote-sourced
-  /// list to override.
   final List<TrustItem> items;
 
   @override
@@ -113,8 +93,6 @@ class _HomeTrustStripState extends State<HomeTrustStrip>
     _syncTimer(resumed: state == AppLifecycleState.resumed);
   }
 
-  /// Run the rotation only when motion is allowed, the app is resumed,
-  /// and there's more than one badge. Idempotent.
   void _syncTimer({bool resumed = true}) {
     final shouldRun = !_reduceMotion && resumed && _items.length > 1;
     if (shouldRun) {
@@ -193,8 +171,6 @@ class _HomeTrustStripState extends State<HomeTrustStrip>
   }
 }
 
-/// A single centred, tappable badge: icon + label. [FittedBox] scales it
-/// down (rather than clipping) at large text sizes.
 class _TrustCell extends StatelessWidget {
   const _TrustCell({required this.item, required this.onTap});
   final TrustItem item;
@@ -231,8 +207,6 @@ class _TrustCell extends StatelessWidget {
   }
 }
 
-/// Reduce-motion fallback — all badges, stacked icon-over-label, static
-/// and each tappable.
 class _StaticTrustRow extends StatelessWidget {
   const _StaticTrustRow({required this.items, required this.onTap});
   final List<TrustItem> items;
@@ -283,8 +257,6 @@ class _StaticTrustRow extends StatelessWidget {
   }
 }
 
-/// "Why shop on Shopxy" explainer — lists every promise with its detail,
-/// the tapped one highlighted. Opened from any badge tap.
 void showTrustPromisesSheet(
   BuildContext context,
   List<TrustItem> items,

@@ -13,7 +13,6 @@ void _expectOk(http.Response response) {
       throw Exception(body['error']);
     }
   } catch (_) {
-    // fall through to the generic message
   }
   throw Exception(
     'Request failed (${response.statusCode}): ${response.body}',

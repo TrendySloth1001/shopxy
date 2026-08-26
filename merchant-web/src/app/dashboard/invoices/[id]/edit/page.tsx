@@ -55,7 +55,6 @@ export default function EditInvoicePage() {
   return <InvoiceEditor existing={invoice} />;
 }
 
-/** Lowercase, localized status word for the "this invoice is …" sentence. */
 function statusWord(t: ReturnType<typeof useTranslations>, status: string): string {
   const key = {
     DRAFT: "status.draftLower",

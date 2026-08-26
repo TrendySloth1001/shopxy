@@ -19,11 +19,6 @@ import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// "Shop operations" hub — entry tiles for Hours/Vacation, Payouts,
-/// KYC, and Team. Hours and Payouts are fully wired (Payouts shows a
-/// live onboarding status badge); KYC-documents and Team are still
-/// scaffolds (no backend) so the surfaces exist when the verification +
-/// multi-user features land.
 class ShopOperationsPage extends StatefulWidget {
   const ShopOperationsPage({super.key});
 
@@ -37,14 +32,7 @@ class _ShopOperationsPageState extends State<ShopOperationsPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      // Refresh so the vacation-mode chip in the Hours tile reflects
-      // the latest server state when the merchant returns from
-      // editing.
       context.read<ShopProvider>().load();
-      // Live payout status drives the Payouts tile badge (Set up / Under
-      // review / Active). Only owners can read the linked-account status
-      // (billing:manage is owner-only) — staff would just 403, and the
-      // tile is hidden for them anyway, so skip the call.
       if (context.read<AuthProvider>().user?.canView('payouts') ?? false) {
         context.read<LinkedAccountProvider>().load();
       }
@@ -80,7 +68,6 @@ class _ShopOperationsPageState extends State<ShopOperationsPage> {
           ),
         ],
       ),
-      // Show layout-mirroring skeleton while either provider is still loading.
       body: isLoading && shop == null
           ? const _OperationsSkeleton()
           : ListView(
@@ -158,12 +145,6 @@ class _ShopOperationsPageState extends State<ShopOperationsPage> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton widgets — private to this file
-// ---------------------------------------------------------------------------
-
-/// One shimmer tile that mirrors the shape of [_OpsTile]:
-/// circle icon placeholder, two text lines, optional right-side badge block.
 class _OpsTileSkeleton extends StatelessWidget {
   const _OpsTileSkeleton({this.showBadge = false});
 
@@ -181,14 +162,12 @@ class _OpsTileSkeleton extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Circle — icon placeholder
           AppShimmerBox(
             width: AppSizes.avatarSm,
             height: AppSizes.avatarSm,
             radius: AppSizes.avatarSm / 2,
           ),
           const SizedBox(width: AppSizes.md),
-          // Title + subtitle
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,7 +183,6 @@ class _OpsTileSkeleton extends StatelessWidget {
             AppShimmerBox(width: 64, height: 22, radius: 6),
           ],
           const SizedBox(width: AppSizes.sm),
-          // Chevron placeholder
           AppShimmerBox(width: 16, height: 16, radius: 4),
         ],
       ),
@@ -212,8 +190,6 @@ class _OpsTileSkeleton extends StatelessWidget {
   }
 }
 
-/// Four skeleton tiles — shown while [ShopProvider] or
-/// [LinkedAccountProvider] is still loading.
 class _OperationsSkeleton extends StatelessWidget {
   const _OperationsSkeleton();
 

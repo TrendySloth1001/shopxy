@@ -1,8 +1,3 @@
-// Tests for the outbox replay/conflict logic — the riskiest offline code.
-// The processor is decoupled via an injected `replay` function, so we drive it
-// with scripted responses (no real network / ApiClient). path_provider is
-// mocked so the real Outbox persistence runs.
-
 import 'dart:io';
 
 import 'package:flutter/services.dart';
@@ -81,8 +76,7 @@ void main() {
       return http.Response('', e.path.endsWith('/1') ? 500 : 200);
     });
     await p.drain();
-    expect(seen, ['/parties/1', '/parties/2']); // both attempted
-    // parties/2 applied+removed; parties/1 stays (retryable) with 1 attempt.
+    expect(seen, ['/parties/1', '/parties/2']);
     expect(ob.pending('1').map((e) => e.path), ['/parties/1']);
     expect(ob.pending('1').single.attempts, 1);
   });
@@ -95,10 +89,10 @@ void main() {
       (e) async => http.Response('', 503),
       maxAttempts: 3,
     );
-    await p.drain(); // attempt 1
+    await p.drain();
     expect(ob.pending('1').single.attempts, 1);
-    await p.drain(); // attempt 2
-    await p.drain(); // attempt 3 → hits cap → dropped
+    await p.drain();
+    await p.drain();
     expect(ob.pending('1'), isEmpty);
   });
 
@@ -110,14 +104,14 @@ void main() {
       throw const SocketException('down');
     });
     await p.drain();
-    expect(calls, 1); // stopped after the first failure, didn't try /2
-    expect(ob.pending('1').length, 2); // nothing dropped
+    expect(calls, 1);
+    expect(ob.pending('1').length, 2);
   });
 
   test('does nothing while offline or for an anonymous user', () async {
     final obOffline = await seed(['/parties/1']);
     final offline = NetworkStatus(offlineDebounce: Duration.zero)..markOffline();
-    await Future<void>.delayed(Duration.zero); // let the flip commit
+    await Future<void>.delayed(Duration.zero);
     var calls = 0;
     await proc(obOffline, offline, (e) async {
       calls++;

@@ -119,8 +119,6 @@ export default function ShopPage() {
     setSaved(false);
   }
 
-  // Logo/banner persist immediately (a single-field save) so an uploaded image
-  // survives a reload without depending on the main Save bar or other fields.
   async function saveImage(field: "logoUrl" | "bannerUrl", url: string | null) {
     patch({ [field]: url });
     setActionError(null);
@@ -221,7 +219,6 @@ export default function ShopPage() {
 
   return (
     <div className="w-full px-lg py-xxl pb-massive md:px-xxl">
-      {/* Storefront preview hero — how customers see you, live as you edit. */}
       <ShopHero
         shop={shop}
         name={form.name}
@@ -236,7 +233,6 @@ export default function ShopPage() {
         onTogglePublish={onTogglePublish}
       />
 
-      {/* Section tabs */}
       <div className="mt-xl overflow-x-auto">
         <div role="tablist" aria-label={t("tabs.ariaLabel")} className="inline-flex gap-xs border-b border-hairline">
           {TABS.map((item) => {
@@ -407,7 +403,6 @@ export default function ShopPage() {
         ) : null}
       </div>
 
-      {/* Sticky save — hidden on the link-only "More" tab. */}
       {tab !== "more" ? (
         <div className="sticky bottom-0 mt-xxl -mx-lg border-t border-hairline bg-canvas px-lg py-md md:-mx-xxl md:px-xxl">
           <button
@@ -433,7 +428,6 @@ const TABS: { key: TabKey }[] = [
   { key: "more" },
 ];
 
-/** Card shell for a settings section. */
 function Card({
   title,
   desc,
@@ -454,7 +448,6 @@ function Card({
   );
 }
 
-/** Live storefront-preview hero: banner + logo + identity + publish control. */
 function ShopHero({
   shop,
   name,
@@ -491,9 +484,6 @@ function ShopHero({
         {banner ? <Image src={banner} alt="" fill className="object-cover" sizes="100vw" unoptimized /> : null}
       </div>
       <div className="px-lg pb-lg">
-        {/* Logo overlaps the banner; identity sits below it, left-aligned.
-            relative z-10 keeps it above the `relative` banner (which would
-            otherwise paint over the overlapping top of the logo). */}
         <div className="relative z-10 -mt-10 size-20 overflow-hidden rounded-xl border-4 border-canvas bg-surface-tint shadow-snackbar">
           {logo ? (
             <Image src={logo} alt="" width={80} height={80} className="size-full object-cover" unoptimized />
@@ -798,13 +788,10 @@ function ImageField({
     </>
   );
 
-  // Plain block root (not flex) so the banner's width can't collapse via a
-  // flex cross-axis / percentage-in-shrink-to-fit quirk.
   return (
     <div>
       <p className="mb-xs text-label-md text-muted">{label}</p>
       {rounded ? (
-        // Square logo: fixed-size preview beside its buttons.
         <div className="flex items-center gap-md">
           <div className={`relative shrink-0 overflow-hidden rounded-full border border-hairline bg-surface-tint ${aspect}`}>
             {src ? (
@@ -818,8 +805,6 @@ function ImageField({
           <div className="flex flex-col gap-sm">{buttons}</div>
         </div>
       ) : (
-        // Wide banner: dimensions via inline styles (immune to JIT/flex issues);
-        // background-image covers the fixed box. A full-width block, so it fills.
         <div>
           <div
             role={src ? "img" : undefined}

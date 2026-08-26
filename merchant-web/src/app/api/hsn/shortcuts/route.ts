@@ -3,10 +3,6 @@ import { z } from "zod";
 import { authedFetch, extractError } from "@/server/auth/session";
 import { hsnShortcutSchema } from "@/features/products/hsn";
 
-// The merchant's own "when I say X, I mean this code" list. Classification
-// only — it deliberately carries no rate, so a Council revision reaches the
-// merchant automatically and there is nothing of theirs for us to rewrite.
-
 export async function GET(req: NextRequest) {
   const locale = req.headers.get("accept-language");
   const res = await authedFetch("/hsn/shortcuts", {

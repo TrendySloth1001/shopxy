@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { authedFetch } from "@/server/auth/session";
 
-// GET /api/auth/export — DPDP right-to-access. Streams the backend's JSON data
-// dump back to the browser as a file download.
 export async function GET() {
   const res = await authedFetch("/auth/me/export");
   if (!res) return NextResponse.json({ error: "Session expired." }, { status: 401 });

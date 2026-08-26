@@ -6,8 +6,6 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 
-/// Merchant-entered coupon / EMI / exchange offers. Legacy `kind == 'BANK'`
-/// rows are filtered out — bank offers were removed from the platform.
 class PdpOffersStrip extends StatelessWidget {
   const PdpOffersStrip({super.key, required this.offers});
 

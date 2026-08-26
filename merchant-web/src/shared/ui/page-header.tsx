@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, type LucideIcon } from "@/shared/icons";
 
-/** Accent tones for the header icon puck — all from house colour tokens. */
 const TONES = {
   brand: "bg-brand-soft text-brand-strong",
   flash: "bg-flash-deal-soft text-flash-deal",
@@ -12,11 +11,6 @@ const TONES = {
 
 export type HeaderTone = keyof typeof TONES;
 
-/**
- * Page header used across the dashboard sections: an accent icon puck, title +
- * subtitle, and an optional actions slot on the right. Keeps every screen's
- * masthead visually consistent.
- */
 export function PageHeader({
   icon: Icon,
   title,
@@ -46,7 +40,6 @@ export function PageHeader({
   );
 }
 
-/** A back link to a parent route, used at the top of editor/detail pages. */
 export function BackLink({ href, label }: { href: string; label: string }) {
   return (
     <Link

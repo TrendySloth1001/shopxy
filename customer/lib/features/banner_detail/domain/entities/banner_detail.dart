@@ -1,9 +1,3 @@
-/// Detail-level banner as returned by `GET /banners/:id`.
-///
-/// A banner header (the image to render at the top of the page) plus the
-/// list of products pinned to it. Distinct from the slim home `HeroSlide`:
-/// that one only knows enough to render a tappable image in the feed; this
-/// carries the full product grid behind the tap.
 class BannerDetail {
   const BannerDetail({
     required this.banner,
@@ -26,7 +20,6 @@ class BannerDetail {
   }
 }
 
-/// The banner row itself — image + placement metadata.
 class BannerHeader {
   const BannerHeader({
     required this.id,
@@ -39,8 +32,6 @@ class BannerHeader {
 
   final String id;
 
-  /// Server-relative or absolute. Rendered through `NetworkImageBox`
-  /// after `resolveImageUrl(...)`.
   final String imageUrl;
   final int productCount;
   final String? placement;
@@ -61,9 +52,6 @@ class BannerHeader {
   }
 }
 
-/// A product card pinned to a banner. Carries the discounted [salePrice]
-/// alongside the catalogue [sellingPrice] so the tile can show the
-/// strike-through + discount chip.
 class BannerProduct {
   const BannerProduct({
     required this.id,
@@ -83,14 +71,10 @@ class BannerProduct {
   final String id;
   final String name;
 
-  /// Catalogue price before any banner discount.
   final double sellingPrice;
 
-  /// Banner-discounted price. Parsed from the server's string field.
-  /// Equals [sellingPrice] when the banner applies no discount.
   final double salePrice;
 
-  /// Integer percent-off applied by the banner. 0 → no chip.
   final int discountPct;
 
   final String imageUrl;
@@ -101,9 +85,6 @@ class BannerProduct {
   final String? shopName;
   final String? shopSlug;
 
-  /// True when the banner price genuinely undercuts the selling price —
-  /// drives the strike-through. Guards against showing a struck-through
-  /// price equal to the sale price.
   bool get hasDiscount => salePrice < sellingPrice;
 
   factory BannerProduct.fromJson(Map<String, dynamic> json) {
@@ -125,11 +106,6 @@ class BannerProduct {
     );
   }
 }
-
-// ── JSON helpers ────────────────────────────────────────────────────
-// Prisma `Decimal` fields serialise as strings (e.g. "30591.00"), so
-// price/rating reads must accept both num and String. Mirrors the
-// coercion the home-feed mapper uses.
 
 double? _asDouble(dynamic v) {
   if (v == null) return null;

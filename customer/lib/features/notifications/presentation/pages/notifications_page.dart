@@ -16,11 +16,6 @@ import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 
-/// V2 notifications inbox. Was a static mock with invented "delivered
-/// today" / "price drop" rows until this build — now reads from
-/// [NotificationsProvider] (the same store the legacy bell page uses).
-/// The four tabs filter the same underlying list by the backend's
-/// `kind` field via the [_NotificationBucket] heuristic below.
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
 
@@ -43,8 +38,6 @@ class _NotificationsPageState extends State<NotificationsPage>
       if (!mounted) return;
       final p = context.read<NotificationsProvider>();
       p.loadInbox();
-      // Pull pending invites alongside so the top-of-inbox callout shows
-      // even when the user lands on the bell before opening MyShops.
       p.loadIncoming(status: 'PENDING');
     });
   }
@@ -161,8 +154,6 @@ class _TabView extends StatelessWidget {
     if (provider.isLoadingInbox && items.isEmpty) {
       return const _NotificationListSkeleton();
     }
-    // A failed initial load must not masquerade as an empty inbox —
-    // give the user the reason and a retry.
     if (provider.error != null && provider.items.isEmpty) {
       return AppErrorView(
         message: provider.error,
@@ -197,11 +188,6 @@ class _TabView extends StatelessWidget {
         ],
       );
     }
-    // Bucket filtering happens client-side over whatever page(s) have been
-    // fetched, so a short filtered list can't rely on scroll position alone
-    // to know more might exist server-side — a trailing "Load more" row
-    // (rather than a scroll-triggered fetch) works for every bucket, short
-    // or long, since it only depends on `hasMoreInbox`, not list length.
     final showLoadMore = provider.hasMoreInbox;
     return ListView.separated(
       padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
@@ -254,12 +240,6 @@ class _LoadMoreRow extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton loading state
-// ---------------------------------------------------------------------------
-
-/// Renders [_count] placeholder rows that mirror the real [_NotificationTile]
-/// layout while data is being fetched.
 class _NotificationListSkeleton extends StatelessWidget {
   const _NotificationListSkeleton();
 
@@ -276,8 +256,6 @@ class _NotificationListSkeleton extends StatelessWidget {
   }
 }
 
-/// A single shimmer placeholder that mirrors one [_NotificationTile]:
-/// 48 dp squircle icon on the left, then two or three shimmer lines.
 class _NotificationRowSkeleton extends StatelessWidget {
   const _NotificationRowSkeleton();
 
@@ -291,7 +269,6 @@ class _NotificationRowSkeleton extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Icon placeholder — 48 dp squircle
           AppShimmerBox(
             width: AppSizes.xxxl,
             height: AppSizes.xxxl,
@@ -302,7 +279,6 @@ class _NotificationRowSkeleton extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Title row with timestamp stub on the right
                 Row(
                   children: [
                     Expanded(
@@ -313,10 +289,8 @@ class _NotificationRowSkeleton extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: AppSizes.xs),
-                // Body line
                 AppShimmerLine(widthFactor: 0.85, height: 12),
                 const SizedBox(height: 3),
-                // Optional third line (shorter)
                 AppShimmerLine(widthFactor: 0.45, height: 12),
               ],
             ),
@@ -326,8 +300,6 @@ class _NotificationRowSkeleton extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
 
 class _NotificationTile extends StatelessWidget {
   const _NotificationTile({required this.item, required this.provider});
@@ -340,9 +312,6 @@ class _NotificationTile extends StatelessWidget {
     return InkWell(
       onTap: () {
         if (item.isUnread) provider.markRead(item.id);
-        // Invite notifications are actionable — route to the dedicated
-        // page where the user can accept/decline rather than leaving
-        // the tile as an informational dead-end.
         if (item.isInvite) {
           Navigator.of(
             context,
@@ -423,13 +392,6 @@ class _NotificationTile extends StatelessWidget {
     );
   }
 
-  /// Routes a QUOTATION_* notification to the shop it belongs to.
-  ///
-  /// The notification `data` carries `partyId` + `quotationId`; the shop
-  /// itself is resolved from the user's `/me/links` (ShopsProvider). We land
-  /// on the shop's quotations list immediately for fast feedback, then — once
-  /// the quotation list is loaded — push the exact quotation's detail on top
-  /// so "back" naturally returns to the list.
   Future<void> _openQuotation(BuildContext context) async {
     final shopsProvider = context.read<ShopsProvider>();
     final navigator = Navigator.of(context);
@@ -485,10 +447,6 @@ class _NotificationTile extends StatelessWidget {
   }
 
   static _IconSpec _kindSpec(String kind) {
-    // All accents go through AppColors tokens so a future theme
-    // swap (dark mode, brand re-skin) flows through. Map per kind:
-    // orders → info, deals → warning/amber, refunds → success,
-    // invites → indigo, restock → rose, default → muted.
     if (kind.startsWith('ORDER_') || kind.startsWith('PURCHASE_REQUEST_')) {
       return const _IconSpec(
         icon: AppIcons.localShippingOutlined,
@@ -585,9 +543,6 @@ class _IconSpec {
   final Color accent;
 }
 
-/// Persistent callout at the top of the inbox while the user has
-/// unanswered invites. Tapping opens the full InvitationsPage where
-/// they can accept/decline each one.
 class _PendingInviteBanner extends StatelessWidget {
   const _PendingInviteBanner();
 

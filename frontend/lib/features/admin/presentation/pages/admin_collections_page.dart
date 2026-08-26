@@ -14,9 +14,6 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
-/// Index of all editorial collections (curated product lists). Tap a
-/// row to open the editor — that's where meta, cover, and items get
-/// managed in one place.
 class AdminCollectionsPage extends StatefulWidget {
   const AdminCollectionsPage({super.key});
 
@@ -254,10 +251,6 @@ class _StatusChip extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton widgets — shown while provider.isLoading && list.isEmpty
-// ---------------------------------------------------------------------------
-
 class _CollectionsListSkeleton extends StatelessWidget {
   const _CollectionsListSkeleton();
 
@@ -290,10 +283,8 @@ class _CollectionRowSkeleton extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Cover image placeholder
           AppShimmerBox(width: 60, height: 60, radius: AppSizes.radiusMd),
           const SizedBox(width: AppSizes.md),
-          // Title + subtitle lines
           const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -305,9 +296,7 @@ class _CollectionRowSkeleton extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSizes.sm),
-          // Status chip placeholder
           AppShimmerBox(width: 58, height: 24, radius: AppSizes.radiusSm),
-          // Delete icon space
           const SizedBox(width: AppSizes.lg + AppSizes.md),
         ],
       ),

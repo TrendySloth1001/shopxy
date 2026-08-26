@@ -19,8 +19,6 @@ class ShopProvider extends ChangeNotifier {
   bool get isSaving => _isSaving;
   String? get error => _error;
 
-  /// Drop the cached shop on logout so user-B doesn't see user-A's
-  /// banner / tagline flash during the new session's first paint.
   void reset() {
     _shop = null;
     _isLoading = false;
@@ -29,9 +27,6 @@ class ShopProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Onboarding: create the caller's first shop (name-your-shop step). Returns
-  /// true on success; the caller then refreshes the auth user so the app gate
-  /// advances from onboarding into the dashboard.
   Future<bool> createFirstShop(String name) async {
     _isSaving = true;
     _error = null;
@@ -62,9 +57,6 @@ class ShopProvider extends ChangeNotifier {
     }
   }
 
-  /// Saves only the fields the caller cares about. Each named
-  /// parameter that is supplied (including explicit null, meaning
-  /// "clear it") is sent; un-supplied fields are left untouched.
   Future<bool> save({
     String? name,
     Object? tagline = _absent,
@@ -136,8 +128,6 @@ class ShopProvider extends ChangeNotifier {
   }
 
   Future<String?> uploadImage(File file) async {
-    // Reset the sticky `_error` so a previous upload failure doesn't
-    // surface alongside a fresh attempt.
     _error = null;
     try {
       return await _ds.uploadImage(file);

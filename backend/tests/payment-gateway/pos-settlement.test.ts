@@ -1,11 +1,3 @@
-/**
- * Behavioural unit tests for the POS UPI-QR settlement handler (settlement.ts
- * `posSale`). pos.service / pos.bus / pos-split / prisma / registry are mocked,
- * so this asserts the handler's wiring without a DB or network:
- *   onPaid      → settles the locked sale in the tx with the captured ref
- *   afterCommit → routes the Route transfer + broadcasts pos.checkout
- *   onAbandon   → closes the QR + unlocks the cart (and still unlocks on a close error)
- */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 const {
@@ -37,7 +29,6 @@ const { settlementFor } = await import(
 );
 import type { GatewayPaymentRecord } from '../../src/modules/payment-gateway/ports/types.js';
 
-// A QR-capable fake provider (isQrCapable checks for createPosQr).
 const provider = { name: 'RAZORPAY', createPosQr: vi.fn(), closeQr };
 
 function intent(over: Partial<GatewayPaymentRecord> = {}): GatewayPaymentRecord {

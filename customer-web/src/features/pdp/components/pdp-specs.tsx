@@ -19,7 +19,6 @@ export function PdpSpecs({ groups }: Props) {
     );
   }
 
-  // Collect unique tabs
   const tabs: string[] = [];
   const seen = new Set<string>();
   for (const g of groups) {

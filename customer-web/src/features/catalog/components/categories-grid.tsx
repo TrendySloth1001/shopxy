@@ -10,11 +10,6 @@ import { ImageBox } from "@/features/home/components/image-box";
 import { resolveImageUrl } from "@/features/home/format";
 import { BackButton } from "@/shared/ui/back-button";
 
-/**
- * All-categories grid page — port of the Flutter CategoriesPage.
- * Fetches `/api/categories/tree` and renders a 3-column image grid.
- * Tapping a category navigates to `/c/[slug]`.
- */
 export function CategoriesGrid() {
   const [tree, setTree] = useState<CategoryNode[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,7 +40,6 @@ export function CategoriesGrid() {
       <BackButton fallback="/" className="mb-sm" />
       <h1 className="mb-lg text-headline-sm text-ink">All Categories</h1>
 
-      {/* Skeleton */}
       {loading ? (
         <div className="grid grid-cols-3 gap-md sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
           {Array.from({ length: 12 }).map((_, i) => (
@@ -81,10 +75,7 @@ export function CategoriesGrid() {
   );
 }
 
-// Rotating soft tints for the letter-monogram fallback — mirrors the home puck tints.
 const TILE_TINTS = CATEGORY_TINTS;
-
-// ── Category tile ─────────────────────────────────────────────────────────────
 
 function CategoryTile({ node, index }: { node: CategoryNode; index: number }) {
   const imageUrl = resolveImageUrl(node.imageUrl);
@@ -97,7 +88,6 @@ function CategoryTile({ node, index }: { node: CategoryNode; index: number }) {
       href={`/c/${node.slug}`}
       className="group flex flex-col items-start gap-sm focus-visible:outline-none"
     >
-      {/* Thumbnail — capped at 160px to reduce dead air */}
       <div
         className="w-full overflow-hidden rounded-lg border border-hairline transition-all duration-200 group-hover:shadow-floating group-hover:-translate-y-xxs group-focus-visible:ring-2 group-focus-visible:ring-brand-soft"
         style={{ height: "clamp(80px, 14vw, 160px)" }}
@@ -116,7 +106,6 @@ function CategoryTile({ node, index }: { node: CategoryNode; index: number }) {
         )}
       </div>
 
-      {/* Name */}
       <p className="line-clamp-2 text-body-sm font-semibold leading-tight text-ink">
         {node.name}
       </p>
@@ -130,8 +119,6 @@ function CategoryTile({ node, index }: { node: CategoryNode; index: number }) {
     </Link>
   );
 }
-
-// ── Skeleton ──────────────────────────────────────────────────────────────────
 
 function CategoryTileSkeleton() {
   return (

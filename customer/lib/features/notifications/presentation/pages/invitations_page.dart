@@ -11,12 +11,6 @@ import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 
-/// Dedicated screen for invitations addressed to the current user. Two
-/// tabs — Pending (actionable) and History — both read from
-/// [NotificationsProvider]'s `incoming` list. Tapping an INVITE
-/// notification in the inbox routes here. Each row renders via the
-/// shared [InviteCard], same as the home preview, so the visual
-/// language stays consistent across surfaces.
 class InvitationsPage extends StatefulWidget {
   const InvitationsPage({super.key});
 
@@ -180,12 +174,6 @@ class _InvitationList extends StatelessWidget {
   }
 }
 
-// ── Skeleton ──────────────────────────────────────────────────────────────────
-
-/// Layout-mirroring placeholder for a single [InviteCard] row shown while
-/// [NotificationsProvider.isLoadingIncoming] is true and no data is cached yet.
-/// Mirrors: 86dp banner, overlapping circular logo, title + subtitle lines,
-/// optional message box shimmer, and two action-button shimmers.
 class _InviteCardSkeleton extends StatelessWidget {
   const _InviteCardSkeleton();
 
@@ -201,7 +189,6 @@ class _InviteCardSkeleton extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Banner (86dp) ────────────────────────────────────────────────
           AppShimmerBox(width: double.infinity, height: 86, radius: 0),
 
           Padding(
@@ -214,13 +201,11 @@ class _InviteCardSkeleton extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Logo overlapping banner + title/subtitle lines ─────────
                 Transform.translate(
                   offset: const Offset(0, -18),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Circular logo
                       AppShimmerBox(
                         width: AppSizes.avatarMd,
                         height: AppSizes.avatarMd,
@@ -233,17 +218,14 @@ class _InviteCardSkeleton extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Status chip placeholder
                               AppShimmerBox(
                                 width: 60,
                                 height: 18,
                                 radius: AppSizes.radiusFull,
                               ),
                               const SizedBox(height: AppSizes.sm),
-                              // Title line
                               AppShimmerLine(widthFactor: 0.85, height: 14),
                               const SizedBox(height: AppSizes.xs),
-                              // Subtitle line
                               AppShimmerLine(widthFactor: 0.55, height: 12),
                             ],
                           ),
@@ -253,7 +235,6 @@ class _InviteCardSkeleton extends StatelessWidget {
                   ),
                 ),
 
-                // ── Optional message box shimmer ─────────────────────────
                 Container(
                   width: double.infinity,
                   height: 44,
@@ -270,7 +251,6 @@ class _InviteCardSkeleton extends StatelessWidget {
 
                 const SizedBox(height: AppSizes.md),
 
-                // ── Action buttons ───────────────────────────────────────
                 Row(
                   children: [
                     Expanded(
@@ -300,8 +280,6 @@ class _InviteCardSkeleton extends StatelessWidget {
   }
 }
 
-// ── End skeleton ──────────────────────────────────────────────────────────────
-
 class _ActionableInviteRow extends StatefulWidget {
   const _ActionableInviteRow({required this.invite, required this.actionable});
   final Invitation invite;
@@ -323,8 +301,6 @@ class _ActionableInviteRowState extends State<_ActionableInviteRow> {
     try {
       if (accept) {
         await provider.accept(widget.invite.id);
-        // A new linked shop just appeared — refresh the shops list so
-        // the user's "My shops" tab reflects it without a manual pull.
         await shopsProvider.loadShops();
       } else {
         await provider.decline(widget.invite.id);

@@ -6,8 +6,6 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 
-/// Vertical milestone strip for a return request. Short-circuits to
-/// REJECTED / CANCELLED when terminated early.
 class ReturnTimeline extends StatelessWidget {
   const ReturnTimeline({super.key, required this.events, required this.status});
   final List<ReturnEvent> events;

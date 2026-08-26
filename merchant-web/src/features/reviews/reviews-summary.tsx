@@ -7,12 +7,6 @@ import { getReviewSummary } from "./api";
 import type { Review, ReviewSummary } from "./schema";
 import { Stars } from "./stars";
 
-/**
- * Customer-review block for the product detail page. Fetches the one-shot
- * summary (average, histogram, verified-buyer count, three most recent
- * reviews) and renders it. Shows an empty state when the product has no
- * reviews yet, so the section is always informative.
- */
 export function ReviewsSummary({ productId }: { productId: string }) {
   const t = useTranslations("common");
   const [summary, setSummary] = useState<ReviewSummary | null>(null);
@@ -59,7 +53,6 @@ export function ReviewsSummary({ productId }: { productId: string }) {
   return (
     <div className="flex flex-col gap-lg">
       <div className="grid gap-xl sm:grid-cols-[auto_1fr] sm:items-center">
-        {/* Score */}
         <div className="flex flex-col gap-xs">
           <div className="flex items-baseline gap-sm">
             <span className="text-display-sm tabular-nums text-ink">
@@ -78,7 +71,6 @@ export function ReviewsSummary({ productId }: { productId: string }) {
           </p>
         </div>
 
-        {/* Histogram */}
         <dl className="flex flex-col gap-xs">
           {[5, 4, 3, 2, 1].map((star) => {
             const n = summary.histogram?.[String(star)] ?? 0;
@@ -103,7 +95,6 @@ export function ReviewsSummary({ productId }: { productId: string }) {
         </dl>
       </div>
 
-      {/* Most recent */}
       {summary.recent.length > 0 ? (
         <ul className="flex flex-col gap-md">
           {summary.recent.map((r) => (

@@ -1,17 +1,5 @@
-/**
- * Catalog presentation types — shop profile, category tree, and the product
- * card shape used across /shop/[slug], /c/[slug], and /spotlights.
- *
- * Ported from the Flutter customer app:
- *   - `marketplace/domain/entities/marketplace_product.dart`
- *   - `marketplace/domain/entities/marketplace_shop.dart`
- *   - `categories/data/models/category_dto.dart`
- */
-
 import { z } from "zod";
 import { zNum } from "@/shared/zod";
-
-// ── Product card (list-select shape from /marketplace/shops/:slug/products) ──
 
 export const CatalogProductSchema = z.object({
   id: z.coerce.string(),
@@ -45,8 +33,6 @@ export const CatalogProductSchema = z.object({
 
 export type CatalogProduct = z.infer<typeof CatalogProductSchema>;
 
-// ── Shop shape from /marketplace/shops/:slug/products ──────────────────────
-
 export const ShopProfileSchema = z.object({
   id: z.coerce.string(),
   name: z.string(),
@@ -64,8 +50,6 @@ export const ShopProfileSchema = z.object({
 
 export type ShopProfile = z.infer<typeof ShopProfileSchema>;
 
-// ── Category (recursive tree node) ─────────────────────────────────────────
-
 export interface CategoryNode {
   id: string;
   name: string;
@@ -79,7 +63,6 @@ export interface CategoryNode {
   children: CategoryNode[];
 }
 
-// Intermediate wire shape (before transform); input allows optional fields.
 interface CategoryNodeWire {
   id: string;
   name: string;
@@ -127,8 +110,6 @@ export const CategoryNodeSchema = z
   .array(CategoryNodeWireSchema)
   .transform((arr) => arr.map(parseCategoryNode));
 
-// ── Pagination ──────────────────────────────────────────────────────────────
-
 export interface Pagination {
   page: number;
   limit: number;
@@ -142,8 +123,6 @@ export const PaginationSchema = z.object({
   total: zNum,
   pages: z.number(),
 });
-
-// ── Sort options ────────────────────────────────────────────────────────────
 
 export type SortOption = "popular" | "newest" | "price_asc" | "price_desc";
 

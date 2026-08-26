@@ -3,10 +3,6 @@
 import type { ButtonHTMLAttributes } from "react";
 import { useTranslations } from "next-intl";
 
-/**
- * Primary action button. Brand fill, restrained radius, clear disabled and
- * loading states (states are mandatory — CLAUDE.md §9b).
- */
 export function SubmitButton({
   loading = false,
   children,
@@ -15,7 +11,6 @@ export function SubmitButton({
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
   loading?: boolean;
-  /** Fully-rounded pill shape — used on the (curved) auth screens. */
   pill?: boolean;
 }) {
   const t = useTranslations("auth");

@@ -21,25 +21,12 @@ import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
-/// Cart page. Rewritten from zero (May 2026, build3) because earlier
-/// iterations collapsed on certain devices — the AppBar disappeared and
-/// the bottom CTA floated into the body. This version uses an explicit
-/// `Column { Header, Expanded(Body), Footer }` layout, no Scaffold
-/// `appBar`/`bottomNavigationBar` slots at all — guarantees the three
-/// regions can never swap places.
-///
-/// A small "BUILD 3" pill in the header is the visual canary: if you
-/// don't see it on the device, the code on disk isn't running.
 class CartPage extends StatelessWidget {
   const CartPage({super.key, this.embedded = false});
 
   final bool embedded;
 
   Future<void> _goToCheckout(BuildContext context) async {
-    // Guests can browse and build a basket, but checkout needs an
-    // account so we can attach the order to a user + ship to a saved
-    // address. After sign-in the cart is server-merged (main.dart's
-    // auth listener) so the items they just built up survive.
     final signedIn = await requireAuth(
       context,
       reason:
@@ -47,11 +34,6 @@ class CartPage extends StatelessWidget {
           'Your cart will be kept.',
     );
     if (!signedIn || !context.mounted) return;
-    // When the cart sits inside a tab (embedded=true) the closest
-    // Navigator is the AppShell's nested one. Pushing checkout onto
-    // it leaves the bottom tab bar visible and traps the back gesture
-    // inside the cart tab. Use the root navigator so checkout owns
-    // the screen and back returns to wherever the user came from.
     Navigator.of(
       context,
       rootNavigator: embedded,
@@ -67,8 +49,6 @@ class CartPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      // Single Column inside SafeArea — header + body + footer can't
-      // race for vertical space.
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -97,8 +77,6 @@ class CartPage extends StatelessWidget {
     );
   }
 }
-
-// ─── Top header bar ─────────────────────────────────────────────────
 
 class _Header extends StatelessWidget {
   const _Header({required this.itemCount, required this.showBack});
@@ -163,8 +141,6 @@ class _Header extends StatelessWidget {
     );
   }
 }
-
-// ─── Cart body ──────────────────────────────────────────────────────
 
 class _Body extends StatelessWidget {
   const _Body({
@@ -397,8 +373,6 @@ class _CartLineRow extends StatelessWidget {
                     AppQuantityStepper(
                       dense: true,
                       quantity: qty,
-                      // Cap + at the known stock so the customer isn't
-                      // invited to request more than the shop can sell.
                       maxQuantity: product.stockQuantity > 0
                           ? product.stockQuantity.floor()
                           : null,
@@ -420,7 +394,6 @@ class _CartLineRow extends StatelessWidget {
                     const Spacer(),
                     InkWell(
                       onTap: () {
-                        // Keep what we need for UNDO before the line is gone.
                         final removedQty = line.quantity;
                         final cart = context.read<CartProvider>();
                         cart.remove(product.id);
@@ -639,15 +612,11 @@ class _ReassuranceCard extends StatelessWidget {
   }
 }
 
-// ─── Empty state ────────────────────────────────────────────────────
-
 class _EmptyCart extends StatelessWidget {
   const _EmptyCart();
   @override
   Widget build(BuildContext context) {
     final shell = CustomerShellScope.of(context);
-    // Scrollable so the shell sees "nothing to scroll" and un-hides the
-    // floating nav; a bare Center sends no scroll metrics at all.
     return CustomScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
@@ -689,8 +658,6 @@ class _EmptyCart extends StatelessWidget {
                 const SizedBox(height: AppSizes.lg),
                 AppButton.primary(
                   label: 'Continue shopping',
-                  // Inside the tab shell there is nothing to pop, so the
-                  // button used to do nothing at all — jump to Home instead.
                   onPressed: shell != null
                       ? () => shell.select(0)
                       : () => Navigator.of(context).maybePop(),
@@ -703,8 +670,6 @@ class _EmptyCart extends StatelessWidget {
     );
   }
 }
-
-// ─── Footer ─────────────────────────────────────────────────────────
 
 class _Footer extends StatelessWidget {
   const _Footer({
@@ -780,9 +745,6 @@ class _Footer extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSizes.md),
-            // Expanded + fullWidth, not Flexible: a Flexible child sizes to its
-            // content, so the button left the rest of its slot as dead space
-            // on the right instead of ending at the bar's margin.
             Expanded(
               flex: 6,
               child: AppButton.primary(

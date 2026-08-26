@@ -1,16 +1,5 @@
 "use client";
 
-/**
- * Search page — full-featured port of the Flutter `SearchPage`.
- *
- * State model:
- *   URL ?q=  ──► effects update local state ──► search fetch ──► results
- *
- * The effects use the cart-context idiom: inner async functions declared
- * and called inside useEffect so setState calls are inside the async fn,
- * not directly in the effect body — which is what the lint rule permits.
- */
-
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -39,19 +28,14 @@ import { SearchSkeleton } from "./search-skeleton";
 const DEBOUNCE_MS = 250;
 const AUTOCOMPLETE_DEBOUNCE_MS = 180;
 
-// ── Main exported component ───────────────────────────────────────────────────
-
 export function SearchPageClient({ initialQuery }: { initialQuery: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
 
-  // The query that drives the current results panel.
   const [committedQuery, setCommittedQuery] = useState(initialQuery);
-  // What the text input shows (may lag during debounce).
   const [inputValue, setInputValue] = useState(initialQuery);
 
-  // Search result state.
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">(
     initialQuery ? "loading" : "idle",
   );
@@ -61,10 +45,8 @@ export function SearchPageClient({ initialQuery }: { initialQuery: string }) {
   const [facets, setFacets] = useState<SearchFacets | null>(null);
   const [filters, setFilters] = useState<SearchFilters>(EMPTY_FILTERS);
 
-  // Idle-state trending hints.
   const [hints, setHints] = useState<string[]>([]);
 
-  // Autocomplete state.
   const [suggestions, setSuggestions] = useState<AutocompleteSuggestions>({
     products: [],
     terms: [],
@@ -72,19 +54,13 @@ export function SearchPageClient({ initialQuery }: { initialQuery: string }) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [acActiveIndex, setAcActiveIndex] = useState(-1);
 
-  // Mutable refs — never trigger renders.
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const acDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const seqRef = useRef(0);
   const inputRef = useRef<HTMLInputElement>(null);
-  // Track the last ?q= we pushed so URL-sync effect ignores our own pushes.
   const lastUrlQ = useRef(initialQuery);
 
   const { recent, add: addRecent, clear: clearRecent } = useRecentSearches();
-
-  // ── Search execution (shared helper, called only from event handlers
-  //    and from inside inner async fns within effects — matching the
-  //    cart-context pattern which the lint rule permits) ─────────────────────
 
   function runSearch(
     q: string,
@@ -119,11 +95,6 @@ export function SearchPageClient({ initialQuery }: { initialQuery: string }) {
       });
   }
 
-  // ── Boot: fire initial search if ?q= came in from the server ─────────────
-  //    Pattern from cart-context: define an inner async fn and call via void,
-  //    so all setState calls are inside the async fn body, not the effect body.
-
-  // Fetch hints on mount.
   useEffect(() => {
     async function boot() {
       const h = await fetchHints().catch(() => [] as string[]);
@@ -132,9 +103,6 @@ export function SearchPageClient({ initialQuery }: { initialQuery: string }) {
     void boot();
   }, []);
 
-  // Boot search: fire initial query from the URL if one was passed in.
-  // This uses an inner async fn wrapper (matching the cart-context pattern)
-  // so all setState calls are inside the async fn, not the effect body.
   useEffect(() => {
     if (!initialQuery) return;
     async function bootSearch() {
@@ -143,8 +111,6 @@ export function SearchPageClient({ initialQuery }: { initialQuery: string }) {
     void bootSearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional boot effect
   }, []);
-
-  // ── URL sync: respond to browser back/forward ─────────────────────────────
 
   useEffect(() => {
     async function syncFromUrl() {
@@ -172,8 +138,6 @@ export function SearchPageClient({ initialQuery }: { initialQuery: string }) {
     void syncFromUrl();
   }, [searchParams]);
 
-  // ── Cleanup on unmount ────────────────────────────────────────────────────
-
   useEffect(() => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -181,13 +145,10 @@ export function SearchPageClient({ initialQuery }: { initialQuery: string }) {
     };
   }, []);
 
-  // ── Input change → debounce search + autocomplete ────────────────────────
-
   function handleInputChange(value: string) {
     setInputValue(value);
     setAcActiveIndex(-1);
 
-    // Autocomplete debounce.
     if (acDebounceRef.current) clearTimeout(acDebounceRef.current);
     if (value.trim()) {
       acDebounceRef.current = setTimeout(() => {
@@ -203,7 +164,6 @@ export function SearchPageClient({ initialQuery }: { initialQuery: string }) {
       setShowDropdown(!value.trim() && recent.length > 0);
     }
 
-    // Search debounce.
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (!value.trim()) {
       setCommittedQuery("");
@@ -233,8 +193,6 @@ export function SearchPageClient({ initialQuery }: { initialQuery: string }) {
     }, DEBOUNCE_MS);
   }
 
-  // ── Commit (Enter / dropdown select) ─────────────────────────────────────
-
   function commitSearch(term: string) {
     const t = term.trim();
     if (!t) return;
@@ -262,14 +220,10 @@ export function SearchPageClient({ initialQuery }: { initialQuery: string }) {
     commitSearch(inputValue);
   }
 
-  // ── Filter change ─────────────────────────────────────────────────────────
-
   function handleFiltersChange(next: SearchFilters) {
     setFilters(next);
     if (committedQuery.trim()) runSearch(committedQuery, next, false);
   }
-
-  // ── Keyboard navigation ───────────────────────────────────────────────────
 
   const acListLen = suggestions.products.length + suggestions.terms.length;
   const recentListLen =
@@ -308,8 +262,6 @@ export function SearchPageClient({ initialQuery }: { initialQuery: string }) {
     }
   }
 
-  // ── Clear input ───────────────────────────────────────────────────────────
-
   function clearInput() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (acDebounceRef.current) clearTimeout(acDebounceRef.current);
@@ -339,14 +291,11 @@ export function SearchPageClient({ initialQuery }: { initialQuery: string }) {
     commitSearch(t);
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────
-
   const hasQuery = !!committedQuery.trim();
   const isLoading = status === "loading";
 
   return (
     <div className="min-h-screen bg-canvas">
-      {/* ── Sticky search header ── */}
       <header className="sticky top-0 z-40 border-b border-hairline bg-white/95 backdrop-blur-sm">
         <div className="mx-auto flex max-w-shell items-center gap-sm px-lg py-sm">
           <button
@@ -358,7 +307,6 @@ export function SearchPageClient({ initialQuery }: { initialQuery: string }) {
             <ArrowLeft size={18} aria-hidden />
           </button>
 
-          {/* Search input */}
           <div className="relative min-w-0 flex-1">
             <form onSubmit={handleSubmit} role="search">
               <label htmlFor="search-input" className="sr-only">
@@ -391,7 +339,6 @@ export function SearchPageClient({ initialQuery }: { initialQuery: string }) {
                     }
                   }}
                   onBlur={() => {
-                    // Delay so mousedown on dropdown items fires first.
                     setTimeout(() => setShowDropdown(false), 150);
                   }}
                   placeholder="Search products, brands…"
@@ -420,7 +367,6 @@ export function SearchPageClient({ initialQuery }: { initialQuery: string }) {
               </div>
             </form>
 
-            {/* Autocomplete dropdown */}
             {showDropdown && inputValue.trim() && acListLen > 0 ? (
               <div id="search-dropdown">
                 <AutocompleteDropdown
@@ -431,7 +377,6 @@ export function SearchPageClient({ initialQuery }: { initialQuery: string }) {
               </div>
             ) : null}
 
-            {/* Recent searches dropdown */}
             {showDropdown && !inputValue.trim() && recent.length > 0 ? (
               <div id="search-dropdown">
                 <RecentDropdown
@@ -446,7 +391,6 @@ export function SearchPageClient({ initialQuery }: { initialQuery: string }) {
         </div>
       </header>
 
-      {/* ── Body ── */}
       <main className="mx-auto max-w-shell px-lg">
         {!hasQuery ? (
           <IdleView
@@ -480,8 +424,6 @@ export function SearchPageClient({ initialQuery }: { initialQuery: string }) {
     </div>
   );
 }
-
-// ── Sub-views ─────────────────────────────────────────────────────────────────
 
 function IdleView({
   hints,

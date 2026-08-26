@@ -1,8 +1,6 @@
 import { z } from "zod";
 import { zNum } from "@/shared/zod";
 
-// ─── Shared sub-schemas ───────────────────────────────────────────────────────
-
 export const shopSummarySchema = z.object({
   id: z.coerce.string(),
   name: z.string(),
@@ -42,14 +40,11 @@ export const customerOrderSchema = z.object({
   updatedAt: z.string(),
   _count: z.object({ shopOrders: z.number() }).optional(),
   shopOrders: z.array(shopOrderPreviewSchema),
-  // Derived on list — some servers return these
   needsOnlinePayment: z.boolean().optional(),
   payableRemainder: z.coerce.number().optional(),
   note: z.string().nullable().optional(),
 });
 export type CustomerOrder = z.infer<typeof customerOrderSchema>;
-
-// ─── Order detail ────────────────────────────────────────────────────────────
 
 export const orderEventSchema = z.object({
   id: z.coerce.string(),
@@ -122,8 +117,6 @@ export const customerOrderDetailSchema = customerOrderSchema.extend({
 });
 export type CustomerOrderDetail = z.infer<typeof customerOrderDetailSchema>;
 
-// ─── Paginated list response ─────────────────────────────────────────────────
-
 export const ordersPageSchema = z.object({
   data: z.array(customerOrderSchema),
   pagination: z.object({
@@ -134,8 +127,6 @@ export const ordersPageSchema = z.object({
   }),
 });
 export type OrdersPage = z.infer<typeof ordersPageSchema>;
-
-// ─── Reorder response ────────────────────────────────────────────────────────
 
 export const reorderItemSchema = z.object({
   productId: z.coerce.string(),
@@ -162,8 +153,6 @@ export const reorderResultSchema = z.object({
 });
 export type ReorderResult = z.infer<typeof reorderResultSchema>;
 
-// ─── Pay session ─────────────────────────────────────────────────────────────
-
 export const paySessionSchema = z.object({
   intentId: z.coerce.string(),
   provider: z.literal("RAZORPAY"),
@@ -179,19 +168,13 @@ export const paySessionSchema = z.object({
   reused: z.boolean(),
 });
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-/** Does this order have unpaid online-payment orders? */
 export function orderNeedsOnlinePayment(order: CustomerOrder): boolean {
   if (typeof order.needsOnlinePayment === "boolean") return order.needsOnlinePayment;
-  // Derive from paymentStatus if the flag wasn't sent
   return order.paymentStatus === "PENDING";
 }
 
-/** Get payable amount from order */
 export function orderPayableRemainder(order: CustomerOrder): number {
   if (typeof order.payableRemainder === "number") return order.payableRemainder;
-  // Derive: estimatedTotal minus wallet/coupon, rounded to 2 dp (matches backend round2)
   const wallet = order.walletPaid ?? 0;
   const coupon = order.couponDiscount ?? 0;
   const raw = Math.max(0, order.estimatedTotal - wallet - coupon);

@@ -35,7 +35,6 @@ export default function OrdersInboxPage() {
   const [nonce, setNonce] = useState(0);
   const [pending, setPending] = useState(0);
 
-  // Debounce the search box.
   useEffect(() => {
     const handle = setTimeout(() => {
       setSearch(searchInput.trim());
@@ -44,7 +43,6 @@ export default function OrdersInboxPage() {
     return () => clearTimeout(handle);
   }, [searchInput]);
 
-  // Pending count for the tab badge — refresh whenever the list reloads.
   useEffect(() => {
     let active = true;
     void (async () => {
@@ -105,7 +103,6 @@ export default function OrdersInboxPage() {
         </p>
       </div>
 
-      {/* Status tabs */}
       <div className="mt-xl flex flex-wrap gap-sm">
         {TABS.map((tabDef, i) => (
           <TabPill
@@ -121,7 +118,6 @@ export default function OrdersInboxPage() {
         ))}
       </div>
 
-      {/* Search + date range */}
       <div className="mt-md flex flex-wrap items-center gap-md">
         <div className="relative min-w-[220px] flex-1">
           <Search
@@ -172,7 +168,6 @@ export default function OrdersInboxPage() {
 
       <Divider className="mt-lg" />
 
-      {/* List */}
       {loading && !data ? (
         <ListSkeleton />
       ) : error && !data ? (
@@ -196,7 +191,6 @@ export default function OrdersInboxPage() {
         </ul>
       )}
 
-      {/* Pagination */}
       {total > PAGE_SIZE ? (
         <div className="mt-lg flex items-center justify-between">
           <p className="text-body-sm text-muted">
@@ -304,7 +298,6 @@ function PagerButton({
   );
 }
 
-/** "3 PCS Solder Wire · 2 PCS Tea Bag (+1 more)" from the inbox preview. */
 function previewText(
   order: OrderListRow,
   more: (count: number) => string,

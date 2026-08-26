@@ -113,7 +113,6 @@ export default function PartyDetailPage() {
     <div className="w-full px-lg py-xxl pb-massive md:px-xxl">
       <BackLink href={BACK} label={t("detail.back")} />
 
-      {/* Header */}
       <div className="mt-md flex flex-wrap items-start justify-between gap-md">
         <div className="flex min-w-0 items-start gap-md">
           <Monogram name={p.name} size={52} />
@@ -155,7 +154,6 @@ export default function PartyDetailPage() {
         ) : null}
       </div>
 
-      {/* Contact rows */}
       <div className="mt-lg flex flex-col gap-sm">
         {p.phone ? <ContactRow icon={<Phone size={15} />} text={p.phone} /> : null}
         {p.email ? <ContactRow icon={<Mail size={15} />} text={p.email} /> : null}
@@ -168,7 +166,6 @@ export default function PartyDetailPage() {
         {p.gstin ? <ContactRow icon={<Landmark size={15} />} text={`GSTIN ${p.gstin}`} /> : null}
       </div>
 
-      {/* Balance */}
       <div className="mt-xl rounded-lg border border-hairline p-lg">
         <div className="flex items-center gap-md">
           <span className={`flex size-11 shrink-0 items-center justify-center rounded-lg ${BALANCE_PUCK[balanceView.tone]}`}>
@@ -190,7 +187,6 @@ export default function PartyDetailPage() {
         </div>
       </div>
 
-      {/* Stats */}
       <div className="mt-lg grid grid-cols-1 gap-lg sm:grid-cols-3">
         <StatBlock
           icon={<ReceiptText size={16} />}
@@ -212,7 +208,6 @@ export default function PartyDetailPage() {
         />
       </div>
 
-      {/* Ledger */}
       {ledger && ledger.entries.length > 0 ? (
         <>
           <Divider className="my-xl" />
@@ -221,7 +216,6 @@ export default function PartyDetailPage() {
         </>
       ) : null}
 
-      {/* Recent invoices */}
       {overview.recentInvoices.length > 0 ? (
         <>
           <Divider className="my-xl" />
@@ -232,7 +226,6 @@ export default function PartyDetailPage() {
         </>
       ) : null}
 
-      {/* Recent challans */}
       {overview.recentChallans.length > 0 ? (
         <>
           <Divider className="my-xl" />

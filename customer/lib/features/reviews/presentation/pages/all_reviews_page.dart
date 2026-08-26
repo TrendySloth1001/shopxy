@@ -13,11 +13,6 @@ import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
-/// Paginated all-reviews page. Loads page 1 on mount; appends pages as
-/// the user scrolls within ~400px of the bottom. Filter chips switch
-/// between "All" and a single-star bucket — the bucket request still
-/// pages from the same /reviews endpoint and filters client-side
-/// (cheap; review counts per product are bounded).
 class AllReviewsPage extends StatefulWidget {
   const AllReviewsPage({
     super.key,
@@ -39,7 +34,7 @@ class _AllReviewsPageState extends State<AllReviewsPage> {
   bool _loading = false;
   bool _initialLoad = true;
   String? _error;
-  int _filterStar = 0; // 0 = all
+  int _filterStar = 0;
 
   @override
   void initState() {
@@ -206,11 +201,6 @@ class _AllReviewsPageState extends State<AllReviewsPage> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton widgets
-// ---------------------------------------------------------------------------
-
-/// Single shimmer tile that mirrors the layout of [ReviewTile].
 class _ReviewTileSkeleton extends StatelessWidget {
   const _ReviewTileSkeleton();
 
@@ -224,7 +214,6 @@ class _ReviewTileSkeleton extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Rating chip + verified badge row
           Row(
             children: [
               AppShimmerBox(width: 52, height: 24, radius: AppSizes.radiusFull),
@@ -233,28 +222,24 @@ class _ReviewTileSkeleton extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSizes.sm),
-          // Review title
           AppShimmerLine(widthFactor: 0.70, height: 14),
           const SizedBox(height: AppSizes.xs),
-          // Body lines
           AppShimmerLine(widthFactor: 1.0, height: 12),
           const SizedBox(height: AppSizes.xs),
           AppShimmerLine(widthFactor: 0.92, height: 12),
           const SizedBox(height: AppSizes.xs),
           AppShimmerLine(widthFactor: 0.65, height: 12),
           const SizedBox(height: AppSizes.sm),
-          // Author row: avatar + name
           Row(
             children: [
               AppShimmerBox(
                 width: 32,
                 height: 32,
-                radius: 16, // circular
+                radius: 16,
               ),
               const SizedBox(width: AppSizes.sm),
               AppShimmerLine(widthFactor: 0.35, height: 12),
               const Spacer(),
-              // Date
               AppShimmerLine(widthFactor: 0.18, height: 11),
             ],
           ),
@@ -264,8 +249,6 @@ class _ReviewTileSkeleton extends StatelessWidget {
   }
 }
 
-/// Full-page skeleton: renders 4 shimmer review tiles separated by hairline
-/// dividers, matching [_buildList]'s separator style.
 class _AllReviewsSkeleton extends StatelessWidget {
   const _AllReviewsSkeleton();
 

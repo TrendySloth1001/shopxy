@@ -1,8 +1,6 @@
 import 'package:shopxy/features/payments/domain/entities/payment.dart';
 
 class PaymentDto {
-  /// Prisma `Decimal` columns serialize to JSON as strings — funnel every
-  /// money/quantity field through this so we never cast a String to num.
   static double _d(dynamic v) {
     if (v == null) return 0;
     if (v is num) return v.toDouble();

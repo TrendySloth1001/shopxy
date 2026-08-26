@@ -14,11 +14,6 @@ import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
-/// Ratings & reviews block on the product detail page. Loads its own
-/// summary in initState so the surrounding PDP build never blocks on
-/// review counts — when the summary is loading we render a slim
-/// skeleton; on error the block hides itself (the PDP works fine
-/// without it).
 class ProductReviewsSection extends StatefulWidget {
   const ProductReviewsSection({
     super.key,
@@ -75,8 +70,6 @@ class _ProductReviewsSectionState extends State<ProductReviewsSection> {
         ),
       ),
     );
-    // Refresh on return — the user might have written a review while
-    // they were on the all-reviews page.
     if (mounted) _load();
   }
 
@@ -197,9 +190,6 @@ class _ProductReviewsSectionState extends State<ProductReviewsSection> {
   }
 }
 
-/// Top half of the section: big number + star row + count on the left,
-/// 5-bar histogram on the right. Reads at a glance the way Flipkart
-/// and Amazon do it.
 class _SummaryRow extends StatelessWidget {
   const _SummaryRow({required this.summary});
   final ReviewSummary summary;
@@ -321,10 +311,6 @@ class _HistogramRow extends StatelessWidget {
               child: Stack(
                 children: [
                   Container(height: AppSizes.sm, color: AppColors.heroPanel),
-                  // FractionallySizedBox in a Stack would clip to parent
-                  // width; AnimatedContainer with LayoutBuilder works
-                  // but for a static read of fraction a plain width
-                  // multiplier on the inner bar is fine and cheap.
                   FractionallySizedBox(
                     widthFactor: fraction,
                     child: Container(height: AppSizes.sm, color: _barColor),

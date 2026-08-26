@@ -8,10 +8,6 @@ class MeRemoteDataSource {
   const MeRemoteDataSource(this._client);
   final ApiClient _client;
 
-  /// New marketplace-shaped endpoint: returns the distinct *shops* (not
-  /// Party/Vendor rows) the user has at least one active link to, with
-  /// marketplace metadata (logo, slug, rating) so the customer app can
-  /// render a clickable rail of merchant cards.
   Future<List<LinkedMerchant>> linkedShops() async {
     final res = await _client.get('/me/linked-shops');
     if (res.statusCode != 200) {
@@ -23,8 +19,6 @@ class MeRemoteDataSource {
         .toList();
   }
 
-  /// Returns both lists in one round-trip. Customers may simultaneously
-  /// be a party at one shop and a vendor at another.
   Future<List<LinkedShop>> links() async {
     final res = await _client.get('/me/links');
     if (res.statusCode != 200) {
@@ -83,7 +77,6 @@ class MeRemoteDataSource {
     }
   }
 
-  /// Quotations the shop sent this customer.
   Future<List<ShopQuotation>> quotations(LinkedShop shop) async {
     final res = await _client.get('/me/parties/${shop.id}/quotations');
     if (res.statusCode != 200) {
@@ -95,7 +88,6 @@ class MeRemoteDataSource {
         .toList();
   }
 
-  /// Accept a quotation → the shop turns it into a confirmed invoice.
   Future<ShopQuotation> acceptQuotation(LinkedShop shop, String quotationId) async {
     final res = await _client.post(
       '/me/parties/${shop.id}/quotations/$quotationId/accept',
@@ -124,7 +116,6 @@ class MeRemoteDataSource {
     return ShopQuotation.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  /// Customer builds a basket and asks the shop for a quote (lands REQUESTED).
   Future<ShopQuotation> requestQuotation(
     LinkedShop shop, {
     required List<Map<String, dynamic>> items,
@@ -143,7 +134,6 @@ class MeRemoteDataSource {
     return ShopQuotation.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  /// Download a quotation as PDF bytes (shop-sent or customer-requested).
   Future<Uint8List> downloadQuotationPdf(LinkedShop shop, String quotationId) async {
     final res = await _client
         .get('/me/parties/${shop.id}/quotations/$quotationId/pdf');
@@ -153,7 +143,6 @@ class MeRemoteDataSource {
     return res.bodyBytes;
   }
 
-  /// Withdraw a quote request that's still awaiting the shop.
   Future<ShopQuotation> cancelQuotation(LinkedShop shop, String quotationId) async {
     final res = await _client.post(
       '/me/parties/${shop.id}/quotations/$quotationId/cancel',

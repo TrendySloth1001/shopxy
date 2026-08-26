@@ -258,8 +258,6 @@ class _FaqTile extends StatelessWidget {
           side: const BorderSide(color: AppColors.hairline),
         ),
         child: Theme(
-          // Strip the default divider Material adds above expansion
-          // tiles so the squircle border stays crisp.
           data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
           child: ExpansionTile(
             tilePadding: const EdgeInsets.symmetric(

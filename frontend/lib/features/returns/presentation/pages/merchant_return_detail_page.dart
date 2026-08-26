@@ -16,10 +16,6 @@ import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// Workflow-heavy detail page. Header shows the customer + refund
-/// total; each item gets a small thumbnail + reason chip; the bottom
-/// of the page surfaces the right action buttons for the current
-/// status (approve/reject → picked up → received → refund).
 class MerchantReturnDetailPage extends StatefulWidget {
   const MerchantReturnDetailPage({super.key, required this.returnId});
   final String returnId;
@@ -90,8 +86,6 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
     }
   }
 
-  /// Common confirmation sheet for the destructive / financial actions.
-  /// Returns the merchant's optional note (or null if they cancelled).
   Future<String?> _askForNote({
     required String title,
     required String confirmLabel,
@@ -322,10 +316,6 @@ class _MerchantReturnDetailPageState extends State<MerchantReturnDetailPage> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton
-// ---------------------------------------------------------------------------
-
 class _ReturnDetailSkeleton extends StatelessWidget {
   const _ReturnDetailSkeleton();
 
@@ -543,10 +533,6 @@ class _ActionBarSkeleton extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Real content widgets
-// ---------------------------------------------------------------------------
 
 class _HeaderCard extends StatelessWidget {
   const _HeaderCard({required this.row});
@@ -791,8 +777,6 @@ class _TimelineCard extends StatelessWidget {
   }
 }
 
-/// Localised label for a return status / timeline event code. Lives at
-/// file scope so both the header badge and the timeline can share it.
 String _statusLabel(AppLocalizations l10n, String code) {
   switch (code) {
     case 'REQUESTED':
@@ -814,8 +798,6 @@ String _statusLabel(AppLocalizations l10n, String code) {
   }
 }
 
-/// Localised label for a return reason code (mirrors [reasonLabel] in the
-/// domain layer, but resolved against the active locale).
 String _reasonLabel(AppLocalizations l10n, String code) {
   switch (code) {
     case 'DAMAGED':

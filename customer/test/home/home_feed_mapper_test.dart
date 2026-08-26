@@ -6,42 +6,31 @@ void main() {
     test('parses each section into the right presentation class', () {
       final feed = HomeFeedMapper.fromFeed(_sampleFeed);
 
-      // Hero banner → slim HeroSlide (id + imageUrl + optional link +
-      // pinned-product count).
       expect(feed.heroSlides, hasLength(1));
       expect(feed.heroSlides.first.id, '1');
       expect(feed.heroSlides.first.imageUrl, '/images/hero-md.webp');
       expect(feed.heroSlides.first.linkUrl, '/category/fashion');
       expect(feed.heroSlides.first.productCount, 5);
 
-      // Ad strip banner → slim HeroSlide. No link → null. No
-      // productCount in the payload → defaults to 0.
       expect(feed.adStrip, hasLength(1));
       expect(feed.adStrip.first.id, '2');
       expect(feed.adStrip.first.imageUrl, '/images/myntra.webp');
       expect(feed.adStrip.first.linkUrl, isNull);
       expect(feed.adStrip.first.productCount, 0);
 
-      // Trending product (prefers `sellingPrice` over `mrp`).
       expect(feed.trending, hasLength(1));
       expect(feed.trending.first.name, 'Trendy Kurta');
       expect(feed.trending.first.imageUrl, '/images/kurta.webp');
 
-      // New arrivals → raw product rows.
       expect(feed.newInStock, hasLength(1));
       expect(feed.newInStock.first.name, 'Just Landed');
 
-      // Category pucks pulled from `categoryPucks`.
       expect(feed.categoryPucks, hasLength(1));
       expect(feed.categoryPucks.first.label, 'Fashion');
       expect(feed.categoryPucks.first.slug, 'fashion');
     });
 
     test('parses Prisma Decimal fields that arrive as JSON strings', () {
-      // Prisma serialises Decimal columns (mrp / sellingPrice /
-      // ratingAvg) as quoted strings. Earlier `as num` casts threw
-      // "type 'String' is not a subtype of type 'num'" on every product
-      // card. This locks in the fix.
       final feed = HomeFeedMapper.fromFeed({
         'heroBanners': [],
         'adStripBanners': [],
@@ -74,7 +63,7 @@ void main() {
     test('survives empty / broken arrays without throwing', () {
       final feed = HomeFeedMapper.fromFeed(const {
         'heroBanners': [],
-        'adStripBanners': null, // intentionally broken
+        'adStripBanners': null,
         'trending': [],
         'newArrivals': null,
         'categoryPucks': [],

@@ -63,8 +63,6 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
   List<Product> _searchResults = const [];
   bool _isSearching = false;
   bool _isSaving = false;
-  // Heuristic unsaved-changes guard. Watches the note controller and
-  // item adds — not exact.
   bool _dirty = false;
 
   void _markDirty() {
@@ -94,8 +92,6 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
   }
 
   void _onProductSearchChanged(String value) {
-    // Debounce — same pattern as OrdersInboxPage, so typing "sol" hits
-    // the backend once instead of once per keystroke.
     _searchDebounce?.cancel();
     _searchDebounce = Timer(AppDurations.searchDebounce, () {
       if (!mounted) return;
@@ -240,9 +236,6 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
           child: MediaQuery.removePadding(
             context: context,
             removeTop: true,
-            // Single scroll view so the hero scrolls away with the form instead
-            // of staying pinned. Hero is full-bleed (zero list padding); the
-            // form fields get their own lg padding via the inner Column.
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
@@ -448,10 +441,6 @@ class _CreateStockAdjustmentPageState extends State<CreateStockAdjustmentPage> {
   }
 }
 
-/// Reason → effect pill shown when the direction is fixed (Damaged / Expired /
-/// Shrinkage always remove; Opening balance always adds). Recount lets the user
-/// choose, so it shows the [SegmentedButton] instead. Makes the stock impact of
-/// the chosen reason explicit before the merchant posts.
 class _DirectionHint extends StatelessWidget {
   const _DirectionHint({required this.direction, required this.l10n});
 
@@ -528,8 +517,6 @@ class _ItemRowState extends State<_ItemRow> {
       q % 1 == 0 ? q.toInt().toString() : q.toStringAsFixed(2);
 
   void _step(double delta) {
-    // Quantity floor mirrors the field validation (must be > 0); stepping down
-    // from 1 stays at 1 rather than going to zero/negative.
     final raw = widget.item.quantity + delta;
     final next = raw < 1 ? 1.0 : raw;
     _qty.text = _format(next);
@@ -607,7 +594,6 @@ class _ItemRowState extends State<_ItemRow> {
   }
 }
 
-/// Square, hairline-bordered ± button used by the quantity stepper.
 class _StepButton extends StatelessWidget {
   const _StepButton({required this.icon, required this.onTap});
 

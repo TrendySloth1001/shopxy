@@ -4,7 +4,6 @@ import { authedFetch, extractError } from "@/server/auth/session";
 
 const bodySchema = z.object({ orderedIds: z.array(z.number().int()).min(1) });
 
-// PATCH /api/products/:id/images/reorder
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> },

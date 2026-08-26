@@ -4,14 +4,6 @@ import 'package:shopxy_customer/shared/constants/app_strings.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/widgets/app_bar.dart';
 
-/// Three static pages — About, Privacy, Terms — surfaced from the profile
-/// screen. The Privacy page carries the DPDP-mandated notice content (what we
-/// collect, retention schedule, children's data, cross-border posture, breach
-/// notification, Grievance Officer) to match the web app's /legal pages; Terms
-/// carries the consumer/intermediary terms + the same Grievance Officer block.
-/// Remaining placeholders are marked inline with [TO FILL: ...] for the items
-/// pending the company's formal appointment (named Grievance Officer, hosting
-/// provider) and the in-app self-service export/delete wiring.
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
 
@@ -130,11 +122,6 @@ class TermsOfServicePage extends StatelessWidget {
   }
 }
 
-/// Grievance Officer block — mandated for Indian intermediaries (IT Rules 2021)
-/// and the contact point for consumer / DPDP grievances. The named officer's
-/// identity, phone and postal address are pending the company's appointment —
-/// marked with [TO FILL: ...] for the legal team. The acknowledgement and
-/// resolution timelines are the committed SLAs.
 const _Section _grievanceSection = _Section(
   title: 'Grievance Officer',
   body:

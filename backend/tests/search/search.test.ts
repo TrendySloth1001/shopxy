@@ -47,8 +47,6 @@ describe('search — POST /search', () => {
       expect(ids).toContain(exact.id);
       expect(ids).not.toContain(other.id);
     } finally {
-      // Only clean rows this test created — bulk-delete would race
-      // with concurrent search tests running in parallel files.
       await prisma.searchEvent.deleteMany({ where: { userId: merchant.userId } });
       await cleanupTestUser(merchant);
     }
@@ -66,8 +64,6 @@ describe('search — POST /search', () => {
       const ids = res.body.results.map((r: { id: number }) => r.id);
       expect(ids).not.toContain(draft.id);
     } finally {
-      // Only clean rows this test created — bulk-delete would race
-      // with concurrent search tests running in parallel files.
       await prisma.searchEvent.deleteMany({ where: { userId: merchant.userId } });
       await cleanupTestUser(merchant);
     }
@@ -102,11 +98,6 @@ describe('search — POST /search', () => {
     }
   });
 
-  // Semantic + hybrid: with OLLAMA_KEY unset (the default in CI) the
-  // response should still come back successfully but the `semantic`
-  // flag must be `false`, signalling that the FTS-only path was
-  // taken. This is the "graceful degradation" guarantee every other
-  // call site relies on.
   it('falls back to FTS-only when OLLAMA_KEY is missing', async () => {
     const previous = process.env.OLLAMA_KEY;
     delete process.env.OLLAMA_KEY;
@@ -123,8 +114,6 @@ describe('search — POST /search', () => {
       expect(res.status).toBe(200);
       expect(res.body.semantic).toBe(false);
       expect(res.body.results.length).toBeGreaterThanOrEqual(1);
-      // Every result row from FTS path carries a `rank` but never
-      // a `semanticScore` — the absence is the contract.
       for (const r of res.body.results as Array<{ semanticScore?: number }>) {
         expect(r.semanticScore).toBeUndefined();
       }
@@ -157,8 +146,6 @@ describe('search — POST /search', () => {
       });
       expect(events.length).toBeGreaterThanOrEqual(2);
     } finally {
-      // Only clean rows this test created — bulk-delete would race
-      // with concurrent search tests running in parallel files.
       await prisma.searchEvent.deleteMany({ where: { userId: merchant.userId } });
       await cleanupTestUser(merchant);
     }
@@ -183,7 +170,6 @@ describe('search — autocomplete + hints', () => {
         name: tag,
         isPublished: true,
       });
-      // Seed a prior search term that should also surface in `terms`.
       await prisma.searchTerm.create({
         data: { term: tag.toLowerCase(), queryCount: 5 },
       });
@@ -196,8 +182,6 @@ describe('search — autocomplete + hints', () => {
         res.body.terms.find((t: { term: string }) => t.term === tag.toLowerCase()),
       ).toBeTruthy();
     } finally {
-      // Only clean rows this test created — bulk-delete would race
-      // with concurrent search tests running in parallel files.
       await prisma.searchEvent.deleteMany({ where: { userId: merchant.userId } });
       await cleanupTestUser(merchant);
     }
@@ -208,8 +192,6 @@ describe('search — autocomplete + hints', () => {
     const term = `topsaree-${Date.now()}`;
     try {
       await clearHintsCache();
-      // Use a very high queryCount so our term lands in the top 10
-      // regardless of whatever else other parallel tests inserted.
       await prisma.searchTerm.create({
         data: {
           term,

@@ -10,20 +10,13 @@ import { notificationsService } from '../notifications/notifications.service.js'
 
 export interface PostLineInput {
   productId: number;
-  /// Always positive. Direction is on the parent.
   quantity: number;
-  /// For IN: required (cost basis of arriving goods).
-  /// For OUT: ignored — FIFO determines cost.
   unitPrice?: number;
-  /// FK back to invoice_item / challan_item / adjustment_item.
   sourceLineId?: number;
   note?: string;
 }
 
 export interface PostInput {
-  /// Owning shop. Every ledger row carries it for cheap per-shop
-  /// stock-report queries — and so cross-tenant posts are physically
-  /// impossible: the shopId must match the products being mutated.
   shopId: number;
   direction: LedgerDirection;
   reasonCode: LedgerReasonCode;
@@ -33,14 +26,11 @@ export interface PostInput {
   createdById?: number;
   idempotencyKey?: string;
 
-  // Legacy / pass-through metadata (preserved on ledger rows)
   vendorId?: number;
   supplierName?: string;
   purchasePriceMode?: PurchasePriceMode;
   note?: string;
 
-  /// Snapshot of who's on the other side of this movement (vendor for
-  /// IN, customer/party for OUT). Survives deletion of the source record.
   counterpartyName?: string;
   counterpartyGstin?: string;
 }
@@ -72,7 +62,6 @@ export type PostError =
 const ROUND_COST = (v: number) => Math.round((v + Number.EPSILON) * 10000) / 10000;
 const ROUND_VALUE = (v: number) => Math.round((v + Number.EPSILON) * 100) / 100;
 
-/// Map a persisted stock_transactions row to the public PostedEntry shape.
 function mapEntry(e: {
   id: number;
   productId: number;
@@ -98,13 +87,6 @@ function mapEntry(e: {
 }
 
 export class LedgerService {
-  /// Post a ledger entry (one row per line). Wraps everything in a
-  /// serializable transaction and locks each product row before touching
-  /// stock. Returns either { entries } or { error, … }.
-  ///
-  /// Accepts an optional `tx` so callers that are already inside a
-  /// `$transaction` can post atomically with their parent work (e.g.
-  /// invoice creation + ledger post must succeed or fail together).
   async post(
     input: PostInput,
     tx?: Prisma.TransactionClient,
@@ -115,8 +97,6 @@ export class LedgerService {
 
     const db: Prisma.TransactionClient | typeof prisma = tx ?? prisma;
 
-    // Idempotency: if the same key has been posted before, return the
-    // already-posted entries instead of duplicating.
     if (input.idempotencyKey) {
       const existing = await db.stockTransaction.findMany({
         where: { idempotencyKey: input.idempotencyKey },
@@ -140,8 +120,6 @@ export class LedgerService {
 
     const runPosting = async (txClient: Prisma.TransactionClient): Promise<PostResult> => {
       const entries: PostedEntry[] = [];
-      // Sequential — locks must be acquired in deterministic order to
-      // avoid deadlocks when posting multi-line documents.
       const sortedLines = [...input.lines].sort((a, b) => a.productId - b.productId);
 
       for (const line of sortedLines) {
@@ -150,9 +128,6 @@ export class LedgerService {
           if ('error' in posted) throw posted;
           entries.push(posted);
         } catch (err) {
-          // Idempotency unique-violation: another concurrent post won
-          // the race. Fall back to returning the existing rows for this
-          // idempotency key.
           if (
             input.idempotencyKey &&
             err && typeof err === 'object' && 'code' in err &&
@@ -185,8 +160,6 @@ export class LedgerService {
 
     try {
       const result = tx ? await runPosting(tx) : await prisma.$transaction(runPosting);
-      // Best-effort bell alert — never let a notification hiccup fail a stock
-      // post; the money/stock write above already succeeded.
       void this.notifyLowStock(input.shopId, result.entries).catch(() => {});
       return result;
     } catch (err) {
@@ -195,11 +168,6 @@ export class LedgerService {
     }
   }
 
-  /// Fires a "low stock" bell alert for each OUT line whose stockAfter just
-  /// crossed BELOW the product's lowStockThreshold (was above it before this
-  /// post). Only the crossing itself notifies — every further sale while
-  /// already-low stays silent, so the merchant isn't spammed on every unit
-  /// sold. Restocking above the threshold re-arms it for the next crossing.
   private async notifyLowStock(shopId: number, entries: PostedEntry[]): Promise<void> {
     const outEntries = entries.filter((e) => e.direction === 'OUT');
     if (outEntries.length === 0) return;
@@ -236,9 +204,6 @@ export class LedgerService {
     }
   }
 
-  /// Reverse a previously-posted entry. Restores cost-layer state for
-  /// OUT reversals and refuses IN reversals if the layer has been
-  /// (partially) consumed.
   async reverse(
     originalEntryId: number,
     opts: {
@@ -271,7 +236,6 @@ export class LedgerService {
         const stockBefore = Number(product.stockQuantity);
 
         if (reverseDirection === 'IN') {
-          // Reversing an OUT — restore qty to the layers we consumed.
           for (const c of original.costConsumptions) {
             await tx.costLayer.update({
               where: { id: c.layerId },
@@ -279,13 +243,11 @@ export class LedgerService {
             });
           }
         } else {
-          // Reversing an IN — the layer it created must be untouched.
           if (original.costLayer) {
             const layer = original.costLayer;
             if (Number(layer.qtyRemaining) < Number(layer.qtyReceived)) {
               throw { error: 'Reversal not allowed: layer already consumed' as const, layerId: layer.id };
             }
-            // Drop the layer entirely.
             await tx.costLayer.delete({ where: { id: layer.id } });
           }
         }
@@ -302,8 +264,6 @@ export class LedgerService {
 
         const reversal = await tx.stockTransaction.create({
           data: {
-            // Reversal inherits the original row's shopId — guarantees
-            // a cross-tenant reverse cannot land in the wrong ledger.
             shopId: original.shopId,
             productId: original.productId,
             direction: reverseDirection,
@@ -357,32 +317,10 @@ export class LedgerService {
     }
   }
 
-  /// PR-H1 — restock a customer return at the ORIGINAL sale's cost basis,
-  /// restoring `qtyRemaining` on the layers the sale consumed instead of
-  /// minting a fresh averaged layer. `ledgerService.post(direction:'IN')`
-  /// always `costLayer.create(...)`, so restocking a return through it
-  /// appends a brand-new layer at whatever `unitPrice` was passed and
-  /// recomputes the moving-average `purchasePrice` — the goods came out of
-  /// older layers, so after every sale+return round-trip FIFO COGS and the
-  /// moving-average drift from reality. This method mirrors the OUT-reversal
-  /// branch of `reverse()` but supports PARTIAL returns: for each line it
-  /// walks the matching SALE STOCK_OUT's `costConsumptions` newest-first
-  /// (the last-depleted layer is restored first) and increments
-  /// `qtyRemaining` up to the returned quantity, posting a RETURN_IN row at
-  /// the weighted-average cost of exactly those restored consumptions — and
-  /// it creates NO new cost layer. `product.purchasePrice` is then
-  /// recomputed as the weighted average of the product's remaining layers,
-  /// so on-hand value is restored rather than inflated.
-  ///
-  /// Falls back to a plain averaged restock (legacy `post`) only for lines
-  /// whose original consumptions can't be located (legacy data with no FIFO
-  /// history) — callers handle that by passing such lines to `post`.
   async restockReturnAtCost(
     input: {
       shopId: number;
-      /// The original SALE invoice whose STOCK_OUT consumptions we restore.
       originalInvoiceId: number;
-      /// Source document for the RETURN_IN rows (the credit note invoice).
       sourceType: LedgerSourceType;
       sourceId: number;
       idempotencyKey?: string;
@@ -397,7 +335,6 @@ export class LedgerService {
     if (input.lines.length === 0) return { entries: [] };
     const db: Prisma.TransactionClient | typeof prisma = tx ?? prisma;
 
-    // Idempotency: same-key replays return the already-posted rows.
     if (input.idempotencyKey) {
       const existing = await db.stockTransaction.findMany({
         where: { idempotencyKey: input.idempotencyKey },
@@ -417,10 +354,6 @@ export class LedgerService {
         const qty = line.quantity;
         if (!(qty > 0)) continue;
 
-        // Locate the original SALE STOCK_OUT for this product, with its
-        // cost consumptions. Newest STOCK_OUT first so a re-sold-then-
-        // returned line maps to the most recent sale of that product on
-        // this invoice. (An invoice carries at most one line per product.)
         const saleOut = await t.stockTransaction.findFirst({
           where: {
             shopId: input.shopId,
@@ -436,16 +369,11 @@ export class LedgerService {
           orderBy: { id: 'desc' },
         });
         if (!saleOut || saleOut.costConsumptions.length === 0) {
-          // Legacy sale with no FIFO history — signal the caller to fall
-          // back to an averaged restock for this product.
           return { error: 'No original consumption', productId: line.productId };
         }
 
-        // Walk consumptions newest-first, restoring up to `qty` units. The
-        // returned quantity may be a fraction of the original sale, so we
-        // cap the total restored at `qty` and may touch only some layers.
         let remaining = qty;
-        let restoredValue = 0; // Σ restored_qty × layer_unitCost (cost basis)
+        let restoredValue = 0;
         for (const c of saleOut.costConsumptions) {
           if (remaining <= 0) break;
           const consumed = Number(c.qtyConsumed);
@@ -468,10 +396,6 @@ export class LedgerService {
         const unitCost = ROUND_COST(restoredValue / restoredQty);
         const totalValue = ROUND_VALUE(restoredValue);
 
-        // Recompute moving-average purchasePrice from the product's layers
-        // AFTER restoration: weighted average of every layer's remaining
-        // value over remaining qty. This undoes the sale's averaging drift
-        // rather than blending in a fresh layer.
         const layerAgg = await t.costLayer.aggregate({
           where: { productId: line.productId, qtyRemaining: { gt: 0 } },
           _sum: { qtyRemaining: true },
@@ -506,8 +430,6 @@ export class LedgerService {
             stockAfter,
             type: 'STOCK_IN',
             unitPrice: unitCost,
-            // Restocking a return restores the layers the sale depleted;
-            // it does NOT create a new layer (no costLayer.create here).
             purchasePriceBefore: ROUND_VALUE(Number(product.purchasePrice)),
             purchasePriceAfter,
             counterpartyName: input.counterpartyName,
@@ -563,10 +485,6 @@ export class LedgerService {
     }
   }
 
-  // ─────────────────────────────────────────────────────────────────
-  // Internals
-  // ─────────────────────────────────────────────────────────────────
-
   private async postLine(
     tx: Prisma.TransactionClient,
     parent: PostInput,
@@ -575,10 +493,6 @@ export class LedgerService {
     const product = await this.lockProduct(tx, line.productId, parent.shopId);
     if (!product) return { error: 'Product not found', productId: line.productId };
 
-    // Inactive products can only receive OPENING/RECOUNT writes from the
-    // reconciliation path — anything else (sales, purchases, damage, etc.)
-    // should be impossible because the product was archived. RECOUNT is
-    // allowed both ways so admins can correct counts before re-activating.
     if (
       !product.isActive &&
       parent.reasonCode !== 'OPENING' &&
@@ -617,7 +531,6 @@ export class LedgerService {
         incomingUnitPrice: unitCost,
       });
     } else {
-      // OUT — consume layers FIFO.
       stockAfter = stockBefore - qty;
     }
 
@@ -698,11 +611,6 @@ export class LedgerService {
     };
   }
 
-  /// Locks the product row using SELECT … FOR UPDATE so concurrent
-  /// postings serialize. Returns null if the product doesn't exist OR
-  /// doesn't belong to the requesting shop — that null bubbles back as
-  /// a "Product not found" error to the caller, which is the right
-  /// 404-shaped response for a cross-tenant attempt.
   private async lockProduct(
     tx: Prisma.TransactionClient,
     productId: number,
@@ -728,10 +636,6 @@ export class LedgerService {
     };
   }
 
-  /// Consume `qty` from the oldest cost layers that still have qtyRemaining.
-  /// Inserts one cost_consumption row per layer touched, decrements layer
-  /// qtyRemaining, and returns the weighted-average unit cost and total
-  /// value of the consumption for ledger snapshotting.
   private async consumeFifoLayers(
     tx: Prisma.TransactionClient,
     productId: number,
@@ -747,7 +651,7 @@ export class LedgerService {
         where: { productId, qtyRemaining: { gt: 0 } },
         orderBy: { createdAt: 'asc' },
       });
-      if (!layer) break; // out of layers — stock-out exceeds FIFO history (legacy data)
+      if (!layer) break;
 
       const take = Math.min(Number(layer.qtyRemaining), remaining);
       const layerCost = Number(layer.unitCost);
@@ -766,7 +670,6 @@ export class LedgerService {
     }
 
     if (!touchedAnyLayer) {
-      // No layers existed for this product (legacy migration gap).
       return { weightedAvgCost: null, totalValue: null };
     }
 
@@ -777,8 +680,6 @@ export class LedgerService {
     };
   }
 
-  /// Replicates the legacy stock service price-mode logic so manual
-  /// stock-in flows behave identically.
   private computeNextPurchasePrice(args: {
     mode: PurchasePriceMode;
     currentPurchasePrice: number;
@@ -796,15 +697,6 @@ export class LedgerService {
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────
-  // Read APIs
-  // ─────────────────────────────────────────────────────────────────
-
-  // PR-L1 — shop-scoped: every read of a product's stock ledger MUST pass the
-  // caller's shopId so it can only ever see its own tenant's movements/costs.
-  // The (shopId, productId, createdAt) composite index keeps this an index
-  // range scan. Don't drop the shopId param even if a caller "knows" the
-  // product is theirs — defence in depth against a cross-tenant productId.
   async listForProduct(
     shopId: number,
     productId: number,

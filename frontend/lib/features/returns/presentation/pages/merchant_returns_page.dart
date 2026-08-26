@@ -19,11 +19,6 @@ import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// Merchant returns inbox. Tabs filter by status; each row is tappable
-/// → `MerchantReturnDetailPage`. The inbox doesn't paginate beyond the
-/// first page yet — return volume is order-of-magnitude lower than
-/// orders, so we keep it simple and revisit if a merchant ever fills
-/// the first page.
 class MerchantReturnsPage extends StatefulWidget {
   const MerchantReturnsPage({super.key});
 
@@ -41,8 +36,6 @@ class _MerchantReturnsPageState extends State<MerchantReturnsPage> {
   ];
   int _index = 0;
 
-  /// Fill colour for a selected status pill, matching the tone the same
-  /// status carries on a return row. "All" stays neutral.
   Color? _tabAccent(String? status) {
     switch (status) {
       case 'REQUESTED':
@@ -129,8 +122,6 @@ class _MerchantReturnsPageState extends State<MerchantReturnsPage> {
         child: Column(
           children: [
             SizedBox(height: FloatingAppBar.contentTopInset(context)),
-            // Was a raw Material ChoiceChip, which ignores the app theme —
-            // same strip the other list screens use now.
             AppFilterStrip(
               children: [
                 for (int i = 0; i < _tabs.length; i++)
@@ -311,10 +302,6 @@ class _ReturnRow extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton loading state
-// ---------------------------------------------------------------------------
-
 class _SkeletonRow extends StatelessWidget {
   const _SkeletonRow();
 
@@ -334,7 +321,6 @@ class _SkeletonRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Title row: text (80%) + status badge placeholder
               Row(
                 children: [
                   const Expanded(
@@ -349,10 +335,8 @@ class _SkeletonRow extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: AppSizes.xs),
-              // Metadata line (60%)
               const AppShimmerLine(widthFactor: 0.6, height: 12),
               const SizedBox(height: AppSizes.sm),
-              // Product names line (70%)
               const AppShimmerLine(widthFactor: 0.7, height: 13),
             ],
           ),

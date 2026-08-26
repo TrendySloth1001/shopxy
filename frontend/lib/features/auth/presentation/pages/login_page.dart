@@ -23,10 +23,6 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  // TODO SECURITY (SCRN-1): auth surface (credentials entered here). Enable
-  // screenshot/recents-thumbnail protection (Android FLAG_SECURE / iOS
-  // app-switcher blur) on entry and disable on exit. No cross-platform
-  // package is a dependency yet — needs a package decision before wiring.
   final _formKey = GlobalKey<FormState>();
   final _email = TextEditingController();
   final _password = TextEditingController();
@@ -82,12 +78,8 @@ class _LoginPageState extends State<LoginPage> {
     });
     try {
       final idToken = await GoogleAuth.signInIdToken();
-      // User cancelled the Google flow — not an error, just stop quietly.
       if (idToken == null) return;
       if (!mounted) return;
-      // The root auth gate (app.dart) routes to the recovery-PIN setup
-      // screen on its own once `needsRecoveryPinSetup` is true; no manual
-      // navigation needed here.
       await context.read<AuthProvider>().loginWithGoogle(idToken);
     } catch (e) {
       if (mounted) setState(() => _error = friendlyError(e));
@@ -108,7 +100,6 @@ class _LoginPageState extends State<LoginPage> {
         footerCta: l10n.authCreateAccountCta,
         onFooterTap: _goToRegister,
         children: [
-          // The two password-less ways in, stacked as a pair above the form.
           const RememberedAccountsButton(),
           if (GoogleAuth.isConfigured) GoogleButton(onTap: _continueWithGoogle),
           const SizedBox(height: AppSizes.lg),
@@ -174,9 +165,6 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-/// The pre-sign-in legal copy that mirrors merchant-web: a Terms / Privacy
-/// acknowledgement, a contact-support line, and a compliance link. Stateful so
-/// the inline-link tap recognizers are disposed properly.
 class _LegalFooter extends StatefulWidget {
   const _LegalFooter();
 

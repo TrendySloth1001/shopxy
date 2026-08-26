@@ -10,9 +10,6 @@ import {
   setSessionCookies,
 } from "@/server/auth/session";
 
-// POST /api/auth/login — validate, proxy to the backend, gate on role, and on
-// success persist the token pair as httpOnly cookies. Returns the safe user
-// (no tokens ever cross to the browser).
 export async function POST(req: Request) {
   const json = await req.json().catch(() => null);
   const parsed = loginSchema.safeParse(json);
@@ -42,7 +39,6 @@ export async function POST(req: Request) {
     );
   }
 
-  // Gate on role BEFORE persisting any session.
   if (result.data.user.role !== ALLOWED_ROLE) {
     return NextResponse.json({ error: ROLE_REJECTED_MESSAGE }, { status: 403 });
   }

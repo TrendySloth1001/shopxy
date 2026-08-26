@@ -2,13 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 
-/// The one app bar. Material's [AppBar] with our defaults locked in:
-/// canvas background (no surface step), 1px hairline divider at the
-/// bottom, ink-black title, no shadow.
-///
-/// Pages should use this everywhere instead of constructing
-/// [AppBar] from scratch — keeps the title weight, height, and
-/// chrome consistent across the app.
 class AppAppBar extends StatelessWidget implements PreferredSizeWidget {
   const AppAppBar({
     super.key,
@@ -22,9 +15,6 @@ class AppAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.automaticallyImplyLeading = true,
   });
 
-  /// Convenience for nested pages — adds a back button automatically
-  /// (Flutter's default behaviour, but kept explicit so callers can
-  /// see at a glance which app bars expect a back stack).
   const AppAppBar.subpage({
     super.key,
     required this.title,
@@ -44,8 +34,6 @@ class AppAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Color? backgroundColor;
   final PreferredSizeWidget? bottom;
 
-  /// Forwarded to [AppBar]. Set false for embedded shell pages (e.g.
-  /// the Cart tab) where there's no route to pop back to.
   final bool automaticallyImplyLeading;
 
   @override

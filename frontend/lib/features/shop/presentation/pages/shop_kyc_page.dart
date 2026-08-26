@@ -8,14 +8,6 @@ import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// KYC scaffold — UI shell only. Lists the documents the verification flow will
-/// collect; each row shows its status (always "Not uploaded" until the backend
-/// ships) and a disabled Upload affordance. Editorial layout: a flat intro and
-/// hairline-divided rows, no cards — matching Shop operations and Payouts.
-///
-/// Note: the identity/bank verification that actually enables payouts happens in
-/// the Payouts onboarding (Razorpay Route). This page is the future
-/// document-upload surface for the verified-seller badge.
 class ShopKycPage extends StatelessWidget {
   const ShopKycPage({super.key});
 
@@ -61,7 +53,6 @@ class ShopKycPage extends StatelessWidget {
           bottom: AppSizes.huge,
         ),
         children: [
-          // Flat intro — no card.
           Padding(
             padding: const EdgeInsets.fromLTRB(
               AppSizes.lg,

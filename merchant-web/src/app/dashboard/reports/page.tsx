@@ -72,8 +72,6 @@ function ReportsContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // One ISO range, shared by the report fetch and the P&L sold-items table, so
-  // they stay in lockstep and the table only refetches when the range changes.
   const range = useMemo<Range>(
     () => ({ from: dateInputToIso(from), to: dateInputToIso(to, true) }),
     [from, to],
@@ -82,8 +80,6 @@ function ReportsContent() {
   useEffect(() => {
     let active = true;
     void (async () => {
-      // The calculator tab is a live tool, not a date-range report — skip the
-      // fetch entirely.
       if (kind === "calculator") {
         setReport(null);
         setError(null);
@@ -129,7 +125,6 @@ function ReportsContent() {
         subtitle={t("subtitle")}
       />
 
-      {/* Tabs */}
       <div className="mt-xl flex flex-wrap items-center gap-sm">
         {TABS.map((tab) => (
           <button
@@ -145,7 +140,6 @@ function ReportsContent() {
         ))}
       </div>
 
-      {/* Range — not relevant to the calculator tool */}
       {kind !== "calculator" ? (
         <div className="mt-md flex flex-wrap items-end gap-md">
           <DateField label={t("range.from")} value={from} max={to} onChange={setFrom} />
@@ -184,8 +178,6 @@ function ReportsContent() {
   );
 }
 
-/* ---------- controls ---------- */
-
 function DateField({
   label,
   value,
@@ -213,8 +205,6 @@ function PresetChip({ label, onClick }: { label: string; onClick: () => void }) 
     </button>
   );
 }
-
-/* ---------- shared presentation ---------- */
 
 function BigStat({ label, value, hint, tone }: { label: string; value: string; hint?: string; tone?: "ink" | "success" | "error" }) {
   const color = tone === "success" ? "text-success" : tone === "error" ? "text-error" : "text-ink";
@@ -255,7 +245,6 @@ function labelDay(iso?: string): string {
   return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
 
-/** Trailing simple moving average (smooths the daily noise). */
 function movingAverage(values: number[], window = 7): number[] {
   return values.map((_, i) => {
     const slice = values.slice(Math.max(0, i - window + 1), i + 1);
@@ -263,11 +252,6 @@ function movingAverage(values: number[], window = 7): number[] {
   });
 }
 
-/**
- * Daily trend line with a 7-day moving-average overlay and a run-rate line.
- * The projection is a naive "at this pace" estimate, not a forecast — labelled
- * as such so it isn't read as a promise.
- */
 function TrendChart({ points }: { points: { day: string; amount: number }[] }) {
   const t = useTranslations("reports");
   if (points.length === 0) return <EmptyHint>{t("trend.noActivity")}</EmptyHint>;
@@ -310,12 +294,6 @@ function EmptyHint({ children }: { children: React.ReactNode }) {
   return <p className="py-lg text-center text-body-sm text-subtle">{children}</p>;
 }
 
-/**
- * One row of the P&L "proof" statement. `kind`:
- *   - line     — a contributing input (with a muted `basis` note explaining it)
- *   - subtotal — a hairline-topped running figure (Revenue, COGS, Gross profit)
- *   - total    — the final Net profit (heavier, hairline-topped)
- */
 function StatementRow({
   label,
   basis,
@@ -352,8 +330,6 @@ function StatementRow({
     </tr>
   );
 }
-
-/* ---------- views ---------- */
 
 function SalesView({ r }: { r: SalesReport }) {
   const t = useTranslations("reports");
@@ -442,7 +418,6 @@ function GstView({ r }: { r: GstReport }) {
   const hasGst = r.outputTax !== 0 || r.inputTax !== 0;
   return (
     <div className="flex flex-col gap-xxl">
-      {/* Headline — three stats fill the width */}
       <div className="grid grid-cols-1 gap-xl sm:grid-cols-3">
         <BigStat label={t("gst.outputGst")} value={formatINR(r.outputTax)} hint={t("gst.collectedOnSales")} />
         <BigStat label={t("gst.inputGst")} value={formatINR(r.inputTax)} hint={t("gst.paidOnPurchases")} />
@@ -454,8 +429,6 @@ function GstView({ r }: { r: GstReport }) {
         />
       </div>
 
-      {/* Head-wise split — the GSTR-3B view: each head set off against its own
-          input credit. */}
       {head && hasGst ? (
         <section className="max-w-content">
           <SectionHeading>{t("gst.netByHead")}</SectionHeading>
@@ -496,13 +469,11 @@ function GstView({ r }: { r: GstReport }) {
         </section>
       ) : null}
 
-      {/* By rate — two columns fill the width */}
       <div className="grid grid-cols-1 gap-xxl lg:grid-cols-2">
         <RateBreakdown title={t("gst.outputByRate")} rows={r.outputByRate} empty={t("gst.noOutput")} />
         <RateBreakdown title={t("gst.inputByRate")} rows={r.inputByRate} empty={t("gst.noInput")} />
       </div>
 
-      {/* Cess — only when there is any (separate ledger, not GST-creditable) */}
       {hasCess ? (
         <section className="max-w-form">
           <SectionHeading>{t("gst.cess")}</SectionHeading>
@@ -513,7 +484,6 @@ function GstView({ r }: { r: GstReport }) {
         </section>
       ) : null}
 
-      {/* Returns note */}
       {returnedGst > 0 ? (
         <p className="text-body-sm text-subtle">
           {t("gst.returnsNote", { amount: formatINR(returnedGst) })}
@@ -523,8 +493,6 @@ function GstView({ r }: { r: GstReport }) {
   );
 }
 
-/** One IGST/CGST/SGST head row in the GST head-wise split. Responsive like the
- *  products table: aligned columns on sm+, stacked with inline labels on phones. */
 function HeadRow({ label, sub, o, i, n }: { label: string; sub: string; o: number; i: number; n: number }) {
   return (
     <div className="flex flex-col gap-xs border-b border-hairline px-md py-sm last:border-b-0 sm:flex-row sm:items-center sm:gap-md">
@@ -550,8 +518,6 @@ function HeadRow({ label, sub, o, i, n }: { label: string; sub: string; o: numbe
   );
 }
 
-/** GST-by-rate breakdown — a clean Rate · Taxable · GST table with a total row,
- *  replacing the old single sparse line so the columns actually line up. */
 function RateBreakdown({
   title,
   rows,
@@ -615,9 +581,6 @@ function RateBreakdown({
 
 function PnlView({ r, range }: { r: PnlReport; range: Range }) {
   const t = useTranslations("reports");
-  // The headline figures are already netted (revenue net of returns, COGS net
-  // of restocked returns). Add the netted-out parts back to show the gross
-  // inputs each line is built from — that's the "proof" the table makes visible.
   const refunds = r.refunds ?? 0;
   const returnedCogs = r.returnedCogs ?? 0;
   const grossSales = r.revenue + refunds;
@@ -625,7 +588,6 @@ function PnlView({ r, range }: { r: PnlReport; range: Range }) {
   const marginPct = (r.grossMargin * 100).toFixed(1);
   return (
     <div className="grid grid-cols-1 gap-xxxl lg:grid-cols-2 lg:gap-huge">
-      {/* Left — the P&L statement and its proof. */}
       <div className="flex flex-col gap-xxl">
       <BigStat
         label={t("pnl.netProfit")}
@@ -641,7 +603,6 @@ function PnlView({ r, range }: { r: PnlReport; range: Range }) {
         <TotalRow label={t("pnl.netProfit")} value={formatINR(r.netProfit)} strong big />
       </section>
 
-      {/* Proof: every headline figure traced back to the documents it sums. */}
       <section className="max-w-content">
         <SectionHeading>{t("pnl.howCalculated")}</SectionHeading>
         <table className="w-full border-collapse">
@@ -700,21 +661,11 @@ function PnlView({ r, range }: { r: PnlReport; range: Range }) {
       </section>
       </div>
 
-      {/* Right — products sold in this range (one row per product); expand a
-          row for its full sale timeline. */}
       <SoldProductsTable range={range} />
     </div>
   );
 }
 
-/**
- * Right-hand feed on the P&L view: an aggregated, spreadsheet-style table with
- * ONE row per product over the range (its number of sales, total qty, total
- * revenue). The list is bounded by the number of distinct products, not the raw
- * sale-line count, so it stays light even for a high-volume period. Expanding a
- * row lazily loads that product's full sale timeline a page at a time. Searches
- * server-side; horizontally scrollable on narrow screens.
- */
 const SOLD_PAGE_SIZE = 25;
 const TIMELINE_PAGE_SIZE = 15;
 const SEARCH_DEBOUNCE_MS = 220;
@@ -722,7 +673,7 @@ const SEARCH_DEBOUNCE_MS = 220;
 function SoldProductsTable({ range }: { range: Range }) {
   const t = useTranslations("reports");
   const [query, setQuery] = useState("");
-  const [search, setSearch] = useState(""); // debounced value actually queried
+  const [search, setSearch] = useState("");
   const [products, setProducts] = useState<SoldProduct[]>([]);
   const [total, setTotal] = useState(0);
   const [totals, setTotals] = useState({ salesCount: 0, totalQuantity: 0, totalAmount: 0 });
@@ -732,13 +683,11 @@ function SoldProductsTable({ range }: { range: Range }) {
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  // Debounce the search box so a request isn't fired on every keystroke.
   useEffect(() => {
     const id = setTimeout(() => setSearch(query), SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(id);
   }, [query]);
 
-  // Reset and pull the first page whenever the range or the search changes.
   useEffect(() => {
     let active = true;
     void (async () => {
@@ -797,8 +746,6 @@ function SoldProductsTable({ range }: { range: Range }) {
         ) : null}
       </div>
 
-      {/* Search — filters server-side across the whole range, not just the
-          loaded page. */}
       <div className="relative mb-md">
         <Search
           size={16}
@@ -837,8 +784,6 @@ function SoldProductsTable({ range }: { range: Range }) {
       ) : (
         <>
           <div className="overflow-hidden rounded-md border border-hairline">
-            {/* Column header — only on sm+, where the columns line up. On mobile
-                each row reflows into a card so the labels would be noise. */}
             <div className="hidden bg-surface-tint px-md py-sm sm:flex sm:items-center sm:gap-md">
               <span className="flex-1 text-label-md uppercase tracking-wide text-muted">
                 {t("soldProducts.productCol")}
@@ -864,7 +809,6 @@ function SoldProductsTable({ range }: { range: Range }) {
                 }
               />
             ))}
-            {/* Grand-total footer — reflows the same way as the rows. */}
             <div className="flex flex-col gap-xs border-t border-hairline bg-surface-tint px-md py-sm sm:flex-row sm:items-center sm:gap-md">
               <span className="text-label-md uppercase tracking-wide text-muted sm:flex-1">
                 {t("soldProducts.total")}
@@ -902,13 +846,6 @@ function SoldProductsTable({ range }: { range: Range }) {
   );
 }
 
-/**
- * One aggregated product row + its lazily-loaded sale timeline when expanded.
- * Responsive without a table: on sm+ it's an aligned row (product grows, the
- * three metrics are fixed-width columns via `sm:contents`); on phones it stacks
- * — the product name gets its own full-width line so it's always legible, with
- * the metrics on a second line below.
- */
 function ProductRow({
   product,
   range,
@@ -933,7 +870,6 @@ function ProductRow({
           expanded ? "bg-surface-tint" : ""
         }`}
       >
-        {/* Product — full width on mobile so the name is always readable */}
         <div className="flex min-w-0 items-center gap-sm sm:flex-1">
           <ChevronRight
             size={16}
@@ -952,9 +888,6 @@ function ProductRow({
           </div>
         </div>
 
-        {/* Metrics — a second line on mobile; aligned columns on sm+. The
-            `sm:contents` wrappers collapse on desktop so each chip sits in its
-            own fixed-width column lined up with the header. */}
         <div className="flex items-center justify-between gap-sm pl-7 sm:contents sm:pl-0">
           <span className="flex shrink-0 items-center sm:w-20 sm:justify-end">
             <span
@@ -981,9 +914,6 @@ function ProductRow({
   );
 }
 
-/** The drill-down: a single product's individual sales, newest first, loaded a
- *  page at a time only once the row is expanded. Rendered as a light timeline
- *  (not a nested grid) with a sticky product total at the bottom. */
 function ProductTimeline({ range, product }: { range: Range; product: SoldProduct }) {
   const t = useTranslations("reports");
   const productId = product.productId;
@@ -1053,8 +983,6 @@ function ProductTimeline({ range, product }: { range: Range; product: SoldProduc
               <div className="flex items-center gap-sm rounded-md px-sm py-xs transition-colors hover:bg-surface-tint">
                 <Clock size={14} className={`shrink-0 ${recencyColor(ev.soldAt)}`} />
                 <span className="shrink-0 text-body-sm text-ink">{formatDateTime(ev.soldAt)}</span>
-                {/* invoice no fills the gap on sm+; hidden on phones to keep the
-                    row from overflowing */}
                 <span className="hidden min-w-0 flex-1 truncate text-body-sm text-subtle sm:block">
                   {ev.invoiceNo ?? ""}
                 </span>
@@ -1111,8 +1039,6 @@ function ProductTimeline({ range, product }: { range: Range; product: SoldProduc
   );
 }
 
-/** Per-product icon tint — same product always gets the same colour, so a
- *  repeated item is easy to spot while scanning the feed. */
 const SOLD_TONES = [
   "bg-accent-teal-soft text-accent-teal",
   "bg-accent-indigo-soft text-accent-indigo",
@@ -1127,30 +1053,25 @@ function toneFor(key: string): string {
   return SOLD_TONES[h % SOLD_TONES.length];
 }
 
-/** Qty chip colour by volume: bigger sale → warmer/stronger fill. */
 function qtyTone(q: number): string {
   if (q >= 5) return "bg-brand-soft text-brand-strong";
   if (q >= 2) return "bg-info-soft text-info";
   return "bg-surface-tint text-muted";
 }
 
-/** Sales-count chip colour: more repeat sales → stronger fill. */
 function countTone(c: number): string {
   if (c >= 10) return "bg-brand-soft text-brand-strong";
   if (c >= 3) return "bg-info-soft text-info";
   return "bg-surface-tint text-muted";
 }
 
-/** Whole number when integral, else 2dp. */
 function fmtQty(q: number): string {
   return Number.isInteger(q) ? String(q) : q.toFixed(2);
 }
 
-/** Clock colour by recency: today → green, this week → blue, older → muted. */
 function recencyColor(iso: string): string {
   const days = (Date.now() - new Date(iso).getTime()) / 86_400_000;
   if (days < 1) return "text-success";
   if (days < 7) return "text-info";
   return "text-subtle";
 }
-

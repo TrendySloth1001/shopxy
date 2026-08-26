@@ -7,10 +7,6 @@ interface Props {
   offers: ProductOffer[];
 }
 
-/**
- * Merchant-entered offers. Legacy `kind: "BANK"` rows are filtered out —
- * bank offers were removed from the platform.
- */
 export function PdpOffersStrip({ offers }: Props) {
   const allOffers = offers.filter((o) => o.kind !== "COUPON" && o.kind !== "BANK");
 

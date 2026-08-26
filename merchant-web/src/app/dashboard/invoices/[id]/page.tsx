@@ -74,7 +74,6 @@ export default function InvoiceDetailPage() {
         setInvoice(inv);
         setPayments(pays);
         setError(null);
-        // One-shot confirm-failure message handed over by the editor.
         try {
           const key = `invoice-confirm-error-${id}`;
           const pendingMsg = sessionStorage.getItem(key);
@@ -83,7 +82,6 @@ export default function InvoiceDetailPage() {
             setActionError(pendingMsg);
           }
         } catch {
-          /* storage unavailable — nothing to surface */
         }
       } catch (e) {
         if (active) setError(e instanceof Error ? e.message : t("detail.loadError"));
@@ -110,18 +108,11 @@ export default function InvoiceDetailPage() {
     }
   }
 
-  // Was onDelete. The backend could never honour a delete — a draft already
-  // owns its legal serial and Rule 46(b) needs the run consecutive — so this
-  // button only ever produced an error. Archiving does what was wanted: the
-  // document leaves the list, its number stays allocated.
   async function onSetArchived(archived: boolean) {
     setBusy(true);
     setActionError(null);
     try {
       await setInvoiceArchived(id, archived);
-      // Either way the document has left the list this page was opened from,
-      // so both land on the invoice list — where a restored document now
-      // reappears, and an archived one has gone.
       router.push(BACK);
       router.refresh();
     } catch (e) {
@@ -170,7 +161,6 @@ export default function InvoiceDetailPage() {
     <div className="w-full px-lg py-xxl pb-massive md:px-xxl">
       <BackLink href={BACK} label={t("detail.back")} />
 
-      {/* Header */}
       <div className="mt-md flex flex-wrap items-start justify-between gap-md">
         <div className="flex min-w-0 items-start gap-md">
           <span
@@ -240,8 +230,6 @@ export default function InvoiceDetailPage() {
             </button>
           ) : null}
           {invoice.archivedAt ? (
-            // Restoring needs no confirmation — it only puts the document back
-            // where it was. Archiving does, hence the modal below.
             <button
               type="button"
               onClick={() => void onSetArchived(false)}
@@ -268,17 +256,14 @@ export default function InvoiceDetailPage() {
         <p className="mt-md rounded-md bg-error-soft px-md py-sm text-body-sm text-error">{actionError}</p>
       ) : null}
 
-      {/* Counterparty */}
       <CounterpartyBlock invoice={invoice} sale={sale} />
 
-      {/* Items */}
       <Divider className="my-xl" />
       <h2 className="mb-sm text-label-md uppercase tracking-wide text-subtle">{t("detail.items")}</h2>
       {invoice.items.map((it, i) => (
         <ItemRow key={it.id ?? i} item={it} />
       ))}
 
-      {/* Totals */}
       <div className="mt-xl ml-auto w-full max-w-form border-t border-hairline pt-md">
         <TotalRow label={t("totals.subtotal")} value={invoice.subtotal} />
         {invoice.discount > 0 ? <TotalRow label={t("totals.discount")} value={-invoice.discount} /> : null}
@@ -320,7 +305,6 @@ export default function InvoiceDetailPage() {
         <p className="mt-md text-body-sm italic text-muted">{invoice.amountInWords}</p>
       ) : null}
 
-      {/* Payments */}
       {isConfirmed && payments.filter((p) => !p.voidedAt).length > 0 ? (
         <>
           <Divider className="my-xl" />
@@ -333,7 +317,6 @@ export default function InvoiceDetailPage() {
         </>
       ) : null}
 
-      {/* Note */}
       {invoice.note ? (
         <>
           <Divider className="my-xl" />
@@ -342,7 +325,6 @@ export default function InvoiceDetailPage() {
         </>
       ) : null}
 
-      {/* Draft action bar */}
       {isDraft ? (
         <div className="mt-xxl flex flex-wrap items-center gap-sm">
           <button
@@ -364,7 +346,6 @@ export default function InvoiceDetailPage() {
         </div>
       ) : null}
 
-      {/* Modals */}
       {confirmCancel ? (
         <Modal title={t("cancelModal.title")} onClose={() => setConfirmCancel(false)}>
           <p className="text-body-md text-muted">
@@ -494,13 +475,11 @@ function TotalRow({ label, value }: { label: string; value: number }) {
   );
 }
 
-/** Localized status badge label; falls back to the raw status for unknowns. */
 function statusLabel(t: ReturnType<typeof useTranslations>, status: string): string {
   const key = { DRAFT: "status.draft", CONFIRMED: "status.confirmed", CANCELLED: "status.cancelled" }[status];
   return key ? t(key) : status;
 }
 
-/** Localized document-type label; falls back to the raw value for unknowns. */
 function docTypeLabel(t: ReturnType<typeof useTranslations>, documentType: string): string {
   const known = ["TAX_INVOICE", "BILL_OF_SUPPLY", "ESTIMATE", "PROFORMA", "CREDIT_NOTE", "DEBIT_NOTE"];
   return known.includes(documentType) ? t(`docType.${documentType}`) : documentType;

@@ -103,7 +103,6 @@ export default function PartiesPage() {
         </MaybeLocked>
       </PageHeader>
 
-      {/* Search */}
       <div className="mt-xl flex items-center gap-sm rounded-input border border-hairline bg-field px-md focus-within:border-brand focus-within:ring-2 focus-within:ring-brand-soft">
         <Search size={16} className="shrink-0 text-subtle" />
         <input

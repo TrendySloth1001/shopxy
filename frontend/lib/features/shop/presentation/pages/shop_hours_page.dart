@@ -12,11 +12,6 @@ import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 const _dayCodes = <String>['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
-/// Editor for `Shop.operatingHours` + `Shop.vacationMode` +
-/// `Shop.vacationMessage`. Vacation mode at the top — it's the most
-/// common reason a merchant lands on this page (they're going on
-/// leave). Below: a per-day open/close picker; toggle the day off
-/// to remove it from the map (= closed).
 class ShopHoursPage extends StatefulWidget {
   const ShopHoursPage({super.key});
 
@@ -229,10 +224,6 @@ class _ShopHoursPageState extends State<ShopHoursPage> {
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton shown while shop data is loading
-// ---------------------------------------------------------------------------
-
 class _ShopHoursSkeleton extends StatelessWidget {
   const _ShopHoursSkeleton();
 
@@ -246,7 +237,6 @@ class _ShopHoursSkeleton extends StatelessWidget {
         AppSizes.huge,
       ),
       children: [
-        // Vacation mode card skeleton
         Material(
           color: AppColors.surface,
           shape: AppShapes.squircle(AppSizes.radiusMd),
@@ -270,11 +260,9 @@ class _ShopHoursSkeleton extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: AppSizes.md),
-                    // Switch placeholder
                     AppShimmerBox(width: 48, height: 28, radius: 14),
                   ],
                 ),
-                // Optional vacation message field skeleton
                 const SizedBox(height: AppSizes.sm),
                 AppShimmerBox(
                   width: double.infinity,
@@ -286,10 +274,8 @@ class _ShopHoursSkeleton extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSizes.xl),
-        // "OPENING HOURS" section label
         const AppShimmerLine(widthFactor: 0.3, height: 11),
         const SizedBox(height: AppSizes.sm),
-        // 7-day rows card skeleton
         Material(
           color: AppColors.surface,
           shape: AppShapes.squircle(AppSizes.radiusMd),
@@ -325,12 +311,10 @@ class _DayRowSkeleton extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Day label
           const SizedBox(
             width: 90,
             child: AppShimmerLine(widthFactor: 0.7, height: 14),
           ),
-          // Open time button placeholder
           Expanded(
             child: AppShimmerBox(
               width: double.infinity,
@@ -339,10 +323,8 @@ class _DayRowSkeleton extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSizes.xs),
-          // Separator dash placeholder
           AppShimmerBox(width: 10, height: 14, radius: 2),
           const SizedBox(width: AppSizes.xs),
-          // Close time button placeholder
           Expanded(
             child: AppShimmerBox(
               width: double.infinity,
@@ -351,15 +333,12 @@ class _DayRowSkeleton extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSizes.sm),
-          // Switch placeholder
           AppShimmerBox(width: 48, height: 28, radius: 14),
         ],
       ),
     );
   }
 }
-
-// ---------------------------------------------------------------------------
 
 class _DayHours {
   const _DayHours({required this.closed, this.open, this.close});

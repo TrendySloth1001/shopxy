@@ -16,8 +16,6 @@ import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// Merchant list of quotations sent to customers. Clean divided rows; tap opens
-/// the detail page. FAB opens the catalogue → bucket → send flow.
 class QuotationsPage extends StatefulWidget {
   const QuotationsPage({super.key});
 
@@ -148,10 +146,6 @@ class _QuotationsPageState extends State<QuotationsPage> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton loading state — mirrors _QuotationRow layout
-// ---------------------------------------------------------------------------
-
 class _QuotationsSkeleton extends StatelessWidget {
   const _QuotationsSkeleton();
 
@@ -190,12 +184,10 @@ class _QuotationRowSkeleton extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Expanded left column — mirrors _QuotationRow's Column
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Top row: title shimmer + badge shimmer
                 Row(
                   children: [
                     AppShimmerLine(widthFactor: 0.35, height: 16),
@@ -208,15 +200,12 @@ class _QuotationRowSkeleton extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: AppSizes.xs),
-                // Subtitle line
                 AppShimmerLine(widthFactor: 0.6, height: 12),
               ],
             ),
           ),
-          // Right side: price amount
           AppShimmerLine(widthFactor: 0.15, height: 16),
           const SizedBox(width: AppSizes.xs),
-          // Chevron placeholder
           const SizedBox(width: AppSizes.iconSm),
         ],
       ),
@@ -288,9 +277,6 @@ class _QuotationRow extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: AppSizes.sm),
-                        // Flexible: "Awaiting customer" next to a six-figure
-                        // total left no room, and a fixed-width pill overflowed
-                        // the row rather than giving way.
                         Flexible(
                           child: AppStatusBadge(
                             label: label,

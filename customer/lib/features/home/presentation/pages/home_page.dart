@@ -30,24 +30,15 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  /// Owned here so both the scrollable feed AND the header can read
-  /// the same offset. Header morphs between expanded ↔ collapsed
-  /// based on `_shrink`, 0..1, derived from `_scroll.offset`.
   final ScrollController _scroll = ScrollController();
   double _shrink = 0.0;
 
-  /// Pixels of scroll required to fully collapse the header. Smaller
-  /// = snappier collapse; larger = lazier. 80 lands near the natural
-  /// "I started scrolling" feel.
   static const double _collapseDistance = 80;
 
   @override
   void initState() {
     super.initState();
     _scroll.addListener(_onScroll);
-    // Provider boot already kicks off on app start; this guarantees a
-    // refresh whenever the home tab is re-mounted after a long pause
-    // (e.g. user came back to the app after an hour).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final p = context.read<HomeFeedProvider>();
@@ -72,10 +63,6 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<HomeFeedProvider>();
-    // Canvas-on-canvas header — no coloured band any more. The status
-    // bar reads as part of the page (dark icons on the warm parchment
-    // background), and the top bar + search pill sit on the same
-    // canvas surface as the feed below them.
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.dark.copyWith(
         statusBarColor: AppColors.canvas,
@@ -119,9 +106,6 @@ class _HomePageState extends State<HomePage> {
     }
     return RefreshIndicator(
       onRefresh: provider.refresh,
-      // The pending-payment affordance lives in the top bar (a wallet
-      // icon + badge next to the bell) so the feed stays a clean
-      // shopping surface — see HomeTopBar.
       child: _HomeFeedList(
         feed: provider.feed,
         feedVersion: provider.feedVersion,
@@ -136,10 +120,6 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-/// Renders the home feed: category pucks, banners, product rails, then
-/// an endless product grid. Empty sections collapse silently (each
-/// widget early-returns on empty input) so a backend with no banners
-/// but live trending still produces a coherent page.
 class _HomeFeedList extends StatefulWidget {
   const _HomeFeedList({
     required this.feed,
@@ -154,14 +134,8 @@ class _HomeFeedList extends StatefulWidget {
   final HomeFeed feed;
   final ScrollController scroll;
 
-  /// Monotonic counter that ticks each time the provider successfully
-  /// refreshes. We use this as the cache key for impression tracking
-  /// so unrelated rebuilds (cart badge, theme changes) don't re-fire
-  /// the impression batch.
   final int feedVersion;
 
-  /// Flat product list owned by the provider — grows as the endless
-  /// pager fetches more pages. Rendered as a 2-column grid.
   final List<ProductCard> products;
   final bool isLoadingMore;
   final bool isExhausted;
@@ -173,13 +147,7 @@ class _HomeFeedList extends StatefulWidget {
 }
 
 class _HomeFeedListState extends State<_HomeFeedList> {
-  /// Version of the last feed snapshot we already fired impressions
-  /// for. Prevents the impression burst from re-firing on every
-  /// rebuild (e.g. when the cart badge changes higher in the tree).
   int? _trackedFeedVersion;
-  // Track how many grid products we'd already counted impressions for
-  // so a newly-appended page only fires impressions for its own
-  // products, not the entire growing list.
   int _impressionWatermark = 0;
 
   @override
@@ -199,8 +167,6 @@ class _HomeFeedListState extends State<_HomeFeedList> {
     if (widget.isExhausted || widget.isLoadingMore) return;
     if (!widget.scroll.hasClients) return;
     final pos = widget.scroll.position;
-    // Fire when within ~1.5 screens of the bottom so the next page is
-    // already on the wire by the time the user gets there.
     if (pos.pixels >= pos.maxScrollExtent - pos.viewportDimension * 1.5) {
       widget.loadMore();
     }
@@ -209,15 +175,10 @@ class _HomeFeedListState extends State<_HomeFeedList> {
   @override
   void didUpdateWidget(covariant _HomeFeedList oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // A successful refresh resets products to a smaller list — drop the
-    // watermark so post-refresh impressions fire from the start.
     if (widget.feedVersion != oldWidget.feedVersion) {
       _impressionWatermark = 0;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) => _trackImpressions());
-    // If new content arrived but the list is shorter than the viewport
-    // the scroll listener never fires — kick the pager manually until
-    // the page fills up.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (!widget.scroll.hasClients) return;
@@ -238,9 +199,6 @@ class _HomeFeedListState extends State<_HomeFeedList> {
     }
     _trackedFeedVersion = widget.feedVersion;
     final tracking = context.read<TrackingService>();
-    // Server batches + dedupes on clientUuid, so a quick scroll-by
-    // burst still stays cheap even if we fire a few extras. We walk
-    // only the newly-appended products since the last call.
     for (var i = _impressionWatermark; i < widget.products.length; i++) {
       tracking.recordImpression(widget.products[i].productId);
     }
@@ -251,10 +209,6 @@ class _HomeFeedListState extends State<_HomeFeedList> {
   Widget build(BuildContext context) {
     final feed = widget.feed;
 
-    // Section slots above the endless grid. Order matches the user's
-    // mental model: browse intent (categories) → marketing (hero) →
-    // trust → continuity (recently viewed) → freshness → trending →
-    // curated banners → then the endless grid. Empty slots collapse.
     final sections = <Widget>[
       const HomePendingInviteCallout(),
       const CategoriesRail(),
@@ -308,8 +262,6 @@ class _HomeFeedListState extends State<_HomeFeedList> {
     ];
 
     final products = widget.products;
-    // 2-column product grid laid out manually (rows of two) inside the
-    // single scroll view so it shares the page's scroll controller.
     final gridRows = (products.length / 2).ceil();
 
     return CustomScrollView(
@@ -371,13 +323,11 @@ class _HomeFeedListState extends State<_HomeFeedList> {
         ),
       );
     }
-    // Nothing loading / loaded / exhausted — show the footer.
     if (widget.products.isEmpty) return const HomeFooterStrip();
     return const SizedBox(height: AppSizes.xl);
   }
 }
 
-/// Thin wrapper that gives a product carousel a "see all" target.
 class _ProductRail extends StatelessWidget {
   const _ProductRail({
     required this.eyebrow,
@@ -434,10 +384,6 @@ class _EndlessExhausted extends StatelessWidget {
   }
 }
 
-/// Shimmer-free first-paint placeholder. Plain blocks keep the layout
-/// height stable while the network call resolves; a flicker-free
-/// transition from skeleton → real content matters more here than a
-/// fancier animation.
 class _HomeSkeleton extends StatelessWidget {
   const _HomeSkeleton();
 

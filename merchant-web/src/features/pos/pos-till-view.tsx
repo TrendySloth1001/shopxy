@@ -18,14 +18,6 @@ import {
   type ShiftReport, type Returnable,
 } from "@/features/cashier/api";
 
-/**
- * Supermarket-grade cashier terminal (DMart / Zudio / Star style): full-screen,
- * keyboard-first. The scan box is always focused; the running total is huge and
- * always visible; F-keys drive Pay / Hold / Recall. Built for speed at the till.
- *
- * Shortcuts: Enter = add scan · F2 = Pay · F4 = Hold · F5 = Recall · F8 = remove
- * last line · "3*<code>" or type 3 then * = quantity multiplier.
- */
 export function PosTillView() {
   const t = useTranslations("pos");
   const pos = usePosSale();
@@ -43,13 +35,11 @@ export function PosTillView() {
   const [customer, setCustomer] = useState<{ name: string; phone: string }>({ name: "", phone: "" });
   const scanRef = useRef<HTMLInputElement>(null);
 
-  // Shift status (also the billing gate — no scan/sell without an open shift).
   const loadShift = useCallback(async () => {
     try {
       const { report } = await fetchCurrent();
       setShiftReport(report);
     } catch {
-      /* till still works without a shift */
     } finally {
       setShiftLoaded(true);
     }
@@ -61,7 +51,6 @@ export function PosTillView() {
         const { report } = await fetchCurrent();
         if (active) setShiftReport(report);
       } catch {
-        /* ignore */
       } finally {
         if (active) setShiftLoaded(true);
       }
@@ -79,8 +68,6 @@ export function PosTillView() {
     if (!tenderOpen && !heldOpen && !shiftModal && !returnsModal && !searchOpen && !pos.unknownCode) scanRef.current?.focus();
   }, [tenderOpen, heldOpen, shiftModal, returnsModal, searchOpen, pos.unknownCode]);
 
-  // Refocus the scan box on background clicks, but never steal focus from an
-  // input/button the cashier is interacting with (e.g. a qty field).
   const onBgClick = useCallback((e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("input,button")) return;
     focusScan();
@@ -90,9 +77,8 @@ export function PosTillView() {
     focusScan();
   }, [focusScan, pos.snapshot?.sale.version]);
 
-  // Submit a scan, honouring an inline "3*code" multiplier or a pending ×N qty.
   const submitScan = useCallback(() => {
-    if (noShift) { setShiftModal(true); return; } // gate: open a shift first
+    if (noShift) { setShiftModal(true); return; }
     const raw = code.trim();
     if (!raw) return;
     let qty = pendingQty ?? 1;
@@ -107,7 +93,6 @@ export function PosTillView() {
     setPendingQty(null);
   }, [code, pendingQty, pos, noShift]);
 
-  // "3*" on its own arms a quantity multiplier for the next scan.
   const onCodeChange = (v: string) => {
     const m = v.match(/^(\d+)\s*[*xX]$/);
     if (m) {
@@ -118,8 +103,6 @@ export function PosTillView() {
     setCode(v);
   };
 
-  // Global F-keys. Read live state from a ref so the listener is subscribed once
-  // (no per-render re-binding, no stale closures).
   const keyStateRef = useRef({ canPay, lines, pos });
   useEffect(() => {
     keyStateRef.current = { canPay, lines, pos };
@@ -143,7 +126,6 @@ export function PosTillView() {
 
   return (
     <div className="flex h-dvh min-h-[600px] w-full flex-col bg-canvas" onClick={onBgClick}>
-      {/* Top bar */}
       <div className="flex items-center justify-between border-b border-hairline px-lg py-sm">
         <div className="flex items-center gap-sm">
           <ScanBarcode size={20} className="text-brand" />
@@ -180,7 +162,6 @@ export function PosTillView() {
       </div>
 
       <div className="flex min-h-0 flex-1">
-        {/* LEFT — the bill */}
         <div className="flex min-w-0 flex-1 flex-col border-r border-hairline">
           <div className="grid grid-cols-[2.5rem_1fr_7rem_6rem_4rem] gap-sm border-b border-hairline px-lg py-xs text-label-sm uppercase tracking-wide text-subtle">
             <span>#</span><span>{t("bill.item")}</span><span className="text-center">{t("bill.qty")}</span><span className="text-right">{t("bill.amount")}</span><span />
@@ -219,7 +200,6 @@ export function PosTillView() {
           </div>
         </div>
 
-        {/* RIGHT — total + scan + pay */}
         <div className="flex w-[380px] shrink-0 flex-col">
           <div className="flex flex-col gap-xs bg-hero-panel px-lg py-lg">
             <span className="text-label-md uppercase tracking-wide text-muted">{t("totals.totalPayable")}</span>
@@ -251,7 +231,6 @@ export function PosTillView() {
             {pos.error ? <p className="mt-sm rounded-md bg-error-soft px-md py-xs text-body-sm text-error">{pos.error}</p> : null}
             {pos.pending > 0 ? <p className="mt-sm text-body-sm text-warning">{t("scan.queuedOffline", { count: pos.pending })}</p> : null}
 
-            {/* Customer (optional) + bill discount */}
             <div className="mt-sm grid grid-cols-2 gap-sm">
               <input value={customer.name} onChange={(e) => setCustomer((c) => ({ ...c, name: e.target.value }))} placeholder={t("customer.namePlaceholder")} className="h-9 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
               <input value={customer.phone} onChange={(e) => setCustomer((c) => ({ ...c, phone: e.target.value }))} inputMode="tel" placeholder={t("customer.phonePlaceholder")} className="h-9 rounded-input border border-hairline bg-canvas px-md text-body-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-soft" />
@@ -342,8 +321,6 @@ export function PosTillView() {
   );
 }
 
-/** Shift + cash drawer, in the till. Open a shift, record cash in/out, see the
- *  live X-report, and close with a counted-cash reconciliation. */
 function ShiftModal({ onClose }: { onClose: () => void }) {
   const t = useTranslations("pos");
   const [report, setReport] = useState<ShiftReport | null>(null);
@@ -453,7 +430,6 @@ function ShiftModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-/** Process a return without leaving the till. */
 function ReturnsModal({ onClose, onNeedManager }: { onClose: () => void; onNeedManager: (retry: (token: string) => void) => void }) {
   const t = useTranslations("pos");
   const [invoiceId, setInvoiceId] = useState("");
@@ -469,7 +445,6 @@ function ReturnsModal({ onClose, onNeedManager }: { onClose: () => void; onNeedM
     try { await fn(); } catch (e) { setError(e instanceof Error ? e.message : t("common.somethingWrong")); } finally { setBusy(false); }
   };
 
-  // Returns are privileged: on OVERRIDE_REQUIRED, ask for a manager grant + retry.
   const submitReturn = async (token?: string) => {
     if (!returnable) return;
     const lines = returnable.lines.map((l) => ({ productId: l.productId, quantity: Number(qty[l.productId]) || 0 })).filter((l) => l.quantity > 0);
@@ -566,8 +541,6 @@ function BillRow({ index, line, last, onInc, onDec, onSetQty, onDiscount, onRemo
   );
 }
 
-/** Directly type a line quantity (0 removes it). Commits on Enter/blur. Remounted
- *  via `key={quantity}` by the parent, so it always seeds from the latest value. */
 function QtyInput({ value, onCommit }: { value: number; onCommit: (q: number) => void }) {
   const t = useTranslations("pos");
   const [text, setText] = useState(String(value));
@@ -594,9 +567,6 @@ function TenderModal({ total, paying, onClose, onCash, onTender, onOnline }: { t
   const t = useTranslations("pos");
   const [received, setReceived] = useState("");
   const recv = Number(received);
-  // Round the change-due to paise so float subtraction (e.g. 100 - 33.33)
-  // can't surface a ₹0.0000001 artefact. Display-only — the sale total is
-  // server-authoritative.
   const change = recv > 0 ? Math.round((recv - total) * 100) / 100 : 0;
   const quick = [total, Math.ceil(total / 100) * 100, Math.ceil(total / 500) * 500].filter((v, i, a) => a.indexOf(v) === i);
   return (
@@ -692,10 +662,6 @@ function Modal({ children, onClose }: { children: React.ReactNode; onClose: () =
   );
 }
 
-/** A manager enters their own credentials in person to authorise a privileged
- *  till action (discount / void / price override / return) that the signed-in
- *  cashier lacks the `invoices:override` right for. On success it hands back a
- *  short-lived grant token that the caller replays with the original command. */
 function ManagerAuthModal({ onClose, onAuthorized }: { onClose: () => void; onAuthorized: (token: string) => void }) {
   const t = useTranslations("pos");
   const [email, setEmail] = useState("");
@@ -786,7 +752,6 @@ function QuickAddForm({ code, onAdd, onCancel }: { code: string; onAdd: (v: { co
   );
 }
 
-/** Per-line discount (₹ or quick %). Amount caps at the line's gross. */
 function LineDiscountModal({ line, onApply, onClose }: { line: SaleLine; onApply: (amount: number) => void; onClose: () => void }) {
   const t = useTranslations("pos");
   const gross = line.unitPrice * line.quantity;
@@ -824,7 +789,6 @@ function LineDiscountModal({ line, onApply, onClose }: { line: SaleLine; onApply
   );
 }
 
-/** Live elapsed-since-open timer for the open shift (HH:MM:SS). */
 function ShiftTimer({ since }: { since: string }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -882,7 +846,6 @@ function PaidScreen({ title, sub, total, invoiceId }: { title: string; sub: stri
   );
 }
 
-/** {name,phone} for checkout, or undefined when the cashier left it blank. */
 function customerArg(c: { name: string; phone: string }): { name?: string; phone?: string } | undefined {
   const name = c.name.trim();
   const phone = c.phone.trim();
@@ -890,7 +853,6 @@ function customerArg(c: { name: string; phone: string }): { name?: string; phone
   return { name: name || undefined, phone: phone || undefined };
 }
 
-/** Bill-level discount (₹). Commits on Enter/blur; remounted via key on change. */
 function BillDiscountInput({ value, onCommit, disabled }: { value: number; onCommit: (d: number) => void; disabled: boolean }) {
   const [text, setText] = useState(value ? String(value) : "");
   const commit = () => {
@@ -912,7 +874,6 @@ function BillDiscountInput({ value, onCommit, disabled }: { value: number; onCom
   );
 }
 
-/** Add an item without a barcode: type → pick from catalogue search. */
 function SearchModal({ search, onAdd, onClose }: { search: (term: string) => Promise<import("./types").ProductSearchResult[]>; onAdd: (productId: string) => void; onClose: () => void }) {
   const t = useTranslations("pos");
   const [term, setTerm] = useState("");
@@ -922,8 +883,6 @@ function SearchModal({ search, onAdd, onClose }: { search: (term: string) => Pro
   const seqRef = useRef(0);
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
 
-  // Debounce in the change handler (event handlers may setState; effects can't
-  // synchronously) so the lint rule stays happy and the UX stays snappy.
   const onTermChange = (v: string) => {
     setTerm(v);
     if (timerRef.current) clearTimeout(timerRef.current);

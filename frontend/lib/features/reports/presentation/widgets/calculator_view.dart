@@ -23,11 +23,6 @@ import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/widgets/app_search_bar.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// Pricing & profit calculator — a multi-product quote builder. Add products,
-/// set quantities and per-product GST + discount, plus an overall discount,
-/// with a ₹/% switch. GST, totals, cost, profit and margin recompute live. It's
-/// the foundation for quotations. A faithful port of merchant-web's
-/// `CalculatorSuite`.
 class CalculatorView extends StatefulWidget {
   const CalculatorView({super.key});
 
@@ -37,8 +32,6 @@ class CalculatorView extends StatefulWidget {
 
 enum _Unit { pct, amt }
 
-/// A calculator basket line: the product plus its editable price/qty/GST/disc
-/// text fields (mirrors the web `Line` type).
 class _CalcLine {
   _CalcLine({
     required this.product,
@@ -76,7 +69,6 @@ class _CalcLine {
 double _num(String s) => double.tryParse(s) ?? 0;
 double _round2(double n) => (n * 100).round() / 100;
 
-/// A discount value (% of a base, or a flat ₹ capped at the base).
 double _discountOf(double base, String value, _Unit unit) {
   final v = _num(value) < 0 ? 0.0 : _num(value);
   return unit == _Unit.pct
@@ -84,14 +76,12 @@ double _discountOf(double base, String value, _Unit unit) {
       : (v > base ? base : v);
 }
 
-/// Split a tax-inclusive price into its taxable value and GST components.
 ({double taxable, double gst}) _gstFromInclusive(double gross, double rate) {
   final r = rate < 0 ? 0.0 : rate;
   final taxable = r > 0 ? (gross * 100) / (100 + r) : gross;
   return (taxable: taxable, gst: gross - taxable);
 }
 
-/// Plain number string: whole when integral, else up to 2dp (no grouping).
 String _plain(double v) =>
     v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(2);
 
@@ -114,7 +104,6 @@ class _CalculatorViewState extends State<CalculatorView> {
   _Unit _discUnit = _Unit.pct;
   final _overallCtrl = TextEditingController();
 
-  // Quotation round-trip.
   Quotation? _quote;
   ({String id, String name, String? stateCode})? _party;
   bool _sending = false;
@@ -144,7 +133,6 @@ class _CalculatorViewState extends State<CalculatorView> {
   QuotationsRemoteDataSource get _quotesDs =>
       context.read<QuotationsRemoteDataSource>();
 
-  // ── product browser ────────────────────────────────────────────────────
   void _onSearchChanged(String v) {
     _searchDebounce?.cancel();
     _searchDebounce = Timer(AppDurations.searchDebounce, () {
@@ -174,8 +162,6 @@ class _CalculatorViewState extends State<CalculatorView> {
     }
   }
 
-  /// Seed the first product as a line the first time the list arrives (so the
-  /// calculator isn't empty on open) — skipped once a quotation is loaded.
   Future<void> _maybeSeedFirst() async {
     if (_autoSeeded || _products.isEmpty || _lines.isNotEmpty) return;
     _autoSeeded = true;
@@ -184,7 +170,6 @@ class _CalculatorViewState extends State<CalculatorView> {
       if (!mounted || _lines.isNotEmpty) return;
       setState(() => _lines.add(_CalcLine.from(full)));
     } catch (_) {
-      /* ignore */
     }
   }
 
@@ -203,14 +188,10 @@ class _CalculatorViewState extends State<CalculatorView> {
       if (!mounted || _has(full.id)) return;
       setState(() => _lines.add(_CalcLine.from(full)));
     } catch (_) {
-      /* ignore */
     }
   }
 
-  // ── quotation round-trip ───────────────────────────────────────────────
   Future<void> _importQuotation(Quotation q) async {
-    // Each quotation line is ex-GST (unit price + tax on top). Convert to the
-    // calculator's GST-inclusive basis so the grand total ties to the quote.
     final built = <_CalcLine>[];
     for (final it in q.items) {
       try {
@@ -226,7 +207,6 @@ class _CalculatorViewState extends State<CalculatorView> {
           ),
         );
       } catch (_) {
-        /* skip lines whose product is gone */
       }
     }
     if (!mounted) return;
@@ -237,7 +217,7 @@ class _CalculatorViewState extends State<CalculatorView> {
       _lines
         ..clear()
         ..addAll(built);
-      _discUnit = _Unit.amt; // quotation discounts are ₹ amounts
+      _discUnit = _Unit.amt;
       _overallCtrl.text = '';
       _quote = q;
       _party = q.partyId != null
@@ -267,8 +247,6 @@ class _CalculatorViewState extends State<CalculatorView> {
     });
   }
 
-  /// Convert the inclusive basket into ex-GST quotation lines (the overall
-  /// discount is distributed across lines pro-rata, so the quote total matches).
   List<Map<String, dynamic>> _buildItems() {
     final computed = _lines.map((l) {
       final price = _num(l.priceCtrl.text).clamp(0, double.infinity).toDouble();
@@ -316,8 +294,6 @@ class _CalculatorViewState extends State<CalculatorView> {
     ];
   }
 
-  /// Save the basket as a quotation (the PDF is rendered server-side from a
-  /// saved quote, so download and send both go through this). Returns the quote.
   Future<Quotation?> _persistQuote() async {
     final l10n = AppLocalizations.of(context);
     final items = _buildItems();
@@ -412,7 +388,6 @@ class _CalculatorViewState extends State<CalculatorView> {
     if (picked != null) await _loadQuotationById(picked.id);
   }
 
-  // ── aggregate maths (mirrors the web reducer) ───────────────────────────
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -473,7 +448,6 @@ class _CalculatorViewState extends State<CalculatorView> {
         ),
         const SizedBox(height: AppSizes.lg),
 
-        // ── Line items ───────────────────────────────────────────────────
         if (_lines.isEmpty)
           Container(
             width: double.infinity,
@@ -505,7 +479,6 @@ class _CalculatorViewState extends State<CalculatorView> {
 
         const SizedBox(height: AppSizes.lg),
 
-        // ── Controls ─────────────────────────────────────────────────────
         Wrap(
           spacing: AppSizes.xl,
           runSpacing: AppSizes.md,
@@ -553,7 +526,6 @@ class _CalculatorViewState extends State<CalculatorView> {
           ],
         ),
 
-        // ── Calculation ──────────────────────────────────────────────────
         const SizedBox(height: AppSizes.xl),
         Divider(height: 1, color: AppColors.hairline),
         const SizedBox(height: AppSizes.xl),
@@ -699,7 +671,6 @@ class _CalculatorViewState extends State<CalculatorView> {
           ],
         ),
 
-        // ── Quotation round-trip ─────────────────────────────────────────
         const SizedBox(height: AppSizes.xxl),
         Divider(height: 1, color: AppColors.hairline),
         const SizedBox(height: AppSizes.lg),
@@ -810,7 +781,6 @@ class _CalculatorViewState extends State<CalculatorView> {
           style: theme.textTheme.bodySmall?.copyWith(color: AppColors.subtle),
         ),
 
-        // ── Product browser ──────────────────────────────────────────────
         const SizedBox(height: AppSizes.xxl),
         Divider(height: 1, color: AppColors.hairline),
         const SizedBox(height: AppSizes.lg),
@@ -840,7 +810,6 @@ class _CalculatorViewState extends State<CalculatorView> {
           hint: l10n.reportsCalcSearchByNameOrSku,
           controller: _searchCtrl,
           onChanged: _onSearchChanged,
-          // _onSearchChanged runs its own debounce.
           debounce: Duration.zero,
         ),
         const SizedBox(height: AppSizes.md),
@@ -881,8 +850,6 @@ class _CalculatorViewState extends State<CalculatorView> {
   }
 }
 
-/// One editable basket line. Phone layout: product + inline price on the first
-/// row; GST / qty / discount + line total on the second.
 class _LineRow extends StatelessWidget {
   const _LineRow({
     super.key,
@@ -1039,7 +1006,6 @@ class _MiniField extends StatelessWidget {
   }
 }
 
-/// Compact numeric text field with optional leading ₹ / trailing % affix.
 class _NumField extends StatelessWidget {
   const _NumField({
     required this.controller,
@@ -1084,7 +1050,6 @@ class _NumField extends StatelessWidget {
   }
 }
 
-/// Labelled segmented pills (Supply / Discount unit).
 class _ChoiceField extends StatelessWidget {
   const _ChoiceField({
     required this.label,
@@ -1197,7 +1162,6 @@ class _Kpi extends StatelessWidget {
   }
 }
 
-/// A labelled block of key/value rows with a ruled total footer.
 class _Block extends StatelessWidget {
   const _Block({required this.label, required this.rows});
   final String label;
@@ -1296,7 +1260,6 @@ class _R extends StatelessWidget {
   }
 }
 
-/// A toggleable product tile in the browser (add / remove from the basket).
 class _ProductTile extends StatelessWidget {
   const _ProductTile({
     required this.product,
@@ -1401,7 +1364,6 @@ class _ProductTile extends StatelessWidget {
   }
 }
 
-/// Bottom-sheet picker for loading a saved quotation into the calculator.
 class _QuotationPickerSheet extends StatefulWidget {
   const _QuotationPickerSheet();
   @override
@@ -1544,7 +1506,6 @@ class _QuotationPickerSheetState extends State<_QuotationPickerSheet> {
   }
 }
 
-/// Percentage, trimmed to at most 2dp (no trailing zeros); "—" for non-finite.
 String _fmtPct(double n) {
   if (!n.isFinite) return '—';
   final s = n.toStringAsFixed(2);

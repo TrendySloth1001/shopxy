@@ -15,10 +15,6 @@ import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
-/// Per-user "recently viewed" page. Pulls the capped (≤20) list from
-/// `GET /me/recently-viewed` and renders it as a 2-col grid so the
-/// user can re-open something they were just looking at without
-/// digging through search or categories.
 class RecentlyViewedPage extends StatefulWidget {
   const RecentlyViewedPage({super.key});
 

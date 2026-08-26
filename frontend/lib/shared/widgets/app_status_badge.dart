@@ -7,19 +7,8 @@ import 'package:shopxy/core/icons/app_icons.dart';
 
 enum AppStatusTone { neutral, success, warning, error, info }
 
-/// Visual weight of the badge.
-///
-/// * [outline] — hairline border, transparent surface. The quiet default,
-///   used for steady states like a stock count in good standing.
-/// * [soft]   — tinted background with the tone's strong colour for text.
-///   Calls attention without shouting; sits between outline and filled.
-/// * [filled] — fully filled background with white text. Reserved for
-///   states the user needs to react to (out of stock, declined, error).
 enum AppStatusWeight { outline, soft, filled }
 
-/// Small pill used for status labels: stock counts, invoice status,
-/// order status, etc. Three weights so urgent things can be visually
-/// louder than steady-state things in the same row.
 class AppStatusBadge extends StatelessWidget {
   const AppStatusBadge({
     super.key,
@@ -105,8 +94,6 @@ class AppStatusBadge extends StatelessWidget {
             AppIcon(icon, size: AppSizes.iconSm - 2, color: fg),
             const SizedBox(width: AppSizes.xs),
           ],
-          // Flexible + ellipsis so a long label truncates instead of
-          // overflowing whatever row the badge was dropped into.
           Flexible(
             child: Text(
               label,

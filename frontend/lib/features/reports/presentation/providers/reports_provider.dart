@@ -9,7 +9,6 @@ class ReportsProvider extends ChangeNotifier {
   ReportsProvider(this._ds);
   final ReportsRemoteDataSource _ds;
 
-  // Default to the last 30 days; users can re-pick via the date selector.
   DateTime _from = DateTime.now().subtract(const Duration(days: 30));
   DateTime _to = DateTime.now();
   DateTime get from => _from;
@@ -33,9 +32,6 @@ class ReportsProvider extends ChangeNotifier {
   GstReport? get gst => _gst;
   PnlReport? get pnl => _pnl;
 
-  /// Drops cached report data on logout — these are financial figures
-  /// (sales/GST/P&L), so the next account on this device must never see
-  /// the previous shop's numbers flash on screen.
   void reset() {
     _sales = null;
     _purchases = null;
@@ -101,7 +97,6 @@ class ReportsProvider extends ChangeNotifier {
     }
   }
 
-  /// Force a refresh of the currently selected report.
   Future<void> refresh() async {
     switch (_kind) {
       case ReportKind.sales:

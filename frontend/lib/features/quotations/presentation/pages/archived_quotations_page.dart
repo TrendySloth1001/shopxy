@@ -7,16 +7,6 @@ import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/widgets/archived_documents_page.dart';
 
-/// Quotations the merchant filed out of their working list.
-///
-/// Only settled ones get here — the backend refuses to archive a REQUESTED or
-/// PENDING quote, because the customer can still act on it and an accept
-/// landing against a document the merchant can't see is nobody's job to
-/// chase. So the filter axis is the settled states.
-///
-/// Archiving is merchant-side only: the customer keeps seeing the quote in
-/// their own list. Filing your copy away is not the counterparty forgetting
-/// what they were quoted.
 class ArchivedQuotationsPage extends StatelessWidget {
   const ArchivedQuotationsPage({super.key});
 
@@ -46,7 +36,6 @@ class ArchivedQuotationsPage extends StatelessWidget {
       ],
       load: (filter) => source.list(archived: true, status: filter),
       restore: (quotation) => source.setArchived(quotation.id, false),
-      // createdAt is what the server sorts quotations by.
       dateOf: (quotation) => quotation.createdAt,
       rowOf: (quotation) => ArchivedRowData(
         number: quotation.quotationNo,

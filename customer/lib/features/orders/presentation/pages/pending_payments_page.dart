@@ -16,17 +16,10 @@ import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 
-/// Indian-grouped rupee formatter — "₹3,84,580.00". Shared by this
-/// page and the home top-bar badge so the two read identically.
 final _rupee = AppFormat.inrPrecise;
 
 String formatPendingAmount(double v) => _rupee.format(v);
 
-/// Flat list of every order awaiting an online payment. Deliberately
-/// chrome-free — a total-due header and one divider-separated row per
-/// order, each with a Pay now button that opens the Razorpay sheet
-/// directly (no hop through the order detail page). Watches
-/// [OrdersProvider] so a paid order drops off the list live.
 class PendingPaymentsPage extends StatefulWidget {
   const PendingPaymentsPage({super.key});
 
@@ -35,13 +28,8 @@ class PendingPaymentsPage extends StatefulWidget {
 }
 
 class _PendingPaymentsPageState extends State<PendingPaymentsPage> {
-  /// Id of the order whose payment sheet is currently open, so only that
-  /// row's button shows a spinner.
   String? _payingId;
 
-  /// Open the Razorpay sheet for [order]'s payable remainder, then
-  /// refresh orders so a successful payment flips the list. Mirrors the
-  /// order-detail Pay Now flow.
   Future<void> _pay(CustomerOrder order) async {
     if (_payingId != null) return;
     setState(() => _payingId = order.id);
@@ -54,12 +42,9 @@ class _PendingPaymentsPageState extends State<PendingPaymentsPage> {
       );
       String? syncedStatus;
       if (result.isSuccess) {
-        // Webhook can lag (and can't reach localhost) — confirm now so
-        // the order flips to PAID immediately. Best-effort.
         try {
           syncedStatus = await cart.syncOrderPayment(order.id);
         } catch (_) {
-          /* non-fatal — the reload below still reflects server state */
         }
       }
       if (!mounted) return;
@@ -102,7 +87,6 @@ class _PendingPaymentsPageState extends State<PendingPaymentsPage> {
       }
     } finally {
       if (mounted) setState(() => _payingId = null);
-      // A paid order should disappear from the list — pull fresh orders.
       if (mounted) await context.read<OrdersProvider>().load();
     }
   }
@@ -145,7 +129,6 @@ class _PendingPaymentsPageState extends State<PendingPaymentsPage> {
   }
 }
 
-/// Plain "Total due ₹X" header — no card, just type on the canvas.
 class _TotalDueHeader extends StatelessWidget {
   const _TotalDueHeader({required this.total});
   final double total;
@@ -185,8 +168,6 @@ class _TotalDueHeader extends StatelessWidget {
   }
 }
 
-/// One order: identity + amount on the left, a Pay now button on the
-/// right. Tapping the row (outside the button) opens the order detail.
 class _PendingOrderRow extends StatelessWidget {
   const _PendingOrderRow({
     required this.order,
@@ -248,8 +229,6 @@ class _PendingOrderRow extends StatelessWidget {
   }
 }
 
-/// Shown when there's nothing left to pay — e.g. the customer paid the
-/// last order off while this page was open.
 class _AllSettled extends StatelessWidget {
   const _AllSettled();
 

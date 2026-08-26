@@ -7,8 +7,6 @@ import { mediaSrc } from "@/features/products/components/product-thumb";
 import { CategoryIcon } from "@/shared/icons";
 import { categoryProductCount, type CategoryNode } from "./schema";
 
-/** Square taxonomy tile — image (or icon fallback) + name + counts. Shared by
- *  the browse grid and the subcategories section on a category page. */
 export function CategoryCard({ node }: { node: CategoryNode }) {
   const t = useTranslations("categories");
   const src = mediaSrc(node.imageUrl);

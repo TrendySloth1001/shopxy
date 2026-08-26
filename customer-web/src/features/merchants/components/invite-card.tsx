@@ -6,8 +6,6 @@ import { Store, Mail, CheckCircle, XCircle, Clock } from "@/shared/icons";
 import type { Invitation } from "../types";
 import { formatRelativeTime } from "@/shared/datetime";
 
-// ─── Status chip ──────────────────────────────────────────────────────────
-
 function statusStyle(status: Invitation["status"]): { label: string; cls: string } {
   switch (status) {
     case "PENDING":
@@ -22,8 +20,6 @@ function statusStyle(status: Invitation["status"]): { label: string; cls: string
       return { label: "Expired", cls: "bg-warning-soft text-warning" };
   }
 }
-
-// ─── Banner cover ─────────────────────────────────────────────────────────
 
 function CardCover({ bannerUrl }: { bannerUrl?: string | null }) {
   if (bannerUrl) {
@@ -46,8 +42,6 @@ function CardCover({ bannerUrl }: { bannerUrl?: string | null }) {
     </div>
   );
 }
-
-// ─── Shop logo ────────────────────────────────────────────────────────────
 
 function ShopLogo({
   logoUrl,
@@ -75,11 +69,8 @@ function ShopLogo({
   );
 }
 
-// ─── Main InviteCard ──────────────────────────────────────────────────────
-
 export type InviteCardProps = {
   invite: Invitation;
-  /** Show Accept/Decline buttons (Pending tab). False shows a status chip only. */
   actionable?: boolean;
   busy?: boolean;
   onAccept?: () => void;
@@ -134,16 +125,12 @@ export function InviteCard({
 
   return (
     <div className="overflow-hidden rounded-lg border border-hairline bg-white">
-      {/* Banner */}
       <CardCover bannerUrl={invite.shop?.bannerUrl} />
 
-      {/* Body */}
       <div className="px-md pb-md">
-        {/* Logo + text row — logo overlaps banner via negative margin */}
         <div className="-mt-7 flex items-start gap-md">
           <ShopLogo logoUrl={invite.shop?.logoUrl} initial={initial} />
           <div className="min-w-0 flex-1 pt-md">
-            {/* Status chip */}
             {!actionable && (
               <span
                 className={`mb-xs inline-block rounded-full px-sm py-xxs text-label-md font-extrabold ${statusCls}`}
@@ -158,7 +145,6 @@ export function InviteCard({
           </div>
         </div>
 
-        {/* Optional message */}
         {hasMessage && (
           <div className="mt-sm rounded-sm bg-hero-panel px-md py-sm">
             <div className="flex items-start gap-xs">
@@ -168,7 +154,6 @@ export function InviteCard({
           </div>
         )}
 
-        {/* Expiry */}
         {actionable && expiryText && (
           <p className="mt-xs text-label-md text-muted">
             <Clock size={11} className="mr-[3px] inline-block align-middle" />
@@ -176,7 +161,6 @@ export function InviteCard({
           </p>
         )}
 
-        {/* History: time + responded */}
         {!actionable && invite.respondedAt && (
           <p className="mt-xs text-label-md text-muted">
             {statusLabel} {formatRelativeTime(invite.respondedAt)}
@@ -189,10 +173,8 @@ export function InviteCard({
           </p>
         )}
 
-        {/* Action buttons */}
         {actionable && (
           <div className="mt-md flex items-center gap-sm">
-            {/* Decline */}
             <button
               type="button"
               disabled={busy}
@@ -203,7 +185,6 @@ export function InviteCard({
               Decline
             </button>
 
-            {/* Accept */}
             <button
               type="button"
               disabled={busy}
@@ -229,17 +210,12 @@ export function InviteCard({
   );
 }
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────
-
 export function InviteCardSkeleton() {
   return (
     <div className="overflow-hidden rounded-lg border border-hairline bg-white">
-      {/* Banner shimmer */}
       <div className="h-20 w-full animate-pulse bg-hero-panel" />
-      {/* Body */}
       <div className="px-md pb-md">
         <div className="-mt-7 flex items-start gap-md">
-          {/* Logo */}
           <div className="h-14 w-14 flex-shrink-0 animate-pulse rounded-md bg-hero-panel" />
           <div className="flex-1 pt-md">
             <div className="h-3 w-1/3 animate-pulse rounded-full bg-hero-panel" />

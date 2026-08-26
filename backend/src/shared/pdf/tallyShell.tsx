@@ -11,19 +11,9 @@ import {
   TotalsBlock,
 } from './blocks.js';
 
-/// The "traditional" preset: a fully-gridded ledger-style layout (every
-/// field in its own bordered box), matching the classic accounting-software
-/// invoice format still common among Indian small businesses — as opposed
-/// to ShellA/ShellB's whitespace-based, mostly-borderless look. Different
-/// enough (per-cell borders, a nested info grid, a signature box) that it's
-/// its own render path rather than another `{shellId, palette, ...}` config
-/// fed into the shared blocks.
-
 const BORDER = '#000000';
 const ROW_HEIGHT = 28;
 const TABLE_HEADER_HEIGHT = 20;
-// Roomier than ShellA/B's header area — the bordered info grid (title +
-// 6 ledger rows) takes more vertical space than a plain meta strip.
 const HEADER_AREA_HEIGHT = 300;
 const FOOTER_BOX_HEIGHT = 70;
 

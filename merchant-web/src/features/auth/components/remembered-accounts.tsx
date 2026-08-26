@@ -13,12 +13,6 @@ import {
 } from "../desktop";
 import { AuthErrorBanner } from "./auth-shell";
 
-/**
- * Desktop-only "Continue as" account picker shown above the sign-in form.
- * Renders nothing on the web build or when no accounts are remembered. Tapping
- * a card resumes that session via the Electron main process (one tap, no
- * password); the secret never touches this component.
- */
 export function RememberedAccounts() {
   const router = useRouter();
   const { refresh } = useAuth();

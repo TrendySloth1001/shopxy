@@ -21,8 +21,6 @@ async function fetchBuffer(url: string): Promise<Buffer> {
   });
 }
 
-// Real internet image — uses Unsplash's hot-link CDN. Stable photo id
-// chosen for size predictability (~250 KB at 1200w).
 const SOURCE_URL =
   'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=1200&q=85';
 
@@ -33,7 +31,6 @@ describe('image pipeline', () => {
   beforeAll(async () => {
     await ensureBucket();
     sourceBuffer = await fetchBuffer(SOURCE_URL);
-    // Sanity: Unsplash didn't 404 / redirect us to a tiny HTML payload.
     expect(sourceBuffer.length).toBeGreaterThan(50_000);
   }, 30_000);
 
@@ -57,8 +54,6 @@ describe('image pipeline', () => {
     const result = await uploadImageWithVariants(sourceBuffer, 'phone.jpg');
     createdIds.push(result.id);
 
-    // Re-fetch each variant from MinIO via the upload service's stream
-    // helper for byte-exact size comparison.
     const { getFileStream } = await import(
       '../../src/modules/upload/upload.service.js'
     );
@@ -80,8 +75,6 @@ describe('image pipeline', () => {
     expect(sm).toBeLessThan(md);
     expect(md).toBeLessThan(lg);
     expect(lg).toBeLessThan(sourceBuffer.length);
-    // At q=75 the largest variant should still be a meaningful fraction
-    // smaller than the source — at least 30% off for a 1200w → 800w WebP.
     expect(lg).toBeLessThan(sourceBuffer.length * 0.7);
   });
 
@@ -93,8 +86,6 @@ describe('image pipeline', () => {
   });
 
   it('urlFor passes through legacy / non-variant URLs unchanged', () => {
-    // Anything that doesn't match the `<id>-<size>.webp` shape — e.g.
-    // pre-pipeline rows or external CDN URLs — is returned as-is.
     const legacy = '/images/legacy-image.jpg';
     expect(urlFor(legacy, 'sm')).toBe(legacy);
 

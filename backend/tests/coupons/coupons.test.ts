@@ -20,8 +20,6 @@ function userToken(ctx: { userId: number; email: string; role: Role }): string {
   );
 }
 
-/// End-to-end coverage: validate preview, apply at checkout, wallet
-/// debit on checkout, atomic counter on totalCap.
 describe('coupons — validate + redeem + wallet checkout', () => {
   const couponIds: number[] = [];
 
@@ -66,24 +64,18 @@ describe('coupons — validate + redeem + wallet checkout', () => {
       });
       couponIds.push(coupon.id);
 
-      // Preview
       const preview = await request(app)
         .post('/me/coupons/validate')
         .set('Authorization', `Bearer ${userToken(buyer)}`)
         .send({ code: coupon.code, subtotal: 500, shopIds: [merchant.shopId] });
       expect(preview.status).toBe(200);
       expect(preview.body.ok).toBe(true);
-      // 10% of 500 = 50, below the ₹100 cap.
       expect(preview.body.coupon.discount).toBe(50);
-      // Contract: the validate response must echo the raw coupon params the
-      // customer client's `couponSchema` requires — `discountValue` is
-      // mandatory there, so omitting it makes every coupon fail to validate.
       expect(preview.body.coupon.discountValue).toBe(10);
       expect(preview.body.coupon.maxDiscountAmount).toBe(100);
       expect(preview.body.coupon.minOrderAmount).toBe(100);
       expect(typeof preview.body.coupon.expiresAt).toBe('string');
 
-      // Place order with coupon
       const place = await request(app)
         .post('/me/orders')
         .set('Authorization', `Bearer ${userToken(buyer)}`)
@@ -95,7 +87,6 @@ describe('coupons — validate + redeem + wallet checkout', () => {
       expect(place.status).toBe(201);
       expect(place.body.couponDiscount).toBe(50);
 
-      // Confirm redemption row + counter bump
       const rows = await prisma.couponRedemption.findMany({
         where: { couponId: coupon.id },
       });
@@ -152,7 +143,6 @@ describe('coupons — validate + redeem + wallet checkout', () => {
       expect(first.status).toBe(201);
       expect(first.body.couponDiscount).toBe(30);
 
-      // Second attempt should fail with COUPON_INVALID.
       const second = await request(app)
         .post('/me/orders')
         .set('Authorization', `Bearer ${userToken(buyer)}`)
@@ -180,8 +170,6 @@ describe('coupons — validate + redeem + wallet checkout', () => {
         email: buyer.email,
       },
     });
-    // Pre-credit the buyer's wallet so the checkout has something to
-    // debit. Goes via the service so the denormed balance stays in sync.
     const { walletService } = await import('../../src/modules/wallet/wallet.service.js');
     await walletService.credit({
       userId: buyer.userId,

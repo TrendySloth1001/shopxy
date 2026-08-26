@@ -8,16 +8,6 @@ import { useCart } from "@/features/cart/cart-context";
 import { Avatar } from "@/features/auth/components/avatar";
 import { SEARCH_HINTS, useRotatingHint } from "./search-bar";
 
-/**
- * Home top bar — port of `HomeTopBar`. Brand wordmark + a delivery-location row
- * that collapses on scroll, with a notification bell (unread badge) and profile
- * avatar pinned right. When collapsed, a compact inline search appears beside
- * the brand mark (mirroring the mobile collapse behaviour).
- *
- * Note: the mobile bar also shows a delivery address, which depends on the
- * addresses feature this web app does not surface here yet (tracked in
- * PENDING.md), so the location row links to the account page instead.
- */
 export function TopBar({ collapsed }: { collapsed: boolean }) {
   const { user, status } = useAuth();
   const { unread } = useNotifications();
@@ -57,7 +47,6 @@ export function TopBar({ collapsed }: { collapsed: boolean }) {
           <span className="flex-1" />
         )}
 
-        {/* Cart chip */}
         <Link
           href="/cart"
           aria-label={cartCount > 0 ? `Cart (${cartCount} items)` : "Cart"}
@@ -76,7 +65,6 @@ export function TopBar({ collapsed }: { collapsed: boolean }) {
           ) : null}
         </Link>
 
-        {/* Bell chip */}
         <Link
           href="/notifications"
           aria-label={unread > 0 ? `Notifications (${unread} unread)` : "Notifications"}
@@ -95,7 +83,6 @@ export function TopBar({ collapsed }: { collapsed: boolean }) {
           ) : null}
         </Link>
 
-        {/* Avatar / Sign-in chip */}
         {status === "authed" ? (
           <Link
             href="/account"

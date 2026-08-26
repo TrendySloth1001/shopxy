@@ -26,12 +26,9 @@ function fmtTax(pct: number) {
   return Number.isInteger(pct) ? `${pct}% tax` : `${pct.toFixed(2)}% tax`;
 }
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
-
 function InvoiceDetailSkeleton() {
   return (
     <div className="space-y-xl">
-      {/* Header */}
       <div className="flex justify-between items-start">
         <div className="space-y-sm flex-1">
           <SkeletonLine className="h-3 w-28" />
@@ -41,7 +38,6 @@ function InvoiceDetailSkeleton() {
         <SkeletonBlock className="h-6 w-16 rounded-full" />
       </div>
       <div className="h-px bg-hairline" />
-      {/* Counterparty */}
       <div className="flex gap-md">
         <SkeletonBlock className="h-10 w-10 shrink-0 rounded-md" />
         <div className="space-y-xs flex-1">
@@ -51,7 +47,6 @@ function InvoiceDetailSkeleton() {
         </div>
       </div>
       <div className="h-px bg-hairline" />
-      {/* Items */}
       <div className="space-y-md">
         <SkeletonLine className="h-3 w-16" />
         {[1, 2, 3].map((i) => (
@@ -65,7 +60,6 @@ function InvoiceDetailSkeleton() {
         ))}
       </div>
       <div className="h-px bg-hairline" />
-      {/* Totals */}
       <div className="space-y-xs">
         {[1, 2, 3].map((i) => (
           <div key={i} className="flex justify-between py-xs">
@@ -77,8 +71,6 @@ function InvoiceDetailSkeleton() {
     </div>
   );
 }
-
-// ─── Detail view ─────────────────────────────────────────────────────────────
 
 function TotalsRow({
   label,
@@ -124,7 +116,6 @@ function InvoiceDetailContent({
 
   return (
     <div className="space-y-xl">
-      {/* Header */}
       <div className="flex justify-between items-start gap-md">
         <div className="space-y-xs flex-1 min-w-0">
           <p className="text-micro font-extrabold tracking-[1.2px] text-brand uppercase">
@@ -143,7 +134,6 @@ function InvoiceDetailContent({
 
       <div className="h-px bg-hairline my-lg" />
 
-      {/* Counterparty */}
       <div className="flex gap-md">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-brand-soft">
           <Icon size={18} className="text-brand" />
@@ -160,7 +150,6 @@ function InvoiceDetailContent({
 
       <div className="h-px bg-hairline my-lg" />
 
-      {/* Items section */}
       <div>
         <div className="flex justify-between items-center mb-sm">
           <p className="text-micro font-extrabold tracking-[1.4px] text-muted uppercase">
@@ -200,7 +189,6 @@ function InvoiceDetailContent({
 
       <div className="h-px bg-hairline my-lg" />
 
-      {/* Totals */}
       <div>
         <TotalsRow label="Subtotal" value={formatINR(invoice.subtotal, { decimals: 2 })} />
         <TotalsRow label="Tax" value={formatINR(invoice.taxAmount, { decimals: 2 })} />
@@ -215,7 +203,6 @@ function InvoiceDetailContent({
         <TotalsRow label="Total" value={formatINR(invoice.total, { decimals: 2 })} strong />
       </div>
 
-      {/* Note */}
       {invoice.note && (
         <>
           <div className="h-px bg-hairline my-lg" />
@@ -233,8 +220,6 @@ function InvoiceDetailContent({
     </div>
   );
 }
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 function InvoiceDetailPageContent() {
   const params = useParams<{ role: string; id: string; invoiceId: string }>();

@@ -59,9 +59,6 @@ class Challan {
   final List<ChallanItem> items;
   final int itemCount;
 
-  /// Set once the merchant files this challan out of the working list. The
-  /// row and its number stay put — Rule 55 wants the run serially numbered,
-  /// so a challan is never deleted.
   final DateTime? archivedAt;
   final DateTime createdAt;
 

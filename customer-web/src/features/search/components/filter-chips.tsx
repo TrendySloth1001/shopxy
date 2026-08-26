@@ -5,27 +5,12 @@ import type { SearchFacets, SearchFilters } from "../types";
 
 type Props = {
   filters: SearchFilters;
-  /**
-   * Facets from the backend — retained in the prop signature so callers
-   * don't need updating when filter support lands. Currently unused because
-   * the filter panel is hidden (see note below).
-   */
   facets: SearchFacets | null | undefined;
   onChangeFilters: (f: SearchFilters) => void;
 };
 
-/**
- * Inline chip strip for active filters.
- *
- * BACKEND NOTE: POST /search currently only honours `categoryId` and `shopId`.
- * The rating, price-range, and in-stock filter controls are hidden until the
- * backend supports those fields. Re-enable the FilterButton + FilterPanel
- * (preserved below in commented-out form) and restore the Chip renders for
- * priceMin/priceMax/ratingMin/inStock when that support lands.
- */
-// facets is retained in Props for forward-compat; destructured to void to silence unused-var lint
 export function FilterChips({ filters, facets: _f, onChangeFilters }: Props) {
-  void _f; // facets retained for when backend filter support lands
+  void _f;
   function remove(key: keyof SearchFilters) {
     const next = { ...filters };
     delete next[key];
@@ -37,13 +22,7 @@ export function FilterChips({ filters, facets: _f, onChangeFilters }: Props) {
 
   return (
     <div className="flex flex-wrap items-center gap-sm">
-      {/*
-       * [HIDDEN — filter button disabled until backend supports price/rating/stock]
-       * When re-enabling: restore FilterButton here and add price/rating/inStock
-       * Chip renders below.
-       */}
 
-      {/* Active chips — supported filters only */}
       {filters.categoryId != null ? (
         <Chip
           label={`Category #${filters.categoryId}`}
@@ -57,7 +36,6 @@ export function FilterChips({ filters, facets: _f, onChangeFilters }: Props) {
         />
       ) : null}
 
-      {/* Clear all */}
       {hasSupportedFilters ? (
         <button
           type="button"

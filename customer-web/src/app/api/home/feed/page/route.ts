@@ -1,14 +1,6 @@
 import { NextResponse } from "next/server";
 import { authedFetch, backendFetch, extractError } from "@/server/auth/session";
 
-/**
- * Endless-scroll product page. Public, but if the caller has a session we send
- * it through `authedFetch` so the backend can apply its viewer filter (a
- * merchant never sees their own shop's products in their stream). Anonymous
- * callers fall back to the plain public fetch.
- *
- * Query: `page` (>=0), `limit` (4..40), optional `seed` (reuse across pages).
- */
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const qp = new URLSearchParams();

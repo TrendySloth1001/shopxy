@@ -10,9 +10,6 @@ import {
   setSessionCookies,
 } from "@/server/auth/session";
 
-// POST /api/auth/register — customer signup. Creates a CUSTOMER account on the
-// backend (no shop) and persists the session as httpOnly cookies. Consent
-// literals are forwarded as the backend requires them.
 export async function POST(req: Request) {
   const json = await req.json().catch(() => null);
   const parsed = registerWireSchema.safeParse(json);
@@ -34,8 +31,6 @@ export async function POST(req: Request) {
     }),
   });
   if (!res.ok) {
-    // Pass the backend's wording through — `extractError` would surface the
-    // raw `verification_unavailable` sentinel.
     if (res.status === 503) {
       const body = (await res.json().catch(() => null)) as { message?: string } | null;
       return NextResponse.json(
@@ -54,7 +49,6 @@ export async function POST(req: Request) {
   }
 
   const payload: unknown = await res.json();
-  // A code was emailed and no account exists yet — no cookies to set.
   if (
     payload &&
     typeof payload === "object" &&

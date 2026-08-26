@@ -11,11 +11,8 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
-/// Session-scoped dismissed alert ids — survives rebuilds + period reloads,
-/// resets when the app restarts (mirrors the web's sessionStorage).
 final Set<String> _dismissed = <String>{};
 
-/// CTA label per alert id (the message already carries the detail).
 String _ctaLabel(AppLocalizations l10n, String id) => switch (id) {
   'low-stock' => l10n.dashboardAlertReorder,
   'gst-due' => l10n.dashboardAlertFileGst,
@@ -24,7 +21,6 @@ String _ctaLabel(AppLocalizations l10n, String id) => switch (id) {
   _ => l10n.dashboardView,
 };
 
-/// Dismissible smart-alert notifications. Mirrors `components/alerts.tsx`.
 class Alerts extends StatefulWidget {
   const Alerts({super.key, required this.alerts});
   final List<DashboardAlert> alerts;
@@ -38,7 +34,7 @@ class _AlertsState extends State<Alerts> {
     final Widget page = switch (href) {
       '/dashboard/products' => const ProductsPage(),
       '/dashboard/cashier' => const CashierPage(),
-      _ => const ReportsPage(), // reports + any other money path
+      _ => const ReportsPage(),
     };
     dashPush(context, page);
   }

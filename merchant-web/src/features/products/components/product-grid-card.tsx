@@ -9,14 +9,6 @@ import { money } from "../format";
 import { mediaSrc } from "./product-thumb";
 import { StockBadge } from "./stock-badge";
 
-/**
- * Product card for the masonry grid on the products screen — the web
- * counterpart of the Flutter `ProductGridCard`. Carries the same signals as
- * the list row (image, name, SKU · category, sell/MRP, stock, publish state)
- * but stacked, so the card flows into the responsive column layout. The
- * whole card links to the detail page; the publish pill is an overlay button
- * that stops propagation so it doesn't trigger the link.
- */
 export function ProductGridCard({
   product,
   categoryName,
@@ -40,7 +32,6 @@ export function ProductGridCard({
         href={`/dashboard/products/${product.id}`}
         className="block focus-visible:outline-none"
       >
-        {/* Square, full-bleed image with a tinted package fallback. */}
         <div className="relative aspect-square w-full bg-surface-tint">
           {src ? (
             <Image
@@ -82,7 +73,6 @@ export function ProductGridCard({
         </div>
       </Link>
 
-      {/* Publish toggle — overlay so it stays outside the card's link. */}
       <button
         type="button"
         onClick={onTogglePublish}

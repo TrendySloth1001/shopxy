@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-/** GET /products/:id/reviews — cursor-paginated reviews. Public. */
 export async function GET(req: Request, { params }: Ctx) {
   const { id } = await params;
   const qs = new URL(req.url).searchParams.toString();
@@ -18,7 +17,6 @@ export async function GET(req: Request, { params }: Ctx) {
   return NextResponse.json(await res.json().catch(() => null), { status: 200 });
 }
 
-/** POST /products/:id/reviews — submit or update a review. Auth required. */
 export async function POST(req: Request, { params }: Ctx) {
   const { id } = await params;
   const body = await req.json().catch(() => null);

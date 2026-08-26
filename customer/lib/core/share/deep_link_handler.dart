@@ -6,17 +6,6 @@ import 'package:shopxy_customer/core/config/app_config.dart';
 import 'package:shopxy_customer/features/marketplace/presentation/pages/product_detail_page.dart';
 import 'package:shopxy_customer/features/marketplace/presentation/pages/shop_profile_page.dart';
 
-/// Listens for incoming app links + the launching URL and routes the
-/// supported paths to in-app pages. Lives at app boot (instantiated in
-/// main.dart) so a tap on a shared product URL opens the PDP whether
-/// the app was already running (uriLinkStream) or just cold-started
-/// (getInitialAppLink).
-///
-/// Supported URL shapes:
-///   `https://<webBaseUrl>/p/<id>`       product (universal / app link)
-///   `shopxy://product/<id>`             product (custom scheme)
-///   `https://<webBaseUrl>/s/<slug>`     shop (universal / app link)
-///   `shopxy://shop/<slug>`              shop (custom scheme)
 class DeepLinkHandler {
   DeepLinkHandler(this._navigatorKey);
 
@@ -26,11 +15,6 @@ class DeepLinkHandler {
   StreamSubscription<Uri>? _sub;
   bool _started = false;
 
-  /// Tracks the most recent destination we navigated to plus the
-  /// millisecond timestamp, so consecutive identical Uri events from
-  /// the OS (which happens often on Android cold-starts) don't stack
-  /// duplicate pages. The key is `"p:<id>"` for products and
-  /// `"s:<slug>"` for shops.
   String? _lastKey;
   int _lastNavigatedAtMs = 0;
   static const _dedupeWindowMs = 1500;
@@ -39,20 +23,13 @@ class DeepLinkHandler {
     if (_started) return;
     _started = true;
 
-    // Cold-start URL — the app was launched by a tap on a link. Drain
-    // first so the eventual push lands on top of the root route the
-    // navigator builds, not below it.
     final initial = await _appLinks.getInitialLink();
     if (initial != null) {
-      // Defer to the next frame so the navigator has been built before
-      // we push onto it.
       WidgetsBinding.instance.addPostFrameCallback((_) => _handle(initial));
     }
 
     _sub = _appLinks.uriLinkStream.listen(
       _handle,
-      // Errors during link parsing shouldn't crash the app; the user
-      // just lands on whatever page they would have without the link.
       onError: (_) {},
     );
   }
@@ -70,13 +47,6 @@ class DeepLinkHandler {
   }
 
   void _route(String key) {
-    // Both supported destinations (product PDP, shop profile) are
-    // public — no auth gate. If a future link type needs auth (e.g.
-    // /orders/<id>), guard it here and queue for replay on sign-in.
-
-    // Dedupe consecutive identical taps. The OS fires the uri stream
-    // more than once on some platforms, and the AppLinks plugin
-    // re-delivers the cold-start URI alongside the live stream.
     final now = DateTime.now().millisecondsSinceEpoch;
     if (_lastKey == key && now - _lastNavigatedAtMs < _dedupeWindowMs) {
       return;
@@ -106,10 +76,6 @@ class DeepLinkHandler {
     }
   }
 
-  /// Extracts a `"p:<id>"` (product) or `"s:<slug>"` (shop) target
-  /// from a supported URL. Tolerant of trailing slashes and query
-  /// strings; returns null for anything else so the listener can
-  /// safely ignore unrelated links the OS might deliver.
   String? _extractTarget(Uri uri) {
     if (uri.scheme == 'https' || uri.scheme == 'http') {
       final expectedHost = Uri.parse(AppConfig.webBaseUrl).host;
@@ -126,9 +92,6 @@ class DeepLinkHandler {
       return null;
     }
     if (uri.scheme == AppConfig.appScheme) {
-      // Custom schemes put the "host" before the path, so
-      //   shopxy://product/12  → host=product, pathSegments=[12]
-      //   shopxy://shop/foo    → host=shop,    pathSegments=[foo]
       if (uri.host == 'product' && uri.pathSegments.isNotEmpty) {
         final id = int.tryParse(uri.pathSegments.first);
         return id == null ? null : 'p:$id';

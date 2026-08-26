@@ -1,13 +1,5 @@
 import { z } from "zod";
 
-/**
- * Client shapes + fetchers for the dashboard KPI drawers' receivables /
- * payables drill-downs, mirroring the backend `GET /dashboard/receivables`
- * and `/dashboard/payables` (`dashboard.service.assembleBreakdown`). Each
- * lists debtors/creditors (biggest balance first) with the confirmed
- * documents behind the balance. Validated at the BFF boundary.
- */
-
 const money = z.coerce.number().default(0);
 
 const breakdownInvoiceSchema = z.object({
@@ -23,7 +15,6 @@ const counterpartySchema = z.object({
   id: z.coerce.string(),
   name: z.string(),
   billed: money,
-  // Named `received` on the receivables side, `paid` on the payables side.
   received: money.optional(),
   paid: money.optional(),
   outstanding: money,
@@ -44,7 +35,6 @@ export const breakdownSchema = z.object({
 });
 export type Breakdown = z.infer<typeof breakdownSchema>;
 
-/** The amount already settled against a counterparty, whichever side. */
 export function settled(c: Counterparty): number {
   return c.received ?? c.paid ?? 0;
 }
@@ -57,7 +47,6 @@ async function getBreakdown(path: string, fallback: string): Promise<Breakdown> 
       const body = (await res.json()) as { error?: string };
       if (body?.error) message = body.error;
     } catch {
-      /* keep fallback */
     }
     throw new Error(message);
   }

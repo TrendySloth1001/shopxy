@@ -1,8 +1,5 @@
 import { z } from "zod";
 
-/// Cashier control-center client API — zod-validated reads against the BFF
-/// (/api/cashier/*), mirroring the backend cashier.service shapes.
-
 export const shiftSchema = z.object({
   id: z.coerce.string(),
   status: z.string(),
@@ -115,7 +112,6 @@ async function jsonOrThrow(res: Response): Promise<unknown> {
   return data;
 }
 
-/** True when an error from this module is "needs a manager to authorise". */
 export function isOverrideRequired(e: unknown): boolean {
   return typeof e === "object" && e !== null && (e as { code?: string }).code === "OVERRIDE_REQUIRED";
 }
@@ -123,7 +119,6 @@ export function isOverrideRequired(e: unknown): boolean {
 export const overrideGrantSchema = z.object({ token: z.string(), authorizerName: z.string() });
 export type OverrideGrant = z.infer<typeof overrideGrantSchema>;
 
-/** Manager authorises a privileged till action with their credentials. */
 export async function authorizeOverride(email: string, password: string): Promise<OverrideGrant> {
   const res = await fetch("/api/cashier/authorize", {
     method: "POST",
@@ -188,7 +183,6 @@ export async function processReturn(input: {
   originalInvoiceId: string;
   refundMode: "CASH" | "UPI" | "CARD" | "OTHER";
   lines: Array<{ productId: string; quantity: number }>;
-  /** Manager-authorisation grant when the cashier lacks the override right. */
   override?: string;
 }): Promise<ReturnResult> {
   const res = await fetch("/api/cashier/return", {

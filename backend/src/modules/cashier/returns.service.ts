@@ -2,11 +2,6 @@ import { Prisma } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
 import { invoicesService, PosInvoiceError } from '../invoices/invoices.service.js';
 
-/// POS returns / exchange — issue a GST **credit note** against a prior POS sale,
-/// restock the goods, and (for a cash refund) book the drawer pay-out. Module of
-/// plain functions. The credit note is the legal document; the cash movement
-/// keeps the shift's drawer reconciliation honest.
-
 export type RefundMode = 'CASH' | 'UPI' | 'CARD' | 'OTHER';
 
 export interface ReturnableLineDto {
@@ -17,7 +12,6 @@ export interface ReturnableLineDto {
   taxPercent: number;
   soldQty: number;
   returnedQty: number;
-  /** soldQty − returnedQty. */
   returnableQty: number;
 }
 
@@ -47,9 +41,6 @@ const num = (d: Prisma.Decimal | number | null | undefined): number =>
 
 type Db = Prisma.TransactionClient | typeof prisma;
 
-/// Already-returned quantity per product for an original invoice (summed across
-/// its credit notes). Accepts a tx so the over-return cap can be checked inside
-/// the return transaction.
 async function returnedQtyByProduct(originalInvoiceId: number, db: Db = prisma): Promise<Map<number, number>> {
   const creditNotes = await db.invoice.findMany({
     where: { originalInvoiceId, documentType: 'CREDIT_NOTE' },
@@ -64,7 +55,6 @@ async function returnedQtyByProduct(originalInvoiceId: number, db: Db = prisma):
   return map;
 }
 
-/// The original sale + per-line returnable quantities, for the return screen.
 export async function getReturnable(
   shopId: number,
   invoiceId: number,
@@ -113,8 +103,6 @@ export async function getReturnable(
   };
 }
 
-/// Process a return: build a credit note for the requested lines, restock, and
-/// (for a cash refund within an open shift) book a REFUND drawer movement.
 export async function returnSale(
   shopId: number,
   userId: number,
@@ -147,9 +135,6 @@ export async function returnSale(
 
   try {
     const result = await prisma.$transaction(async (tx) => {
-      // Re-read already-returned quantities INSIDE the (Serializable) tx and
-      // validate the over-return cap here, so two concurrent returns of the same
-      // sale can't both pass the cap and double-refund — the loser aborts (P2034).
       const returned = await returnedQtyByProduct(original.id, tx);
       const items: Array<{ productId: number; quantity: number; unitPrice: number; discount: number; taxPercent: number; cessRate: number }> = [];
       for (const req of input.lines) {
@@ -172,10 +157,6 @@ export async function returnSale(
         });
       }
 
-      // Resolve the caller's open shift BEFORE issuing the note. A cash refund
-      // MUST book a REFUND drawer movement, so a cash refund without an open
-      // shift would silently skip the drawer entry and corrupt reconciliation
-      // (CASH-3). Reject it up front rather than complete an unbooked refund.
       const shift = await tx.cashierShift.findFirst({
         where: { shopId, openedById: userId, status: 'OPEN' },
         orderBy: { id: 'desc' },
@@ -198,12 +179,9 @@ export async function returnSale(
           items,
         },
         userId,
-        // CASH-1 — tie the credit note to the issuing shift (null when none open,
-        // which only happens for non-cash refunds; cash was rejected above).
         shift?.id,
       );
 
-      // Cash refund → reduce the drawer via a REFUND movement on the open shift.
       let cashDrawerAdjusted = false;
       if (input.refundMode === 'CASH' && shift) {
         await tx.cashMovement.create({
@@ -230,7 +208,6 @@ export async function returnSale(
     return { ...result, refundMode: input.refundMode };
   } catch (e) {
     if (e instanceof PosInvoiceError) return { error: e.message };
-    // Serializable conflict (a concurrent return on the same sale) → ask to retry.
     if ((e as { code?: string }).code === 'P2034') {
       return { error: 'Another return for this sale is in progress — please retry.' };
     }

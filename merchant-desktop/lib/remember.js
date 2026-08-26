@@ -1,20 +1,13 @@
 "use strict";
 
-/**
- * Remembered-accounts store for the desktop app. The device-remember token
- * NEVER reaches the renderer/web JS: it's held here in the main process,
- * encrypted at rest with the OS keychain (Electron safeStorage), and used to
- * call the backend + inject fresh session cookies into the Electron session.
- * The renderer only ever gets the display profile (name/email/avatar).
- */
 const fs = require("node:fs");
 const path = require("node:path");
 const { safeStorage } = require("electron");
 
-let _serverUrl = null; // http://127.0.0.1:PORT (cookie origin)
-let _apiBaseUrl = null; // backend base, no trailing slash
+let _serverUrl = null;
+let _apiBaseUrl = null;
 let _userDataDir = null;
-let _ses = null; // Electron session for cookie read/write
+let _ses = null;
 
 function configure({ serverUrl, apiBaseUrl, userDataDir, ses }) {
   _serverUrl = serverUrl;
@@ -44,11 +37,6 @@ function sealToken(token) {
   if (safeStorage.isEncryptionAvailable()) {
     return { enc: safeStorage.encryptString(token).toString("base64") };
   }
-  // Keychain unavailable (e.g. Linux without an unlocked keyring) — NEVER write
-  // the raw session-minting rememberToken to disk in cleartext (TOKEN-1).
-  // Persist nothing secret: the account still shows in the picker (display
-  // profile only), but resume will find no token and fall back to a password
-  // login. Better a re-login prompt than a plaintext credential on disk.
   return {};
 }
 
@@ -60,7 +48,6 @@ function openToken(acct) {
       return null;
     }
   }
-  // No encrypted token on file — never read a cleartext fallback (TOKEN-1).
   return null;
 }
 
@@ -85,7 +72,7 @@ async function setSessionCookie(name, value) {
     name,
     value,
     httpOnly: true,
-    secure: false, // loopback http origin
+    secure: false,
     sameSite: "lax",
     path: "/",
     expirationDate: Math.floor(Date.now() / 1000) + 7 * 24 * 3600,
@@ -101,8 +88,6 @@ function upsert(store, profile, token) {
   return { accounts: [{ ...profile, ...sealToken(token) }, ...rest] };
 }
 
-/** After a fresh password login: mint + store a remember credential for this
- *  device. Reads the just-set access cookie from the session (never the web). */
 async function rememberCurrentAccount() {
   const access = await getCookie("sxm_access");
   if (!access) return { ok: false };
@@ -119,7 +104,6 @@ async function rememberCurrentAccount() {
   return { ok: true };
 }
 
-/** Profiles only — no tokens — for the login-screen account cards. */
 function listRememberedAccounts() {
   return readStore().accounts.map((a) => ({
     id: a.id,
@@ -129,8 +113,6 @@ function listRememberedAccounts() {
   }));
 }
 
-/** One-tap resume: exchange the stored token for a fresh session and inject
- *  the cookies. Drops the card if the token is dead. */
 async function resumeAccount(id) {
   const store = readStore();
   const acct = store.accounts.find((a) => a.id === id);
@@ -145,7 +127,6 @@ async function resumeAccount(id) {
     try {
       error = (await res.json()).error ?? error;
     } catch {
-      /* keep default */
     }
     return { ok: false, error, removed: true };
   }
@@ -156,7 +137,6 @@ async function resumeAccount(id) {
   return { ok: true };
 }
 
-/** "Remove this account" — revoke server-side + drop locally. */
 async function forgetAccount(id) {
   const store = readStore();
   const acct = store.accounts.find((a) => a.id === id);
@@ -166,7 +146,6 @@ async function forgetAccount(id) {
       try {
         await backend("/auth/remember/forget", { body: { rememberToken: token } });
       } catch {
-        /* best effort */
       }
     }
   }

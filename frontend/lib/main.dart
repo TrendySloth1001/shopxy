@@ -73,12 +73,9 @@ import 'package:shopxy/features/returns/data/datasources/merchant_returns_remote
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // A throw before `runApp` would leave the launch window up forever.
   try {
     AppConfig.assertSafeForRelease();
 
-    // Read the developer environment choice BEFORE anything resolves a URL,
-    // otherwise the first requests of the run go to the previous backend.
     await AppEnvironments.load();
 
     await bootstrapShopxy();
@@ -88,68 +85,25 @@ void main() async {
   }
 }
 
-/// Teardown hooks for the long-lived listeners the current object graph
-/// leaves running. Populated by [bootstrapShopxy] and drained by it on the
-/// next call — without this, switching environments would leave the previous
-/// graph's outbox processor and connectivity prober alive alongside the new
-/// one.
 final List<void Function()> _graphDisposers = [];
 
-/// Builds the entire object graph and hands it to `runApp`.
-///
-/// Extracted from [main] so the developer environment switcher
-/// ([AppEnvironments]) can tear the app down and build it again against a
-/// different backend. Everything stateful is a fresh instance — the token
-/// store, the offline response cache, the outbox and every provider — so no
-/// data from the previous environment's database can survive the switch. A
-/// key-swap style "restart" would not do: the providers live above `runApp`,
-/// so rebuilding the widget tree alone would re-attach the very state we're
-/// trying to discard.
 Future<void> bootstrapShopxy() async {
-  // Snapshot the outgoing graph's teardown hooks and run them only once the
-  // replacement root is mounted (bottom of this function). Disposing them here
-  // would kill ChangeNotifiers — NetworkStatus above all — that the still-live
-  // old widget tree is listening to, and the several awaits below give it
-  // plenty of frames to rebuild and throw "used after dispose".
   final outgoing = List.of(_graphDisposers);
   _graphDisposers.clear();
 
-  // Load tokens from secure storage before rendering anything
   final tokenManager = TokenManager();
   await tokenManager.init();
 
-  // Reuse the same secure-storage container we already use for tokens
-  // for tiny user prefs (currently just nav style). Awaited so the
-  // first frame already reflects the saved choice.
   final navPrefs = NavigationPrefsProvider(appPrefsStorage);
   await navPrefs.load();
 
-  // Theme choice (light / dark / OLED) — loaded before the first frame so the
-  // app opens in the saved theme with no flash. Also primes AppPalette.active.
   final themePrefs = ThemePrefsProvider(appPrefsStorage);
   await themePrefs.load();
 
-  // Haptics on/off — loaded before the first frame and attached to the
-  // static AppHaptics gate so every tap-site call (nav, menu, scroll edges)
-  // respects the saved choice from the very first interaction.
   final hapticsPrefs = HapticsPrefsProvider(appPrefsStorage);
   await hapticsPrefs.load();
   AppHaptics.attach(hapticsPrefs);
 
-  // Offline layer (SSOT): one connectivity signal + one device response cache,
-  // both injected into the single ApiClient so every read gets offline support
-  // without touching data sources. Cache init is awaited so the first request
-  // can already hit it.
-  // The probe is what lets the app *recover* on its own. Every other signal
-  // comes from a completed request, and while offline nothing issues one — the
-  // outbox won't drain and screens serve cache — so without this the app can
-  // sit behind the offline banner long after the network is back.
-  //
-  // `/health` is unauthenticated on purpose: probing an authed route while a
-  // token has expired would answer 401 and start a refresh storm during exactly
-  // the moment the network is flaky. And ANY completed response counts,
-  // including 503 (`{status: 'degraded', db: 'down'}`) — the question here is
-  // whether we can reach the network at all, not whether the server is well.
   final networkStatus = NetworkStatus(
     probe: () async {
       try {
@@ -162,12 +116,6 @@ Future<void> bootstrapShopxy() async {
       }
     },
   );
-  // Coming back to the foreground is the strongest hint the answer changed —
-  // a phone that slept through a network change wakes with the backoff already
-  // at its 30s ceiling, and making someone watch a stale banner for half a
-  // minute after they've opened the app is the visible half of this bug.
-  // Retained for the graph's lifetime and torn down when the environment
-  // switcher rebuilds it (see [_graphDisposers]).
   final lifecycle = AppLifecycleListener(
     onResume: networkStatus.probeNow,
   );
@@ -185,14 +133,10 @@ Future<void> bootstrapShopxy() async {
     networkStatus: networkStatus,
     outbox: outbox,
   );
-  // Resolve the device name once (async, non-blocking) so requests carry
-  // `X-Device-Name` for the sessions list. Auth calls are user-triggered
-  // seconds later, well after this fast native lookup resolves.
   unawaited(
     DeviceInfoHelper.deviceName().then((n) => apiClient.deviceName = n),
   );
 
-  // Data sources
   final authDs = AuthRemoteDataSource(apiClient);
   final categoriesDs = CategoriesRemoteDataSource(apiClient);
   final customFieldsDs = CustomFieldsRemoteDataSource(apiClient);
@@ -228,17 +172,9 @@ Future<void> bootstrapShopxy() async {
     invitationsDs,
   );
 
-  // Auth provider (created before runApp so we can wire the callback)
   final authProvider = AuthProvider(authDs, tokenManager);
 
-  // Eagerly-created user-scoped providers — registered with
-  // AuthProvider.registerOnClear so logout / 401-refresh drops the
-  // previous user's cached lists. Without these, user B sees A's
-  // products/invoices/etc. flash on screen for a frame.
   final productsProvider = ProductsProvider(productsDs);
-  // The in-memory catalogue behind local product search in the invoice,
-  // challan and quotation pickers. Loaded lazily by whichever picker opens
-  // first; refreshed by the cache listener below when products change.
   final productCatalogue = ProductCatalogue(productsDs);
   final invoicesProvider = InvoicesProvider(invoicesDs);
   final invoiceNumberingProvider = InvoiceNumberingProvider(invoiceNumberingDs);
@@ -250,16 +186,7 @@ Future<void> bootstrapShopxy() async {
   final linkedAccountProvider = LinkedAccountProvider(
     LinkedAccountRemoteDataSource(apiClient),
   );
-  // Hoisted to a local (was inline in the MultiProvider) so the cache-
-  // revalidation listener below can reload it when the dashboard changes.
   final dashboardProvider = DashboardProvider(dashboardDs);
-  // These five were previously created inline in the MultiProvider below
-  // (`create: (_) => X(...)`), which meant nothing outside the widget tree
-  // held a reference to register a clear-on-logout callback — the previous
-  // shop's custom fields, stock history, quotations, reports and analytics
-  // could all flash on screen for the next account on a shared device.
-  // Hoisted here so they can be wired into the same fan-out as everything
-  // else.
   final customFieldsProvider = CustomFieldsProvider(customFieldsDs);
   final stockProvider = StockProvider(stockDs);
   final quotationsProvider = QuotationsProvider(quotationsDs);
@@ -282,21 +209,9 @@ Future<void> bootstrapShopxy() async {
   authProvider.registerOnClear(stockProvider.reset);
   authProvider.registerOnClear(quotationsProvider.reset);
   authProvider.registerOnClear(reportsProvider.reset);
-  // Purge the device response cache on logout / 401 / account-delete so the
-  // next account can't see the previous user's cached business data.
   authProvider.registerOnClear(httpCache.wipe);
-  // Drop any un-synced offline writes on logout too (they belong to the account
-  // that's leaving).
   authProvider.registerOnClear(outbox.wipe);
 
-  // Replays queued offline writes when the network returns (and once now, for
-  // anything left from a previous offline session). `currentUserId` comes from
-  // the same source as the cache/outbox namespace (TokenManager), so they can't
-  // disagree, and it's available at boot — before AuthProvider loads the user.
-  // Lives as long as the object graph does: its NetworkStatus listener keeps
-  // it alive, and `dispose()` is called when the environment switcher rebuilds
-  // the graph — a leaked processor from the previous environment would replay
-  // its queued writes against the new backend.
   final outboxProcessor = OutboxProcessor(
     outbox: outbox,
     networkStatus: networkStatus,
@@ -306,35 +221,20 @@ Future<void> bootstrapShopxy() async {
   )..start();
   _graphDisposers.add(outboxProcessor.dispose);
 
-  // When ApiClient can't recover a 401 (refresh failed), force re-login
-  // — the registered callbacks fan out via clearAuth().
   tokenManager.onUnauthorized = () {
     authProvider.clearAuth();
   };
 
-  // Live permission sync: every authenticated response carries the
-  // caller's perms version; when it changes (an owner edited this
-  // staffer's access elsewhere) AuthProvider refetches /auth/me and the
-  // gated UI rebuilds — on the next request, no re-login.
   apiClient.onPermsVersion = authProvider.notePermsVersion;
 
-  // Keep the pending-orders badge fresh on session change.
   authProvider.addListener(() {
     if (authProvider.isAuthenticated) {
       ordersProvider.refreshPendingCount();
     }
   });
 
-  // Stale-while-revalidate repaint: a cache-first GET paints instantly, then a
-  // background revalidation fires this event if the server copy changed (incl.
-  // a change made in another session, e.g. web). We reload the matching
-  // provider so the screen refreshes in place. Single central listener → no
-  // per-provider wiring. Errors are swallowed (background refresh).
   final cacheEventsSub = apiClient.cacheEvents.listen((tag) {
     final Future<void>? reload = switch (tag) {
-      // Both: the grid reloads its current page, and the in-memory catalogue
-      // refetches so a product created on web is findable in the pickers here
-      // without a restart.
       'products' => Future.wait<void>([
         productsProvider.loadProducts(),
         productCatalogue.refresh(),
@@ -352,9 +252,6 @@ Future<void> bootstrapShopxy() async {
   });
   _graphDisposers.add(() => unawaited(cacheEventsSub.cancel()));
 
-  // Whenever the session changes (login or logout), refresh the bell
-  // badge so it reflects the new user immediately. Single listener for
-  // the app lifetime; doesn't leak.
   authProvider.addListener(() {
     if (authProvider.isAuthenticated) {
       notificationsProvider.refreshUnreadCount();
@@ -367,22 +264,15 @@ Future<void> bootstrapShopxy() async {
   runApp(
     MultiProvider(
       providers: [
-        // Auth first — _AuthGate reads this
         ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
         ChangeNotifierProvider<NavigationPrefsProvider>.value(value: navPrefs),
         ChangeNotifierProvider<ThemePrefsProvider>.value(value: themePrefs),
         ChangeNotifierProvider<HapticsPrefsProvider>.value(value: hapticsPrefs),
-        // Offline connectivity signal — watched by the app-wide offline banner.
         ChangeNotifierProvider<NetworkStatus>.value(value: networkStatus),
-        // Outbox exposed so the banner can show "syncing N changes" from its
-        // pendingCount. Provided as nullable so a lookup never throws.
         Provider<Outbox?>.value(value: outbox),
 
-        // Raw HTTP client — surfaced for widgets that hit small endpoints
-        // (e.g. ContactChangesSection) without their own data-source layer.
         Provider<ApiClient>.value(value: apiClient),
 
-        // Data sources available for direct injection (e.g. detail pages)
         Provider<ProductsRemoteDataSource>.value(value: productsDs),
         Provider<StockRemoteDataSource>.value(value: stockDs),
         Provider<InvoicesRemoteDataSource>.value(value: invoicesDs),
@@ -405,7 +295,6 @@ Future<void> bootstrapShopxy() async {
         Provider<MerchantCouponsRemoteDataSource>.value(value: couponsDs),
         Provider<MerchantReturnsRemoteDataSource>.value(value: returnsDs),
 
-        // Feature state providers
         ChangeNotifierProvider<DashboardProvider>.value(
           value: dashboardProvider,
         ),
@@ -454,17 +343,12 @@ Future<void> bootstrapShopxy() async {
     ),
   );
 
-  // The replacement root is mounted — the previous graph is now detached and
-  // safe to tear down. Best-effort: a throwing disposer must not stop the app
-  // coming back up.
   for (final dispose in outgoing.reversed) {
     try {
       dispose();
     } catch (_) {
-      // already torn down, or never fully started
     }
   }
 
-  // Restore session after runApp so the splash screen shows during init
   authProvider.init();
 }

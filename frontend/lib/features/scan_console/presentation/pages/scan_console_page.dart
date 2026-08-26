@@ -13,11 +13,6 @@ import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// Continuous "scan to console" mode. The phone holds a live WebSocket to the
-/// shop room (role=scanner): every barcode/QR is pushed over the socket, the
-/// backend resolves it and fans it to the web console, and acks it back. The
-/// connection state + how many consoles are watching are shown up front so it's
-/// obvious whether scans are actually reaching the server.
 class ScanConsolePage extends StatefulWidget {
   const ScanConsolePage({super.key});
 
@@ -61,8 +56,6 @@ class _ScanConsolePageState extends State<ScanConsolePage> {
     final code = capture.barcodes.firstOrNull?.rawValue;
     if (code == null || code.isEmpty) return;
 
-    // Debounce a burst of identical frames; a deliberate re-scan after the
-    // cooldown is allowed through so it bumps the quantity on the console.
     final now = DateTime.now();
     if (code == _lastCode &&
         _lastAt != null &&
@@ -162,7 +155,6 @@ class _ScanConsolePageState extends State<ScanConsolePage> {
   }
 }
 
-/// The "connection established on the phone end" surface.
 class _ConnectionBanner extends StatelessWidget {
   const _ConnectionBanner({required this.client});
   final ScanConsoleClient client;

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 
-/// Section label shown above lists or content groups.
 class AppSectionHeader extends StatelessWidget {
   const AppSectionHeader({
     super.key,

@@ -2,8 +2,6 @@ import 'dart:convert';
 
 import 'package:shopxy/core/network/api_client.dart';
 
-/// One member of the shop's team. `userId` is the user account id (used
-/// for permission edits / remove). `roleName` is the human label.
 class TeamMember {
   const TeamMember({
     required this.userId,
@@ -19,13 +17,12 @@ class TeamMember {
   final String userId;
   final String name;
   final String email;
-  final String role; // OWNER | STAFF (+ legacy MANAGER/STOCKIST/CASHIER)
+  final String role;
   final String? roleName;
   final bool isOwner;
   final String? avatarUrl;
   final List<String> permissions;
 
-  /// What to show on the role badge.
   String get label => isOwner ? 'Owner' : (roleName ?? teamRoleLabel(role));
 
   factory TeamMember.fromJson(Map<String, dynamic> j) {
@@ -45,7 +42,6 @@ class TeamMember {
   }
 }
 
-/// A pending team invitation (invited, not yet accepted).
 class TeamInvite {
   const TeamInvite({
     required this.id,
@@ -72,7 +68,6 @@ class TeamInvite {
       );
 }
 
-/// An owner-defined role: a named permission template.
 class TeamRole {
   const TeamRole({
     required this.id,
@@ -94,8 +89,6 @@ class TeamRole {
       );
 }
 
-/// Thin wrapper over the /me/team endpoints. Surfaces the backend's
-/// machine error string so the UI can show why a write was rejected.
 class TeamService {
   TeamService(this._client);
   final ApiClient _client;
@@ -129,7 +122,6 @@ class TeamService {
     }
   }
 
-  // ── Members ─────────────────────────────────────────────────────
   Future<List<TeamMember>> listMembers() async {
     final res = await _client.get('/me/team/members');
     if (res.statusCode != 200) {
@@ -191,7 +183,6 @@ class TeamService {
     }
   }
 
-  // ── Roles ───────────────────────────────────────────────────────
   Future<List<TeamRole>> listRoles() async {
     final res = await _client.get('/me/team/roles');
     if (res.statusCode != 200) {
@@ -231,8 +222,6 @@ class TeamService {
   }
 }
 
-// ── Permission area metadata (mirror of backend AREAS) ──────────────
-
 class PermissionAreaInfo {
   const PermissionAreaInfo(this.key, this.label, {this.hint = '', this.viewOnly = false});
   final String key;
@@ -259,9 +248,6 @@ const List<PermissionAreaInfo> kPermissionAreaInfos = [
   PermissionAreaInfo('team', 'Team', hint: 'Team members & roles'),
 ];
 
-/// Plain-language "what you can do" bullets derived from an actual grant
-/// set — used on the join-request screen so the role is described by its
-/// real access, not a hardcoded blurb. Manage beats view per area.
 List<String> responsibilitiesFromPermissions(List<String> perms) {
   final set = perms.toSet();
   final out = <String>[];
@@ -275,12 +261,9 @@ List<String> responsibilitiesFromPermissions(List<String> perms) {
   return out;
 }
 
-/// Count of areas the grant set can *manage* — for compact summaries.
 int manageableAreaCount(List<String> perms) =>
     perms.where((r) => r.endsWith(':manage')).length;
 
-/// Normalise a grant set the way the backend does: every `:manage`
-/// carries its `:view`.
 Set<String> normalizeRights(Iterable<String> rights) {
   final out = <String>{};
   for (final r in rights) {
@@ -290,7 +273,6 @@ Set<String> normalizeRights(Iterable<String> rights) {
   return out;
 }
 
-/// Legacy fallback label for the old enum role values.
 String teamRoleLabel(String role) {
   switch (role) {
     case 'OWNER':

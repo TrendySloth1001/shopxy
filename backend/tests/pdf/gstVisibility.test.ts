@@ -60,8 +60,6 @@ describe('invoiceGstVisibility', () => {
     expect(invoiceGstVisibility(inv, null).showGst).toBe(false);
   });
 
-  // A composition dealer holds a GSTIN but may not collect tax (Sec 10), so
-  // the columns must stay off despite the GSTIN being on file.
   it('hides GST for a composition dealer', () => {
     const inv = invoice({ items: [item({ taxPercent: 0 })] });
     const composition = { ...REGISTERED, registrationType: 'COMPOSITION' as const };
@@ -83,9 +81,6 @@ describe('invoiceGstVisibility', () => {
     expect(invoiceGstVisibility(inv, owner).showGst).toBe(true);
   });
 
-  // The load-bearing safety net: a shop can move `gstEffectiveFrom` after
-  // issuing invoices. Hiding the tax columns on a document that genuinely
-  // charged tax would leave its own totals not adding up.
   it('still prints GST when the gate says no but the invoice recorded tax', () => {
     const inv = invoice({
       invoiceDate: new Date('2026-07-01T00:00:00.000Z'),
@@ -97,8 +92,6 @@ describe('invoiceGstVisibility', () => {
     expect(invoiceGstVisibility(inv, owner).showGst).toBe(true);
   });
 
-  // A purchase records the *vendor's* output tax — our own registration is
-  // irrelevant, only whether tax was actually charged to us.
   it('prints GST on a purchase carrying vendor tax even when we are unregistered', () => {
     const inv = invoice({ type: 'PURCHASE', items: [item({ taxPercent: 18 })] });
     expect(invoiceGstVisibility(inv, UNREGISTERED).showGst).toBe(true);
@@ -144,8 +137,6 @@ describe('buildPdfColumns', () => {
     expect(c.row(row, 0)).toEqual(['1', 'Kurti', '100.00']);
   });
 
-  // The table must still span the page — the freed width goes to the flex
-  // column rather than leaving a ragged right edge.
   it('re-sums kept widths to the declared total in every combination', () => {
     for (const [hsn, gst] of [
       [true, true],
@@ -167,8 +158,6 @@ describe('buildPdfColumns', () => {
     expect([c.align(0), c.align(1), c.align(2)]).toEqual(['left', 'left', 'right']);
   });
 
-  // Mutually exclusive columns (IGST vs CGST+SGST) are why the total is
-  // passed in rather than summed from the declarations.
   it('sizes correctly when two declared columns are mutually exclusive', () => {
     const built = buildPdfColumns<{ v: string }>(100, [
       { header: 'Item', width: 40, align: 'left', flex: true, cell: (r) => r.v },

@@ -8,7 +8,6 @@ import type { Review } from "../types";
 interface Props {
   productId: string;
   productName: string;
-  /** If set, pre-populates the form for editing */
   existingReview?: Review | null;
   onClose: () => void;
   onSuccess: () => void;
@@ -29,7 +28,6 @@ export function WriteReviewModal({
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  // Lock body scroll
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -82,7 +80,6 @@ export function WriteReviewModal({
       }}
     >
       <div className="w-full max-w-panel overflow-hidden rounded-t-dialog bg-white sm:rounded-dialog">
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-hairline px-lg py-md">
           <h2 className="text-title-lg font-extrabold text-ink">
             {existingReview ? "Edit your review" : "Rate this product"}
@@ -97,10 +94,8 @@ export function WriteReviewModal({
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-lg p-lg">
-          {/* Product name */}
           <p className="line-clamp-2 text-body-md text-muted">{productName}</p>
 
-          {/* Star picker */}
           <div>
             <p className="mb-sm text-body-md font-bold text-ink">Your rating</p>
             <div className="flex items-center gap-xs">
@@ -143,7 +138,6 @@ export function WriteReviewModal({
             ) : null}
           </div>
 
-          {/* Title */}
           <div>
             <label htmlFor="review-title" className="mb-xs block text-body-md font-bold text-ink">
               Title{" "}
@@ -160,7 +154,6 @@ export function WriteReviewModal({
             />
           </div>
 
-          {/* Body */}
           <div>
             <label htmlFor="review-body" className="mb-xs block text-body-md font-bold text-ink">
               Review{" "}
@@ -177,14 +170,12 @@ export function WriteReviewModal({
             />
           </div>
 
-          {/* Error */}
           {error ? (
             <p role="alert" className="rounded-sm bg-error-soft px-md py-sm text-body-sm text-error">
               {error}
             </p>
           ) : null}
 
-          {/* Actions */}
           <div className="flex items-center gap-sm">
             <button
               type="submit"

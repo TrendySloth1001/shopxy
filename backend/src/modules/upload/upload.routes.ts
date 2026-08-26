@@ -4,18 +4,12 @@ import { fromBuffer as fileTypeFromBuffer } from 'file-type';
 import asyncHandler from '../../shared/http/asyncHandler.js';
 import { uploadImageWithVariants } from './upload.service.js';
 
-/// Merchant image upload. Mounted under `/upload` with `ownerOnly`
-/// upstream so only shop owners can hit it. The companion avatar route
-/// (customer-facing, requireAuth only) lives in upload-avatar.routes.ts.
-
 const router = Router();
 const ALLOWED_MIMES = new Set<string>(['image/jpeg', 'image/png', 'image/webp']);
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 8 * 1024 * 1024 }, // 8 MB
-  // No fileFilter here — extension/mimetype can be spoofed by the client.
-  // We validate the actual bytes below via file-type's magic-byte sniffing.
+  limits: { fileSize: 8 * 1024 * 1024 },
 });
 
 router.post(
@@ -33,9 +27,6 @@ router.post(
         .json({ error: 'Only JPEG, PNG, or WebP images are allowed' });
       return;
     }
-    // Re-encode + resize on upload so the storage layer is uniform WebP
-    // at 3 widths. Response includes the default (md) url plus the
-    // variant map so clients can request the size they need.
     const result = await uploadImageWithVariants(
       req.file.buffer,
       req.file.originalname,

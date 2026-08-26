@@ -1,7 +1,6 @@
 import { authedFetch, extractError } from "@/server/auth/session";
 import { NextResponse } from "next/server";
 
-/** GET /me/cart — fetch the caller's cart. Auth required. */
 export async function GET() {
   const res = await authedFetch("/me/cart");
   if (!res)
@@ -15,7 +14,6 @@ export async function GET() {
   return NextResponse.json(await res.json().catch(() => null), { status: res.status });
 }
 
-/** DELETE /me/cart — clear the entire cart. Auth required. */
 export async function DELETE() {
   const res = await authedFetch("/me/cart", { method: "DELETE" });
   if (!res)

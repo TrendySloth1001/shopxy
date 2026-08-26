@@ -12,14 +12,6 @@ import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// Two-level tree picker over the canonical taxonomy. Replaces the
-/// flat searchable list — categories are fixed and curated now, so the
-/// browse pattern (parent → child) matches how merchants think about
-/// where their product lives.
-///
-/// The picker only commits a *leaf* selection; tapping a parent expands
-/// it inline. A "Clear" footer surfaces when there's already a current
-/// pick.
 class CategoryPickerSheet extends StatefulWidget {
   const CategoryPickerSheet({super.key, required this.currentSelectionId});
 
@@ -52,8 +44,6 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
   @override
   void initState() {
     super.initState();
-    // If the current selection is a leaf, pre-expand its parent so the
-    // user lands on it visually without scrolling-and-tapping.
     _load();
   }
 
@@ -65,8 +55,6 @@ class _CategoryPickerSheetState extends State<CategoryPickerSheet> {
       setState(() {
         _tree = tree;
         _isLoading = false;
-        // Auto-expand any parent whose subtree contains the current
-        // selection so the user can confirm what's picked at a glance.
         for (final p in tree) {
           if (p.children.any(
             (c) => c.category.id == widget.currentSelectionId,
@@ -227,8 +215,6 @@ class _ParentRow extends StatelessWidget {
   final VoidCallback onToggle;
   final ValueChanged<Category?> onPickChild;
 
-  /// When the parent has no children, tapping the row picks it directly
-  /// instead of toggling (otherwise the parent is unpickable).
   final ValueChanged<Category?>? onPickParent;
 
   @override
@@ -293,8 +279,6 @@ class _ParentRow extends StatelessWidget {
         if (expanded && parent.children.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(
-              // Indent child chips to clear the parent thumbnail column
-              // (thumb width `huge` + row gap `md`).
               left: AppSizes.huge + AppSizes.md,
               bottom: AppSizes.sm,
             ),
@@ -373,9 +357,6 @@ class _ChildChip extends StatelessWidget {
   }
 }
 
-/// Thumbnail used in the parent row and child chip. Falls back to the
-/// iconName-derived glyph over a tint when the URL is empty or the
-/// load errors.
 class _CategoryThumb extends StatelessWidget {
   const _CategoryThumb({
     required this.category,
@@ -423,9 +404,6 @@ class _CategoryThumb extends StatelessWidget {
   }
 }
 
-/// Returned from [CategoryPickerSheet.show]. `categoryId == null` with
-/// a non-null result means the user explicitly cleared the selection;
-/// a `null` result means the sheet was dismissed without choosing.
 class CategoryPickerResult {
   const CategoryPickerResult({required this.categoryId, this.categoryName});
   final String? categoryId;

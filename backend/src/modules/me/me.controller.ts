@@ -14,8 +14,6 @@ const quotationStatusSchema = z
   .enum(['REQUESTED', 'PENDING', 'ACCEPTED', 'DECLINED', 'CANCELLED', 'EXPIRED'])
   .optional();
 
-/// Buyer's own GST identity. `gstin: null` clears the profile (back to B2C);
-/// the checksum itself is validated in the service, which owns the rule.
 const gstProfileSchema = z.object({
   gstin: z.string().trim().max(15).nullable(),
   legalName: z.string().trim().max(200).nullable().optional(),
@@ -25,8 +23,6 @@ const declineQuotationSchema = z.object({
   declineNote: z.string().max(500).nullable().optional(),
 });
 
-/// One line in a customer-built quote request (advisory catalogue prices; the
-/// merchant re-prices before sending the quotation back).
 const quoteRequestItemSchema = z.object({
   productId: zPublicId,
   name: z.string().max(200),
@@ -137,8 +133,6 @@ export class MeController {
     res.json({ ...body, vendor });
   }
 
-  /// Quotations the merchant sent to a party the caller is linked to. Listing
-  /// + detail are reads; accept/decline are writes (gated by assertOwnsParty).
   async quotations(req: Request, res: Response): Promise<void> {
     const partyId = parseId(req.params.partyId);
     if (!partyId) { res.status(400).json({ error: 'Invalid party id' }); return; }
@@ -202,7 +196,6 @@ export class MeController {
     res.json(result);
   }
 
-  /// Customer builds a basket and asks the shop for a quote (status REQUESTED).
   async requestQuotation(req: Request, res: Response): Promise<void> {
     const partyId = parseId(req.params.partyId);
     if (!partyId) { res.status(400).json({ error: 'Invalid party id' }); return; }
@@ -229,7 +222,6 @@ export class MeController {
     res.status(201).json(result.quotation);
   }
 
-  /// Customer downloads a quotation (the shop sent, or they requested) as PDF.
   async quotationPdf(req: Request, res: Response): Promise<void> {
     const partyId = parseId(req.params.partyId);
     const quotationId = parseId(req.params.quotationId);
@@ -250,7 +242,6 @@ export class MeController {
     }
   }
 
-  /// Customer withdraws their own REQUESTED quote.
   async cancelQuotation(req: Request, res: Response): Promise<void> {
     const partyId = parseId(req.params.partyId);
     const quotationId = parseId(req.params.quotationId);

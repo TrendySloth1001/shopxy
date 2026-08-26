@@ -15,11 +15,6 @@ import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/widgets/app_search_bar.dart';
 
-/// The P&L "Products sold" drill-down: an aggregated table with ONE row per
-/// product over the range (its number of sales, total qty, total revenue).
-/// Expanding a row lazily loads that product's full sale timeline a page at a
-/// time. Searches server-side across the whole range, not just the loaded page.
-/// A faithful port of merchant-web's `SoldProductsTable`.
 class SoldProductsTable extends StatefulWidget {
   const SoldProductsTable({super.key, required this.from, required this.to});
   final DateTime from;
@@ -58,7 +53,6 @@ class _SoldProductsTableState extends State<SoldProductsTable> {
   @override
   void didUpdateWidget(covariant SoldProductsTable old) {
     super.didUpdateWidget(old);
-    // The range changed (parent re-picked dates) — reset and pull page 1.
     if (old.from != widget.from || old.to != widget.to) _load();
   }
 
@@ -186,14 +180,12 @@ class _SoldProductsTableState extends State<SoldProductsTable> {
             ],
           ),
         ),
-        // Search — filters server-side across the whole range.
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
           child: AppSearchBar(
             hint: l10n.reportsSearchByProductOrSku,
             controller: _searchCtrl,
             onChanged: _onSearchChanged,
-            // _onSearchChanged runs its own debounce.
             debounce: Duration.zero,
           ),
         ),
@@ -265,7 +257,6 @@ class _SoldProductsTableState extends State<SoldProductsTable> {
                               : p.productId,
                         ),
                       ),
-                    // Grand-total footer.
                     Container(
                       decoration: BoxDecoration(
                         color: AppColors.heroPanel,
@@ -350,7 +341,6 @@ class _SoldProductsTableState extends State<SoldProductsTable> {
   }
 }
 
-/// One aggregated product row + its lazily-loaded timeline when expanded.
 class _ProductRow extends StatelessWidget {
   const _ProductRow({
     required this.product,
@@ -484,8 +474,6 @@ class _ProductRow extends StatelessWidget {
   }
 }
 
-/// The drill-down: a single product's individual sales, newest first, loaded a
-/// page at a time only once the row is expanded.
 class _ProductTimeline extends StatefulWidget {
   const _ProductTimeline({
     required this.from,
@@ -727,11 +715,10 @@ class _TimelineRow extends StatelessWidget {
   }
 }
 
-/// A small rounded count/qty chip whose tint scales with volume.
 class _Chip extends StatelessWidget {
   const _Chip({required this.label, required this.tone});
   final String label;
-  final (Color, Color) tone; // (fg, bg)
+  final (Color, Color) tone;
 
   @override
   Widget build(BuildContext context) {
@@ -753,16 +740,12 @@ class _Chip extends StatelessWidget {
   }
 }
 
-// ── tints & formatters (mirrors merchant-web's helpers) ──────────────────────
-
 NumberFormat _money() =>
     NumberFormat.currency(symbol: AppStrings.currencySymbol, decimalDigits: 0);
 
-/// Whole number when integral, else 2dp.
 String fmtQty(double q) =>
     q == q.roundToDouble() ? q.toStringAsFixed(0) : q.toStringAsFixed(2);
 
-/// Per-product icon tint — same product always gets the same colour.
 (Color, Color) _toneFor(String key) {
   var h = 0;
   for (final c in key.codeUnits) {
@@ -778,21 +761,18 @@ String fmtQty(double q) =>
   return tones[h % tones.length];
 }
 
-/// Qty chip colour by volume: bigger sale → warmer/stronger fill.
 (Color, Color) _qtyTone(double q) {
   if (q >= 5) return (AppColors.brandStrong, AppColors.brandSoft);
   if (q >= 2) return (AppColors.info, AppColors.infoSoft);
   return (AppColors.muted, AppColors.surfaceTint);
 }
 
-/// Sales-count chip colour: more repeat sales → stronger fill.
 (Color, Color) _countTone(int c) {
   if (c >= 10) return (AppColors.brandStrong, AppColors.brandSoft);
   if (c >= 3) return (AppColors.info, AppColors.infoSoft);
   return (AppColors.muted, AppColors.surfaceTint);
 }
 
-/// Clock colour by recency: today → green, this week → blue, older → muted.
 Color _recencyColor(DateTime? when) {
   if (when == null) return AppColors.subtle;
   final days = DateTime.now().difference(when).inHours / 24;

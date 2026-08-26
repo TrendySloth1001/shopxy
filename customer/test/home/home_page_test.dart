@@ -21,9 +21,6 @@ import 'package:shopxy_customer/features/orders/presentation/providers/orders_pr
 import 'package:shopxy_customer/features/shops/data/datasources/me_remote_data_source.dart';
 import 'package:shopxy_customer/features/shops/presentation/providers/shops_provider.dart';
 
-/// In-memory provider that bypasses the network — replays the seed
-/// HomeFeed verbatim so widget tests don't have to spin up an HTTP
-/// fake.
 class _FakeHomeFeedProvider extends HomeFeedProvider {
   _FakeHomeFeedProvider({
     HomeFeedStatus status = HomeFeedStatus.ready,
@@ -77,11 +74,6 @@ class _NoopTracking implements TrackingService {
 }
 
 Widget _harness(HomeFeedProvider provider) {
-  // The top bar reads from several providers via Selector — unread from
-  // NotificationsProvider, the pending-payment badge from OrdersProvider, and
-  // the profile button's visibility from ShopsProvider (hasLinkedParty). Stub
-  // them all with empty providers (never load()ed) so the widget pumps without
-  // a backend; empty state → the badges/buttons collapse to SizedBox.
   final apiClient = ApiClient(TokenManager());
   return MediaQuery(
     data: const MediaQueryData(size: Size(414, 896)),
@@ -108,9 +100,6 @@ Widget _harness(HomeFeedProvider provider) {
         ChangeNotifierProvider<AddressesProvider>(
           create: (_) => AddressesProvider(AddressesRemoteDataSource(apiClient)),
         ),
-        // Empty tree → CategoriesRail collapses to SizedBox.shrink. The
-        // real provider would fire a network request on load; here we
-        // never call load() so the tree stays empty.
         ChangeNotifierProvider<CategoriesProvider>(
           create: (_) =>
               CategoriesProvider(CategoriesRemoteDataSource(apiClient)),
@@ -128,10 +117,7 @@ void main() {
     );
     await tester.pump();
 
-    // No real sections render yet; the skeleton placeholder is the
-    // only ListView in the body region.
     expect(find.byType(ListView), findsWidgets);
-    // Top bar still renders so navigation chrome is consistent.
     expect(find.byType(HomePage), findsOneWidget);
   });
 
@@ -143,16 +129,9 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    // Ready-state path renders — distinct from the skeleton/error tests below
-    // (no error block, real HomePage scaffold present).
     expect(find.byType(HomePage), findsOneWidget);
     expect(find.text("Couldn't load your home feed"), findsNothing);
     expect(find.byType(Scrollable), findsWidgets);
-    // NOTE: the home header rework (auto-rotating trust strip, category chips)
-    // changed the hero TEMPLATE + scroll structure, so the previous exact
-    // 'Festive Edit' hero-title and 'Wireless Earbuds' drag assertions no longer
-    // hold. They were removed pending a redesign-aware re-check by the home owner
-    // rather than asserted against the new layout blind.
   });
 
   testWidgets('shows retry CTA when the initial load errors', (tester) async {

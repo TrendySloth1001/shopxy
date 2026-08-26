@@ -32,7 +32,6 @@ describe('parseBannerLink', () => {
   });
 
   it('keeps a search phrase verbatim, including its case and spaces', () => {
-    // Only the kind is normalised — a search is what the merchant typed.
     expect(parseBannerLink('search:Winter Jackets')).toEqual({
       kind: 'search',
       value: 'Winter Jackets',
@@ -40,9 +39,6 @@ describe('parseBannerLink', () => {
   });
 
   it('returns null for the legacy formats, rather than guessing', () => {
-    // These are what the old validator accepted. The customer app fed them
-    // straight into the search box, so `https://x` searched for the literal
-    // URL. Unrecognised now means "decorative", which is at least honest.
     expect(parseBannerLink('https://example.com/sale')).toBeNull();
     expect(parseBannerLink('/shop/acme')).toBeNull();
     expect(parseBannerLink('url:https://example.com')).toBeNull();

@@ -23,9 +23,6 @@ class HomeProductCarousel extends StatelessWidget {
   final String? eyebrow;
   final List<ProductCard> products;
 
-  /// Optional override for the header "see all" target. Defaults to
-  /// opening the marketplace search so every section is at least
-  /// navigable — sections can pass a specific destination later.
   final VoidCallback? onSeeAll;
 
   void _handleSeeAll(BuildContext context) {
@@ -97,9 +94,6 @@ class HomeProductCarousel extends StatelessWidget {
         ),
         const SizedBox(height: AppSizes.md),
         SizedBox(
-          // Tile is (image 158 + name 2-line + price row + a single
-          // info line) ≈ 250 at 1.0 text scale, ~290 at 1.3. The few
-          // extra px keep us clear of accessibility-scale overflow.
           height: 296,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
@@ -118,8 +112,6 @@ class HomeProductTile extends StatelessWidget {
   const HomeProductTile({super.key, required this.product, this.width = 158});
   final ProductCard product;
 
-  /// Fixed width when used in a horizontal carousel; pass `null` for
-  /// flex sizing inside a grid cell.
   final double? width;
 
   @override
@@ -132,8 +124,6 @@ class HomeProductTile extends StatelessWidget {
         AppSizes.radiusLg,
         side: const BorderSide(color: AppColors.hairline),
       ),
-      // Clipping here is what lets the image sit full-bleed against the
-      // card's own corners, instead of the tile re-rounding its top itself.
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => Navigator.of(context).push(
@@ -168,8 +158,6 @@ class HomeProductTile extends StatelessWidget {
                     _PriceRow(product: product, hasDiscount: hasDiscount),
                     if (product.freeDelivery || product.isAssured) ...[
                       const SizedBox(height: AppSizes.xs),
-                      // Wrap, not Row: two signals plus a long delivery label
-                      // used to need a ClipRect to hide the overflow stripe.
                       Wrap(
                         spacing: AppSizes.xs,
                         runSpacing: AppSizes.xxs,
@@ -201,8 +189,6 @@ class HomeProductTile extends StatelessWidget {
   }
 }
 
-/// Small signal chip. Mirrors the merchant grid card's `_Pill` so a product
-/// reads the same way on both sides of the platform.
 class TilePill extends StatelessWidget {
   const TilePill({
     super.key,
@@ -246,11 +232,6 @@ class TilePill extends StatelessWidget {
   }
 }
 
-/// Image area + every overlay chip. Layered top to bottom:
-///   - Discount % chip — top-left — only when `hasDiscount`
-///   - Wishlist heart — top-right
-///   - Tag pill (e.g. "Limited") — left, just above the rating
-///   - Rating pill — bottom-left
 class _Image extends StatelessWidget {
   const _Image({required this.product, required this.hasDiscount});
   final ProductCard product;
@@ -429,9 +410,6 @@ class _RatingPill extends StatelessWidget {
   }
 }
 
-/// Price line — bold sale price, struck-through original on its right.
-/// When discount > 0 we also add a green "% off" inline so the user
-/// reads price + savings without crossing the card.
 class _PriceRow extends StatelessWidget {
   const _PriceRow({required this.product, required this.hasDiscount});
   final ProductCard product;
@@ -439,14 +417,7 @@ class _PriceRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // FittedBox scales the whole price line down a hair if the tile's
-    // intrinsic width can't host it. Stops the 1-4px horizontal
-    // overflow seen in 3-col grids without dropping any signal —
-    // tested with ₹64,990 + 28% off on a ~100px tile.
     final theme = Theme.of(context);
-    // FittedBox scales the whole price line down a hair if the tile's
-    // intrinsic width can't host it. Stops the 1-4px horizontal
-    // overflow seen in 3-col grids without dropping any signal.
     return FittedBox(
       fit: BoxFit.scaleDown,
       alignment: AlignmentDirectional.centerStart,
@@ -462,8 +433,6 @@ class _PriceRow extends StatelessWidget {
               fontWeight: FontWeight.w800,
               letterSpacing: -0.3,
               height: 1,
-              // Tabular figures so prices line up column-to-column in the
-              // grid instead of jittering on digit width.
               fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
@@ -482,9 +451,6 @@ class _PriceRow extends StatelessWidget {
               ),
             ),
           ],
-          // Inline "% off" intentionally dropped — the corner badge on
-          // the image already carries the discount, and the duplicate
-          // here was the main source of overflow on narrow tiles.
         ],
       ),
     );

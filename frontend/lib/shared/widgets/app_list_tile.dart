@@ -3,9 +3,6 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 
-/// Linear-style row: leading slot + title/subtitle stack + trailing slot.
-/// No card chrome by itself — meant to live inside a list, with [AppDivider]
-/// between rows, or wrapped in [AppCard] when standalone.
 class AppListTile extends StatelessWidget {
   const AppListTile({
     super.key,

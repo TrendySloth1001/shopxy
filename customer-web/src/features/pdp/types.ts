@@ -1,15 +1,11 @@
 import { z } from "zod";
 
-// ── Image ─────────────────────────────────────────────────────────────────────
-
 export const productImageSchema = z.object({
   id: z.coerce.string().optional(),
   url: z.string(),
   sortOrder: z.number(),
 });
 export type ProductImage = z.infer<typeof productImageSchema>;
-
-// ── Variant ───────────────────────────────────────────────────────────────────
 
 export const variantSchema = z.object({
   id: z.coerce.string(),
@@ -23,15 +19,11 @@ export const variantSchema = z.object({
 });
 export type Variant = z.infer<typeof variantSchema>;
 
-// ── Variant axis ──────────────────────────────────────────────────────────────
-
 export const variantAxisSchema = z.object({
   name: z.string(),
   values: z.array(z.string()),
 });
 export type VariantAxis = z.infer<typeof variantAxisSchema>;
-
-// ── Spec row / group ──────────────────────────────────────────────────────────
 
 export const specRowSchema = z.object({
   label: z.string(),
@@ -45,8 +37,6 @@ export const specGroupSchema = z.object({
 export type SpecRow = z.infer<typeof specRowSchema>;
 export type SpecGroup = z.infer<typeof specGroupSchema>;
 
-// ── Product offer ─────────────────────────────────────────────────────────────
-
 export const productOfferSchema = z.object({
   kind: z.string(),
   headline: z.string(),
@@ -55,8 +45,6 @@ export const productOfferSchema = z.object({
 });
 export type ProductOffer = z.infer<typeof productOfferSchema>;
 
-// ── Shop summary ──────────────────────────────────────────────────────────────
-
 export const shopSummarySchema = z.object({
   id: z.coerce.string(),
   name: z.string(),
@@ -64,14 +52,6 @@ export const shopSummarySchema = z.object({
   logoUrl: z.string().nullable().optional(),
   rating: z.coerce.number().nullable().optional(),
   ratingCount: z.number().nullable().optional(),
-  // ── Seller identity (CP E-Commerce Rules r.5(3)/r.6(5)) ─────────────────
-  // A marketplace must disclose each seller's legal name, principal
-  // geographic address, GSTIN and a customer-care contact before purchase.
-  // These come from the shop owner (User.shopName/shopAddress/shopGstin) +
-  // Shop.locationCity/locationState. They are OPTIONAL here: the storefront
-  // PDP/shop payload does not yet surface them — extending that backend
-  // select is tracked as a follow-up (findings_deferred LDC-7). Until then
-  // these render as "not provided" so the disclosure block degrades safely.
   legalName: z.string().nullable().optional(),
   address: z.string().nullable().optional(),
   gstin: z.string().nullable().optional(),
@@ -82,15 +62,11 @@ export const shopSummarySchema = z.object({
 });
 export type ShopSummary = z.infer<typeof shopSummarySchema>;
 
-// ── Category summary ──────────────────────────────────────────────────────────
-
 export const categorySummarySchema = z.object({
   id: z.coerce.string(),
   name: z.string(),
   slug: z.string(),
 });
-
-// ── Full product detail ───────────────────────────────────────────────────────
 
 export const productDetailSchema = z.object({
   id: z.coerce.string(),
@@ -101,8 +77,6 @@ export const productDetailSchema = z.object({
   mrp: z.coerce.number(),
   sellingPrice: z.coerce.number(),
   taxPercent: z.coerce.number().default(0),
-  // Legal Metrology — country of origin (mandatory for imported goods) shown
-  // on the PDP. Nullable: domestic items may leave it unset.
   countryOfOrigin: z.string().nullable().optional(),
   stockQuantity: z.coerce.number(),
   ratingAvg: z.coerce.number().nullable().optional(),
@@ -125,8 +99,6 @@ export const productDetailSchema = z.object({
 });
 export type ProductDetail = z.infer<typeof productDetailSchema>;
 
-// ── FBT card ──────────────────────────────────────────────────────────────────
-
 export const fbtCardSchema = z.object({
   id: z.coerce.string(),
   name: z.string(),
@@ -143,8 +115,6 @@ export const fbtCardSchema = z.object({
 });
 export type FbtCard = z.infer<typeof fbtCardSchema>;
 
-// ── Parsed specs helper ───────────────────────────────────────────────────────
-
 export function parseSpecGroups(raw: unknown): SpecGroup[] {
   if (!Array.isArray(raw)) return [];
   return raw.flatMap((item): SpecGroup[] => {
@@ -153,8 +123,6 @@ export function parseSpecGroups(raw: unknown): SpecGroup[] {
   });
 }
 
-// ── Parsed offers helper ──────────────────────────────────────────────────────
-
 export function parseOffers(raw: unknown): ProductOffer[] {
   if (!Array.isArray(raw)) return [];
   return raw.flatMap((item): ProductOffer[] => {
@@ -162,4 +130,3 @@ export function parseOffers(raw: unknown): ProductOffer[] {
     return parsed.success ? [parsed.data] : [];
   });
 }
-

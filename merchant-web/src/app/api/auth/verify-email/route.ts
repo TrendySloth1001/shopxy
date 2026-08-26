@@ -15,9 +15,6 @@ const bodySchema = z.object({
   otp: z.string().trim().regex(/^\d{6}$/, "Enter the 6-digit code."),
 });
 
-// POST /api/auth/verify-email — confirm the signup OTP. On success the backend
-// creates the account and returns a session, which we persist as httpOnly
-// cookies (same as login/register-fallback).
 export async function POST(req: Request) {
   const json = await req.json().catch(() => null);
   const parsed = bodySchema.safeParse(json);

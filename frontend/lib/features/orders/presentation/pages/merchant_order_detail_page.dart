@@ -44,22 +44,13 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
   String? _error;
   bool _busy = false;
 
-  /// Set on a stock-shortfall failure so we can highlight the offending
-  /// line in the items list.
   String? _shortfallProductId;
 
-  /// Collapses the verbose customer card into a sticky summary header
-  /// once the user scrolls past it. ScrollController offset > threshold.
   final _scrollCtrl = ScrollController();
   late final ScrollBoundaryHaptics _scrollHaptics;
   bool _stickyHeaderVisible = false;
   static const _stickyThreshold = 96.0;
 
-  /// Stock-in drafts created in this session via the Restock flow.
-  /// Surfaced as an inline confirm card so the merchant can post the
-  /// stock without leaving the order — confirming a draft posts the
-  /// ledger row, after which we drop it from this list and reload the
-  /// order so the stock chips update.
   final List<_PendingStockDraft> _pendingStockDrafts = [];
   final Set<String> _confirmingDraftIds = {};
 
@@ -119,11 +110,6 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
     }
   }
 
-  /// Confirm bottom sheet spelling out the side-effect ("creates a draft
-  /// invoice"). Used to be one-tap → real invoice; misclick territory.
-  /// When the detail page already shows a stock shortfall, the sheet
-  /// switches to a louder warning tone so the merchant doesn't fail the
-  /// invoice later.
   Future<void> _confirm() async {
     final order = _order;
     if (order == null) return;
@@ -165,8 +151,6 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
             ? e.productId
             : null;
       });
-      // Server is the source of truth for stock; re-pull so the
-      // shortfall chip on the page matches what just blocked the confirm.
       if (e.code == 'INSUFFICIENT_STOCK') {
         unawaitedReload();
       }
@@ -179,13 +163,9 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
   }
 
   void unawaitedReload() {
-    // Fire-and-forget; mounted check inside.
     _load();
   }
 
-  /// Styled decline flow — bottom sheet with quick-pick reason chips
-  /// and an optional free-form note. Chips prefill the note so the
-  /// merchant rarely has to type one.
   Future<void> _reject() async {
     final result = await showModalBottomSheet<({bool ok, String note})>(
       context: context,
@@ -215,11 +195,6 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
     }
   }
 
-  /// Shipping milestone flow — bottom sheet with a milestone selector
-  /// (PACKED → RETURNED), courier/AWB/ETA fields for the in-transit
-  /// milestones, and an optional note. Mirrors merchant-web's
-  /// ShippingModal; marking DELIVERED is what opens the customer's
-  /// return window, so app-only merchants need this too.
   Future<void> _updateShipping() async {
     final result = await showModalBottomSheet<_ShippingUpdateResult>(
       context: context,
@@ -248,7 +223,6 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
         SnackBar(content: Text(l10n.ordersShippingPosted)),
       );
       setState(() => _busy = false);
-      // Re-pull so the events timeline reflects the new milestone.
       await _load();
     } catch (e) {
       if (!mounted) return;
@@ -257,11 +231,6 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
     }
   }
 
-  /// Loads the full product for a line and opens the stock-in sheet so
-  /// the merchant can resolve a shortfall without leaving the order.
-  /// When the sheet returns a new draft invoice id we add it to the
-  /// pending list so an inline confirm card appears at the top of the
-  /// page — the merchant can post the stock right there.
   Future<void> _restock(MerchantOrderItem item) async {
     final messenger = ScaffoldMessenger.of(context);
     final ds = context.read<ProductsRemoteDataSource>();
@@ -288,9 +257,6 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
             ),
           );
         });
-        // We don't reload the order yet — stock chips only move once
-        // the draft is confirmed (the ledger posts on confirm, not on
-        // draft create). The inline confirm card handles that.
       }
     } catch (e) {
       if (!mounted) return;
@@ -510,8 +476,6 @@ class _MerchantOrderDetailPageState extends State<MerchantOrderDetailPage> {
   }
 }
 
-/// One-line collapsed summary shown under the AppBar once the user
-/// scrolls past the customer card. Keeps "who + total" anchored.
 class _StickyContextStrip extends StatelessWidget {
   const _StickyContextStrip({required this.order});
   final MerchantOrderDetail order;
@@ -604,7 +568,6 @@ class _Body extends StatelessWidget {
         bottom: AppSizes.md,
       ),
       children: [
-        // Decision summary strip
         _DecisionSummaryStrip(
           order: order,
           relativeFmt: relativeFmt,
@@ -612,7 +575,6 @@ class _Body extends StatelessWidget {
         ),
         const SizedBox(height: AppSizes.md),
 
-        // Stock shortfall banner — louder + actionable
         if (order.isPending && order.hasStockShortfall)
           _ShortfallBanner(
             shortCount: order.shortItemCount,
@@ -620,9 +582,6 @@ class _Body extends StatelessWidget {
             onRestock: onRestockBanner,
           ),
 
-        // Inline stock-draft confirm card — appears after the merchant
-        // posts a Restock from this page so they can confirm the draft
-        // (= actually move the stock) right here.
         if (pendingStockDrafts.isNotEmpty)
           _StockDraftCard(
             drafts: pendingStockDrafts,
@@ -631,7 +590,6 @@ class _Body extends StatelessWidget {
             onDismiss: onDismissDraft,
           ),
 
-        // Customer card — avatar + reachability + linked-party badge
         _CustomerCard(
           order: order,
           onCall: onCall,
@@ -639,7 +597,6 @@ class _Body extends StatelessWidget {
           onEmail: onEmail,
         ),
 
-        // Delivery address
         if (order.customerAddress != null &&
             order.customerAddress!.isNotEmpty) ...[
           const SizedBox(height: AppSizes.sm),
@@ -670,13 +627,11 @@ class _Body extends StatelessWidget {
           ),
         ],
 
-        // Customer note — promoted right under the customer card
         if (order.note != null && order.note!.isNotEmpty) ...[
           const SizedBox(height: AppSizes.md),
           _CustomerNote(note: order.note!),
         ],
 
-        // Date row with status journey strip
         const SizedBox(height: AppSizes.md),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
@@ -710,10 +665,8 @@ class _Body extends StatelessWidget {
           ),
         const AppDivider(),
 
-        // Itemized totals block
         _TotalsBlock(order: order, currency: currency),
 
-        // Open invoice CTA when this order has already been confirmed
         if (order.linkedInvoiceNo != null) ...[
           const SizedBox(height: AppSizes.lg),
           Padding(
@@ -735,9 +688,6 @@ class _Body extends StatelessWidget {
           ),
         ],
 
-        // Shipping milestones — apply once an order is confirmed.
-        // Mirrors merchant-web: section shows when the order is past
-        // pending or already has events on record.
         if (order.isConfirmed || order.events.isNotEmpty) ...[
           const SizedBox(height: AppSizes.lg),
           const AppDivider(),
@@ -763,7 +713,6 @@ class _Body extends StatelessWidget {
   }
 }
 
-/// Pill-row above the customer block: time + items · qty · total.
 class _DecisionSummaryStrip extends StatelessWidget {
   const _DecisionSummaryStrip({
     required this.order,
@@ -854,9 +803,6 @@ class _DecisionSummaryStrip extends StatelessWidget {
   }
 }
 
-/// Editorial three-up: value on top, tiny label below, separated by a
-/// hairline rule — matches the dashboard's `_QuickStats` so the order
-/// detail reads as part of the same surface, not a stack of cards.
 class _SummaryStat extends StatelessWidget {
   const _SummaryStat({
     required this.label,
@@ -1231,9 +1177,6 @@ class _StatusJourney extends StatelessWidget {
     final invoiced = order.linkedInvoiceNo != null;
     final confirmed = order.isConfirmed;
     final placed = true;
-    // Paid state comes from the linked invoice's payment summary (receipts,
-    // which include the customer's online/wallet payments). Lit when fully
-    // settled.
     final paid = order.isPaid;
 
     final steps = <_JourneyStep>[
@@ -1329,8 +1272,6 @@ class _ItemRow extends StatelessWidget {
   final MerchantOrderItem item;
   final NumberFormat currency;
 
-  /// True if this row was flagged by the most recent stock-shortfall
-  /// confirm failure — gives the merchant a visual to scroll to.
   final bool highlight;
   final VoidCallback? onTap;
 
@@ -1528,9 +1469,6 @@ class _TotalsBlock extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final subtotal = order.subtotal;
-    // We don't have tax/discount fields snapshotted on the request yet;
-    // surface them as zero rows so the merchant sees the shape they'll
-    // get on the invoice and can spot mismatches early.
     const tax = 0.0;
     const discount = 0.0;
     final total = subtotal + tax - discount;
@@ -1705,8 +1643,6 @@ class _ErrorState extends StatelessWidget {
 String _qtyLabel(double q) =>
     q.truncateToDouble() == q ? q.toInt().toString() : q.toStringAsFixed(2);
 
-/// Localized label for a shipping milestone type. Falls back to the raw
-/// type for any unmapped value (keeps historical/unknown milestones legible).
 String _milestoneLabel(AppLocalizations l10n, String type) {
   switch (type) {
     case 'PACKED':
@@ -1724,9 +1660,6 @@ String _milestoneLabel(AppLocalizations l10n, String type) {
   }
 }
 
-/// Modal bottom sheet replacement for the old confirm dialog. Same
-/// copy + same destructive-tone fallback when a shortfall is detected;
-/// just a sheet so it composes with the rest of the page's modal style.
 class _ConfirmOrderSheet extends StatelessWidget {
   const _ConfirmOrderSheet({required this.shortfall});
   final bool shortfall;
@@ -1841,8 +1774,6 @@ class _DeclineOrderSheet extends StatefulWidget {
 
 class _DeclineOrderSheetState extends State<_DeclineOrderSheet> {
   final _ctrl = TextEditingController();
-  // Stable identity for the selected quick-pick reason. 'OTHER' clears the
-  // note field; the others prefill it with their localized label.
   String? _selectedReasonKey;
 
   @override
@@ -1866,7 +1797,6 @@ class _DeclineOrderSheetState extends State<_DeclineOrderSheet> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    // Quick-pick decline reasons: stable key + localized label.
     final reasons = <(String, String)>[
       ('OUT_OF_STOCK', l10n.ordersDeclineReasonOutOfStock),
       ('CLOSED', l10n.ordersDeclineReasonClosed),
@@ -1958,11 +1888,6 @@ class _DeclineOrderSheetState extends State<_DeclineOrderSheet> {
   }
 }
 
-// ─── Shipping updates ────────────────────────────────────────────────────────
-
-/// What the shipping sheet hands back to the page. Courier / AWB / ETA
-/// are only populated for the in-transit milestones, matching
-/// merchant-web's ShippingModal.
 typedef _ShippingUpdateResult = ({
   String type,
   String? courier,
@@ -1971,9 +1896,6 @@ typedef _ShippingUpdateResult = ({
   String? note,
 });
 
-/// Chronological list of recorded milestones + the "Update shipping"
-/// entry point (confirmed orders only — the backend rejects events on
-/// anything else).
 class _ShippingSection extends StatelessWidget {
   const _ShippingSection({
     required this.order,
@@ -2107,9 +2029,6 @@ class _ShippingEventRow extends StatelessWidget {
   }
 }
 
-/// Bottom sheet for posting a shipping milestone. Courier / AWB / ETA
-/// only show for SHIPPED and OUT_FOR_DELIVERY — same gating as
-/// merchant-web's ShippingModal.
 class _ShippingUpdateSheet extends StatefulWidget {
   const _ShippingUpdateSheet();
 
@@ -2118,12 +2037,6 @@ class _ShippingUpdateSheet extends StatefulWidget {
 }
 
 class _ShippingUpdateSheetState extends State<_ShippingUpdateSheet> {
-  // PR-H3 — RETURNED is deliberately not a postable milestone. The raw
-  // shipping-event endpoint has no side effects (no refund / stock
-  // add-back / credit-note GST reversal / transfer clawback), so returns
-  // run through the dedicated returns flow. The backend rejects RETURNED
-  // here, and historical RETURNED events still render in the timeline.
-  // Labels are resolved from l10n at build time via _milestoneLabel.
   static const _milestoneTypes = <String>[
     'PACKED',
     'SHIPPED',
@@ -2138,7 +2051,6 @@ class _ShippingUpdateSheetState extends State<_ShippingUpdateSheet> {
   final _noteCtrl = TextEditingController();
   DateTime? _eta;
 
-  /// Courier / AWB / ETA matter for in-transit milestones only.
   bool get _showLogistics => _type == 'SHIPPED' || _type == 'OUT_FOR_DELIVERY';
 
   @override
@@ -2352,13 +2264,6 @@ class _SheetHandle extends StatelessWidget {
   }
 }
 
-// ─── Skeleton ────────────────────────────────────────────────────────────────
-
-/// Full-page skeleton shown while the order detail is loading.
-/// Mirrors the scrollable layout: decision summary strip → optional
-/// shortfall banner placeholder → customer avatar + info lines →
-/// address line → date + status journey → item rows (×4) → dividers →
-/// totals section → optional invoice button placeholder.
 class _OrderDetailSkeleton extends StatelessWidget {
   const _OrderDetailSkeleton();
 
@@ -2398,7 +2303,6 @@ class _OrderDetailSkeleton extends StatelessWidget {
   }
 }
 
-/// Three stat boxes separated by hairline dividers (Items / Qty / Total).
 class _SummaryStripSkeleton extends StatelessWidget {
   const _SummaryStripSkeleton();
 
@@ -2409,7 +2313,6 @@ class _SummaryStripSkeleton extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // relative-time line
           const AppShimmerLine(widthFactor: 0.45, height: AppSizes.md),
           const SizedBox(height: AppSizes.sm),
           IntrinsicHeight(
@@ -2445,7 +2348,6 @@ class _StatBoxSkeleton extends StatelessWidget {
   }
 }
 
-/// Placeholder for the optional shortfall warning banner.
 class _ShortfallBannerSkeleton extends StatelessWidget {
   const _ShortfallBannerSkeleton();
 
@@ -2462,7 +2364,6 @@ class _ShortfallBannerSkeleton extends StatelessWidget {
   }
 }
 
-/// Squircle avatar + name / phone / email lines.
 class _CustomerCardSkeleton extends StatelessWidget {
   const _CustomerCardSkeleton();
 
@@ -2497,7 +2398,6 @@ class _CustomerCardSkeleton extends StatelessWidget {
   }
 }
 
-/// Single address text line (icon placeholder + text).
 class _AddressLineSkeleton extends StatelessWidget {
   const _AddressLineSkeleton();
 
@@ -2522,7 +2422,6 @@ class _AddressLineSkeleton extends StatelessWidget {
   }
 }
 
-/// Date text on the left, status badge placeholder on the right.
 class _DateStatusSkeleton extends StatelessWidget {
   const _DateStatusSkeleton();
 
@@ -2547,7 +2446,6 @@ class _DateStatusSkeleton extends StatelessWidget {
   }
 }
 
-/// Four dots connected by lines — mirrors _StatusJourney.
 class _StatusJourneySkeleton extends StatelessWidget {
   const _StatusJourneySkeleton();
 
@@ -2590,7 +2488,6 @@ class _JourneyDotSkeleton extends StatelessWidget {
   }
 }
 
-/// Thin horizontal rule matching AppDivider visual weight.
 class _ItemsDivider extends StatelessWidget {
   const _ItemsDivider();
 
@@ -2600,7 +2497,6 @@ class _ItemsDivider extends StatelessWidget {
   }
 }
 
-/// Single item row skeleton: thumbnail box + name/sku/chip lines + qty/total.
 class _ItemRowSkeleton extends StatelessWidget {
   const _ItemRowSkeleton();
 
@@ -2628,7 +2524,6 @@ class _ItemRowSkeleton extends StatelessWidget {
                 SizedBox(height: AppSizes.xs),
                 AppShimmerLine(widthFactor: 0.5, height: AppSizes.md),
                 SizedBox(height: AppSizes.xs),
-                // Stock chip placeholder
                 AppShimmerBox(
                   width: 100,
                   height: AppSizes.lg,
@@ -2660,7 +2555,6 @@ class _ItemRowSkeleton extends StatelessWidget {
   }
 }
 
-/// Four label/value pairs with a divider before the total row.
 class _TotalsBlockSkeleton extends StatelessWidget {
   const _TotalsBlockSkeleton();
 
@@ -2714,8 +2608,6 @@ class _TotalLineSkeleton extends StatelessWidget {
   }
 }
 
-/// Placeholder for the "Open invoice" button shown once an order has
-/// been confirmed.
 class _InvoiceButtonSkeleton extends StatelessWidget {
   const _InvoiceButtonSkeleton();
 
@@ -2732,12 +2624,6 @@ class _InvoiceButtonSkeleton extends StatelessWidget {
   }
 }
 
-// ─── End skeleton ─────────────────────────────────────────────────────────────
-
-/// Local model for a stock-in draft created during the current detail
-/// session. We only need enough to render the inline confirm card and
-/// post the status flip — full invoice data isn't fetched until the
-/// merchant taps "Open".
 class _PendingStockDraft {
   const _PendingStockDraft({
     required this.invoiceId,

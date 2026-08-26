@@ -18,16 +18,6 @@ import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_search_bar.dart';
 
-/// Opens the product picker as a modal sheet — the browse-and-add surface for
-/// the invoice/challan/quotation line editors.
-///
-/// [onAdd] fires per tap rather than the sheet returning a single product:
-/// building a document means adding several lines, and closing after each one
-/// would cost a reopen per product. The sheet stays up, keeps a running count
-/// per product, and the caller closes it when done.
-///
-/// [sale] picks which price to show — selling for an outgoing document,
-/// purchase for an incoming one.
 Future<void> showProductPicker(
   BuildContext context, {
   required bool sale,
@@ -59,16 +49,11 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
   bool _loading = false;
   String? _error;
 
-  /// How many of each product this sitting has added. Drives the count chip so
-  /// a merchant adding a long list can see what they've already tapped instead
-  /// of counting rows behind the sheet.
   final Map<String, int> _added = {};
 
   @override
   void initState() {
     super.initState();
-    // Open on the shop's products rather than an empty pane — the ask is to
-    // browse a list, not to have to type before anything appears.
     _loadFromServer('');
   }
 
@@ -81,9 +66,6 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
 
   void _onQueryChanged(String value) {
     final catalogue = context.read<ProductCatalogue>();
-    // The in-memory catalogue answers in this frame, so debouncing it would
-    // only add lag the merchant can feel. It can't answer an empty query
-    // (no tokens), so that still goes to the server for the browse list.
     if (catalogue.isSearchable && value.trim().isNotEmpty) {
       _debounce?.cancel();
       setState(() {
@@ -94,8 +76,6 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
       return;
     }
 
-    // Catalogue cold, or too large for this shop to hold — the server is
-    // still the answer, and it needs debouncing so "sol" costs one round-trip.
     _debounce?.cancel();
     _debounce = Timer(AppDurations.searchDebounce, () {
       if (mounted) _loadFromServer(value);
@@ -274,7 +254,6 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
     );
   }
 
-  /// Whole numbers read as "12", not "12.0" — stock is usually integral.
   String _qty(double v) =>
       v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(2);
 }

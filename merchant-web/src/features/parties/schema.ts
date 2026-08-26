@@ -1,11 +1,5 @@
 import { z } from "zod";
 
-/**
- * Party ("customer") shapes, mirroring the backend `parties` module
- * (`/parties`). Like vendors but receivable-side, with challans instead of
- * stock-in.
- */
-
 export const partySchema = z
   .object({
     id: z.coerce.string(),
@@ -42,8 +36,6 @@ export const partyListSchema = z.object({
     .transform((v) => v ?? []),
 });
 
-// The backend only selects `{ id, name }` for the linked user, so `email` is
-// absent on the wire — keep it optional rather than failing the whole parse.
 const linkedUserSchema = z.object({
   id: z.coerce.string(),
   name: z.string(),

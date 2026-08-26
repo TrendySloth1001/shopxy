@@ -6,8 +6,6 @@ import { partiesService } from './parties.service.js';
 import { paymentsService } from '../payments/payments.service.js';
 import { contactChangeLogService } from '../contact-change-log/contact-change-log.service.js';
 
-// GST state code is a strict 2 digits; full validation against the lookup
-// is enforced client-side via the state drop-down.
 const stateCodeSchema = z.string().regex(/^\d{2}$/, 'must be 2-digit GST state code');
 
 const createPartySchema = z.object({
@@ -45,9 +43,6 @@ function parseId(raw: string): number | null {
   return decodeId(raw);
 }
 
-/// Resolve the caller's shop or 401 the request. Centralised so each
-/// controller method stays short and the "no shop yet" error message
-/// is consistent.
 function requireShopId(req: Request, res: Response): number | null {
   const shopId = req.user?.shopId;
   if (!shopId) {
@@ -151,7 +146,6 @@ export class PartiesController {
     if (!shopId) return;
     const id = parseId(req.params.id);
     if (!id) { res.status(400).json({ error: 'Invalid id' }); return; }
-    // Authorize: only access the change log for parties this shop owns.
     const owned = await partiesService.getPartyById(shopId, id);
     if (!owned) { res.status(404).json({ error: 'Party not found' }); return; }
     const params = parsePagination(req);

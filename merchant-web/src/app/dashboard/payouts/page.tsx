@@ -25,7 +25,6 @@ function tone(status?: string | null): string {
   return (status && STATUS_TONE[status.toUpperCase()]) || "bg-surface-tint text-muted";
 }
 
-// "UNDER_REVIEW" → "Under review"
 function humanStatus(status?: string | null): string {
   if (!status) return "Unknown";
   const s = status.replace(/_/g, " ").toLowerCase();
@@ -38,8 +37,6 @@ export default function PayoutsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // refresh=true re-polls Razorpay live (picks up an activation that happened
-  // after we last stored the status).
   const load = useCallback(async (refresh = false) => {
     setLoading(true);
     try {

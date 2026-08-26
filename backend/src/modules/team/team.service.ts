@@ -6,11 +6,6 @@ import {
 } from '../../shared/http/requireAuth.js';
 import { normalizeRights, presetFor } from '../../shared/http/permissions.js';
 
-/// Delegation cap (TEAM-1): a non-owner with `team:manage` must not be
-/// able to grant rights they don't themselves hold (which would let a
-/// limited staffer escalate a colleague — or, by cross-granting, bypass
-/// the own-role guard). OWNER bypasses every gate, so it can grant
-/// anything. Returns the requested rights the actor lacks (empty = ok).
 export function rightsBeyondActor(
   actorRole: ShopRole | undefined,
   actorPermissions: string[] | undefined,
@@ -34,16 +29,12 @@ const memberSelect = {
 
 export type MemberDTO = Prisma.ShopMemberGetPayload<{ select: typeof memberSelect }>;
 
-/// The starter roles seeded into every new shop (editable thereafter).
-/// Names + permission sets mirror the classic presets.
 export const DEFAULT_ROLES: { name: string; permissions: string[] }[] = [
   { name: 'Manager', permissions: presetFor('MANAGER') },
   { name: 'Stockist', permissions: presetFor('STOCKIST') },
   { name: 'Cashier', permissions: presetFor('CASHIER') },
 ];
 
-/// Seed a shop's starter roles. Idempotent (skips duplicates) so it's
-/// safe to call on every shop creation. `client` may be a tx.
 export async function seedDefaultRoles(
   client: Prisma.TransactionClient | typeof prisma,
   shopId: number,
@@ -64,7 +55,6 @@ export function isValidRoleName(value: unknown): value is string {
 }
 
 export class TeamService {
-  /// All members of a shop, owner first then by join order.
   async listMembers(shopId: number) {
     const members = await prisma.shopMember.findMany({
       where: { shopId },
@@ -74,7 +64,6 @@ export class TeamService {
     return members.map((m) => ({ ...m, isOwner: m.role === 'OWNER' }));
   }
 
-  /// Pending TEAM invitations for the shop.
   async listInvites(shopId: number) {
     return prisma.invitation.findMany({
       where: { shopId, linkType: 'TEAM', status: 'PENDING' },
@@ -85,25 +74,16 @@ export class TeamService {
         teamPermissions: true,
         createdAt: true,
         expiresAt: true,
-        // The single-use accept-invite token, so the owner can copy a
-        // shareable link for a new hire who has no account yet (there's
-        // no email delivery — the link is the delivery mechanism). Safe
-        // to expose: this list is scoped to the owner's own shop and the
-        // token only works for the invited email.
         token: true,
       },
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  // ── Roles (owner-defined, per-shop) ───────────────────────────────
-
   async listRoles(shopId: number) {
     const select = { id: true, name: true, permissions: true, builtin: true } as const;
     const orderBy = [{ builtin: 'desc' as const }, { name: 'asc' as const }];
     let roles = await prisma.teamRole.findMany({ where: { shopId }, select, orderBy });
-    // Self-heal: a shop with no roles (created before seeding, or a failed seed)
-    // would leave the invite picker without Manager/Stockist/Cashier presets.
     if (roles.length === 0) {
       await seedDefaultRoles(prisma, shopId);
       roles = await prisma.teamRole.findMany({ where: { shopId }, select, orderBy });
@@ -183,9 +163,6 @@ export class TeamService {
     }
   }
 
-  /// Delete a role template. Members who were assigned it keep their
-  /// copied permissions — only the template (a future-assignment preset)
-  /// goes away.
   async deleteRole(opts: { shopId: number; id: number }) {
     const res = await prisma.teamRole.deleteMany({
       where: { id: opts.id, shopId: opts.shopId },
@@ -194,12 +171,6 @@ export class TeamService {
     return { ok: true as const };
   }
 
-  // ── Assignment ────────────────────────────────────────────────────
-
-  /// Set a member's role label + exact granted rights (the single
-  /// assignment path used by the permission editor). Stores role=STAFF +
-  /// the human label + the normalised grant. Takes effect on the
-  /// member's next request via cache invalidation — no re-login.
   async setPermissions(opts: {
     shopId: number;
     actingUserId: number;
@@ -215,7 +186,6 @@ export class TeamService {
     if (opts.targetUserId === opts.actingUserId) {
       return { error: 'CANNOT_CHANGE_OWN_ROLE' as const };
     }
-    // Capped delegation (TEAM-1): can't grant a right the actor lacks.
     if (rightsBeyondActor(opts.actingShopRole, opts.actingPermissions, opts.permissions).length > 0) {
       return { error: 'CANNOT_GRANT_BEYOND_OWN_RIGHTS' as const };
     }
@@ -239,9 +209,6 @@ export class TeamService {
     return { member: { ...updated, isOwner: false } };
   }
 
-  /// Remove a staffer from the team. Can't remove the owner or yourself.
-  /// Deletes their membership, drops the account back to CUSTOMER, and
-  /// revokes their sessions immediately.
   async removeMember(opts: {
     shopId: number;
     actingUserId: number;
@@ -257,13 +224,6 @@ export class TeamService {
     if (!member) return { error: 'MEMBER_NOT_FOUND' as const };
     if (member.role === 'OWNER') return { error: 'CANNOT_REMOVE_OWNER' as const };
 
-    // Remove only their team access. We deliberately DON'T flip the
-    // account to CUSTOMER — an account is only a "shopper" if it
-    // registered on the customer app. A removed staffer stays a
-    // merchant-side account with no shop, so they can still sign in and
-    // land on the "No shop linked" screen (or accept a re-invite) rather
-    // than being locked out of the merchant app. We do revoke their
-    // sessions so their shop access ends immediately.
     const stamp = new Date();
     await prisma.$transaction([
       prisma.shopMember.delete({ where: { id: member.id } }),

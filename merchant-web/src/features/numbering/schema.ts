@@ -1,13 +1,5 @@
 import { z } from "zod";
 
-/**
- * Document-numbering shapes, mirroring the backend `numbering` module
- * (`/numbering`). Each of the 7 series below is independently customizable
- * (prefix/suffix/separator/padding/yearly-reset); a series with no saved
- * override uses the system default (same format as before this feature
- * existed).
- */
-
 export const SERIES_VALUES = [
   "SALE_INVOICE",
   "PURCHASE_INVOICE",
@@ -47,7 +39,6 @@ export type NumberingScheme = z.infer<typeof numberingSchemeSchema>;
 
 export const numberingSchemeListSchema = z.array(numberingSchemeSchema);
 
-/** A bare code (letters/digits/`-_.`), no `/` — the separator is its own field. */
 const CODE_RE = /^[A-Za-z0-9\-_.]*$/;
 
 export const updateSchemeSchema = z.object({
@@ -63,14 +54,6 @@ export const setNextNumberSchema = z.object({
   startAt: z.number().int().positive(),
 });
 
-/**
- * Pure preview formatter — ported from the backend's `formatDocNo`
- * (`backend/src/shared/numbering/sequences.ts`). A ~10-line pure function,
- * safe to duplicate rather than share across the Node/Next boundary. Lets
- * the settings screen recompute the preview locally as the merchant edits
- * fields, using the `nextSeq`/`financialYear` from the last load — no
- * round-trip per keystroke.
- */
 export function formatDocNoPreview(
   scheme: {
     prefix: string;

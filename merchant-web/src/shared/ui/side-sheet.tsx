@@ -3,12 +3,6 @@
 import { useEffect, useRef } from "react";
 import { X } from "@/shared/icons";
 
-/**
- * Left/right-anchored slide-over panel — full height, fixed width, scrollable
- * body. For long forms + drill-downs where a centered modal is cramped. While
- * it's open the page behind is scroll-locked and blurred, so it can't move or
- * be interacted with; Escape, the X, or a click on the scrim closes it.
- */
 export function SideSheet({
   title,
   onClose,
@@ -22,13 +16,11 @@ export function SideSheet({
   side?: "left" | "right";
   width?: string;
 }) {
-  // Keep the latest onClose without re-running the mount effect each render.
   const onCloseRef = useRef(onClose);
   useEffect(() => {
     onCloseRef.current = onClose;
   });
 
-  // Escape to close + lock the body so the page behind can't scroll while open.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onCloseRef.current();

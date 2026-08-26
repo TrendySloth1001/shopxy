@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { authedFetch, extractError } from "@/server/auth/session";
 import { reviewSummarySchema } from "@/features/reviews/schema";
 
-// GET /api/products/:id/reviews/summary — proxies the public backend summary.
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },

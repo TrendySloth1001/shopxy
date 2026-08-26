@@ -31,13 +31,11 @@ export function OrderCard({ order }: { order: CustomerOrder }) {
       href={`/orders/${order.id}`}
       className="block rounded-lg border border-hairline bg-white p-md transition-all duration-200 hover:bg-surface-tint/40 hover:shadow-floating focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
     >
-      {/* Header row */}
       <div className="flex items-start justify-between gap-sm">
         <span className="text-title-sm font-extrabold text-ink">Order #{order.id}</span>
         <AggregateStatusChip order={order} />
       </div>
 
-      {/* Seller + date */}
       <p className="mt-xs text-body-sm font-semibold text-muted truncate">
         {sellerLine(order)}
       </p>
@@ -48,7 +46,6 @@ export function OrderCard({ order }: { order: CustomerOrder }) {
 
       <div className="my-sm h-px bg-hairline" />
 
-      {/* Total + action indicator */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-xs">
           <span className="text-body-sm font-bold text-muted">Total</span>

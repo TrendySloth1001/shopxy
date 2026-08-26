@@ -15,10 +15,6 @@ import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
-/// "My coupons" — read-only list of redeemable promo codes. Customers
-/// copy a code here and paste it into the checkout sheet. Exhausted
-/// coupons stay visible with a muted "Used" badge so the user has a
-/// memory of what they've already used.
 class MyCouponsPage extends StatefulWidget {
   const MyCouponsPage({super.key});
 
@@ -85,7 +81,6 @@ class _MyCouponsPageState extends State<MyCouponsPage> {
   }
 }
 
-/// Skeleton card that mirrors the layout of [_CouponCard].
 class _CouponCardSkeleton extends StatelessWidget {
   const _CouponCardSkeleton();
 
@@ -103,7 +98,6 @@ class _CouponCardSkeleton extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Title row — wide line + small pill placeholder on the right
           Row(
             children: [
               const Expanded(
@@ -114,18 +108,14 @@ class _CouponCardSkeleton extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSizes.xs),
-          // Headline / benefit line
           const AppShimmerLine(widthFactor: 0.40, height: 13),
           const SizedBox(height: AppSizes.xs),
-          // Optional min-order label
           const AppShimmerLine(widthFactor: 0.30, height: 11),
           const SizedBox(height: AppSizes.sm),
-          // Optional description — two shorter lines
           const AppShimmerLine(widthFactor: 0.85, height: 11),
           const SizedBox(height: AppSizes.xs),
           const AppShimmerLine(widthFactor: 0.65, height: 11),
           const SizedBox(height: AppSizes.sm),
-          // Bottom row: code badge + expiry date
           Row(
             children: [
               AppShimmerBox(width: 90, height: 28, radius: AppSizes.radiusSm),

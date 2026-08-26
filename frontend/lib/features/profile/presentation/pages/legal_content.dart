@@ -1,9 +1,3 @@
-// GENERATED — do not edit by hand.
-// Verbatim copy of the merchant-web legal pages (privacy + terms), assembled
-// from merchant-web/messages/en.json by a one-off script so the mobile and web
-// legal text stay identical. Regenerate rather than editing inline.
-
-/// One block inside a legal section: either a paragraph or a bulleted list.
 class LegalBlock {
   const LegalBlock.p(this.paragraph) : bullets = null;
   const LegalBlock.ul(this.bullets) : paragraph = null;
@@ -11,14 +5,12 @@ class LegalBlock {
   final List<String>? bullets;
 }
 
-/// A titled legal section.
 class LegalSection {
   const LegalSection(this.heading, this.blocks);
   final String heading;
   final List<LegalBlock> blocks;
 }
 
-/// "Last updated" line shared by both documents.
 const String kLegalUpdated = 'Last updated June 2026';
 
 const List<LegalSection> kPrivacySections = <LegalSection>[

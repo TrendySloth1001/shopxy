@@ -64,9 +64,6 @@ class CustomFieldDefinitionDto {
     return data;
   }
 
-  /// Section assignment is split off because `null` is a meaningful
-  /// value here ("remove from section, render at the top") — bundling
-  /// it into [toUpdateJson] would conflict with our null-strips logic.
   static Map<String, dynamic> toAssignSectionJson({required String? sectionId}) {
     return {'sectionId': sectionId};
   }

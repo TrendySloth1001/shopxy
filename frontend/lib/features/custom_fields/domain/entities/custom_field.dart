@@ -1,8 +1,5 @@
-// Names intentionally match the backend's SCREAMING_SNAKE wire format so
-// `CustomFieldType.fromWire` / `.name` is a no-op round trip.
 // ignore_for_file: constant_identifier_names
 
-/// Field-type enum mirrored from the backend.
 enum CustomFieldType {
   TEXT,
   LONG_TEXT,
@@ -36,9 +33,6 @@ enum CustomFieldType {
   }
 }
 
-/// Optional grouping for [CustomFieldDefinition]s. Lets the user
-/// organise per-product data into clusters like "Warranty",
-/// "Logistics", "Electronics" rather than a flat list.
 class CustomFieldSection {
   const CustomFieldSection({
     required this.id,
@@ -80,7 +74,6 @@ class CustomFieldSection {
   }
 }
 
-/// Shop-wide definition. One row per field the shop owner has created.
 class CustomFieldDefinition {
   const CustomFieldDefinition({
     required this.id,
@@ -134,8 +127,6 @@ class CustomFieldDefinition {
   }
 }
 
-/// Tree response from `GET /custom-fields/tree` — sections with their
-/// fields embedded, plus the un-sectioned ones in a separate bucket.
 class CustomFieldsTree {
   const CustomFieldsTree({
     required this.sections,
@@ -148,7 +139,6 @@ class CustomFieldsTree {
   bool get isEmpty => sections.isEmpty && ungrouped.isEmpty;
 }
 
-/// Predefined template the user can apply in one tap.
 class CustomFieldTemplate {
   const CustomFieldTemplate({
     required this.id,
@@ -165,9 +155,6 @@ class CustomFieldTemplate {
   final int fieldCount;
 }
 
-/// One product's value for one definition. `definition` is always
-/// included from the backend because the value is meaningless without
-/// the type info that tells the UI how to render it.
 class ProductCustomFieldValue {
   const ProductCustomFieldValue({
     required this.id,

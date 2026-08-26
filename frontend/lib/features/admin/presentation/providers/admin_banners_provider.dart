@@ -15,8 +15,6 @@ class AdminBannersProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  /// Returns banners grouped by placement, in the canonical placement
-  /// order the home page renders them.
   Map<BannerPlacement, List<AdminBanner>> get grouped {
     final out = <BannerPlacement, List<AdminBanner>>{
       BannerPlacement.hero: [],
@@ -38,10 +36,6 @@ class AdminBannersProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      // Walk every page so an admin platform with > 100 banners doesn't
-      // silently truncate the manager view. Capped at 50 iterations
-      // (5k banners) as a runaway-guard — past that we'd want a real
-      // virtual list anyway.
       _banners.clear();
       int? cursor;
       var pages = 0;

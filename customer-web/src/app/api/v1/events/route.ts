@@ -1,6 +1,5 @@
 import { proxyAuthed } from "@/server/bff";
 
-/** POST /v1/events — ingest analytics events. Auth required. */
 export async function POST(req: Request) {
   const body = await req.text().catch(() => null);
   return proxyAuthed(

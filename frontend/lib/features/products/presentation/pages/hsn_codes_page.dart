@@ -17,22 +17,6 @@ import 'package:shopxy/shared/theme/app_text_styles.dart';
 import 'package:shopxy/shared/widgets/empty_state.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
-/// "My HSN codes" — the merchant's own view of the two things they can save
-/// against the shared tariff.
-///
-/// The product form asks *"save this as your code for X?"*, and without this
-/// screen that was a one-way door: a saved shortcut silently won on every
-/// future product with nowhere to see, correct, or remove it.
-///
-/// The two lists are deliberately different kinds of thing:
-///
-///  * **Saved codes** are classification only. They store no rate — the live
-///    rate is joined on at read time — so they can never hold a merchant on a
-///    slab the Council has since changed. Low stakes, freely editable.
-///  * **Rate overrides** restate this shop's tax position on a code for the
-///    whole catalogue. They need `shop:manage` (the backend enforces it),
-///    demand a written reason, and delete softly, because they were the stated
-///    basis for invoices already raised.
 class HsnCodesPage extends StatefulWidget {
   const HsnCodesPage({super.key});
 
@@ -68,8 +52,6 @@ class _HsnCodesPageState extends State<HsnCodesPage> {
   }
 
   Future<void> _load() async {
-    // Overrides are fetched only when the role can see them: asking anyway
-    // would 403 and turn a normal screen into an error for a cashier.
     final canSeeOverrides =
         context.read<AuthProvider>().user?.canView('shop') ?? false;
     setState(() => _loading = true);
@@ -90,12 +72,9 @@ class _HsnCodesPageState extends State<HsnCodesPage> {
     }
   }
 
-  /// `Exception: <text>` reads badly in a snackbar; the text alone is the
-  /// backend's own message and is what the merchant needs.
   static String _message(Object e) =>
       e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
 
-  /// Run a mutation, report it, and reload on success.
   Future<bool> _run(Future<void> Function() action) async {
     setState(() => _busy = true);
     try {
@@ -147,7 +126,6 @@ class _HsnCodesPageState extends State<HsnCodesPage> {
                           )),
                   const SizedBox(height: AppSizes.xxl),
 
-                  // ── Saved codes ──────────────────────────────────────────
                   _SectionHeading(title: l10n.hsnSavedHeading),
                   Text(l10n.hsnSavedBlurb,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -181,7 +159,6 @@ class _HsnCodesPageState extends State<HsnCodesPage> {
                             _run(() => _ds.deleteHsnShortcut(s.id)),
                       ),
 
-                  // ── Rate overrides ───────────────────────────────────────
                   if (canViewOverrides) ...[
                     const SizedBox(height: AppSizes.xxl),
                     const Divider(height: 1),
@@ -221,10 +198,6 @@ class _HsnCodesPageState extends State<HsnCodesPage> {
     );
   }
 
-  /// Point a saved word at a different code. Saving is an upsert keyed on the
-  /// merchant's own wording, so this moves the shortcut rather than duplicating
-  /// it — and it is the only cure for `needsAttention`, because the successor
-  /// to a retired code is a judgement call we must not make for them.
   Future<void> _repoint(HsnShortcut shortcut) async {
     final code = await showModalBottomSheet<String>(
       context: context,
@@ -327,8 +300,6 @@ class _ShortcutRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    // The rate shown is joined live, never stored — so this is today's rate,
-    // not the one that was in force when the shortcut was saved.
     final detail = [
       shortcut.code,
       ?shortcut.name,
@@ -398,8 +369,6 @@ class _OverrideRow extends StatelessWidget {
     required this.onDelete,
   });
 
-  /// Not named `override` — a field of that name shadows Dart's `@override`
-  /// annotation for the whole class body.
   final HsnOverride entry;
   final bool enabled;
   final VoidCallback onDelete;
@@ -476,8 +445,6 @@ class _ErrorView extends StatelessWidget {
   }
 }
 
-/// Pick a code, and refuse to hand one back that has no rate on file — that is
-/// exactly what got a broken shortcut here in the first place.
 class _CodePickerSheet extends StatefulWidget {
   const _CodePickerSheet({
     required this.title,
@@ -549,11 +516,6 @@ class _OverrideDraft {
   final String reason;
 }
 
-/// Record a rate override.
-///
-/// The platform rate for the chosen code is resolved and shown as they type, so
-/// the sheet states the departure plainly — "we say 5%, you are saying 18%" —
-/// rather than letting a number be entered against nothing.
 class _OverrideSheet extends StatefulWidget {
   const _OverrideSheet({required this.dataSource});
   final ProductsRemoteDataSource dataSource;
@@ -660,8 +622,6 @@ class _OverrideSheetState extends State<_OverrideSheet> {
   }
 }
 
-/// Scroll-safe sheet body: the keyboard inset is added to the padding so the
-/// reason field stays visible while it is being typed into.
 class _SheetShell extends StatelessWidget {
   const _SheetShell({required this.title, required this.children});
   final String title;

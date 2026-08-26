@@ -5,14 +5,6 @@ import { useLocale, useTranslations } from "next-intl";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, X } from "@/shared/icons";
 import { ComboSelect, type ComboOption } from "./combo-select";
 
-/**
- * Custom date picker — our replacement for the native `<input type="date">`
- * (no browser-native calendar anywhere). A pill trigger shows the formatted
- * date; clicking opens a month-grid popover with prev/next navigation,
- * keyboard support (arrows move day, PageUp/Down move month, Enter selects,
- * Escape closes) and min/max clamping. Values are `YYYY-MM-DD` strings, exactly
- * like the native input it replaces. Pass `value=""` for the empty state.
- */
 export function DatePicker({
   label,
   ariaLabel,
@@ -48,8 +40,6 @@ export function DatePicker({
   const [view, setView] = useState<Date>(() => startOfMonth(selected ?? new Date()));
   const [focus, setFocus] = useState<Date>(() => selected ?? clamp(new Date(), minD, maxD));
 
-  // Re-anchor the grid on open — in the handler, not an effect, to avoid a
-  // synchronous setState-in-effect.
   function openPicker() {
     const anchor = selected ?? clamp(new Date(), minD, maxD);
     setView(startOfMonth(anchor));
@@ -57,7 +47,6 @@ export function DatePicker({
     setOpen(true);
   }
 
-  // Close on outside-click.
   useEffect(() => {
     if (!open) return;
     const onDoc = (e: MouseEvent) => {
@@ -176,7 +165,6 @@ export function DatePicker({
             onKeyDown={onGridKeyDown}
             className="absolute left-0 z-30 mt-xs w-72 rounded-input border border-hairline bg-field p-md shadow-menu"
           >
-            {/* Month header */}
             <div className="mb-sm flex items-center justify-between">
               <IconNav
                 label={t("datePicker.prevMonth")}
@@ -193,7 +181,6 @@ export function DatePicker({
               </IconNav>
             </div>
 
-            {/* Weekday row */}
             <div className="grid grid-cols-7 gap-px">
               {weekdays.map((w, i) => (
                 <span
@@ -205,7 +192,6 @@ export function DatePicker({
               ))}
             </div>
 
-            {/* Day grid */}
             <div className="grid grid-cols-7 gap-px" role="grid">
               {cells.map((d) => {
                 const inMonth = d.getMonth() === view.getMonth();
@@ -239,7 +225,6 @@ export function DatePicker({
               })}
             </div>
 
-            {/* Today shortcut */}
             <div className="mt-sm flex justify-end">
               <button
                 type="button"
@@ -256,10 +241,6 @@ export function DatePicker({
   );
 }
 
-/**
- * Custom time picker — two dropdowns (hour + minute), no native time input.
- * Value is a 24h `HH:mm` string (empty = unset, treated as 00:00 on edit).
- */
 export function TimeSelect({
   value,
   onChange,
@@ -329,8 +310,6 @@ function IconNav({
   );
 }
 
-// ── date helpers (all local-time, matching native date-input semantics) ──
-
 function parseYmd(s: string): Date | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
   if (!m) return null;
@@ -354,7 +333,6 @@ function startOfMonth(d: Date): Date {
 function addMonths(d: Date, n: number): Date {
   return new Date(d.getFullYear(), d.getMonth() + n, 1);
 }
-/** Add months keeping the day-of-month (clamped to month length). */
 function addMonths2(d: Date, n: number): Date {
   const target = new Date(d.getFullYear(), d.getMonth() + n, 1);
   const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
@@ -379,15 +357,12 @@ function startOfDay(d: Date): Date {
 function endOfDay(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59);
 }
-/** 42-cell (6-week) grid starting on the Sunday on/before the 1st. */
 function monthGrid(view: Date): Date[] {
   const first = startOfMonth(view);
-  const start = addDays(first, -first.getDay()); // back up to Sunday
+  const start = addDays(first, -first.getDay());
   return Array.from({ length: 42 }, (_, i) => addDays(start, i));
 }
-/** Localised short weekday labels, Sunday-first. */
 function weekdayLabels(locale: string): string[] {
   const fmt = new Intl.DateTimeFormat(locale, { weekday: "short" });
-  // 2023-01-01 is a Sunday.
   return Array.from({ length: 7 }, (_, i) => fmt.format(new Date(2023, 0, 1 + i)));
 }

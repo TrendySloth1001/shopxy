@@ -4,11 +4,6 @@ import { stockAdjustmentsService } from '../../src/modules/stock-adjustments/sto
 import { paymentsService } from '../../src/modules/payments/payments.service.js';
 import { createTestUser, cleanupTestUser, createTestProduct } from '../helpers/setup.js';
 
-/// Proves the non-invoice producers actually emit on the real service paths
-/// (in the same transaction as the business write), complementing the
-/// invoice-confirm coverage in the invoices suite + relay.test.ts. One
-/// representative IN-stock adjustment and one payment record+void.
-
 describe('outbox producers', () => {
   afterAll(async () => {
     await prisma.$disconnect();
@@ -19,7 +14,7 @@ describe('outbox producers', () => {
     try {
       const product = await createTestProduct(ctx.shopId);
       const res = await stockAdjustmentsService.create(ctx.shopId, {
-        reasonCode: 'OPENING', // IN reason — no pre-existing stock needed
+        reasonCode: 'OPENING',
         items: [{ productId: product.id, quantity: 5, unitCost: 70 }],
         createdById: ctx.userId,
       });
@@ -65,8 +60,6 @@ describe('outbox producers', () => {
       expect(voidEvent?.aggregateType).toBe('payment');
       expect((voidEvent?.payload as { paymentId?: number })?.paymentId).toBe(payment.id);
     } finally {
-      // Order matters: outbox + payments reference the shop; clear them before
-      // the user/shop cascade so no FK lingers.
       await prisma.outboxEvent.deleteMany({ where: { shopId: ctx.shopId } }).catch(() => undefined);
       await prisma.payment.deleteMany({ where: { shopId: ctx.shopId } }).catch(() => undefined);
       await prisma.party.deleteMany({ where: { id: party.id } }).catch(() => undefined);

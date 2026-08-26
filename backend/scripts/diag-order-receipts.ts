@@ -1,14 +1,6 @@
-/**
- * READ-ONLY diagnostic: for the most recent online-paid customer orders, print
- * the gateway intent, the child invoices, and the receipts posted against them.
- * Pinpoints WHY a paid order shows unpaid on the merchant invoice.
- *
- * Run: npx tsx scripts/diag-order-receipts.ts
- */
 import prisma from '../src/infra/db/prisma.js';
 
 async function main() {
-  // Most recent orders that have a gateway intent against them.
   const gws = await prisma.gatewayPayment.findMany({
     where: { targetType: 'ORDER' },
     orderBy: { id: 'desc' },
@@ -102,7 +94,6 @@ async function main() {
       }
     }
 
-    // What the reconciler WOULD see for the gateway slice.
     const capturedForOrder = await prisma.gatewayPayment.findFirst({
       where: { targetType: 'ORDER', targetId: orderId, status: 'CAPTURED' },
       select: { id: true, amount: true },

@@ -4,10 +4,6 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shopxy_customer/core/network/api_client.dart';
 
-/// Uploads a profile avatar to `/me/upload/avatar` and returns the
-/// canonical URL the backend stored it at. Mirrors the merchant
-/// pipeline (sharp re-encode + 3 WebP variants) so the same image
-/// loader can resolve responsive sizes.
 class AvatarRemoteDataSource {
   AvatarRemoteDataSource(this._client);
   final ApiClient _client;

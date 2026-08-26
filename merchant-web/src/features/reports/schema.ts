@@ -1,11 +1,5 @@
 import { z } from "zod";
 
-/**
- * Report shapes, mirroring the backend `reports` module (`/reports/*`). Each
- * report takes a `from`/`to` ISO range and returns confirmed-document totals.
- * All money is rupees (Decimal serialised as a number).
- */
-
 const dailyNum = z.coerce.number().default(0);
 
 export const salesReportSchema = z
@@ -83,7 +77,6 @@ const gstRateSchema = z.object({
   cess: dailyNum.nullish(),
 });
 
-/** IGST / CGST / SGST amounts for one column (output, input or net). */
 const gstHeadSchema = z.object({
   igst: dailyNum,
   cgst: dailyNum,
@@ -98,8 +91,6 @@ export const gstReportSchema = z
     outputCess: dailyNum.nullish(),
     inputCess: dailyNum.nullish(),
     netCessPayable: dailyNum.nullish(),
-    // Head-wise split (GSTR-3B): each of output / input (ITC) / net payable
-    // broken into IGST, CGST and SGST.
     byHead: z
       .object({
         output: gstHeadSchema,
@@ -107,8 +98,6 @@ export const gstReportSchema = z
         netPayable: gstHeadSchema,
       })
       .nullish(),
-    // Output tax reversed on refunded returns in the period (already netted
-    // out of the figures above).
     returns: z
       .object({
         gst: dailyNum,
@@ -144,7 +133,6 @@ export const pnlReportSchema = z
   .passthrough();
 export type PnlReport = z.infer<typeof pnlReportSchema>;
 
-/** One confirmed sale line in the P&L "products sold" drill-down. */
 export const soldItemSchema = z.object({
   productName: z.string().nullish(),
   productSku: z.string().nullish(),
@@ -167,7 +155,6 @@ const paginationSchema = z
   .nullish()
   .transform((v) => v ?? { page: 1, limit: 25, total: 0, totalPages: 0 });
 
-/** Paginated `/reports/sold-items` page (one product's timeline). */
 export const soldItemsPageSchema = z.object({
   data: z
     .array(soldItemSchema)
@@ -177,7 +164,6 @@ export const soldItemsPageSchema = z.object({
 });
 export type SoldItemsPage = z.infer<typeof soldItemsPageSchema>;
 
-/** One aggregated product row in the P&L "products sold" summary. */
 export const soldProductSchema = z.object({
   productId: z.coerce.string(),
   productName: z.string().nullish(),
@@ -190,7 +176,6 @@ export const soldProductSchema = z.object({
 });
 export type SoldProduct = z.infer<typeof soldProductSchema>;
 
-/** Grand totals across every matching product (all pages), for the footer. */
 const soldTotalsSchema = z
   .object({
     salesCount: dailyNum,
@@ -200,7 +185,6 @@ const soldTotalsSchema = z
   .nullish()
   .transform((v) => v ?? { salesCount: 0, totalQuantity: 0, totalAmount: 0 });
 
-/** Paginated `/reports/sold-products` page (the summary). */
 export const soldProductsPageSchema = z.object({
   data: z
     .array(soldProductSchema)

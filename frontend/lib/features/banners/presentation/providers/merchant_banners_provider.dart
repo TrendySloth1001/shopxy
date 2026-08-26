@@ -16,8 +16,6 @@ class MerchantBannersProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  /// Returns banners grouped by placement, in the canonical placement
-  /// order the home page renders them.
   Map<BannerPlacement, List<AdminBanner>> get grouped {
     final out = <BannerPlacement, List<AdminBanner>>{
       BannerPlacement.hero: [],
@@ -90,20 +88,15 @@ class MerchantBannersProvider extends ChangeNotifier {
     }
   }
 
-  /// Curated products pinned to a banner, in display order.
   Future<List<BannerProductRow>> listBannerProducts(String bannerId) =>
       _ds.listBannerProducts(bannerId);
 
-  /// Replaces the entire pinned-product list for a banner. Empty [items]
-  /// clears it. Returns the re-read rows (with server-computed sale prices).
   Future<List<BannerProductRow>> replaceBannerProducts(
     String bannerId,
     List<BannerProductInput> items,
   ) =>
       _ds.replaceBannerProducts(bannerId, items);
 
-  /// Drops cached state on logout / 401-refresh so the next user doesn't
-  /// momentarily see the previous merchant's banners.
   void reset() {
     _banners.clear();
     _isLoading = false;

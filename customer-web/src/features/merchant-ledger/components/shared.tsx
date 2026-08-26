@@ -10,9 +10,6 @@ import {
   FileQuestion,
 } from "@/shared/icons";
 
-// ─── Status chips ─────────────────────────────────────────────────────────────
-
-/** Generic pill badge — maps (label, text-color, bg-color) to a pill. */
 export function StatusBadge({
   label,
   color,
@@ -42,7 +39,6 @@ export function InvoiceStatusBadge({ status }: { status: string }) {
   return <StatusBadge label={label} color={color} bg={bg} />;
 }
 
-/** Status chip for a quotation */
 export function QuotationStatusBadge({ status }: { status: string }) {
   let label = status;
   let color = "text-muted";
@@ -57,8 +53,6 @@ export function QuotationStatusBadge({ status }: { status: string }) {
   }
   return <StatusBadge label={label} color={color} bg={bg} />;
 }
-
-// ─── Snackbar ─────────────────────────────────────────────────────────────────
 
 export type SnackTone = "success" | "error" | "info";
 export interface SnackMsg { message: string; tone: SnackTone }
@@ -76,8 +70,6 @@ export function Snackbar({ snack }: { snack: SnackMsg | null }) {
     </div>
   );
 }
-
-// ─── Common page states ──────────────────────────────────────────────────────
 
 export function PageError({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
@@ -126,8 +118,6 @@ export function QuotationEmptyState({ onRequest }: { onRequest?: () => void }) {
   );
 }
 
-// ─── Skeleton primitives ──────────────────────────────────────────────────────
-
 export function SkeletonLine({ className = "" }: { className?: string }) {
   return <div className={`animate-pulse rounded-sm bg-surface-tint ${className}`} />;
 }
@@ -135,8 +125,6 @@ export function SkeletonLine({ className = "" }: { className?: string }) {
 export function SkeletonBlock({ className = "" }: { className?: string }) {
   return <div className={`animate-pulse rounded-md bg-surface-tint ${className}`} />;
 }
-
-// ─── Icon-only status markers (for ledger txn rows) ──────────────────────────
 
 export function TxnIcon({ type }: { type: string }) {
   switch (type) {
@@ -158,7 +146,7 @@ export function TxnIcon({ type }: { type: string }) {
           <Ban size={18} className="text-error" />
         </span>
       );
-    default: // ADJUSTMENT
+    default:
       return (
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-accent-indigo-soft">
           <Clock size={18} className="text-accent-indigo" />

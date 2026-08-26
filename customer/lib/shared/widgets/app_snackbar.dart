@@ -6,19 +6,8 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 
-/// Snackbar variants. Maps to the four status colors in [AppColors] so
-/// the visual treatment matches the message intent.
 enum AppSnackbarTone { neutral, success, error, info }
 
-/// Single entry-point for non-blocking feedback. Always prefer this
-/// over raw [ScaffoldMessenger] calls — rule from DESIGN.md #8.
-///
-/// Behaviour:
-/// * Auto-dismiss after 3s (5s when [action] is set, so the user has
-///   time to act).
-/// * Floating shape with hairline border to feel of-a-piece with cards.
-/// * Single line by default; multi-line if the message is long.
-/// * Action button is text-only on the right (Material guidance).
 void showAppSnackbar(
   BuildContext context, {
   required String message,

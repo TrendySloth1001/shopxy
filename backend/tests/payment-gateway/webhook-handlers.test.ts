@@ -1,7 +1,3 @@
-/**
- * Unit tests for the settlement webhook handlers (settlement/webhook-handlers.ts).
- * prisma and reverseTransferForReturn are vi.mock'd.
- */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 const { gatewayTransfer, linkedAccount, gatewayPayment, reverseTransferForReturn } = vi.hoisted(

@@ -1,13 +1,5 @@
 import { z } from "zod";
 
-/**
- * Merchant-side return shapes, mirroring the backend returns module served at
- * `/orders/returns`. Returns are initiated by customers; the merchant works the
- * inbox: approve / reject → mark picked-up → mark received → refund (refunds the
- * buyer's original payment method and restocks). Money is rupees (Decimal
- * serialised as number).
- */
-
 export const RETURN_STATUSES = [
   "REQUESTED",
   "APPROVED",
@@ -98,14 +90,6 @@ export const returnListSchema = z.object({
   total: z.coerce.number().default(0),
 });
 
-/**
- * Result of POST /orders/returns/:id/refund. The refund goes to the buyer's
- * original payment instrument via the gateway. `refundStatus`:
- *   REFUNDED            — money sent back to the original payment method
- *   NO_PAYMENT          — nothing was paid online (COD); settle offline
- *   FAILED              — gateway rejected the refund
- *   NOTHING_TO_REFUND   — zero refundable amount
- */
 export const REFUND_STATUSES = ["REFUNDED", "NO_PAYMENT", "FAILED", "NOTHING_TO_REFUND"] as const;
 export type RefundStatus = (typeof REFUND_STATUSES)[number];
 
@@ -116,10 +100,6 @@ export const refundResultSchema = z.object({
 });
 export type RefundResult = z.infer<typeof refundResultSchema>;
 
-/**
- * Maps a refund result to the i18n key (under the `returns` namespace) that
- * describes the outcome. The caller resolves it with `t(refundStatusMessageKey(r))`.
- */
 export function refundStatusMessageKey(r: RefundResult): string {
   switch (r.refundStatus) {
     case "REFUNDED":

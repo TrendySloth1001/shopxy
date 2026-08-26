@@ -24,11 +24,6 @@ const createPaymentSchema = z
     amount: z.number().positive(),
     mode: paymentModeSchema,
     modeReference: z.string().max(120).nullable().optional(),
-    // Accept an offset-aware timestamp (…Z / +05:30), a timezone-less LOCAL
-    // datetime (what the Flutter apps send via DateTime.toIso8601String() on a
-    // local DateTime — no offset), or a bare calendar date. The strict
-    // offset-only variant was silently rejecting every app-recorded payment
-    // with a "VALIDATION_ERROR" the modal sheet couldn't even surface.
     paymentDate: z
       .string()
       .datetime({ offset: true })
@@ -78,9 +73,6 @@ export class PaymentsController {
     const shopId = requireShopId(req, res);
     if (!shopId) return;
     const payload = createPaymentSchema.parse(req.body);
-    // Honour client-supplied idempotency keys. A flaky mobile retry
-    // with the same key reuses the original row (no double-payment of
-    // the invoice, no double-debit on the party/vendor ledger).
     const rawKey = req.get('x-idempotency-key') ?? req.get('X-Idempotency-Key');
     const idempotencyKey =
       typeof rawKey === 'string' && rawKey.length > 0 && rawKey.length <= 120
@@ -144,9 +136,6 @@ export class PaymentsController {
     res.json(payment);
   }
 
-  /// DELETE /payments/:id now soft-voids the payment (it is retained for
-  /// audit + statutory retention, just excluded from balances). An optional
-  /// `reason` may be supplied via the request body or `?reason=`.
   async delete(req: Request, res: Response): Promise<void> {
     const shopId = requireShopId(req, res);
     if (!shopId) return;
@@ -164,10 +153,6 @@ export class PaymentsController {
       res.status(404).json({ error: 'Payment not found' });
       return;
     }
-    // PR-C2 — a platform-collected receipt (customer wallet/gateway or a POS
-    // QR/online settlement) can't be silently voided: the funds are already
-    // captured at the platform. Voiding would falsely reopen the invoice's
-    // outstanding. Require a refund / credit-note flow instead.
     if (result === 'PLATFORM_COLLECTED') {
       res.status(409).json({
         error:

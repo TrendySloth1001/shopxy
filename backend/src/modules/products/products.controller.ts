@@ -6,27 +6,12 @@ import { decodeId } from '../../shared/ids/publicId.js';
 import { zPublicId } from '../../shared/ids/zPublicId.js';
 import { productsService } from './products.service.js';
 
-// CAT-M5 — stock columns are Decimal(12,3): nine integer digits + three
-// fractional. Anything at/above 1e9 overflows the precision (DB throws
-// inconsistently), and >3 decimals is silently truncated by Postgres. Bound
-// both the product- and variant-level stock at the schema so the API rejects
-// these cleanly instead of leaking a DB error or storing a truncated number.
 const STOCK_MAX = 999_999_999;
 
-// Ceiling on a single-response catalogue. Chosen for the payload, not the row
-// count: the light projection runs ~250 bytes a row, so 5,000 rows is ~1.2 MB
-// before gzip — around the most that's defensible to hand a phone in one go.
-// A shop past this keeps using server-side search, which has no such limit.
 const PRODUCT_CATALOGUE_MAX = 5_000;
 const hasMax3Decimals = (n: number): boolean =>
   Number.isFinite(n) && Math.round(n * 1000) === n * 1000;
 
-// Accepts either an absolute URL (legacy rows, externally-hosted images)
-// or a server-relative path like `/images/<key>` (the format our own
-// /upload endpoint returns — relative on purpose so the same row works
-// against localhost, devtunnels, and prod). Using bare `z.string().url()`
-// here silently rejected every fresh upload, leaving newly-created
-// products without an image even though the file landed in MinIO.
 const productImageRef = z
   .string()
   .min(1)
@@ -35,26 +20,15 @@ const productImageRef = z
     message: 'Must be an http(s) URL or a server-relative path',
   });
 
-// Phase D — optional `tab` key per spec group. When any group declares
-// a tab the customer PDP renders a chip row above the spec sheet and
-// filters groups by selection. Empty/absent keeps the legacy flat-list
-// render so existing products are unaffected.
-// Phase C — A+ content blocks. Five fixed kinds with per-kind payloads,
-// hard cap of 8 blocks per product. Markdown sanitisation for TEXT
-// blocks happens in the service layer so the DB never sees raw <script>.
 const contentBlockSchema = z.discriminatedUnion('kind', [
   z.object({
     kind: z.literal('HERO'),
-    // UPLOAD-3: scheme-validate (http(s) or server-relative) so a content
-    // block can't smuggle a javascript:/data: URL that renders on the PDP.
     imageUrl: productImageRef,
     headline: z.string().min(1).max(120),
     subtext: z.string().max(240).optional(),
   }),
   z.object({
     kind: z.literal('FEATURE'),
-    // UPLOAD-3: scheme-validate (http(s) or server-relative) so a content
-    // block can't smuggle a javascript:/data: URL that renders on the PDP.
     imageUrl: productImageRef,
     side: z.enum(['LEFT', 'RIGHT']),
     title: z.string().min(1).max(120),
@@ -78,7 +52,7 @@ const contentBlockSchema = z.discriminatedUnion('kind', [
     images: z
       .array(
         z.object({
-          url: productImageRef, // UPLOAD-3: reject javascript:/data: URLs
+          url: productImageRef,
           caption: z.string().max(140).optional(),
         }),
       )
@@ -87,18 +61,12 @@ const contentBlockSchema = z.discriminatedUnion('kind', [
   }),
   z.object({
     kind: z.literal('TEXT'),
-    // Restricted markdown subset — the service strips any <script> /
-    // <iframe> before saving so the DB column stays render-safe.
     markdown: z.string().min(1).max(2000),
   }),
 ]);
 
 const contentBlocksSchema = z.array(contentBlockSchema).max(8);
 
-// Phase E — axis definitions and per-variant payloads. Each variant
-// must include all axis attributes; missing keys would lead to undefined
-// behaviour in the swatch picker. Stock is decimal-shaped to match the
-// product table.
 const variantAxesSchema = z
   .array(
     z.object({
@@ -117,18 +85,8 @@ const variantSchema = z
     mrp: z.number().positive(),
     sellingPrice: z.number().positive(),
     purchasePrice: z.number().nonnegative(),
-    // CAT-H1 — optional per-variant GST source. When two variants of a
-    // product sit in different HSN/GST slabs the merchant declares each
-    // variant's own hsnCode / taxPercent; null/omitted inherits the
-    // product-level slab at invoice time. Bounds mirror the product fields.
     hsnCode: z.string().max(20).nullable().optional(),
     taxPercent: z.number().min(0).max(100).optional(),
-    // CAT-M5 — bound the variant display stock at write. The column is
-    // Decimal(12,3): values above the funded product total are already
-    // clamped in the service (CAT-C1), but the schema must also refuse
-    // absurd magnitudes (>1e9 overflows the precision and throws
-    // inconsistently at the DB layer) and >3 decimal places (silently
-    // truncated by Postgres). Keep the same bound on the product field.
     stockQuantity: z
       .number()
       .nonnegative()
@@ -139,8 +97,6 @@ const variantSchema = z
     isActive: z.boolean().optional(),
     sortOrder: z.number().int().nonnegative().optional(),
   })
-  // CAT-C3 — Legal Metrology s.18/s.36: a variant must never be sold above
-  // its declared MRP. Cross-field so the message points at sellingPrice.
   .refine((v) => v.sellingPrice <= v.mrp, {
     message: 'Selling price cannot exceed MRP',
     path: ['sellingPrice'],
@@ -167,26 +123,15 @@ const createProductSchema = z.object({
   sku: z.string().min(1).max(50),
   barcode: z.string().max(50).optional(),
   hsnCode: z.string().max(20).optional(),
-  // CAT-C2 — country of manufacture/origin. Required on the printed
-  // invoice/label for imported goods (Legal Metrology); optional here so
-  // domestic goods without a declared origin stay valid.
   countryOfOrigin: z.string().min(1).max(60).optional(),
-  // Phase B — free-text brand surfaced under the PDP title.
   brand: z.string().min(1).max(80).optional(),
   imageUrls: z.array(productImageRef).max(10).optional(),
   mrp: z.number().positive(),
   sellingPrice: z.number().positive(),
   purchasePrice: z.number().nonnegative(),
   taxPercent: z.number().min(0).max(100).optional(),
-  // Compensation cess is ad valorem up to 290% (tobacco) — wider bound
-  // than GST on purpose.
   cessRate: z.number().min(0).max(300).optional(),
-  // Whether mrp/sellingPrice already contain GST (TAX_INCLUSIVE), have it
-  // added on top when billed (TAX_EXCLUSIVE, the default), or the product is
-  // exempt/nil-rated (NO_GST — taxPercent/cessRate are then forced to 0 by
-  // the service, see resolveProductPricing()).
   pricingMode: z.enum(['TAX_EXCLUSIVE', 'TAX_INCLUSIVE', 'NO_GST']).optional(),
-  // CAT-M5 — same Decimal(12,3) bound as the variant field.
   stockQuantity: z
     .number()
     .nonnegative()
@@ -197,8 +142,6 @@ const createProductSchema = z.object({
   unit: z.enum(UNITS).optional(),
   categoryId: zPublicId.optional(),
   tags: z.array(z.string().min(1).max(40)).max(20).optional(),
-  // V2 PDP descriptive fields. All optional; the customer screen
-  // hides the relevant section when the array / object is empty.
   highlights: z.array(z.string().min(1).max(140)).max(8).optional(),
   specs: z
     .array(specGroupSchema)
@@ -221,8 +164,6 @@ const createProductSchema = z.object({
   variantAxes: variantAxesSchema.nullable().optional(),
   variants: variantsSchema.optional(),
 })
-  // CAT-C3 — Legal Metrology s.18/s.36: product-level selling price must
-  // never exceed MRP. Variant-level prices are validated on variantSchema.
   .refine((d) => d.sellingPrice <= d.mrp, {
     message: 'Selling price cannot exceed MRP',
     path: ['sellingPrice'],
@@ -235,7 +176,6 @@ const updateProductSchema = z
     sku: z.string().min(1).max(50).optional(),
     barcode: z.string().max(50).nullable().optional(),
     hsnCode: z.string().max(20).nullable().optional(),
-    // CAT-C2 — nullable so the merchant can clear a previously-set origin.
     countryOfOrigin: z.string().min(1).max(60).nullable().optional(),
     brand: z.string().min(1).max(80).nullable().optional(),
     mrp: z.number().positive().optional(),
@@ -273,9 +213,6 @@ const updateProductSchema = z
     variants: variantsSchema.optional(),
   })
   .refine((d) => Object.keys(d).length > 0, { message: 'At least one field is required' })
-  // CAT-C3 — when both mrp and sellingPrice are supplied in the same patch
-  // we can enforce the invariant up front. A patch touching only ONE of the
-  // pair is re-checked against the persisted row in the service layer.
   .refine(
     (d) => d.mrp === undefined || d.sellingPrice === undefined || d.sellingPrice <= d.mrp,
     { message: 'Selling price cannot exceed MRP', path: ['sellingPrice'] },
@@ -283,8 +220,6 @@ const updateProductSchema = z
 
 const setPublishedSchema = z.object({ isPublished: z.boolean() });
 
-// All query-string params coerced + bounded here so the service trusts
-// its inputs and clients get 400s instead of weird db queries.
 const listProductsQuerySchema = z.object({
   search: z.string().max(200).optional(),
   categoryId: zPublicId.optional(),
@@ -308,9 +243,6 @@ const reorderImagesSchema = z.object({
   orderedIds: z.array(zPublicId).min(1),
 });
 
-// Decode a URL path param (`:id`, `:imageId`) to its internal integer. Accepts
-// both an opaque public token and a legacy numeric id; null on anything else,
-// which callers map to 404 (never 400 — don't confirm the id space).
 function parseId(raw: string): number | null {
   return decodeId(raw);
 }
@@ -351,19 +283,12 @@ export class ProductsController {
     res.json(paginatedResponse(products, total, { page, limit, skip }));
   }
 
-  /// The whole active catalogue, light, for clients that search locally.
-  ///
-  /// Not a page of `list` with a big limit: the projection is deliberately
-  /// narrower (no specs/offers/variants), which is the only reason sending
-  /// every row is affordable.
   async catalogue(req: Request, res: Response): Promise<void> {
     const { products, total, truncated } = await productsService.listCatalogue({
       shopId: req.shopId!,
       limit: PRODUCT_CATALOGUE_MAX,
     });
 
-    // `truncated` is load-bearing, not diagnostic — it's how the client knows
-    // to keep asking the server instead of searching an incomplete list.
     res.json({ data: products, total, truncated, limit: PRODUCT_CATALOGUE_MAX });
   }
 
@@ -420,8 +345,6 @@ export class ProductsController {
     if (result === null) { res.status(404).json({ error: 'Product not found' }); return; }
     res.status(204).send();
   }
-
-  // ── Image management ──────────────────────────────────────────────
 
   async addImage(req: Request, res: Response): Promise<void> {
     const id = parseId(req.params.id);

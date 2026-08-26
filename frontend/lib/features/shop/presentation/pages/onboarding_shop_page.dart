@@ -7,10 +7,6 @@ import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 
-/// First-run "name your shop" step for a freshly-signed-up OWNER who has no
-/// shop yet (the register form no longer collects the shop name — it's created
-/// shopless, mirroring merchant-web). Creating the shop here gives the account
-/// a ShopMember(OWNER) row, so the auth gate advances into the dashboard.
 class OnboardingShopPage extends StatefulWidget {
   const OnboardingShopPage({super.key});
 
@@ -42,14 +38,6 @@ class _OnboardingShopPageState extends State<OnboardingShopPage> {
     if (!mounted) return;
     if (!ok) {
       final error = context.read<ShopProvider>().error;
-      // The server is the source of truth here, and it's telling us this
-      // account already has a shop — which can only mean this screen's
-      // showing on stale client state (e.g. a device-cached /auth/me from
-      // before onboarding finished). That's not a user-facing error to
-      // display and retry forever: resync from the server instead, and
-      // the auth gate swaps this screen out on its own once shopRole
-      // populates. A genuinely different failure (network, validation)
-      // still surfaces normally.
       if (error != null && error.contains('already have a shop')) {
         await context.read<AuthProvider>().refreshUser();
         if (mounted) setState(() => _isLoading = false);
@@ -61,9 +49,6 @@ class _OnboardingShopPageState extends State<OnboardingShopPage> {
       });
       return;
     }
-    // Shop created → refresh the session so shopRole populates; the root
-    // auth gate then swaps this screen for the dashboard. This widget may be
-    // disposed as a result, so guard any further state writes.
     await context.read<AuthProvider>().refreshUser();
     if (mounted) setState(() => _isLoading = false);
   }
@@ -150,7 +135,6 @@ class _OnboardingShopPageState extends State<OnboardingShopPage> {
                       onPressed: _isLoading ? null : _submit,
                     ),
                     const SizedBox(height: AppSizes.lg),
-                    // Escape hatch — sign out if this isn't the account they meant.
                     TextButton(
                       onPressed: _isLoading
                           ? null

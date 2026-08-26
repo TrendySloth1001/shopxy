@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-// ── UserAddress ───────────────────────────────────────────────────────────────
-
 export const userAddressSchema = z.object({
   id: z.coerce.string(),
   label: z.string().nullable().optional(),
@@ -22,8 +20,6 @@ export const addressListSchema = z.object({
   data: z.array(userAddressSchema),
 });
 
-// ── Address form ──────────────────────────────────────────────────────────────
-
 export interface AddressFormValues {
   label: string;
   fullName: string;
@@ -37,7 +33,6 @@ export interface AddressFormValues {
   isDefault: boolean;
 }
 
-/** One-line summary as shown in the checkout picker row. */
 export function addressOneLine(a: UserAddress): string {
   const parts: string[] = [a.line1];
   if (a.line2) parts.push(a.line2);

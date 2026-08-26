@@ -1,6 +1,5 @@
 import { proxy, withQuery } from "@/server/proxy";
 
-// GET /api/parties · POST /api/parties → /parties
 export function GET(req: Request) {
   return proxy(withQuery("/parties", req), req, { fallback: "Could not load customers." });
 }

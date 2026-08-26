@@ -1,15 +1,5 @@
-/**
- * Client mirror of the backend `cta-target` DSL (banners / spotlight CTAs).
- * The wire format is `<kind>:<value>` — `category:<slug>`, `product:<id>`,
- * `collection:<slug>`, `url:https://…`. We validate the same shapes here so
- * the merchant doesn't round-trip to the server to learn a value is malformed.
- * The backend remains the validation authority on write.
- */
-
 export type CtaKind = "none" | "category" | "product" | "collection" | "url";
 
-/** Selectable CTA kinds with the message-catalog key (under "common") for each
- *  option's label. The field translates `labelKey` at the point of use. */
 export const CTA_KIND_OPTIONS: ReadonlyArray<{ value: CtaKind; labelKey: string }> = [
   { value: "none", labelKey: "cta.kind.none" },
   { value: "category", labelKey: "cta.kind.category" },
@@ -18,7 +8,6 @@ export const CTA_KIND_OPTIONS: ReadonlyArray<{ value: CtaKind; labelKey: string 
   { value: "url", labelKey: "cta.kind.url" },
 ];
 
-/** Message-catalog key (under "common") for the helper hint of a CTA kind. */
 export function ctaHintKey(kind: CtaKind): string {
   switch (kind) {
     case "none":
@@ -34,7 +23,6 @@ export function ctaHintKey(kind: CtaKind): string {
   }
 }
 
-/** Split a stored target back into {kind, value} for editing. */
 export function parseCtaTarget(target?: string | null): { kind: CtaKind; value: string } {
   if (!target) return { kind: "none", value: "" };
   const idx = target.indexOf(":");
@@ -48,7 +36,6 @@ export function parseCtaTarget(target?: string | null): { kind: CtaKind; value: 
   return { kind: "none", value: "" };
 }
 
-/** Build + validate. Returns `{ target }` (null target = no CTA) or `{ error }`. */
 export function buildCtaTarget(
   kind: CtaKind,
   rawValue: string,

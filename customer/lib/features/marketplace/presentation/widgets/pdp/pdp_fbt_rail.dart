@@ -12,11 +12,6 @@ import 'package:shopxy_customer/shared/format/app_format.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 
-/// Phase G — "Frequently bought together" rail. Sits between the offers
-/// strip and the tab bar in the PDP. Self-loads its own cohort on
-/// init; renders nothing while loading or on error so it can never
-/// block the PDP. Empty arrays from the server also collapse to
-/// nothing (no rail when there's no cohort).
 class PdpFbtRail extends StatefulWidget {
   const PdpFbtRail({super.key, required this.productId});
   final String productId;
@@ -41,7 +36,6 @@ class _PdpFbtRailState extends State<PdpFbtRail> {
       if (!mounted) return;
       setState(() => _items = items);
     } catch (_) {
-      // Rail is purely additive — swallow errors and hide it.
       if (!mounted) return;
       setState(() => _items = const []);
     }
@@ -69,10 +63,6 @@ class _PdpFbtRailState extends State<PdpFbtRail> {
           ),
           const SizedBox(height: AppSizes.sm),
           SizedBox(
-            // 140px square image + ~88px body (name 2 lines, price row,
-            // optional rating row, 16px padding). A couple of devices
-            // were clipping by 4px at the default scale — 232 buys the
-            // headroom and absorbs a +10% text-scale setting too.
             height: 232,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,

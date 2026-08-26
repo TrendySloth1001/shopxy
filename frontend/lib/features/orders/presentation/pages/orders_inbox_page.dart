@@ -15,7 +15,6 @@ import 'package:shopxy/shared/constants/app_durations.dart';
 import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
-import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_search_bar.dart';
 import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/shared/widgets/app_status_badge.dart';
@@ -34,8 +33,6 @@ class OrdersInboxPage extends StatefulWidget {
 }
 
 class _OrdersInboxPageState extends State<OrdersInboxPage> {
-  // Status filters for the four inbox tabs. Labels are resolved from
-  // l10n at build time (see _tabLabel); only the status codes live here.
   static const _tabStatuses = <String?>[
     'PENDING',
     'CONFIRMED',
@@ -85,8 +82,6 @@ class _OrdersInboxPageState extends State<OrdersInboxPage> {
 
   void _onSearchChanged(String value) {
     _searchDebounce?.cancel();
-    // Debounce — types like "sol" hit the backend once, not three
-    // times. Cheap to debounce client-side; saves a chatty inbox.
     _searchDebounce = Timer(AppDurations.searchDebounce, () {
       if (!mounted) return;
       context.read<OrdersProvider>().setSearch(value.trim());
@@ -132,7 +127,6 @@ class _OrdersInboxPageState extends State<OrdersInboxPage> {
           : Column(
               children: [
                 SizedBox(height: FloatingAppBar.contentTopInset(context)),
-                // ── Status pills ───────────────────────────────────────────
                 Padding(
                   padding: const EdgeInsets.fromLTRB(
                     AppSizes.lg,
@@ -149,9 +143,6 @@ class _OrdersInboxPageState extends State<OrdersInboxPage> {
                             padding: const EdgeInsets.only(right: AppSizes.sm),
                             child: _Pill(
                               label: _tabLabel(l10n, _tabStatuses[i]),
-                              // Tiny count badge on Pending so a busy merchant
-                              // sees the pile growing without leaving the
-                              // inbox.
                               badge:
                                   _tabStatuses[i] == 'PENDING' &&
                                       p.pendingCount > 0
@@ -168,7 +159,6 @@ class _OrdersInboxPageState extends State<OrdersInboxPage> {
                     ),
                   ),
                 ),
-                // ── Search + date filter row ───────────────────────────────
                 Padding(
                   padding: const EdgeInsets.fromLTRB(
                     AppSizes.lg,
@@ -183,8 +173,6 @@ class _OrdersInboxPageState extends State<OrdersInboxPage> {
                           hint: l10n.ordersSearchHint,
                           controller: _searchCtrl,
                           onChanged: _onSearchChanged,
-                          // The inbox runs its own debounce (_searchDebounce),
-                          // so the shared bar must not debounce again.
                           debounce: Duration.zero,
                         ),
                       ),
@@ -215,10 +203,6 @@ class _OrdersInboxPageState extends State<OrdersInboxPage> {
                           )
                         : ListView.separated(
                             controller: _scrollCtrl,
-                            // Header already clears the bar; stop the list
-                            // from auto-applying the MediaQuery top inset
-                            // (extendBodyBehindAppBar) a second time. Bottom
-                            // padding clears the floating nav.
                             padding: EdgeInsets.fromLTRB(
                               AppSizes.lg,
                               0,
@@ -350,7 +334,6 @@ class _DateFilterChip extends StatelessWidget {
         customBorder: AppShapes.squircle(AppSizes.radiusFull),
         onTap: onTap,
         child: Container(
-          // Match the search pill's height so the two sit level on the row.
           height: AppSizes.huge,
           padding: const EdgeInsets.symmetric(horizontal: AppSizes.md),
           alignment: Alignment.center,
@@ -485,9 +468,6 @@ class _OrderRow extends StatelessWidget {
     );
   }
 
-  /// "3 PCS Solder Wire Roll · 2 PCS Tea Bag (+1 more)" — built from
-  /// the backend's itemsPreview projection so we never miss a list-row
-  /// render due to a follow-up fetch.
   static String? _itemPreviewText(MerchantOrder order) {
     if (order.itemPreview.isEmpty) return null;
     final parts = order.itemPreview.map((p) {
@@ -576,10 +556,6 @@ class _EmptyInbox extends StatelessWidget {
   }
 }
 
-// ── Skeleton widgets ─────────────────────────────────────────────────────────
-
-/// Full-list skeleton — 4 repeated [_OrderRowSkeleton] items separated by
-/// [AppDivider]s, mirroring the real [ListView.separated] layout.
 class _OrdersInboxSkeleton extends StatelessWidget {
   const _OrdersInboxSkeleton();
 
@@ -595,10 +571,6 @@ class _OrdersInboxSkeleton extends StatelessWidget {
   }
 }
 
-/// Single-row skeleton that mirrors [_OrderRow]:
-///   • Left column: title line (order ID + customer name), optional preview
-///     line, metadata line
-///   • Right column: price line + status-badge block
 class _OrderRowSkeleton extends StatelessWidget {
   const _OrderRowSkeleton();
 
@@ -619,12 +591,10 @@ class _OrderRowSkeleton extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Left column
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Title row: order-id chip + customer name
                 Row(
                   children: [
                     AppShimmerBox(
@@ -639,23 +609,18 @@ class _OrderRowSkeleton extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 6),
-                // Preview line (item names)
                 const AppShimmerLine(widthFactor: 0.8, height: 12),
                 const SizedBox(height: 6),
-                // Metadata line (date · item count)
                 const AppShimmerLine(widthFactor: 0.5, height: 11),
               ],
             ),
           ),
           const SizedBox(width: AppSizes.sm),
-          // Right column
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              // Price
               AppShimmerBox(width: 64, height: 14, radius: AppSizes.radiusSm),
               const SizedBox(height: AppSizes.xs),
-              // Status badge
               AppShimmerBox(width: 72, height: 22, radius: AppSizes.radiusFull),
             ],
           ),
@@ -664,8 +629,6 @@ class _OrderRowSkeleton extends StatelessWidget {
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _ErrorState extends StatelessWidget {
   const _ErrorState({required this.message, required this.onRetry});

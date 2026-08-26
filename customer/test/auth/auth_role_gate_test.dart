@@ -6,8 +6,6 @@ import 'package:shopxy_customer/features/auth/domain/entities/auth_user.dart';
 import 'package:shopxy_customer/features/auth/presentation/providers/auth_provider.dart';
 import 'package:shopxy_customer/shared/constants/app_strings.dart';
 
-/// Guards the cross-app login fix: a merchant (OWNER) account must never
-/// be able to sign in to — or restore a session in — the customer app.
 void main() {
   AuthUser user(String role) => AuthUser(
         id: '1',
@@ -31,7 +29,6 @@ void main() {
           contains(AppStrings.merchantAccountBlocked),
         )),
       );
-      // The freshly-issued tokens are discarded and no session is set.
       await Future<void>.delayed(Duration.zero);
       expect(provider.isAuthenticated, isFalse);
       expect(provider.user, isNull);

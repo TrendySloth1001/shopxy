@@ -1,7 +1,6 @@
 import { authedFetch, extractError } from "@/server/auth/session";
 import { NextResponse } from "next/server";
 
-/** GET /me/addresses — list saved addresses. Auth required. */
 export async function GET() {
   const res = await authedFetch("/me/addresses");
   if (!res)
@@ -15,7 +14,6 @@ export async function GET() {
   return NextResponse.json(await res.json().catch(() => null), { status: res.status });
 }
 
-/** POST /me/addresses — add a new address. Auth required. */
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const res = await authedFetch("/me/addresses", {

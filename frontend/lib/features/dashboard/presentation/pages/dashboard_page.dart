@@ -36,10 +36,6 @@ import 'package:shopxy/shared/widgets/app_shimmer.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
-/// Merchant dashboard — a 1:1 port of the merchant-web overview
-/// (`merchant-web/src/features/dashboard`): period switcher, KPI row, sales
-/// trend chart, analytics pies, action centre, operations strip and the recent
-/// activity feed. Responsive from phone to wide tablet.
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
 
@@ -48,12 +44,7 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  /// Guards the one-time startup-nudge sequence so a rebuild can't stack
-  /// sheets or re-run the chain mid-way.
   bool _startupNudgesScheduled = false;
-  /// Whether this merchant can see payouts at all — if not, [LinkedAccountProvider]
-  /// never loads and its `loaded` flag never flips, so the nudge gate below
-  /// must not wait on it forever.
   bool _canViewPayouts = false;
   final _scrollCtrl = ScrollController();
   late final ScrollBoundaryHaptics _scrollHaptics;
@@ -62,11 +53,6 @@ class _DashboardPageState extends State<DashboardPage> {
   void initState() {
     super.initState();
     _scrollHaptics = ScrollBoundaryHaptics(_scrollCtrl);
-    // Read synchronously (no provider mutation, safe pre-frame) so the
-    // nudge gate in build() has the right answer from the very first frame
-    // — deferring this into the postFrameCallback below left a one-frame
-    // window where it read as false even for merchants who CAN view
-    // payouts, letting the GST nudge jump the queue.
     _canViewPayouts =
         context.read<AuthProvider>().user?.canView('payouts') ?? false;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -92,16 +78,6 @@ class _DashboardPageState extends State<DashboardPage> {
     super.dispose();
   }
 
-  /// Runs the startup nudge sheets ONE AT A TIME, never stacked — payout
-  /// setup first (if due), then the GST-effective-date declaration (if
-  /// due), only after the payout sheet has fully resolved either way.
-  ///
-  /// Waits for [LinkedAccountProvider.load] to settle before deciding
-  /// anything (unless this merchant can't view payouts at all, in which
-  /// case it never will). Deciding early off the GST condition alone used
-  /// to latch [_startupNudgesScheduled] permanently while the payout status
-  /// was still mid-flight — the payout sheet then never got its turn for
-  /// the rest of the session.
   void _maybeRunStartupNudges(LinkedAccountProvider payouts, AuthProvider auth) {
     if (_startupNudgesScheduled) return;
     if (_canViewPayouts && !payouts.loaded) return;
@@ -117,7 +93,7 @@ class _DashboardPageState extends State<DashboardPage> {
       final declared = await showGstEffectiveDateNudgeSheet(context);
       if (!mounted) return;
       auth.dismissGstEffectiveDatePrompt();
-      if (!declared) return; // "Skip for now" — just dismiss, nothing else.
+      if (!declared) return;
       await Navigator.push(
         context,
         MaterialPageRoute(
@@ -141,23 +117,16 @@ class _DashboardPageState extends State<DashboardPage> {
         context.watch<AuthProvider>(),
       );
     }
-    // The profile action shows the user's actual avatar (their photo, or a
-    // colored monogram fallback) rather than a generic person glyph.
     final profile = context
         .select<AuthProvider, ({String? name, String? avatarUrl})>(
           (a) => (name: a.user?.name, avatarUrl: a.user?.avatarUrl),
         );
 
     return Scaffold(
-      // Let the page scroll *behind* the floating app bar (transparent) —
-      // content passes under the islands. The scroll adds the bar's inset
-      // as top padding so nothing hides beneath it at rest.
       extendBodyBehindAppBar: true,
       appBar: FloatingAppBar.brand(
         actions: [
           const NotificationBell(),
-          // Profile shortcut — the user's avatar opens the Profile page.
-          // (Profile is no longer a bottom-nav tab.)
           IconButton(
             tooltip: l10n.navProfile,
             icon: ProfileAvatar(
@@ -195,7 +164,6 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 }
 
-/// Horizontal page padding — 16 on phones, 24 on wider screens (web `md:px-xxl`).
 double _hPad(double w) => w >= 768 ? AppSizes.xxl : AppSizes.lg;
 
 class _DashboardScroll extends StatelessWidget {
@@ -213,8 +181,6 @@ class _DashboardScroll extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, c) {
         final pad = _hPad(c.maxWidth);
-        // With extendBodyBehindAppBar the body starts at y=0, so add the
-        // app bar's inset (status bar + island band) to the top padding.
         final topInset = FloatingAppBar.contentTopInset(context) + AppSizes.xxl;
         return ListView(
           controller: controller,
@@ -289,7 +255,6 @@ class _Header extends StatelessWidget {
       ],
     );
 
-    // Stack on narrow screens, spread on wide (web `flex-wrap justify-between`).
     if (width < Bp.sm) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -425,7 +390,6 @@ class _DashboardBody extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (stats.alerts.isNotEmpty) ...[Alerts(alerts: stats.alerts), gap],
-        // Period-scoped money sections dim while a new period loads.
         if (money.isNotEmpty) ...[
           _DimWhileRefreshing(
             refreshing: provider.isRefreshing,
@@ -469,7 +433,6 @@ class _DimWhileRefreshing extends StatelessWidget {
   }
 }
 
-/// First-login pending-invite callout — links to the notifications screen.
 class _PendingInviteCallout extends StatelessWidget {
   const _PendingInviteCallout();
 
@@ -532,10 +495,6 @@ class _PendingInviteCallout extends StatelessWidget {
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────
-// Skeleton
-// ─────────────────────────────────────────────────────────────────────
 
 class _DashboardSkeleton extends StatelessWidget {
   const _DashboardSkeleton();

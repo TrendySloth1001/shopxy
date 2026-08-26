@@ -10,7 +10,6 @@ import { StringListEditor } from "./string-list-editor";
 const cell =
   "h-9 rounded-input border border-hairline bg-field px-sm text-body-sm text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft";
 
-/** Parse a numeric input, clamping negatives to 0. */
 function nonNegative(raw: string): number {
   return Math.max(0, Number(raw) || 0);
 }
@@ -39,7 +38,6 @@ function cartesian(axes: VariantAxis[]): Array<Record<string, string>> {
   );
 }
 
-/** Variant axes (max 3) + per-variant rows. */
 export function VariantsEditor({
   axes,
   variants,
@@ -72,7 +70,6 @@ export function VariantsEditor({
 
   const namedAxes = axes.filter((a) => a.name.trim());
 
-  // SKUs must be unique — flag duplicates inline before the backend rejects them.
   const skuCounts = new Map<string, number>();
   for (const v of variants) {
     const s = v.sku.trim().toLowerCase();
@@ -84,7 +81,6 @@ export function VariantsEditor({
 
   return (
     <div className="flex flex-col gap-lg">
-      {/* Axes */}
       <div className="flex flex-col gap-md">
         <p className="text-label-md text-muted">{t("variants.axesLabel")}</p>
         {axes.map((axis, ai) => (
@@ -125,7 +121,6 @@ export function VariantsEditor({
         </div>
       </div>
 
-      {/* Variants */}
       {variants.length > 0 ? (
         <div className="flex flex-col gap-sm">
           <p className="text-label-md text-muted">{t("variants.countLabel", { count: variants.length })}</p>

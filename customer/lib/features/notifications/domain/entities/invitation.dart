@@ -59,10 +59,6 @@ class Invitation {
   final InviteStatus status;
   final String? message;
 
-  /// Legacy denormalised snapshot — historically the inviter user's
-  /// display name copied into a "shop name" column. Prefer [shopName]
-  /// (the real Shop record's name) for rendering; this is kept as a
-  /// fallback for older invites where the relation wasn't populated.
   final String? fromShopName;
   final String? displayName;
   final DateTime expiresAt;
@@ -72,9 +68,6 @@ class Invitation {
   final String? fromUserEmail;
   final String? fromUserAvatarUrl;
 
-  /// Inviting shop's real identity (from the joined Shop record, not
-  /// the legacy [fromShopName] string). When present these drive the
-  /// invite card's branding — logo, banner, and tap-through slug.
   final String? shopId;
   final String? shopName;
   final String? shopSlug;
@@ -84,8 +77,6 @@ class Invitation {
   bool get isPending => status == InviteStatus.pending;
   bool get isParty => linkType == InviteLinkType.party;
 
-  /// Resolved shop name — prefers the joined record over the legacy
-  /// snapshot. Returns null only when neither is set.
   String? get effectiveShopName => shopName ?? fromShopName;
 
   factory Invitation.fromJson(Map<String, dynamic> j) {

@@ -7,11 +7,6 @@ import { useAuth } from "../auth-context";
 import { Field } from "./field";
 import { Banner } from "./banner";
 
-/**
- * DPDP self-service: export my data (right-to-access) and delete my account
- * (right-to-erasure). Deletion requires re-entering the password and may be
- * refused by the backend when retained records exist.
- */
 export function DangerZone() {
   const { exportData, deleteAccount } = useAuth();
   const router = useRouter();

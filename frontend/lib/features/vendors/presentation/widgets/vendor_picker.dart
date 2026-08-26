@@ -16,9 +16,6 @@ import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/widgets/app_search_bar.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// Opens a modal search sheet to pick an existing Vendor or create a new
-/// one. Mirrors [showPartyPicker] for the purchase-invoice flow so the
-/// user can add a vendor inline without leaving the page.
 Future<Vendor?> showVendorPicker(BuildContext context) {
   return showModalBottomSheet<Vendor>(
     context: context,

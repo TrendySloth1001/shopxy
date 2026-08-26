@@ -25,13 +25,6 @@ import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
-/// Read-only detail for one posted stock adjustment.
-///
-/// An adjustment is an immutable audit document: posting it already moved
-/// every listed product's stock and wrote a permanent row into that
-/// product's stock ledger. Nothing here is editable — the page's job is to
-/// explain what moved and let the user follow each line through to the
-/// product it hit.
 class StockAdjustmentDetailPage extends StatefulWidget {
   const StockAdjustmentDetailPage({super.key, required this.adjustmentId});
 
@@ -178,8 +171,6 @@ class _StockAdjustmentDetailPageState extends State<StockAdjustmentDetailPage> {
                           const SizedBox(height: AppSizes.md),
                           const AppDivider.flush(),
                           const SizedBox(height: AppSizes.md),
-                          // The single most important fact on this page:
-                          // which way stock moved.
                           Row(
                             children: [
                               AppIcon(
@@ -264,13 +255,6 @@ class _StockAdjustmentDetailPageState extends State<StockAdjustmentDetailPage> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Explainer
-// ---------------------------------------------------------------------------
-
-/// Spells out the inventory consequence, because "posted an adjustment" is
-/// bookkeeping vocabulary — the user wants to know whether their on-hand
-/// count already changed (it did) and whether this can be edited (it can't).
 class _EffectExplainer extends StatelessWidget {
   const _EffectExplainer({required this.isStockIn});
 
@@ -313,10 +297,6 @@ class _EffectExplainer extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Item row
-// ---------------------------------------------------------------------------
 
 class _ItemRow extends StatelessWidget {
   const _ItemRow({
@@ -435,10 +415,6 @@ class _InfoRow extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Skeleton
-// ---------------------------------------------------------------------------
 
 class _StockAdjustmentDetailSkeleton extends StatelessWidget {
   const _StockAdjustmentDetailSkeleton();

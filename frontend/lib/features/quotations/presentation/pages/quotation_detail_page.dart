@@ -21,8 +21,6 @@ import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// Merchant-side quotation detail: who it went to, status, line items, totals,
-/// the invoice it spawned (if accepted), and a Cancel action while pending.
 class QuotationDetailPage extends StatefulWidget {
   const QuotationDetailPage({super.key, required this.quotation});
   final Quotation quotation;
@@ -75,7 +73,6 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        // Reflect the new status locally without refetching.
         _q = _q.copyWith(status: 'CANCELLED');
       });
       messenger.showSnackBar(
@@ -88,12 +85,6 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
     }
   }
 
-  /// File this quote away, or bring it back. Confirmation only when archiving
-  /// — restoring merely puts the document back where it was.
-  ///
-  /// There is no delete: the quotation number is a per-shop serial allocated
-  /// at create time. Archiving is merchant-side only; the customer keeps
-  /// seeing the quote in their own list.
   Future<void> _setArchived(bool archived) async {
     final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
@@ -122,8 +113,6 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
           ),
         ),
       );
-      // The list this came from no longer holds it either way, so pop with a
-      // "reload me" result rather than leaving a stale row behind.
       navigator.pop(true);
     } catch (e) {
       if (!mounted) return;
@@ -132,8 +121,6 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
     }
   }
 
-  /// Price the request in the builder; on success pop back to the list (which
-  /// reloads), so the now-PENDING quote shows its new state.
   Future<void> _priceAndSend() async {
     final navigator = Navigator.of(context);
     final sent = await navigator.push<bool>(
@@ -233,10 +220,6 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
       appBar: FloatingAppBar(
         title: _q.quotationNo,
         actions: [
-          // A settled quote can be filed away; an archived one brought back.
-          // While the customer can still act (REQUESTED / PENDING) neither is
-          // offered — the server refuses it, and an accept landing against a
-          // quote the merchant can't see is nobody's job to chase.
           if (_q.isArchived || !_q.isAwaitingCounterparty)
             IconButton(
               icon: AppIcon(
@@ -286,7 +269,6 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
           AppSizes.lg,
         ),
         children: [
-          // Status + meta — flat, no box.
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

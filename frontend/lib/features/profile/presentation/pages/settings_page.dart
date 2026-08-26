@@ -37,9 +37,6 @@ import 'package:shopxy/shared/theme/app_text_styles.dart';
 
 enum SettingsSection { account, appearance, notifications, about }
 
-/// Settings — flat, sectioned, no boxed cards. Pass [initialSection] to
-/// open the page focused on a particular cluster (used by the Profile
-/// page's "About" deep-link).
 class SettingsPage extends StatefulWidget {
   const SettingsPage({
     super.key,
@@ -148,7 +145,6 @@ class _SettingsPageState extends State<SettingsPage> {
           bottom: AppSizes.huge,
         ),
         children: [
-          // ── Account ─────────────────────────────────────────
           _Eyebrow(l10n.profileSectionAccount),
           const SizedBox(height: AppSizes.sm),
           _SettingRow(
@@ -198,9 +194,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
           const _Gap(),
 
-          // ── Shop operations ─────────────────────────────────
-          // Hidden entirely unless the role can view at least one of the
-          // areas inside (hours/shop, payouts, or team).
           if ((user?.canView('shop') ?? false) ||
               (user?.canView('payouts') ?? false) ||
               (user?.canView('team') ?? false)) ...[
@@ -222,7 +215,6 @@ class _SettingsPageState extends State<SettingsPage> {
             const _Gap(),
           ],
 
-          // ── Invoicing ────────────────────────────────────────
           if (user?.canView('invoices') ?? false) ...[
             _Eyebrow(l10n.profileSectionInvoicing),
             const SizedBox(height: AppSizes.sm),
@@ -242,26 +234,21 @@ class _SettingsPageState extends State<SettingsPage> {
             const _Gap(),
           ],
 
-          // ── Appearance ──────────────────────────────────────
           _Eyebrow(l10n.profileSectionAppearance),
           const SizedBox(height: AppSizes.sm),
           const _ThemeRow(),
-          // Currency stays a placeholder row — no `onTap` so it doesn't pretend
-          // to be live; the "Coming soon" chip signals the future surface.
           _SettingRow(
             icon: AppIcons.currencyRupeeRounded,
             title: l10n.profileCurrency,
             subtitle: l10n.profileCurrencyIndianRupee,
             trailing: _comingSoonChip(context),
           ),
-          // Language is live (multilingual pilot): English + हिन्दी.
           const _LanguageRow(),
           const _DensityRow(),
           const _HapticsRow(),
 
           const _Gap(),
 
-          // ── Inventory ───────────────────────────────────────
           _Eyebrow(l10n.profileSectionInventory),
           const SizedBox(height: AppSizes.sm),
           _SettingRow(
@@ -282,7 +269,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
           const _Gap(),
 
-          // ── Notifications ───────────────────────────────────
           _Eyebrow(l10n.profileSectionNotifications),
           const SizedBox(height: AppSizes.sm),
           _SettingToggle(
@@ -297,7 +283,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
           const _Gap(),
 
-          // ── About ───────────────────────────────────────────
           _Eyebrow(l10n.profileSectionAbout),
           const SizedBox(height: AppSizes.sm),
           _SettingRow(
@@ -338,10 +323,6 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
 
-          // ── Developer ───────────────────────────────────────
-          // Only for the developer account (see [kDeveloperEmail]); every
-          // other merchant sees the About section run straight into the
-          // danger zone, exactly as before.
           if (isDeveloperAccount(user?.email)) ...[
             const _Gap(),
             const _Eyebrow('DEVELOPER'),
@@ -365,9 +346,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
           const _Gap(),
 
-          // ── Danger zone ─────────────────────────────────────
-          // DPDP §11/§12 affordances. Kept above the logout row so the
-          // destructive actions live together at the bottom of the page.
           _Eyebrow(l10n.profileSectionDangerZone),
           const SizedBox(height: AppSizes.sm),
           _SettingRow(
@@ -399,7 +377,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
           const _Gap(),
 
-          // ── Log out ─────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: AppSizes.lg,
@@ -464,10 +441,6 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// Layout primitives
-// ─────────────────────────────────────────────────────────────────────
-
 class _Eyebrow extends StatelessWidget {
   const _Eyebrow(this.text);
   final String text;
@@ -502,9 +475,6 @@ class _Gap extends StatelessWidget {
   }
 }
 
-/// Two-way picker for [ListDensity]. Drives list-row padding on the
-/// products page (and any future inventory-heavy list) so the user
-/// can opt into a compact mode that fits more rows per screen.
 class _DensityRow extends StatelessWidget {
   const _DensityRow();
 
@@ -595,10 +565,6 @@ class _DensityRow extends StatelessWidget {
   }
 }
 
-/// On/off switch for [AppHaptics] — the single source of truth every haptic
-/// call site (nav taps, menu rows, scroll edges) checks before vibrating.
-/// Firing a confirmation tick right after turning it on lets the merchant
-/// feel the setting take effect immediately; turning it off stays silent.
 class _HapticsRow extends StatelessWidget {
   const _HapticsRow();
 
@@ -619,10 +585,6 @@ class _HapticsRow extends StatelessWidget {
   }
 }
 
-/// Three-way picker for [AppThemeMode] — Light, Dark and OLED. Mirrors the
-/// web app's theme picker. Writes through [ThemePrefsProvider], which swaps the
-/// active palette, persists the choice and rebuilds the whole app live so the
-/// theme flips without leaving Settings.
 class _ThemeRow extends StatelessWidget {
   const _ThemeRow();
 
@@ -682,10 +644,6 @@ class _ThemeRow extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: AppSizes.sm),
-                // A wrapping chip set (not a SegmentedButton) so the eight
-                // themes stay usable on a phone — they flow onto multiple rows
-                // instead of squeezing into one. Each chip previews the theme's
-                // canvas colour as a swatch dot.
                 Wrap(
                   spacing: AppSizes.sm,
                   runSpacing: AppSizes.sm,
@@ -700,9 +658,6 @@ class _ThemeRow extends StatelessWidget {
                           ),
                         ),
                         label: Text(_themeLabel(l10n, mode)),
-                        // Explicit label colour so the chip stays readable in
-                        // both states (ChoiceChip otherwise renders unselected
-                        // labels from the inverse foreground — invisible here).
                         labelStyle: theme.textTheme.labelMedium?.copyWith(
                           color: prefs.mode == mode
                               ? AppColors.onInverse
@@ -723,7 +678,6 @@ class _ThemeRow extends StatelessWidget {
   }
 }
 
-/// Display label for a theme mode, shown on its picker chip (localized).
 String _themeLabel(AppLocalizations l10n, AppThemeMode mode) => switch (mode) {
   AppThemeMode.light => l10n.themeLight,
   AppThemeMode.beige => l10n.themeBeige,
@@ -735,11 +689,6 @@ String _themeLabel(AppLocalizations l10n, AppThemeMode mode) => switch (mode) {
   AppThemeMode.nord => l10n.themeNord,
 };
 
-/// Picker for the UI language — the multilingual pilot (English + हिन्दी).
-/// Mirrors [_ThemeRow]: writes through [LocalePrefsProvider], which persists the
-/// choice, swaps the Devanagari font and rebuilds the whole app live. Language
-/// names are shown as endonyms (each in its own script), the convention for
-/// language pickers, so they read the same regardless of the active locale.
 class _LanguageRow extends StatelessWidget {
   const _LanguageRow();
 
@@ -817,7 +766,6 @@ class _LanguageRow extends StatelessWidget {
   }
 }
 
-/// Endonym for a language — its own self-name, shown in its own script.
 String _languageLabel(AppLanguage lang) => switch (lang) {
   AppLanguage.english => 'English',
   AppLanguage.hindi => 'हिन्दी',
@@ -965,9 +913,6 @@ class _SettingToggle extends StatelessWidget {
   }
 }
 
-/// Password-gated confirmation for DPDP §12 erasure. Returns the
-/// entered password on confirm and `null` on cancel — the caller then
-/// invokes [AuthProvider.deleteAccount] and routes the user out.
 class _DeleteAccountDialog extends StatefulWidget {
   const _DeleteAccountDialog();
 

@@ -12,8 +12,6 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
-/// Series label + which group each belongs to, resolved at build time so
-/// the labels stay localized. Grouping mirrors the merchant-web page.
 List<({String titleKey, List<NumberingSeries> series})> _groups(
   AppLocalizations l10n,
 ) => [

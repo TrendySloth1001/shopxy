@@ -28,7 +28,6 @@ import { createInvoice, updateInvoice, updateInvoiceStatus, type InvoiceWrite } 
 
 const BACK = "/dashboard/invoices";
 
-/* Stable loaders — passed to PickerModal whose effect depends on `load`. */
 const loadProducts = (s: string) => listProducts({ search: s, limit: "20" }).then((r) => r.data);
 const loadParties = (s: string) => listParties(s ? { search: s } : undefined);
 const loadVendors = (s: string) => listVendors(s ? { search: s } : undefined);
@@ -40,7 +39,6 @@ export function InvoiceEditor({
   initialDocumentType,
 }: {
   existing?: Invoice;
-  /** Pre-select a SALE document type for a fresh editor (e.g. Estimate/Proforma). */
   initialDocumentType?: string;
 }) {
   const router = useRouter();
@@ -89,26 +87,12 @@ export function InvoiceEditor({
   const [picker, setPicker] = useState<"product" | "party" | "vendor" | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Pre-save gates. `pendingConfirm` remembers which button opened them so the
-  // flow can resume on the far side.
   const [gate, setGate] = useState<ReturnType<typeof checkRecipient>>(null);
   const [preview, setPreview] = useState<InvoicePreview | null>(null);
   const [pendingConfirm, setPendingConfirm] = useState(false);
   const [recipient, setRecipient] = useState<RecipientDetails | null>(null);
-  /// A state the merchant set by hand, overriding the shop-state fallback.
-  /// Null in the ordinary case — see `canOverridePlaceOfSupply`.
   const [posOverride, setPosOverride] = useState<string | null>(null);
 
-  // The attached customer's postal address, fetched on select.
-  //
-  // The contact picker's `Contact` carries only id/name/phone/gstin/stateCode,
-  // so without this a NEW invoice's recipient gate saw no address and warned
-  // even when the customer had one on file. Fetching is the fix rather than
-  // widening `Contact`, because the picker lists many contacts and only the
-  // chosen one needs its full row.
-  // Keyed by the party it belongs to, so switching customers reads as
-  // "not loaded yet" rather than briefly showing the previous customer's
-  // address. No clearing step, and nothing to get wrong on unmount.
   const [fetchedParty, setFetchedParty] = useState<{
     id: string;
     address?: string | null;
@@ -118,13 +102,6 @@ export function InvoiceEditor({
     stateCode?: string | null;
   } | null>(null);
 
-  // Pull the chosen customer's full row so the recipient gate and the preview
-  // can see their address. Async IIFE + `active` guard: no synchronous
-  // setState in the effect body, and a slow response for a customer the
-  // merchant has since switched away from can't overwrite the current one.
-  //
-  // A failure is swallowed on purpose — this only enriches a warning. The
-  // gate falls back to the invoice snapshot and, at worst, over-warns.
   const partyId = party?.id ?? null;
   useEffect(() => {
     if (!partyId) return;
@@ -142,7 +119,6 @@ export function InvoiceEditor({
           stateCode: full.stateCode,
         });
       } catch {
-        /* Only enriches a warning — the snapshot fallback still applies. */
       }
     })();
     return () => {
@@ -150,12 +126,8 @@ export function InvoiceEditor({
     };
   }, [partyId]);
 
-  /// The fetched row, but only while it still describes the attached party.
   const partyAddress = fetchedParty?.id === partyId ? fetchedParty : null;
 
-  // Place of supply is DERIVED, never asked: the first two digits of a GSTIN
-  // ARE the holder's state code, so asking again only invites a picked state
-  // that contradicts the number — and that puts tax under the wrong head.
   const derived = derivePlaceOfSupply({
     type,
     party,
@@ -163,8 +135,6 @@ export function InvoiceEditor({
     typedGstin: walkInGstin,
     shopStateCode,
   });
-  // A manual answer beats the shop-state guess, and is only reachable when
-  // that guess was all we had.
   const pos = posOverride
     ? ({ code: posOverride, source: "manual" } as const)
     : derived;
@@ -186,10 +156,6 @@ export function InvoiceEditor({
         next[idx] = { ...next[idx], quantity: next[idx].quantity + 1 };
         return next;
       }
-      // Seed the line's tax convention from the product's own pricingMode —
-      // the same three modes the backend's resolveProductPricing() resolves,
-      // so the preview here matches what the invoice actually bills. Still
-      // editable afterward via the line's badge, same as rate/discount.
       return [
         ...prev,
         {
@@ -248,8 +214,6 @@ export function InvoiceEditor({
       confirm,
     };
     if (placeOfSupply) payload.placeOfSupplyStateCode = placeOfSupply;
-    // Recipient postal fields the merchant completed at the gate (or the
-    // explicit "issue it incomplete" acknowledgement).
     if (recipientOverride) Object.assign(payload, recipientOverride);
     if (type === "SALE") {
       if (party) payload.partyId = party.id;
@@ -264,16 +228,11 @@ export function InvoiceEditor({
     return payload;
   }
 
-  /// Entry point for both buttons. Runs the pre-save gates, then commits.
   function onSave(confirm: boolean) {
     setError(null);
-    // Validate before opening any modal, so a missing item doesn't surface
-    // behind a preview the merchant then has to dismiss.
     const check = buildPayload(confirm, recipient);
     if (typeof check === "string") return setError(check);
 
-    // Rule 46(e)/(f) — checked here because the server's rejection is
-    // unactionable from this screen.
     if (!recipient) {
       const needed = checkRecipient({
         type,
@@ -290,8 +249,6 @@ export function InvoiceEditor({
       }
     }
 
-    // Confirming issues the document, posts stock and burns a number. Saving
-    // a draft does none of that, so only the irreversible path is reviewed.
     if (confirm) {
       setPendingConfirm(true);
       setPreview(buildPreview());
@@ -300,11 +257,6 @@ export function InvoiceEditor({
     void commit(false, recipient);
   }
 
-  /// Address fields of the attached party, for the recipient check.
-  ///
-  /// The freshly fetched party row wins; the invoice's own snapshot is the
-  /// fallback while that request is in flight, and for an edit whose party
-  /// has since been deleted.
   const partyDetails = party
     ? {
         address: partyAddress?.address ?? existing?.customerAddress ?? null,
@@ -315,10 +267,6 @@ export function InvoiceEditor({
 
   function buildPreview(): InvoicePreview {
     const sale = type === "SALE";
-    // Prefer what the merchant just typed into the gate, then the fetched
-    // party row, then the invoice's own snapshot. Reading the snapshot alone
-    // made a NEW invoice's preview claim "no address on file" for a customer
-    // who had one.
     const addressParts = sale
       ? [
           recipient?.customerAddress ?? partyAddress?.address ?? existing?.customerAddress,
@@ -345,8 +293,6 @@ export function InvoiceEditor({
         quantityLabel: `${l.quantity} × ${formatINR2(l.unitPrice)}${
           l.discount > 0 ? ` − ${formatINR2(l.discount)}` : ""
         }`,
-        // Net of the line's own discount, so the preview adds up to the
-        // subtotal shown beneath it.
         amount: Math.max(l.quantity * l.unitPrice - (l.discount || 0), 0),
       })),
       totals: [
@@ -370,15 +316,12 @@ export function InvoiceEditor({
       } else {
         const result = await createInvoice(payload);
         if (confirm && !result.confirmed) {
-          // The invoice saved as a draft but auto-confirm failed — hand the
-          // message to the detail page (we navigate away, so local state dies).
           try {
             sessionStorage.setItem(
               `invoice-confirm-error-${result.invoice.id}`,
               result.confirmError ?? t("errors.confirmFailed"),
             );
           } catch {
-            /* storage unavailable — the draft badge still tells the story */
           }
         }
         router.push(`/dashboard/invoices/${result.invoice.id}`);
@@ -401,7 +344,6 @@ export function InvoiceEditor({
         <p className="mt-md rounded-md bg-error-soft px-md py-sm text-body-sm text-error">{error}</p>
       ) : null}
 
-      {/* Type */}
       <div className="mt-xl">
         <p className="text-label-md uppercase tracking-wide text-subtle">{t("form.typeLabel")}</p>
         <div className="mt-sm flex flex-wrap items-center gap-sm">
@@ -428,7 +370,6 @@ export function InvoiceEditor({
         </div>
       </div>
 
-      {/* Counterparty */}
       <div className="mt-xl">
         <p className="text-label-md uppercase tracking-wide text-subtle">
           {type === "SALE" ? t("form.customer") : t("form.vendor")}
@@ -464,9 +405,6 @@ export function InvoiceEditor({
           </button>
         )}
 
-        {/* Derived, read-only. It's shown because it's the reason the tax
-            below splits into CGST+SGST or IGST — the old free-choice select
-            never told anyone that. */}
         <div className="mt-md rounded-md bg-hero-panel px-md py-sm">
           <p className="text-label-md uppercase tracking-wide text-subtle">
             {t("form.placeOfSupply")}
@@ -490,9 +428,6 @@ export function InvoiceEditor({
           <p className="mt-xs text-body-sm text-muted">
             {t(`form.posSource.${pos.source}`)}
           </p>
-          {/* Offered only when the shop's own state was a guess. A GSTIN or a
-              saved address IS the answer, and overriding those is how tax
-              lands under the wrong head. */}
           {canOverride ? (
             <div className="mt-sm flex flex-wrap items-center gap-sm">
               <SelectField
@@ -512,7 +447,6 @@ export function InvoiceEditor({
         </div>
       </div>
 
-      {/* Items */}
       <div className="mt-xl">
         <div className="flex flex-wrap items-center justify-between gap-sm">
           <p className="text-label-md uppercase tracking-wide text-subtle">{t("detail.items")}</p>
@@ -548,7 +482,6 @@ export function InvoiceEditor({
         )}
       </div>
 
-      {/* Totals + meta */}
       {lines.length > 0 ? (
         <div className="mt-xl grid grid-cols-1 gap-xl lg:grid-cols-2">
           <div className="flex flex-col gap-md">
@@ -584,7 +517,6 @@ export function InvoiceEditor({
         </div>
       ) : null}
 
-      {/* Actions */}
       <div className="mt-xxl flex flex-wrap items-center gap-sm">
         <button
           type="button"
@@ -604,7 +536,6 @@ export function InvoiceEditor({
         </button>
       </div>
 
-      {/* Pickers */}
       {gate ? (
         <RecipientGateModal
           requirement={gate.requirement}
@@ -619,9 +550,6 @@ export function InvoiceEditor({
           onFill={(details, saveToParty) => {
             setGate(null);
             setRecipient(details);
-            // Best-effort: the invoice is the thing being saved, so failing to
-            // also update the customer record must not block it. The details
-            // still travel on the invoice either way.
             if (saveToParty && party) {
               void fillPartyAddress(party.id, {
                 address: details.customerAddress ?? null,
@@ -790,12 +718,6 @@ function LineRow({
   onRemove: () => void;
 }) {
   const t = useTranslations("invoices");
-  // Pre-tax line amount (qty × rate), matching the "Subtotal" total and the
-  // Flutter editor. We deliberately do NOT add tax or fold in the header
-  // discount here: the header discount is apportioned across lines at the
-  // totals level (computeInvoiceTotals), so showing a gross tax-on-top figure
-  // per line wouldn't reconcile to the displayed Total. With this basis,
-  // Σ(line amounts) = Subtotal, then − Discount + GST = Total. (FMD-5.)
   const lineAmount = Math.max(line.quantity * line.unitPrice - (line.discount || 0), 0);
   return (
     <div className="flex flex-wrap items-end gap-md border-b border-hairline py-md">

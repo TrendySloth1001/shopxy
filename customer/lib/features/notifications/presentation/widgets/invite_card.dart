@@ -8,12 +8,6 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 
-/// Single source of truth for "you've been invited" card rendering.
-/// Used both as the home-page preview (first pending invite, optional
-/// dismiss, taps through to the dedicated page) and as each row on the
-/// Invitations page itself (full message + status). The visual
-/// language is identical across both surfaces by design — switching
-/// screens shouldn't make the user wonder if it's the same invite.
 class InviteCard extends StatelessWidget {
   const InviteCard({
     super.key,
@@ -34,38 +28,22 @@ class InviteCard extends StatelessWidget {
   final Invitation invite;
   final bool busy;
 
-  /// True on the home preview + pending tab. False on the history tab,
-  /// where we render a status chip instead of accept/decline buttons.
   final bool actionable;
 
   final VoidCallback? onAccept;
   final VoidCallback? onDecline;
 
-  /// Tap on the body area (cover/logo/title region — not on the
-  /// buttons). Wired on the home preview to push the full
-  /// Invitations page. Null on the InvitationsPage itself.
   final VoidCallback? onTapBody;
 
-  /// × button on the cover banner. Null hides the button. Home wires
-  /// this to a session-local dismiss so the user can hide a noisy
-  /// invite without declining it server-side.
   final VoidCallback? onDismiss;
 
-  /// "+N more" indicator next to the NEW INVITE chip — used on the
-  /// home preview when there are additional pending invites queued
-  /// behind this one.
   final int extraCount;
 
-  /// Bottom-aligned secondary link (e.g. "Review all 4 invitations").
-  /// Only renders if both label and callback are provided.
   final String? reviewAllLabel;
   final VoidCallback? onReviewAll;
 
-  /// Optional "Expires in 2 days" footnote, used on the InvitationsPage.
   final bool showExpiry;
 
-  /// The brand-coloured NEW INVITE chip. Off on the InvitationsPage
-  /// where the surrounding tab already labels the row.
   final bool showNewBadge;
 
   @override
@@ -113,7 +91,6 @@ class InviteCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Negative top to let the logo overlap the cover.
                 Transform.translate(
                   offset: const Offset(0, -18),
                   child: Row(
@@ -216,11 +193,6 @@ class InviteCard extends StatelessWidget {
                     ),
                   ),
                 if (actionable) ...[
-                  // When there's no message, pull the buttons up a touch
-                  // so the negative-offset title row doesn't leave a
-                  // visual gap. When a message is present, leave the
-                  // buttons in their natural slot — pulling them up
-                  // would overlap the message bubble.
                   Padding(
                     padding: EdgeInsets.only(top: hasMessage ? AppSizes.md : 0),
                     child: Transform.translate(
@@ -287,9 +259,6 @@ class InviteCard extends StatelessWidget {
     );
 
     if (onTapBody == null) return card;
-    // Whole card is tappable when wired, but the embedded buttons
-    // (Decline/Accept) intercept their own taps because they're
-    // Material InkWells higher in the hit-test stack.
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTapBody,
@@ -343,8 +312,6 @@ class _Cover extends StatelessWidget {
                     ),
                   ),
           ),
-          // Subtle bottom gradient so the logo + text reads cleanly
-          // even when the banner is photographic.
           if (hasBanner)
             Positioned.fill(
               child: DecoratedBox(

@@ -3,7 +3,6 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 
-/// Standard card: white surface with hairline border. Tappable when onTap set.
 class AppCard extends StatelessWidget {
   const AppCard({
     super.key,

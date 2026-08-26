@@ -65,8 +65,6 @@ class AdminBanner {
   final DateTime? endAt;
   final bool isActive;
 
-  /// Number of curated products pinned to this banner. Surfaced on the
-  /// list row so merchants can see which banners are product-backed.
   final int productCount;
 
   factory AdminBanner.fromJson(Map<String, dynamic> j) => AdminBanner(

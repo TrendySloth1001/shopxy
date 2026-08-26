@@ -11,13 +11,6 @@ import {
   type Invoice,
 } from "@/features/invoices/schema";
 
-/**
- * Invoices the merchant filed out of the working list.
- *
- * They are not deleted and cannot be: the serial is allocated at create time
- * and Rule 46(b) needs the run consecutive, so every archived row still holds
- * its number. This page is the way back.
- */
 export default function ArchivedInvoicesPage() {
   const t = useTranslations("invoices");
 
@@ -29,7 +22,6 @@ export default function ArchivedInvoicesPage() {
       backLabel={t("archived.backToList")}
       emptyTitle={t("archived.empty")}
       emptyBody={t("archived.emptyHint")}
-      // Same primary axis the invoices list filters on — direction of money.
       filters={[
         { key: "", label: t("list.typeAll") },
         { key: "SALE", label: t("list.typeSales") },
@@ -40,7 +32,6 @@ export default function ArchivedInvoicesPage() {
       }
       restore={(invoice) => setInvoiceArchived(invoice.id, false)}
       keyOf={(invoice) => invoice.id}
-      // Grouped by invoiceDate — what the server sorts on.
       dateOf={(invoice) => invoice.invoiceDate}
       rowOf={(invoice) => {
         const sale = isSale(invoice);

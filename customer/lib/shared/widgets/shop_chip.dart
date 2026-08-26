@@ -5,9 +5,6 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 
-/// Small "Sold by {shop}" chip used on cart, checkout, and order
-/// detail rows so multi-shop bags read unambiguously. Renders nothing
-/// when the shop name is null/empty — callers don't need to guard.
 class ShopChip extends StatelessWidget {
   const ShopChip({super.key, required this.shopName, this.dense = false});
 

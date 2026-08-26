@@ -15,15 +15,6 @@ import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// Bottom-sheet form for recording a payment.
-///
-/// Reusable across the merchant app:
-///   * For a party receipt: pass `type: 'RECEIPT'` + `partyId`.
-///   * For a vendor payout: pass `type: 'PAYMENT'` + `vendorId`.
-///
-/// Optionally pre-allocates against a specific invoice (used by the
-/// invoice detail page's "Mark as Paid" quick action) — when
-/// [lockedInvoiceId] is set we skip the toggle entirely.
 class RecordPaymentSheet extends StatefulWidget {
   const RecordPaymentSheet({
     super.key,
@@ -105,9 +96,6 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
   String? _selectedInvoiceId;
   List<LedgerEntry> _openInvoices = const [];
   bool _loadingInvoices = false;
-  // Shown inline inside the sheet. A snackbar via ScaffoldMessenger renders at
-  // the screen bottom — behind this modal sheet — so save failures were
-  // invisible; surface them here instead.
   String? _error;
 
   bool get _isReceipt => widget.type == 'RECEIPT';
@@ -147,8 +135,6 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
         final ledger = _isReceipt
             ? await ds.getPartyLedger(widget.partyId!)
             : await ds.getVendorLedger(widget.vendorId!);
-        // Surface every confirmed invoice as a candidate; we don't yet
-        // pre-filter by paid/unpaid (server enforces over-allocation).
         final invoices = ledger.entries
             .where((e) => e.isInvoice)
             .toList()
@@ -204,7 +190,6 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
       );
       if (mounted) Navigator.of(context).pop(payment);
     } catch (e) {
-      // Inline (not a snackbar) so the message is visible above the sheet.
       if (mounted) setState(() => _error = friendlyError(e));
     }
   }
@@ -280,10 +265,6 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
                   spacing: AppSizes.sm,
                   runSpacing: AppSizes.sm,
                   children: [
-                    // AppFilterPill sets the label colour directly, so the
-                    // unselected label stays legible — unlike the themed
-                    // ChoiceChip, whose state-aware label rendered light-on-
-                    // light here.
                     for (final m in _modes)
                       AppFilterPill(
                         label: m,
@@ -413,8 +394,6 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
                   ),
                 ],
                 const SizedBox(height: AppSizes.lg),
-                // Cancel + Save side by side so there's always an obvious way
-                // out of the sheet (the top X alone was easy to miss).
                 Row(
                   children: [
                     Expanded(

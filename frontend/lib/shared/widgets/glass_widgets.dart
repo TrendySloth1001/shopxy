@@ -7,26 +7,6 @@ import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
-/// ─────────────────────────────────────────────────────────────────────
-/// GlassPage — Glassdoor-style page scaffold.
-///
-/// Anatomy:
-///   ┌──────────────────────────────┐
-///   │ [progress bar — optional]    │
-///   ├──────────────────────────────┤
-///   │   [hero panel (gray bg)]     │  ← illustration zone
-///   ├──────────────────────────────┤
-///   │  Title                       │
-///   │  Body copy …                 │
-///   │  [content slot]              │
-///   ├──────────────────────────────┤
-///   │  [Primary CTA]               │
-///   │  [Secondary text-link]       │
-///   └──────────────────────────────┘
-///
-/// Optional [navButton] floats over the top-left corner — the Glassdoor
-/// chunky black circle back arrow.
-/// ─────────────────────────────────────────────────────────────────────
 class GlassPage extends StatelessWidget {
   const GlassPage({
     super.key,
@@ -41,26 +21,18 @@ class GlassPage extends StatelessWidget {
     this.backgroundColor,
   });
 
-  /// The hero panel (illustration + soft gray background). Pass [null] to
-  /// skip — useful for list-style pages that don't need a top zone.
   final Widget? hero;
 
-  /// Big bold headline directly under the hero zone.
   final String? title;
 
-  /// Calm secondary copy below the title.
   final String? subtitle;
 
-  /// Main content slot — forms, lists, anything.
   final Widget? body;
 
-  /// Bottom action area — typically a [GlassActionPanel].
   final Widget? actions;
 
-  /// Optional top segmented progress bar — pass a value in [0,1].
   final double? progress;
 
-  /// Optional floating back/forward button — see [GlassNavButton].
   final Widget? navButton;
 
   final bool scrollable;
@@ -144,9 +116,6 @@ class GlassPage extends StatelessWidget {
   }
 }
 
-/// ─────────────────────────────────────────────────────────────────────
-/// GlassHero — the soft gray top panel that houses an illustration.
-/// ─────────────────────────────────────────────────────────────────────
 class GlassHero extends StatelessWidget {
   const GlassHero({
     super.key,
@@ -155,7 +124,6 @@ class GlassHero extends StatelessWidget {
     this.backgroundColor,
   });
 
-  /// Convenience constructor for the bundled [LineArt] illustrations.
   GlassHero.line({
     Key? key,
     required LineArt kind,
@@ -174,9 +142,6 @@ class GlassHero extends StatelessWidget {
          backgroundColor: backgroundColor,
        );
 
-  /// Convenience constructor for raster (PNG) illustrations sitting on
-  /// the soft hero panel. The image is contained inside vertical
-  /// padding so it never bleeds into the title below.
   GlassHero.image({
     Key? key,
     required String asset,
@@ -196,8 +161,6 @@ class GlassHero extends StatelessWidget {
   final Widget illustration;
   final double height;
 
-  /// Hero panel fill. Defaults to [AppColors.heroPanel] (theme-aware) when null
-  /// — can't be a const default now that AppColors are getters.
   final Color? backgroundColor;
 
   @override
@@ -211,19 +174,11 @@ class GlassHero extends StatelessWidget {
   }
 }
 
-/// ─────────────────────────────────────────────────────────────────────
-/// GlassProgressBar — segmented green progress at the very top.
-///
-/// Two-tone fill: filled portion is brand-green, unfilled is a tiny
-/// hairline strip. Used in onboarding / multi-step flows.
-/// ─────────────────────────────────────────────────────────────────────
 class GlassProgressBar extends StatelessWidget {
   const GlassProgressBar({super.key, required this.value, this.steps = 0});
 
-  /// Progress in [0, 1].
   final double value;
 
-  /// If > 0, renders as discrete segments with small gaps between.
   final int steps;
 
   @override
@@ -264,11 +219,6 @@ class GlassProgressBar extends StatelessWidget {
   }
 }
 
-/// ─────────────────────────────────────────────────────────────────────
-/// GlassNavButton — the chunky black circular button with a white chevron.
-///
-///   ●←   for back   ●→   for forward
-/// ─────────────────────────────────────────────────────────────────────
 class GlassNavButton extends StatelessWidget {
   const GlassNavButton({
     super.key,
@@ -283,10 +233,8 @@ class GlassNavButton extends StatelessWidget {
   final GlassNavDirection direction;
   final double size;
 
-  /// Chevron colour. Defaults to [AppColors.onInverse] (theme-aware).
   final Color? foreground;
 
-  /// Circle fill — a high-contrast neutral. Defaults to [AppColors.inverseSurface].
   final Color? background;
 
   @override
@@ -319,10 +267,6 @@ class GlassNavButton extends StatelessWidget {
 
 enum GlassNavDirection { back, forward, close }
 
-/// ─────────────────────────────────────────────────────────────────────
-/// GlassActionPanel — primary CTA + optional secondary text link, pinned
-/// to the bottom of the page with a hairline divider above.
-/// ─────────────────────────────────────────────────────────────────────
 class GlassActionPanel extends StatelessWidget {
   const GlassActionPanel({
     super.key,
@@ -343,11 +287,8 @@ class GlassActionPanel extends StatelessWidget {
   final String? secondaryLabel;
   final VoidCallback? onSecondary;
 
-  /// Optional override for the primary button color — pass [AppColors.brand]
-  /// when you want a Glassdoor-green CTA instead of the default neutral.
   final Color? primaryColor;
 
-  /// Panel fill. Defaults to [AppColors.surface] (theme-aware) when null.
   final Color? background;
 
   @override
@@ -396,10 +337,6 @@ class GlassActionPanel extends StatelessWidget {
   }
 }
 
-/// Internal pill-shaped CTA. We keep this separate from [AppButton] so the
-/// Glassdoor language stays distinct — larger touch target, fully rounded,
-/// no border. Use [AppButton] for inline buttons inside forms; use this
-/// only via [GlassActionPanel].
 class _PillButton extends StatelessWidget {
   const _PillButton({
     required this.label,
@@ -464,6 +401,4 @@ class _PillButton extends StatelessWidget {
   }
 }
 
-/// Re-export so callers can `import 'glass_widgets.dart'` and get the
-/// button enum without an extra import.
 typedef GlassButton = AppButton;

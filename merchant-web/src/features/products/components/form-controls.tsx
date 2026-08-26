@@ -4,9 +4,6 @@ import { useId, useState, type ReactNode } from "react";
 import { ChevronDown } from "@/shared/icons";
 import { ComboSelect } from "@/shared/ui/combo-select";
 
-/// Exported so a bespoke field that needs its own markup (the HSN picker,
-/// which hangs a suggestion popover off the input) still looks identical to
-/// the stock controls instead of re-deriving the classes.
 export const inputClass =
   "w-full rounded-input border bg-field px-md py-sm text-body-md text-ink outline-none transition-colors placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft disabled:text-disabled";
 
@@ -144,7 +141,6 @@ export function CheckboxField({
   );
 }
 
-/** Collapsible section for the editorial parts of the form. */
 export function FormSection({
   title,
   description,
@@ -181,7 +177,6 @@ export function FormSection({
   );
 }
 
-/** Small secondary "+ Add" / row-action button. */
 export function MiniButton({
   onClick,
   children,

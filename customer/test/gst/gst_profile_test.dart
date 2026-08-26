@@ -4,9 +4,6 @@ import 'package:shopxy_customer/features/gst/domain/entities/gst_profile.dart';
 import 'package:shopxy_customer/features/gst/presentation/providers/gst_profile_provider.dart';
 import 'package:shopxy_customer/shared/domain/entities/catalog_product.dart';
 
-/// Stands in for the data source so the provider's contract can be exercised
-/// without a socket. The GSTIN checksum is deliberately server-side only, so
-/// the client's job is to relay the server's verdict, not second-guess it.
 class _FakeDs implements GstProfileRemoteDataSource {
   _FakeDs({this.initial = const GstProfile.empty(), this.rejectWith});
 
@@ -83,8 +80,6 @@ void main() {
     });
 
     test('a rejected GSTIN surfaces the server message, not a retry', () async {
-      // The checksum runs on the server. Its wording is the answer the user
-      // needs; swallowing it would leave them retrying a GSTIN that is wrong.
       final provider = GstProfileProvider(
         _FakeDs(
           rejectWith: const GstProfileRejected(
@@ -151,8 +146,6 @@ void main() {
     });
 
     test('defaults to false when the payload omits it', () {
-      // Never imply a registration the seller may not have — the whole point
-      // of the flag is deciding whether to promise a claimable invoice.
       final product = CatalogProduct.fromJson({
         'id': '1',
         'name': 'Widget',

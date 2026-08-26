@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { authedFetch, extractError } from "@/server/auth/session";
 import { orderListSchema } from "@/features/orders/schema";
 
-// GET /api/orders — inbox list (forwards: status, search, from, to, page, limit).
 export async function GET(req: Request) {
   const qs = new URL(req.url).searchParams.toString();
   const res = await authedFetch(`/orders${qs ? `?${qs}` : ""}`);

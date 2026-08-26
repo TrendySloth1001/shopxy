@@ -12,9 +12,6 @@ import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
-/// The per-shop landing for a customer. Every record the shop keeps for them —
-/// invoices, quotations — is a first-class section here, so nothing is buried
-/// behind a conditional banner. Vendors see only invoices.
 class ShopSectionsPage extends StatefulWidget {
   const ShopSectionsPage({super.key, required this.shop});
   final LinkedShop shop;

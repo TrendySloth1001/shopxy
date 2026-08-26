@@ -59,9 +59,6 @@ class CustomerProfilePage extends StatelessWidget {
     );
   }
 
-  /// Rendered for signed-in users. Pulled out of `build` only so the
-  /// guest path stays a clean swap and the existing list keeps its
-  /// shape (no rewrite, just relocation).
   Widget _buildSignedInBody(
     BuildContext context,
     ThemeData theme,
@@ -150,9 +147,6 @@ class CustomerProfilePage extends StatelessWidget {
             context,
           ).push(MaterialPageRoute(builder: (_) => const AddressesPage())),
         ),
-        // Orders deliberately omitted — it lives in the bottom nav as
-        // its own tab. Keeping it here too made the profile redundant
-        // and confused which surface is the source of truth.
         const _SectionLabel(label: 'Activity'),
         _Row(
           icon: AppIcons.favoriteBorderRounded,
@@ -287,11 +281,6 @@ class CustomerProfilePage extends StatelessWidget {
   }
 }
 
-/// Public-browse profile body: a sign-in hero card and a slim set of
-/// non-user-scoped settings (Help, About, Privacy, Terms). Authed-only
-/// rows (Edit profile, Linked merchants, Addresses, Wishlist, etc.) are
-/// omitted entirely rather than gated per-row — the page itself is the
-/// gate, which matches how Amazon/Flipkart present "You" for guests.
 class _GuestProfileBody extends StatelessWidget {
   const _GuestProfileBody({required this.theme});
   final ThemeData theme;

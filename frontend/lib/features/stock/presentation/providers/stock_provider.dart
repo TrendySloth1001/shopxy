@@ -16,8 +16,6 @@ class StockProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  /// Drops cached transactions on logout so the next account on this
-  /// device doesn't see the previous shop's stock history flash on screen.
   void reset() {
     _transactions = [];
     _isLoading = false;
@@ -40,8 +38,6 @@ class StockProvider extends ChangeNotifier {
     }
   }
 
-  /// Posts a manual stock-in or stock-out as a DRAFT invoice. Returns the
-  /// new invoice id so the caller can navigate the user to it for review.
   Future<String> addStock({
     required String productId,
     required String type,

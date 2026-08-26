@@ -14,11 +14,6 @@ import { todayInputDate } from "@/shared/datetime";
 
 const REGISTRATION_TYPES = ["REGULAR", "COMPOSITION", "UNREGISTERED"] as const;
 
-/**
- * Merchant profile + shop details. Pre-filled from the current user; PATCHes
- * the whole editable set (the backend treats it as a partial update). Shop
- * fields populate the invoice header / GST footer / UPI QR.
- */
 export function ProfileForm({ onSaved }: { onSaved?: () => void } = {}) {
   const { user, updateProfile } = useAuth();
   const t = useTranslations("auth");
@@ -42,10 +37,6 @@ export function ProfileForm({ onSaved }: { onSaved?: () => void } = {}) {
   const [saved, setSaved] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // The GSTIN as it was when the form loaded — used to tell "editing an
-  // unrelated field on an already-registered shop" apart from "registering
-  // a new/different GSTIN", which is the only case that requires an
-  // effective date (mirrors the backend guard in auth.service.ts exactly).
   const originalGstin = user?.shopGstin ?? "";
 
   function set(key: keyof typeof values, value: string) {
@@ -57,8 +48,6 @@ export function ProfileForm({ onSaved }: { onSaved?: () => void } = {}) {
     setValues((v) => ({
       ...v,
       shopGstin: value,
-      // Default the effective date to today the moment a GSTIN first
-      // appears — the merchant can still pick a different date afterward.
       gstEffectiveFrom: value && !v.gstEffectiveFrom ? todayInputDate() : v.gstEffectiveFrom,
     }));
     setSaved(false);
@@ -82,8 +71,6 @@ export function ProfileForm({ onSaved }: { onSaved?: () => void } = {}) {
       );
       return;
     }
-    // Mirrors the backend guard: a NEW/changed GSTIN resolving to REGULAR
-    // requires an effective date before it's ever sent to the server.
     const isNewGstinRegistration = values.shopGstin && values.shopGstin !== originalGstin;
     const resolvedRegType = values.registrationType || (values.shopGstin ? "REGULAR" : "UNREGISTERED");
     if (isNewGstinRegistration && resolvedRegType === "REGULAR" && !values.gstEffectiveFrom) {

@@ -22,9 +22,6 @@ Widget _wrap({required ShopsProvider shops, required NotificationsProvider notif
   );
 }
 
-
-/// Pushes MyShopsPage on top of a placeholder so `Navigator.canPop()` is true —
-/// the Profile entry point, as opposed to the bottom-nav tab.
 Widget _wrapPushed({
   required ShopsProvider shops,
   required NotificationsProvider notifs,
@@ -102,8 +99,6 @@ void main() {
 
   testWidgets('shows pending-invite banner when invitations are waiting',
       (tester) async {
-    // The redesigned callout lives in the has-shops list (not the empty state),
-    // so seed a shop alongside the pending invitation.
     await tester.pumpWidget(_wrap(
       shops: FakeShopsProvider(seedShops: [fakeShop(id: '1', name: 'Bharat Traders')]),
       notifs: FakeNotificationsProvider(
@@ -112,8 +107,6 @@ void main() {
     ));
     await tester.pump();
 
-    // The redesigned callout shows a count, not the sender's name inline
-    // (my_shops_page.dart: "Pending invitations are intentionally NOT shown inline").
     expect(find.text('1 pending invitation'), findsOneWidget);
   });
 
@@ -134,8 +127,6 @@ void main() {
     expect(find.text('3 pending invitations'), findsOneWidget);
   });
 
-  // MyShopsPage is both a bottom-nav tab and a pushed route. Only the pushed
-  // instance can go back, and it used to offer no way to.
   testWidgets('shows a back button only when it was pushed', (tester) async {
     await tester.pumpWidget(_wrapPushed(
       shops: FakeShopsProvider(),
@@ -150,7 +141,6 @@ void main() {
 
     await tester.tap(back);
     await tester.pumpAndSettle();
-    // Back on the launcher screen — the page actually popped.
     expect(find.text('open'), findsOneWidget);
     expect(find.text('Merchants'), findsNothing);
   });
@@ -163,7 +153,6 @@ void main() {
     await tester.pump();
 
     expect(find.text('Merchants'), findsOneWidget);
-    // Nothing to pop to, so no back control is built at all.
     expect(find.byKey(const Key('merchants-back')), findsNothing);
   });
 }

@@ -19,9 +19,6 @@ import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 
-/// Lets the user change their display name and reach the change-password
-/// flow. Email stays read-only — backend doesn't expose an email-change
-/// endpoint to the customer app yet.
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
 
@@ -42,9 +39,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
     super.initState();
     final user = context.read<AuthProvider>().user;
     _name = TextEditingController(text: user?.name ?? '');
-    // Email is read-only on this surface but still needs a controller
-    // so the field renders. Building it per-rebuild leaked one
-    // controller per setState; initState binds it once.
     _email = TextEditingController(text: user?.email ?? '');
     _phone = TextEditingController(text: user?.phoneNumber ?? '');
   }
@@ -92,12 +86,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
       ),
     );
     if (!mounted) return;
-    // null result from the sheet means either user dismissed it OR
-    // tapped "Remove photo". Disambiguate by checking if user already
-    // had an avatar — if yes, "remove" was the intent.
     if (source == null) {
       final user = context.read<AuthProvider>().user;
-      if (user?.avatarUrl == null) return; // user just dismissed
+      if (user?.avatarUrl == null) return;
       await _removePhoto();
       return;
     }
@@ -154,7 +145,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
       setState(() => _error = AppStrings.nameTooShort);
       return;
     }
-    // Loose-validate the phone: empty (clear) or +country & digits is OK.
     if (trimmedPhone.isNotEmpty &&
         !RegExp(r'^\+?[0-9\s\-]{7,20}$').hasMatch(trimmedPhone)) {
       setState(
@@ -169,9 +159,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
     });
     try {
       final auth = context.read<AuthProvider>();
-      // Save name first, then phone — both are independent PATCHes
-      // and the failure mode of either is the same recoverable
-      // toast, so keeping them sequential avoids partial-save logic.
       if (trimmedName != (auth.user?.name ?? '')) {
         await auth.updateName(trimmedName);
       }

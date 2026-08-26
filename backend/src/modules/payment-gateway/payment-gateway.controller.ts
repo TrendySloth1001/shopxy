@@ -3,13 +3,8 @@ import { z } from 'zod';
 import { decodeId } from '../../shared/ids/publicId.js';
 import { paymentGatewayService, listEnabledProviders } from './index.js';
 
-/**
- * First slice: wallet top-up. The customer principal (req.user.sub) tops up
- * their own wallet, so the settlement target is always WALLET → self. Other
- * targets (ORDER/INVOICE) plug in here later via the same service call.
- */
 const topUpSchema = z.object({
-  amount: z.number().positive().max(200000), // ₹2L sane cap; tune per policy
+  amount: z.number().positive().max(200000),
   provider: z.string().min(1).max(40).optional(),
 });
 
@@ -27,7 +22,6 @@ function parseId(raw: string): number | null {
 }
 
 export class PaymentGatewayController {
-  /** POST /me/wallet/topup — create a checkout session funding the wallet. */
   async initiateWalletTopUp(req: Request, res: Response): Promise<void> {
     const userId = requireUserId(req, res);
     if (userId == null) return;
@@ -61,7 +55,6 @@ export class PaymentGatewayController {
     }
   }
 
-  /** GET /me/wallet/topup/:id — read one intent (scoped to the caller). */
   async getIntent(req: Request, res: Response): Promise<void> {
     const userId = requireUserId(req, res);
     if (userId == null) return;
@@ -78,26 +71,16 @@ export class PaymentGatewayController {
     res.json(intent);
   }
 
-  /** GET /payment-gateway/providers — which gateways are enabled. */
   async providers(_req: Request, res: Response): Promise<void> {
     res.json({ providers: listEnabledProviders() });
   }
 
-  /**
-   * POST /payment-gateway/webhook/:provider — provider → us. UNAUTHENTICATED;
-   * trust comes from the signature, not a JWT. Requires the RAW body (see
-   * routes + WIRING.md). Returns 200 on success, 500 on transient error so the
-   * provider retries.
-   */
   async webhook(req: Request, res: Response): Promise<void> {
     const provider = req.params.provider;
     const rawBody: Buffer = Buffer.isBuffer(req.body)
       ? req.body
       : Buffer.from(typeof req.body === 'string' ? req.body : '');
     if (rawBody.length === 0) {
-      // Empty/uncaptured body → permanent. Ack with 200 so the provider stops
-      // retrying (a 4xx-class issue must never surface as a retry-forcing 5xx
-      // on a shared account).
       res.status(200).json({ received: true, ignored: true });
       return;
     }
@@ -110,14 +93,10 @@ export class PaymentGatewayController {
       res.status(200).json({ received: true });
     } catch (err) {
       const status = (err as { status?: number })?.status;
-      // 4xx = permanent (bad signature/data) → ack so the provider stops.
-      // Anything else = transient → 500 so the provider retries.
       if (status && status >= 400 && status < 500) {
         res.status(200).json({ received: true, ignored: true });
         return;
       }
-      // A malformed body (SyntaxError) is a permanent client error → ack so the
-      // provider stops retrying rather than hammering a shared endpoint.
       if (err instanceof SyntaxError) {
         res.status(200).json({ received: true, ignored: true });
         return;

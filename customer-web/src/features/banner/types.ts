@@ -2,7 +2,6 @@ import { z } from "zod";
 
 const zNum = z.union([z.number(), z.string()]).transform((v) => Number(v));
 
-/** A product pinned to a banner, with its banner sale price. */
 export const BannerProductSchema = z.object({
   id: z.coerce.string(),
   name: z.string(),

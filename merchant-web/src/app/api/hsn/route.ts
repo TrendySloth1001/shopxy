@@ -3,16 +3,10 @@ import { z } from "zod";
 import { authedFetch, extractError } from "@/server/auth/session";
 import { hsnMatchSchema } from "@/features/products/hsn";
 
-// GET /api/hsn?q=kameez — type-ahead over the HSN/SAC master, the merchant's
-// saved shortcuts, and the translated alias vocabulary. Read-only: the shared
-// master is seeded server-side from a checked-in manifest, so there is no
-// write counterpart.
 export async function GET(req: NextRequest) {
   const params = new URLSearchParams({ q: req.nextUrl.searchParams.get("q") ?? "" });
   const kind = req.nextUrl.searchParams.get("kind");
   if (kind) params.set("kind", kind);
-  // Forward the browser's language so codes come back with translated names
-  // and definitions rather than raw tariff wording.
   const locale = req.headers.get("accept-language");
 
   const res = await authedFetch(`/hsn?${params.toString()}`, {

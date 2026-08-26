@@ -4,9 +4,9 @@ import { passwordSchema, loginSchema, registerSchema } from "./schema";
 describe("passwordSchema", () => {
   it("requires ≥8 chars with at least one letter and one digit", () => {
     expect(passwordSchema.safeParse("abc12345").success).toBe(true);
-    expect(passwordSchema.safeParse("short1").success).toBe(false); // too short
-    expect(passwordSchema.safeParse("abcdefgh").success).toBe(false); // no digit
-    expect(passwordSchema.safeParse("12345678").success).toBe(false); // no letter
+    expect(passwordSchema.safeParse("short1").success).toBe(false);
+    expect(passwordSchema.safeParse("abcdefgh").success).toBe(false);
+    expect(passwordSchema.safeParse("12345678").success).toBe(false);
   });
 });
 

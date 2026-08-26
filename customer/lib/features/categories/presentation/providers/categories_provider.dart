@@ -2,12 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:shopxy_customer/features/categories/data/datasources/categories_remote_data_source.dart';
 import 'package:shopxy_customer/shared/domain/entities/category.dart';
 
-/// Holds the canonical taxonomy in memory for the customer app. Loaded
-/// once at app launch (cheap — single network round-trip, server pre-
-/// nests children) and consumed by the home rail, the dedicated
-/// Categories page, and the search idle state.
-///
-/// No mutation methods: customers can't author categories.
 class CategoriesProvider extends ChangeNotifier {
   CategoriesProvider(this._ds);
   final CategoriesRemoteDataSource _ds;
@@ -20,8 +14,6 @@ class CategoriesProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  /// Top-level (parent) categories — what the home rail and the
-  /// landing grid render.
   List<Category> get parents => _tree.map((n) => n.category).toList();
 
   CategoryNode? findBySlug(String slug) {

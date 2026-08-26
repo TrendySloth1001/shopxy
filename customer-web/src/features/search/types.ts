@@ -1,11 +1,3 @@
-/**
- * Search presentation models — ported from the Flutter customer app
- * (`customer/lib/features/search/data/datasources/marketplace_search_remote_data_source.dart`).
- *
- * All external payloads from /api/search are validated with Zod at the boundary
- * (see schema.ts). These types are what the search UI renders.
- */
-
 export interface SearchHit {
   id: string;
   name: string;
@@ -13,7 +5,6 @@ export interface SearchHit {
   sellingPrice: number;
   ratingAvg: number | null;
   ratingCount: number;
-  /** Relative backend path (/images/…) or absolute URL, or null. */
   imageUrl: string | null;
   shopId: string;
   shopName: string;
@@ -66,7 +57,6 @@ export interface SearchResult {
   facets?: SearchFacets | null;
 }
 
-/** Minimal shape returned by /api/search/autocomplete. */
 export interface AutocompleteHit {
   id: string;
   name: string;

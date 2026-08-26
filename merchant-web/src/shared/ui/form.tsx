@@ -8,7 +8,6 @@ import { DatePicker, TimeSelect } from "./date-picker";
 const inputBase =
   "h-10 w-full rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft disabled:bg-field-tint disabled:text-disabled";
 
-/** Label + helper/error wrapper shared by the form fields below. */
 function FieldShell({
   label,
   helper,
@@ -114,8 +113,6 @@ export function SelectField<T extends string>({
   helper?: string;
   disabled?: boolean;
 }) {
-  // Custom dropdown (no native <select>). ComboSelect renders its own label +
-  // helper in the same style as FieldShell, so we hand them straight to it.
   return (
     <ComboSelect
       label={label}
@@ -128,7 +125,6 @@ export function SelectField<T extends string>({
   );
 }
 
-/** Native datetime-local field that reads/writes UTC ISO strings. */
 export function DateTimeField({
   label,
   value,
@@ -142,9 +138,7 @@ export function DateTimeField({
   helper?: string;
   error?: string | null;
 }) {
-  // Custom date + time (no native datetime-local). Split the local input
-  // string into date/time, edit each with our own controls, recombine to UTC.
-  const local = isoToLocalInput(value); // "YYYY-MM-DDTHH:mm" or ""
+  const local = isoToLocalInput(value);
   const date = local ? local.slice(0, 10) : "";
   const time = local ? local.slice(11, 16) : "";
   const emit = (d: string, tm: string) =>
@@ -172,7 +166,6 @@ export function DateTimeField({
   );
 }
 
-/** Hex colour field — a live swatch (also a native picker) beside the text. */
 export function HexColorField({
   label,
   value,
@@ -185,8 +178,6 @@ export function HexColorField({
   helper?: string;
 }) {
   const t = useTranslations("common");
-  // The native colour input only understands #RRGGBB; fall back to a neutral
-  // swatch when the merchant has typed a partial/8-digit value.
   const swatch = /^#[0-9a-fA-F]{6}$/.test(value) ? value : "#ffffff";
   return (
     <FieldShell label={label} helper={helper}>

@@ -1,8 +1,6 @@
 import { z } from "zod";
 import { zNum } from "@/shared/zod";
 
-// ─── Invitations ───────────────────────────────────────────────────────────
-
 export const invitationShopSchema = z
   .object({
     id: z.coerce.string(),
@@ -59,9 +57,6 @@ export const invitationPageSchema = z.object({
 });
 export type InvitationPage = z.infer<typeof invitationPageSchema>;
 
-// ─── Linked shops / merchants ──────────────────────────────────────────────
-
-// /me/linked-shops shape
 export const linkedShopSchema = z
   .object({
     id: z.coerce.string(),
@@ -85,7 +80,6 @@ export const linkedShopsResponseSchema = z.object({
   data: z.array(linkedShopSchema).nullish().transform((v) => v ?? []),
 });
 
-// /me/links shape — parties and vendors
 const invoiceSummarySchema = z.object({
   invoiceDate: z.string().nullish(),
   total: zNum.nullish(),
@@ -136,8 +130,6 @@ export const linksResponseSchema = z.object({
 });
 export type LinksResponse = z.infer<typeof linksResponseSchema>;
 
-// ─── Catalog ───────────────────────────────────────────────────────────────
-
 const categorySchema = z
   .object({
     id: z.coerce.string(),
@@ -185,28 +177,21 @@ export const catalogProductsPageSchema = z.object({
 });
 export type CatalogProductsPage = z.infer<typeof catalogProductsPageSchema>;
 
-// ─── Helpers ───────────────────────────────────────────────────────────────
-
-/** Role as encoded in the URL: "party" | "vendor" */
 export type MerchantRole = "party" | "vendor";
 
-/** Normalise the URL [role] segment into the canonical enum. */
 export function parseMerchantRole(raw: string): MerchantRole | null {
   if (raw === "party" || raw === "vendor") return raw;
   return null;
 }
 
-/** Display label for a role. */
 export function roleLabelOf(role: MerchantRole): string {
   return role === "party" ? "Customer" : "Supplier";
 }
 
-/** Colour token string for a role pill. */
 export function roleColorOf(role: MerchantRole): string {
   return role === "party" ? "bg-brand-soft text-brand" : "bg-accent-indigo-soft text-accent-indigo";
 }
 
-/** Build the canonical /merchants/[role]/[id] prefix for linking. */
 export function merchantBase(role: MerchantRole, id: string): string {
   return `/merchants/${role}/${id}`;
 }

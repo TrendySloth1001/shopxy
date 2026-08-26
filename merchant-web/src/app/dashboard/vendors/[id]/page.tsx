@@ -109,7 +109,6 @@ export default function VendorDetailPage() {
     <div className="w-full px-lg py-xxl pb-massive md:px-xxl">
       <BackLink href={BACK} label={t("list.title")} />
 
-      {/* Header */}
       <div className="mt-md flex flex-wrap items-start justify-between gap-md">
         <div className="flex min-w-0 items-start gap-md">
           <Avatar url={v.linkedUser?.avatarUrl} name={v.name} size={52} />
@@ -149,7 +148,6 @@ export default function VendorDetailPage() {
         </div>
       </div>
 
-      {/* Contact rows */}
       <div className="mt-lg flex flex-col gap-sm">
         {v.phone ? <ContactRow icon={<Phone size={15} />} text={v.phone} /> : null}
         {v.email ? <ContactRow icon={<Mail size={15} />} text={v.email} /> : null}
@@ -162,7 +160,6 @@ export default function VendorDetailPage() {
         {v.gstin ? <ContactRow icon={<Landmark size={15} />} text={`GSTIN ${v.gstin}`} /> : null}
       </div>
 
-      {/* Balance */}
       <div className="mt-xl rounded-lg border border-hairline p-lg">
         <div className="flex items-center gap-md">
           <span className={`flex size-11 shrink-0 items-center justify-center rounded-lg ${BALANCE_PUCK[balanceView.tone]}`}>
@@ -184,7 +181,6 @@ export default function VendorDetailPage() {
         </div>
       </div>
 
-      {/* Stats */}
       <div className="mt-lg grid grid-cols-1 gap-lg sm:grid-cols-3">
         <StatBlock
           icon={<ShoppingBag size={16} />}
@@ -206,7 +202,6 @@ export default function VendorDetailPage() {
         />
       </div>
 
-      {/* Ledger */}
       {ledger && ledger.entries.length > 0 ? (
         <CollapsibleSection
           icon={<BookText size={18} />}
@@ -217,7 +212,6 @@ export default function VendorDetailPage() {
         />
       ) : null}
 
-      {/* Recent bills */}
       {overview.recentInvoices.length > 0 ? (
         <CollapsibleSection
           icon={<ReceiptText size={18} />}
@@ -231,7 +225,6 @@ export default function VendorDetailPage() {
         />
       ) : null}
 
-      {/* Recent stock-ins */}
       {overview.recentStockIns.length > 0 ? (
         <CollapsibleSection
           icon={<ScrollText size={18} />}
@@ -280,15 +273,8 @@ function ContactRow({ icon, text }: { icon: React.ReactNode; text: string }) {
   );
 }
 
-/** How many rows each activity section shows before "Show all". */
 const SECTION_PREVIEW = 5;
 
-/**
- * Activity section that previews the first {@link SECTION_PREVIEW} rows and
- * expands in place — keeps the page short when a vendor has a long history.
- * `render(n)` is asked for the first `n` rows so each section controls its own
- * markup (the ledger is a single component; bills/stock-ins are row lists).
- */
 function CollapsibleSection({
   icon,
   title,
@@ -303,7 +289,6 @@ function CollapsibleSection({
   count: number;
   noun: string;
   preview?: number;
-  /** When set, shows a link to the complete, filtered list elsewhere. */
   viewAllHref?: string;
   render: (visible: number) => React.ReactNode;
 }) {

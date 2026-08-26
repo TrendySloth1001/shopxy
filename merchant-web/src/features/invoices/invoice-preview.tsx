@@ -4,17 +4,6 @@ import { useTranslations } from "next-intl";
 import { Modal, ModalActions } from "@/shared/ui/modal";
 import { formatINR2 } from "@/shared/money";
 
-/**
- * Last look before an invoice is issued — the web mirror of the Flutter
- * merchant app's `showInvoicePreviewSheet`.
- *
- * Confirming is the irreversible step: it issues the document, posts the stock
- * movement and burns an invoice number. Saving a draft does none of that and
- * deliberately stays one click.
- *
- * Built from the live form rather than re-read from anywhere, so it can't show
- * something different from what gets sent.
- */
 export type PreviewLine = {
   name: string;
   quantityLabel: string;
@@ -27,8 +16,6 @@ export type InvoicePreview = {
   documentTypeLabel: string;
   counterpartyLabel: string;
   counterpartyName: string;
-  /** Null when nothing is on file — flagged, since that absence is the thing
-   *  worth catching before the document goes out. */
   counterpartyAddress: string | null;
   placeOfSupply: string | null;
   supplyTypeLabel: string;

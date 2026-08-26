@@ -20,13 +20,6 @@ import {
 import { QUOTATION_STATUS_LABELS, type Quotation } from "@/features/quotations/schema";
 import { listParties } from "@/features/parties/api";
 
-/**
- * Pricing & profit calculator — a multi-product quote builder. Add products,
- * set quantities and per-product GST + discount, plus an overall discount, with
- * a ₹/% switch. GST, totals, cost, profit and margin recompute live. It's the
- * foundation for quotations. Tokens only; structure from hairline dividers.
- */
-
 const num = (s: string): number => {
   const v = Number.parseFloat(s);
   return Number.isFinite(v) ? v : 0;
@@ -47,7 +40,6 @@ const toneText = (t?: Tone) =>
 type Unit = "pct" | "amt";
 type Line = { product: Product; priceStr: string; qtyStr: string; rateStr: string; discStr: string };
 
-/** Build a fresh line from a product (price defaults to its GST-inclusive sell). */
 function lineFrom(p: Product): Line {
   return {
     product: p,
@@ -58,7 +50,6 @@ function lineFrom(p: Product): Line {
   };
 }
 
-/** A discount value (% of a base, or a flat ₹ capped at the base). */
 function discountOf(base: number, value: string, unit: Unit): number {
   const v = Math.max(0, num(value));
   return unit === "pct" ? (base * Math.min(100, v)) / 100 : Math.min(base, v);
@@ -77,7 +68,6 @@ export function CalculatorSuite({ quotationId }: { quotationId?: string } = {}) 
   const [discUnit, setDiscUnit] = useState<Unit>("pct");
   const [overallStr, setOverallStr] = useState("");
 
-  // Quotation round-trip
   const [quote, setQuote] = useState<Quotation | null>(null);
   const [party, setParty] = useState<PartyRef | null>(null);
   const [note, setNote] = useState("");
@@ -112,7 +102,6 @@ export function CalculatorSuite({ quotationId }: { quotationId?: string } = {}) 
       const full = await getProduct(p.id);
       setLines((ls) => (ls.some((l) => l.product.id === full.id) ? ls : [...ls, lineFrom(full)]));
     } catch {
-      /* ignore */
     }
   }
 
@@ -128,10 +117,7 @@ export function CalculatorSuite({ quotationId }: { quotationId?: string } = {}) 
       .catch(() => {});
   }, [products]);
 
-  // ── quotation round-trip ─────────────────────────────────────────────────
   async function importQuotation(q: Quotation) {
-    // Each quotation line is ex-GST (unit price + tax on top). Convert to the
-    // calculator's GST-inclusive basis so the grand total ties to the quote.
     const built = await Promise.all(
       q.items.map(async (it) => {
         try {
@@ -149,7 +135,7 @@ export function CalculatorSuite({ quotationId }: { quotationId?: string } = {}) 
         }
       }),
     );
-    setDiscUnit("amt"); // quotation discounts are ₹ amounts
+    setDiscUnit("amt");
     setOverallStr("");
     setLines(built.filter((l): l is Line => l != null));
     setQuote(q);
@@ -168,7 +154,7 @@ export function CalculatorSuite({ quotationId }: { quotationId?: string } = {}) 
 
   useEffect(() => {
     if (!quotationId) return;
-    autoLoaded.current = true; // a quotation populates the lines; skip the seed
+    autoLoaded.current = true;
     void (async () => {
       await loadQuotationById(quotationId);
     })();
@@ -182,8 +168,6 @@ export function CalculatorSuite({ quotationId }: { quotationId?: string } = {}) 
     setSendMsg(null);
   }
 
-  // Convert the inclusive basket into ex-GST quotation lines (the overall
-  // discount is distributed across lines pro-rata, so the quote total matches).
   function buildItems(): QuotationItemWrite[] {
     const computed = lines.map((l) => {
       const price = Math.max(0, num(l.priceStr));
@@ -214,8 +198,6 @@ export function CalculatorSuite({ quotationId }: { quotationId?: string } = {}) 
       });
   }
 
-  // Save the basket as a quotation (the PDF is rendered server-side from a saved
-  // quote, so download and send both go through this). Returns the saved quote.
   async function persistQuote(): Promise<Quotation | null> {
     const items = buildItems();
     if (items.length === 0) {
@@ -257,13 +239,11 @@ export function CalculatorSuite({ quotationId }: { quotationId?: string } = {}) 
   }
 
   async function download() {
-    // Use the loaded quote's PDF if present; otherwise save the basket first.
     const saved = quote ?? (await persistQuote());
     if (saved) window.open(quotationPdfUrl(saved.id), "_blank", "noopener,noreferrer");
   }
 
-  // ── aggregate maths ──────────────────────────────────────────────────────
-  let grossIncl = 0; // Σ selling × qty (incl. GST), before any discount
+  let grossIncl = 0;
   let lineDiscTotal = 0;
   let taxAfterLines = 0;
   let gstAfterLines = 0;
@@ -286,7 +266,7 @@ export function CalculatorSuite({ quotationId }: { quotationId?: string } = {}) 
     totalCost += p.purchasePrice * q;
     totalQty += q;
   }
-  const afterLines = grossIncl - lineDiscTotal; // incl. GST, after per-line discounts
+  const afterLines = grossIncl - lineDiscTotal;
   const overallDisc = discountOf(afterLines, overallStr, discUnit);
   const grandTotal = afterLines - overallDisc;
   const g = afterLines > 0 ? grandTotal / afterLines : 0;
@@ -302,14 +282,12 @@ export function CalculatorSuite({ quotationId }: { quotationId?: string } = {}) 
 
   return (
     <div ref={topRef} className="flex flex-col gap-xl lg:flex-row lg:items-start lg:gap-xxl">
-      {/* ── Calculator ─────────────────────────────────────────────────── */}
       <section className="min-w-0 lg:flex-1">
         <h2 className="text-headline-sm text-ink">{t("calc.title")}</h2>
         <p className="mt-xs text-body-md text-muted">
           {t("calc.blurb")}
         </p>
 
-        {/* Line items */}
         <div className="mt-lg">
           {lines.length === 0 ? (
             <p className="rounded-md border border-dashed border-hairline px-md py-xl text-center text-body-sm text-muted">
@@ -341,7 +319,6 @@ export function CalculatorSuite({ quotationId }: { quotationId?: string } = {}) 
           )}
         </div>
 
-        {/* Controls */}
         <div className="mt-lg flex flex-wrap items-end gap-x-xl gap-y-md">
           <div className="flex flex-col gap-xs">
             <span className="text-label-md text-muted">{t("calc.supply")}</span>
@@ -371,7 +348,6 @@ export function CalculatorSuite({ quotationId }: { quotationId?: string } = {}) 
           </div>
         </div>
 
-        {/* Calculation */}
         <div className="mt-xl border-t border-hairline pt-xl">
           <div className="flex flex-wrap items-end justify-between gap-lg">
             <div className="min-w-0">
@@ -424,7 +400,6 @@ export function CalculatorSuite({ quotationId }: { quotationId?: string } = {}) 
           </div>
         </div>
 
-        {/* Quotation round-trip */}
         <div className="mt-xxl border-t border-hairline pt-lg">
           <div className="flex flex-wrap items-baseline justify-between gap-md">
             <p className="text-label-md uppercase tracking-wide text-subtle">{t("calc.quotation")}</p>
@@ -515,7 +490,6 @@ export function CalculatorSuite({ quotationId }: { quotationId?: string } = {}) 
         </div>
       </section>
 
-      {/* ── Product browser ────────────────────────────────────────────── */}
       <aside className="min-w-0 lg:w-96 lg:shrink-0 lg:border-l lg:border-hairline lg:pl-xl">
         <div className="flex items-baseline justify-between gap-md">
           <p className="text-label-md uppercase tracking-wide text-subtle">{t("calc.yourProducts")}</p>
@@ -608,8 +582,6 @@ export function CalculatorSuite({ quotationId }: { quotationId?: string } = {}) 
   );
 }
 
-/* ─────────────────────────── shared primitives ─────────────────────────── */
-
 function LineRow({
   line,
   unit,
@@ -645,7 +617,6 @@ function LineRow({
   );
   return (
     <div className="border-b border-hairline py-sm last:border-b-0">
-      {/* Product + (desktop) inline controls */}
       <div className="flex items-center gap-sm">
         <ProductThumb url={p.images[0]?.url ?? null} alt={p.name} size={40} />
         <div className="min-w-0 flex-1">
@@ -685,7 +656,6 @@ function LineRow({
         </button>
       </div>
 
-      {/* Mobile controls — labelled, below the product */}
       <div className="mt-sm flex items-end gap-md md:hidden">
         <FieldCol label={t("calc.colGst")}>
           <Suffixed value={line.rateStr} onChange={onRate} suffix="%" ariaLabel={t("calc.gstFor", { name: p.name })} className="w-16" />
@@ -709,7 +679,6 @@ function FieldCol({ label, children }: { label: string; children: React.ReactNod
   );
 }
 
-/** Number input with a trailing unit (e.g. "%"). */
 function Suffixed({
   value,
   onChange,
@@ -740,7 +709,6 @@ function Suffixed({
   );
 }
 
-/** Discount input that flips between a leading ₹ and a trailing %. */
 function DiscInput({
   value,
   onChange,

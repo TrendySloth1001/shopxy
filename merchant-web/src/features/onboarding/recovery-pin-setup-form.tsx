@@ -9,12 +9,6 @@ import { AuthErrorBanner } from "@/features/auth/components/auth-shell";
 import { recoveryPinSchema } from "@/features/auth/schema";
 import { needsRecoveryPinSetup } from "@/features/auth/types";
 
-/**
- * Shown right after a Google sign-in creates (or first links) an account.
- * Google accounts have no password, so this PIN is the only fallback if
- * Google itself is ever unreachable — mirrors WhatsApp's 2-step PIN: short,
- * numeric, chosen by the user (not a generated code to save).
- */
 export function RecoveryPinSetupForm() {
   const { status, user } = useAuth();
   const router = useRouter();
@@ -25,8 +19,6 @@ export function RecoveryPinSetupForm() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Gate: guests to login; anyone who already set a PIN skips straight to
-  // the usual post-signup onboarding (naming the shop).
   useEffect(() => {
     if (status === "guest") {
       router.replace("/login");

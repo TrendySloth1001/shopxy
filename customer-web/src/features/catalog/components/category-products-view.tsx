@@ -14,14 +14,6 @@ import { resolveImageUrl } from "@/features/home/format";
 
 const PAGE_SIZE = 24;
 
-/**
- * Client component for /c/[slug].
- * - Shows child-category chips for drilling down
- * - Sort chip bar
- * - Paginated product grid with infinite scroll
- *
- * Port of the Flutter CategoryProductsPage.
- */
 export function CategoryProductsView({ slug }: { slug: string }) {
   const [category, setCategory] = useState<CategoryDetail | null>(null);
   const [products, setProducts] = useState<CatalogProduct[]>([]);
@@ -67,7 +59,6 @@ export function CategoryProductsView({ slug }: { slug: string }) {
     void load(1, sort, true);
   }, [load, sort]);
 
-  // Infinite scroll
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el) return;
@@ -93,7 +84,6 @@ export function CategoryProductsView({ slug }: { slug: string }) {
     void load(1, s, true);
   };
 
-  // ── Skeleton ────────────────────────────────────────────────────────────
   if (loading && !category) {
     return (
       <div className="mx-auto max-w-shell px-lg">
@@ -104,7 +94,6 @@ export function CategoryProductsView({ slug }: { slug: string }) {
     );
   }
 
-  // ── Error ────────────────────────────────────────────────────────────────
   if (error && !category) {
     return (
       <div className="mx-auto max-w-shell px-lg py-xxxl">
@@ -128,7 +117,6 @@ export function CategoryProductsView({ slug }: { slug: string }) {
 
   return (
     <div className="mx-auto max-w-shell">
-      {/* Back nav */}
       <div className="px-lg pt-lg">
         <Link
           href="/categories"
@@ -138,10 +126,8 @@ export function CategoryProductsView({ slug }: { slug: string }) {
         </Link>
       </div>
 
-      {/* Category header */}
       {category ? <CategoryHeader category={category} total={pagination.total} /> : null}
 
-      {/* Sub-category chips */}
       {category?.children && category.children.length > 0 ? (
         <div className="overflow-x-auto px-lg pb-sm [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <div className="flex gap-sm">
@@ -163,12 +149,10 @@ export function CategoryProductsView({ slug }: { slug: string }) {
         </div>
       ) : null}
 
-      {/* Sort bar */}
       <div className="px-lg">
         <SortBar value={sort} onChange={handleSort} />
       </div>
 
-      {/* Product grid */}
       <div className="px-lg pb-xxxl pt-sm">
         {loading ? (
           <ProductGridSkeleton count={8} />
@@ -201,9 +185,6 @@ export function CategoryProductsView({ slug }: { slug: string }) {
   );
 }
 
-// ── Category header ──────────────────────────────────────────────────────────
-
-// Rotating tints — matches home puck palette
 const HEADER_TINTS = CATEGORY_TINTS;
 
 function catTint(name: string): string {
@@ -219,13 +200,11 @@ function CategoryHeader({ category, total }: { category: CategoryDetail; total: 
 
   return (
     <div className="mb-sm">
-      {/* Tinted hero band */}
       <div
         className="w-full px-lg py-xl"
         style={{ backgroundColor: tint }}
       >
         <div className="flex items-center gap-md">
-          {/* White circular chip for icon/image */}
           <div className="size-14 shrink-0 overflow-hidden rounded-full border-2 border-white bg-white shadow-floating">
             {imageUrl ? (
               <ImageBox url={imageUrl} alt={category.name} fit="cover" />
@@ -250,8 +229,6 @@ function CategoryHeader({ category, total }: { category: CategoryDetail; total: 
     </div>
   );
 }
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
 
 function EmptyState({ categoryName }: { categoryName: string }) {
   return (

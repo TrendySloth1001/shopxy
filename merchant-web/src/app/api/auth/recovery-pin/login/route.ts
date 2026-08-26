@@ -10,9 +10,6 @@ import {
   setSessionCookies,
 } from "@/server/auth/session";
 
-// POST /api/auth/recovery-pin/login — fallback sign-in for Google-only
-// accounts when Google itself isn't reachable. Same cookie contract as
-// /api/auth/login.
 export async function POST(req: Request) {
   const json = await req.json().catch(() => null);
   const parsed = recoveryPinLoginSchema.safeParse(json);

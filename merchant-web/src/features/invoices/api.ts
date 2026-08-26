@@ -7,7 +7,6 @@ async function jsonOrThrow<T>(res: Response, parse: (raw: unknown) => T, fallbac
       const body = (await res.json()) as { error?: string };
       if (body?.error) message = body.error;
     } catch {
-      /* keep fallback */
     }
     throw new Error(message);
   }
@@ -27,8 +26,6 @@ export type InvoiceListFilters = {
   vendorId?: string;
   partyId?: string;
   productId?: string;
-  /// The "Archived" view. Archived documents are out of every other list —
-  /// that's the point of archiving.
   archived?: boolean;
 };
 
@@ -53,14 +50,12 @@ export function getInvoice(id: string): Promise<Invoice> {
   );
 }
 
-/** Line item as sent to the backend create/update schema. */
 export type InvoiceItemWrite = {
   productId: string;
   quantity: number;
   unitPrice: number;
   taxPercent?: number;
   isPriceInclusive?: boolean;
-  /** Rupees off this line, before the header discount is apportioned. */
   discount?: number;
 };
 
@@ -79,7 +74,6 @@ export type InvoiceWrite = {
   confirm?: boolean;
 };
 
-/** Create response: the invoice plus whether an auto-confirm succeeded. */
 export type CreateInvoiceResult = {
   invoice: Invoice;
   confirmed: boolean;
@@ -126,13 +120,6 @@ export function convertEstimate(id: string): Promise<Invoice> {
   );
 }
 
-/**
- * File a DRAFT or CANCELLED invoice out of the working list, or restore it.
- *
- * Replaces `deleteInvoice`, which could never succeed — a draft already owns
- * its legal serial and Rule 46(b) needs the run consecutive, so the row can't
- * be removed. Archiving keeps the number allocated against it.
- */
 export async function setInvoiceArchived(
   id: string,
   archived: boolean,
@@ -149,7 +136,6 @@ export async function setInvoiceArchived(
   );
 }
 
-/** Open the server-rendered PDF (download / print) in a new tab. */
 export function invoicePdfUrl(id: string): string {
   return `/api/invoices/${id}/pdf`;
 }

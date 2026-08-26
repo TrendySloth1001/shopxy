@@ -1,11 +1,5 @@
 import { z } from "zod";
 
-/**
- * Custom-field shapes, mirroring `backend/src/modules/customFields/*`.
- * Definitions are shop-wide; sections group them. Validated at the BFF read
- * boundary so screens get a clean typed object.
- */
-
 export const CUSTOM_FIELD_TYPES = [
   "TEXT",
   "LONG_TEXT",
@@ -16,10 +10,6 @@ export const CUSTOM_FIELD_TYPES = [
 ] as const;
 export type CustomFieldType = (typeof CUSTOM_FIELD_TYPES)[number];
 
-/**
- * Stable i18n keys (under the "customFields" namespace) for each field type's
- * display label. Translate at the point of use with `t(CUSTOM_FIELD_TYPE_LABEL_KEYS[type])`.
- */
 export const CUSTOM_FIELD_TYPE_LABEL_KEYS: Record<CustomFieldType, string> = {
   TEXT: "types.text",
   LONG_TEXT: "types.longText",
@@ -61,7 +51,6 @@ export const sectionSchema = z
   .passthrough();
 export type Section = z.infer<typeof sectionSchema>;
 
-/** A section with its nested fields, as returned by `/custom-fields/tree`. */
 export const treeSectionSchema = sectionSchema.extend({
   fields: arr(definitionSchema),
 });

@@ -13,12 +13,6 @@ import { ProductThumb } from "./product-thumb";
 
 type Item = { id?: string; url: string };
 
-/**
- * Product image manager.
- * - Edit mode (`productId` set): add / remove / reorder hit the live endpoints.
- * - Create mode (no `productId`): collect URLs locally; the parent submits them
- *   as `imageUrls` in the create payload.
- */
 export function ImageManager({
   productId,
   initial,

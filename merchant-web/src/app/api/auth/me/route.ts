@@ -8,9 +8,6 @@ import {
   getCurrentUser,
 } from "@/server/auth/session";
 
-// GET /api/auth/me — the single source of truth for "who is signed in".
-// Refreshes the token pair transparently on a 401; returns 401 when there is
-// no valid, role-appropriate session.
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) {
@@ -19,8 +16,6 @@ export async function GET() {
   return NextResponse.json({ user });
 }
 
-// Shop string fields that an empty input should CLEAR (→ null), mirroring the
-// mobile data source's `put` helper. `name` is never cleared (min length 2).
 const CLEARABLE = [
   "shopName",
   "shopAddress",
@@ -35,7 +30,6 @@ const CLEARABLE = [
   "phoneNumber",
 ] as const;
 
-// PATCH /api/auth/me — update the profile / shop fields.
 export async function PATCH(req: Request) {
   const json = await req.json().catch(() => null);
   const parsed = updateProfileSchema.safeParse(json);
@@ -65,21 +59,12 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: message }, { status: 400 });
   }
 
-  // The backend's PATCH now re-attaches the team scope itself (see its
-  // `withShopScope` — it used to return the bare profile row, which is what
-  // this re-read was working around). Kept as belt-and-braces so a merchant-web
-  // deploy running against an older backend still hands the client a complete
-  // user rather than one with no shop.
   const enriched = await getCurrentUser();
   if (enriched) return NextResponse.json({ user: enriched });
   const fallback = authUserSchema.safeParse(await res.json());
   return NextResponse.json({ user: fallback.success ? fallback.data : null });
 }
 
-// DELETE /api/auth/me — DPDP erasure. OWNER accounts holding retained invoices
-// are not hard-deleted: the backend runs a controlled wipe (pseudonymises the
-// identity, keeps statutory invoices) and returns 200 with mode:'pseudonymised'.
-// Customers (and clean owners) get mode:'deleted'. A wrong password returns 400.
 export async function DELETE(req: Request) {
   const json = await req.json().catch(() => null);
   const parsed = deleteAccountSchema.safeParse(json);
@@ -121,8 +106,5 @@ export async function DELETE(req: Request) {
 
   const body = (await res.json().catch(() => ({}))) as { mode?: string };
   await clearSessionCookies();
-  // mode is 'deleted' or 'pseudonymised' — let the client tailor the
-  // confirmation copy (e.g. "your account data was removed; invoices we
-  // must keep for 8 years were anonymised").
   return NextResponse.json({ ok: true, mode: body.mode ?? "deleted" });
 }

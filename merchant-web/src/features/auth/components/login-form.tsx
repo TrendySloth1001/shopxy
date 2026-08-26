@@ -24,7 +24,6 @@ export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Already signed in → leave the auth screen.
   useEffect(() => {
     if (status === "authed") router.replace("/dashboard");
   }, [status, router]);
@@ -89,10 +88,6 @@ export function LoginForm() {
           {t("login.usePinInstead")}
         </Link>
       </p>
-      {/* Pre-signin discoverability of the published policies — the DPDP notice
-          and the user agreement must be accessible before/around collection,
-          not only behind auth. (DPDP Act 2023 s.5; IT Intermediary Rules 2021
-          r.3(1)(b)/(f).) */}
       <p className="text-center text-body-sm text-muted">
         {t.rich("login.legalConsent", {
           terms: (chunks) => (

@@ -26,8 +26,6 @@ class ProductDto {
       sellingPrice: _toDouble(json['sellingPrice']),
       purchasePrice: _toDouble(json['purchasePrice']),
       taxPercent: _toDouble(json['taxPercent']),
-      // Absent on older backends — default to MANUAL, which is what an
-      // un-stamped rate always was.
       taxSource: json['taxSource'] as String? ?? 'MANUAL',
       pricingMode: json['pricingMode'] as String? ?? 'TAX_EXCLUSIVE',
       stockQuantity: _toDouble(json['stockQuantity']),
@@ -204,9 +202,6 @@ class ProductDto {
     return data;
   }
 
-  /// Drops empty-row + empty-value pairs before serialising. Lets the
-  /// editor leave half-filled rows in the form without ever shipping
-  /// them. Phase D: serialises the optional `tab` bucket when set.
   static Map<String, dynamic> _specToJson(SpecGroup g) => {
         'title': g.title.trim(),
         if (g.tab != null && g.tab!.trim().isNotEmpty) 'tab': g.tab!.trim(),

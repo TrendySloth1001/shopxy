@@ -37,9 +37,6 @@ import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// Where the derived place of supply came from. Shown under the read-only
-/// row so the merchant can see WHY they're being charged IGST rather than
-/// CGST+SGST — the one thing the old free-choice dropdown never told them.
 enum _PosSource {
   partyGstin,
   partyAddress,
@@ -47,21 +44,12 @@ enum _PosSource {
   vendorAddress,
   shopDefault,
 
-  /// The merchant picked the state themselves. Only offered when nothing on
-  /// the counterparty says where they are — see [_CreateInvoicePageState._posOverride].
   manual,
 }
 
-/// Height of the sticky Save-as-draft / Save-&-confirm action buttons. Taller
-/// than a stock button so the two labels stay on one line and the bar reads as
-/// a deliberate footer.
 const double _actionBarButtonHeight = 54;
 
 class CreateInvoicePage extends StatefulWidget {
-  /// [existing] turns this page into an edit form. Pre-fills every
-  /// control from the invoice and routes the save action through PATCH
-  /// instead of POST. Only DRAFT invoices should be passed in — the
-  /// backend rejects anything else.
   const CreateInvoicePage({super.key, this.existing});
 
   final Invoice? existing;
@@ -73,9 +61,6 @@ class CreateInvoicePage extends StatefulWidget {
 class _CreateInvoicePageState extends State<CreateInvoicePage> {
   final _formKey = GlobalKey<FormState>();
   bool _isSaving = false;
-  // Heuristic unsaved-changes guard. Flipped true by the customer/name
-  // and note listeners, or whenever an item is added/removed. Not exact —
-  // intentional, see PopScope wiring below.
   bool _dirty = false;
 
   String _type = 'SALE';
@@ -87,45 +72,20 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
   final _discount = TextEditingController(text: '0');
   final _note = TextEditingController();
 
-  // Tax-invoice vs bill-of-supply toggle, only meaningful for SALE.
-  // PURCHASE always falls back to TAX_INVOICE on the wire.
   String _documentType = 'TAX_INVOICE';
 
-  // GST tax convention. Default false = EXCLUSIVE: unit prices are pre-tax and
-  // GST is added on top (the existing merchant manual-invoice behaviour — never
-  // change this silently). When true = INCLUSIVE (matches the backend
-  // `isPriceInclusive` flag and the marketplace "inclusive of all taxes" path):
-  // the entered unit price ALREADY contains tax and the engine backs it out, so
-  // the displayed tax isn't double-added.
   bool _isPriceInclusive = false;
 
-  // Place of supply is no longer held in state — it's derived on every build
-  // from the counterparty's GSTIN / address, falling back to the shop's own
-  // state. See [_placeOfSupply].
-
-  /// A state the merchant set by hand, overriding the shop-state fallback.
-  ///
-  /// Null in the ordinary case. Only settable when nothing on the
-  /// counterparty implies a state (see [_canOverridePlaceOfSupply]) — the
-  /// walk-in-from-another-state case, which would otherwise be billed as a
-  /// local supply.
   String? _posOverride;
 
   final List<InvoiceItemDraft> _items = [];
 
-
-  /// The place-of-supply row AND the CGST/SGST-vs-IGST split are both derived
-  /// from this field, so it has to repaint on every keystroke. [_markDirty]
-  /// alone won't do it — it only rebuilds the first time it's called.
   void _onGstinChanged() {
     _markDirty();
     if (mounted) setState(() {});
   }
 
   void _markDirty() {
-    // Trigger a rebuild so PopScope.canPop sees the flipped flag —
-    // without setState the back gesture would still pop a dirty form
-    // because canPop was computed from the prior build.
     if (!_dirty) {
       if (mounted) {
         setState(() => _dirty = true);
@@ -145,8 +105,6 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     _discount.addListener(_markDirty);
     _customerGstin.addListener(_onGstinChanged);
 
-    // Edit mode: rehydrate every control from the persisted invoice so
-    // the user sees exactly what's on file before tweaking.
     final existing = widget.existing;
     if (existing != null) {
       _type = existing.type;
@@ -158,12 +116,6 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
           ? existing.discount.toStringAsFixed(2)
           : '0';
       _note.text = existing.note ?? '';
-      // `existing.placeOfSupplyStateCode` is deliberately not restored — it's
-      // re-derived from the counterparty below, which is where it came from.
-      // Reconstruct minimal Party/Vendor stubs from the invoice's address
-      // snapshot. They're enough for the picker cards to render + for
-      // IGST detection (state code drives that). If the user wants the
-      // live row, they can tap "Change".
       if (existing.partyId != null && existing.isSale) {
         _selectedParty = _partyFromInvoiceSnapshot(existing);
       }
@@ -171,22 +123,15 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
         _selectedVendor = _vendorFromInvoiceSnapshot(existing);
       }
       _items.addAll(existing.items.map(InvoiceItemDraft.fromInvoiceItem));
-      // The form starts clean — user must touch something to mark dirty.
       _dirty = false;
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      // Warm the catalogue while the merchant is still picking a customer, so
-      // the product sheet opens on a list instead of a spinner.
-      // No-op if another page loaded it already.
       unawaited(context.read<ProductCatalogue>().ensureLoaded());
     });
   }
 
-  /// Build a stub [Party] from an invoice's snapshot. Used in edit mode
-  /// so the SelectedPartyCard can render without an extra network call.
-  /// The user can tap "Change" to swap in the live row from the picker.
   static Party _partyFromInvoiceSnapshot(Invoice inv) {
     return Party(
       id: inv.partyId!,
@@ -233,32 +178,22 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     super.dispose();
   }
 
-  // Sum of each line's taxable (qty*price − its own discount). Doubles as
-  // the base over which the invoice-level discount is apportioned.
   double get _subtotal => _items.fold(0, (sum, i) => sum + i.subtotal);
-  // Invoice-level discount, clamped to [0, subtotal] so the preview can't
-  // go negative — matches the backend engine's clamp.
   double get _headerDiscount {
     final raw = double.tryParse(_discount.text) ?? 0;
     if (raw <= 0 || _subtotal <= 0) return 0;
     return raw > _subtotal ? _subtotal : raw;
   }
 
-  // GST is charged on each line's taxable AFTER its proportional share of
-  // the invoice-level discount (CGST Sec 15(3)). The backend apportions the
-  // header discount into the lines before computing tax, so the preview
-  // mirrors that or the shown total won't match the saved invoice.
   double get _totalTax {
     final base = _subtotal;
     final hd = _headerDiscount;
     if (base <= 0) return 0;
     var tax = 0.0;
     for (final i in _items) {
-      final lineBase = i.subtotal; // qty*price − line discount
+      final lineBase = i.subtotal;
       final net = lineBase - hd * (lineBase / base);
       if (_isPriceInclusive) {
-        // Inclusive: the net amount already contains tax — back it out so the
-        // preview matches the backend and tax isn't double-added.
         final lineTaxable = net * 100 / (100 + i.taxPercent);
         tax += net - lineTaxable;
       } else {
@@ -268,31 +203,15 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     return tax;
   }
 
-  // Net taxable after every discount. For inclusive pricing the tax already
-  // sits inside the line amount, so taxable = net amount − tax.
   double get _taxableValue => _isPriceInclusive
       ? _subtotal - _headerDiscount - _totalTax
       : _subtotal - _headerDiscount;
-  // Exclusive: total = net taxable + tax. Inclusive: the net amount already
-  // includes tax, so total = (subtotal − header discount) directly; written as
-  // taxable + tax it reduces to the same number.
   double get _rawTotal => _taxableValue + _totalTax;
-  // Indian invoices commonly round to the nearest rupee. We compute the
-  // diff the same way the backend does so the UI matches the saved row.
   double get _roundedTotal => _rawTotal.roundToDouble();
   double get _roundOff => _roundedTotal - _rawTotal;
   double get _total => _roundedTotal;
 
-  /// Where this supply is deemed to take place, and why. Mirrors the backend's
-  /// derivation (`invoices.service.ts` — GST-10 and the place-of-supply
-  /// default) so the split shown here can't disagree with the one saved.
-  ///
-  /// Order: the counterparty's own state code → their GSTIN prefix → for a
-  /// SALE, the shop's own state, because an unregistered walk-in with no
-  /// address is a local supply.
   ({String? code, _PosSource source}) get _placeOfSupply {
-    // A manual answer beats the shop-state guess, and is only reachable when
-    // that guess was all we had (see [_canOverridePlaceOfSupply]).
     if (_posOverride != null) {
       return (code: _posOverride, source: _PosSource.manual);
     }
@@ -326,8 +245,6 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
   String? get _shopStateCode =>
       context.read<AuthProvider>().user?.shopStateCode;
 
-  /// Ask for the state by hand. Only reachable via
-  /// [_canOverridePlaceOfSupply], so it can never contradict a GSTIN.
   Future<void> _pickPlaceOfSupply() async {
     final l10n = AppLocalizations.of(context);
     final chosen = await showModalBottomSheet<String>(
@@ -376,15 +293,6 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     _markDirty();
   }
 
-  /// Whether the merchant may set the place of supply by hand.
-  ///
-  /// Only when nothing on the counterparty tells us where they are. A GSTIN
-  /// or a saved address IS the answer — letting someone override those is
-  /// exactly how tax ends up under the wrong head, which is what deriving
-  /// the field was meant to prevent.
-  ///
-  /// The case this exists for: a walk-in with no GSTIN who is standing in
-  /// another state. Without it that sale is silently billed as local.
   bool get _canOverridePlaceOfSupply {
     if (_posOverride != null) return true;
     return _placeOfSupply.source == _PosSource.shopDefault;
@@ -392,9 +300,6 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
 
   String? get _placeOfSupplyStateCode => _placeOfSupply.code;
 
-  /// True if the counterparty's state differs from the shop's. Mirrors
-  /// backend `isInterstateSupply` — both halves must be present, else
-  /// we treat it as intrastate to avoid mis-charging IGST.
   bool get _isInterstate {
     final shop = context.read<AuthProvider>().user?.shopStateCode;
     final pos = _placeOfSupplyStateCode;
@@ -402,8 +307,6 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     return shop != pos;
   }
 
-  /// Opens the shared catalogue sheet. It calls back per tap rather than
-  /// returning one product, so several lines can be added in one sitting.
   Future<void> _openProductPicker() {
     return showProductPicker(
       context,
@@ -419,11 +322,6 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
       setState(() => _items[existing].quantity += 1);
     } else {
       setState(() {
-        // The document-wide inclusive/exclusive switch can't represent mixed
-        // per-line modes, so it's seeded from the FIRST product added — a
-        // later product with a disagreeing pricingMode still bills correctly
-        // per-line on the backend (which resolves per-product), just isn't
-        // reflected in this preview toggle. Only seed once, on an empty cart.
         if (_items.isEmpty) {
           _isPriceInclusive = product.pricingMode == 'TAX_INCLUSIVE';
         }
@@ -476,9 +374,6 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
 
   void _clearVendor() => setState(() => _selectedVendor = null);
 
-  /// Open the camera-based product scanner and append the picked product
-  /// as a draft row. The scanner page handles "not found" itself: it lets
-  /// the user create the product, then returns the fresh row.
   Future<void> _scanProduct() async {
     final picked = await Navigator.push<Product?>(
       context,
@@ -487,26 +382,11 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     if (picked != null && mounted) _addItem(picked);
   }
 
-  /// The ₹50,000 named-recipient threshold in Rule 46(f). Mirrors `FIFTY_K`
-  /// in `invoices.service.ts`.
   static const _namedRecipientThreshold = 50000;
 
-  /// Checks the recipient is complete enough to issue, and if not, offers to
-  /// complete it. Returns whether to carry on, plus anything the merchant
-  /// filled in.
-  ///
-  /// This warns in MORE cases than the server blocks, on purpose. The server
-  /// backfills `customerStateCode` from a recipient GSTIN and then counts a
-  /// bare state code as an address, so a B2B invoice never actually trips its
-  /// address branch however empty the customer's record is — it would happily
-  /// issue a tax invoice with no postal address at all. The question worth
-  /// asking the merchant is "do we know where this customer is?", not "will
-  /// the server let this through?".
   Future<({bool proceed, RecipientDetails? details})> _recipientGate() async {
     const carryOn = (proceed: true, details: null);
     if (_type != 'SALE') return carryOn;
-    // CREDIT/DEBIT notes inherit their recipient from the original invoice,
-    // and ESTIMATE/PROFORMA are pre-supply offers Rule 46 doesn't govern.
     if (_documentType != 'TAX_INVOICE' && _documentType != 'BILL_OF_SUPPLY') {
       return carryOn;
     }
@@ -522,8 +402,6 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     final party = _selectedParty;
     bool filled(String? v) => (v ?? '').trim().isNotEmpty;
     final nameMissing = !filled(_customerName.text);
-    // State code is deliberately NOT counted — see the note above. What's
-    // being asked is whether a postal address exists.
     final addressMissing =
         !filled(party?.address) &&
         !filled(party?.city) &&
@@ -543,16 +421,11 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
 
     switch (outcome) {
       case null:
-        // Dismissed. Back to the form — skipping has to be chosen, never
-        // fallen into.
         return (proceed: false, details: null);
       case RecipientSkipped():
         return (proceed: true, details: const RecipientDetails.acknowledgedMissing());
       case RecipientFilled(:final details, :final saveToParty):
         if (saveToParty && party != null) {
-          // Best-effort: the invoice is the thing being saved, so a failure to
-          // also update the customer record must not block it. The details
-          // still travel on the invoice either way.
           await _saveDetailsToParty(party.id, details);
         }
         return (proceed: true, details: details);
@@ -574,13 +447,9 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
       });
       if (mounted) setState(() => _selectedParty = updated);
     } catch (_) {
-      // Swallowed on purpose — see the call site.
     }
   }
 
-  /// Snapshot of what is about to be sent, for the pre-issue review. Built
-  /// from the live form rather than re-read from anywhere, so it can't show
-  /// something different from what gets saved.
   InvoicePreviewData _previewData() {
     final l10n = AppLocalizations.of(context);
     final isSale = _type == 'SALE';
@@ -641,8 +510,6 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
   static String _qtyLabel(double q) =>
       q == q.roundToDouble() ? q.toStringAsFixed(0) : q.toStringAsFixed(2);
 
-  /// Same labels the document-type pills use, so the preview names the
-  /// document exactly as the form did.
   String _documentTypeLabel(String value) {
     final l10n = AppLocalizations.of(context);
     return switch (value) {
@@ -654,16 +521,6 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     };
   }
 
-  /// Saves the form. When [confirm] is true the backend (create path)
-  /// or this method (edit path) immediately posts the stock movement
-  /// too — saves the merchant a separate Confirm round-trip.
-  ///
-  /// Outcome routing:
-  ///   - save-as-draft → pop true; list refreshes.
-  ///   - save + confirm OK → pop true with a "confirmed" snackbar.
-  ///   - save OK but confirm failed (insufficient stock) → push the
-  ///     just-created draft's detail page so the merchant lands on the
-  ///     row they need to fix, with a snackbar explaining why.
   Future<void> _save({required bool confirm}) async {
     final l10n = AppLocalizations.of(context);
     if (!_formKey.currentState!.validate()) return;
@@ -674,16 +531,9 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
       return;
     }
 
-    // Recipient completeness is checked HERE, before the request, because the
-    // server's Rule 46(e)/(f) rejection is unactionable from this screen — the
-    // merchant would just see "Recipient address is required" with nowhere to
-    // put one.
     final gate = await _recipientGate();
     if (!gate.proceed || !mounted) return;
 
-    // Confirming issues the document, posts the stock movement and burns an
-    // invoice number. Saving a draft does none of that, so only the
-    // irreversible path gets a review step.
     if (confirm) {
       final approved = await showInvoicePreviewSheet(context, _previewData());
       if (!approved || !mounted) return;
@@ -702,9 +552,6 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
               'unitPrice': i.unitPrice,
               'taxPercent': i.taxPercent,
               'discount': i.discount,
-              // GST-5 — send the tax convention per line so the backend engine
-              // computes the same total the preview shows. Defaults to false
-              // (exclusive) so existing merchant manual invoices are unchanged.
               'isPriceInclusive': _isPriceInclusive,
             },
           )
@@ -729,8 +576,6 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
         );
         _dirty = false;
         if (confirm) {
-          // Edit path runs confirm as a follow-up call so the create
-          // and the status flip aren't double-coupled at the API level.
           try {
             await provider.updateStatus(existing.id, 'CONFIRMED');
             if (!mounted) return;
@@ -786,8 +631,6 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
         navigator.pop(true);
         return;
       }
-      // Auto-confirm failed — land the merchant on the draft so they
-      // can address the underlying issue (usually insufficient stock).
       messenger.showSnackBar(
         SnackBar(
           content: Text(
@@ -859,8 +702,6 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
             ),
             child: Row(
               children: [
-                // Draft = secondary. No icon so the label always sits on one
-                // line; the taller height keeps a comfortable tap target.
                 Expanded(
                   flex: 2,
                   child: OutlinedButton(
@@ -918,15 +759,10 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
             ),
           ),
         ),
-        // Freeze inputs while saving — edits made mid-flight would be
-        // silently dropped from the payload that's already on the wire.
         body: AbsorbPointer(
           absorbing: _isSaving,
           child: Form(
             key: _formKey,
-            // Single scroll surface: the hero illustration scrolls away with the
-            // form (it used to be pinned above a nested ListView). Content passes
-            // behind the frosted app bar via extendBodyBehindAppBar.
             child: ListView(
               padding: EdgeInsets.zero,
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -965,10 +801,6 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                           ),
                         ],
                         selected: {_type},
-                        // Type is immutable once an invoice exists — switching it
-                        // would change the number prefix (INV ↔ PUR) and stock
-                        // direction, so backend rejects it. Lock the toggle in
-                        // edit mode rather than silently failing on save.
                         onSelectionChanged: _isEditing
                             ? null
                             : (v) => setState(() {
@@ -1051,12 +883,6 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                         ],
                       ],
 
-                      // Place of supply is DERIVED, never asked: the first two
-                      // digits of a GSTIN are the holder's state code, so
-                      // asking for it again invites a mismatch between what
-                      // the merchant picked and what the number says. Shown
-                      // read-only because it's the reason the tax below splits
-                      // into CGST+SGST or IGST.
                       const SizedBox(height: AppSizes.md),
                       _PlaceOfSupplyRow(
                         placeOfSupply: _placeOfSupply,
@@ -1075,10 +901,6 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                         padding: const EdgeInsets.only(bottom: AppSizes.sm),
                       ),
 
-                      // Opens the catalogue as a sheet rather than searching
-                      // inline: the sheet browses the whole list without
-                      // typing, and stays up across several taps so building
-                      // a multi-line invoice doesn't reopen it per product.
                       Row(
                         children: [
                           Expanded(
@@ -1172,12 +994,6 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                           padding: const EdgeInsets.only(bottom: AppSizes.sm),
                         ),
                         if (_type == 'SALE') ...[
-                          // Document-type toggle. Tax Invoice is the default; Bill of
-                          // Supply is for composition / nil-rated dealers; Estimate and
-                          // Proforma are pre-supply offers (both take the EST- series and
-                          // convert into a real tax invoice via the detail page). Credit
-                          // and debit notes are NOT here — they are Sec 34 adjustments
-                          // raised against an existing invoice from its detail screen.
                           Wrap(
                             spacing: AppSizes.sm,
                             runSpacing: AppSizes.sm,
@@ -1201,10 +1017,6 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                           ),
                           const SizedBox(height: AppSizes.md),
                         ],
-                        // Money summary grouped on its own surface so the running total
-                        // reads as a distinct panel, not more canvas rows. The tax-
-                        // convention toggle lives here too — it directly drives the
-                        // numbers below it.
                         AppCard(
                           padding: const EdgeInsets.symmetric(
                             horizontal: AppSizes.lg,
@@ -1212,9 +1024,6 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                           ),
                           child: Column(
                             children: [
-                              // GST-5 — tax convention toggle. OFF (default) = unit
-                              // prices are pre-tax and GST is added on top. ON = entered
-                              // prices already include GST and the engine backs it out.
                               SwitchListTile.adaptive(
                                 contentPadding: EdgeInsets.zero,
                                 dense: true,
@@ -1242,10 +1051,6 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                 label: l10n.invoicesSubtotal,
                                 value: _subtotal,
                               ),
-                              // GST split: same formula as the backend — line.taxableValue
-                              // = qty*price − discount, line tax = taxableValue*rate/100.
-                              // Sum across lines: one IGST row (interstate) or a 50/50
-                              // CGST/SGST split (intrastate).
                               if (_isInterstate)
                                 _TotalRow(label: 'IGST', value: _totalTax)
                               else ...[
@@ -1302,7 +1107,6 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                         const SizedBox(height: AppSizes.xxl),
                       ],
 
-                      // Note
                       TextFormField(
                         controller: _note,
                         decoration: InputDecoration(
@@ -1373,9 +1177,6 @@ class _SelectedVendorCard extends StatelessWidget {
   }
 }
 
-/// Read-only place-of-supply row. Styled as a disabled form field so it sits
-/// in the same rhythm as the inputs above it, while making it obvious there's
-/// nothing here to fill in.
 class _PlaceOfSupplyRow extends StatelessWidget {
   const _PlaceOfSupplyRow({
     required this.placeOfSupply,
@@ -1388,12 +1189,9 @@ class _PlaceOfSupplyRow extends StatelessWidget {
   final ({String? code, _PosSource source}) placeOfSupply;
   final bool isInterstate;
 
-  /// Whether to offer the manual picker at all — false whenever the
-  /// counterparty's own GSTIN or address already answers the question.
   final bool canOverride;
   final VoidCallback onOverride;
 
-  /// Non-null only while a manual answer is in force.
   final VoidCallback? onClearOverride;
 
   @override
@@ -1422,8 +1220,6 @@ class _PlaceOfSupplyRow extends StatelessWidget {
         labelText: l10n.invoicesPlaceOfSupply,
         helperText: helper,
         helperMaxLines: 2,
-        // A filled, non-focusable box reads as "computed for you" rather than
-        // an input someone forgot to enable.
         filled: true,
         fillColor: AppColors.heroPanel,
         enabled: false,
@@ -1462,9 +1258,6 @@ class _PlaceOfSupplyRow extends StatelessWidget {
               ),
             ),
           ),
-          // Offered only when the shop's own state was a guess. A GSTIN or a
-          // saved address IS the answer, and overriding those is how tax
-          // lands under the wrong head.
           if (canOverride) ...[
             const SizedBox(width: AppSizes.xs),
             TextButton(

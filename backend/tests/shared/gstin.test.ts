@@ -5,11 +5,6 @@ import {
   isValidGstin,
 } from '../../src/shared/validation/indian.js';
 
-/// The 15th character is a mod-36 check digit over the first 14. These two are
-/// the GSTINs used as worked examples in GSTN's own documentation, so they are
-/// the fixture that proves the algorithm rather than the algorithm proving
-/// itself: both round-trip only if the weighting and base-36 digit sum match
-/// the published spec.
 const REAL_GSTINS = ['27AAPFU0939F1ZV', '19AAACI1681G1ZM'];
 
 describe('gstinCheckDigit', () => {
@@ -43,17 +38,12 @@ describe('isValidGstin', () => {
   });
 
   it('rejects a single-character typo the shape check lets through', () => {
-    // One digit changed. GSTIN_REGEX still matches, which is exactly why the
-    // checksum has to run: this is the failure mode that reaches a filed
-    // return as the buyer's credit denied and the seller's GSTR-1 mismatched.
     const typo = '27AAPFU0939F1ZX';
     expect(GSTIN_REGEX.test(typo)).toBe(true);
     expect(isValidGstin(typo)).toBe(false);
   });
 
   it('rejects a two-digit prefix that is not a real state code', () => {
-    // "99" is two digits but no state was ever notified under it, so the
-    // place-of-supply derived from it would be meaningless.
     const badState = '99AAPFU0939F1ZV';
     expect(GSTIN_REGEX.test(badState)).toBe(true);
     expect(isValidGstin(badState)).toBe(false);

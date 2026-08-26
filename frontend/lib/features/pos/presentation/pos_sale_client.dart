@@ -16,11 +16,6 @@ class _QueuedScan {
   final String code;
 }
 
-/// Drives one POS sale on the phone ENTIRELY over the WebSocket: every op is a
-/// `{t:'cmd', reqId, op, …}` frame answered with `{t:'res', reqId, ok, data}`;
-/// the other till's changes arrive as version-nudge events and we re-fetch with
-/// a `snapshot` command. Server is the source of truth. Functional collaborators,
-/// state held here (a ChangeNotifier is Flutter's idiom, not domain logic).
 class PosSaleClient extends ChangeNotifier {
   PosSaleClient(ApiClient client) : _ds = PosRemoteDataSource(client);
 
@@ -44,13 +39,11 @@ class PosSaleClient extends ChangeNotifier {
   String? _checkoutInvoiceId;
   String? get checkoutInvoiceId => _checkoutInvoiceId;
 
-  // Amount of an in-flight online payment (set while Razorpay Checkout is open).
   double? _onlineAmount;
 
   double? _onlinePaidAmount;
   double? get onlinePaidAmount => _onlinePaidAmount;
 
-  /// Terminal states only — AWAITING_PAYMENT (a payment is outstanding) is NOT closed.
   bool get isClosed =>
       _snapshot != null && (_snapshot!.status == 'CHECKED_OUT' || _snapshot!.status == 'VOIDED');
 
@@ -72,15 +65,13 @@ class PosSaleClient extends ChangeNotifier {
 
   void _apply(Map<String, dynamic> data) {
     final snap = SaleSnapshot.fromJson(data);
-    if (snap.version < _appliedVersion) return; // drop stale
+    if (snap.version < _appliedVersion) return;
     _appliedVersion = snap.version;
     _saleId = snap.saleId;
     _snapshot = snap;
     notifyListeners();
   }
 
-  /// Send a command and await its `{ok, data|error}` reply. Resolves
-  /// `{ok:false, error:'offline'|'timeout'}` when the socket can't carry it.
   Future<Map<String, dynamic>> _send(String op, [Map<String, dynamic> args = const {}]) {
     final channel = _channel;
     if (channel == null) return Future.value({'ok': false, 'error': 'offline'});
@@ -120,7 +111,6 @@ class PosSaleClient extends ChangeNotifier {
       }
       _setStatus(PosConnStatus.live);
       _sub = channel.stream.listen(_onData, onDone: _onDone, onError: (_) => _onDone());
-      // First connect → open (reuses an empty sale); reconnect → resume same sale.
       final res = _saleId == null ? await _send('open') : await _send('snapshot', {'saleId': _saleId});
       if (res['ok'] == true) _apply(res['data'] as Map<String, dynamic>);
       unawaited(_flushOutbox());
@@ -146,7 +136,6 @@ class PosSaleClient extends ChangeNotifier {
       return;
     }
     final type = msg['type'];
-    // An online payment settled (webhook → pos.checkout) → mark paid.
     if (type == 'pos.checkout' && msg['saleId']?.toString() == _saleId && _onlineAmount != null) {
       _onlinePaidAmount = _onlineAmount;
       _onlineAmount = null;
@@ -162,7 +151,6 @@ class PosSaleClient extends ChangeNotifier {
     _sub?.cancel();
     _sub = null;
     _channel = null;
-    // Fail in-flight commands so callers don't hang.
     for (final entry in _pending.entries) {
       _pendingTimers.remove(entry.key)?.cancel();
       if (!entry.value.isCompleted) entry.value.complete({'ok': false, 'error': 'disconnected'});
@@ -186,21 +174,18 @@ class PosSaleClient extends ChangeNotifier {
     if (res['ok'] == true && !_disposed) _apply(res['data'] as Map<String, dynamic>);
   }
 
-  /// Hold the current bill (it stays OPEN, recallable) and start a fresh cart.
   Future<void> holdAndNew() async {
-    _appliedVersion = -1; // switching sales — accept the new lower-version snapshot
+    _appliedVersion = -1;
     final res = await _send('open');
     if (res['ok'] == true && !_disposed) _apply(res['data'] as Map<String, dynamic>);
   }
 
-  /// Recall a parked bill by id (make it the active cart).
   Future<void> recall(String saleId) async {
     _appliedVersion = -1;
     final res = await _send('snapshot', {'saleId': saleId});
     if (res['ok'] == true && !_disposed) _apply(res['data'] as Map<String, dynamic>);
   }
 
-  /// Catalogue search for the "add without a barcode" picker.
   Future<List<Map<String, dynamic>>> searchProducts(String term) async {
     final res = await _send('search', {'term': term});
     if (res['ok'] != true) return const [];
@@ -208,7 +193,6 @@ class PosSaleClient extends ChangeNotifier {
     return data is List ? data.cast<Map<String, dynamic>>() : const [];
   }
 
-  /// Add a product by id (from search), bumping its line quantity.
   Future<void> addItem(String productId, {double quantity = 1}) async {
     if (_saleId == null) return;
     _error = null;
@@ -222,7 +206,6 @@ class PosSaleClient extends ChangeNotifier {
     }
   }
 
-  /// The parked (held) bills with items.
   Future<List<Map<String, dynamic>>> listOpen() async {
     final res = await _send('listOpen');
     if (res['ok'] != true) return const [];
@@ -230,13 +213,6 @@ class PosSaleClient extends ChangeNotifier {
     return data is List ? data.cast<Map<String, dynamic>>() : const [];
   }
 
-  // ── actions ──
-
-  /// Transport-level failures produced by [_send] / [_onDone] — the ONLY cases
-  /// where a scan genuinely never reached the server and must be queued for
-  /// replay on reconnect. A server that *replies* `ok:false` (no open shift,
-  /// override required, a business error, …) is NOT offline — its message must
-  /// surface as-is instead of a misleading "queued, will sync" banner.
   static const _transportErrors = {'offline', 'disconnected', 'timeout'};
 
   Future<void> scan(String code) async {
@@ -254,17 +230,13 @@ class PosSaleClient extends ChangeNotifier {
       } else {
         _apply(dataMap);
       }
-      // Drain anything queued during a transient blip now that we're through.
       if (_outbox.isNotEmpty) unawaited(_flushOutbox());
       return;
     }
-    // ok:false — only queue when the socket actually couldn't carry the command.
     if (_transportErrors.contains(res['error'])) {
       _outbox.add(_QueuedScan(opId, c));
       _error = 'Offline — scan queued, will sync on reconnect.';
     } else {
-      // A live server rejection (e.g. "Open a shift before you can scan or
-      // sell.", override required). Show the real reason, don't queue it.
       _error = _human(res['error']);
     }
     notifyListeners();
@@ -357,10 +329,6 @@ class PosSaleClient extends ChangeNotifier {
     }
   }
 
-  /// Start an online payment: locks the cart + creates a Razorpay order. Returns
-  /// the pay session ({ clientParams, amount, … }) for the page to open Razorpay
-  /// Checkout, or null on error (with `error` set). The sale settles on the
-  /// payment.captured webhook (pos.checkout event) / a follow-up [syncOnline].
   Future<Map<String, dynamic>?> startOnline() async {
     if (_saleId == null) return null;
     _error = null;
@@ -369,7 +337,7 @@ class PosSaleClient extends ChangeNotifier {
     if (res['ok'] == true) {
       final d = res['data'] as Map<String, dynamic>;
       _onlineAmount = (d['amount'] as num?)?.toDouble();
-      unawaited(_refresh()); // sale is now AWAITING_PAYMENT
+      unawaited(_refresh());
       return d;
     }
     _error = _human(res['error']);
@@ -377,7 +345,6 @@ class PosSaleClient extends ChangeNotifier {
     return null;
   }
 
-  /// Settle backstop after the Razorpay sheet succeeds (webhook may be delayed).
   Future<void> syncOnline() async {
     if (_saleId == null) return;
     final res = await _send('syncOnline', {'saleId': _saleId});
@@ -385,7 +352,6 @@ class PosSaleClient extends ChangeNotifier {
     if (res['ok'] == true) _apply(res['data'] as Map<String, dynamic>);
   }
 
-  /// Cancel an outstanding online payment: unlock the cart back to OPEN.
   Future<void> cancelOnline() async {
     if (_saleId == null) return;
     _onlineAmount = null;

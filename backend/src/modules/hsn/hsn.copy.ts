@@ -3,72 +3,30 @@ import path from 'node:path';
 import { z } from 'zod';
 import { logger } from '../../shared/logging/logger.js';
 
-/// Loader for the translatable HSN copy catalogues.
-///
-/// The words a merchant reads and searches by live in `copy/hsn.copy.<locale>.json`,
-/// keyed by code, deliberately apart from the rates in the database. Two
-/// properties fall out of that split and both matter:
-///
-///   * A translation PR can't touch a tax figure, and a rate change can't
-///     silently invalidate a translation.
-///   * Adding "kameez" as a search term is a content edit, not a migration.
-///
-/// **Aliases are merged across every locale.** A merchant on the English UI
-/// still types `kameez`, and one on the Hindi UI still types `shirt`. Only the
-/// display strings (name, definition) are locale-scoped; matching sees all of
-/// them at once, so each spelling is listed exactly once in whichever file it
-/// naturally belongs to.
-///
-/// Loaded once at import and held in memory. The whole catalogue is a few
-/// hundred small objects — an index build measured in microseconds — so
-/// there's no cache to invalidate and no round trip on the typing path.
-
 const entrySchema = z.object({
   name: z.string().min(1),
   definition: z.string().optional(),
   aliases: z.array(z.string().min(1)).optional(),
-  /// Cross-references to the neighbours this code gets confused with, as
-  /// `code → label`. Half of misclassification isn't failing to find something,
-  /// it's confidently picking the wrong one — this is what redirects them.
   notHere: z.record(z.string(), z.string()).optional(),
 });
 
 const catalogueSchema = z.object({
   locale: z.string().min(2),
-  // Free-form note block at the top of each file; ignored here.
   _readme: z.array(z.string()).optional(),
   entries: z.record(z.string(), entrySchema),
 });
 
 export type HsnCopyEntry = z.infer<typeof entrySchema>;
 
-/// Locales we ship copy for. Adding one is: drop in the JSON, add it here.
 const LOCALES = ['en', 'hi'] as const;
 export type HsnLocale = (typeof LOCALES)[number];
 export const DEFAULT_LOCALE: HsnLocale = 'en';
 
-/// Read from disk rather than `import`ing the JSON: `resolveJsonModule` would
-/// inline these into the bundle and pull every JSON in the tree into the TS
-/// program. Reading at runtime also means a translator's edit is visible on a
-/// dev restart without a recompile.
-///
-/// `tsc` doesn't copy non-TS assets, so `npm run build` copies this directory
-/// into `dist/` alongside the compiled output — if that step is ever dropped,
-/// the loader logs a warning and every locale falls back to tariff wording
-/// rather than the process failing to boot.
 const COPY_DIR = path.join(__dirname, 'copy');
 
-/// code → locale → copy
 const byCode = new Map<string, Map<HsnLocale, HsnCopyEntry>>();
-/// normalised alias → codes that claim it. One alias can legitimately point at
-/// several codes ("bag" is both luggage and packaging sacks); ranking sorts it
-/// out downstream rather than the loader picking a winner.
 const aliasIndex = new Map<string, Set<string>>();
 
-/// Lowercase, strip punctuation, collapse whitespace. Applied identically to
-/// stored aliases and to incoming queries — the only way the two can meet.
-/// Devanagari passes through untouched: the class being stripped is ASCII
-/// punctuation, not "non-Latin".
 export function normalizeTerm(raw: string): string {
   return raw
     .toLowerCase()
@@ -77,8 +35,6 @@ export function normalizeTerm(raw: string): string {
     .trim();
 }
 
-/// True when `needle` appears in `haystack` as a whole space-delimited word.
-/// Both sides are already normalised to single spaces by [normalizeTerm].
 function containsWord(haystack: string, needle: string): boolean {
   const at = haystack.indexOf(needle);
   if (at < 0) return false;
@@ -107,9 +63,6 @@ function load(): void {
         fs.readFileSync(path.join(COPY_DIR, `hsn.copy.${locale}.json`), 'utf8'),
       );
     } catch (e) {
-      // A missing catalogue degrades that locale to the fallback rather than
-      // taking the process down — the rates, which are what actually matter,
-      // don't live here.
       logger.warn({ locale, err: (e as Error).message }, 'hsn copy: catalogue not loaded');
       continue;
     }
@@ -129,7 +82,6 @@ function load(): void {
       }
       perLocale.set(locale, entry);
 
-      // The name itself is a search term — merchants type what they see.
       indexAlias(entry.name, code);
       for (const alias of entry.aliases ?? []) indexAlias(alias, code);
     }
@@ -144,17 +96,12 @@ load();
 
 export function resolveLocale(raw: string | undefined): HsnLocale {
   if (!raw) return DEFAULT_LOCALE;
-  // Accept "hi-IN", "hi_IN", "hi" — only the primary subtag is meaningful here.
   const primary = raw.toLowerCase().split(/[-_]/)[0];
   return (LOCALES as readonly string[]).includes(primary)
     ? (primary as HsnLocale)
     : DEFAULT_LOCALE;
 }
 
-/// Copy for a code in the requested locale, falling back field-by-field to
-/// English. A half-translated entry therefore shows a Hindi name with an
-/// English definition rather than dropping to English wholesale — the merchant
-/// gets whatever has actually been translated.
 export function copyFor(code: string, locale: HsnLocale = DEFAULT_LOCALE): HsnCopyEntry | null {
   const perLocale = byCode.get(code);
   if (!perLocale) return null;
@@ -170,12 +117,6 @@ export function copyFor(code: string, locale: HsnLocale = DEFAULT_LOCALE): HsnCo
   };
 }
 
-/// Codes whose aliases match the query, ranked: exact alias hit first, then
-/// prefix, then substring. Cheap enough to run on every keystroke — it's a Map
-/// probe plus a scan of a few hundred short keys.
-///
-/// Returns codes only; the caller joins them against the rate table, because
-/// copy alone can't say whether a code is currently ratable.
 export function searchCopy(query: string, limit = 20): string[] {
   const q = normalizeTerm(query);
   if (!q) return [];
@@ -190,12 +131,6 @@ export function searchCopy(query: string, limit = 20): string[] {
   if (exact) for (const code of exact) bump(code, 0);
   for (const [alias, codes] of aliasIndex) {
     if (alias === q) continue;
-    // 1 = the alias starts with what they typed (type-ahead: "sham" → "shampoo").
-    // 2 = the query appears as a whole word inside it ("oil" → "hair oil").
-    //
-    // Whole-word, not raw substring: a plain `includes` matched "oil" against
-    // "toilet paper" and put tissues above cooking oil. Aliases are normalised
-    // to single-spaced words, so boundary checking is three string compares.
     const score = alias.startsWith(q) ? 1 : containsWord(alias, q) ? 2 : -1;
     if (score < 0) continue;
     for (const code of codes) bump(code, score);
@@ -208,33 +143,11 @@ export function searchCopy(query: string, limit = 20): string[] {
     .map(([code]) => code);
 }
 
-/// Codes whose alias appears **inside** the given text as a whole phrase.
-///
-/// [searchCopy] answers "which aliases start with or contain what the merchant
-/// typed" — right for a search box, wrong for a product name. A real product
-/// name is longer than the alias: "sarson ka tel 1L" *contains* the alias
-/// "sarson ka tel", and checking only the other direction made mustard oil
-/// invisible while generic oils (matching the bare word "tel") won.
-///
-/// Ranked by alias length, longest first: a match on "sarson ka tel" is a far
-/// more specific claim than one on "tel", so specificity is the signal, not
-/// word position or rarity — both of which get it wrong on one name shape or
-/// the other.
 export function matchAliasesInText(text: string, limit = 20): string[] {
   const haystack = normalizeTerm(text);
   if (!haystack) return [];
-  /// code → the length of the **longest** alias of that code found in the text.
-  ///
-  /// Longest, not first-seen. A code usually has several aliases that all match
-  /// ("pen" and "ball pen" both sit inside "ball pen"), and the index is walked
-  /// in insertion order — so keeping whichever turned up first recorded 9608 at
-  /// the length of "pen" (3) and let 9506's "ball" (4) outrank it. A merchant
-  /// typing "ball pen" got sports equipment. The specificity this function
-  /// ranks by is the length of the *best* alias, not an arbitrary one.
   const best = new Map<string, number>();
   for (const [alias, codes] of aliasIndex) {
-    // Single characters and two-letter fragments match far too much to be
-    // evidence of anything.
     if (alias.length < 3) continue;
     if (!containsWord(haystack, alias)) continue;
     for (const code of codes) {
@@ -247,12 +160,6 @@ export function matchAliasesInText(text: string, limit = 20): string[] {
     .map(([code]) => code);
 }
 
-/// The full corpus, field by field, across every locale.
-///
-/// Kept structured rather than pre-joined because the retrieval index weights
-/// the fields differently: a hit on an alias is a much stronger claim than a
-/// hit somewhere in a definition, and flattening to one string throws that
-/// distinction away.
 export function corpus(): Array<{
   code: string;
   names: string[];
@@ -275,16 +182,10 @@ export function corpus(): Array<{
   return out;
 }
 
-/// Every code that carries copy, for the embedding build. Sorted so the
-/// generated vector file is byte-stable across runs and diffs cleanly.
 export function codesWithCopy(): string[] {
   return [...byCode.keys()].sort();
 }
 
-/// The text an embedding should be built from: name, definition and aliases
-/// together, so a semantic query matches on meaning rather than the label
-/// alone. English and Hindi are concatenated on purpose — one vector per code
-/// that answers queries in either language.
 export function embeddingTextFor(code: string): string {
   const perLocale = byCode.get(code);
   if (!perLocale) return '';

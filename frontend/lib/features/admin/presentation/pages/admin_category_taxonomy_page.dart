@@ -15,11 +15,6 @@ import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/constants/app_curves.dart';
 
-/// Platform-admin editor for the marketplace taxonomy tree. Each node
-/// is rendered as an expandable tile; tapping it opens an inline editor
-/// for rename / re-parent / activate / delete. Re-parenting uses the
-/// flat list as the "Parent" dropdown (filtered to avoid offering the
-/// node's own subtree, which the backend would reject anyway as a cycle).
 class AdminCategoryTaxonomyPage extends StatefulWidget {
   const AdminCategoryTaxonomyPage({super.key});
 
@@ -33,7 +28,7 @@ class _AdminCategoryTaxonomyPageState extends State<AdminCategoryTaxonomyPage> {
   final _scrollCtrl = ScrollController();
   late final ScrollBoundaryHaptics _scrollHaptics;
   List<CategoryNode> _tree = [];
-  List<Category> _flat = []; // flattened for the parent picker
+  List<Category> _flat = [];
   bool _loading = true;
   String? _error;
   final Set<String> _expanded = {};
@@ -74,8 +69,6 @@ class _AdminCategoryTaxonomyPageState extends State<AdminCategoryTaxonomyPage> {
         _tree = tree;
         _flat = flat;
         _loading = false;
-        // Expand all root nodes by default so the page isn't a wall
-        // of collapsed cards.
         for (final n in tree) {
           _expanded.add(n.category.id);
         }
@@ -117,9 +110,6 @@ class _AdminCategoryTaxonomyPageState extends State<AdminCategoryTaxonomyPage> {
           child: _CategoryEditorSheet(
             existing: existing,
             initialParentId: parentId,
-            // Filter out `existing` itself + any of its descendants so
-            // the parent picker never lets the admin pick a value the
-            // backend will reject as a cycle.
             availableParents: existing == null
                 ? _flat
                 : _flat
@@ -136,9 +126,6 @@ class _AdminCategoryTaxonomyPageState extends State<AdminCategoryTaxonomyPage> {
     );
   }
 
-  /// O(n) walk up via `parentId`. Returns true iff `candidateId` lives
-  /// somewhere under `ancestorId`. Used to scrub the parent-picker
-  /// option list during re-parenting.
   bool _isDescendantOf(String candidateId, String ancestorId) {
     String? cursor = candidateId;
     for (int i = 0; i < 32 && cursor != null; i++) {
@@ -252,11 +239,6 @@ class _AdminCategoryTaxonomyPageState extends State<AdminCategoryTaxonomyPage> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton widgets — shown while the taxonomy tree is loading.
-// ---------------------------------------------------------------------------
-
-/// A single shimmer tile that mirrors the card layout of [_CategoryTreeTile].
 class _CategoryTileSkeleton extends StatelessWidget {
   const _CategoryTileSkeleton();
 
@@ -274,7 +256,6 @@ class _CategoryTileSkeleton extends StatelessWidget {
           padding: const EdgeInsets.all(AppSizes.sm),
           child: Row(
             children: [
-              // Chevron icon skeleton
               const SizedBox(
                 width: AppSizes.iconMd + AppSizes.sm * 2,
                 height: AppSizes.iconMd + AppSizes.sm * 2,
@@ -286,14 +267,12 @@ class _CategoryTileSkeleton extends StatelessWidget {
                   ),
                 ),
               ),
-              // Category icon box (32×32 coloured square)
               const AppShimmerBox(
                 width: 32,
                 height: 32,
                 radius: AppSizes.radiusSm,
               ),
               const SizedBox(width: AppSizes.sm),
-              // Title + subtitle lines
               const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -304,7 +283,6 @@ class _CategoryTileSkeleton extends StatelessWidget {
                   ],
                 ),
               ),
-              // Action icon placeholders
               const AppShimmerBox(
                 width: AppSizes.iconMd,
                 height: AppSizes.iconMd,
@@ -324,8 +302,6 @@ class _CategoryTileSkeleton extends StatelessWidget {
   }
 }
 
-/// Renders 5 skeleton tiles inside a scrollable list, mirroring the real
-/// category list while [_loading] is true and [_tree] is still empty.
 class _CategoryListSkeleton extends StatelessWidget {
   const _CategoryListSkeleton();
 
@@ -344,10 +320,6 @@ class _CategoryListSkeleton extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-
-/// Single tile in the tree. Recursively renders children inside an
-/// AnimatedSize so the expand/collapse animation is consistent.
 class _CategoryTreeTile extends StatelessWidget {
   const _CategoryTreeTile({
     required this.node,
@@ -566,7 +538,6 @@ class _CategoryEditorSheetState extends State<_CategoryEditorSheet> {
             'imageUrl': _imageUrl.text.trim(),
           'sortOrder': int.tryParse(_sortOrder.text) ?? 0,
           'isActive': _isActive,
-          // Always send parentId — null means re-parent to root.
           'parentId': _parentId,
         });
       } else {

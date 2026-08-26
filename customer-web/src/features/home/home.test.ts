@@ -21,7 +21,6 @@ describe("format", () => {
   });
 });
 
-// A minimal product row shaped like the backend's Prisma projection (Decimal as string).
 function productRow(id: number, name = `P${id}`) {
   return {
     id,

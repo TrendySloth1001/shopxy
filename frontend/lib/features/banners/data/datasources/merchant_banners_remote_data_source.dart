@@ -4,9 +4,6 @@ import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/features/admin/data/models/banner.dart';
 import 'package:shopxy/features/banners/data/models/banner_product.dart';
 
-/// Merchant-side banner CRUD against the slim `/me/banners` API. Reuses
-/// the slim [AdminBanner]/[BannerPlacement] model — the wire shape is
-/// identical to the admin endpoint.
 class MerchantBannersRemoteDataSource {
   MerchantBannersRemoteDataSource(this._client);
   final ApiClient _client;
@@ -45,7 +42,6 @@ class MerchantBannersRemoteDataSource {
     }
   }
 
-  /// Curated products pinned to a banner, in display order.
   Future<List<BannerProductRow>> listBannerProducts(String bannerId) async {
     final res = await _client.get('/me/banners/$bannerId/products');
     if (res.statusCode != 200) {
@@ -57,9 +53,6 @@ class MerchantBannersRemoteDataSource {
         .toList();
   }
 
-  /// PUT replaces the entire pinned-product list — simpler and safer than
-  /// diffing on the client. Empty [items] clears the list. Returns the
-  /// re-read rows (with server-computed sale prices).
   Future<List<BannerProductRow>> replaceBannerProducts(
     String bannerId,
     List<BannerProductInput> items,
@@ -87,7 +80,6 @@ class MerchantBannersRemoteDataSource {
   }
 }
 
-/// One product to pin to a banner, as sent to the PUT endpoint.
 class BannerProductInput {
   const BannerProductInput({
     required this.productId,

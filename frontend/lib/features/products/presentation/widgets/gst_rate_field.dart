@@ -7,17 +7,6 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 
-/// GST rate — a **readout**, not an input.
-///
-/// This is the point of the whole HSN feature. Two free-text boxes that had to
-/// agree (a code and a rate, with nothing connecting them) is what let two
-/// shops bill the identical shirt at different rates. Here the merchant
-/// classifies, and the rate is a consequence they can read and check.
-///
-/// The manual path still exists, because nil exceptions and advance rulings are
-/// real — but it's a deliberate act, it's visibly flagged when it disagrees
-/// with the code, and the server records it as MANUAL so a divergence becomes a
-/// report rather than a discovery.
 class GstRateField extends StatelessWidget {
   const GstRateField({
     super.key,
@@ -30,14 +19,11 @@ class GstRateField extends StatelessWidget {
 
   final TextEditingController controller;
 
-  /// True when the merchant has taken the rate off the code.
   final bool manual;
   final ValueChanged<bool> onManualChanged;
 
-  /// What the code resolved to, or null when no code is set / none matched.
   final HsnResolution? resolution;
 
-  /// A code was entered but the master carries no rate for it.
   final bool unknownCode;
 
   @override
@@ -46,8 +32,6 @@ class GstRateField extends StatelessWidget {
     final theme = Theme.of(context);
     final rate = resolution;
 
-    // A manual rate that happens to equal the code's rate isn't a divergence
-    // worth shouting about — only flag a real disagreement.
     final typed = double.tryParse(controller.text.trim());
     final diverges =
         manual && rate != null && typed != null && (typed - rate.gstRate).abs() > 0.005;
@@ -67,7 +51,6 @@ class GstRateField extends StatelessWidget {
         else
           _Readout(rate: rate, unknownCode: unknownCode),
 
-        // Where the number came from — never an unexplained figure.
         if (!manual && rate != null) ...[
           const SizedBox(height: AppSizes.xs),
           _Note(
@@ -113,8 +96,6 @@ class GstRateField extends StatelessWidget {
           onPressed: () {
             final next = !manual;
             onManualChanged(next);
-            // Leaving manual mode hands the rate back to the code, so the field
-            // can't keep showing a stale hand-typed number.
             if (!next && rate != null) controller.text = formatHsnRate(rate.gstRate);
           },
           icon: AppIcon(AppIcons.editOutlined, size: AppSizes.iconSm),
@@ -133,8 +114,6 @@ class GstRateField extends StatelessWidget {
   }
 }
 
-/// The derived rate, styled to read as output rather than an empty field
-/// waiting to be filled.
 class _Readout extends StatelessWidget {
   const _Readout({required this.rate, required this.unknownCode});
   final HsnResolution? rate;

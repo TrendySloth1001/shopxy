@@ -1,10 +1,3 @@
-/**
- * Linked-account KYC onboarding — creates and tracks a shop's Razorpay Route
- * payout destination. A shop with an ACTIVATED, payouts-enabled linked account
- * is what lets the ORDER split create real transfers; until then its slices are
- * recorded KYC_GATED and retried once activation lands (webhook or the reconcile
- * re-poll). One linked account per shop (the LinkedAccount @@unique(shopId)).
- */
 import prisma from '../../infra/db/prisma.js';
 import { getProvider } from '../payment-gateway/providers/registry.js';
 import {
@@ -13,11 +6,8 @@ import {
 } from '../payment-gateway/ports/payment-provider.port.js';
 
 const PROVIDER = 'RAZORPAY';
-// Don't re-poll the provider for the same shop more often than this (a merchant
-// spamming ?refresh=1 would otherwise burn API quota + trip the shared breaker).
 const REFRESH_MIN_INTERVAL_MS = 30_000;
 
-/** Identity + status returned by the connect-account verify step. */
 export interface ConnectAccountDetails {
   accountId: string;
   kycStatus: string;
@@ -71,19 +61,12 @@ const SELECT = {
 } as const;
 
 export class LinkedAccountsService {
-  /**
-   * Start (or resume) onboarding for a shop. Idempotent: an already-onboarded
-   * shop returns its existing account without creating a second at the provider;
-   * a reserved-but-incomplete row (provider create failed earlier) is retried.
-   */
   async startOnboarding(
     input: Omit<CreateLinkedAccountParams, 'shopId'> & { shopId: number },
   ): Promise<{ ok: true; account: LinkedAccountView } | { error: 'PROVIDER_UNAVAILABLE' }> {
     const provider = getProvider(PROVIDER);
     if (!isOnboardingCapable(provider)) return { error: 'PROVIDER_UNAVAILABLE' };
 
-    // Reserve the per-shop row up front so the @@unique(shopId) serializes
-    // concurrent/retried onboarding to a single row before any provider call.
     await prisma.linkedAccount.upsert({
       where: { shopId: input.shopId },
       create: {
@@ -103,17 +86,13 @@ export class LinkedAccountsService {
       where: { shopId: input.shopId },
       select: SELECT,
     });
-    if (existing?.providerAccountId) return { ok: true, account: view(existing) }; // already onboarded
+    if (existing?.providerAccountId) return { ok: true, account: view(existing) };
 
-    // Claim the provider-create: ONLY the request that flips null→CREATING calls
-    // Razorpay, so a concurrent OR retried request can't mint a duplicate account
-    // (the create is a non-idempotent POST — this is the real serialization).
     const claim = await prisma.linkedAccount.updateMany({
       where: { shopId: input.shopId, providerAccountId: null, kycStatus: { not: 'CREATING' } },
       data: { kycStatus: 'CREATING' },
     });
     if (claim.count !== 1) {
-      // Another request owns the in-flight create — return the current state.
       const row = await prisma.linkedAccount.findUnique({
         where: { shopId: input.shopId },
         select: SELECT,
@@ -133,8 +112,6 @@ export class LinkedAccountsService {
         category: input.category,
         subcategory: input.subcategory,
         registeredAddress: input.registeredAddress,
-        // PAN/GST and bank details are forwarded to the provider and NOT
-        // persisted here (data minimization — they live only at Razorpay).
         pan: input.pan,
         gst: input.gst,
         beneficiaryName: input.beneficiaryName,
@@ -152,7 +129,6 @@ export class LinkedAccountsService {
       });
       return { ok: true, account: view(row) };
     } catch (err) {
-      // Release the claim so a later retry can re-attempt the provider create.
       await prisma.linkedAccount.updateMany({
         where: { shopId: input.shopId, kycStatus: 'CREATING' },
         data: { kycStatus: 'CREATED' },
@@ -161,13 +137,6 @@ export class LinkedAccountsService {
     }
   }
 
-  /**
-   * Re-poll the provider for every not-yet-payout-enabled account and sync — the
-   * scheduled self-heal for a DROPPED or EARLY account.activated webhook (a
-   * seller would otherwise be stranded KYC_GATED on a single missed event). When
-   * an account flips to payouts-enabled, the transfer sweep's KYC retry then
-   * promotes its gated transfers. Per-item isolated; never throws.
-   */
   async reconcilePendingKyc(
     batchSize = 50,
   ): Promise<{ scanned: number; activated: number; errors: number }> {
@@ -188,7 +157,6 @@ export class LinkedAccountsService {
       try {
         const live = await provider.fetchAccountStatus(la.providerAccountId!);
         await prisma.linkedAccount.updateMany({
-          // claim-once on the gate so a concurrent webhook can't be clobbered.
           where: { shopId: la.shopId, payoutsEnabled: false },
           data: { kycStatus: live.kycStatus, payoutsEnabled: live.payoutsEnabled },
         });
@@ -200,12 +168,6 @@ export class LinkedAccountsService {
     return { scanned: pending.length, activated, errors };
   }
 
-  /**
-   * Connect an EXISTING Razorpay linked account by its id — verify step. Fetches
-   * the account so the merchant can confirm it's theirs before storing. A GET on
-   * an id that isn't a linked account under our platform throws → NOT_FOUND.
-   * Writes nothing.
-   */
   async verifyConnect(
     accountId: string,
   ): Promise<{ ok: true; details: ConnectAccountDetails } | { error: 'PROVIDER_UNAVAILABLE' | 'NOT_FOUND' }> {
@@ -218,12 +180,6 @@ export class LinkedAccountsService {
     }
   }
 
-  /**
-   * Connect an existing linked account — confirm step. Re-fetches (authoritative,
-   * never trusts a stale verify), then stores it as the shop's linked account
-   * with mapper-derived KYC/payouts. Rejects if the shop already has a DIFFERENT
-   * provider account (so we never orphan an in-flight wizard account).
-   */
   async confirmConnect(
     shopId: number,
     accountId: string,
@@ -265,16 +221,11 @@ export class LinkedAccountsService {
     return { ok: true, account: view(row) };
   }
 
-  /** The shop's linked account as we last knew it (no provider call). */
   async getStatus(shopId: number): Promise<LinkedAccountView | null> {
     const row = await prisma.linkedAccount.findUnique({ where: { shopId }, select: SELECT });
     return row ? view(row) : null;
   }
 
-  /**
-   * Re-poll the provider for live KYC and sync — the self-heal for a dropped or
-   * early account.* webhook. Returns the (possibly updated) account.
-   */
   async refreshStatus(shopId: number): Promise<LinkedAccountView | null> {
     const row = await prisma.linkedAccount.findUnique({
       where: { shopId },
@@ -282,9 +233,6 @@ export class LinkedAccountsService {
     });
     if (!row) return null;
     if (!row.providerAccountId) return view(row);
-    // Throttle: a merchant spamming ?refresh=1 must not hammer the provider (and
-    // trip the shared circuit breaker for every tenant). Already-activated rows
-    // never need a re-poll.
     if (
       row.payoutsEnabled ||
       Date.now() - row.updatedAt.getTime() < REFRESH_MIN_INTERVAL_MS

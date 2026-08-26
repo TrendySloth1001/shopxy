@@ -3,11 +3,6 @@ import type { ReactNode } from "react";
 import { Divider } from "@/shared/ui/divider";
 import { Banner } from "./banner";
 
-/**
- * Layout for the auth screens. A calm centered column on the canvas — no card,
- * no elevation. The form and the footer link are separated by a hairline
- * divider, not a box (CLAUDE.md §9b).
- */
 export function AuthShell({
   title,
   subtitle,
@@ -56,7 +51,6 @@ export function AuthShell({
   );
 }
 
-/** Inline error banner — hairline error border, no fill, not chunky. */
 export function AuthErrorBanner({ message }: { message: string }) {
   return (
     <div

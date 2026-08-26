@@ -29,33 +29,18 @@ class ShopxyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // The locale provider is created here (not in main.dart) so the i18n wiring
-    // stays out of the shared bootstrap file. It loads asynchronously; until
-    // then the app opens in English.
     return ChangeNotifierProvider<LocalePrefsProvider>(
       create: (_) => LocalePrefsProvider(appPrefsStorage)..load(),
       child: Consumer<LocalePrefsProvider>(
         builder: (context, localePrefs, _) {
-          // Drive the whole app from the selected theme. Setting AppPalette.active
-          // here (before the subtree builds) keeps the AppColors.* getters in sync
-          // with the ThemeData we hand MaterialApp, so custom-painted widgets and
-          // Material components agree.
           final themePrefs = context.watch<ThemePrefsProvider>();
           AppPalette.active = themePrefs.palette;
 
           return MaterialApp(
             title: AppStrings.appName,
-            // Mount the single app-wide offline banner above every gate branch
-            // (splash/login/onboarding/shell). The app has no root Scaffold, so
-            // MaterialApp.builder is the one place that covers them all.
             builder: (context, child) =>
                 OfflineBannerHost(child: child ?? const SizedBox.shrink()),
-            // No scrollbars anywhere: the default MaterialScrollBehavior paints
-            // a scrollbar on desktop/web (and drag surfaces), which clashes
-            // with the floating-glass design. Suppress it app-wide.
             scrollBehavior: const _NoScrollbarBehavior(),
-            // Devanagari languages (Hindi) swap the base font to Noto Sans
-            // Devanagari; English stays on Inter.
             theme: AppTheme.fromPalette(
               themePrefs.palette,
               devanagari: localePrefs.isDevanagari,
@@ -65,10 +50,6 @@ class ShopxyApp extends StatelessWidget {
             locale: localePrefs.locale,
             supportedLocales: AppLocalizations.supportedLocales,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
-            // The guard sits at the home route so its context resolves to the
-            // root navigator: when the session ends it pops every pushed
-            // screen, otherwise logging out from Settings would leave the user
-            // sitting on Settings with the login screen hidden below.
             home: const SessionRouteGuard(child: _AuthGate()),
           );
         },
@@ -77,9 +58,6 @@ class ShopxyApp extends StatelessWidget {
   }
 }
 
-/// Scroll behaviour that never wraps scrollables in a [Scrollbar]. Keeps the
-/// floating-glass UI clean on desktop/web (and drag input) where the default
-/// [MaterialScrollBehavior] would otherwise paint one.
 class _NoScrollbarBehavior extends MaterialScrollBehavior {
   const _NoScrollbarBehavior();
 
@@ -99,28 +77,15 @@ class _AuthGate extends StatelessWidget {
     final auth = context.watch<AuthProvider>();
     if (auth.isLoading) return const _SplashScreen();
     if (!auth.isAuthenticated) return const LoginPage();
-    // A Google-only account without a recovery PIN yet takes priority over
-    // every other gate below — persists across an app restart between
-    // signing up with Google and setting the PIN (see AuthUser
-    // .needsRecoveryPinSetup), not just a one-time post-signup redirect.
     if (auth.user?.needsRecoveryPinSetup ?? false) {
       return const RecoveryPinSetupPage();
     }
-    // A member (owner or staff) has a shopRole → straight into the app.
     if (auth.user?.shopRole != null) return const AppShell();
-    // A brand-new OWNER signs up shopless (the register form no longer asks
-    // for a shop name) → send them to onboarding to name their shop, which
-    // gives them a ShopMember(OWNER) and advances the gate above.
     if (auth.user?.role == 'OWNER') return const OnboardingShopPage();
-    // Otherwise: an invited staffer who must accept first, or a stray shopless
-    // account. The JoinGate sorts that out.
     return const _JoinGate();
   }
 }
 
-/// Decides what a membership-less authenticated account sees: the
-/// join-request screen if they have a pending team invite, otherwise a
-/// "no shop linked" dead-end with a way back out.
 class _JoinGate extends StatefulWidget {
   const _JoinGate();
 
@@ -169,8 +134,6 @@ class _JoinGateState extends State<_JoinGate> {
   }
 }
 
-/// Fallback for an authenticated account with neither a shop nor a
-/// pending invite — e.g. a staffer who was removed, or a stray account.
 class _NoShopScreen extends StatelessWidget {
   const _NoShopScreen();
 

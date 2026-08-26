@@ -2,12 +2,6 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
-/**
- * Defers rendering its children until the section scrolls near the viewport.
- * Children that self-fetch (heatmap, retention, forecast) then only hit the
- * network when the merchant actually scrolls to them — keeping the initial
- * analytics load to a single request. Shows a shimmer placeholder until shown.
- */
 export function LazySection({
   children,
   placeholderClass = "h-40",

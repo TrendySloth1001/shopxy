@@ -3,21 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { AlertCircle, Check } from "@/shared/icons";
 
-/**
- * Developer-only backend switcher — the customer-web mirror of merchant-web's
- * `features/settings/environment-picker.tsx`.
- *
- * Visibility is inferred from the server, not decided here: `GET
- * /api/dev/environment` answers 404 for everyone but the developer account,
- * so the gate lives in one place and the developer's address never ships in
- * this bundle. Options carry no URLs either — `API_BASE_URL` stays server-only
- * (see `shared/config/env.ts`).
- *
- * Strings are intentionally not localised: the screen is gated to a single
- * hardcoded developer account, so a translation of "Dev tunnel" would be
- * shipped weight nobody can ever read.
- */
-
 type EnvOption = { id: string; label: string; description: string };
 type EnvState = {
   options: EnvOption[];
@@ -25,11 +10,6 @@ type EnvState = {
   isDefault: boolean;
 };
 
-/**
- * Loads the switcher's state. `available` stays false for non-developers (the
- * endpoint 404s) and while the first request is in flight, so the account page
- * never flashes a section this account can't use.
- */
 export function useDeveloperEnvironments() {
   const [state, setState] = useState<EnvState | null>(null);
 
@@ -41,8 +21,6 @@ export function useDeveloperEnvironments() {
         if (!cancelled && data) setState(data);
       })
       .catch(() => {
-        // Not a developer, or the endpoint is unreachable — either way the
-        // section simply doesn't exist for this session.
       });
     return () => {
       cancelled = true;
@@ -52,11 +30,6 @@ export function useDeveloperEnvironments() {
   return { available: state !== null, state };
 }
 
-/**
- * The picker, rendered only when {@link useDeveloperEnvironments} reports
- * `available`. Renders nothing otherwise, so the caller can drop it in
- * unconditionally.
- */
 export function DeveloperEnvironmentSection() {
   const { available, state } = useDeveloperEnvironments();
   const [switching, setSwitching] = useState<string | null>(null);
@@ -74,8 +47,6 @@ export function DeveloperEnvironmentSection() {
         body: JSON.stringify({ id: pending.id }),
       });
       if (!res.ok) throw new Error("Switch failed");
-      // A hard navigation, not router.push: every cached RSC payload on this
-      // page was rendered against the previous database.
       window.location.href = "/login";
     } catch {
       setSwitching(null);

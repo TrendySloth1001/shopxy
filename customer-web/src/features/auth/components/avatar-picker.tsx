@@ -5,7 +5,6 @@ import { useAuth } from "../auth-context";
 import { Avatar } from "./avatar";
 import { Banner } from "./banner";
 
-/** Profile-photo control: shows the current avatar with change / remove. */
 export function AvatarPicker() {
   const { user, uploadAvatar, removeAvatar } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -14,7 +13,7 @@ export function AvatarPicker() {
 
   async function onFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    event.target.value = ""; // allow re-selecting the same file
+    event.target.value = "";
     if (!file) return;
     setError(null);
     setBusy(true);

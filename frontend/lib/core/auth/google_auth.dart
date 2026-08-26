@@ -1,9 +1,6 @@
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shopxy/core/config/app_config.dart';
 
-/// Thin wrapper around `google_sign_in` v7's singleton API. `initialize()`
-/// must complete before `authenticate()` is called — enforced here so
-/// call sites don't need to remember the ordering.
 class GoogleAuth {
   GoogleAuth._();
 
@@ -14,11 +11,6 @@ class GoogleAuth {
   static Future<void>? _initFuture;
 
   static Future<void> _ensureInitialized() {
-    // `serverClientId` (the WEB client ID) makes the returned ID token's
-    // audience the web client on every platform, so the backend verifies
-    // Android/iOS/web sign-ins the same way. `clientId` is only needed on
-    // iOS (google_sign_in reads Android's client ID from the SHA-1 +
-    // package name registered in Cloud Console, not from code).
     return _initFuture ??= GoogleSignIn.instance.initialize(
       clientId: AppConfig.googleClientIdIos.isNotEmpty
           ? AppConfig.googleClientIdIos
@@ -29,8 +21,6 @@ class GoogleAuth {
     );
   }
 
-  /// Runs the interactive Google sign-in flow and returns a verified ID
-  /// token, or `null` if the user cancelled. Throws for any other failure.
   static Future<String?> signInIdToken() async {
     await _ensureInitialized();
     try {

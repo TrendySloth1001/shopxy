@@ -14,7 +14,6 @@ async function jsonOrThrow<T>(res: Response, parse: (raw: unknown) => T, fallbac
       const body = (await res.json()) as { error?: string };
       if (body?.error) message = body.error;
     } catch {
-      /* keep fallback */
     }
     throw new Error(message);
   }
@@ -55,7 +54,6 @@ export function getCoupon(id: string): Promise<Coupon> {
   );
 }
 
-/** Recent redemptions for a coupon (admin analytics). */
 export function listCouponRedemptions(id: string): Promise<CouponRedemption[]> {
   return fetch(`/api/coupons/${id}/redemptions`, { cache: "no-store" }).then((r) =>
     jsonOrThrow(r, (raw) => couponRedemptionListSchema.parse(raw).data, "Could not load redemptions."),

@@ -25,10 +25,6 @@ import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/widgets/app_search_bar.dart';
 
-/// Drill-down view from CategoriesPage. Loads the products for a single
-/// category directly (own state — not coupled to the global
-/// ProductsProvider) so the merchant tab's filter state isn't mutated
-/// when the user just wants to browse a bucket.
 class CategoryProductsPage extends StatefulWidget {
   const CategoryProductsPage({super.key, required this.category});
 
@@ -44,13 +40,11 @@ class _CategoryProductsPageState extends State<CategoryProductsPage> {
   bool _isLoading = true;
   String? _error;
 
-  // Pagination — load more on scroll-to-end.
   static const _pageSize = 20;
   int _page = 1;
   bool _hasMore = true;
   bool _loadingMore = false;
 
-  // Local search inside the category.
   final _searchCtrl = TextEditingController();
   String _search = '';
   Timer? _searchDebounce;
@@ -132,8 +126,6 @@ class _CategoryProductsPageState extends State<CategoryProductsPage> {
 
   void _onSearchChanged(String value) {
     setState(() => _search = value.trim());
-    // Debounce the reload — same pattern as OrdersInboxPage, so typing
-    // "sol" hits the backend once instead of once per keystroke.
     _searchDebounce?.cancel();
     _searchDebounce = Timer(AppDurations.searchDebounce, () {
       if (!mounted) return;
@@ -328,11 +320,6 @@ class _Header extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton widgets
-// ---------------------------------------------------------------------------
-
-/// Full-page skeleton that mirrors the real layout while [_isLoading] is true.
 class _CategoryProductsSkeleton extends StatelessWidget {
   const _CategoryProductsSkeleton();
 
@@ -341,9 +328,7 @@ class _CategoryProductsSkeleton extends StatelessWidget {
     return CustomScrollView(
       physics: const NeverScrollableScrollPhysics(),
       slivers: [
-        // Header card skeleton
         const SliverToBoxAdapter(child: _HeaderSkeleton()),
-        // Search bar placeholder
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -359,7 +344,6 @@ class _CategoryProductsSkeleton extends StatelessWidget {
             ),
           ),
         ),
-        // Product list tile skeletons
         SliverList.separated(
           itemCount: 6,
           separatorBuilder: (context, index) => const AppDivider.flush(),
@@ -371,7 +355,6 @@ class _CategoryProductsSkeleton extends StatelessWidget {
   }
 }
 
-/// Mirrors the [_Header] card: icon box + three text lines.
 class _HeaderSkeleton extends StatelessWidget {
   const _HeaderSkeleton();
 
@@ -392,7 +375,6 @@ class _HeaderSkeleton extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Icon box
           AppShimmerBox(
             width: AppSizes.fabSize,
             height: AppSizes.fabSize,
@@ -403,16 +385,12 @@ class _HeaderSkeleton extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Category name
                 const AppShimmerLine(widthFactor: 0.55, height: 18),
                 const SizedBox(height: AppSizes.sm),
-                // Description line 1
                 const AppShimmerLine(widthFactor: 0.9, height: 13),
                 const SizedBox(height: AppSizes.xs),
-                // Description line 2
                 const AppShimmerLine(widthFactor: 0.7, height: 13),
                 const SizedBox(height: AppSizes.sm),
-                // Product count chip
                 const AppShimmerLine(widthFactor: 0.35, height: 12),
               ],
             ),
@@ -423,7 +401,6 @@ class _HeaderSkeleton extends StatelessWidget {
   }
 }
 
-/// Mirrors one [ProductListTile]: image thumbnail + name/shop/rating/price lines.
 class _ProductTileSkeleton extends StatelessWidget {
   const _ProductTileSkeleton();
 
@@ -436,20 +413,16 @@ class _ProductTileSkeleton extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Product thumbnail
           AppShimmerBox(width: 56, height: 56, radius: AppSizes.radiusSm),
           const SizedBox(width: AppSizes.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Product name
                 const AppShimmerLine(widthFactor: 0.65, height: 14),
                 const SizedBox(height: AppSizes.xs),
-                // Shop / subtitle
                 const AppShimmerLine(widthFactor: 0.45, height: 12),
                 const SizedBox(height: AppSizes.xs),
-                // Rating + price row
                 Row(
                   children: [
                     const AppShimmerLine(widthFactor: 0.25, height: 12),
@@ -466,8 +439,6 @@ class _ProductTileSkeleton extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-
 class _SearchField extends StatelessWidget {
   const _SearchField({required this.controller, required this.onChanged});
   final TextEditingController controller;
@@ -480,7 +451,6 @@ class _SearchField extends StatelessWidget {
       hint: l10n.categoriesSearchProductsHint,
       controller: controller,
       onChanged: onChanged,
-      // The page debounces its own reload (_searchDebounce).
       debounce: Duration.zero,
     );
   }

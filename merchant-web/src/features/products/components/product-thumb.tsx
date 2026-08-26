@@ -1,13 +1,11 @@
 import Image from "next/image";
 import { Package } from "@/shared/icons";
 
-/** Resolve a stored relative image URL (`/images/...`) to the media proxy. */
 export function mediaSrc(url?: string | null): string | null {
   if (!url) return null;
   return url.startsWith("/images/") ? `/api/media${url}` : url;
 }
 
-/** Square product thumbnail with a tinted package fallback. */
 export function ProductThumb({
   url,
   alt,

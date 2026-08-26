@@ -37,16 +37,12 @@ const ownerBannerSelect = {
   updatedAt: true,
 } as const;
 
-/** Flatten Prisma's `_count.products` into a plain `productCount` field. */
 function withCount<T extends { _count: { products: number }; imageUrl: string }>(
   row: T,
 ): Omit<T, '_count'> & { productCount: number } {
   const { _count, ...rest } = row;
   return {
     ...rest,
-    // Banners render full-bleed. The stored URL is the `md` variant, which is
-    // narrower than any phone we ship to, so serving it upscaled every hero
-    // image on the home screen. `lg` is the only variant wide enough.
     imageUrl: urlFor(row.imageUrl, 'lg'),
     productCount: _count.products,
   };
@@ -60,17 +56,12 @@ export interface CreateBannerInput {
   startAt?: Date | null;
   endAt?: Date | null;
   isActive?: boolean;
-  /// Owning shop. null = a platform-wide banner authored by an admin.
   shopId?: number | null;
 }
 
 export type UpdateBannerInput = Partial<CreateBannerInput>;
 
 export class BannersService {
-  /// Public read — only banners that are active AND inside their
-  /// scheduling window. Cached in Redis for 60s so home-feed reads
-  /// don't hit Postgres on every request. Cache key is per placement,
-  /// invalidated by any banner write.
   async getActiveByPlacement(placement: BannerPlacement) {
     if (redisAvailable()) {
       try {
@@ -112,8 +103,6 @@ export class BannersService {
     return mapped;
   }
 
-  /// Admin listing — ALL banners regardless of schedule + active state
-  /// so the manager UI can show "Scheduled" / "Expired" / "Off".
   async listForAdmin(opts: {
     placement?: BannerPlacement;
     cursor?: number;
@@ -142,13 +131,6 @@ export class BannersService {
     return row ? withCount(row) : null;
   }
 
-  /// A link is only useful if it lands somewhere. The grammar check in the
-  /// controller proves the shape; this proves the destination exists, so a
-  /// banner pointing at a deleted product or a mistyped slug is refused at
-  /// save time instead of dead-ending a customer who taps it.
-  ///
-  /// Throws HttpError(400) — the merchant is editing, and a targeted message
-  /// is more use than a silently-dropped link.
   private async _assertLinkResolves(raw: string | null | undefined) {
     if (raw == null || raw.length === 0) return;
     const link = parseBannerLink(raw);
@@ -202,8 +184,6 @@ export class BannersService {
         return;
       }
       case 'search':
-        // Any phrase is a legal search; an empty result set is a normal
-        // outcome, not a broken link.
         return;
     }
   }
@@ -250,10 +230,6 @@ export class BannersService {
     return true;
   }
 
-  // ── Merchant-scoped CRUD ─────────────────────────────────────────
-  // Each merchant manages their own banners (shopId = their shop). All
-  // queries scope through shopId so id-probing across shops returns 404.
-
   async listForShop(shopId: number) {
     const rows = await prisma.banner.findMany({
       where: { shopId },
@@ -281,7 +257,6 @@ export class BannersService {
       select: { id: true },
     });
     if (!owned) return null;
-    // shopId can never be reassigned through the merchant path.
     const { shopId: _ignore, ...rest } = input;
     void _ignore;
     return this.update(id, rest);
@@ -314,7 +289,6 @@ export class BannersService {
     return data as Prisma.BannerUncheckedCreateInput;
   }
 
-  /// Blow the per-placement cache. No-op when Redis is offline.
   private async _invalidate(placement: BannerPlacement): Promise<void> {
     if (!redisAvailable()) return;
     try {
@@ -324,14 +298,6 @@ export class BannersService {
     }
   }
 
-  // ── Pinned products ──────────────────────────────────────────────
-  // A merchant pins a curated list of their own products to a banner,
-  // each with an optional promo discount. The customer banner-detail
-  // page renders them with the discounted price; the discount also flows
-  // into the order line + invoice via promo-pricing.resolveActiveProductPromos.
-
-  /// Merchant read — the banner's pinned products (no published filter so
-  /// the merchant sees their unpublished ones too). null if not owned.
   async listProductsForShopBanner(shopId: number, bannerId: number) {
     const owned = await prisma.banner.findFirst({
       where: { id: bannerId, shopId },
@@ -374,9 +340,6 @@ export class BannersService {
     });
   }
 
-  /// Full-list replace, transactional. Validates every productId belongs
-  /// to the caller's shop, clamps each discount, then rewrites the join.
-  /// Returns the new rows, or null when the banner isn't owned.
   async replaceProductsForShopBanner(
     shopId: number,
     bannerId: number,
@@ -434,9 +397,6 @@ export class BannersService {
     return this.listProductsForShopBanner(shopId, bannerId);
   }
 
-  /// Public banner detail — the visible banner + its pinned, published
-  /// products with computed sale prices. null if the banner is off,
-  /// outside its window, or doesn't exist.
   async getPublicBannerWithProducts(id: number) {
     const now = new Date();
     const banner = await prisma.banner.findFirst({

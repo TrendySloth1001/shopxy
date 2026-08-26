@@ -3,7 +3,6 @@ import { authedFetch, extractError } from "@/server/auth/session";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-/** Mark a single notification read. */
 export async function POST(_req: Request, { params }: Ctx) {
   const { id } = await params;
   const res = await authedFetch(`/notifications/${encodeURIComponent(id)}/read`, { method: "POST" });

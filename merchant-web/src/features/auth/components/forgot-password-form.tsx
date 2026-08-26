@@ -10,19 +10,6 @@ import { AuthErrorBanner } from "./auth-shell";
 
 const COOLDOWN = 30;
 
-/**
- * Forgotten-password reset in two steps: ask for the email, then take the
- * emailed code plus the new password together.
- *
- * The code is the authorisation, so it's submitted alongside the password in
- * one request rather than exchanged for an intermediate reset token. One
- * fewer credential to mint, expire and get wrong, and the server-side check
- * is identical either way.
- *
- * The "sent" step never confirms the address exists — the backend answers the
- * same for a stranger's email as for a real one, and this copy has to match
- * that, or the UI leaks what the API deliberately doesn't.
- */
 export function ForgotPasswordForm() {
   const t = useTranslations("auth");
   const router = useRouter();
@@ -85,8 +72,6 @@ export function ForgotPasswordForm() {
         const body = (await res.json()) as { error?: string };
         throw new Error(body.error ?? t("forgot.failed"));
       }
-      // Straight to sign-in: the reset issues no session, and every device was
-      // signed out, so there is nothing to return to.
       router.replace("/login?reason=password-reset");
     } catch (err) {
       setError(err instanceof Error ? err.message : t("forgot.failed"));
@@ -149,8 +134,6 @@ export function ForgotPasswordForm() {
         onChange={(e) => setConfirm(e.target.value)}
       />
 
-      {/* Stated up front, not discovered afterwards — being signed out
-          everywhere is surprising if you weren't told. */}
       <p className="flex items-start gap-sm text-body-sm text-muted">
         <TriangleAlert size={16} className="mt-px shrink-0 text-warning" />
         {t("forgot.signOutWarning")}

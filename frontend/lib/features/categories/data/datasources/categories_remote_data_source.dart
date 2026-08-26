@@ -19,10 +19,6 @@ class CategoriesRemoteDataSource {
         .toList();
   }
 
-  /// Paginated/searchable fetch used by the category picker. Returns
-  /// `(rows, total)` so the caller can decide whether to load the next
-  /// page. Stays out of [getCategories] so callers that want the
-  /// small-shop default don't pay for the picker's extra plumbing.
   Future<({List<Category> categories, int total})> searchCategories({
     String? search,
     bool activeOnly = true,
@@ -48,8 +44,6 @@ class CategoriesRemoteDataSource {
     return (categories: categories, total: total);
   }
 
-  /// Full taxonomy tree — one network round-trip, server pre-nests the
-  /// children. Used by the platform-admin taxonomy editor.
   Future<List<CategoryNode>> getTree({bool activeOnly = false}) async {
     final response = await _client.get(
       '/categories/tree',

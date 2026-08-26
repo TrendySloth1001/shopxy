@@ -1,9 +1,5 @@
 import { FileCheck2, Headphones, Lock, ShieldCheck } from "@/shared/icons";
 
-/**
- * "Why millions choose ShopXY" footer — port of `HomeFooterStrip`. A soft panel
- * with a 2×2 grid of trust cells, shown at the tail of the feed.
- */
 const CELLS = [
   { icon: ShieldCheck, title: "100% Authentic", sub: "Sourced direct from brands" },
   { icon: Lock, title: "Secure payments", sub: "UPI · Cards · COD" },

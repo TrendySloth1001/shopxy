@@ -16,18 +16,9 @@ import {
 } from './blocks.js';
 
 export const PAGE_PADDING = { top: 40, bottom: 56, left: 40, right: 40 };
-// Usable A4 content height (841.89pt) minus the reserved top/bottom padding.
 export const CONTENT_HEIGHT = 841.89 - PAGE_PADDING.top - PAGE_PADDING.bottom;
 const TABLE_HEADER_HEIGHT = 22;
-// Generous per-row estimates (item cells can wrap to two lines) — an
-// underestimate of capacity only ever costs an occasional un-headered
-// spillover page, never clipped content, since react-pdf auto-continues
-// overflow onto a fresh page regardless of our chunk boundaries.
 const ROW_HEIGHT = { normal: 32, compact: 24 };
-// Reserved space for the title/badge/parties/meta block that only appears
-// once, above the table, on the first page. ShellC (the "traditional"
-// preset) never reaches this — it has its own render path in
-// `tallyShell.tsx` — the entry exists only to satisfy the shellId union.
 const HEADER_AREA = { A: 230, B: 250, C: 0 };
 
 function headerAreaHeight(model: PdfDocumentModel, config: TemplateConfig): number {
@@ -80,13 +71,6 @@ function ShellBTop({ model, config }: { model: PdfDocumentModel; config: Templat
   );
 }
 
-/// Builds the full multi-page `<Document>` for one document model + template
-/// config. Item rows are pre-chunked (see `paginate.ts`) into one `<Page>`
-/// per slice, each with the table header re-painted at the top; the
-/// trailing blocks (HSN summary/totals/declaration/signature/notes) render
-/// in normal flow after the LAST slice, and the footer is `fixed` so it
-/// repeats on every page (including any un-planned overflow page) via
-/// react-pdf's built-in per-page render prop.
 export function renderShellDocument(model: PdfDocumentModel, config: TemplateConfig) {
   const rowHeight = ROW_HEIGHT[config.density];
   const firstPageHeight = CONTENT_HEIGHT - headerAreaHeight(model, config);

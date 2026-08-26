@@ -7,11 +7,8 @@ import 'package:http/http.dart' as http;
 import 'package:shopxy_customer/shared/domain/entities/catalog_product.dart';
 import 'package:shopxy_customer/features/orders/domain/entities/customer_order.dart';
 
-/// Differentiated cancel failure thrown by the data source so the UI can
-/// render targeted copy instead of "Could not cancel".
 class CancelOrderException implements Exception {
   CancelOrderException(this.code, this.message);
-  /// One of: NOT_FOUND, NOT_OWNED, NOT_PENDING, NOT_CANCELLABLE, UNKNOWN.
   final String code;
   final String message;
 
@@ -19,7 +16,6 @@ class CancelOrderException implements Exception {
   String toString() => message;
 }
 
-/// One line whose live price disagreed with what the customer was shown.
 class PriceDrift {
   const PriceDrift({
     required this.productId,
@@ -31,9 +27,6 @@ class PriceDrift {
   final double actualUnitPrice;
 }
 
-/// Server rejected the place-order because one or more line prices
-/// moved between cart + submit (e.g. a flash sale ended). Carries the
-/// corrected prices so the UI can re-show the cart with a clear callout.
 class PriceDriftException implements Exception {
   PriceDriftException(this.drifts);
   final List<PriceDrift> drifts;
@@ -42,16 +35,9 @@ class PriceDriftException implements Exception {
   String toString() => 'Prices have changed since you viewed the cart.';
 }
 
-/// Result of placing an order — returns the parent `CustomerOrder` id
-/// and the per-vendor child slices the server created. The customer UI
-/// uses the parent id to navigate to the new order detail; the child
-/// ids are useful for surfacing "3 vendors will fulfil this" copy
-/// without an extra round trip.
 class PlaceOrderResponse {
   const PlaceOrderResponse({required this.orderId, required this.shopOrders});
   final String orderId;
-  /// Per-vendor child ids + shopIds — matches the server's
-  /// `shopOrders: [{ id, shopId }]` response.
   final List<({String id, String shopId})> shopOrders;
 }
 
@@ -59,9 +45,6 @@ class OrdersRemoteDataSource {
   const OrdersRemoteDataSource(this._client);
   final ApiClient _client;
 
-  /// Single POST that hands the whole cart to the server. Server groups
-  /// by shop and creates one parent CustomerOrder + N PurchaseRequest
-  /// children in one transaction. Idempotent per [idempotencyKey].
   Future<PlaceOrderResponse> placeOrder({
     required List<({String productId, double quantity, double? expectedUnitPrice})>
         items,
@@ -69,8 +52,6 @@ class OrdersRemoteDataSource {
     String? idempotencyKey,
     String? addressId,
     String? couponCode,
-    /// Ask each GST-registered seller to invoice this order to the buyer's own
-    /// GSTIN. Intent only — the GSTIN comes from the saved profile server-side.
     bool claimGst = false,
   }) async {
     final key = idempotencyKey ?? _newIdempotencyKey();
@@ -94,9 +75,6 @@ class OrdersRemoteDataSource {
     );
     if (res.statusCode != 200 && res.statusCode != 201) {
       final err = jsonDecode(res.body) as Map<String, dynamic>;
-      // PRICE_DRIFT specifically carries a per-line breakdown in
-      // `details`; surface it via a typed exception so the cart can
-      // re-quote + re-show with the corrected prices.
       if (res.statusCode == 409 && err['error'] == 'PRICE_DRIFT') {
         final details = ((err['details'] as List?) ?? const [])
             .map((e) {
@@ -145,8 +123,6 @@ class OrdersRemoteDataSource {
     return CustomerOrderDetail.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  /// Cancel one shop's slice of a customer order. The parent and the
-  /// other shops in the same checkout are unaffected.
   Future<void> cancelShopOrder({
     required String parentId,
     required String childId,
@@ -160,13 +136,10 @@ class OrdersRemoteDataSource {
       final body = jsonDecode(res.body) as Map<String, dynamic>;
       code = (body['code'] as String?) ?? code;
       message = (body['error'] as String?) ?? message;
-    } catch (_) {/* keep defaults */}
+    } catch (_) {}
     throw CancelOrderException(code, message);
   }
 
-  /// Reorder a previous order — server returns the cart-ready line
-  /// items (each with the full product payload) plus a `skipped` list
-  /// (UNAVAILABLE / OWN_SHOP) for the client toast.
   Future<({List<({CatalogProduct product, double quantity})> items,
           List<({String productId, String productName, String reason})> skipped})>
       reorder(String parentId) async {
@@ -196,10 +169,6 @@ class OrdersRemoteDataSource {
     return (items: items, skipped: skipped);
   }
 
-  /// Download an invoice PDF as raw bytes. Caller decides what to do
-  /// with them (save to documents, hand to the platform share sheet,
-  /// open with the OS PDF viewer). Goes direct via `http.get` instead
-  /// of [ApiClient.get] because we want bytes back, not a parsed body.
   Future<Uint8List> downloadInvoicePdf({
     required String parentId,
     required String childId,
@@ -217,9 +186,6 @@ class OrdersRemoteDataSource {
     return res.bodyBytes;
   }
 
-  /// Lightweight UUID-v4-shaped string, sufficient for idempotency.
-  /// Doesn't pull in a uuid package — 122 random bits give us collision
-  /// resistance well beyond what the customer needs.
   static String _newIdempotencyKey() {
     final r = Random.secure();
     String hex(int n) =>
@@ -229,8 +195,6 @@ class OrdersRemoteDataSource {
     return s;
   }
 
-  /// Start an online gateway payment for an order's payable remainder.
-  /// Returns the checkout session the app opens the Razorpay sheet with.
   Future<GatewayCheckout> payForOrder(String orderId) async {
     final res = await _client.post('/me/orders/$orderId/pay');
     if (res.statusCode != 201) {
@@ -240,11 +204,6 @@ class OrdersRemoteDataSource {
     return GatewayCheckout.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  /// Client-confirm after the Razorpay sheet reports success. The server
-  /// re-checks the live provider order and settles if paid (a backstop for the
-  /// webhook, which can't reach a localhost dev server and may lag in prod).
-  /// Returns the order's resulting paymentStatus (e.g. 'PAID'). Best-effort:
-  /// the webhook is still authoritative, so a failure here is non-fatal.
   Future<String> syncOrderPayment(String orderId) async {
     final res = await _client.post('/me/orders/$orderId/payment/sync');
     if (res.statusCode != 200) {
@@ -256,9 +215,6 @@ class OrdersRemoteDataSource {
   }
 }
 
-/// The checkout session returned by `POST /me/orders/:id/pay` — mirrors the
-/// backend's gateway InitiateResult. `clientParams` is the provider-specific
-/// bag (Razorpay: key / order_id / amount / currency) fed to the sheet.
 class GatewayCheckout {
   const GatewayCheckout({
     required this.intentId,

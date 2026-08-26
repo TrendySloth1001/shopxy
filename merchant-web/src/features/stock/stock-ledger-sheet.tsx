@@ -15,13 +15,6 @@ import {
   type StockTxn,
 } from "./schema";
 
-/**
- * Full chronological stock ledger for one product — the web mirror of the
- * Flutter `StockLedgerPage`, shown as a bottom-sheet/dialog. Each row shows when
- * the movement happened, its reason, the signed quantity, the running balance,
- * the source document, supplier and operator. Rows backed by an invoice/challan
- * are clickable and link straight to that document.
- */
 export function StockLedgerSheet({
   productId,
   productName,
@@ -117,7 +110,6 @@ function LedgerEntry({
       ? t(`ledgerReason.${entry.reasonCode}`)
       : t("ledgerReason.movement");
 
-  // "27 Jun 2026, 11:09 am · Acme traders · by Nikhil Kumawat"
   const meta = [
     formatDateTime(entry.createdAt),
     entry.vendor?.name ?? entry.supplierName ?? null,
@@ -207,7 +199,6 @@ function LedgerSkeleton() {
   );
 }
 
-/** Route to the source document, or null when there's nothing to open. */
 function sourceLink(entry: StockTxn): string | null {
   if (!hasSourceDocument(entry) || entry.sourceId == null) return null;
   if (entry.sourceType === "INVOICE") return `/dashboard/invoices/${entry.sourceId}`;

@@ -7,7 +7,6 @@ async function jsonOrThrow<T>(res: Response, parse: (raw: unknown) => T, fallbac
       const body = (await res.json()) as { error?: string };
       if (body?.error) message = body.error;
     } catch {
-      /* keep fallback */
     }
     throw new Error(message);
   }
@@ -54,11 +53,6 @@ export function markPickedUp(id: string): Promise<void> {
 export function markReceived(id: string): Promise<void> {
   return postAction(id, "received", {}, "Could not update the return.");
 }
-/**
- * Refund a received return. The backend refunds to the buyer's ORIGINAL payment
- * method (gateway refund-to-source) — never a wallet — and replies with
- * `{ ok, refundAmount, refundStatus }`.
- */
 export async function refundReturn(id: string, note?: string): Promise<RefundResult> {
   const res = await fetch(`/api/returns/${id}/refund`, {
     method: "POST",

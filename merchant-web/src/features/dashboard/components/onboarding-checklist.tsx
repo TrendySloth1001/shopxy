@@ -3,12 +3,6 @@ import { useTranslations } from "next-intl";
 import { ArrowRight, CheckCircle2, Circle } from "@/shared/icons";
 import type { DashboardOnboarding } from "../stats";
 
-/**
- * First-run setup checklist, shown in place of the KPI grid until the shop has
- * products and invoices. Action-focused (positive copy + a clear next step) so a
- * fresh shop sees guidance, not a wall of ₹0. `payoutsEnabled` comes from the
- * caller (the dashboard already loads payout status for its nudge).
- */
 export function OnboardingChecklist({
   onboarding,
   payoutsEnabled,

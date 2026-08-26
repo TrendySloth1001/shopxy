@@ -6,7 +6,6 @@ import { stateNameFromCode, isInterstateSupply } from '../../shared/validation/i
 import { loadPdfEngine } from '../../shared/pdfEngineLoader.js';
 import { buildPdfColumns } from '../../shared/pdfColumns.js';
 
-/// One stored quotation line (the JSON shape priceItems writes).
 interface QuoteLine {
   name?: string;
   sku?: string | null;
@@ -18,14 +17,6 @@ interface QuoteLine {
   lineTotal?: number;
 }
 
-/// Whether this quote may print GST at all — the same principle the invoice
-/// engine applies (`invoiceGstVisibility`): a merchant who charges no tax
-/// should get no GST% column and no tax rows, rather than a column of `0%`
-/// and a stack of `Rs. 0.00`. The quote's own stored figures decide it — the
-/// write path already ran the registration gate (`chargesOutputGstForSale`)
-/// when it priced the lines, so re-deriving it here could only disagree with
-/// the numbers actually on the page. Quotations carry no HSN column at all,
-/// so there is no HSN equivalent.
 function quotationChargesGst(
   lines: QuoteLine[],
   taxAmount: Prisma.Decimal | number | string | null | undefined,
@@ -34,19 +25,12 @@ function quotationChargesGst(
   return new Prisma.Decimal((taxAmount ?? 0).toString()).gt(0);
 }
 
-/// The quotation's closing disclaimer. The tax sentence is dropped for a
-/// merchant who charges none — promising that "taxes are computed on
-/// acceptance" would be a straightforwardly false statement to their customer.
 function quotationDeclaration(showGst: boolean): string {
   const base =
     'This is a quotation, not a tax invoice. Prices are an estimate and may change until confirmed.';
   return showGst ? `${base} Taxes are computed on acceptance.` : base;
 }
 
-/// Render one quotation as a PDF — to a stream when `out` is set, or to a
-/// Buffer otherwise. Returns `{ error }` when the quotation can't be found
-/// for `shopId`. Dispatches to the react-pdf engine by default; set
-/// `PDF_ENGINE=pdfkit` to roll back to the original layout below.
 export async function renderQuotationPdf(
   shopId: number,
   id: number,
@@ -59,7 +43,6 @@ export async function renderQuotationPdf(
   return renderQuotationPdfReactPdf(shopId, id, out, onReady);
 }
 
-/// The original hand-drawn PDFKit layout — kept verbatim as the rollback path.
 async function renderQuotationPdfPdfKit(
   shopId: number,
   id: number,
@@ -129,7 +112,6 @@ async function renderQuotationPdfPdfKit(
         if (typeof anyDoc.destroy === 'function') anyDoc.destroy();
         else doc.end();
       } catch {
-        // best-effort
       }
     };
     if (out) {
@@ -174,7 +156,6 @@ async function renderQuotationPdfPdfKit(
     const RIGHT = 555;
 
     try {
-      // ---------- Title ----------
       doc
         .fillColor('#111827')
         .font('Helvetica-Bold')
@@ -191,7 +172,6 @@ async function renderQuotationPdfPdfKit(
 
       doc.moveTo(LEFT, 80).lineTo(RIGHT, 80).strokeColor('#9CA3AF').lineWidth(1).stroke();
 
-      // ---------- Shop (left) + Bill To (right) ----------
       const blocksY = 90;
       const colW = (W - 20) / 2;
       const leftX = LEFT;
@@ -224,7 +204,6 @@ async function renderQuotationPdfPdfKit(
       if (party?.panNumber) { doc.text(`PAN: ${party.panNumber}`, rightX, rY, { width: colW }); rY = doc.y; }
       const cpBottom = rY;
 
-      // ---------- Meta strip ----------
       let y = Math.max(shopBottom, cpBottom) + 12;
       doc.moveTo(LEFT, y).lineTo(RIGHT, y).strokeColor('#E5E7EB').lineWidth(0.7).stroke();
       y += 6;
@@ -233,8 +212,6 @@ async function renderQuotationPdfPdfKit(
       const pos = quotation.placeOfSupplyStateCode
         ? `${quotation.placeOfSupplyStateCode}${posName ? ` - ${posName}` : ''}`
         : '-';
-      // Place of supply only means something under GST, and it printed a bare
-      // "-" whenever the state was unknown — omit it in both cases.
       const metaFields: { label: string; value: string }[] = [
         { label: 'Quotation No', value: quotation.quotationNo },
         { label: 'Date', value: formatDDMMYYYY(quotation.createdAt) },
@@ -254,10 +231,6 @@ async function renderQuotationPdfPdfKit(
       doc.moveTo(LEFT, y).lineTo(RIGHT, y).strokeColor('#E5E7EB').lineWidth(0.7).stroke();
       y += 10;
 
-      // ---------- Items table ----------
-      // Sr | Item / SKU | Qty | Rate | Disc | Taxable | GST% | Amount, with
-      // the GST pair dropped when the quote charges none. "Taxable" goes with
-      // them: untaxed, it only repeats the Amount column.
       const itemCols = buildPdfColumns<QuoteLine>(W, [
         { header: 'Sr', width: 24, align: 'left', cell: (_it, i) => String(i + 1) },
         {
@@ -316,7 +289,6 @@ async function renderQuotationPdfPdfKit(
         sr += 1;
       }
 
-      // ---------- Totals ----------
       y += 10;
       const totalsX = 360;
       const totalsW = RIGHT - totalsX;
@@ -327,23 +299,12 @@ async function renderQuotationPdfPdfKit(
         doc.text(value, totalsX + (totalsW - 90), y, { width: 90, align: 'right' });
         y += 15;
       };
-      // GST-11 — even on a (non-statutory) quotation, label the tax by the
-      // correct head so a B2B recipient sees the split they'll be billed under.
-      // Interstate is derived from the shop's state vs the quote's place of
-      // supply; the stored `taxAmount` is the same total either way, so we
-      // split it for display (CGST = half rounded to the paisa, SGST absorbs
-      // the remainder — mirrors the invoice engine). A quote with no resolvable
-      // place of supply falls back to the intrastate CGST/SGST presentation.
       const shopStateCode =
         owner?.shopStateCode ?? (owner?.shopGstin ? owner.shopGstin.slice(0, 2) : null);
       const quoteInterstate = isInterstateSupply(
         shopStateCode,
         quotation.placeOfSupplyStateCode,
       );
-      // `taxAmount` bundles GST + compensation cess (priceItems sums both), so
-      // recompute cess from the stored lines and back it out before splitting,
-      // keeping cess out of the CGST/SGST/IGST heads. CGST + SGST + Cess then
-      // re-sum to the stored taxAmount exactly (gst = taxAmount − cess).
       const D = Prisma.Decimal;
       const round2 = (v: Prisma.Decimal) => v.toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);
       const taxTotal = new D((quotation.taxAmount ?? 0).toString());
@@ -373,7 +334,6 @@ async function renderQuotationPdfPdfKit(
       y += 4;
       totRow('Total', money(quotation.total), true);
 
-      // ---------- Validity + note ----------
       y += 8;
       if (y + 24 > 770) { doc.addPage(); y = 40; }
       doc
@@ -389,7 +349,6 @@ async function renderQuotationPdfPdfKit(
         doc.font('Helvetica').fontSize(8).fillColor('#374151').text(quotation.note, LEFT, y + 12, { width: W });
       }
 
-      // ---------- Footer ----------
       const range = doc.bufferedPageRange();
       for (let i = 0; i < range.count; i++) {
         doc.switchToPage(range.start + i);
@@ -453,8 +412,6 @@ function formatDDMMYYYY(d: Date | string): string {
   return `${dd}/${mm}/${yy}`;
 }
 
-/// Converts PDFKit-style absolute point widths into percentages summing to
-/// 100 — see the identical helper in `invoice-pdf-renderer.ts`.
 function pct(points: number[]): number[] {
   const total = points.reduce((a, b) => a + b, 0);
   return points.map((p) => (p / total) * 100);
@@ -521,8 +478,6 @@ async function renderQuotationPdfReactPdf(
 
   const showGst = quotationChargesGst(lines, quotation.taxAmount);
 
-  // The GST pair is dropped when the quote charges none. "Taxable" goes with
-  // them: untaxed, it only repeats the Amount column.
   const itemCols = buildPdfColumns<QuoteLine>(515, [
     { header: 'Sr', width: 24, align: 'left', cell: (_it, i) => String(i + 1) },
     {
@@ -614,8 +569,6 @@ async function renderQuotationPdfReactPdf(
       gstin: party?.gstin,
       pan: party?.panNumber,
     },
-    // Place of supply only means something under GST, and it printed a bare
-    // "-" whenever the state was unknown — omit it in both cases.
     meta: [
       { label: 'Quotation No', value: quotation.quotationNo },
       { label: 'Date', value: formatDDMMYYYY(quotation.createdAt) },

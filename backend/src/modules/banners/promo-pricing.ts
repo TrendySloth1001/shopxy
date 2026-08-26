@@ -2,21 +2,10 @@ import { Prisma } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
 import { round2 } from '../../shared/numbering/decimal.js';
 
-/// Shared pricing rules for the BannerProduct promo surface. One module
-/// owns clamping, per-line discount math, and active-promo lookup so the
-/// merchant editor, customer order builder, and invoice generator can't
-/// drift apart on what counts as a valid discount.
-
 export type DiscountType = 'PERCENT' | 'AMOUNT';
 
-/// Hard ceiling on a PERCENT row. 90% leaves at least 10% of revenue and
-/// prevents accidental "100%" free-give bugs.
 export const MAX_PERCENT = 90;
 
-/// Clamp a merchant-typed number to a safe stored value.
-///   - NaN / non-finite / negative → 0
-///   - PERCENT clamped to [0, MAX_PERCENT]
-///   - AMOUNT clamped to [0, sellingPrice - 0.01] so the line stays positive
 export function clampDiscountValue(
   type: DiscountType,
   raw: number,
@@ -30,21 +19,16 @@ export function clampDiscountValue(
   return round2(Math.min(ceiling, raw));
 }
 
-/// Per-unit rupee discount this promo grants at the given sellingPrice.
 export function discountPerUnit(
   type: DiscountType,
   value: number,
   sellingPrice: number,
 ): number {
   if (value <= 0 || sellingPrice <= 0) return 0;
-  // Re-clamp PERCENT defensively: a legacy/raw row with value > MAX_PERCENT must
-  // never produce a per-unit discount that exceeds the price (negative line).
   if (type === 'PERCENT') return round2((sellingPrice * Math.min(MAX_PERCENT, value)) / 100);
   return round2(Math.min(value, Math.max(0, sellingPrice - 0.01)));
 }
 
-/// Total rupee discount for an invoice/order line, bounded so the line
-/// can't go negative (defense in depth).
 export function lineDiscount(
   type: DiscountType,
   value: number,
@@ -60,17 +44,9 @@ export interface ResolvedPromo {
   type: DiscountType;
   value: number;
   perUnit: number;
-  /// Banner that supplied this promo — handy for audit/annotations.
   bannerId: number;
 }
 
-/// Best active banner promo per product. `shopId` is optional — pass it
-/// to restrict promos to a single merchant (the invoice case); omit it
-/// for cross-shop reads (the customer cart spans many shops).
-///
-/// Returns a map keyed by productId; products with no active promo are
-/// absent (callers default to no discount). "Active" = banner is on AND
-/// inside its schedule window.
 export async function resolveActiveProductPromos(
   shopId: number | null,
   productIds: number[],
@@ -116,7 +92,6 @@ export async function resolveActiveProductPromos(
   return out;
 }
 
-/// Decimal-typed thin wrapper for callers already holding Prisma Decimals.
 export function lineDiscountDecimal(
   type: DiscountType,
   value: number,

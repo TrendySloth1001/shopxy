@@ -6,11 +6,6 @@ import 'package:shopxy/shared/theme/app_text_styles.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 
-/// Compact empty state for a tab body — a soft icon puck over a short
-/// headline + one line of guidance. Lighter than the full-page
-/// [EmptyState] hero, which is too heavy inside a tab.
-///
-/// Shared by the notifications feed and the invitations tabs.
 class EmptyHint extends StatelessWidget {
   const EmptyHint({
     super.key,
@@ -24,9 +19,6 @@ class EmptyHint extends StatelessWidget {
   final String title;
   final String body;
 
-  /// Optional CTA rendered under the copy — e.g. "Send an invitation"
-  /// on an empty invitations list, so the empty state is a starting
-  /// point rather than a dead end.
   final Widget? action;
 
   @override

@@ -8,9 +8,6 @@ import type { CatalogProduct } from "@/features/catalog/types";
 import { fetchBannerDetail } from "../api";
 import type { BannerDetail, BannerProduct } from "../types";
 
-/** Map a banner product (with its banner sale price) onto the shared
- *  CatalogProduct card shape: the banner sale price becomes the price,
- *  with the higher of (MRP, list price) struck through. */
 function toCard(p: BannerProduct): CatalogProduct {
   const struck = Math.max(p.mrp, p.sellingPrice);
   return {

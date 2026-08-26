@@ -1,20 +1,7 @@
-// Single source of truth for icons in this app (Hugeicons stroke-rounded).
-//
-// Every icon the app uses is named here exactly once. UI code renders
-// `AppIcon(AppIcons.<name>)` (see app_icon.dart) and references the glyph
-// only through `AppIcons.<name>`, so changing or retiring an icon is a
-// one-line edit here.
-//
-// NOTE: the WhatsApp mark is intentionally NOT here — it comes from
-// font_awesome as an FaIconData and renders via the FaIcon widget at its
-// single call site (invoice_detail_page.dart).
-
 import 'package:hugeicons/hugeicons.dart';
 
-/// SVG glyph payload used across the app (a Hugeicons icon, `List<List>`).
 typedef AppIconData = List<List<dynamic>>;
 
-/// Central icon registry. See file header.
 abstract final class AppIcons {
   static const AppIconData accessTimeRounded = HugeIcons.strokeRoundedClock01;
   static const AppIconData accountBalanceOutlined = HugeIcons.strokeRoundedBank;

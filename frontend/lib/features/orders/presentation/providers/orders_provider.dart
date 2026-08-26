@@ -11,7 +11,7 @@ class OrdersProvider extends ChangeNotifier {
   bool _loading = false;
   String? _error;
 
-  String? _statusFilter; // null = all
+  String? _statusFilter;
   String _search = '';
   DateTime? _from;
   DateTime? _to;
@@ -27,7 +27,6 @@ class OrdersProvider extends ChangeNotifier {
   DateTime? get to => _to;
   int get pendingCount => _pendingCount;
 
-  /// Drop the cached inbox + badge on logout / 401-refresh.
   void reset() {
     _orders = const [];
     _loading = false;
@@ -64,7 +63,7 @@ class OrdersProvider extends ChangeNotifier {
     try {
       _pendingCount = await _ds.pendingCount();
       notifyListeners();
-    } catch (_) {/* ignore */}
+    } catch (_) {}
   }
 
   void setStatusFilter(String? value) {
@@ -107,8 +106,6 @@ class OrdersProvider extends ChangeNotifier {
     await Future.wait([load(), refreshPendingCount()]);
   }
 
-  /// Post a shipping milestone for a confirmed order. The caller
-  /// re-pulls the detail afterwards so the events timeline refreshes.
   Future<void> addShippingEvent(
     String id, {
     required String type,

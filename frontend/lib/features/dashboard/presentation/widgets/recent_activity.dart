@@ -11,8 +11,6 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
-/// Recent stock movements feed, each row linking to its source document.
-/// Mirrors `components/recent-activity.tsx`.
 class RecentActivity extends StatelessWidget {
   const RecentActivity({super.key, required this.transactions});
   final List<DashboardTransaction> transactions;

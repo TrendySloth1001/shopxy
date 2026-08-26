@@ -1,13 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-/// Pure unit tests — NO database, NO network.
-///
-/// The wallet.service module imports Prisma at module load, so we mock the
-/// WHOLE module before importing settlement.ts (which imports walletService
-/// at its top). This keeps the suite DB-free while letting us assert the
-/// exact args the WALLET settlement handler hands to walletService.credit.
-/// vi.mock is hoisted above imports, so the spy must be hoisted too — hence
-/// vi.hoisted rather than a plain top-level const.
 const { creditSpy } = vi.hoisted(() => ({ creditSpy: vi.fn() }));
 vi.mock('../../src/modules/wallet/wallet.service.js', () => ({
   walletService: { credit: creditSpy },
@@ -25,8 +17,6 @@ import type {
   SettlementTargetType,
 } from '../../src/modules/payment-gateway/ports/types.js';
 
-/// Build a minimal CAPTURED intent for the WALLET handler. Only the fields the
-/// handler reads matter; the rest satisfy the type.
 function makeIntent(
   over: Partial<GatewayPaymentRecord> = {},
 ): GatewayPaymentRecord {
@@ -56,7 +46,6 @@ describe('provider registry', () => {
   beforeEach(() => {
     process.env.RAZORPAY_KEY_ID = 'rzp_test_key';
     process.env.RAZORPAY_KEY_SECRET = 'rzp_test_secret';
-    // Forget the lazily-built map so it re-reads the env we just set.
     resetProviderRegistry();
   });
 
@@ -149,8 +138,6 @@ describe('settlement — WALLET handler', () => {
 });
 
 describe('settlement — unwired targets', () => {
-  // ORDER is wired (checkout online payment → CustomerOrder.paymentStatus,
-  // covered by order-settlement.test.ts). Only INVOICE remains a stub.
   it.each<SettlementTargetType>(['INVOICE'])(
     'throws 501 for %s (not wired yet)',
     async (type) => {

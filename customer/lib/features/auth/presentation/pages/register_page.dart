@@ -18,10 +18,6 @@ import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
-/// Multi-step, onboarding-style registration. One question per screen
-/// (name → email → password) with a progress bar, so signing up feels
-/// like a guided flow rather than a wall of fields. Preserves the auth
-/// contract: pops `true` the moment registration succeeds.
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
 
@@ -32,10 +28,6 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   static const _stepCount = 3;
 
-  // TODO SECURITY (SCRN-1): auth surface (credentials entered here). Enable
-  // screenshot/recents-thumbnail protection (Android FLAG_SECURE / iOS
-  // app-switcher blur) on entry and disable on exit. No cross-platform
-  // package is a dependency yet — needs a package decision before wiring.
   final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
   final _email = TextEditingController();
@@ -48,9 +40,6 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _isLoading = false;
   String? _error;
 
-  /// Explicit, affirmative DPDP consent — false until the user ticks the box
-  /// on the final step. Submit is gated on this; it is never assumed.
-  /// (DPDP Act 2023 s.6 — consent must be specific, informed, unambiguous.)
   bool _consentAccepted = false;
 
   late final AuthProvider _auth;
@@ -74,8 +63,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
   void _onAuthChanged() {
     if (!_auth.isAuthenticated || !mounted) return;
-    // `pop` removes the topmost route, so skip when the OTP step is above us
-    // — it owns the dismissal.
     if (ModalRoute.of(context)?.isCurrent != true) return;
     Navigator.of(context).pop(true);
   }
@@ -94,8 +81,6 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<void> _continue() async {
-    // Only the current step's fields are mounted, so this validates just
-    // what's on screen.
     if (!(_formKey.currentState?.validate() ?? false)) return;
     if (!_isLast) {
       setState(() {
@@ -147,7 +132,6 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      // Back goes a step at a time; only pops the page from step 0.
       canPop: _step == 0,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _back();
@@ -364,9 +348,6 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 }
 
-/// Affirmative, opt-in consent control shown on the final register step.
-/// Off by default; the tappable links open the actual Terms / Privacy notice
-/// so the consent is informed. (DPDP Act 2023 s.6.)
 class _ConsentCheckbox extends StatelessWidget {
   const _ConsentCheckbox({
     required this.value,
@@ -435,7 +416,6 @@ class _ConsentCheckbox extends StatelessWidget {
   }
 }
 
-/// Shared per-step body: step label, big question, subtitle, fields.
 class _StepShell extends StatelessWidget {
   const _StepShell({
     required this.stepLabel,
@@ -487,7 +467,6 @@ class _StepShell extends StatelessWidget {
   }
 }
 
-/// Three-segment progress bar; fills up to (and including) the active step.
 class _StepProgress extends StatelessWidget {
   const _StepProgress({required this.step, required this.total});
   final int step;
@@ -516,8 +495,6 @@ class _StepProgress extends StatelessWidget {
   }
 }
 
-/// Small circular back button — lighter than the chunky GlassNavButton,
-/// suited to a white form page.
 class _CircleBack extends StatelessWidget {
   const _CircleBack({required this.onTap});
   final VoidCallback onTap;

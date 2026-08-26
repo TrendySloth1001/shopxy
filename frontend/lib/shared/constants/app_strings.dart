@@ -1,19 +1,13 @@
 class AppStrings {
-  // App
   static const String appName = 'ShopXY';
   static const String appTagline = 'Smart Inventory Management';
 
-  /// Vendor attribution shown under the app name (splash, auth header).
-  /// Note the capital N in "CloudNSofts".
   static const String appBy = 'by CloudNSofts';
 
-  /// CloudNSofts house tagline, from the brand lockup.
   static const String brandTagline = 'SOFTWARE, ALWAYS OPEN';
 
-  /// Copyright line shown on the About page.
   static const String copyright = '© 2026 CloudNSofts';
 
-  // Navigation
   static const String navDashboard = 'Dashboard';
   static const String navProducts = 'Products';
   static const String navCategories = 'Categories';
@@ -24,7 +18,6 @@ class AppStrings {
   static const String navMore = 'More';
   static const String navProfile = 'Profile';
 
-  // Profile / Settings
   static const String settings = 'Settings';
   static const String editProfile = 'Edit profile';
   static const String account = 'Account';
@@ -46,7 +39,6 @@ class AppStrings {
   static const String roleStaff = 'Staff';
   static const String memberSince = 'Member since';
 
-  // Dashboard
   static const String categories = 'Categories';
   static const String lowStock = 'Low Stock';
   static const String outOfStock = 'Out of Stock';
@@ -74,7 +66,6 @@ class AppStrings {
       'No stock movements yet. Your recent in/out activity will appear here.';
   static const String pendingInvitationTitle = 'You have a pending invitation';
 
-  // Filters (shared)
   static const String filterAll = 'All';
   static const String noMatches = 'No matches';
   static const String noMatchesHint =
@@ -83,7 +74,6 @@ class AppStrings {
   static const String invoiceTypeSale = 'Sales';
   static const String invoiceTypePurchase = 'Purchases';
 
-  // Products
   static const String addProduct = 'Add Product';
   static const String editProduct = 'Edit Product';
   static const String productDetails = 'Product Details';
@@ -104,7 +94,6 @@ class AppStrings {
   static const String noCategoriesMatch = 'No categories match that search.';
   static const String categoryPickerLabel = 'Category';
 
-  // Custom fields
   static const String customFields = 'Custom Fields';
   static const String customFieldsHint =
       'Track extra information on every product';
@@ -140,7 +129,6 @@ class AppStrings {
   static const String sectionStock = 'Stock';
   static const String none = 'None';
 
-  // Product fields
   static const String productName = 'Product Name';
   static const String description = 'Description';
   static const String sku = 'SKU';
@@ -155,7 +143,6 @@ class AppStrings {
   static const String unit = 'Unit';
   static const String category = 'Category';
 
-  // Categories
   static const String addCategory = 'Add Category';
   static const String editCategory = 'Edit Category';
   static const String noCategories = 'No categories yet';
@@ -163,7 +150,6 @@ class AppStrings {
   static const String categoryName = 'Category Name';
   static const String categoryDeleted = 'Category deleted';
 
-  // Vendors
   static const String addVendor = 'Add Vendor';
   static const String editVendor = 'Edit Vendor';
   static const String deleteVendor = 'Delete Vendor';
@@ -183,7 +169,6 @@ class AppStrings {
   static const String selectVendor = 'Select vendor';
   static const String newVendor = 'New vendor';
 
-  // Parties
   static const String navParties = 'Parties';
   static const String addParty = 'Add Party';
   static const String editParty = 'Edit Party';
@@ -198,7 +183,6 @@ class AppStrings {
   static const String selectParty = 'Select party';
   static const String newParty = 'New party';
 
-  // Invoices
   static const String createInvoice = 'Create Invoice';
   static const String invoiceType = 'Invoice Type';
   static const String saleInvoice = 'Sale Invoice';
@@ -225,7 +209,6 @@ class AppStrings {
   static const String noInvoicesHint =
       'Create your first invoice to get started';
 
-  // Stock
   static const String stockIn = 'Stock In';
   static const String stockOut = 'Stock Out';
   static const String adjustment = 'Adjustment';
@@ -255,7 +238,6 @@ class AppStrings {
   static const String stockUpdated = 'Stock updated successfully';
   static const String insufficientStock = 'Insufficient stock';
 
-  // QR
   static const String scanQr = 'Scan QR / Barcode';
   static const String generateQr = 'Generate QR Code';
   static const String productNotFound = 'Product not found for this code';
@@ -264,12 +246,10 @@ class AppStrings {
   static const String scanAgain = 'Scan again';
   static const String scanHint = 'Point camera at QR or barcode';
 
-  // OCR
   static const String ocrApplied = 'Applied scan results';
   static const String ocrNoDetails = 'No product details found';
   static const String ocrFailed = 'Could not read product details';
 
-  // Challans
   static const String navChallans = 'Challans';
   static const String createChallan = 'Create Challan';
   static const String challanPartyInfo = 'Party Info';
@@ -292,7 +272,6 @@ class AppStrings {
   static const String yes = 'Yes';
   static const String no = 'No';
 
-  // Actions
   static const String save = 'Save';
   static const String cancel = 'Cancel';
   static const String delete = 'Delete';
@@ -300,7 +279,6 @@ class AppStrings {
   static const String retry = 'Retry';
   static const String confirm = 'Confirm';
 
-  // Orders
   static const String orders = 'Orders';
   static const String confirmOrder = 'Confirm order';
   static const String confirmAndCreateInvoice = 'Confirm & create invoice';
@@ -323,7 +301,6 @@ class AppStrings {
   static const String stockShortfall = 'Low stock';
   static const String inactiveProduct = 'Inactive product';
 
-  // Order detail
   static const String orderLinkedParty = 'Linked party';
   static const String orderRestock = 'Restock';
   static const String orderTotalsSubtotal = 'Subtotal';
@@ -347,22 +324,17 @@ class AppStrings {
   static const String orderDeclineReasonOther = 'Other';
   static const String orderStockUnknown = 'Stock unknown';
 
-  // States
   static const String loading = 'Loading...';
   static const String error = 'Something went wrong';
   static const String noData = 'No data available';
 
-  // Validation
   static const String fieldRequired = 'This field is required';
   static const String invalidNumber = 'Enter a valid number';
   static const String invalidUrl = 'Enter a valid URL';
   static const String priceMustBePositive = 'Price must be greater than 0';
 
-  // Auth
   static const String welcomeBack = 'Welcome back';
   static const String loginSubtitle = 'Sign in to your Shopxy account';
-  // Shown when a customer account tries to sign in here — the merchant
-  // app is for shop owners only.
   static const String customerAccountBlocked =
       'This is a customer account. Please use the Shopxy customer app to sign in.';
   static const String registerTitle = 'Create your account';
@@ -383,7 +355,6 @@ class AppStrings {
   static const String profile = 'Profile';
   static const String passwordHint = 'At least 8 characters, 1 letter and 1 number';
 
-  // Auth validation
   static const String invalidEmail = 'Enter a valid email address';
   static const String passwordTooShort = 'Password must be at least 10 characters';
   static const String passwordNeedsLetter = 'Password must contain at least one letter';
@@ -391,6 +362,5 @@ class AppStrings {
   static const String passwordsDoNotMatch = 'Passwords do not match';
   static const String nameTooShort = 'Name must be at least 2 characters';
 
-  // Currency
   static const String currencySymbol = '₹';
 }

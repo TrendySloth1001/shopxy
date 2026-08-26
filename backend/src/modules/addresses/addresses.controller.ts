@@ -3,9 +3,6 @@ import { z } from 'zod';
 import { decodeId } from '../../shared/ids/publicId.js';
 import { addressesService } from './addresses.service.js';
 
-// PII-7 — normalise a contact phone toward E.164: strip spaces, dashes,
-// dots and parentheses, keep a single optional leading '+'. Leaves the
-// digits intact so the validator can count them.
 const normalisePhone = (raw: string): string => {
   const trimmed = raw.trim();
   const hasPlus = trimmed.startsWith('+');
@@ -15,16 +12,12 @@ const normalisePhone = (raw: string): string => {
 
 const addressSchema = z.object({
   label: z.string().max(40).nullable().optional(),
-  // Trim and collapse internal whitespace so we don't persist " John  Doe ".
   fullName: z
     .string()
     .trim()
     .min(1)
     .max(120)
     .transform((s) => s.replace(/\s+/g, ' ')),
-  // PII-7 — accept international numbers but normalise toward E.164 and
-  // require a sane digit count (7–15 per the E.164 spec) so we don't
-  // persist junk like "phone please call" that passed a bare length check.
   phone: z
     .string()
     .min(7)

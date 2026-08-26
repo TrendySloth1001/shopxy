@@ -6,15 +6,6 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 
-/// Squircle thumbnail used everywhere a product needs an avatar — list
-/// rows, detail-page hero, edit-page preview. Falls back to a
-/// hash-tinted monogram when there's no image (or the image fails to
-/// load), so a product without a photo still reads as recognisable.
-///
-/// Provide [size] for the side of the square. Border radius scales
-/// gently with size — small thumbs use [AppSizes.radiusMd], large
-/// thumbs use [AppSizes.radiusLg] so they don't look like blown-up
-/// versions of the small chip.
 class ProductThumbnail extends StatelessWidget {
   const ProductThumbnail({
     super.key,
@@ -25,11 +16,6 @@ class ProductThumbnail extends StatelessWidget {
   final Product product;
   final double size;
 
-  /// Stable per-product hash → one of six brand-friendly accents. Same
-  /// product always picks the same colour so the row reads as a deck
-  /// of recognisable cards rather than identical placeholders.
-  // Getter, not `static final`: AppColors.* are theme-aware getters, so a
-  // cached list would freeze the light-mode tints and not flip in dark.
   static List<(Color bg, Color fg)> get _accents => [
         (AppColors.brandSoft, AppColors.brandStrong),
         (AppColors.accentTealSoft, AppColors.accentTeal),
@@ -73,10 +59,6 @@ class ProductThumbnail extends StatelessWidget {
               child: CachedNetworkImage(
                 imageUrl: resolved,
                 fit: BoxFit.cover,
-                // Decode to the physical pixel size of this thumb, not the
-                // source resolution — a 1500² product photo otherwise decodes
-                // to ~9 MB in RAM for a ≤64px slot. Rounds up a touch so a
-                // hero-sized thumb still stays crisp.
                 memCacheWidth: (size * MediaQuery.devicePixelRatioOf(context))
                     .round(),
                 placeholder: (_, _) => Container(
@@ -111,8 +93,6 @@ class _MonogramFallback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Letter scales with the container so it always reads the same
-    // visual weight whether this is a 36px thumb or a 160px hero.
     final fontSize = (size * 0.42).clamp(14.0, 64.0);
     return Container(
       color: AppColors.tileBg(bg),

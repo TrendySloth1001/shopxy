@@ -17,11 +17,6 @@ import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// A field the caller can ask [EditProfilePage] (or [InvoiceSettingsPage])
-/// to open focused on — lets the completion meter deep-link straight to the
-/// field a user still needs to fill instead of dumping them at the top of
-/// the form. [shopGstin]/[shopPan]/[upiVpa] live on the Invoice settings
-/// screen now, not here — see `invoice_settings_page.dart`.
 enum ProfileField {
   name,
   phone,
@@ -39,9 +34,6 @@ enum ProfileField {
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key, this.focusField});
 
-  /// When set, the matching field is focused (and scrolled into view) once
-  /// the form first lays out. `photo`/`shopState` have no text field, so
-  /// they simply open the form at the top.
   final ProfileField? focusField;
 
   @override
@@ -54,8 +46,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _name;
   late final TextEditingController _phone;
-  // Shop details — every field is editable in this page; an empty string
-  // is interpreted by the AuthProvider as "clear it on the server."
   late final TextEditingController _shopName;
   late final TextEditingController _shopAddress;
   late final TextEditingController _shopCity;
@@ -64,9 +54,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
   bool _busy = false;
   bool _uploadingAvatar = false;
 
-  /// Focus nodes for the text fields we can deep-link to. Requesting focus
-  /// also makes Flutter scroll the field into view, so no scroll keys are
-  /// needed. The dropdown (state) and avatar (photo) have no node.
   late final Map<ProfileField, FocusNode> _focusNodes;
 
   @override
@@ -198,21 +185,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (!_formKey.currentState!.validate()) return;
     final auth = context.read<AuthProvider>();
     final user = auth.user;
-    // Diff each field against the stored value so we only PATCH what
-    // actually changed. The provider treats `null` as "leave it alone"
-    // and `''` as "clear it" — see updateProfile.
     String? diff(String current, String? stored) {
       final next = current.trim();
       final prev = stored ?? '';
       if (next == prev) return null;
-      return next; // empty string → clear
+      return next;
     }
 
     final newName = _name.text.trim();
     final nameArg = newName == (user?.name ?? '') ? null : newName;
 
-    // Phone: diff() gives null (unchanged) / '' (cleared) / value. The API
-    // clears only when clearPhone is true, so map '' → clearPhone.
     final phoneDiff = diff(_phone.text, user?.phoneNumber);
     final clearPhone = phoneDiff == '';
     final phoneArg = (phoneDiff != null && phoneDiff.isNotEmpty)
@@ -224,8 +206,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final shopCityArg = diff(_shopCity.text, user?.shopCity);
     final shopPinCodeArg = diff(_shopPinCode.text, user?.shopPinCode);
 
-    // State pair must move together: if the code changed, send both
-    // halves; if it didn't, send neither.
     String? shopStateArg;
     String? shopStateCodeArg;
     if (_shopStateCode != user?.shopStateCode) {
@@ -359,7 +339,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               keyboardType: TextInputType.phone,
               validator: (v) {
                 final t = (v ?? '').trim();
-                if (t.isEmpty) return null; // phone is optional
+                if (t.isEmpty) return null;
                 return IndianValidators.phone(v);
               },
             ),

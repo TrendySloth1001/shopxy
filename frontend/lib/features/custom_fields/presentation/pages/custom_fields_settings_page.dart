@@ -21,12 +21,6 @@ import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// Settings → Custom Fields.
-///
-/// Tree-style layout: each [CustomFieldSection] is a collapsible card
-/// listing its own fields. Ungrouped fields render in a "No section"
-/// bucket at the top so they're easy to find + organise. Templates
-/// available as a one-tap stamp from the AppBar.
 class CustomFieldsSettingsPage extends StatefulWidget {
   const CustomFieldsSettingsPage({super.key});
 
@@ -486,12 +480,6 @@ class _UngroupedSectionCard extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton / shimmer loading state
-// ---------------------------------------------------------------------------
-
-/// Full-page skeleton that mirrors the loaded layout:
-/// templates callout card → ungrouped section card → 2 section cards.
 class _CustomFieldsSkeleton extends StatelessWidget {
   const _CustomFieldsSkeleton();
 
@@ -518,7 +506,6 @@ class _CustomFieldsSkeleton extends StatelessWidget {
   }
 }
 
-/// Shimmer block that mirrors the brand-tinted templates callout card.
 class _TemplatesCalloutSkeleton extends StatelessWidget {
   const _TemplatesCalloutSkeleton();
 
@@ -532,7 +519,6 @@ class _TemplatesCalloutSkeleton extends StatelessWidget {
   }
 }
 
-/// Shimmer block that mirrors one section card (header + N field rows).
 class _SectionCardSkeleton extends StatelessWidget {
   const _SectionCardSkeleton({required this.fieldCount});
 
@@ -553,7 +539,6 @@ class _SectionCardSkeleton extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Section header: icon + two text lines
             Row(
               children: [
                 AppShimmerBox(
@@ -575,7 +560,6 @@ class _SectionCardSkeleton extends StatelessWidget {
               ],
             ),
             const SizedBox(height: AppSizes.md),
-            // Field rows
             for (int i = 0; i < fieldCount; i++) ...[
               _FieldRowSkeleton(),
               if (i < fieldCount - 1) const SizedBox(height: AppSizes.sm),
@@ -587,7 +571,6 @@ class _SectionCardSkeleton extends StatelessWidget {
   }
 }
 
-/// Single shimmer row that mirrors a _FieldRow (icon + two text lines).
 class _FieldRowSkeleton extends StatelessWidget {
   const _FieldRowSkeleton();
 
@@ -615,8 +598,6 @@ class _FieldRowSkeleton extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
 
 class _FieldRow extends StatelessWidget {
   const _FieldRow({

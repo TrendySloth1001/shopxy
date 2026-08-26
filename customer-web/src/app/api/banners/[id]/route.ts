@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { backendFetch, extractError } from "@/server/auth/session";
 
-/** Public banner detail — banner + its pinned products. Proxies the
- *  backend `GET /banners/:id`. No auth required. */
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const res = await backendFetch(`/banners/${encodeURIComponent(id)}`);

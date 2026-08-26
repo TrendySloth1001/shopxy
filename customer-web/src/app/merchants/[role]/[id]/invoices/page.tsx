@@ -114,7 +114,6 @@ function InvoicesPageContent() {
   return (
     <div className="mx-auto max-w-shell px-0 sm:px-lg py-xxxl">
       <div className="mx-auto max-w-content">
-        {/* Header */}
         <div className="px-lg sm:px-0 mb-xxl">
           <BackButton fallback="/merchants" className="mb-sm" />
           <h1 className="text-headline-sm font-extrabold text-ink">Invoices</h1>
@@ -123,7 +122,6 @@ function InvoicesPageContent() {
           )}
         </div>
 
-        {/* Loading skeletons */}
         {loading && invoices.length === 0 && (
           <div className="divide-y divide-hairline">
             {Array.from({ length: 8 }).map((_, i) => (
@@ -132,15 +130,12 @@ function InvoicesPageContent() {
           </div>
         )}
 
-        {/* Error */}
         {!loading && error && invoices.length === 0 && (
           <PageError message={error} onRetry={() => load(1)} />
         )}
 
-        {/* Empty */}
         {!loading && !error && invoices.length === 0 && <InvoiceEmptyState />}
 
-        {/* List */}
         {invoices.length > 0 && (
           <>
             <div className="divide-y divide-hairline border-y border-hairline">
@@ -153,7 +148,6 @@ function InvoicesPageContent() {
               ))}
             </div>
 
-            {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex items-center justify-center gap-md mt-xxl px-lg">
                 <button

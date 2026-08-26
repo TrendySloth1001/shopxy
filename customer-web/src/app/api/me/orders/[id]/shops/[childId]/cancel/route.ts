@@ -3,9 +3,6 @@ import { NextResponse } from "next/server";
 
 type Ctx = { params: Promise<{ id: string; childId: string }> };
 
-/** POST /me/orders/:id/shops/:childId/cancel — cancel a shop sub-order. Auth required.
- *  Passes the full backend JSON body on error so the client can read `code` (e.g. NOT_CANCELLABLE).
- */
 export async function POST(_req: Request, { params }: Ctx) {
   const { id, childId } = await params;
   const res = await authedFetch(

@@ -1,13 +1,3 @@
-/// Seed a heavily-filled electronics catalog for a single test merchant.
-///
-/// Usage:
-///   cd backend
-///   npx tsx src/scripts/seed-test-merchant.ts
-///
-/// Idempotent — re-running skips the user/shop if they already exist
-/// (matching by email) and skips any product whose SKU is already
-/// present. To wipe and start over: `npx prisma migrate reset --force`.
-
 import 'dotenv/config';
 import bcrypt from 'bcrypt';
 import prisma from '../infra/db/prisma.js';
@@ -68,7 +58,6 @@ async function ensureMerchant(): Promise<{ userId: number; shopId: number }> {
         },
         select: { id: true },
       });
-      // shopId/shopRole resolve from ShopMember — seed the OWNER row.
       await tx.shopMember.create({
         data: { shopId: s.id, userId: u.id, role: 'OWNER' },
       });
@@ -118,11 +107,6 @@ async function ensureMerchant(): Promise<{ userId: number; shopId: number }> {
   return { userId: user.id, shopId: shop.id };
 }
 
-/// Looks up the canonical category row by slug. Slugs live in
-/// `categories/catalog.seed.ts` — the boot seeder upserts them on
-/// server start. If you run this script before booting the API once,
-/// the categories table will be empty and these lookups will return
-/// null; the products still create, just without a category FK.
 async function categoryIdBySlug(slug: string): Promise<number | undefined> {
   const row = await prisma.category.findUnique({
     where: { slug },
@@ -139,7 +123,6 @@ type SeedProduct = Parameters<typeof productsService.createProduct>[0] & {
 };
 
 const PRODUCTS: SeedProduct[] = [
-  // ── 1. Smartphone ──────────────────────────────────────────────
   {
     name: 'Aether X12 Pro 5G',
     description:
@@ -300,7 +283,6 @@ const PRODUCTS: SeedProduct[] = [
     ],
   },
 
-  // ── 2. Wireless earbuds ────────────────────────────────────────
   {
     name: 'PulseAir Pods Pro (2nd Gen)',
     description: 'True wireless earbuds with adaptive ANC, spatial audio, and 32-hour total playback with the wireless case.',
@@ -378,7 +360,6 @@ const PRODUCTS: SeedProduct[] = [
     ],
   },
 
-  // ── 3. Laptop ──────────────────────────────────────────────────
   {
     name: 'Nimbus Vortex 14 OLED',
     description: '14″ 3K OLED ultrabook with Intel Core Ultra 9 and dedicated RTX 4060 graphics in a 1.49 kg chassis.',
@@ -475,7 +456,6 @@ const PRODUCTS: SeedProduct[] = [
     ],
   },
 
-  // ── 4. Smartwatch ──────────────────────────────────────────────
   {
     name: 'ChronoFit S3 AMOLED',
     description: 'Lightweight smartwatch with a 1.43″ AMOLED, dual-frequency GPS, and 14-day battery life.',
@@ -548,7 +528,6 @@ const PRODUCTS: SeedProduct[] = [
     ],
   },
 
-  // ── 5. Bluetooth speaker ───────────────────────────────────────
   {
     name: 'BassRock Cube Mini',
     description: 'Pocketable Bluetooth speaker with stereo pairing, 360° sound, and 18-hour playback.',
@@ -604,7 +583,6 @@ const PRODUCTS: SeedProduct[] = [
     ],
   },
 
-  // ── 6. Monitor ─────────────────────────────────────────────────
   {
     name: 'PixelPro 27Q QHD IPS',
     description: '27″ QHD IPS monitor at 165 Hz with 1ms response, 95% DCI-P3 and ergonomic stand.',
@@ -663,7 +641,6 @@ const PRODUCTS: SeedProduct[] = [
     variants: [],
   },
 
-  // ── 7. Mechanical keyboard ─────────────────────────────────────
   {
     name: 'KeyForge K75 RGB',
     description: '75% hot-swappable mechanical keyboard with gasket mount, per-key RGB, and tri-mode wireless.',
@@ -731,7 +708,6 @@ const PRODUCTS: SeedProduct[] = [
     ],
   },
 
-  // ── 8. Power bank ──────────────────────────────────────────────
   {
     name: 'VoltStash 20K MagFlow',
     description: 'Slim 20,000 mAh power bank with magnetic wireless charging, 100W USB-C PD, and a built-in OLED.',
@@ -787,7 +763,6 @@ const PRODUCTS: SeedProduct[] = [
     ],
   },
 
-  // ── 9. Action camera ───────────────────────────────────────────
   {
     name: 'OmniLens Go 6',
     description: 'Pocket action camera with 5.3K60 video, dual screens, and a 1/1.7″ sensor.',
@@ -844,7 +819,6 @@ const PRODUCTS: SeedProduct[] = [
     ],
   },
 
-  // ── 10. Smart TV ───────────────────────────────────────────────
   {
     name: 'Crestwave 55" QLED Mini-LED 4K',
     description: '55-inch QLED TV with 1,200 mini-LED zones, 144 Hz gaming, and Dolby Vision IQ.',
@@ -936,11 +910,8 @@ async function seedProducts(shopId: number): Promise<void> {
       { shopId },
     );
 
-    // Mark as published so it surfaces in the public marketplace.
     await productsService.setPublished(shopId, product.id, true);
 
-    // Bump soldLast30d to a realistic-looking number so the
-    // "X bought in past month" line appears on the PDP.
     const fakeSold = 80 + Math.floor(Math.random() * 600);
     await prisma.product.update({
       where: { id: product.id },
@@ -954,12 +925,6 @@ async function seedProducts(shopId: number): Promise<void> {
   console.log(`\n✓ Products: ${createdCount} created, ${skippedCount} skipped.`);
 }
 
-/// Synthesise enough ProductEvent rows that the trending recompute
-/// surfaces every seeded product on the customer home feed. Without
-/// this, the home page's trending rail stays empty until real customer
-/// traffic generates events. We backdate the events across the last
-/// 12 hours so trending's 24-hour window picks them up but also so
-/// they don't all stack on the exact same timestamp.
 async function seedTrendingEvents(): Promise<void> {
   const products = await prisma.product.findMany({
     where: { isActive: true, isPublished: true },
@@ -976,13 +941,10 @@ async function seedTrendingEvents(): Promise<void> {
   };
   const rows: EventInput[] = [];
   const now = Date.now();
-  const WINDOW_MS = 12 * 60 * 60 * 1000; // last 12h
+  const WINDOW_MS = 12 * 60 * 60 * 1000;
 
   for (const p of products) {
-    // Pick weights so different products land at different scores —
-    // the rail looks more realistic when there's a clear top item
-    // rather than a flat row of identical scores.
-    const lift = 1 + Math.random() * 2; // 1×–3× lift
+    const lift = 1 + Math.random() * 2;
     const counts = {
       IMPRESSION: Math.round(120 * lift),
       TAP: Math.round(25 * lift),
@@ -1006,8 +968,6 @@ async function seedTrendingEvents(): Promise<void> {
     }
   }
 
-  // createMany skips on duplicate clientUuid (the @unique constraint),
-  // which makes re-running the seed safe.
   await prisma.productEvent.createMany({ data: rows, skipDuplicates: true });
   console.log(`✓ Inserted ${rows.length} synthetic ProductEvents across ${products.length} products.`);
 }

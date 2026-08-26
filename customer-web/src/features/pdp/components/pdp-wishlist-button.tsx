@@ -16,7 +16,6 @@ export function PdpWishlistButton({ productId }: Props) {
   const [wishlisted, setWishlisted] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  // Load initial wishlist state when authed
   useEffect(() => {
     if (status !== "authed") return;
     void getWishlistIds().then((ids) => {
@@ -32,11 +31,11 @@ export function PdpWishlistButton({ productId }: Props) {
     }
     setBusy(true);
     const nextState = !wishlisted;
-    setWishlisted(nextState); // optimistic
+    setWishlisted(nextState);
     try {
       await toggleWishlist(productId, nextState);
     } catch {
-      setWishlisted(!nextState); // revert
+      setWishlisted(!nextState);
     } finally {
       setBusy(false);
     }

@@ -5,9 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-/// Saves quotation PDF bytes to a temp file and opens the platform share /
-/// save / print sheet. Mirrors the orders feature's `shareInvoicePdf` — going
-/// through a real file (not `XFile.fromData`) is required on iOS.
 Future<void> shareQuotationPdf({
   required BuildContext context,
   required String quotationNo,

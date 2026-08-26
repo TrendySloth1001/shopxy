@@ -27,7 +27,6 @@ function findVariant(variants: Variant[], selected: Record<string, string>): Var
 export function PdpVariantPicker({ product, onSelect }: Props) {
   const { variants, variantAxes } = product;
 
-  // Seed from default variant
   const defaultVariant = variants.find((v) => v.isDefault) ?? variants[0] ?? null;
   const [selected, setSelected] = useState<Record<string, string>>(() => {
     if (!defaultVariant || variantAxes.length === 0) return {};
@@ -63,7 +62,6 @@ export function PdpVariantPicker({ product, onSelect }: Props) {
           <div className="flex flex-wrap gap-sm">
             {axis.values.map((value) => {
               const isSelected = selected[axis.name] === value;
-              // Check if this value leads to any variant with stock
               const hasStock = variants.some((v) => {
                 const match = { ...selected, [axis.name]: value };
                 return (

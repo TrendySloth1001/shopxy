@@ -73,16 +73,11 @@ export default function ProductDetailPage({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [stockSheet, setStockSheet] = useState<StockType | null>(null);
   const [ledgerOpen, setLedgerOpen] = useState(false);
-  // The just-created draft (this session) — used to highlight + scroll its row.
   const [draftId, setDraftId] = useState<string | null>(null);
-  // All unconfirmed drafts touching this product. Server-backed, so they
-  // persist across reloads instead of vanishing with the in-session banner.
   const [drafts, setDrafts] = useState<Invoice[]>([]);
   const [copied, setCopied] = useState(false);
   const draftRef = useRef<HTMLDivElement>(null);
 
-  // Pending DRAFT invoices that include this product. Re-fetched on `nonce` so a
-  // fresh stock-in draft shows up immediately and a confirmed one drops off.
   useEffect(() => {
     let active = true;
     void (async () => {
@@ -90,7 +85,6 @@ export default function ProductDetailPage({
         const list = await listInvoices({ status: "DRAFT", productId });
         if (active) setDrafts(list);
       } catch {
-        // Non-fatal — the rest of the page works without the drafts panel.
         if (active) setDrafts([]);
       }
     })();
@@ -99,9 +93,6 @@ export default function ProductDetailPage({
     };
   }, [productId, nonce]);
 
-  // When a draft invoice is created, pull the panel into view (once its row has
-  // loaded) so the merchant can't miss the "confirm to post stock" step — they
-  // may be scrolled down the detail page after stocking in.
   useEffect(() => {
     if (draftId != null && draftRef.current) {
       draftRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -136,7 +127,6 @@ export default function ProductDetailPage({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // clipboard blocked — no-op; the URL is already in the address bar.
     }
   }
 
@@ -182,7 +172,6 @@ export default function ProductDetailPage({
     <div className="w-full px-lg py-xxl md:px-xxl">
       <BackLink />
 
-      {/* Header */}
       <div className="mt-md flex flex-wrap items-start justify-between gap-md">
         <div className="min-w-0">
           {product.brand ? (
@@ -330,7 +319,6 @@ export default function ProductDetailPage({
 
       <Divider className="my-xxl" />
 
-      {/* Gallery + key facts */}
       <div className="grid gap-xxl lg:grid-cols-[2fr_3fr]">
         <Gallery product={product} />
         <div className="flex flex-col gap-lg">
@@ -521,9 +509,6 @@ function BackLink() {
   );
 }
 
-/** One pending-draft row inside the product detail's drafts panel. Mirrors the
- *  invoices-list row, with two actions: View (open the invoice) and Confirm
- *  (post the stock for this draft right here). */
 function DraftRow({
   draft,
   highlight,
@@ -549,7 +534,6 @@ function DraftRow({
     setError(null);
     try {
       await updateInvoiceStatus(draft.id, "CONFIRMED");
-      // Posting succeeded — refresh the product + drafts; this row drops off.
       onConfirmed();
     } catch (e) {
       setError(e instanceof Error ? e.message : t("detail.drafts.confirmError"));

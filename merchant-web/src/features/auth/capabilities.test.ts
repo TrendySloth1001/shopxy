@@ -34,7 +34,7 @@ describe("shop capabilities", () => {
     const staff = user({ shopRole: "STAFF", shopPermissions: ["products:view", "orders:manage"] });
     expect(canView(staff, "products")).toBe(true);
     expect(canManage(staff, "products")).toBe(false);
-    expect(canView(staff, "orders")).toBe(true); // manage implies view
+    expect(canView(staff, "orders")).toBe(true);
     expect(canManage(staff, "orders")).toBe(true);
     expect(canView(staff, "reports")).toBe(false);
   });

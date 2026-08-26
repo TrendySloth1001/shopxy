@@ -117,9 +117,6 @@ class InvoiceDto {
     bool? confirm,
   }) {
     final payload = <String, dynamic>{'type': type, 'items': items};
-    // Recipient postal fields + the explicit "issue it incomplete" flag. Each
-    // is omitted when empty so the server keeps falling back to the party for
-    // whatever the merchant didn't fill in.
     if (recipient != null) payload.addAll(recipient.toJson());
     if (confirm == true) payload['confirm'] = true;
     if (vendorId != null) payload['vendorId'] = vendorId;

@@ -2,22 +2,8 @@ import "server-only";
 import { NextResponse } from "next/server";
 import { authedFetch, backendFetch, extractError } from "@/server/auth/session";
 
-/**
- * Thin BFF proxy helpers. Each `proxy*` function calls the backend, maps errors
- * to the standard `{ error: string }` envelope and returns a NextResponse.
- *
- * Binary passthrough (PDFs): use `proxyBinaryAuthed` — it streams the upstream
- * body with `Content-Type` and `Content-Disposition` preserved.
- */
-
 type Init = Omit<RequestInit, "cache">;
 
-// ─── public (no session required) ────────────────────────────────────────────
-
-/**
- * Proxy a public GET (or any method) to the backend, forwarding the query
- * string from the incoming request.
- */
 export async function proxyPublic(
   backendPath: string,
   init?: Init,
@@ -35,11 +21,6 @@ export async function proxyPublic(
   });
 }
 
-// ─── authenticated ────────────────────────────────────────────────────────────
-
-/**
- * Proxy a protected endpoint. Returns 401 if no live session.
- */
 export async function proxyAuthed(
   backendPath: string,
   init?: Init,
@@ -58,18 +39,6 @@ export async function proxyAuthed(
   return NextResponse.json(body, { status: res.status });
 }
 
-/**
- * Proxy a protected endpoint, forwarding the upstream JSON body and status
- * VERBATIM — including non-2xx responses whose body is itself the contract.
- *
- * Use this (not `proxyAuthed`) when a 4xx carries a structured payload the
- * client consumes directly. `POST /me/coupons/validate` is the canonical
- * case: a failed validation is a 400 with `{ ok: false, code, message }`, and
- * collapsing it into the generic `{ error }` envelope is exactly what made the
- * checkout show "Could not validate coupon." for every rejected coupon instead
- * of the real reason (expired, min-order, first-order-only, …). Only a missing
- * session is mapped to a 401 envelope.
- */
 export async function proxyAuthedPassthrough(
   backendPath: string,
   init?: Init,
@@ -81,10 +50,6 @@ export async function proxyAuthedPassthrough(
   return NextResponse.json(body, { status: res.status });
 }
 
-/**
- * Like proxyAuthed but returns 204 (no body) on success. Use for mutations
- * whose backend also responds 204.
- */
 export async function proxyAuthed204(
   backendPath: string,
   init?: Init,
@@ -102,10 +67,6 @@ export async function proxyAuthed204(
   return new NextResponse(null, { status: 204 });
 }
 
-/**
- * Stream a binary (PDF) response from the backend through to the browser.
- * Preserves Content-Type and Content-Disposition headers.
- */
 export async function proxyBinaryAuthed(
   backendPath: string,
   fallback = "Could not retrieve file.",
@@ -134,10 +95,6 @@ export async function proxyBinaryAuthed(
   });
 }
 
-/**
- * Forward the entire incoming request body + query string to the backend.
- * Returns the upstream JSON or binary response as-is.
- */
 export async function proxyAuthedWithBody(
   backendPath: string,
   method: string,

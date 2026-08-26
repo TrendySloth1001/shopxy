@@ -1,8 +1,6 @@
 import prisma from '../../infra/db/prisma.js';
 import { contactChangeLogService } from '../contact-change-log/contact-change-log.service.js';
 
-/// Tenant-scoped vendor (supplier) operations. Every method takes
-/// `shopId` so reads and writes stay isolated to the calling merchant.
 export class VendorsService {
   async createVendor(
     shopId: number,
@@ -68,7 +66,6 @@ export class VendorsService {
           createdAt: true,
           updatedAt: true,
           linkedUserId: true,
-          // Name + avatar only — login email is withheld (see getVendorOverview).
           linkedUser: { select: { id: true, name: true, avatarUrl: true } },
           _count: { select: { stockTransactions: true, invoices: true } },
         },
@@ -99,12 +96,6 @@ export class VendorsService {
         createdAt: true,
         updatedAt: true,
         linkedUserId: true,
-        // DPDP §6/§8 — do NOT disclose the linked user's registered login
-        // email to the merchant. The merchant already holds the contact
-        // `email` they typed on the vendor row; the account email is a
-        // separate data principal's PII shared with no specific consent at
-        // link time. Name + avatar (the linked user's chosen profile photo,
-        // shown as the vendor's avatar) only — never the email.
         linkedUser: { select: { id: true, name: true, avatarUrl: true } },
       },
     });

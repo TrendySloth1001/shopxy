@@ -5,7 +5,6 @@ import { productSchema } from "@/features/products/schema";
 
 const bodySchema = z.object({ isPublished: z.boolean() });
 
-// POST /api/products/:id/publish — toggle marketplace visibility.
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },

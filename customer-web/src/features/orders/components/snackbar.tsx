@@ -1,6 +1,5 @@
 "use client";
 
-/** Lightweight ephemeral toast. Place at the bottom of the component tree. */
 export type SnackTone = "success" | "error" | "info";
 
 export type SnackMessage = {

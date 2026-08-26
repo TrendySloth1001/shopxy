@@ -37,9 +37,6 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
   bool _isLoading = true;
   bool _isConverting = false;
 
-  /// Guards the archive button against a double tap while the request is in
-  /// flight — the page pops on success, so a second call would fire against a
-  /// dead context.
   bool _archiving = false;
 
   @override
@@ -88,11 +85,6 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
     }
   }
 
-  /// File this challan away, or bring it back. Confirmation only when
-  /// archiving — restoring merely puts the document back where it was.
-  ///
-  /// There is no delete and can't be: the challan number is allocated at
-  /// create time and Rule 55 wants the run serially numbered.
   Future<void> _setArchived(Challan challan, bool archived) async {
     final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
@@ -121,8 +113,6 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
           ),
         ),
       );
-      // The list this came from no longer holds it either way, so pop with a
-      // "reload me" result rather than leaving a stale row behind.
       navigator.pop(true);
     } catch (e) {
       if (!mounted) return;
@@ -195,9 +185,6 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
                 if (v == 'cancel') _cancel();
               },
             ),
-          // A settled challan can be filed away; an archived one brought
-          // back. A PENDING one offers neither — the server refuses it,
-          // because goods are still out against it.
           if (c.isArchived || !c.isPending)
             IconButton(
               icon: AppIcon(
@@ -362,10 +349,6 @@ class _ChallanDetailPageState extends State<ChallanDetailPage> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton shown while challan detail is loading
-// ---------------------------------------------------------------------------
-
 class _ChallanDetailSkeleton extends StatelessWidget {
   const _ChallanDetailSkeleton();
 
@@ -382,7 +365,6 @@ class _ChallanDetailSkeleton extends StatelessWidget {
         child: Column(
           children: [
             SizedBox(height: FloatingAppBar.contentTopInset(context)),
-            // Mirror of GlassHero.line
             AppShimmerBox(
               width: double.infinity,
               height: AppSizes.heroHeightMd,
@@ -391,13 +373,11 @@ class _ChallanDetailSkeleton extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.all(AppSizes.lg),
                 children: [
-                  // Info card
                   AppCard(
                     padding: const EdgeInsets.all(AppSizes.lg),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Challan number / status row
                         Row(
                           children: [
                             const Expanded(
@@ -415,10 +395,8 @@ class _ChallanDetailSkeleton extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: AppSizes.xs),
-                        // Date line
                         const AppShimmerLine(widthFactor: 0.45, height: 13),
                         const SizedBox(height: AppSizes.md),
-                        // _InfoRow placeholders: party name, phone, note
                         const AppShimmerLine(widthFactor: 0.75, height: 13),
                         const SizedBox(height: AppSizes.xs),
                         const AppShimmerLine(widthFactor: 0.5, height: 13),
@@ -428,10 +406,8 @@ class _ChallanDetailSkeleton extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: AppSizes.md),
-                  // Section header placeholder
                   const AppShimmerLine(widthFactor: 0.35, height: 13),
                   const SizedBox(height: AppSizes.sm),
-                  // Items card
                   AppCard(
                     padding: EdgeInsets.zero,
                     child: Column(

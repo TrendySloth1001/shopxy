@@ -12,14 +12,10 @@ import { deriveInclusiveTaxBreakup, type TaxBreakup } from "@/shared/tax";
 import { useState } from "react";
 import { mediaSrc } from "@/shared/media";
 
-// ── Undo toast (simple transient overlay) ─────────────────────────────────────
-
 interface UndoToast {
   message: string;
   onUndo: () => void;
 }
-
-// ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function CartPage() {
   const { lines, count, subtotal, savings, loading, mutating, priceProvisional, setQty, remove, add } = useCart();
@@ -28,13 +24,8 @@ export default function CartPage() {
   const [toast, setToast] = useState<UndoToast | null>(null);
   const [cappedIds, setCappedIds] = useState<Set<string>>(new Set());
 
-  // Reference (MRP) total shown struck-through. Derived from subtotal + savings
-  // so it stays consistent with the per-line savings guard (a bad catalog row
-  // where mrp ≤ sellingPrice contributes no saving and no inflated strike).
   const mrpTotal = subtotal + savings;
 
-  // GST breakup — selling prices are tax-inclusive, so back the tax out of the
-  // line amounts grouped by rate to show the "of which taxes" split.
   const taxBreakup = deriveInclusiveTaxBreakup(
     lines.map((l) => ({
       inclusiveAmount: l.product.sellingPrice * l.quantity,
@@ -98,7 +89,6 @@ export default function CartPage() {
       <AppHeader />
       <main className="mx-auto max-w-shell px-lg py-xl">
         <BackButton fallback="/" className="mb-md" />
-        {/* Header */}
         <div className="mb-xl border-b border-hairline pb-lg">
           <h1 className="text-headline-md text-ink">My Cart</h1>
           <p className="mt-xs text-body-sm text-muted">
@@ -112,9 +102,7 @@ export default function CartPage() {
           <EmptyCart />
         ) : (
           <div className="flex flex-col gap-xl lg:flex-row lg:items-start">
-            {/* Left column — items */}
             <div className="flex flex-1 flex-col gap-lg">
-              {/* Savings banner */}
               {savings > 0 && (
                 <div className="flex items-center gap-sm rounded-md bg-success-soft px-md py-sm">
                   <span className="text-body-sm font-bold text-success">
@@ -123,10 +111,6 @@ export default function CartPage() {
                 </div>
               )}
 
-              {/* Guest cart: prices are a snapshot taken when the item was
-                  added, not a live figure. Disclose so a stale price/MRP
-                  isn't shown as current. (CP E-Commerce Rules r.5; Legal
-                  Metrology.) Signing in refreshes against the live catalogue. */}
               {priceProvisional && (
                 <div className="flex items-center gap-sm rounded-md bg-canvas px-md py-sm">
                   <span className="text-body-sm text-muted">
@@ -137,7 +121,6 @@ export default function CartPage() {
                 </div>
               )}
 
-              {/* Item list */}
               <div className="divide-y divide-hairline rounded-lg border border-hairline bg-white">
                 {lines.map((line) => {
                   const { product } = line;
@@ -150,7 +133,6 @@ export default function CartPage() {
 
                   return (
                     <div key={line.id} className="flex gap-md p-md transition-colors duration-200 hover:bg-surface-tint/40">
-                      {/* Image — 96px rounded-lg */}
                       <Link href={`/p/${product.id}`} className="shrink-0">
                         <div className="h-24 w-24 overflow-hidden rounded-lg bg-brand-soft">
                           {product.images[0] ? (
@@ -173,7 +155,6 @@ export default function CartPage() {
                         </div>
                       </Link>
 
-                      {/* Details */}
                       <div className="flex flex-1 flex-col gap-xs">
                         <Link href={`/p/${product.id}`} className="hover:underline">
                           <p className="line-clamp-2 text-body-sm font-bold leading-snug text-ink">
@@ -186,7 +167,6 @@ export default function CartPage() {
                           </span>
                         )}
 
-                        {/* Price row */}
                         <div className="flex flex-wrap items-center gap-sm">
                           <span className="text-title-sm font-extrabold text-ink">
                             {formatINR(product.sellingPrice)}
@@ -209,7 +189,6 @@ export default function CartPage() {
                           </p>
                         )}
 
-                        {/* Pill stepper + remove */}
                         <div className="flex items-center justify-between">
                           <QuantityStepper
                             qty={line.quantity}
@@ -235,7 +214,6 @@ export default function CartPage() {
                 })}
               </div>
 
-              {/* Bill summary */}
               <BillCard
                 subtotal={subtotal}
                 mrpTotal={mrpTotal}
@@ -243,7 +221,6 @@ export default function CartPage() {
                 taxBreakup={taxBreakup}
               />
 
-              {/* Safe and secure strip */}
               <div className="flex items-center gap-md rounded-lg bg-brand-soft px-md py-sm">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white shadow-sm">
                   <ShieldCheck className="h-5 w-5 text-brand" />
@@ -257,13 +234,11 @@ export default function CartPage() {
               </div>
             </div>
 
-            {/* Right column — checkout CTA (sticky on desktop) */}
             <div className="lg:sticky lg:top-xl lg:w-72">
               <div className="rounded-lg border border-hairline bg-white p-md shadow-floating">
                 <p className="mb-sm text-label-md font-extrabold uppercase tracking-wide text-muted">
                   Order summary
                 </p>
-                {/* Mini bill rows */}
                 <div className="flex flex-col gap-xs pb-md">
                   {savings > 0 && (
                     <div className="flex items-center justify-between">
@@ -309,7 +284,6 @@ export default function CartPage() {
           </div>
         )}
 
-        {/* Undo toast */}
         {toast && (
           <div className="fixed bottom-xl left-1/2 z-50 flex -translate-x-1/2 items-center gap-md rounded-button bg-ink px-md py-sm shadow-snackbar">
             <span className="text-body-sm text-white">{toast.message}</span>
@@ -329,9 +303,6 @@ export default function CartPage() {
   );
 }
 
-// ── Sub-components ─────────────────────────────────────────────────────────────
-
-/** Single-pill stepper: [− qty +] inside one hairline-bordered rounded-full */
 function QuantityStepper({
   qty,
   maxQty,
@@ -406,8 +377,6 @@ function BillCard({
           value={formatINR(subtotal, { decimals: 2 })}
           bold
         />
-        {/* GST breakup — prices are inclusive of tax; this is the "of which"
-            split backed out of the item amounts. */}
         {taxBreakup.taxTotal > 0 && (
           <div className="mt-xs flex flex-col gap-xs border-t border-hairline pt-xs">
             <BillRow
@@ -472,7 +441,6 @@ function BillRow({
 function EmptyCart() {
   return (
     <div className="flex flex-col items-center py-xxxl text-center">
-      {/* Brand-soft tinted illustration block */}
       <div className="mb-xl flex h-32 w-32 flex-col items-center justify-center rounded-2xl bg-brand-soft">
         <ShoppingCart className="h-12 w-12 text-brand/50" />
         <span className="mt-sm text-label-md font-extrabold text-brand/50">Empty bag</span>

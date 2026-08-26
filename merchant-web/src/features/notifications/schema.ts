@@ -1,9 +1,5 @@
 import { z } from "zod";
 
-/**
- * Per-user notifications — mirrors the backend `/notifications` module
- * (shared by both apps). `kind` is a free-form string; `readAt` null = unread.
- */
 export const notificationSchema = z
   .object({
     id: z.coerce.string(),
@@ -41,7 +37,6 @@ export function isUnread(n: AppNotification): boolean {
   return n.readAt == null;
 }
 
-/** Pull a numeric id out of the JSON `data` payload (handles num/string). */
 export function dataId(n: AppNotification, key: string): number | null {
   const v = n.data?.[key];
   if (typeof v === "number" && Number.isFinite(v)) return v;

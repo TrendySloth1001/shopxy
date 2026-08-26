@@ -1,7 +1,3 @@
-/**
- * Unit tests for linked-account onboarding (linked-accounts.service.ts).
- * prisma and the provider registry are vi.mock'd.
- */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 const { linkedAccount, createLinkedAccount, fetchAccountStatus, fetchAccount, provider } = vi.hoisted(() => {
@@ -71,8 +67,6 @@ describe('mapProviderKyc (single source of truth)', () => {
     expect(mapProviderKyc('under_review')).toEqual({ kycStatus: 'UNDER_REVIEW', payoutsEnabled: false });
     expect(mapProviderKyc('suspended')).toEqual({ kycStatus: 'SUSPENDED', payoutsEnabled: false });
     expect(mapProviderKyc('funds_held')).toEqual({ kycStatus: 'FUNDS_HELD', payoutsEnabled: false });
-    // Razorpay individual Route accounts use `created` as their terminal active
-    // state (dashboard shows "Activated") — treat it as payout-ready.
     expect(mapProviderKyc('created')).toEqual({ kycStatus: 'ACTIVATED', payoutsEnabled: true });
     expect(mapProviderKyc('some_unknown')).toEqual({ kycStatus: 'CREATED', payoutsEnabled: false });
   });
@@ -87,9 +81,8 @@ describe('startOnboarding', () => {
     const r = await linkedAccountsService.startOnboarding(ONBOARD);
 
     expect(r).toEqual({ ok: true, account: expect.objectContaining({ providerAccountId: 'acc_NEW' }) });
-    expect(linkedAccount.upsert).toHaveBeenCalledTimes(1); // reserved first
+    expect(linkedAccount.upsert).toHaveBeenCalledTimes(1);
     expect(createLinkedAccount).toHaveBeenCalledTimes(1);
-    // KYC + bank details are forwarded to the provider…
     expect(createLinkedAccount).toHaveBeenCalledWith(
       expect.objectContaining({
         pan: 'AAACL1234C',
@@ -99,7 +92,6 @@ describe('startOnboarding', () => {
         bankIfsc: 'HDFC0001234',
       }),
     );
-    // …but PII (PAN, bank) is NEVER persisted (data minimization).
     const reservedData = (linkedAccount.upsert.mock.calls[0][0] as { create: Record<string, unknown> }).create;
     expect(reservedData).not.toHaveProperty('bankAccountNumber');
     expect(reservedData).not.toHaveProperty('pan');
@@ -115,18 +107,18 @@ describe('startOnboarding', () => {
 
     expect(r).toMatchObject({ ok: true, account: { providerAccountId: 'acc_EXISTING' } });
     expect(createLinkedAccount).not.toHaveBeenCalled();
-    expect(linkedAccount.updateMany).not.toHaveBeenCalled(); // never claimed
+    expect(linkedAccount.updateMany).not.toHaveBeenCalled();
   });
 
   it('does NOT create at the provider when it loses the create-claim (concurrent/retry)', async () => {
     linkedAccount.findUnique
-      .mockResolvedValueOnce(row({ providerAccountId: null })) // existing reserved
-      .mockResolvedValueOnce(row({ providerAccountId: null, kycStatus: 'CREATING' })); // in-flight
-    linkedAccount.updateMany.mockResolvedValue({ count: 0 }); // someone else owns the create
+      .mockResolvedValueOnce(row({ providerAccountId: null }))
+      .mockResolvedValueOnce(row({ providerAccountId: null, kycStatus: 'CREATING' }));
+    linkedAccount.updateMany.mockResolvedValue({ count: 0 });
 
     const r = await linkedAccountsService.startOnboarding(ONBOARD);
 
-    expect(createLinkedAccount).not.toHaveBeenCalled(); // no duplicate provider account
+    expect(createLinkedAccount).not.toHaveBeenCalled();
     expect(r).toMatchObject({ ok: true });
   });
 
@@ -135,7 +127,6 @@ describe('startOnboarding', () => {
     createLinkedAccount.mockRejectedValue(new Error('razorpay 400'));
 
     await expect(linkedAccountsService.startOnboarding(ONBOARD)).rejects.toThrow('razorpay 400');
-    // claim released back to CREATED.
     expect(linkedAccount.updateMany).toHaveBeenCalledWith({
       where: { shopId: 7, kycStatus: 'CREATING' },
       data: { kycStatus: 'CREATED' },
@@ -169,7 +160,7 @@ describe('connect existing account', () => {
   });
 
   it('confirmConnect stores the account with mapper-derived status', async () => {
-    linkedAccount.findUnique.mockResolvedValue(null); // no prior account
+    linkedAccount.findUnique.mockResolvedValue(null);
     fetchAccount.mockResolvedValue(DETAILS);
     linkedAccount.upsert.mockResolvedValue(
       row({ providerAccountId: 'acc_LIVE', kycStatus: 'ACTIVATED', payoutsEnabled: true }),

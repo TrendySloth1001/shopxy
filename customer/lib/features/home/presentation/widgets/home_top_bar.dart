@@ -28,16 +28,10 @@ import 'package:shopxy_customer/shared/constants/app_curves.dart';
 class HomeTopBar extends StatelessWidget {
   const HomeTopBar({super.key, this.shrink = 0.0});
 
-  /// 0.0 = fully expanded (brand row + location pill below), 1.0 =
-  /// fully collapsed (only the brand row, now with compact city +
-  /// search substitutes that have faded in beside the bell).
   final double shrink;
 
   @override
   Widget build(BuildContext context) {
-    // Ease the visibility so the compact substitutes finish fading in
-    // before the user has scrolled too far — linear `t` would feel
-    // sluggish at the top of the curve.
     final t = AppCurves.decelerate.transform(shrink.clamp(0.0, 1.0));
 
     return Padding(
@@ -52,12 +46,6 @@ class HomeTopBar extends StatelessWidget {
           Row(
             children: [
               _BrandWordmark(t: t),
-              // As the full search bar collapses away on scroll, a broad
-              // search field fades in here to fill the freed space. The
-              // address isn't surfaced in the collapsed header at all —
-              // it's still one tap away via the location row up top when
-              // expanded. Expanded keeps the wallet/bell/avatar pinned to
-              // the right (acts as a spacer while the field is invisible).
               Expanded(
                 child: _CollapsedSearchField(
                   t: t,
@@ -66,11 +54,6 @@ class HomeTopBar extends StatelessWidget {
                   ).push(MaterialPageRoute(builder: (_) => const SearchPage())),
                 ),
               ),
-              // Pending-payment affordance. Lives up here next to the
-              // bell — out of the browse path — so the home feed stays
-              // a clean shopping surface. Renders nothing when there's
-              // nothing to pay; the badge counts outstanding orders and
-              // a tap opens the full list.
               Selector<OrdersProvider, int>(
                 selector: (_, p) =>
                     p.orders.where((o) => o.needsOnlinePayment).length,
@@ -102,16 +85,7 @@ class HomeTopBar extends StatelessWidget {
                   ),
                 ),
               ),
-              // Profile button moves here when the customer is linked
-              // to at least one merchant (shop-side party link). In
-              // that layout the bottom nav drops the Profile tab in
-              // favour of Merchant, so the affordance lives next to
-              // the bell instead. Unlinked customers don't render this
-              // — Profile is still reachable via the bottom nav.
               Selector<ShopsProvider, bool>(
-                // Hint-or-real getter — keeps the profile button's
-                // visibility consistent with the bottom-nav layout
-                // decision from the very first paint.
                 selector: (_, p) => p.hasLinkedParty,
                 builder: (_, linked, _) {
                   if (!linked) return const SizedBox.shrink();
@@ -129,9 +103,6 @@ class HomeTopBar extends StatelessWidget {
               ),
             ],
           ),
-          // The location pill collapses (height + opacity + the
-          // separator above it) as `t` -> 1. ClipRect ensures the
-          // collapsing content doesn't bleed visually.
           ClipRect(
             child: Align(
               alignment: Alignment.topCenter,
@@ -160,19 +131,9 @@ class HomeTopBar extends StatelessWidget {
   }
 }
 
-/// Broad search field that lives in the brand row and fades in as the
-/// page scrolls (the full search bar below collapses away at the same
-/// time). Sits inside an [Expanded], so at t=0 it's invisible and
-/// non-interactive but still reserves the middle width — keeping the
-/// wallet/bell/avatar pinned to the right exactly like a [Spacer] would.
-///
-/// Cycles the same rotating [HomeStaticData.searchHints] as the full
-/// search bar, with the matching slide+fade transition, so the two read
-/// as one continuous element across the scroll.
 class _CollapsedSearchField extends StatefulWidget {
   const _CollapsedSearchField({required this.t, required this.onTap});
 
-  /// 0 = expanded header (field hidden), 1 = fully collapsed (field shown).
   final double t;
   final VoidCallback onTap;
 
@@ -204,8 +165,6 @@ class _CollapsedSearchFieldState extends State<_CollapsedSearchField> {
   @override
   Widget build(BuildContext context) {
     return IgnorePointer(
-      // Don't intercept taps across the middle of the header while the
-      // field is (near) invisible at the top of the page.
       ignoring: widget.t < 0.5,
       child: Opacity(
         opacity: widget.t.clamp(0.0, 1.0),
@@ -269,9 +228,6 @@ class _CollapsedSearchFieldState extends State<_CollapsedSearchField> {
 class _BrandWordmark extends StatelessWidget {
   const _BrandWordmark({required this.t});
 
-  /// 0 = expanded (full "shopxy." wordmark), 1 = collapsed (just the
-  /// "S" mark). The text portion shrinks + fades away as the header
-  /// collapses, freeing width for the search field beside it.
   final double t;
 
   @override
@@ -289,7 +245,6 @@ class _BrandWordmark extends StatelessWidget {
             shape: AppShapes.squircle(AppSizes.radiusSm),
           ),
           alignment: Alignment.center,
-          // Placeholder mark — to be replaced with the real logo later.
           child: const AppIcon(
             AppIcons.storefrontRounded,
             color: AppColors.white,
@@ -357,13 +312,8 @@ class _LocationPill extends StatelessWidget {
     required this.onTap,
   });
 
-  /// Address line 1 of the default address. Null/empty when no address
-  /// is saved — the pill then renders an "Add a delivery address" CTA in
-  /// brand colour instead of stamping in a placeholder.
   final String? line;
 
-  /// Pincode of the default address. Pinned at the end of the row so it
-  /// stays visible even when a long [line] truncates with an ellipsis.
   final String? pincode;
   final VoidCallback onTap;
 
@@ -371,9 +321,6 @@ class _LocationPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasAddress = line != null && line!.isNotEmpty;
     final hasPincode = pincode != null && pincode!.isNotEmpty;
-    // Slim, borderless single line — no filled panel. Reads as a light
-    // "deliver to <line 1> <pincode> ▾" affordance under the brand row
-    // instead of a heavy boxed pill.
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
@@ -451,17 +398,11 @@ class _LocationPill extends StatelessWidget {
 }
 
 Future<void> _showAddressSheet(BuildContext context) async {
-  // Saving / picking a delivery address is per-user; a guest tapping
-  // the address chip is asking to set up shipping — gate at the door
-  // instead of letting them open the sheet, see a "no addresses" empty
-  // state, then hit a 401 the moment they tap "Add new".
   final signedIn = await requireAuth(
     context,
     reason: 'Sign in to save delivery addresses and use them at checkout.',
   );
   if (!signedIn || !context.mounted) return;
-  // Read provider before showing the sheet; the sheet builds in its
-  // own context that still has access via the root MaterialApp tree.
   context.read<AddressesProvider>().load();
   showModalBottomSheet<void>(
     context: context,
@@ -806,10 +747,6 @@ class _TopBarIcon extends StatelessWidget {
   }
 }
 
-/// Tappable avatar that opens the customer profile page. Rendered next
-/// to the notification bell when the customer is linked to at least
-/// one merchant — in that layout the bottom nav drops Profile in
-/// favour of Merchant, so this is where the user reaches it.
 class _ProfileButton extends StatelessWidget {
   const _ProfileButton({required this.onTap});
   final VoidCallback onTap;

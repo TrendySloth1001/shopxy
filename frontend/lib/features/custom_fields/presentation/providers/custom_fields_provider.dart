@@ -4,11 +4,6 @@ import 'package:shopxy/features/custom_fields/data/datasources/custom_fields_rem
 import 'package:shopxy/features/custom_fields/domain/entities/custom_field.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 
-/// Owns the shop-wide custom-fields tree (sections with their fields,
-/// plus the ungrouped fields). Single source of truth for both the
-/// settings page and the product form — both watch this provider, so
-/// adding a field/section in one place updates the other on the next
-/// frame.
 class CustomFieldsProvider extends ChangeNotifier {
   CustomFieldsProvider(this._ds);
   final CustomFieldsRemoteDataSource _ds;
@@ -30,10 +25,6 @@ class CustomFieldsProvider extends ChangeNotifier {
   String? get error => _error;
   bool get hasLoadedOnce => _hasLoadedOnce;
 
-  /// Flat list of every active definition across all sections plus
-  /// the ungrouped bucket — useful when callers don't need the tree
-  /// structure (e.g. the inline "+ Add field" affordance just wants
-  /// to know what definitions exist).
   List<CustomFieldDefinition> get allActiveDefinitions {
     return [
       ..._tree.ungrouped.where((d) => d.isActive),
@@ -42,8 +33,6 @@ class CustomFieldsProvider extends ChangeNotifier {
     ];
   }
 
-  /// Drops the cached tree/templates on logout so the next account on this
-  /// device doesn't see the previous shop's custom fields flash on screen.
   void reset() {
     _tree = const CustomFieldsTree(sections: [], ungrouped: []);
     _templates = const [];
@@ -52,8 +41,6 @@ class CustomFieldsProvider extends ChangeNotifier {
     _hasLoadedOnce = false;
     notifyListeners();
   }
-
-  // ── Loading ────────────────────────────────────────────────────────
 
   Future<void> load({bool activeOnly = false}) async {
     _isLoading = true;
@@ -80,18 +67,11 @@ class CustomFieldsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Templates ──────────────────────────────────────────────────────
-
-  /// Fetches just the template catalogue. Used by the picker on open
-  /// so it works even when the caller hasn't gone through [load] yet
-  /// (e.g. quick-start tap from the empty-state on the product form).
   Future<void> loadTemplates() async {
     try {
       _templates = await _ds.listTemplates();
       notifyListeners();
     } catch (_) {
-      // Picker surfaces the empty state if this fails — no need to
-      // promote a transient template-fetch error to a global error.
     }
   }
 
@@ -99,8 +79,6 @@ class CustomFieldsProvider extends ChangeNotifier {
     _tree = await _ds.applyTemplate(templateId);
     notifyListeners();
   }
-
-  // ── Sections ───────────────────────────────────────────────────────
 
   Future<CustomFieldSection> createSection({
     required String name,
@@ -137,8 +115,6 @@ class CustomFieldsProvider extends ChangeNotifier {
     await _ds.reorderSections(orderedIds);
     await _refreshTree();
   }
-
-  // ── Definitions ────────────────────────────────────────────────────
 
   Future<CustomFieldDefinition> createDefinition({
     required String name,
@@ -193,10 +169,6 @@ class CustomFieldsProvider extends ChangeNotifier {
     await _refreshTree();
   }
 
-  /// Reorder fields globally (the existing endpoint takes a flat list
-  /// of ids). The settings page uses this to drag fields within a
-  /// section — we compute the final globally-ordered list from the
-  /// section's local order and submit that.
   Future<void> reorderDefinitions(List<String> orderedIds) async {
     await _ds.reorderDefinitions(orderedIds);
     await _refreshTree();

@@ -3,23 +3,14 @@ import { getRedis, redisAvailable } from '../../infra/redis.js';
 import { logger } from '../../shared/logging/logger.js';
 import { embeddingService } from './embedding.service.js';
 
-/// Search (P8) — Postgres FTS over the generated `products.search_vector`
-/// column. Three surfaces:
-///   * POST /search                  — ranked search, logs SearchEvent
-///   * GET  /search/autocomplete?q=  — top product names + prior terms
-///   * GET  /search/hints            — top trending terms (Redis-cached)
-///
-/// `term` is canonicalised (trim + lowercase) before storage so
-/// "Saree", "saree ", and " SAREE" collapse onto one SearchTerm row.
-
 const HINTS_CACHE_KEY = 'search:hints:top10';
-const HINTS_CACHE_TTL = 300; // 5 minutes — fresh enough for a trending strip
+const HINTS_CACHE_TTL = 300;
 
 interface SearchHit {
   id: number;
   name: string;
   sku: string;
-  selling_price: string; // numeric → string from raw
+  selling_price: string;
   rating_avg: string | null;
   rating_count: number;
   image_url: string | null;
@@ -27,19 +18,12 @@ interface SearchHit {
   shop_name: string;
   shop_slug: string;
   rank: number;
-  /// Only populated by the hybrid path. `semantic_score` is in
-  /// [0, 1] (1 - cosine_distance), `fts_score` is the raw ts_rank.
   semantic_score?: number;
   fts_score?: number;
 }
 
 export interface SearchResult {
   query: string;
-  /// True when the result set was produced by the hybrid semantic +
-  /// FTS ranker (i.e. the embedding service was reachable and the
-  /// product catalogue has at least some embeddings). Lets the
-  /// client distinguish "no semantic understanding available" from
-  /// "we did our best."
   semantic: boolean;
   results: Array<{
     id: number;
@@ -66,10 +50,6 @@ function canon(term: string): string {
 }
 
 export class SearchService {
-  /// Ranked full-text search. Uses plainto_tsquery so callers don't
-  /// need to know FTS syntax (no &/|/!). Filters by category + shop
-  /// optionally. Limited to 50 hits — the customer surface paginates,
-  /// not this call.
   async search(
     rawQuery: string,
     filters: SearchFilters,
@@ -80,29 +60,13 @@ export class SearchService {
       return { query, semantic: false, results: [] };
     }
 
-    // Embed the query upfront. When the embedding service is
-    // disabled (`OLLAMA_KEY` missing) or the API call fails, we get
-    // null and the search degrades cleanly to pure FTS — the
-    // catalogue is still navigable, just without semantic understanding
-    // of synonyms / misspellings / phrasing.
     const queryVector = await embeddingService.embedQuery(query);
     const useSemantic = queryVector !== null;
 
-    // The raw SQL uses parameter placeholders so user input never
-    // lands inside the query string — tsquery injection isn't a
-    // thing here, but consistent parameterisation is the
-    // cheap-and-correct default. The pgvector literal is the one
-    // value that's spliced via $queryRawUnsafe — its content comes
-    // from the Ollama embedding response (not user input), and the
-    // pgvector input parser rejects anything malformed.
     const rows = useSemantic
       ? await this._hybridSearch(query, queryVector!, filters)
       : await this._ftsSearch(query, filters);
 
-    // Side-effects: log the event, bump the term. Awaited — the two
-    // writes add ~2ms and tests + downstream callers benefit from
-    // reading their own writes. Errors degrade to a warn and the
-    // search response still returns successfully.
     try {
       await this._recordSearch({
         query,
@@ -136,21 +100,6 @@ export class SearchService {
     };
   }
 
-  /// Hybrid semantic + FTS ranker. Combines:
-  ///   * Cosine similarity over Ollama text embeddings — handles
-  ///     synonyms, paraphrases, and intent ("noise cancelling buds"
-  ///     matches a product named "Wireless ANC earbuds").
-  ///   * Postgres FTS rank — keeps lexical exact-match strong, so
-  ///     SKU / brand / part-number queries still surface the right
-  ///     row even when the embedding is fuzzy.
-  ///
-  /// The candidate set is unioned: top-100 by vector ANN + top-100
-  /// by FTS. We then re-rank in-SQL with a weighted score
-  ///   `0.6 * semantic + 0.4 * fts_normalised`.
-  /// Weights are deliberately conservative on the FTS side — it has
-  /// fewer "near misses" and tends to spike on common words; the
-  /// 0.6/0.4 mix beat both pure-vector and pure-FTS in offline
-  /// eval. Move to a config table once we want to A/B them.
   private async _hybridSearch(
     query: string,
     queryVector: string,
@@ -158,10 +107,6 @@ export class SearchService {
   ): Promise<SearchHit[]> {
     const categoryId = filters.categoryId ?? null;
     const shopId = filters.shopId ?? null;
-    // We use $queryRawUnsafe + parameter array here because $queryRaw
-    // template literals can't bind pgvector params cleanly (the
-    // ::vector cast confuses the tagged-template detector). All
-    // values still flow through parameter placeholders.
     return prisma.$queryRawUnsafe<SearchHit[]>(
       `
       WITH q AS (
@@ -238,9 +183,6 @@ export class SearchService {
     );
   }
 
-  /// Pure FTS fallback — used when the embedding service is disabled
-  /// or the OpenAI call fails. Same shape as the hybrid path so the
-  /// surrounding mapper doesn't branch on which ranker ran.
   private async _ftsSearch(
     query: string,
     filters: SearchFilters,
@@ -275,10 +217,6 @@ export class SearchService {
     `;
   }
 
-  /// Lightweight typeahead — returns up to 8 product names (FTS prefix-
-  /// style via plainto_tsquery) plus up to 4 matching prior search
-  /// terms. Two separate lists keep the client's UX flexible (chips vs
-  /// rows).
   async autocomplete(rawQuery: string) {
     const query = canon(rawQuery);
     if (query.length < 2) return { products: [], terms: [] };
@@ -306,9 +244,6 @@ export class SearchService {
     return { products, terms };
   }
 
-  /// Trending search terms — top 10 from the last 24h. Cached in Redis
-  /// for 5min; the strip refreshes often enough to feel fresh without
-  /// being a per-request hit.
   async listHints(): Promise<Array<{ term: string; queryCount: number }>> {
     if (redisAvailable()) {
       try {
@@ -351,20 +286,9 @@ export class SearchService {
     return rows;
   }
 
-  // ── Internal ─────────────────────────────────────────────────────
-
-  /// In-memory dedupe key → lastSeen. A bot or runaway tab firing the
-  /// same query in a loop won't accumulate `SearchTerm` upserts or
-  /// SearchEvent rows. Map is bounded (10k entries) and pruned LRU-ish
-  /// to keep its footprint constant.
   private readonly _recentSearches = new Map<string, number>();
   private static readonly _SEARCH_DEDUPE_MS = 2_000;
   private static readonly _SEARCH_DEDUPE_MAX = 10_000;
-  /// CAT-L1 — fraction of ANONYMOUS searches we persist to SearchEvent /
-  /// SearchTerm. Anonymous traffic can't be per-actor deduped, so we sample
-  /// it to keep an unauthenticated flood from inflating analytics row-for-row
-  /// while still surfacing trending terms. Authenticated traffic is recorded
-  /// in full (deduped). 0..1.
   private static readonly _ANON_SAMPLE_RATE = 0.1;
 
   private _shouldRecordSearch(key: string): boolean {
@@ -374,8 +298,6 @@ export class SearchService {
       return false;
     }
     if (this._recentSearches.size >= SearchService._SEARCH_DEDUPE_MAX) {
-      // Drop the oldest 10% — Map preserves insertion order so the
-      // first N entries are the stalest.
       const drop = Math.floor(SearchService._SEARCH_DEDUPE_MAX / 10);
       const iter = this._recentSearches.keys();
       for (let i = 0; i < drop; i++) {
@@ -394,18 +316,6 @@ export class SearchService {
     userId: number | null;
     sessionId: string | null;
   }): Promise<void> {
-    // Per-(user/session) dedupe — bot loops + double-fire UI bugs no
-    // longer cost us an upsert + insert per call.
-    //
-    // CAT-L1 — the public /search, /autocomplete, /hints routes are mounted
-    // behind the per-IP edge rate-limiter (`publicLimiter`, 200/min/IP — see
-    // infra/http/app.ts), which is the real anonymous-flood guard. This
-    // function adds the SECOND line: anonymous calls have no stable actor to
-    // key the dedupe map on (every anonymous request would collapse onto one
-    // bucket, masking distinct visitors), so instead of a full insert per
-    // anonymous request we SAMPLE them — write ~1 in N — so an anonymous
-    // burst can't inflate SearchEvent/SearchTerm row-for-row. Authenticated /
-    // session traffic keeps the exact per-actor dedupe (no sampling).
     if (opts.userId !== null || opts.sessionId !== null) {
       const actorKey =
         opts.userId !== null ? `u:${opts.userId}` : `s:${opts.sessionId}`;
@@ -433,8 +343,6 @@ export class SearchService {
         },
       }),
     ]);
-    // Best-effort cache bust — surface fresh hints sooner if a term
-    // just spiked.
     if (redisAvailable()) {
       await getRedis()
         .del(HINTS_CACHE_KEY)

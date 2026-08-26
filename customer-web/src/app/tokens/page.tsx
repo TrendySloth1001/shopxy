@@ -1,14 +1,6 @@
 import { Divider } from "@/shared/ui/divider";
 import { color, radius, shadow, space, tokens } from "@/shared/ui/tokens";
 
-/**
- * Design-token gallery. Renders every token group so the design system is
- * inspectable in the browser and the build proves the tokens compile.
- *
- * This is the one place raw token *values* are read inline (`style={{...}}`):
- * we are displaying the source of truth, not hardcoding new values.
- */
-
 function Section({
   title,
   children,

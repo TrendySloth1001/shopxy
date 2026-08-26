@@ -16,15 +16,11 @@ import type { UserAddress, AddressFormValues } from "@/features/addresses/types"
 import { addressOneLine } from "@/features/addresses/types";
 import { BackButton } from "@/shared/ui/back-button";
 
-// ── Modal state shape ─────────────────────────────────────────────────────────
-
 type ModalState =
   | { mode: "none" }
   | { mode: "add" }
   | { mode: "edit"; address: UserAddress }
   | { mode: "delete"; address: UserAddress };
-
-// ── Main page ─────────────────────────────────────────────────────────────────
 
 function AddressesInner() {
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
@@ -39,8 +35,6 @@ function AddressesInner() {
 
   useEffect(() => {
     let cancelled = false;
-    // Batch the loading-start state into a single transition via startTransition
-    // to satisfy react-hooks/set-state-in-effect (no synchronous setState in body).
     import("react").then(({ startTransition }) => {
       startTransition(() => {
         if (!cancelled) {
@@ -107,7 +101,6 @@ function AddressesInner() {
         prev.map((a) => ({ ...a, isDefault: a.id === id })),
       );
     } catch {
-      /* ignore — reload to sync */
       void load();
     } finally {
       setSettingDefault(null);
@@ -119,7 +112,6 @@ function AddressesInner() {
       <AppHeader />
       <main className="mx-auto max-w-content px-lg py-xxxl">
         <BackButton fallback="/account" className="mb-sm" />
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-headline-md text-ink">Saved Addresses</h1>
@@ -160,7 +152,6 @@ function AddressesInner() {
         </div>
       </main>
 
-      {/* Add/Edit modal */}
       {(modal.mode === "add" || modal.mode === "edit") && (
         <div
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-ink/40 px-lg"
@@ -186,7 +177,6 @@ function AddressesInner() {
         </div>
       )}
 
-      {/* Delete confirm modal */}
       {modal.mode === "delete" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-lg">
           <div className="w-full max-w-narrow rounded-dialog bg-white p-xl">
@@ -238,8 +228,6 @@ export default function AddressesPage() {
   );
 }
 
-// ── Sub-components ─────────────────────────────────────────────────────────────
-
 function AddressCard({
   address,
   settingDefault,
@@ -282,7 +270,6 @@ function AddressCard({
           </p>
         )}
 
-        {/* Actions */}
         <div className="mt-sm flex flex-wrap items-center gap-sm">
           <button
             onClick={onEdit}

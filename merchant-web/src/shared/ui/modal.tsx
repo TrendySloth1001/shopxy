@@ -4,11 +4,6 @@ import { useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { X } from "@/shared/icons";
 
-/**
- * Centered (mobile: bottom-sheet) dialog on a scrim. The header (title + close)
- * stays fixed while the body scrolls. Escape and click-outside close it, and
- * the page behind is scroll-locked while it's open.
- */
 export function Modal({
   title,
   onClose,
@@ -21,7 +16,6 @@ export function Modal({
   wide?: boolean;
 }) {
   const t = useTranslations("common");
-  // Keep the latest onClose without re-running the mount effect each render.
   const onCloseRef = useRef(onClose);
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -75,11 +69,6 @@ export function ModalActions({
   busy,
   disabled,
   confirmLabel,
-  /**
-   * Overrides the default "Cancel". Worth setting when the CONFIRM action is
-   * itself a cancellation ("Cancel sign-up") — two buttons both reading
-   * "Cancel" but meaning opposite things is a trap.
-   */
   cancelLabel,
   onCancel,
   onConfirm,

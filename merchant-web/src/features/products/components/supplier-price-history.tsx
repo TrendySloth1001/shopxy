@@ -12,14 +12,6 @@ import {
 import { money, qty as fmtQty } from "@/features/products/format";
 import { unitLabel } from "@/features/products/units";
 
-/**
- * Supplier-wise purchase-price history for a product — the web mirror of the
- * Flutter product-detail "Supplier price history" section. Reads the stock
- * ledger's STOCK_IN rows (`GET /stock?type=STOCK_IN`), groups them by supplier
- * (structured vendor name, else the free-typed supplier), and surfaces, per
- * supplier: the latest and average purchase price, total quantity bought, the
- * last stock-in, the price policy in force, and the most recent buys.
- */
 export function SupplierPriceHistory({
   productId,
   unit,
@@ -79,7 +71,7 @@ export function SupplierPriceHistory({
 
 type SupplierGroup = {
   supplier: string;
-  txns: StockTxn[]; // newest-first
+  txns: StockTxn[];
   isVendor: boolean;
 };
 

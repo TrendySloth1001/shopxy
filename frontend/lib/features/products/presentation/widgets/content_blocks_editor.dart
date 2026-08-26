@@ -9,18 +9,6 @@ import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// Phase C — A+ content blocks editor used inside the add/edit product
-/// page. Each block is one of HERO / FEATURE / COMPARISON / GALLERY /
-/// TEXT (mirrors the backend `contentBlockSchema`). Hard cap 8 blocks
-/// enforced client + server.
-///
-/// The editor reads/writes [blocks] in place: the parent owns the list,
-/// the widget mutates it directly. Same pattern used by the specs and
-/// offers editors in the add/edit product page.
-///
-/// [onPickImage] uploads an image (gallery/camera handled by the page)
-/// and returns its stored URL — every image field offers it so the
-/// merchant never has to hand-paste a link.
 class ContentBlocksEditor extends StatefulWidget {
   const ContentBlocksEditor({
     super.key,
@@ -39,10 +27,6 @@ class ContentBlocksEditor extends StatefulWidget {
 class _ContentBlocksEditorState extends State<ContentBlocksEditor> {
   static const _maxBlocks = 8;
 
-  // Friendly metadata for the "add a block" menu — plain-language label
-  // + a one-liner so the merchant knows what each block does without
-  // having to guess from an acronym. Labels/hints resolved via l10n at
-  // render time; only the kind + icon are static.
   static const _kinds = <(String, AppIconData)>[
     ('HERO', AppIcons.wallpaperRounded),
     ('FEATURE', AppIcons.viewSidebarRounded),
@@ -175,8 +159,6 @@ class _ContentBlocksEditorState extends State<ContentBlocksEditor> {
   }
 }
 
-/// A tappable "add this kind of block" row — plain-language label + a
-/// hint so the merchant picks the right block on the first try.
 class _AddBlockTile extends StatelessWidget {
   const _AddBlockTile({
     required this.icon,
@@ -484,11 +466,6 @@ class _BlockForm extends StatelessWidget {
   }
 }
 
-/// Structured comparison-table editor (replaces the old raw-JSON
-/// textarea). The merchant names the columns they're comparing, then
-/// adds feature rows and fills one cell per column. The widget keeps
-/// every column's `values` array the same length as `rows` so the saved
-/// payload always matches the backend's `contentBlockSchema`.
 class _ComparisonEditor extends StatefulWidget {
   const _ComparisonEditor({required this.data, required this.onChanged});
   final Map<String, dynamic> data;
@@ -523,7 +500,6 @@ class _ComparisonEditorState extends State<_ComparisonEditor> {
     _rows = ((widget.data['rows'] as List?) ?? const [])
         .map((e) => e?.toString() ?? '')
         .toList();
-    // Seed sane defaults if a fresh/empty block landed here.
     while (_columns.length < _minColumns) {
       _columns.add(<String, dynamic>{'label': '', 'values': <String>[]});
     }
@@ -531,7 +507,6 @@ class _ComparisonEditorState extends State<_ComparisonEditor> {
     _normalize();
   }
 
-  /// Keep every column's value list aligned 1:1 with [_rows].
   void _normalize() {
     for (final c in _columns) {
       final vals = (c['values'] as List).cast<String>();
@@ -702,9 +677,6 @@ class _ComparisonEditorState extends State<_ComparisonEditor> {
   }
 }
 
-/// Image field with an inline thumbnail, an Upload button (reuses the
-/// page's picker via [onPickImage]) and a "paste a link" fallback so a
-/// merchant never has to know what a URL is to add a picture.
 class _ImageField extends StatefulWidget {
   const _ImageField({
     required this.label,

@@ -36,7 +36,6 @@ const ITEMS: Array<{
   { key: "lowStock", labelKey: "action.lowStock", href: "/dashboard/products", Icon: Boxes, tone: "amber" },
 ];
 
-/** Prioritised "needs attention" queue — one tile per non-empty counter. */
 export function ActionCenter({ queue }: { queue: DashboardActionQueue }) {
   const t = useTranslations("dashboard");
   const items = ITEMS.filter((it) => queue[it.key] > 0);

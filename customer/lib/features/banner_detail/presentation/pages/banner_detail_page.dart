@@ -13,9 +13,6 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 
-/// Banner-detail page: the banner image at the top, followed by a
-/// responsive grid of the products pinned to it (with banner-discounted
-/// prices). Reached by tapping a home banner that has `productCount > 0`.
 class BannerDetailPage extends StatefulWidget {
   const BannerDetailPage({super.key, required this.bannerId});
   final String bannerId;
@@ -90,9 +87,6 @@ class _Body extends StatelessWidget {
             padding: const EdgeInsets.all(AppSizes.lg),
             sliver: SliverLayoutBuilder(
               builder: (context, constraints) {
-                // Responsive column count: target ~180px tiles, clamp
-                // to 2–4 columns so the grid reads well on phones and
-                // wide tablets alike.
                 final width = constraints.crossAxisExtent;
                 final columns = (width / 180).floor().clamp(2, 4);
                 return SliverGrid(
@@ -119,7 +113,6 @@ class _BannerHeaderImage extends StatelessWidget {
   const _BannerHeaderImage({required this.banner});
   final BannerHeader banner;
 
-  // Wide marketing strip — matches the home hero aspect ratio.
   static const double _aspectRatio = 16 / 7;
 
   @override

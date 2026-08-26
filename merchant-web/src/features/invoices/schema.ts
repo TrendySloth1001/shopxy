@@ -1,19 +1,11 @@
 import { z } from "zod";
 
-/**
- * Invoice shapes, mirroring the backend `invoices` module (`/invoices`).
- * Money/qty Decimals are coerced to numbers (rupees, not paise). An invoice is
- * a SALE (to a party/walk-in) or PURCHASE (from a vendor); DRAFT until
- * confirmed, then CONFIRMED (stock posted, locked) or CANCELLED.
- */
-
 export const INVOICE_TYPES = ["SALE", "PURCHASE"] as const;
 export type InvoiceType = (typeof INVOICE_TYPES)[number];
 
 export const INVOICE_STATUSES = ["DRAFT", "CONFIRMED", "CANCELLED"] as const;
 export type InvoiceStatus = (typeof INVOICE_STATUSES)[number];
 
-/** Document types the SALE editor can pick; PURCHASE is always TAX_INVOICE. */
 export const SALE_DOC_TYPES = ["TAX_INVOICE", "BILL_OF_SUPPLY", "ESTIMATE", "PROFORMA"] as const;
 
 export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
@@ -96,9 +88,6 @@ export const invoiceSchema = z
     amountInWords: z.string().nullish(),
     note: z.string().nullish(),
     invoiceDate: z.string(),
-    /// Set when the merchant filed the document out of the working list.
-    /// Archiving never removes the row or frees its number — Rule 46(b) needs
-    /// the serial run consecutive — so this is the only marker.
     archivedAt: z.string().nullish(),
     convertedToInvoiceId: z.coerce.string().nullish(),
     createdAt: z.string().optional(),
@@ -134,7 +123,6 @@ export function isSale(inv: Invoice): boolean {
   return inv.type === "SALE";
 }
 
-/** Counterparty name for a row/header — customer for SALE, vendor for PURCHASE. */
 export function counterpartyName(inv: Invoice): string {
   if (isSale(inv)) return inv.customerName ?? "Walk-in customer";
   return inv.vendorName ?? "Vendor";

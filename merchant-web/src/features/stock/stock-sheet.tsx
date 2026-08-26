@@ -15,18 +15,10 @@ import type { Product } from "@/features/products/schema";
 import { createStockTransaction } from "./api";
 import type { StockType } from "./schema";
 
-/** number → editable string, blank when zero. */
 function priceStr(n: number): string {
   return n > 0 ? String(n) : "";
 }
 
-/**
- * Record a stock movement for a product — the web mirror of the Flutter
- * `StockBottomSheet`. Purchase (STOCK_IN, counterparty = a vendor) or Sale
- * (STOCK_OUT, counterparty = a customer). The vendor / customer lists are
- * pre-loaded so the user just selects — no name searching. On submit the
- * backend creates a draft invoice; stock posts when that draft is confirmed.
- */
 export function StockSheet({
   product,
   initialType,
@@ -55,9 +47,6 @@ export function StockSheet({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Pre-load the counterparty options whenever the movement type changes.
-  // Suppliers come from the full vendor list (not just past purchases), so a
-  // freshly-added vendor is selectable straight away.
   useEffect(() => {
     let active = true;
     void (async () => {
@@ -70,7 +59,6 @@ export function StockSheet({
           const ps = await listParties();
           if (active) {
             setParties(ps);
-            // Default to Walk-in Customer (or the first party) like the app.
             setPartyId((cur) => {
               if (cur) return cur;
               const fallback = ps.find((p) => p.name === "Walk-in Customer") ?? ps[0];
@@ -79,7 +67,6 @@ export function StockSheet({
           }
         }
       } catch {
-        /* selection is optional — leave the dropdown empty on failure */
       } finally {
         if (active) setLoadingOpts(false);
       }
@@ -101,7 +88,6 @@ export function StockSheet({
   const quantityNum = Number(quantity);
   const unitPriceNum = Number(unitPrice);
   const quantityOk = Number.isFinite(quantityNum) && quantityNum > 0;
-  // Unit price is required for a purchase, optional for a sale.
   const priceOk =
     type === "STOCK_OUT" ||
     (unitPrice.trim() !== "" && Number.isFinite(unitPriceNum) && unitPriceNum >= 0);
@@ -138,7 +124,6 @@ export function StockSheet({
         {product.name} · {t("stockSheet.inStock", { qty: qty(product.stockQuantity), unit })}
       </p>
 
-      {/* Purchase / Sale toggle */}
       <div className="flex items-center gap-sm">
         <TypeTab label={t("stockSheet.purchaseTab")} active={type === "STOCK_IN"} onClick={() => switchType("STOCK_IN")} />
         <TypeTab label={t("stockSheet.saleTab")} active={type === "STOCK_OUT"} onClick={() => switchType("STOCK_OUT")} />

@@ -1,15 +1,3 @@
-/**
- * Unit tests for transfer-level reconciliation (settlement/transfer-reconcile.ts).
- * prisma, the provider registry, and executeHeldTransfers are vi.mock'd.
- *   P1 — null-ref HELD heal re-drives executeHeldTransfers per stale payment.
- *   P2 — overdue holds release (claim-once), EXCEPT children with an open return.
- *   P3/P4 — reconcile each row against the provider (auto-release, re-release,
- *           full/partial reversal sync, mismatch flag).
- *   P7 — promote KYC_GATED rows once their linked account activates.
- *
- * findMany is routed by its `where` clause (not call order) so adding phases
- * doesn't shuffle the mocks.
- */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 const {
@@ -74,24 +62,21 @@ import { reconcileStaleTransfers } from '../../src/modules/payment-gateway/settl
 
 const NOW = new Date('2026-06-01T12:00:00Z');
 
-// Per-phase row fixtures (default empty); set in a test before calling.
 let rows: { p1: unknown[]; p2: unknown[]; verify: unknown[]; kyc: unknown[] };
 
 beforeEach(() => {
   vi.clearAllMocks();
   rows = { p1: [], p2: [], verify: [], kyc: [] };
-  // Route findMany to the right phase by its where clause.
   gatewayTransfer.findMany.mockImplementation((args: { where: Record<string, unknown> }) => {
     const w = args.where;
     if (w.status === 'KYC_GATED') return Promise.resolve(rows.kyc);
-    if (w.status && typeof w.status === 'object') return Promise.resolve(rows.verify); // status.in → P3
+    if (w.status && typeof w.status === 'object') return Promise.resolve(rows.verify);
     if (w.providerTransferRef === null) return Promise.resolve(rows.p1);
     if (w.holdUntil) return Promise.resolve(rows.p2);
     return Promise.resolve([]);
   });
   returnRequest.findFirst.mockResolvedValue(null);
   gatewayPayment.findUnique.mockResolvedValue({ provider: 'RAZORPAY', providerPaymentRef: 'pay_X' });
-  // PR-M3: the POS re-drive step is a no-op unless a test opts in.
   isRouteSplitEnabled.mockReturnValue(false);
   gatewayPayment.findMany.mockResolvedValue([]);
   settlePosTransfer.mockResolvedValue(undefined);
@@ -259,7 +244,6 @@ describe('reconcileStaleTransfers — P3/P4 verify against provider', () => {
 
   it('moves a partially-reversed HELD row to PARTIALLY_REVERSED (keeps it out of auto-release)', async () => {
     rows.verify = [verifyRow({ status: 'HELD', amount: 60, reversedAmount: 0 })];
-    // ₹20 of ₹60 reversed, still on hold.
     listTransfers.mockResolvedValue([provTransfer({ amountReversedMinor: 2000, onHold: true })]);
 
     const s = await reconcileStaleTransfers({ now: NOW });
@@ -275,7 +259,6 @@ describe('reconcileStaleTransfers — P3/P4 verify against provider', () => {
 
   it('FLAGS (does not shrink) when the provider reversed LESS than our DB', async () => {
     rows.verify = [verifyRow({ status: 'PARTIALLY_REVERSED', amount: 60, reversedAmount: 30 })];
-    // provider says only ₹10 reversed, DB recorded ₹30 — discrepancy.
     listTransfers.mockResolvedValue([provTransfer({ amountReversedMinor: 1000 })]);
 
     const s = await reconcileStaleTransfers({ now: NOW });

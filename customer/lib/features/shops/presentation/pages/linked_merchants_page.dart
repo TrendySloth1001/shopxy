@@ -15,9 +15,6 @@ import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
-/// Customer-side directory of merchants the user has an active Party
-/// or Vendor link with. Each card opens the marketplace `ShopProfilePage`
-/// for that shop, restricted to that merchant's catalog.
 class LinkedMerchantsPage extends StatefulWidget {
   const LinkedMerchantsPage({super.key});
 
@@ -236,11 +233,6 @@ class _Pill extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton loading state
-// ---------------------------------------------------------------------------
-
-/// Renders 3 skeleton merchant cards that mirror [_MerchantCard]'s layout.
 class _MerchantListSkeleton extends StatelessWidget {
   const _MerchantListSkeleton();
 
@@ -259,7 +251,6 @@ class _MerchantListSkeleton extends StatelessWidget {
   }
 }
 
-/// A single skeleton card whose structure mirrors [_MerchantCard].
 class _MerchantCardSkeleton extends StatelessWidget {
   const _MerchantCardSkeleton();
 
@@ -277,7 +268,6 @@ class _MerchantCardSkeleton extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Banner placeholder (aspect ratio 16:6)
           AspectRatio(
             aspectRatio: 16 / 6,
             child: AppShimmerBox(
@@ -291,25 +281,20 @@ class _MerchantCardSkeleton extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Logo placeholder
                 AppShimmerBox(
                   width: AppSizes.huge,
                   height: AppSizes.huge,
                   radius: AppSizes.radiusSm,
                 ),
                 const SizedBox(width: AppSizes.md),
-                // Text column
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Shop name
                       AppShimmerLine(widthFactor: 0.55, height: 14),
                       const SizedBox(height: AppSizes.xs),
-                      // Tagline
                       AppShimmerLine(widthFactor: 0.75, height: 11),
                       const SizedBox(height: AppSizes.sm),
-                      // Pill row (two pill-shaped blobs)
                       Row(
                         children: [
                           AppShimmerBox(
@@ -336,8 +321,6 @@ class _MerchantCardSkeleton extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
 
 class _EmptyState extends StatelessWidget {
   const _EmptyState();

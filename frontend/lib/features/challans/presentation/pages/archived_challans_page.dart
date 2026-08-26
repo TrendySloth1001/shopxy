@@ -6,12 +6,6 @@ import 'package:shopxy/features/challans/presentation/pages/challan_detail_page.
 import 'package:shopxy/l10n/app_localizations.dart';
 import 'package:shopxy/shared/widgets/archived_documents_page.dart';
 
-/// Delivery challans the merchant filed out of the working list.
-///
-/// Only settled ones get here — the backend refuses to archive a PENDING
-/// challan, because goods are physically out against it and it has been
-/// neither invoiced nor cancelled. So the filter axis is the settled states,
-/// not the full status set.
 class ArchivedChallansPage extends StatelessWidget {
   const ArchivedChallansPage({super.key});
 
@@ -46,14 +40,11 @@ class ArchivedChallansPage extends StatelessWidget {
         return page.challans;
       },
       restore: (challan) => source.setArchived(challan.id, false),
-      // createdAt is what the server sorts challans by.
       dateOf: (challan) => challan.createdAt,
       rowOf: (challan) => ArchivedRowData(
         number: challan.challanNo,
         status: challan.status,
         subtitle: challan.partyName,
-        // A challan carries no money — the count of lines is the useful
-        // figure at a glance.
         trailing: l10n.documentItemCount(challan.itemCount),
       ),
       onOpen: (context, challan) => Navigator.push(

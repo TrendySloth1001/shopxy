@@ -1,16 +1,3 @@
-/**
- * Razorpay Web SDK loader + checkout wrapper (merchant-web).
- *
- * Ported from `customer-web/src/shared/razorpay.ts` (the apps duplicate shared
- * client code by design). Used by the POS "Online" tender: the till opens
- * Razorpay Checkout — which itself shows a UPI QR + cards — from the
- * `clientParams` the `payOnline` POS command returns.
- *
- * IMPORTANT: a 'success' result here is the client-side handshake only. The
- * backend webhook / the `syncOnline` POS command is the authoritative settlement
- * path — treat success as "sheet completed, now sync the sale".
- */
-
 declare global {
   interface Window {
     Razorpay?: new (opts: RazorpayOptions) => RazorpayInstance;
@@ -42,21 +29,17 @@ interface RazorpayInstance {
   on(event: string, handler: (response: { error: { code: string; description: string } }) => void): void;
 }
 
-/** Razorpay Checkout params returned inside `clientParams`. */
 export interface RazorpayClientParams {
   key: string;
   order_id: string;
-  /** Paise (minor units). */
   amount: number;
   currency?: string;
 }
 
-/** Pay-session envelope returned by the `payOnline` POS command. */
 export interface PaySession {
   intentId: string;
   provider: string;
   providerOrderRef: string;
-  /** Rupees (major units). */
   amount: number;
   currency: string;
   clientParams: RazorpayClientParams;
@@ -74,7 +57,6 @@ export interface RazorpayResult {
 const CDN = "https://checkout.razorpay.com/v1/checkout.js";
 let scriptPromise: Promise<void> | null = null;
 
-/** Inject the Razorpay checkout.js script once and resolve when ready. */
 export function loadRazorpay(): Promise<void> {
   if (scriptPromise) return scriptPromise;
   if (typeof window !== "undefined" && window.Razorpay) {
@@ -87,7 +69,7 @@ export function loadRazorpay(): Promise<void> {
     script.async = true;
     script.onload = () => resolve();
     script.onerror = () => {
-      scriptPromise = null; // allow a retry
+      scriptPromise = null;
       reject(new Error("Failed to load Razorpay checkout script."));
     };
     document.head.appendChild(script);
@@ -103,7 +85,6 @@ export interface OpenCheckoutOpts {
   description?: string;
 }
 
-/** Load the Razorpay SDK (once) and open the payment sheet for the session. */
 export async function openRazorpayCheckout(
   session: PaySession,
   opts: OpenCheckoutOpts = {},

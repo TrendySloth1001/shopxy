@@ -18,12 +18,6 @@ import { useCart } from "@/features/cart/cart-context";
 import { Avatar } from "./avatar";
 import { useEffect, useRef, useState } from "react";
 
-// ── Merchant-links badge (Merchants nav item) ────────────────────────────────
-
-/**
- * Lightweight hook: fetches /api/me/links once when authed, returns whether
- * any linked shop exists. Silently swallows errors (the link just won't show).
- */
 function useMerchantLinksExist(): boolean {
   const { status } = useAuth();
   const [hasLinks, setHasLinks] = useState(false);
@@ -39,16 +33,12 @@ function useMerchantLinksExist(): boolean {
         }
       })
       .catch(() => {
-        /* silent */
       });
   }, [status]);
 
   return hasLinks;
 }
 
-// ── Scroll shadow hook ────────────────────────────────────────────────────────
-
-/** Returns true once the page has scrolled past the threshold (default 4px). */
 function useScrolled(threshold = 4): boolean {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
@@ -61,8 +51,6 @@ function useScrolled(threshold = 4): boolean {
   }, [threshold]);
   return scrolled;
 }
-
-// ── Search form (submits to /search?q=) ──────────────────────────────────────
 
 function SearchInput() {
   const router = useRouter();
@@ -106,8 +94,6 @@ function SearchInput() {
   );
 }
 
-// ── Cart badge ────────────────────────────────────────────────────────────────
-
 function CartBadge({ count }: { count: number }) {
   return (
     <Link
@@ -128,8 +114,6 @@ function CartBadge({ count }: { count: number }) {
   );
 }
 
-// ── Account dropdown ──────────────────────────────────────────────────────────
-
 function AccountMenu({
   user,
   onSignOut,
@@ -140,7 +124,6 @@ function AccountMenu({
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  // Close on outside click.
   useEffect(() => {
     if (!open) return;
     function handler(e: MouseEvent) {
@@ -152,7 +135,6 @@ function AccountMenu({
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
-  // Close on Escape.
   useEffect(() => {
     if (!open) return;
     function handler(e: KeyboardEvent) {
@@ -232,23 +214,6 @@ function MenuLink({
   );
 }
 
-// ── Main header ───────────────────────────────────────────────────────────────
-
-/**
- * App-wide top bar. Sticky with a scroll-triggered shadow transition.
- *
- * Features:
- *   - Brand logo (links to home feed)
- *   - Search input → /search?q= (submits on Enter, focus ring, expanding)
- *   - Cart badge from useCart()
- *   - Orders / Wishlist links (text hidden on <md, icon in AccountMenu)
- *   - Merchants link (shown only when the user has linked shops)
- *   - Notification bell with unread badge
- *   - Account dropdown (profile, orders, wishlist, sign-out)
- *   - Guest: Sign in / Register links instead of the account menu
- *   - Active-route: text-ink + underline-offset accent via usePathname
- *   - Scrolled: border fades, shadow-floating fades in (smooth transition)
- */
 export function AppHeader() {
   const { user, status, logout } = useAuth();
   const { unread } = useNotifications();
@@ -276,7 +241,6 @@ export function AppHeader() {
       ].join(" ")}
     >
       <div className="mx-auto flex h-14 max-w-shell items-center gap-md px-lg">
-        {/* Brand */}
         <Link href="/" aria-label="ShopXY home" className="flex shrink-0 items-center gap-sm">
           <span className="flex size-7 items-center justify-center rounded-sm bg-brand">
             <Store size={16} className="text-white" aria-hidden />
@@ -288,13 +252,10 @@ export function AppHeader() {
           </span>
         </Link>
 
-        {/* Search */}
         <SearchInput />
 
-        {/* Spacer */}
         <span className="flex-1" />
 
-        {/* Nav links — desktop (text), collapsed to icons only on <md) */}
         {isAuthed ? (
           <nav className="hidden items-center gap-xs md:flex">
             <NavLink href="/orders" active={pathname.startsWith("/orders")}>
@@ -314,14 +275,11 @@ export function AppHeader() {
           </nav>
         ) : null}
 
-        {/* Icon actions row */}
         <div className="flex items-center gap-xs">
-          {/* Cart */}
           <CartBadge count={cartCount} />
 
           {isAuthed ? (
             <>
-              {/* Notifications */}
               <Link
                 href="/notifications"
                 aria-label={
@@ -340,11 +298,9 @@ export function AppHeader() {
                 ) : null}
               </Link>
 
-              {/* Account dropdown */}
               <AccountMenu user={user!} onSignOut={onSignOut} />
             </>
           ) : (
-            /* Guest: sign in + register */
             <div className="flex items-center gap-sm">
               <Link
                 href="/login"

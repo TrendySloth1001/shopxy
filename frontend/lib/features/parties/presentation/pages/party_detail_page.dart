@@ -195,8 +195,6 @@ class _PartyDetailPageState extends State<PartyDetailPage> {
   }
 }
 
-// ── Skeleton ─────────────────────────────────────────────────────────────────
-
 class _PartyDetailSkeleton extends StatelessWidget {
   const _PartyDetailSkeleton();
 
@@ -485,8 +483,6 @@ class _InvoiceRowSkeleton extends StatelessWidget {
     );
   }
 }
-
-// ── End Skeleton ──────────────────────────────────────────────────────────────
 
 class _Header extends StatelessWidget {
   const _Header({required this.party});

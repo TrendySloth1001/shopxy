@@ -1,4 +1,3 @@
-/// One line in a quotation — a product the merchant added to the bucket.
 class QuotationLine {
   const QuotationLine({
     required this.productId,
@@ -20,10 +19,6 @@ class QuotationLine {
   final double unitPrice;
   final double taxPercent;
 
-  /// Whether [unitPrice] already contains GST. Frozen onto the line at
-  /// quote-creation time from the product's own pricingMode (see
-  /// resolveProductPricing on the backend), not re-resolved at accept time —
-  /// so the quoted total can't drift from what the customer already saw.
   final bool isPriceInclusive;
   final double discount;
   final double lineTotal;
@@ -52,7 +47,6 @@ class QuotationLine {
       );
 }
 
-/// A merchant-built quotation sent to a linked customer for acceptance.
 class Quotation {
   const Quotation({
     required this.id,
@@ -75,14 +69,11 @@ class Quotation {
 
   final String id;
   final String quotationNo;
-  final String status; // REQUESTED | PENDING | ACCEPTED | DECLINED | CANCELLED | EXPIRED
+  final String status;
   final String partyName;
 
-  /// The linked customer's id — needed to spawn a *new* quotation from a loaded
-  /// one (the pricing calculator's round-trip). Null for legacy payloads.
   final String? partyId;
 
-  /// Place-of-supply state code carried through when re-pricing a request.
   final String? placeOfSupplyStateCode;
   final double subtotal;
   final double taxAmount;
@@ -90,10 +81,6 @@ class Quotation {
   final List<QuotationLine> items;
   final DateTime createdAt;
 
-  /// Set once the merchant files this quotation out of their working list.
-  /// The row and its number stay put — the quotation serial is allocated at
-  /// create time, so a quotation is never deleted. Merchant-side only: the
-  /// customer still sees it in their own list.
   final DateTime? archivedAt;
   final String? note;
   final String? declineNote;
@@ -102,18 +89,12 @@ class Quotation {
 
   bool get isPending => status == 'PENDING';
 
-  /// A customer-initiated quote awaiting the merchant's pricing.
   bool get isRequested => status == 'REQUESTED';
 
   bool get isArchived => archivedAt != null;
 
-  /// Whether the customer could still act on this — the states archiving is
-  /// refused in, because a quote the merchant can't see is one nobody chases.
   bool get isAwaitingCounterparty => isPending || isRequested;
 
-  /// Local echo of a state change, so a screen can reflect one field without
-  /// refetching. Exists because the alternative — rebuilding the whole object
-  /// by hand at each call site — silently drops every field added later.
   Quotation copyWith({String? status, DateTime? archivedAt, bool clearArchivedAt = false}) {
     return Quotation(
       id: id,

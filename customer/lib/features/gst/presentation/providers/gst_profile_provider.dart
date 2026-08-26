@@ -35,9 +35,6 @@ class GstProfileProvider extends ChangeNotifier {
     }
   }
 
-  /// Returns null on success, or the server's rejection message. The GSTIN
-  /// checksum runs server-side, so a failure here is a real answer to show
-  /// the user rather than something to retry.
   Future<String?> save({required String? gstin, String? legalName}) async {
     _error = null;
     try {

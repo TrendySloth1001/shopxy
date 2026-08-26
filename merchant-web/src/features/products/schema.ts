@@ -1,13 +1,5 @@
 import { z } from "zod";
 
-/**
- * Product shapes, mirroring the backend products module
- * (`backend/src/modules/products/*`). Decimal money/qty fields are coerced to
- * numbers; nullable arrays are normalised to `[]`; unknown fields pass through.
- * Validated at the BFF boundary so screens work with a clean, typed object.
- */
-
-/** Array that may arrive as null/undefined → always an array. */
 const arr = <T extends z.ZodTypeAny>(s: T) =>
   z
     .array(s)
@@ -74,7 +66,6 @@ export const variantSchema = z.object({
 });
 export type ProductVariant = z.infer<typeof variantSchema>;
 
-/** A+ content block — kind + free-form per-kind payload. */
 export const contentBlockSchema = z.object({ kind: z.string() }).passthrough();
 export type ContentBlock = z.infer<typeof contentBlockSchema>;
 
@@ -91,14 +82,8 @@ export const productSchema = z
     sellingPrice: z.coerce.number().default(0),
     purchasePrice: z.coerce.number().default(0),
     taxPercent: z.coerce.number().default(0),
-    /// Where `taxPercent` came from. MANUAL means someone typed it, which is
-    /// what every pre-HSN-master row is; the form uses it to decide whether the
-    /// tax field opens as a readout or as an input.
     taxSource: z.enum(["HSN", "HSN_RULE", "OVERRIDE", "MANUAL"]).default("MANUAL"),
     hsnRevision: z.string().nullish(),
-    /// Whether mrp/sellingPrice already contain GST (TAX_INCLUSIVE), have it
-    /// added on top when billed (TAX_EXCLUSIVE, the default), or the product
-    /// is exempt/nil-rated (NO_GST — taxPercent is then forced to 0 server-side).
     pricingMode: z
       .enum(["TAX_EXCLUSIVE", "TAX_INCLUSIVE", "NO_GST"])
       .default("TAX_EXCLUSIVE"),
@@ -143,7 +128,6 @@ export const productListSchema = z.object({
 });
 export type ProductList = z.infer<typeof productListSchema>;
 
-/** Custom-field definition (shop-wide) + per-product value. */
 export const customFieldDefSchema = z
   .object({
     id: z.coerce.string(),

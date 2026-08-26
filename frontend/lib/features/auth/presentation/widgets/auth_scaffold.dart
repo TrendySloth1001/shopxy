@@ -10,15 +10,8 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
-/// Below this width the illustration panel is dropped and the form takes the
-/// full width — mirrors the merchant-web auth shell.
 const double _kSplitWidth = 900;
 
-/// Signed-out scaffold that mirrors the merchant-web auth screens exactly:
-/// a brand lockup + Sign in / Create account chips along the top, an
-/// illustration panel on the left at wide widths that fades into the canvas,
-/// and a focused, vertically-centred form column (≤ 400) on the right. On
-/// phones only the form shows.
 class AuthScaffold extends StatelessWidget {
   const AuthScaffold({
     super.key,
@@ -35,16 +28,8 @@ class AuthScaffold extends StatelessWidget {
   final String title;
   final String subtitle;
 
-  /// The form body (fields, buttons, legal copy) for the column.
   final List<Widget> children;
 
-  /// The way *off* this screen — "New to ShopXY? / Create an account" on sign
-  /// in, the reverse on register. Rendered twice on purpose: as a chip in the
-  /// header (reachable without scrolling) and as the footer prompt.
-  ///
-  /// There used to be a second chip for the screen you were already on, which
-  /// did nothing when tapped — a dead control at the top of the first screen of
-  /// the app.
   final String footerPrompt;
   final String footerCta;
   final VoidCallback onFooterTap;
@@ -56,9 +41,6 @@ class AuthScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      // Keep the body (and the backdrop) full-height when the keyboard opens —
-      // otherwise the Scaffold shrinks and the background image jumps/resizes.
-      // The form scrolls instead (see the keyboard inset padding below).
       resizeToAvoidBottomInset: false,
       body: SafeArea(
         bottom: false,
@@ -101,19 +83,9 @@ class AuthScaffold extends StatelessWidget {
 
   Widget _formColumn(BuildContext context) {
     final theme = Theme.of(context);
-    // Biased above centre rather than dead-centre. True centring split the
-    // slack evenly, which on a tall phone left a ~180px void between the brand
-    // header and "Welcome back" — the headline floated, unattached to the
-    // lockup it belongs with, and the gap read as a layout bug. At -0.35 the
-    // slack falls roughly a third above / two thirds below, so the headline
-    // sits under the header and the empty space collects at the bottom where
-    // it looks deliberate. When the content is taller than the viewport this
-    // has no effect: the scroll view fills the height and alignment is moot.
     return Align(
       alignment: const Alignment(0, -0.35),
       child: SingleChildScrollView(
-        // Bottom inset grows with the keyboard so the focused field can scroll
-        // clear of it (the Scaffold no longer resizes — see resizeToAvoidBottomInset).
         padding: EdgeInsets.fromLTRB(
           AppSizes.lg,
           80,
@@ -177,8 +149,6 @@ class AuthScaffold extends StatelessWidget {
   }
 }
 
-/// Left showcase panel — the illustration bleeding under a gradient that fades
-/// to the canvas on the right so it merges into the form column.
 class _IllustrationPanel extends StatelessWidget {
   const _IllustrationPanel({required this.asset});
   final String asset;
@@ -211,10 +181,6 @@ class _IllustrationPanel extends StatelessWidget {
   }
 }
 
-/// Phone-only backdrop: the boho illustration full-bleed behind the form, faded
-/// into the canvas by a top→bottom gradient so the form stays readable. Because
-/// the overlay is the theme-aware canvas colour, it lightens the art in light
-/// mode and darkens it in dark / OLED.
 class _PhoneBackdrop extends StatelessWidget {
   const _PhoneBackdrop();
 
@@ -223,10 +189,6 @@ class _PhoneBackdrop extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        // Boho art, blurred past the point where any single shape reads. The
-        // artwork stays — the blur is only enough that the dark mass in it
-        // stops resolving into a *blob*, which is what made it look like a
-        // smudge on the glass rather than a backdrop.
         ImageFiltered(
           imageFilter: ImageFilter.blur(sigmaX: 26, sigmaY: 26),
           child: Image.asset(
@@ -235,11 +197,6 @@ class _PhoneBackdrop extends StatelessWidget {
             alignment: Alignment.topCenter,
           ),
         ),
-        // Translucent canvas wash (theme-aware) — the art's opacity, in effect.
-        // Not a flat value: densest at the top so the headline sits on near-
-        // clean canvas, lightest through the middle band where the art has room
-        // to show, and denser again at the foot behind the legal copy. Raise
-        // these numbers to fade the artwork, lower them to bring it forward.
         DecoratedBox(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -259,12 +216,6 @@ class _PhoneBackdrop extends StatelessWidget {
   }
 }
 
-/// Top bar: brand lockup on the left, and a single chip for the *other* auth
-/// screen on the right — the signed-out counterpart to the app header.
-///
-/// Outline rather than filled: this is a secondary way out, and a solid black
-/// pill up here was out-weighting the green Sign in button that the screen
-/// actually exists for.
 class _AuthHeader extends StatelessWidget {
   const _AuthHeader({
     required this.actionLabel,
@@ -365,9 +316,6 @@ class _HeaderChip extends StatelessWidget {
   }
 }
 
-/// "Continue with Google" pill — surface fill, hairline border, painted 4-colour
-/// Google "G". The backend Google flow isn't wired yet, so [onTap] should
-/// surface a "coming soon" notice (matching merchant-web).
 class GoogleButton extends StatelessWidget {
   const GoogleButton({super.key, required this.onTap});
   final VoidCallback onTap;
@@ -435,8 +383,6 @@ class _GoogleGPainter extends CustomPainter {
       ..strokeWidth = stroke
       ..strokeCap = StrokeCap.butt;
 
-    // Four arcs forming the ring (0°=east, clockwise): blue right, green bottom,
-    // yellow left, red top. A small gap on the right is filled by the bar.
     p.color = _red;
     canvas.drawArc(rect, _rad(-135), _rad(90), false, p);
     p.color = _yellow;
@@ -446,7 +392,6 @@ class _GoogleGPainter extends CustomPainter {
     p.color = _blue;
     canvas.drawArc(rect, _rad(-20), _rad(60), false, p);
 
-    // The inner horizontal bar of the G (blue), pointing toward the centre.
     final bar = Paint()..color = _blue;
     canvas.drawRect(
       Rect.fromLTWH(
@@ -463,7 +408,6 @@ class _GoogleGPainter extends CustomPainter {
   bool shouldRepaint(covariant _GoogleGPainter oldDelegate) => false;
 }
 
-/// "── or continue with email ──" rule.
 class AuthOrDivider extends StatelessWidget {
   const AuthOrDivider({super.key, this.label});
   final String? label;
@@ -488,9 +432,6 @@ class AuthOrDivider extends StatelessWidget {
   }
 }
 
-/// Web-style field: a label above a filled, hairline-bordered input (no
-/// floating label, no prefix icon). Password fields get an inline "Show / Hide"
-/// text toggle on the right instead of an eye icon.
 class AuthField extends StatefulWidget {
   const AuthField({
     super.key,
@@ -520,8 +461,6 @@ class AuthField extends StatefulWidget {
   final String? Function(String?)? validator;
   final ValueChanged<String>? onSubmitted;
 
-  /// Greys the field out and blocks editing. Used where a value has been
-  /// committed to mid-flow (e.g. the address a reset code was mailed to).
   final bool enabled;
 
   @override
@@ -534,8 +473,6 @@ class _AuthFieldState extends State<AuthField> {
   @override
   void initState() {
     super.initState();
-    // The Show/Hide toggle only appears once there's something to reveal —
-    // otherwise an empty password field carries a control that does nothing.
     if (widget.obscure) widget.controller.addListener(_onTextChanged);
   }
 
@@ -609,7 +546,6 @@ class _AuthFieldState extends State<AuthField> {
   }
 }
 
-/// Brand-green pill CTA used as the primary submit on the auth screens.
 class AuthSubmitButton extends StatelessWidget {
   const AuthSubmitButton({
     super.key,
@@ -658,7 +594,6 @@ class AuthSubmitButton extends StatelessWidget {
   }
 }
 
-/// Inline error banner — hairline error border, soft fill.
 class AuthErrorBanner extends StatelessWidget {
   const AuthErrorBanner({super.key, required this.message});
   final String message;

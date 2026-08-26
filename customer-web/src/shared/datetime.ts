@@ -1,5 +1,3 @@
-/** Date/time helpers (mirrors merchant-web's). Backend sends UTC ISO strings. */
-
 const dateTimeFmt = new Intl.DateTimeFormat("en-IN", {
   day: "numeric",
   month: "short",
@@ -14,7 +12,6 @@ const dateFmt = new Intl.DateTimeFormat("en-IN", {
   year: "numeric",
 });
 
-/** "5 Jun 2026" (date only) — null/invalid → "—". */
 export function formatDate(iso?: string | null): string {
   if (!iso) return "—";
   const d = new Date(iso);
@@ -22,7 +19,6 @@ export function formatDate(iso?: string | null): string {
   return dateFmt.format(d);
 }
 
-/** "5 Jun 2026, 2:30 pm" — null/invalid → "—". */
 export function formatDateTime(iso?: string | null): string {
   if (!iso) return "—";
   const d = new Date(iso);
@@ -30,7 +26,6 @@ export function formatDateTime(iso?: string | null): string {
   return dateTimeFmt.format(d);
 }
 
-/** "just now" / "5m ago" / "2h ago" / "3d ago", falling back to the date. */
 export function formatRelativeTime(iso?: string | null): string {
   if (!iso) return "—";
   const d = new Date(iso);

@@ -1,21 +1,15 @@
-/// Trimmed strings table for the customer-side app.
 class AppStrings {
-  // App
   static const String appName = 'Shopxy';
   static const String appTagline = 'Your shops, your invoices.';
 
-  // Navigation
   static const String navHome = 'Home';
   static const String navCart = 'Cart';
   static const String navOrders = 'Orders';
   static const String navNotifications = 'Notifications';
   static const String navProfile = 'Profile';
 
-  // Auth (mirrors merchant for shared widgets)
   static const String welcomeBack = 'Welcome back';
   static const String loginSubtitle = 'Sign in to your Shopxy account';
-  // Shown when a merchant (OWNER) account tries to sign in here — the
-  // customer app is for shoppers only.
   static const String merchantAccountBlocked =
       'This is a merchant account. Please use the Shopxy Merchant app to sign in.';
   static const String registerTitle = 'Create your account';
@@ -44,7 +38,6 @@ class AppStrings {
   static const String nameTooShort = 'Name must be at least 2 characters';
   static const String fieldRequired = 'This field is required';
 
-  // Customer home
   static const String myShops = 'My shops';
   static const String shopsSubtitle = 'Shops you\'re linked to as a customer or supplier';
   static const String noShopsTitle = 'No shops yet';
@@ -58,12 +51,10 @@ class AppStrings {
       'When this shop confirms an invoice for you, it\'ll appear here.';
   static const String items = 'items';
 
-  // Quotations
   static const String quoteRequestSent =
       'Request sent. The shop will price it and send back a quotation.';
   static const String quoteRequestCancelled = 'Quote request withdrawn.';
 
-  // Common
   static const String retry = 'Retry';
   static const String cancel = 'Cancel';
   static const String confirm = 'Confirm';
@@ -82,7 +73,6 @@ class AppStrings {
   static const String memberSince = 'Member since';
   static const String currencySymbol = '₹';
 
-  // Catalog
   static const String searchProducts = 'Search products';
   static const String addToCart = 'Add to cart';
   static const String inCart = 'In cart';
@@ -109,14 +99,12 @@ class AppStrings {
   static const String estimatedTotal = 'Estimated total';
   static const String finalTotal = 'Final total';
 
-  // Cancel confirmation
   static const String cancelOrderTitle = 'Cancel this order?';
   static const String cancelOrderBody =
       'Once cancelled, the shop won\'t process it. This can\'t be undone.';
   static const String keepOrder = 'Keep order';
   static const String confirmCancelOrder = 'Yes, cancel';
 
-  // Error / retry
   static const String somethingWentWrong = 'Something went wrong';
   static const String tryAgain = 'Try again';
 }

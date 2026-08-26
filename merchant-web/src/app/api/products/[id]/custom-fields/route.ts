@@ -8,7 +8,6 @@ const putSchema = z.object({
   ),
 });
 
-// GET /api/products/:id/custom-fields — values for one product.
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -27,7 +26,6 @@ export async function GET(
   return NextResponse.json(await res.json());
 }
 
-// PUT /api/products/:id/custom-fields — bulk set values.
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> },

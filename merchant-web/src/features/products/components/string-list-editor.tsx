@@ -3,7 +3,6 @@
 import { useTranslations } from "next-intl";
 import { X, Plus } from "@/shared/icons";
 
-/** Editable list of short strings (used for tags and highlights). */
 export function StringListEditor({
   items,
   onChange,

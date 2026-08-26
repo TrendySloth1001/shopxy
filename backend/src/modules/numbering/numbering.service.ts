@@ -12,16 +12,8 @@ import {
 
 export interface SchemeDto extends SchemeFields {
   series: Series;
-  /// Whether this shop has a saved override for the series, or is still
-  /// on the system default — surfaced so the UI can show "Using default"
-  /// vs "Customized".
   isCustom: boolean;
-  /// What the next document in this series would look like right now.
-  /// Read-only, never allocates.
   nextPreview: string;
-  /// The raw parts behind `nextPreview` — lets the settings screens
-  /// recompute the preview locally as the merchant edits fields, without a
-  /// round-trip per keystroke.
   nextSeq: number;
   financialYear: string;
 }

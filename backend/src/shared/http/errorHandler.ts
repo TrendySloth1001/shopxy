@@ -3,9 +3,6 @@ import { NextFunction, Request, Response } from 'express';
 import { ZodError } from 'zod';
 import { logger } from '../logging/logger.js';
 
-/// Typed domain error services can throw to return a non-2xx without
-/// the controller writing status-mapping boilerplate. Always reaches
-/// the response via errorHandler so the envelope shape stays uniform.
 export class HttpError extends Error {
   constructor(
     public readonly status: number,
@@ -18,22 +15,10 @@ export class HttpError extends Error {
   }
 }
 
-/// Canonical error envelope. Every backend response with a non-2xx
-/// status code carries this shape so the Flutter apps can branch on a
-/// stable machine code instead of pattern-matching English strings.
-///
-/// `error` is kept as a redundant alias of `code` for one release to
-/// avoid breaking existing clients that look at `body.error`. After
-/// both apps have shipped a build that prefers `code`, drop the alias.
 export interface ApiErrorBody {
-  /// Machine-readable code, SCREAMING_SNAKE. Stable across releases.
   code: string;
-  /// Human-readable message. Subject to copy changes.
   message: string;
-  /// Optional structured payload — per-field issues for validation,
-  /// per-line corrections for PRICE_DRIFT, etc.
   details?: unknown;
-  /// @deprecated Alias of `code`; remove once both apps prefer `code`.
   error: string;
 }
 
@@ -95,10 +80,6 @@ export function errorHandler(
   }
 
   logger.error({ err }, 'unhandled error in request');
-  // In non-production envs surface the underlying error message in the
-  // response body so the merchant editor's snackbar shows something
-  // useful instead of a generic "Internal error". Production still
-  // returns the bare envelope to avoid leaking internals.
   const isProd = process.env.NODE_ENV === 'production';
   const detail = !isProd && err instanceof Error ? err.message : undefined;
   res

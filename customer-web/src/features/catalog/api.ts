@@ -1,8 +1,3 @@
-/**
- * Catalog client fetchers — call same-origin BFF routes only.
- * Never touches the backend origin directly.
- */
-
 import {
   CatalogProductSchema,
   CategoryNodeSchema,
@@ -24,14 +19,11 @@ async function getJson(url: string): Promise<unknown> {
       const b = (await res.json()) as { error?: string };
       if (b?.error) message = b.error;
     } catch {
-      // ignore parse error
     }
     throw new Error(message);
   }
   return res.json();
 }
-
-// ── Shop products ───────────────────────────────────────────────────────────
 
 const ShopProductsResponseSchema = z.object({
   shop: ShopProfileSchema,
@@ -55,15 +47,11 @@ export async function fetchShopProducts(
   return { shop: parsed.shop, products: parsed.data, pagination: parsed.pagination };
 }
 
-// ── Category tree ───────────────────────────────────────────────────────────
-
 export async function fetchCategoryTree(): Promise<CategoryNode[]> {
   const raw = await getJson("/api/categories/tree");
   const result = z.object({ data: CategoryNodeSchema }).parse(raw);
   return result.data;
 }
-
-// ── Category products ───────────────────────────────────────────────────────
 
 const CategoryProductsResponseSchema = z.object({
   category: z.object({
@@ -114,4 +102,3 @@ export async function fetchCategoryProducts(
     pagination: parsed.pagination,
   };
 }
-

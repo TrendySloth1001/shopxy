@@ -9,12 +9,6 @@ import 'package:shopxy_customer/shared/theme/app_shadows.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 
-/// PDP gallery — paginated image carousel with page indicator and an
-/// overlaid coupon pill when the product carries an `offers[]` row with
-/// `kind == 'COUPON'`. Each frame is wrapped in an [InteractiveViewer]
-/// so the customer can pinch-zoom the image in place. The heart button
-/// pins to the top-right corner so it doesn't fight with the SliverAppBar
-/// action slot when the gallery scrolls under it.
 class PdpGallery extends StatefulWidget {
   const PdpGallery({
     super.key,

@@ -1,42 +1,15 @@
 import { INDIAN_STATES } from "@/shared/india";
 
-/**
- * Place of supply, derived rather than asked for — the web mirror of the
- * Flutter merchant app's `_placeOfSupply` in `create_invoice_page.dart`.
- *
- * A GSTIN is `state(2) + PAN(10) + entity(1) + Z + checksum`, so the holder's
- * state is not a separate fact to collect — it's already in the number. Asking
- * for it again only invites a picked state that contradicts the GSTIN, which
- * is what puts tax under the wrong head (CGST/SGST where IGST is due).
- *
- * Mirrors the backend's own derivation (`invoices.service.ts` — the GST-10
- * fallback and the place-of-supply default) so the split shown here can't
- * disagree with the one saved.
- */
-
-/** Where the derived answer came from, so the UI can say why. */
 export type PosSource =
   | "partyGstin"
   | "partyAddress"
   | "vendorGstin"
   | "vendorAddress"
   | "shopDefault"
-  /**
-   * The merchant picked the state themselves. Only offered when nothing on
-   * the counterparty says where they are — see `canOverridePlaceOfSupply`.
-   */
   | "manual";
 
 export type PlaceOfSupply = { code: string | null; source: PosSource };
 
-/**
- * The GST state code encoded in a GSTIN's first two digits.
- *
- * Reads only the prefix rather than requiring a complete, well-formed GSTIN:
- * the merchant types left to right and the state is knowable from character
- * three onward. Returns null unless the prefix is two digits AND a real GST
- * state code, so "99…" or "ab…" derive nothing and the caller falls back.
- */
 export function stateCodeFromGstin(
   gstin: string | null | undefined,
 ): string | null {
@@ -51,16 +24,10 @@ type Counterparty = {
   gstin?: string | null;
 } | null;
 
-/**
- * Order: the counterparty's own state code → their GSTIN prefix → for a SALE,
- * the typed GSTIN's prefix → the shop's own state, because an unregistered
- * walk-in with no address is a local supply.
- */
 export function derivePlaceOfSupply(args: {
   type: "SALE" | "PURCHASE";
   party: Counterparty;
   vendor: Counterparty;
-  /** GSTIN typed into the walk-in form, when no party is attached. */
   typedGstin?: string | null;
   shopStateCode?: string | null;
 }): PlaceOfSupply {
@@ -81,17 +48,6 @@ export function derivePlaceOfSupply(args: {
   return { code: shopStateCode ?? null, source: "shopDefault" };
 }
 
-/**
- * Whether the merchant may set the place of supply by hand.
- *
- * Only when nothing on the counterparty tells us where they are. A GSTIN or a
- * saved address IS the answer, and letting someone override those is exactly
- * how tax ends up under the wrong head — which is what deriving this field
- * was meant to prevent.
- *
- * The case this exists for: a walk-in with no GSTIN who is standing in
- * another state. Without it that sale is silently billed as local.
- */
 export function canOverridePlaceOfSupply(source: PosSource): boolean {
   return source === "shopDefault" || source === "manual";
 }

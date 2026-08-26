@@ -6,17 +6,6 @@ import { Check, ChevronDown, Search } from "@/shared/icons";
 
 export type ComboOption = { value: string; label: string; hint?: string };
 
-/**
- * A styled single-select dropdown — our custom replacement for the native
- * `<select>` (no browser-native menu anywhere). Shows the chosen option in a
- * pill trigger, opens a popover list with hover/selected/active states, full
- * keyboard support (Arrow/Home/End/Enter/Space + type-ahead), and — when
- * `searchable` — an inline filter. Closes on outside-click, Escape or blur.
- *
- * `label` is optional: omit it for inline/toolbar triggers and pass `ariaLabel`
- * instead. `className` styles the outer wrapper (e.g. width). Pass `value=""`
- * for the unselected/placeholder state.
- */
 export function ComboSelect({
   label,
   ariaLabel,
@@ -48,7 +37,7 @@ export function ComboSelect({
   const baseId = useId();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [active, setActive] = useState(0); // highlighted index within `filtered`
+  const [active, setActive] = useState(0);
   const rootRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const typeahead = useRef<{ buffer: string; at: number }>({ buffer: "", at: 0 });
@@ -61,7 +50,6 @@ export function ComboSelect({
     [searchable, q, options],
   );
 
-  // Close on outside-click.
   useEffect(() => {
     if (!open) return;
     const onDoc = (e: MouseEvent) => {
@@ -71,15 +59,12 @@ export function ComboSelect({
     return () => document.removeEventListener("mousedown", onDoc);
   }, [open]);
 
-  // Open and highlight the selected row (or the first). Done in the handler,
-  // not an effect, so there's no synchronous setState-in-effect.
   function openList() {
     const idx = filtered.findIndex((o) => o.value === value);
     setActive(idx >= 0 ? idx : 0);
     setOpen(true);
   }
 
-  // Keep the active row scrolled into view as it changes.
   useEffect(() => {
     if (!open || !listRef.current) return;
     const el = listRef.current.querySelector<HTMLElement>(`#${cssId(baseId, active)}`);
@@ -99,7 +84,6 @@ export function ComboSelect({
     });
   }
 
-  // Type-ahead: jump to the next option whose label starts with the typed run.
   function onTypeahead(key: string) {
     if (key.length !== 1) return;
     const now = Date.now();
@@ -147,7 +131,7 @@ export function ComboSelect({
         if (filtered[active]) pick(filtered[active].value);
         break;
       case " ":
-        if (searchable) break; // a space belongs to the query
+        if (searchable) break;
         e.preventDefault();
         if (filtered[active]) pick(filtered[active].value);
         break;
@@ -256,7 +240,6 @@ export function ComboSelect({
   );
 }
 
-/** Stable DOM id for the option at `index` (aria-activedescendant target). */
 function cssId(base: string, index: number): string {
   return `combo-${base.replace(/[^a-zA-Z0-9_-]/g, "")}-opt-${index}`;
 }

@@ -15,7 +15,6 @@ async function jsonOrThrow<T>(res: Response, parse: (raw: unknown) => T, fallbac
       const body = (await res.json()) as { error?: string };
       if (body?.error) message = body.error;
     } catch {
-      /* keep fallback */
     }
     throw new Error(message);
   }
@@ -53,7 +52,6 @@ export function getParty(id: string): Promise<Party> {
   );
 }
 
-/** Drop null/empty optional fields — the backend create schema rejects null. */
 function createBody(input: ContactWrite): Record<string, string> {
   const out: Record<string, string> = { name: input.name };
   for (const [k, v] of Object.entries(input)) {
@@ -71,14 +69,6 @@ export function createParty(input: ContactWrite): Promise<Party> {
   }).then((r) => jsonOrThrow(r, (raw) => partySchema.parse(raw), "Could not create the customer."));
 }
 
-/**
- * Fill in a party's postal fields without touching anything else.
- *
- * `updateParty` sends a whole `ContactWrite`, so calling it with only the
- * address fields would blank the party's phone, GSTIN and the rest. This
- * re-reads the row first and merges, which is what the invoice form's
- * "also save to this customer" needs: complete what's missing, disturb nothing.
- */
 export async function fillPartyAddress(
   id: string,
   address: Partial<
@@ -93,7 +83,6 @@ export async function fillPartyAddress(
     email: current.email ?? null,
     panNumber: current.panNumber ?? null,
     gstin: current.gstin ?? null,
-    // Only overwrite a field the merchant actually supplied.
     address: address.address ?? current.address ?? null,
     city: address.city ?? current.city ?? null,
     state: address.state ?? current.state ?? null,

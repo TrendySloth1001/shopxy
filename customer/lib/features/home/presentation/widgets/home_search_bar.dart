@@ -13,9 +13,6 @@ import 'package:shopxy_customer/shared/constants/app_curves.dart';
 class HomeSearchBar extends StatefulWidget {
   const HomeSearchBar({super.key, this.shrink = 0.0});
 
-  /// 0.0 = fully visible, 1.0 = collapsed to zero height. Driven by
-  /// the home page's scroll offset so the bar shrinks into the brand
-  /// row's compact search icon as the user scrolls.
   final double shrink;
 
   @override
@@ -84,8 +81,6 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
           ),
           child: Row(
             children: [
-              // Filled brand affordance — anchors the bar and reads as
-              // the primary entry point (vs. mic/camera as secondaries).
               Container(
                 width: AppSizes.avatarXs,
                 height: AppSizes.avatarXs,
@@ -164,8 +159,6 @@ class _SearchAction extends StatelessWidget {
   const _SearchAction({required this.icon, required this.filled});
   final AppIconData icon;
 
-  /// Filled = brand-soft fill (primary secondary action — scan).
-  /// Outlined = transparent (tertiary action — voice).
   final bool filled;
 
   @override

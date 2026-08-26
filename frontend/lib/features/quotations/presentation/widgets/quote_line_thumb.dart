@@ -7,10 +7,6 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
-/// Small squircle thumbnail for a quotation line — uses the stored line image
-/// when present, falling back to a brand-tinted box icon. Quote lines only
-/// carry a name + url (not a full Product), so this is lighter than
-/// [ProductThumbnail].
 class QuoteLineThumb extends StatelessWidget {
   const QuoteLineThumb({
     super.key,

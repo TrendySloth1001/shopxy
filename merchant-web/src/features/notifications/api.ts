@@ -11,7 +11,6 @@ async function jsonOrThrow<T>(res: Response, parse: (raw: unknown) => T, fallbac
       const body = (await res.json()) as { error?: string };
       if (body?.error) message = body.error;
     } catch {
-      /* keep fallback */
     }
     throw new Error(message);
   }
@@ -33,7 +32,6 @@ export function listNotifications(opts?: {
   );
 }
 
-/** Cheap unread count for the bell badge. Soft-fails to 0 on the BFF side. */
 export function getUnreadCount(): Promise<number> {
   return fetch("/api/notifications/unread-count", { cache: "no-store" }).then((r) =>
     jsonOrThrow(r, (raw) => unreadCountSchema.parse(raw).unread, "Could not load the unread count."),

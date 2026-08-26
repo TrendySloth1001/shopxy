@@ -7,14 +7,6 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
-/// One-time startup nudge that prompts the owner to finish payout onboarding.
-///
-/// Shown from the dashboard while [LinkedAccountProvider.shouldPrompt] is true.
-/// "Set up now" pushes the [ShopPayoutsPage]; "Later" just dismisses (the
-/// caller marks it dismissed for the session so it doesn't re-nag).
-///
-/// Returns true when the owner chose to set up now. [hasDraft] switches the copy
-/// to "continue" when there's a saved, half-finished onboarding.
 Future<bool> showPayoutSetupSheet(
   BuildContext context, {
   bool hasDraft = false,
@@ -101,9 +93,6 @@ class _PayoutSetupSheet extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
               ),
               onPressed: () {
-                // Capture the navigator BEFORE pop — once the sheet is popped
-                // this widget's context is deactivated, so a fresh
-                // Navigator.of(context) lookup would throw.
                 final navigator = Navigator.of(context);
                 navigator.pop(true);
                 navigator.push(

@@ -6,10 +6,6 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
-/// The Privacy Policy / Terms of Service reader. Both flavours share this
-/// scaffolding; the body is a verbatim copy of the merchant-web legal pages
-/// (see [kPrivacySections] / [kTermsSections] in legal_content.dart) so the
-/// mobile and web legal text stay identical.
 class LegalPage extends StatelessWidget {
   const LegalPage.privacy({super.key}) : _isPrivacy = true;
 
@@ -52,8 +48,6 @@ class LegalPage extends StatelessWidget {
   }
 }
 
-/// One legal section — a hairline rule, its heading, then its blocks
-/// (mirrors the web `LegalSection`: `border-t` + heading + prose).
 class _SectionView extends StatelessWidget {
   const _SectionView({required this.section});
   final LegalSection section;
@@ -83,7 +77,6 @@ class _SectionView extends StatelessWidget {
   }
 }
 
-/// A paragraph or a bulleted list within a section.
 class _BlockView extends StatelessWidget {
   const _BlockView({required this.block});
   final LegalBlock block;

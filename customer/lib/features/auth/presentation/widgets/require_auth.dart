@@ -11,21 +11,6 @@ import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
-/// Single sign-in gate used by every guest-blocked action. The contract:
-///
-///   * If the user is already signed in, `action` runs immediately and
-///     the future completes with `true`.
-///   * Otherwise a bottom sheet appears explaining *why* sign-in is
-///     needed (the `reason` string is the body — keep it short, e.g.
-///     "to add items to your cart"). Two CTAs push either [LoginPage]
-///     or [RegisterPage]; both auto-pop with `true` when auth succeeds.
-///   * If the user dismisses the sheet or backs out of the auth pages,
-///     the future completes with `false` and `action` is **not** run.
-///
-/// `action` is invoked from inside this helper rather than left to the
-/// caller so a successful sign-in always runs exactly the work the
-/// caller wanted gated — no risk of a forgotten "then add to cart"
-/// follow-up. Pass `null` if you just want the sign-in prompt.
 Future<bool> requireAuth(
   BuildContext context, {
   required String reason,
@@ -37,9 +22,6 @@ Future<bool> requireAuth(
     return true;
   }
 
-  // Capture the root navigator *before* the sheet is shown so the
-  // LoginPage push lands on the app-level nav, not on a transient
-  // sheet/dialog navigator that disappears with the sheet.
   final rootNavigator = Navigator.of(context, rootNavigator: true);
 
   final mode = await _showSignInSheet(context, reason: reason);
@@ -59,15 +41,6 @@ Future<bool> requireAuth(
   return false;
 }
 
-/// Top-right "Skip" affordance for the Login + Register pages. Mirrors
-/// the pattern Amazon/Flipkart use: the auth page is dismissible, but
-/// before letting the user out we surface a short bottom sheet listing
-/// what they'll miss without an account so the dismissal is informed.
-///
-/// On confirmation the auth page pops with `false`, which propagates
-/// back through `requireAuth` so the caller's gated action does NOT
-/// run. If the user backs out of the sheet they're returned to the
-/// auth page to try again.
 class SkipToGuestButton extends StatelessWidget {
   const SkipToGuestButton({super.key});
 

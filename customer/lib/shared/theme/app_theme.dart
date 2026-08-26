@@ -5,9 +5,6 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/theme/app_typography.dart';
 import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
-/// Minimal two-tone theme. White background, black ink, single hairline.
-/// Light and dark currently resolve to the same look — dark colours will be
-/// decided later. Until then both modes look identical to keep the app stable.
 class AppTheme {
   AppTheme._();
 
@@ -306,7 +303,6 @@ class AppTheme {
         ),
       ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(
-        // Brand-green progress matches the Glassdoor segmented progress bar.
         color: AppColors.brand,
         circularTrackColor: Colors.transparent,
         linearTrackColor: Colors.transparent,

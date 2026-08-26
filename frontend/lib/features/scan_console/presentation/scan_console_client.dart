@@ -9,8 +9,6 @@ import 'package:shopxy/features/scan_console/data/scan_console_remote_data_sourc
 
 enum ScanConnStatus { connecting, connected, reconnecting, error }
 
-/// One row of scanner-side feedback, driven by the server's ack so it reflects
-/// what actually reached the backend (not just what the camera saw).
 class ScanFeedback {
   ScanFeedback({
     required this.title,
@@ -24,10 +22,6 @@ class ScanFeedback {
   final DateTime at;
 }
 
-/// Holds the scanner's live WebSocket to the shop room: mints a ticket, opens
-/// the socket (role=scanner), pushes scans, and surfaces connection + presence
-/// state so the phone can show "connection established · N watching". Reconnects
-/// with a fresh ticket on drop.
 class ScanConsoleClient extends ChangeNotifier {
   ScanConsoleClient(ApiClient client) : _ds = ScanConsoleRemoteDataSource(client);
   final ScanConsoleRemoteDataSource _ds;
@@ -67,8 +61,6 @@ class ScanConsoleClient extends ChangeNotifier {
       final ticket = await _ds.requestTicket();
       if (_disposed) return;
 
-      // Same host as the REST base, ws(s) scheme. The phone's apiBaseUrl and the
-      // WebSocket therefore share one origin (the dev tunnel) — "same url".
       final wsBase = AppConfig.apiBaseUrl
           .replaceFirst(RegExp(r'^http'), 'ws')
           .replaceAll(RegExp(r'/+$'), '');
@@ -76,7 +68,7 @@ class ScanConsoleClient extends ChangeNotifier {
 
       final channel = WebSocketChannel.connect(uri);
       _channel = channel;
-      await channel.ready; // throws on a failed handshake (e.g. 401)
+      await channel.ready;
       if (_disposed) {
         await channel.sink.close();
         return;
@@ -151,8 +143,6 @@ class ScanConsoleClient extends ChangeNotifier {
     });
   }
 
-  /// Push a scanned code over the socket. Dropped silently if not connected —
-  /// the UI shows the connection state so the user knows scans aren't flowing.
   void sendScan(String code) {
     if (_status != ScanConnStatus.connected || _channel == null) return;
     _channel!.sink.add(jsonEncode({'type': 'scan', 'code': code}));

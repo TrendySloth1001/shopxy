@@ -9,8 +9,6 @@ enum AppButtonVariant { primary, secondary, danger, ghost }
 
 enum AppButtonSize { sm, md, lg }
 
-/// The one button widget for the app. Wraps Material buttons with consistent
-/// two-tone styling, loading state, and optional leading/trailing icons.
 class AppButton extends StatelessWidget {
   const AppButton({
     super.key,
@@ -24,8 +22,6 @@ class AppButton extends StatelessWidget {
     this.fullWidth = false,
   });
 
-  /// Primary CTA: high-contrast neutral fill + matching text — theme-aware, so
-  /// it flips correctly in dark/OLED (light fill + dark text).
   const AppButton.primary({
     super.key,
     required this.label,
@@ -37,7 +33,6 @@ class AppButton extends StatelessWidget {
     this.fullWidth = false,
   }) : variant = AppButtonVariant.primary;
 
-  /// Secondary: white background, black hairline border.
   const AppButton.secondary({
     super.key,
     required this.label,
@@ -49,7 +44,6 @@ class AppButton extends StatelessWidget {
     this.fullWidth = false,
   }) : variant = AppButtonVariant.secondary;
 
-  /// Danger: solid error background, white text.
   const AppButton.danger({
     super.key,
     required this.label,
@@ -61,7 +55,6 @@ class AppButton extends StatelessWidget {
     this.fullWidth = false,
   }) : variant = AppButtonVariant.danger;
 
-  /// Ghost: no background, no border — text-only action.
   const AppButton.ghost({
     super.key,
     required this.label,
@@ -161,12 +154,6 @@ class AppButton extends StatelessWidget {
         child: Padding(
           padding: _padding,
           child: Center(
-            // `heightFactor: 1` is load-bearing. A bare Center sizes to its
-            // child only when the incoming constraints are unbounded; when
-            // they're bounded it expands to fill them. Scaffold hands
-            // `bottomNavigationBar` a loose full-screen maxHeight, so every
-            // pinned CTA grew into a full-page slab. Hug the child's height
-            // and keep the Center purely for horizontal alignment.
             heightFactor: 1,
             child: child,
           ),
@@ -184,12 +171,8 @@ class AppButton extends StatelessWidget {
     if (onPressed == null && !isLoading) return AppColors.disabled;
     switch (variant) {
       case AppButtonVariant.primary:
-        // High-contrast neutral CTA — pairs with the inverseSurface fill so it
-        // flips correctly (dark fill + light text in light mode; light fill +
-        // dark text in dark mode).
         return AppColors.onInverse;
       case AppButtonVariant.danger:
-        // White on the saturated error red — correct in every theme.
         return AppColors.white;
       case AppButtonVariant.secondary:
       case AppButtonVariant.ghost:

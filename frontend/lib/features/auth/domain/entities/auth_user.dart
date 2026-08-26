@@ -32,28 +32,15 @@ class AuthUser {
   final String name;
   final String role;
 
-  /// Platform-wide curation privilege (banners, taxonomy, collections).
-  /// Independent of role — flag any user via DB to grant it.
   final bool isPlatformAdmin;
 
-  /// The caller's position within their shop's team (OWNER, MANAGER,
-  /// STOCKIST, CASHIER). Null for accounts not on any team (e.g. a
-  /// customer account, or an owner whose shop predates membership).
-  /// Surfaced on /auth/me; gates role-sensitive UI like the Team screen.
   final String? shopRole;
 
-  /// Human label of the caller's role — a TeamRole name ("Cashier",
-  /// "Warehouse Lead", …). Preferred over [shopRole] for display.
   final String? shopRoleName;
 
-  /// Granted rights as `area:action` strings (see shop_capabilities
-  /// .dart). Empty for OWNER (their role bypasses every gate) and for
-  /// non-team accounts. Surfaced on /auth/me.
   final List<String> shopPermissions;
   final bool emailNotifications;
   final DateTime createdAt;
-  // Shop profile — surfaced on /auth/me and editable via PATCH /auth/me.
-  // All optional so legacy users without a shop set up still load cleanly.
   final String? shopName;
   final String? shopAddress;
   final String? shopCity;
@@ -62,33 +49,18 @@ class AuthUser {
   final String? shopPinCode;
   final String? shopGstin;
 
-  /// REGULAR | COMPOSITION | UNREGISTERED. Only a REGULAR shop with a
-  /// GSTIN charges output GST — a COMPOSITION dealer holds a GSTIN too but
-  /// never charges it, so this app must check both fields together
-  /// whenever it decides the merchant needs to declare [gstEffectiveFrom].
   final String? registrationType;
 
-  /// Calendar date (YYYY-MM-DD) GST starts applying — null = ungated
-  /// (pre-feature behaviour). See backend `gstEffectiveFrom` on `User`.
   final String? gstEffectiveFrom;
   final String? shopPan;
   final String? upiVpa;
 
-  /// Profile photo URL (upload-service path). Null = initial fallback.
   final String? avatarUrl;
 
-  /// Merchant phone number, editable from Edit Profile.
   final String? phoneNumber;
 
-  /// Not a secret — Google's stable per-account `sub`, useless without also
-  /// owning that Google account. Presence means this account has no
-  /// password (Google-only accounts get a random, unusable one server-side
-  /// — see backend `safeUserSelect`). Combined with [recoveryPinSetAt] this
-  /// is how [needsRecoveryPinSetup] gates every protected screen.
   final String? googleId;
 
-  /// Timestamp only (never the PIN or its hash) — presence means the
-  /// recovery PIN is already set up.
   final DateTime? recoveryPinSetAt;
 
   factory AuthUser.fromJson(Map<String, dynamic> j) => AuthUser(
@@ -111,8 +83,6 @@ class AuthUser {
     shopPinCode: j['shopPinCode'] as String?,
     shopGstin: j['shopGstin'] as String?,
     registrationType: j['registrationType'] as String?,
-    // Backend sends a full ISO datetime for the underlying Date column —
-    // this app only ever needs the calendar-date part.
     gstEffectiveFrom: (j['gstEffectiveFrom'] as String?)?.substring(0, 10),
     shopPan: j['shopPan'] as String?,
     upiVpa: j['upiVpa'] as String?,
@@ -130,14 +100,8 @@ class AuthUser {
 
   bool get isOwner => role == 'OWNER';
 
-  /// True when this account owns the shop (vs invited staff). Gates the
-  /// team-management actions on the Team & roles screen.
   bool get isShopOwner => shopRole == 'OWNER';
 
-  /// True for a Google-linked account that hasn't set a recovery PIN yet —
-  /// takes priority over every other post-auth gate (shop onboarding,
-  /// team-join) since it's the only way back in if Google is ever
-  /// unreachable.
   bool get needsRecoveryPinSetup =>
       googleId != null && recoveryPinSetAt == null;
 

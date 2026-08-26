@@ -1,6 +1,5 @@
 import { proxy, withQuery } from "@/server/proxy";
 
-// GET /api/banners · POST /api/banners (→ backend /me/banners)
 export function GET(req: Request) {
   return proxy(withQuery("/me/banners", req), req, { fallback: "Could not load banners." });
 }

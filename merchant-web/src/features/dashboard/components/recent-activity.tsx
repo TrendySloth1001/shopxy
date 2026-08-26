@@ -4,7 +4,6 @@ import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Timer } from "@/shared/ico
 import type { DashboardTransaction } from "../stats";
 import { Section } from "./ui";
 
-/** Recent stock movements feed, each row linking to its source document. */
 export function RecentActivity({ transactions }: { transactions: DashboardTransaction[] }) {
   const t = useTranslations("dashboard");
   return (

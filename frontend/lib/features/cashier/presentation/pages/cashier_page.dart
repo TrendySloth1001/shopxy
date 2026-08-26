@@ -12,8 +12,6 @@ import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// Cashier control center: open/close a till shift, manage the cash drawer,
-/// reconcile (X/Z report), and process returns. Reaches /me/cashier over HTTP.
 class CashierPage extends StatefulWidget {
   const CashierPage({super.key});
 
@@ -25,10 +23,6 @@ String _money(num? v) => '₹${(v ?? 0).toStringAsFixed(2)}';
 double _d(Object? v) => v is num ? v.toDouble() : 0;
 int _i(Object? v) => v is num ? v.toInt() : 0;
 
-/// Parse a money text field, ignoring everything that isn't the number itself —
-/// the ₹ sign, thousands separators, spaces and stray characters — keeping only
-/// digits and the decimal point (e.g. '₹1,200.50' → 1200.5). Returns null when
-/// there's no parseable amount. Mirrors merchant-web `parseAmount`.
 double? _parseAmount(String raw) {
   final cleaned = raw.replaceAll(RegExp(r'[^0-9.]'), '');
   if (cleaned.isEmpty || cleaned == '.') return null;
@@ -48,7 +42,6 @@ class _CashierPageState extends State<CashierPage> {
     super.initState();
     _ds = CashierRemoteDataSource(context.read<ApiClient>());
     _load();
-    // Tick the shift timer every second while a shift is open.
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted && _open) setState(() {});
     });

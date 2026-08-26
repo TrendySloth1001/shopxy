@@ -49,15 +49,12 @@ describe('banners — admin CRUD + cache invalidation', () => {
         });
       expect(create.status).toBe(201);
       const id = create.body.id;
-      // Ids are opaque strings since the public-id migration.
       expect(typeof id).toBe('string');
 
       const get = await request(app)
         .get(`/admin/banners/${id}`)
         .set('Authorization', `Bearer ${admin.accessToken}`);
       expect(get.status).toBe(200);
-      // Served at the large variant: a banner renders full bleed, and the
-      // stored `md` was narrower than the screen it fills.
       expect(get.body.imageUrl).toBe('/images/banner-lg.webp');
       expect(get.body.linkUrl).toBe('search:fashion');
 
@@ -77,10 +74,6 @@ describe('banners — admin CRUD + cache invalidation', () => {
   });
 
   it('rejects the legacy link formats, which never resolved anywhere', async () => {
-    // These are what the old validator accepted. The customer app passed them
-    // to its search box verbatim, so `/shop/festive` opened an empty search
-    // and an absolute URL searched for its own text. Rejecting them on write
-    // is what stops a merchant saving a link that cannot work.
     const admin = await createTestUser({ isPlatformAdmin: true });
     try {
       for (const linkUrl of [
@@ -161,7 +154,6 @@ describe('banners — public read + scheduling window', () => {
     const yesterday = new Date(now.getTime() - 86_400_000);
     const tomorrow = new Date(now.getTime() + 86_400_000);
 
-    // 3 rows: active+in-window, active+future, inactive.
     const live = await prisma.banner.create({
       data: {
         placement: 'HERO',
@@ -189,9 +181,6 @@ describe('banners — public read + scheduling window', () => {
     const res = await request(app).get('/banners?placement=HERO');
     expect(res.status).toBe(200);
     expect(res.body.data.length).toBe(1);
-    // Identified by image rather than id — ids are opaque strings now, so the
-    // raw row id no longer compares. `-lg` because banners render full bleed
-    // and are served the large variant, not the stored `md`.
     expect(res.body.data[0].imageUrl).toBe('/images/a-lg.webp');
     void live;
   });
@@ -206,30 +195,24 @@ describe('banners — public read + scheduling window', () => {
 
   it('write invalidates Redis cache so the next read sees the change', async () => {
     if (!(await pingRedis().catch(() => false))) {
-      // Redis not running locally — skip; cache helpers degrade gracefully
-      // and the un-cached path is covered by the previous test.
       return;
     }
     await clearAllTestBanners();
     const admin = await createTestUser({ isPlatformAdmin: true });
     try {
-      // 1. Read empty → caches `[]`.
       const first = await request(app).get('/banners?placement=PROMO');
       expect(first.body.data.length).toBe(0);
       const cachedRaw = await getRedis().get('banners:active:PROMO');
       expect(cachedRaw).toBe('[]');
 
-      // 2. Admin writes a new active banner.
       const created = await request(app)
         .post('/admin/banners')
         .set('Authorization', `Bearer ${admin.accessToken}`)
         .send({ placement: 'PROMO', imageUrl: '/images/promo-md.webp' });
 
-      // 3. Cache should have been deleted by the write.
       const cachedAfter = await getRedis().get('banners:active:PROMO');
       expect(cachedAfter).toBeNull();
 
-      // 4. Next read returns the new row + repopulates the cache.
       const second = await request(app).get('/banners?placement=PROMO');
       expect(second.body.data.length).toBe(1);
       expect(second.body.data[0].id).toBe(created.body.id);

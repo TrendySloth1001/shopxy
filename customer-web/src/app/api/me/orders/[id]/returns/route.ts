@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-/** POST /me/orders/:parentId/returns — submit a return request. Auth required. */
 export async function POST(req: Request, { params }: Ctx) {
   const { id } = await params;
   const body = await req.text();

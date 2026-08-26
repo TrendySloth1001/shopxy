@@ -14,18 +14,6 @@ import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 import 'package:shopxy/shared/constants/app_curves.dart';
 
-/// Image carousel for the product detail hero.
-///
-/// Three independent concerns sharing one widget:
-///   * `PageView` paginates through every image (no images → falls
-///     back to the same hash-tinted monogram the list uses, so the
-///     hero never looks broken).
-///   * Dot indicator under the carousel for fast position read-out.
-///   * Thumbnail strip beneath that for jump-to navigation when there
-///     are 3+ images.
-///
-/// Tapping any image opens a full-screen viewer with pinch-zoom and
-/// horizontal swipe between images.
 class ProductImageCarousel extends StatefulWidget {
   const ProductImageCarousel({
     super.key,
@@ -35,10 +23,6 @@ class ProductImageCarousel extends StatefulWidget {
 
   final Product product;
 
-  /// When the product has no images and this is non-null, the empty
-  /// monogram band becomes a tappable "Add photos" affordance (wired to
-  /// the edit page) so the placeholder isn't a dead end. Null hides the
-  /// call-to-action — e.g. for roles that can't edit products.
   final VoidCallback? onAddPhotos;
 
   @override
@@ -80,10 +64,6 @@ class _ProductImageCarouselState extends State<ProductImageCarousel> {
   Widget build(BuildContext context) {
     final images = widget.product.images;
 
-    // No images: show the monogram band, same look as before. No
-    // dot strip, no thumbnail rail — nothing to navigate. When the
-    // viewer can edit, the band turns into an "Add photos" call-to-
-    // action so the placeholder isn't a dead end.
     if (images.isEmpty) {
       final band = Container(
         width: double.infinity,
@@ -161,9 +141,6 @@ class _ProductImageCarouselState extends State<ProductImageCarousel> {
   }
 }
 
-/// "Add photos" call-to-action shown over the empty monogram band when
-/// the viewer can edit the product. Tapping it opens the edit page where
-/// the image manager lives.
 class _AddPhotosPill extends StatelessWidget {
   const _AddPhotosPill({required this.onTap});
   final VoidCallback onTap;
@@ -304,9 +281,6 @@ class _ThumbnailStrip extends StatelessWidget {
   }
 }
 
-/// Full-screen image viewer. One PageView, one InteractiveViewer per
-/// page (so pinch-zoom doesn't fight the swipe gesture — zoom is
-/// scoped to its own page). Tap closes; swipe between images.
 class _ProductLightbox extends StatefulWidget {
   const _ProductLightbox({required this.urls, required this.startIndex});
 
@@ -331,9 +305,6 @@ class _ProductLightboxState extends State<_ProductLightbox> {
 
   @override
   Widget build(BuildContext context) {
-    // A fullscreen photo viewer is a media surface: it stays black with light
-    // controls in every theme (like any gallery lightbox), so it uses fixed
-    // Material black/white rather than theme-flipping tokens.
     return Scaffold(
       extendBodyBehindAppBar: true,
       backgroundColor: Colors.black,

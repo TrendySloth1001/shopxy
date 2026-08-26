@@ -13,12 +13,6 @@ import {
 
 const MAX_BACKOFF_MS = 8_000;
 
-/**
- * Live scan-console connection. Mints a ticket, opens the backend WebSocket,
- * and folds incoming scans into a quantity-aggregated row list (scanning the
- * same code again bumps its qty, POS-style). Reconnects with a fresh ticket on
- * drop, with capped exponential backoff.
- */
 export function useScanConsole() {
   const t = useTranslations("scanConsole");
   const [rows, setRows] = useState<ConsoleRow[]>([]);
@@ -30,15 +24,12 @@ export function useScanConsole() {
   const closedRef = useRef(false);
   const attemptRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Indirection so `connect` and the reconnect scheduler can reference each
-  // other without a forward declaration.
   const connectRef = useRef<() => void>(() => {});
 
   const upsert = useCallback((scan: ScanItem) => {
     setRows((prev) => {
       const existing = prev.find((r) => r.productId === scan.productId);
       if (existing) {
-        // Bump qty and float the just-scanned row to the top.
         const bumped: ConsoleRow = {
           ...existing,
           qty: existing.qty + 1,
@@ -104,7 +95,6 @@ export function useScanConsole() {
       };
 
       ws.onerror = () => {
-        // Let onclose drive the reconnect; closing here makes that deterministic.
         ws.close();
       };
 
@@ -143,7 +133,7 @@ export function useScanConsole() {
   }, [connect]);
 
   const clear = useCallback(async () => {
-    setRows([]); // optimistic; the backend 'clear' broadcast confirms for all consoles
+    setRows([]);
     try {
       await clearConsole();
     } catch (e) {

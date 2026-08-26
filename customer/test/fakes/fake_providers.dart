@@ -7,10 +7,6 @@ import 'package:shopxy_customer/features/shops/data/datasources/me_remote_data_s
 import 'package:shopxy_customer/features/shops/domain/entities/linked_shop.dart';
 import 'package:shopxy_customer/features/shops/presentation/providers/shops_provider.dart';
 
-/// Lightweight in-memory fakes for widget tests. Each subclass
-/// overrides every loader the page touches so the underlying data
-/// source is never asked for anything. The data source is real but
-/// inert — its constructor doesn't fire any network.
 final _inertApi = ApiClient(TokenManager());
 final _inertNotifsDs = NotificationsRemoteDataSource(_inertApi);
 final _inertInvitesDs = InvitationsRemoteDataSource(_inertApi);
@@ -65,10 +61,6 @@ class FakeNotificationsProvider extends NotificationsProvider {
   @override
   Future<void> refreshUnreadCount() async {}
 }
-
-// ─────────────────────────────────────────────────────────────────────
-// Test fixtures
-// ─────────────────────────────────────────────────────────────────────
 
 LinkedShop fakeShop({
   String id = '1',

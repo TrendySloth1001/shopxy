@@ -1,9 +1,6 @@
 import 'package:shopxy/features/parties/domain/entities/party_overview.dart';
 
 class PartyOverviewDto {
-  /// Prisma `Decimal` columns serialize to JSON as strings. Funnel every
-  /// money/quantity field through this so a stray `String is not num` cast
-  /// can never happen.
   static double _d(dynamic v) {
     if (v == null) return 0;
     if (v is num) return v.toDouble();
@@ -44,9 +41,6 @@ class PartyOverviewDto {
           ? null
           : PartyLinkedUser(
               id: linked['id'].toString(),
-              // Name only — the server sends nothing else here by design
-              // (DPDP §6/§8, see PartyLinkedUser). Reading `email` off this
-              // object is what threw the Null-is-not-a-String cast.
               name: linked['name'] as String? ?? '',
             ),
       invoiceCount: counts['invoices'] as int? ?? 0,

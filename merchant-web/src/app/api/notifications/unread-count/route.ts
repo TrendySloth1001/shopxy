@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { authedFetch } from "@/server/auth/session";
 import { unreadCountSchema } from "@/features/notifications/schema";
 
-/** Bell badge count. Soft-fails to 0 so a blip never breaks the shell. */
 export async function GET() {
   const res = await authedFetch("/notifications/unread-count");
   if (!res || !res.ok) return NextResponse.json({ unread: 0 });

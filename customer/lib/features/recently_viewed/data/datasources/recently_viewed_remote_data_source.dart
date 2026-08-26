@@ -4,12 +4,6 @@ import 'package:shopxy_customer/core/network/api_client.dart';
 import 'package:shopxy_customer/features/home/data/models/home_feed_models.dart';
 import 'package:shopxy_customer/features/recently_viewed/data/models/recently_viewed_mapper.dart';
 
-/// Adapter for the per-user "recently viewed" surface.
-///
-///   GET /me/recently-viewed → { data: [{ id, lastViewedAt, product: {...} }] }
-///
-/// Backend caps the list at 20 rows per user; an hourly cron trims older
-/// entries so this endpoint never returns more than that.
 class RecentlyViewedRemoteDataSource {
   const RecentlyViewedRemoteDataSource(this._client);
   final ApiClient _client;

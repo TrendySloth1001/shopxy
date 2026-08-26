@@ -1,15 +1,3 @@
-// Local product search over the preloaded catalogue.
-//
-// The pickers used to ask the server per keystroke — debounced, so the request
-// count was sane, but the merchant still waited for the network before seeing
-// a row. This holds the shop's active products in memory and answers in-frame.
-//
-// The dangerous failure here is not "slow", it's "confidently wrong": a
-// catalogue that is partial, stale, or belongs to the previous user will
-// happily tell a merchant their own SKU doesn't exist. Most of what follows
-// tests refusal — when the index must decline to answer so the caller falls
-// back to the server.
-
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -47,8 +35,6 @@ Map<String, dynamic> _row(
   'updatedAt': '2026-01-01T00:00:00.000Z',
 };
 
-/// Catalogue over a canned response. Returns the request counter so a test can
-/// assert how many times the network was actually touched.
 ({ProductCatalogue catalogue, int Function() calls}) build({
   List<Map<String, dynamic>>? rows,
   bool truncated = false,
@@ -103,7 +89,6 @@ void main() {
     });
 
     test('matches a word anywhere in the name, not just the first', () async {
-      // A merchant reaching for "Basmati Rice 5kg" often types "rice" first.
       final b = build(rows: _shop);
       await b.catalogue.ensureLoaded();
 
@@ -111,8 +96,6 @@ void main() {
     });
 
     test('an exact code outranks any name similarity', () async {
-      // A scan or a fully-typed code is an unambiguous answer. It must win, or
-      // scanning a barcode surfaces a list to choose from.
       final b = build(rows: _shop);
       await b.catalogue.ensureLoaded();
 
@@ -121,8 +104,6 @@ void main() {
     });
 
     test('every token must match — two words narrow, not widen', () async {
-      // "blue pen" must not return every pen. An OR here would make the second
-      // word actively unhelpful.
       final b = build(rows: _shop);
       await b.catalogue.ensureLoaded();
 
@@ -173,14 +154,11 @@ void main() {
     });
 
     test('when the shop is larger than one response', () async {
-      // The whole point: searching a partial catalogue would report a real
-      // product as missing. Being unable to answer is the correct outcome.
       final b = build(rows: _shop, truncated: true, total: 90000);
       await b.catalogue.ensureLoaded();
 
       expect(b.catalogue.isTruncated, isTrue);
       expect(b.catalogue.isSearchable, isFalse);
-      // Even though "Sugar 1 kg" is demonstrably in the rows it holds.
       expect(b.catalogue.search('sugar'), isEmpty);
     });
 
@@ -193,7 +171,6 @@ void main() {
     });
 
     test('after logout', () async {
-      // User B must never search user A's products.
       final b = build(rows: _shop);
       await b.catalogue.ensureLoaded();
       expect(b.catalogue.search('sugar'), isNotEmpty);
@@ -221,9 +198,6 @@ void main() {
     });
 
     test('refresh picks up a product added elsewhere', () async {
-      // A create on the web app invalidates the `products` cache tag, and the
-      // central listener calls refresh() — the merchant must not have to
-      // restart the app to bill something they just added.
       final rows = [..._shop];
       final b = build(rows: rows);
       await b.catalogue.ensureLoaded();
@@ -236,8 +210,6 @@ void main() {
     });
 
     test('a failed refresh keeps the catalogue it already had', () async {
-      // Going offline mid-session must not empty a working index — a stale
-      // list beats no list, and the rows are the merchant's own.
       var fail = false;
       var calls = 0;
       final api = ApiClient(
@@ -264,8 +236,6 @@ void main() {
     });
 
     test('parses the light payload into usable line data', () async {
-      // The catalogue omits description/specs/variants. What it must carry is
-      // everything needed to price an invoice line without a second fetch.
       final b = build(rows: _shop);
       await b.catalogue.ensureLoaded();
 

@@ -6,9 +6,6 @@ import {
   extractError,
 } from "@/server/auth/session";
 
-// POST /api/auth/change-password — the backend revokes ALL sessions (including
-// this one) and bumps tokensValidFrom on success, so we clear the session
-// cookies and the client returns to sign-in.
 export async function POST(req: Request) {
   const json = await req.json().catch(() => null);
   const parsed = changePasswordSchema.safeParse(json);

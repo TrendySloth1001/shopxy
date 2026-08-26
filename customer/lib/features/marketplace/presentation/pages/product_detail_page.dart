@@ -28,13 +28,6 @@ import 'package:shopxy_customer/shared/format/friendly_error.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 
-/// Customer-facing product detail page.
-///
-/// Single [CustomScrollView] that renders the full page top-to-bottom —
-/// gallery, title, variants, price, offers, FBT rail, then the three
-/// content sections (Details, Specs, Reviews) stacked vertically with
-/// section headers. No horizontal tab swap: everything is reached by
-/// scrolling, the same way Amazon's app handles long-form PDPs.
 class ProductDetailPage extends StatefulWidget {
   const ProductDetailPage({super.key, required this.productId});
   final String productId;
@@ -45,8 +38,6 @@ class ProductDetailPage extends StatefulWidget {
 
 class _ProductDetailPageState extends State<ProductDetailPage> {
   MarketplaceProduct? _product;
-  // Currently-picked variant; drives price/stock display and is sent
-  // along with add-to-cart so the cart line can reference it.
   MarketplaceVariant? _selectedVariant;
   bool _loading = true;
   String? _error;
@@ -167,7 +158,6 @@ class _Body extends StatelessWidget {
         ),
         SliverToBoxAdapter(child: PdpFbtRail(productId: p.id)),
 
-        // ── Details section ──────────────────────────────────────
         const SliverToBoxAdapter(child: _SectionDivider()),
         const SliverToBoxAdapter(child: _SectionHeader(title: 'Details')),
         SliverToBoxAdapter(child: PdpHighlights(items: p.highlights)),
@@ -177,7 +167,6 @@ class _Body extends StatelessWidget {
           SliverToBoxAdapter(child: _Description(text: p.description!)),
         SliverToBoxAdapter(child: _ShopCard(product: p)),
 
-        // ── Specs section ────────────────────────────────────────
         const SliverToBoxAdapter(child: _SectionDivider()),
         const SliverToBoxAdapter(
           child: _SectionHeader(title: 'Specifications'),
@@ -194,7 +183,6 @@ class _Body extends StatelessWidget {
         else
           SliverToBoxAdapter(child: _SpecTabsAndSheet(groups: p.specs)),
 
-        // ── Reviews section ──────────────────────────────────────
         const SliverToBoxAdapter(child: _SectionDivider()),
         const SliverToBoxAdapter(
           child: _SectionHeader(title: 'Ratings & reviews'),
@@ -209,9 +197,6 @@ class _Body extends StatelessWidget {
   }
 }
 
-/// Soft divider between page sections — a hairline above a small
-/// breathing space. Keeps section transitions visible without
-/// the loudness of a full Divider.
 class _SectionDivider extends StatelessWidget {
   const _SectionDivider();
 
@@ -325,9 +310,6 @@ class _TitleBlock extends StatelessWidget {
     );
   }
 
-  /// Coarse rounding to the nearest 50/100/500 — Amazon shows
-  /// "200+ bought in past month", not "247 bought". Keeps the line
-  /// reading as social proof rather than analytics.
   String _compact(int n) {
     if (n >= 1000) return '${(n ~/ 500) * 500}';
     if (n >= 100) return '${(n ~/ 50) * 50}';
@@ -347,8 +329,6 @@ class _SystemTagsRow extends StatelessWidget {
     _ => tag,
   };
 
-  // Pull every tag color from the theme so the pills feel like part of
-  // the same palette as the rest of the app.
   ({Color bg, Color fg}) _palette(String tag) => switch (tag) {
     'BESTSELLER' => (bg: AppColors.black, fg: AppColors.white),
     'EDITORS_PICK' => (bg: AppColors.info, fg: AppColors.white),
@@ -505,11 +485,6 @@ class _RatingChip extends StatelessWidget {
   }
 }
 
-/// Wraps the spec sheet with an optional Phase D subtab chip row.
-/// When any group declares a [SpecGroup.tab], the unique tabs become
-/// horizontal pills and the selected one filters the visible groups.
-/// When no group declares a tab, falls through to a flat list (the
-/// pre-Phase-D behaviour).
 class _SpecTabsAndSheet extends StatefulWidget {
   const _SpecTabsAndSheet({required this.groups});
   final List<SpecGroup> groups;
@@ -845,22 +820,6 @@ class _EmptySection extends StatelessWidget {
   }
 }
 
-/// Pinned bottom action bar.
-///
-/// Three states:
-///   • idle          → primary "Add to cart" button (brand color) + secondary
-///                     ghost "Buy now" pill that pushes the cart page.
-///   • loading       → button shows an inline spinner while the optimistic
-///                     write fans out to the server. The user can't double-tap
-///                     it.
-///   • in-cart       → button collapses into a [- N +] quantity stepper plus a
-///                     filled "Go to cart" pill, mirroring the standard
-///                     marketplace pattern (Amazon / Flipkart / Myntra).
-///
-/// The cart provider's [CartProvider.add] / [setQuantity] calls return
-/// synchronously after writing the local mirror; the network sync is
-/// fire-and-forget. We only show the loading state long enough to
-/// debounce double-taps (and as a visual ack that the tap registered).
 class _ActionBar extends StatefulWidget {
   const _ActionBar({required this.catalogProduct, required this.productId});
   final CatalogProduct catalogProduct;
@@ -879,9 +838,6 @@ class _ActionBarState extends State<_ActionBar> {
     HapticFeedback.lightImpact();
     final cart = context.read<CartProvider>();
     final result = cart.add(widget.catalogProduct);
-    // Tiny delay so the spinner is perceptible. Cart writes locally
-    // first, so without this the state flip is so fast it looks like
-    // nothing happened.
     await Future<void>.delayed(AppDurations.searchDebounce);
     if (!mounted) return;
     setState(() => _busy = false);
@@ -972,7 +928,6 @@ class _ActionBarState extends State<_ActionBar> {
   }
 }
 
-/// Idle state — "Add to cart" + "Buy now".
 class _IdleRow extends StatelessWidget {
   const _IdleRow({
     required this.busy,
@@ -992,9 +947,6 @@ class _IdleRow extends StatelessWidget {
             label: busy ? 'Adding…' : 'Add to cart',
             icon: AppIcons.shoppingCartOutlined,
             loading: busy,
-            // Outline brand button — pairs with the filled "Buy now"
-            // on the right so the two CTAs read at the same visual
-            // weight without competing.
             kind: _PillKind.outlined,
             onPressed: busy ? null : onAdd,
           ),
@@ -1013,7 +965,6 @@ class _IdleRow extends StatelessWidget {
   }
 }
 
-/// In-cart state — stepper + "Go to cart".
 class _InCartRow extends StatelessWidget {
   const _InCartRow({
     required this.quantity,
@@ -1225,11 +1176,6 @@ class _PrimaryPillButton extends StatelessWidget {
   }
 }
 
-// ── Skeleton / shimmer loading state ────────────────────────────────────────
-
-/// Full-page skeleton that mirrors the real [_Body] layout so the user
-/// sees the structural chrome immediately while the product data fetches.
-/// Uses [CustomScrollView] + slivers so scroll physics match the real page.
 class _ProductDetailSkeleton extends StatelessWidget {
   const _ProductDetailSkeleton();
 
@@ -1238,7 +1184,6 @@ class _ProductDetailSkeleton extends StatelessWidget {
     return CustomScrollView(
       physics: const NeverScrollableScrollPhysics(),
       slivers: [
-        // ── App bar placeholder ──────────────────────────────────
         SliverAppBar(
           backgroundColor: AppColors.canvas,
           foregroundColor: AppColors.black,
@@ -1247,38 +1192,28 @@ class _ProductDetailSkeleton extends StatelessWidget {
           scrolledUnderElevation: 0,
         ),
 
-        // ── Gallery placeholder ──────────────────────────────────
         const SliverToBoxAdapter(child: _GallerySkeleton()),
 
-        // ── Title block placeholder ──────────────────────────────
         const SliverToBoxAdapter(child: _TitleSkeleton()),
 
-        // ── Variant picker placeholder ───────────────────────────
         const SliverToBoxAdapter(child: _VariantPickerSkeleton()),
 
-        // ── Price block placeholder ──────────────────────────────
         const SliverToBoxAdapter(child: _PriceBlockSkeleton()),
 
-        // ── Stock chip placeholder ───────────────────────────────
         const SliverToBoxAdapter(child: _StockChipSkeleton()),
 
-        // ── Offers strip placeholder ─────────────────────────────
         const SliverToBoxAdapter(child: _OffersStripSkeleton()),
 
-        // ── FBT rail placeholder ─────────────────────────────────
         const SliverToBoxAdapter(child: _FbtRailSkeleton()),
 
-        // ── Details section ──────────────────────────────────────
         const SliverToBoxAdapter(child: _SectionDivider()),
         const SliverToBoxAdapter(child: _SkeletonSectionHeader()),
         const SliverToBoxAdapter(child: _DetailsSkeleton()),
 
-        // ── Specs section ────────────────────────────────────────
         const SliverToBoxAdapter(child: _SectionDivider()),
         const SliverToBoxAdapter(child: _SkeletonSectionHeader()),
         const SliverToBoxAdapter(child: _SpecsSkeleton()),
 
-        // ── Reviews section ──────────────────────────────────────
         const SliverToBoxAdapter(child: _SectionDivider()),
         const SliverToBoxAdapter(child: _SkeletonSectionHeader()),
         const SliverToBoxAdapter(child: _ReviewsSkeleton()),
@@ -1289,7 +1224,6 @@ class _ProductDetailSkeleton extends StatelessWidget {
   }
 }
 
-/// Tall image gallery rectangle.
 class _GallerySkeleton extends StatelessWidget {
   const _GallerySkeleton();
 
@@ -1299,7 +1233,6 @@ class _GallerySkeleton extends StatelessWidget {
   }
 }
 
-/// Brand label + two-line product name + short description lines.
 class _TitleSkeleton extends StatelessWidget {
   const _TitleSkeleton();
 
@@ -1315,25 +1248,18 @@ class _TitleSkeleton extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Brand label
           AppShimmerLine(widthFactor: 0.25, height: 10),
           const SizedBox(height: AppSizes.sm),
-          // Product name line 1
           AppShimmerLine(widthFactor: 0.85, height: 18),
           const SizedBox(height: AppSizes.xs),
-          // Product name line 2
           AppShimmerLine(widthFactor: 0.65, height: 18),
           const SizedBox(height: AppSizes.sm),
-          // Sold-by chip
           AppShimmerBox(width: 140, height: 14, radius: AppSizes.radiusSm),
           const SizedBox(height: AppSizes.sm),
-          // Description line 1
           AppShimmerLine(widthFactor: 1.0, height: 12),
           const SizedBox(height: AppSizes.xs),
-          // Description line 2
           AppShimmerLine(widthFactor: 0.75, height: 12),
           const SizedBox(height: AppSizes.sm),
-          // Rating chip
           AppShimmerBox(width: 90, height: 22, radius: AppSizes.radiusSm),
         ],
       ),
@@ -1341,7 +1267,6 @@ class _TitleSkeleton extends StatelessWidget {
   }
 }
 
-/// Row of variant chips.
 class _VariantPickerSkeleton extends StatelessWidget {
   const _VariantPickerSkeleton();
 
@@ -1366,7 +1291,6 @@ class _VariantPickerSkeleton extends StatelessWidget {
   }
 }
 
-/// Price + MRP + discount badge block.
 class _PriceBlockSkeleton extends StatelessWidget {
   const _PriceBlockSkeleton();
 
@@ -1393,7 +1317,6 @@ class _PriceBlockSkeleton extends StatelessWidget {
   }
 }
 
-/// Small stock-availability chip.
 class _StockChipSkeleton extends StatelessWidget {
   const _StockChipSkeleton();
 
@@ -1411,7 +1334,6 @@ class _StockChipSkeleton extends StatelessWidget {
   }
 }
 
-/// Horizontal offers strip (one wide rectangle).
 class _OffersStripSkeleton extends StatelessWidget {
   const _OffersStripSkeleton();
 
@@ -1433,7 +1355,6 @@ class _OffersStripSkeleton extends StatelessWidget {
   }
 }
 
-/// Frequently-bought-together horizontal rail — 4 thumbnail cards.
 class _FbtRailSkeleton extends StatelessWidget {
   const _FbtRailSkeleton();
 
@@ -1472,7 +1393,6 @@ class _FbtRailSkeleton extends StatelessWidget {
   }
 }
 
-/// Section header line — mirrors [_SectionHeader] width.
 class _SkeletonSectionHeader extends StatelessWidget {
   const _SkeletonSectionHeader();
 
@@ -1490,7 +1410,6 @@ class _SkeletonSectionHeader extends StatelessWidget {
   }
 }
 
-/// Details section — highlight rows + description lines.
 class _DetailsSkeleton extends StatelessWidget {
   const _DetailsSkeleton();
 
@@ -1528,7 +1447,6 @@ class _DetailsSkeleton extends StatelessWidget {
   }
 }
 
-/// Specs section — two-column key/value rows inside a rounded card.
 class _SpecsSkeleton extends StatelessWidget {
   const _SpecsSkeleton();
 
@@ -1576,7 +1494,6 @@ class _SpecsSkeleton extends StatelessWidget {
   }
 }
 
-/// Reviews section — rating summary bar + 2 review card placeholders.
 class _ReviewsSkeleton extends StatelessWidget {
   const _ReviewsSkeleton();
 
@@ -1592,7 +1509,6 @@ class _ReviewsSkeleton extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Rating summary row
           Row(
             children: [
               AppShimmerBox(width: 56, height: 56, radius: AppSizes.radiusSm),
@@ -1611,7 +1527,6 @@ class _ReviewsSkeleton extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSizes.md),
-          // 2 review card placeholders
           for (var i = 0; i < 2; i++) ...[
             Container(
               padding: const EdgeInsets.all(AppSizes.md),

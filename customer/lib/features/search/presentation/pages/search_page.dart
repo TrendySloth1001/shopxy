@@ -16,21 +16,9 @@ import 'package:shopxy_customer/shared/widgets/app_shimmer.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 
-/// Global product search. Opened from the home page's search entry
-/// and pushed full-screen so the keyboard and the chip strip can
-/// both fit without competing for vertical space.
-///
-/// Behaviour:
-/// * Idle (no query) → recent searches as chips + empty hint.
-/// * Typing → debounced search (220ms) with skeleton state.
-/// * Results → list rows with thumbnail + price + tap-to-detail.
-/// * No matches → empty state with the typed query echoed back.
-/// * Error → AppErrorView-style block with retry.
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key, this.initialQuery});
 
-  // Pre-seeds the search box + provider when a caller wants to land
-  // straight on results (e.g. tapping a curated home-feed rail).
   final String? initialQuery;
 
   @override
@@ -758,11 +746,6 @@ class _ResultsList extends StatelessWidget {
   }
 }
 
-/// Small badge above results telling the user whether the result set
-/// was ranked by the hybrid semantic + FTS engine or fell back to
-/// pure FTS (e.g. when `OPENAI_API_KEY` isn't set on the backend).
-/// Cheap honesty signal — useful both for QA and for users who care
-/// why the ranking looks the way it does.
 class _SemanticBadge extends StatelessWidget {
   const _SemanticBadge({required this.semantic, required this.count});
   final bool semantic;

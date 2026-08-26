@@ -1,7 +1,3 @@
-/// One-time backfill of the analytics roll-up tables from all historical data.
-/// Run after deploying the analytics_rollups migration:  npm run rollup:backfill
-/// Idempotent — safe to re-run (recomputeDay delete-then-inserts each day).
-
 import { backfillAll } from '../src/modules/analytics-rollup/changefeed.service.js';
 import { logger } from '../src/shared/logging/logger.js';
 

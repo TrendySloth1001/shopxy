@@ -13,11 +13,6 @@ import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
-/// Modal sheet that walks the customer through a return:
-///   1. Pick line(s) to return + quantity per line.
-///   2. Pick a reason (single, applies to the whole return).
-///   3. Optional note.
-/// On success returns the new return id (int); null on dismiss.
 Future<String?> showRequestReturnSheet({
   required BuildContext context,
   required String parentOrderId,
@@ -43,7 +38,6 @@ class _Sheet extends StatefulWidget {
 }
 
 class _SheetState extends State<_Sheet> {
-  /// productItemId → quantity to return. Absent means "don't return".
   final Map<String, double> _picks = {};
   String _reason = 'DAMAGED';
   final TextEditingController _noteCtrl = TextEditingController();
@@ -137,8 +131,6 @@ class _SheetState extends State<_Sheet> {
           ),
           const Divider(height: 1, color: AppColors.hairline),
           Expanded(
-            // Freeze the form while the request is in flight so the
-            // picks/reason/note can't drift from what's being submitted.
             child: AbsorbPointer(
               absorbing: _submitting,
               child: ListView(
@@ -348,7 +340,6 @@ class _ItemPickerRow extends StatelessWidget {
                     ),
                     if (selected) ...[
                       const SizedBox(height: AppSizes.xxs),
-                      // Refund math made explicit: "2 × ₹250 = ₹500".
                       Text(
                         'Refund: ${picked!.toStringAsFixed(picked! == picked!.roundToDouble() ? 0 : 2)} × ${AppFormat.rupeesSmart(item.unitPrice)} = ${AppFormat.rupeesSmart(picked! * item.unitPrice)}',
                         style: Theme.of(context).textTheme.labelMedium
@@ -469,7 +460,6 @@ class _ReasonChip extends StatelessWidget {
   }
 }
 
-/// Convenience helper for callers — opens the sheet and shows a toast.
 Future<void> openRequestReturn(
   BuildContext context, {
   required String parentOrderId,

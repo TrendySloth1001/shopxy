@@ -1,37 +1,22 @@
-/// Indian-format validators + the GST state code lookup table.
-///
-/// Mirrors `backend/src/shared/validation/indian.ts` exactly. Keep these
-/// in sync by hand — the two apps don't share Dart/TS code, but the
-/// regex shapes and state list are normative on the backend.
 library;
 
 class IndianValidators {
   IndianValidators._();
 
-  /// GSTIN: state(2) + PAN(10) + entity(1) + Z + checksum(1) = 15 chars.
   static final RegExp gstinRegex =
       RegExp(r'^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[0-9A-Z]{1}Z[0-9A-Z]{1}$');
 
-  /// PAN: 5 alpha + 4 digit + 1 alpha.
   static final RegExp panRegex = RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$');
 
-  /// PIN: 6 digits, first digit 1-9.
   static final RegExp pincodeRegex = RegExp(r'^[1-9][0-9]{5}$');
 
-  /// Indian mobile: 10 digits starting 6-9 with optional +91/0 prefix.
   static final RegExp phoneRegex =
       RegExp(r'^(?:\+?91[-\s]?|0)?[6-9][0-9]{9}$');
 
-  /// HSN/SAC: 4, 6 or 8 digits.
   static final RegExp hsnRegex = RegExp(r'^[0-9]{4}(?:[0-9]{2}(?:[0-9]{2})?)?$');
 
-  /// UPI VPA: handle@psp (loose).
   static final RegExp upiVpaRegex =
       RegExp(r'^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z][a-zA-Z]{2,64}$');
-
-  /// All form validators return null when the value is empty so the
-  /// field stays optional; pair with a `fieldRequired` check upstream
-  /// when the field is mandatory.
 
   static String? gstin(String? v) {
     final t = (v ?? '').trim();
@@ -75,8 +60,6 @@ typedef IndianState = ({String code, String name});
 class IndianStates {
   IndianStates._();
 
-  /// GST state codes per the GST notification. Mirrors backend
-  /// `INDIAN_STATES`. 38 entries.
   static const List<IndianState> all = [
     (code: '01', name: 'Jammu and Kashmir'),
     (code: '02', name: 'Himachal Pradesh'),
@@ -126,19 +109,6 @@ class IndianStates {
     return null;
   }
 
-  /// The GST state code encoded in a GSTIN's first two digits.
-  ///
-  /// A GSTIN is constructed as state(2) + PAN(10) + entity(1) + Z + checksum,
-  /// so the holder's state is not a separate fact to be asked for — it is
-  /// already in the number. This is what lets the invoice form derive place of
-  /// supply instead of offering a dropdown that could contradict the GSTIN.
-  ///
-  /// Deliberately reads only the prefix rather than requiring a complete,
-  /// well-formed GSTIN: the merchant types left to right, and the state is
-  /// knowable from character three onward. Returns null unless the prefix is
-  /// two digits AND a real GST state code, so "99…" or "ab…" derive nothing.
-  ///
-  /// Mirrors the backend's GST-10 fallback in `invoices.service.ts`.
   static String? stateCodeFromGstin(String? gstin) {
     final trimmed = (gstin ?? '').trim();
     if (trimmed.length < 2) return null;

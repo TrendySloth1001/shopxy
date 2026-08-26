@@ -8,9 +8,6 @@ import {
   getCurrentUser,
 } from "@/server/auth/session";
 
-// GET /api/auth/me — the single source of truth for "who is signed in".
-// Refreshes the token pair transparently on a 401; returns 401 when there is
-// no valid, role-appropriate session.
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) {
@@ -19,10 +16,8 @@ export async function GET() {
   return NextResponse.json({ user });
 }
 
-// Fields an empty input should CLEAR (→ null). `name` is never cleared.
 const CLEARABLE = ["phoneNumber"] as const;
 
-// PATCH /api/auth/me — update the customer profile.
 export async function PATCH(req: Request) {
   const json = await req.json().catch(() => null);
   const parsed = updateProfileSchema.safeParse(json);
@@ -56,8 +51,6 @@ export async function PATCH(req: Request) {
   return NextResponse.json({ user: fallback.success ? fallback.data : null });
 }
 
-// DELETE /api/auth/me — DPDP erasure. Customer accounts cascade freely; a wrong
-// password returns 400.
 export async function DELETE(req: Request) {
   const json = await req.json().catch(() => null);
   const parsed = deleteAccountSchema.safeParse(json);

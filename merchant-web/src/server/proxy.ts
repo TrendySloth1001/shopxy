@@ -2,13 +2,6 @@ import "server-only";
 import { NextResponse } from "next/server";
 import { authedFetch, extractError } from "./auth/session";
 
-/**
- * Thin BFF proxy for merchant admin CRUD where the backend is the validation
- * authority. Forwards method + JSON body to `backendPath`, surfaces the
- * backend's structured `{ error }` on failure, and passes 204s through. Read
- * responses are Zod-validated in each feature's client `api.ts` before they
- * reach a screen, so the typed boundary is still enforced.
- */
 export async function proxy(
   backendPath: string,
   req?: Request,
@@ -35,7 +28,6 @@ export async function proxy(
   return NextResponse.json(data, { status: res.status });
 }
 
-/** Append the incoming request's query string to a backend path. */
 export function withQuery(backendPath: string, req: Request): string {
   const qs = new URL(req.url).searchParams.toString();
   return qs ? `${backendPath}?${qs}` : backendPath;

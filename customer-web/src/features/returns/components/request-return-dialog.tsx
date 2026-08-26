@@ -28,9 +28,6 @@ export function RequestReturnDialog({ parentOrderId, shopOrder, onClose, onSubmi
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Rough estimate only — the backend reconciles taxes, line/header discounts
-  // and any partial-quantity proration at processing time, so this is shown as
-  // an estimate, never a guaranteed final refund.
   const refundEstimate = Array.from(picks.values()).reduce(
     (sum, p) => sum + p.quantity * p.unitPrice,
     0,
@@ -85,7 +82,6 @@ export function RequestReturnDialog({ parentOrderId, shopOrder, onClose, onSubmi
       onSubmitted(result.id);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Could not submit return.";
-      // Map backend error codes to user-friendly messages
       if (msg === "WINDOW_EXPIRED") setError("The return window for this order has closed.");
       else if (msg === "RETURNS_DISABLED") setError("This shop does not accept returns.");
       else if (msg === "ALREADY_REQUESTED") setError("A return has already been submitted for this item.");
@@ -100,7 +96,6 @@ export function RequestReturnDialog({ parentOrderId, shopOrder, onClose, onSubmi
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="w-full max-w-panel rounded-t-bottom-sheet bg-canvas sm:rounded-dialog sm:my-lg max-h-[92vh] flex flex-col shadow-menu">
-        {/* Header */}
         <div className="flex items-center justify-between px-lg py-md border-b border-hairline flex-shrink-0">
           <h2 className="text-title-md text-ink font-extrabold">Return items</h2>
           <button
@@ -112,12 +107,10 @@ export function RequestReturnDialog({ parentOrderId, shopOrder, onClose, onSubmi
           </button>
         </div>
 
-        {/* Scrollable body */}
         <div
           className="flex-1 overflow-y-auto px-lg py-md space-y-lg"
           style={{ overscrollBehavior: "contain" }}
         >
-          {/* Items */}
           <div>
             <p className="mb-sm text-caption font-extrabold tracking-[0.6px] text-muted uppercase">
               Choose items
@@ -158,7 +151,6 @@ export function RequestReturnDialog({ parentOrderId, shopOrder, onClose, onSubmi
                         )}
                       </div>
                     </div>
-                    {/* Qty stepper — only if more than 1 was ordered */}
                     {selected && item.quantity > 1 && (
                       <div className="mt-sm flex items-center gap-sm pl-[28px]">
                         <span className="text-body-sm text-muted font-bold">Quantity:</span>
@@ -187,7 +179,6 @@ export function RequestReturnDialog({ parentOrderId, shopOrder, onClose, onSubmi
             </div>
           </div>
 
-          {/* Reason */}
           <div>
             <p className="mb-sm text-caption font-extrabold tracking-[0.6px] text-muted uppercase">
               Reason
@@ -209,7 +200,6 @@ export function RequestReturnDialog({ parentOrderId, shopOrder, onClose, onSubmi
             </div>
           </div>
 
-          {/* Note */}
           <div>
             <p className="mb-sm text-caption font-extrabold tracking-[0.6px] text-muted uppercase">
               Add a note (optional)
@@ -229,7 +219,6 @@ export function RequestReturnDialog({ parentOrderId, shopOrder, onClose, onSubmi
           )}
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-between border-t border-hairline px-lg py-md flex-shrink-0">
           <div>
             <p className="text-caption font-extrabold tracking-[0.4px] text-muted uppercase">

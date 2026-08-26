@@ -15,8 +15,6 @@ class ChallansRemoteDataSource {
   Future<({List<Challan> challans, int total})> listChallans({
     String? status,
     String? search,
-    /// The "Archived" view. Archived challans are out of every other list —
-    /// that's the point of archiving.
     bool archived = false,
     int page = 1,
     int limit = 20,
@@ -49,9 +47,6 @@ class ChallansRemoteDataSource {
     await _client.patch('/challans/$id/cancel', body: {});
   }
 
-  /// File a settled challan out of the working list, or bring it back. There
-  /// is no delete endpoint and can't be — the challan number is allocated at
-  /// create time and Rule 55 wants the run serially numbered.
   Future<Challan> setArchived(String id, bool archived) async {
     final response = await _client.post(
       '/challans/$id/${archived ? 'archive' : 'unarchive'}',

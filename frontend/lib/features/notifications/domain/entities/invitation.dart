@@ -62,8 +62,6 @@ class Invitation {
   final InviteLinkType linkType;
   final String? partyId;
   final String? vendorId;
-  /// Set only for TEAM invites — the role label + the exact rights
-  /// granted on accept. Used by the join-request screen.
   final String? teamRole;
   final String? teamRoleName;
   final List<String> teamPermissions;
@@ -81,17 +79,9 @@ class Invitation {
   bool get isParty => linkType == InviteLinkType.party;
   bool get isTeam => linkType == InviteLinkType.team;
 
-  /// The server only flips a stale PENDING row to EXPIRED when something
-  /// touches it (an hourly sweep, or a user attempting to accept/decline/
-  /// claim it) — so a row can sit at PENDING past its own [expiresAt] for
-  /// up to an hour. Compare the date directly so the badge/actions are
-  /// correct immediately rather than waiting on the next sweep tick.
   bool get isEffectivelyExpired =>
       status == InviteStatus.pending && DateTime.now().isAfter(expiresAt);
 
-  /// [status] with the client-side expiry check folded in — use this for
-  /// display and for gating actions (e.g. hiding "Cancel"/"Accept" once an
-  /// invite is past its window even if the DB hasn't caught up yet).
   InviteStatus get effectiveStatus =>
       isEffectivelyExpired ? InviteStatus.expired : status;
 

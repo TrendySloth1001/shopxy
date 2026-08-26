@@ -16,17 +16,6 @@ import 'package:shopxy_customer/shared/format/app_format.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 
-/// Customer-side "Merchants" tab (index 1 once the user is linked).
-/// Single screen, three layers stacked vertically:
-///
-///   1. Hero header     — page identity + count
-///   2. Summary strip   — at-a-glance stats incl. unread invitations
-///   3. Filter + list   — role filter (when both roles present) +
-///                        rich merchant cards sorted by activity
-///
-/// Pending invitations are intentionally NOT shown inline here; the
-/// home tab surfaces them and the bell + summary chip link to the
-/// dedicated InvitationsPage.
 class MyShopsPage extends StatefulWidget {
   const MyShopsPage({super.key});
 
@@ -56,8 +45,6 @@ class _MyShopsPageState extends State<MyShopsPage> {
       (n) => n.pendingIncoming.length,
     );
 
-    // Most-active first so users land on their live relationships.
-    // Shops without invoices fall to the bottom (sorted by name).
     final sorted = [...p.shops]
       ..sort((a, b) {
         final aT = a.lastInvoiceAt;
@@ -173,8 +160,6 @@ class _MyShopsPageState extends State<MyShopsPage> {
   }
 }
 
-// ── Hero header ────────────────────────────────────────────────────
-
 class _HeroHeader extends StatelessWidget {
   const _HeroHeader({required this.count, required this.isLoading});
   final int count;
@@ -197,8 +182,6 @@ class _HeroHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // This page is both a bottom-nav tab and a pushed route (from
-          // Profile). Only the pushed instance can go back.
           if (Navigator.of(context).canPop())
             Padding(
               padding: const EdgeInsets.only(bottom: AppSizes.sm),
@@ -249,9 +232,6 @@ class _HeaderBack extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // No Align: the parent Column is start-aligned, so this sizes to the
-    // 40×40 button. Wrapping it stretched the tap target across the full
-    // header width while only the left corner was actually hittable.
     return Material(
       color: AppColors.white,
       shape: AppShapes.squircle(
@@ -274,12 +254,6 @@ class _HeaderBack extends StatelessWidget {
     );
   }
 }
-
-// ── Pending-invites banner ────────────────────────────────────────
-//
-// Only renders when the user has unanswered invitations. Acts as a
-// teaser/tap-through to InvitationsPage — the full Accept/Decline UI
-// lives on the home tab and the dedicated page.
 
 class _InvitesBanner extends StatelessWidget {
   const _InvitesBanner({required this.count, required this.onTap});
@@ -343,8 +317,6 @@ class _InvitesBanner extends StatelessWidget {
     );
   }
 }
-
-// ── Role filter ────────────────────────────────────────────────────
 
 class _RoleFilterChips extends StatelessWidget {
   const _RoleFilterChips({
@@ -426,8 +398,6 @@ class _Chip extends StatelessWidget {
     );
   }
 }
-
-// ── Shop card ──────────────────────────────────────────────────────
 
 class _ShopCard extends StatelessWidget {
   const _ShopCard({required this.shop});
@@ -537,9 +507,6 @@ class _ShopCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  // Pull the activity row up so the negative-offset
-                  // logo doesn't leave a hollow gap below the title
-                  // block.
                   Transform.translate(
                     offset: const Offset(0, -16),
                     child: _ActivityRow(shop: shop, money: money),
@@ -745,8 +712,6 @@ class _ActivityRow extends StatelessWidget {
   }
 }
 
-// ── Skeleton (loading) ─────────────────────────────────────────────
-
 class _SkeletonList extends StatelessWidget {
   const _SkeletonList();
 
@@ -820,8 +785,6 @@ class _SkeletonList extends StatelessWidget {
     );
   }
 }
-
-// ── Empty state ────────────────────────────────────────────────────
 
 class _EmptyShops extends StatelessWidget {
   const _EmptyShops();
@@ -928,8 +891,6 @@ class _PrimaryCta extends StatelessWidget {
     );
   }
 }
-
-// ── Error state ────────────────────────────────────────────────────
 
 class _ErrorBlock extends StatelessWidget {
   const _ErrorBlock({required this.error, required this.onRetry});

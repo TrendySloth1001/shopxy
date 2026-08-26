@@ -21,7 +21,6 @@ import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-// Vendor model scoped to this widget (sourced from /stock/suppliers)
 typedef _SV = SupplierVendor;
 
 class StockBottomSheet extends StatefulWidget {
@@ -47,7 +46,6 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
   final _supplierFocusNode = FocusNode();
   final _note = TextEditingController();
 
-  // Vendor selection (STOCK_IN) — structured vendors from /stock/suppliers
   List<_SV> _vendors = const [];
   _SV? _selectedVendor;
   List<String> _freeTextOptions = const [];
@@ -55,7 +53,6 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
   bool _isLoadingSuppliers = false;
   String _lastSupplierQuery = '';
 
-  // Party selection (STOCK_OUT) — customer the goods go to.
   final _partyQuery = TextEditingController();
   Party? _selectedParty;
   List<Party> _partyResults = const [];
@@ -153,7 +150,6 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
 
   void _onSupplierInputChanged() {
     if (_type != 'STOCK_IN') return;
-    // If user types manually, clear structured vendor selection
     if (_selectedVendor != null && _supplier.text != _selectedVendor!.name) {
       _selectedVendor = null;
     }
@@ -169,8 +165,6 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
   Future<void> _loadSupplierOptions({String? query}) async {
     if (_type != 'STOCK_IN') return;
     setState(() => _isLoadingSuppliers = true);
-    // Capture data sources before any await — `context` must not be used
-    // across an async gap (use_build_context_synchronously).
     final ds = context.read<StockRemoteDataSource>();
     final vendorsDs = context.read<VendorsRemoteDataSource>();
     try {
@@ -179,14 +173,9 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
         productId: widget.product.id,
         limit: 12,
       );
-      // If no product-specific vendors, fall back to all vendors that have
-      // purchase history for this shop.
       if (result.vendors.isEmpty && result.freeTextSuppliers.isEmpty) {
         result = await ds.getSuppliers(query: query, limit: 12);
       }
-      // Still nothing? `/stock/suppliers` only lists vendors with a prior
-      // stock-in, so a freshly-added vendor never appears. Fall back to the
-      // full vendor list so any saved vendor is selectable straight away.
       var vendors = result.vendors;
       if (vendors.isEmpty) {
         final all = await vendorsDs.getVendors(search: query, limit: 50);
@@ -245,10 +234,6 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(l10n.stockSheetDraftCreated)));
-        // Return the draft invoice id so the opener can offer an
-        // inline "confirm this draft" affordance without leaving its
-        // page. Callers that only need a saved/dismissed signal can
-        // null-check the result.
         Navigator.pop(context, draftId);
       }
     } catch (e) {
@@ -281,7 +266,6 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Handle
               Center(
                 child: Container(
                   width: AppSizes.handleWidth,
@@ -320,9 +304,6 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
               ),
               const SizedBox(height: AppSizes.xl),
 
-              // Type selector — manual flow now produces a DRAFT invoice.
-              // Damage / expired / shrinkage live on the Stock Adjustments
-              // page; pure cash movements happen here.
               SegmentedButton<String>(
                 segments: [
                   ButtonSegment(
@@ -475,7 +456,6 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
               ],
 
               if (_type == 'STOCK_IN') ...[
-                // ── Vendor quick-select ───────────────────────────────────
                 if (_isLoadingSuppliers)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: AppSizes.sm),
@@ -513,7 +493,6 @@ class _StockBottomSheetState extends State<StockBottomSheet> {
                   ),
                   const SizedBox(height: AppSizes.sm),
                 ],
-                // ── Free-text supplier (when no vendor selected) ──────────
                 if (_selectedVendor == null)
                   RawAutocomplete<String>(
                     textEditingController: _supplier,

@@ -29,8 +29,6 @@ type ViewMode = "grid" | "list";
 const VIEW_KEY = "sx_products_view";
 const VIEW_EVENT = "sx:products-view";
 
-// Read the persisted view mode as an external store so there is no
-// setState-in-effect and no SSR/hydration mismatch (server snapshot = grid).
 function subscribeView(cb: () => void) {
   window.addEventListener("storage", cb);
   window.addEventListener(VIEW_EVENT, cb);
@@ -56,7 +54,6 @@ const SORTS: Array<{ key: string; sortBy: string; sortOrder: string }> = [
 ];
 
 export default function ProductsListPage() {
-  // useSearchParams needs a Suspense boundary during prerender.
   return (
     <Suspense fallback={null}>
       <ProductsListInner />
@@ -76,7 +73,6 @@ function ProductsListInner() {
   const canEdit = useCanManage("products");
   const t = useTranslations("products");
 
-  // Initialise filter state from the URL so the view deep-links and survives refresh.
   const [searchInput, setSearchInput] = useState(() => searchParams.get("q") ?? "");
   const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
   const [categoryId, setCategoryId] = useState<string>(() => searchParams.get("category") ?? "");
@@ -96,19 +92,15 @@ function ProductsListInner() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [toggleError, setToggleError] = useState<string | null>(null);
 
-  // Grid (masonry) vs list. Grid is the default (matches the Flutter app);
-  // the choice is remembered per browser and shared across tabs.
   const view = useSyncExternalStore(subscribeView, readView, () => "grid");
   const setViewMode = useCallback((next: ViewMode) => {
     try {
       window.localStorage.setItem(VIEW_KEY, next);
     } catch {
-      /* persistence is best-effort */
     }
     window.dispatchEvent(new Event(VIEW_EVENT));
   }, []);
 
-  // Debounce the search box (setState in a timeout — not synchronous).
   useEffect(() => {
     const t = setTimeout(() => {
       setSearch(searchInput.trim());
@@ -117,7 +109,6 @@ function ProductsListInner() {
     return () => clearTimeout(t);
   }, [searchInput]);
 
-  // Mirror the active filters into the URL (replace, no history spam).
   useEffect(() => {
     const qs = new URLSearchParams();
     if (search) qs.set("q", search);
@@ -131,7 +122,6 @@ function ProductsListInner() {
     if (next !== current) router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false });
   }, [search, categoryId, lowStock, outOfStock, sortIdx, page, pathname, router, searchParams]);
 
-  // Load categories once.
   useEffect(() => {
     let active = true;
     void (async () => {
@@ -139,7 +129,6 @@ function ProductsListInner() {
         const cats = await listCategories();
         if (active) setCategories(cats);
       } catch {
-        /* filter just won't populate */
       }
     })();
     return () => {
@@ -203,7 +192,7 @@ function ProductsListInner() {
       );
     } finally {
       setTogglingId(null);
-      reload(); // refetch either way so the row reflects server truth
+      reload();
     }
   }
 
@@ -230,7 +219,6 @@ function ProductsListInner() {
         </MaybeLocked>
       </div>
 
-      {/* Toolbar */}
       <div className="mt-xl flex flex-wrap items-center gap-md">
         <div className="relative min-w-[220px] flex-1">
           <Search
@@ -284,7 +272,6 @@ function ProductsListInner() {
           {t("list.outOfStock")}
         </FilterChip>
 
-        {/* Grid / list view toggle — pushed to the end of the toolbar. */}
         <div className="ml-auto inline-flex overflow-hidden rounded-button border border-hairline">
           <ViewToggleButton
             active={view === "grid"}
@@ -313,7 +300,6 @@ function ProductsListInner() {
         </p>
       ) : null}
 
-      {/* Results — grid (masonry) or list, per the toggle. */}
       {loading && !data ? (
         view === "grid" ? <GridSkeleton /> : <ListSkeleton />
       ) : error && !data ? (
@@ -332,8 +318,6 @@ function ProductsListInner() {
           {t("list.empty")}
         </p>
       ) : view === "grid" ? (
-        // CSS multi-column masonry: the browser fits as many ~16rem columns
-        // as the width allows, and cards flow with their natural height.
         <div className="mt-lg gap-lg [column-gap:1rem] [column-width:16rem]">
           {products.map((p) => (
             <div key={p.id} className="mb-lg break-inside-avoid">
@@ -362,7 +346,6 @@ function ProductsListInner() {
         </ul>
       )}
 
-      {/* Pagination */}
       {total > PAGE_SIZE ? (
         <div className="mt-lg flex items-center justify-between">
           <p className="text-body-sm text-muted">
@@ -549,7 +532,6 @@ function ListSkeleton() {
 }
 
 function GridSkeleton() {
-  // Varied heights so the placeholder reads as a masonry, not a table.
   const heights = [220, 260, 240, 280, 230, 300, 250, 270];
   return (
     <div className="mt-lg animate-pulse [column-gap:1rem] [column-width:16rem]">

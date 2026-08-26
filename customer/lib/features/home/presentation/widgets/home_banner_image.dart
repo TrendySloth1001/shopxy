@@ -4,18 +4,6 @@ import 'package:shopxy_customer/features/home/domain/banner_link.dart';
 import 'package:shopxy_customer/features/home/presentation/widgets/banner_link_router.dart';
 import 'package:shopxy_customer/features/home/presentation/widgets/network_image_box.dart';
 
-/// A banner placement is an image + an optional link, and may also have
-/// products pinned to it. This renders the image (cover-fit, optionally
-/// rounded) and makes it tappable:
-///
-///   * [productCount] > 0 → open the banner-detail page (image + the
-///     pinned product grid). This takes priority over [linkUrl].
-///   * else a parseable [linkUrl] → its real destination (see [BannerLink]).
-///   * else → decorative, not tappable.
-///
-/// An unparseable link is decorative too. It used to be passed to the search
-/// box verbatim, so a banner linking to `https://x` searched for the literal
-/// text "https://x" and one linking to `/shop/acme` opened an empty search.
 class HomeBannerImage extends StatelessWidget {
   const HomeBannerImage({
     super.key,

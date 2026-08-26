@@ -10,9 +10,6 @@ import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// Connect an EXISTING Razorpay linked account by its acc_XXXX id — skips the
-/// 4-step KYC wizard. Enter the id → verify (fetch from Razorpay) → confirm the
-/// fetched details → link. Pops `true` on success so the caller can refresh.
 class ConnectLinkedAccountPage extends StatefulWidget {
   const ConnectLinkedAccountPage({super.key});
 

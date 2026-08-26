@@ -1,19 +1,11 @@
-/// The single source of truth for the 8 selectable PDF look-and-feels. Each
-/// preset is a `{shellId, palette, fonts, borderStyle, density}` config fed
-/// into the shared blocks (`./blocks.tsx`) — NOT a bespoke hand-built design
-/// per preset. The exception is `traditional` (shellId `'C'`): a fully
-/// bordered ledger grid different enough from the other two shells that it
-/// has its own render path (`tallyShell.tsx`) instead of reusing the shared
-/// blocks. Only the standard 14 PDF base fonts are used (Helvetica/
-/// Times/Courier families) so no font files need to be bundled/registered.
 export interface TemplatePalette {
   text: string;
   muted: string;
   border: string;
-  headerBg: string; // items-table header row fill
-  rowAlt: string; // alternating row tint (only used by `colorful`)
-  accent: string; // ShellB's header-band fill / ShellA's rule color
-  onAccent: string; // text color drawn on top of `accent`
+  headerBg: string;
+  rowAlt: string;
+  accent: string;
+  onAccent: string;
 }
 
 export interface TemplateFonts {
@@ -172,9 +164,6 @@ const PRESET_BY_ID = new Map(TEMPLATE_PRESETS.map((p) => [p.id, p]));
 
 export const DEFAULT_TEMPLATE_ID = 'classic';
 
-/// Resolves a stored `pdfTemplateId` to its config — falls back to the
-/// default and logs a warning for a retired/unknown id rather than ever
-/// failing a real document render over a stale template choice.
 export function resolveTemplateConfig(templateId: string | null | undefined): TemplateConfig {
   const id = templateId ?? DEFAULT_TEMPLATE_ID;
   const found = PRESET_BY_ID.get(id);

@@ -8,14 +8,6 @@ import { loadPdfEngine } from '../../shared/pdfEngineLoader.js';
 import { buildPdfColumns } from '../../shared/pdfColumns.js';
 import { isOutputGstRegistered } from './gst-registration-gate.js';
 
-/// Render one invoice as a PDF — to a stream when `out` is set, or to a
-/// Buffer otherwise. Returns `{ error }` if the invoice can't be found or
-/// doesn't belong to `shopId`.
-///
-/// Dispatches to the react-pdf engine (which honors the shop's chosen
-/// `pdfTemplateId`) by default; set `PDF_ENGINE=pdfkit` to roll back to the
-/// original hand-drawn PDFKit layout below — a one-line env change, not a
-/// redeploy, if the new engine ever misbehaves in production.
 export async function renderInvoicePdf(
   shopId: number,
   id: number,
@@ -28,8 +20,6 @@ export async function renderInvoicePdf(
   return renderInvoicePdfReactPdf(shopId, id, out, onReady);
 }
 
-/// The original hand-drawn PDFKit layout — kept verbatim as the rollback
-/// path (see `PDF_ENGINE=pdfkit` above).
 async function renderInvoicePdfPdfKit(
   shopId: number,
   id: number,
@@ -43,9 +33,6 @@ async function renderInvoicePdfPdfKit(
 
     if (!invoice) return { error: 'Invoice not found' };
 
-    // Shop owner row — drives header block + UPI QR. Looked up via the
-    // owning Shop, not the global "first OWNER" — that pre-migration
-    // path printed Merchant A's UPI on Merchant B's invoice.
     const shopRow = await prisma.shop.findUnique({
       where: { id: shopId },
       select: {
@@ -59,8 +46,6 @@ async function renderInvoicePdfPdfKit(
             shopPinCode: true,
             shopGstin: true,
             shopPan: true,
-            // Drives whether the GST columns print at all — see
-            // `invoiceGstVisibility`.
             registrationType: true,
             gstEffectiveFrom: true,
             upiVpa: true,
@@ -73,10 +58,6 @@ async function renderInvoicePdfPdfKit(
     const owner = shopRow?.owner ?? null;
     const { showGst, showHsn } = invoiceGstVisibility(invoice, owner);
 
-    // GST-2 (Rule 53) — a credit/debit note MUST carry the serial number and
-    // date of the original tax invoice it adjusts. Look it up (scoped to the
-    // same shop) so it can be printed in the meta strip. Null when the link
-    // is missing (legacy rows) — the strip then simply omits the reference.
     let originalRef: { invoiceNo: string; invoiceDate: Date } | null = null;
     if (
       (invoice.documentType === 'CREDIT_NOTE' || invoice.documentType === 'DEBIT_NOTE') &&
@@ -89,9 +70,6 @@ async function renderInvoicePdfPdfKit(
       if (orig) originalRef = orig;
     }
 
-    // Generate the UPI QR up-front so the awaitable lives outside the
-    // PDFKit promise. Only applicable to SALE invoices with a non-zero
-    // total and a configured VPA.
     const D = Prisma.Decimal;
     const total = new D(invoice.total.toString());
     let upiQr: { buffer: Buffer; link: string } | null = null;
@@ -112,7 +90,6 @@ async function renderInvoicePdfPdfKit(
         const buffer = await QRCode.toBuffer(link, { type: 'png', width: 220, margin: 1 });
         upiQr = { buffer, link };
       } catch {
-        // QR generation should never block the invoice — degrade gracefully.
         upiQr = null;
       }
     }
@@ -122,20 +99,14 @@ async function renderInvoicePdfPdfKit(
       const chunks: Buffer[] | null = out ? null : [];
       let settled = false;
       const cleanup = () => {
-        // PDFKit exposes `destroy` on newer versions; fall back to `end`
-        // so we never leak the underlying writable.
         const anyDoc = doc as unknown as { destroy?: () => void };
         try {
           if (typeof anyDoc.destroy === 'function') anyDoc.destroy();
           else doc.end();
         } catch {
-          // best-effort — already torn down
         }
       };
       if (out) {
-        // Invoice loaded successfully and we're about to write bytes —
-        // let the caller flip the response headers from default JSON
-        // into application/pdf right before the body begins.
         if (onReady) {
           try {
             onReady();
@@ -145,8 +116,6 @@ async function renderInvoicePdfPdfKit(
             return;
           }
         }
-        // Pipe straight into the response. The `finish` event on the
-        // destination fires after the last chunk is flushed.
         doc.pipe(out);
         out.on('finish', () => {
           if (settled) return;
@@ -174,14 +143,11 @@ async function renderInvoicePdfPdfKit(
         reject(err);
       });
 
-      const W = 515; // usable width
+      const W = 515;
       const PAGE_W = 595;
       const LEFT = 40;
       const RIGHT = 555;
       const invoiceDate = formatDDMMYYYY(invoice.invoiceDate);
-      // Use Prisma.Decimal for fixed-point currency formatting — invoice
-      // amounts come back from Postgres as Decimal, and Number(...) for
-      // values > 2^53 silently loses precision.
       const currencyFmt = (n: number | string | Prisma.Decimal | null | undefined): string => {
         if (n === null || n === undefined) return 'Rs. 0.00';
         return `Rs. ${new D(n.toString()).toFixed(2)}`;
@@ -194,13 +160,10 @@ async function renderInvoicePdfPdfKit(
         if (v === null || v === undefined) return '+0.00';
         const d = new D(v.toString());
         if (d.gte(0)) return `+${d.toFixed(2)}`;
-        // Unicode minus for visual parity with the spec.
         return `−${d.abs().toFixed(2)}`;
       };
 
       try {
-
-      // ---------- Header: centred document title ----------
       const docTitle = documentTypeLabel(invoice.documentType);
       doc
         .fillColor('#111827')
@@ -208,7 +171,6 @@ async function renderInvoicePdfPdfKit(
         .fontSize(18)
         .text(docTitle, LEFT, 40, { width: W, align: 'center' });
 
-      // Triplet on the right, small grey.
       doc
         .font('Helvetica')
         .fontSize(7)
@@ -220,13 +182,11 @@ async function renderInvoicePdfPdfKit(
       doc.fillColor('#111827');
       doc.moveTo(LEFT, 78).lineTo(RIGHT, 78).strokeColor('#9CA3AF').lineWidth(1).stroke();
 
-      // ---------- Shop block (left) + Counterparty block (right) ----------
       const blocksY = 88;
-      const colW = (W - 20) / 2; // 20px gutter
+      const colW = (W - 20) / 2;
       const leftX = LEFT;
       const rightX = LEFT + colW + 20;
 
-      // Shop block.
       const shopName = owner?.shopName ?? owner?.name ?? 'Shop';
       const shopAddressLine = composeAddress(
         owner?.shopAddress,
@@ -251,7 +211,6 @@ async function renderInvoicePdfPdfKit(
       }
       const shopBlockBottom = lY;
 
-      // Counterparty block.
       const isSale = invoice.type === 'SALE';
       const cpLabel = isSale ? 'Bill To' : 'Vendor';
       const cpName = isSale
@@ -282,7 +241,6 @@ async function renderInvoicePdfPdfKit(
       }
       const cpBlockBottom = rY;
 
-      // ---------- Meta strip ----------
       let y = Math.max(shopBlockBottom, cpBlockBottom) + 12;
       doc.moveTo(LEFT, y).lineTo(RIGHT, y).strokeColor('#E5E7EB').lineWidth(0.7).stroke();
       y += 6;
@@ -293,9 +251,6 @@ async function renderInvoicePdfPdfKit(
         : '-';
 
       doc.fillColor('#111827').font('Helvetica').fontSize(9);
-      // Place of supply only means something under GST, and it printed a bare
-      // "-" whenever the state was unknown — omit it in both cases. The strip
-      // divides by the fields it actually has, so it stays evenly spread.
       const metaFields: { label: string; value: string }[] = [
         { label: 'Invoice No', value: invoice.invoiceNo },
         { label: 'Date', value: invoiceDate },
@@ -314,8 +269,6 @@ async function renderInvoicePdfPdfKit(
       metaFields.forEach((f, i) => drawMeta(f.label, f.value, i));
       y = metaRowY + 28;
 
-      // GST-2 (Rule 53) — second meta row carrying the original tax invoice's
-      // number + date that this credit/debit note adjusts.
       if (originalRef) {
         const origRowY = y;
         const drawMeta2 = (label: string, value: string, idx: number) => {
@@ -331,14 +284,7 @@ async function renderInvoicePdfPdfKit(
       doc.moveTo(LEFT, y).lineTo(RIGHT, y).strokeColor('#E5E7EB').lineWidth(0.7).stroke();
       y += 10;
 
-      // ---------- Items table ----------
       const isInter = invoice.isInterstate;
-      // Column layout — Sr | Item/SKU | HSN | Qty | Rate | Disc | Taxable |
-      // GST% | <tax cols...> | Total, with the HSN and GST groups dropped
-      // outright when they don't apply. Widths are tuned so the kept columns
-      // always re-sum to W=515; the item column absorbs whatever is freed.
-      // Without GST the per-line "Taxable" column is just the line total
-      // again, so it travels with the tax columns.
       const itemCols = buildPdfColumns<(typeof invoice.items)[number]>(W, [
         { header: 'Sr', width: 22, align: 'left', cell: (_it, i) => String(i + 1) },
         {
@@ -378,14 +324,12 @@ async function renderInvoicePdfPdfKit(
       ]);
       const headers = itemCols.headers;
       const widths = itemCols.widths;
-      // Build cumulative x positions.
       const xs: number[] = [];
       let cx = LEFT;
       for (const w of widths) { xs.push(cx); cx += w; }
 
       const align = itemCols.align;
 
-      // Header row.
       doc.rect(LEFT, y, W, 18).fill('#F3F4F6');
       doc.fillColor('#111827').font('Helvetica-Bold').fontSize(7.5);
       headers.forEach((h, i) => {
@@ -400,7 +344,6 @@ async function renderInvoicePdfPdfKit(
         if (y + rowH > 720) {
           doc.addPage();
           y = 40;
-          // Repaint header on continuation pages.
           doc.rect(LEFT, y, W, 18).fill('#F3F4F6');
           doc.fillColor('#111827').font('Helvetica-Bold').fontSize(7.5);
           headers.forEach((h, i) => {
@@ -419,9 +362,6 @@ async function renderInvoicePdfPdfKit(
         sr += 1;
       }
 
-      // ---------- HSN summary (skip rows with null hsn) ----------
-      // The summary exists for GSTR-1, so it is skipped entirely on a
-      // document that charges no tax.
       type HsnAgg = {
         taxable: Prisma.Decimal;
         igst: Prisma.Decimal;
@@ -448,7 +388,6 @@ async function renderInvoicePdfPdfKit(
         if (y + 60 > 760) { doc.addPage(); y = 40; }
         doc.font('Helvetica-Bold').fontSize(9).fillColor('#111827').text('HSN Summary', LEFT, y);
         y += 14;
-        // Columns: HSN | Taxable | (IGST | CGST | SGST) | Cess | Total Tax
         const hsnHeaders = isInter
           ? ['HSN', 'Taxable Value', 'IGST', 'Cess', 'Total Tax']
           : ['HSN', 'Taxable Value', 'CGST', 'SGST', 'Cess', 'Total Tax'];
@@ -480,7 +419,6 @@ async function renderInvoicePdfPdfKit(
         }
       }
 
-      // ---------- Totals block (right side) ----------
       y += 10;
       const totalsX = 360;
       const totalsW = RIGHT - totalsX;
@@ -492,15 +430,12 @@ async function renderInvoicePdfPdfKit(
         y += 15;
       };
 
-      // Total discount = header discount + sum of line discounts.
       let lineDiscount = new D(0);
       for (const it of invoice.items) lineDiscount = lineDiscount.add(new D(it.discount.toString()));
       const totalDiscount = new D(invoice.discount.toString()).add(lineDiscount);
 
       totRow('Subtotal', currencyFmt(invoice.subtotal));
       if (totalDiscount.gt(0)) totRow('Total Discount', `- ${currencyFmt(totalDiscount)}`);
-      // "Taxable Value" is a GST term of art, and without tax it just repeats
-      // the discounted subtotal — so it travels with the tax rows.
       if (showGst) {
         totRow('Taxable Value', currencyFmt(invoice.taxableValue));
         if (isInter) {
@@ -527,11 +462,6 @@ async function renderInvoicePdfPdfKit(
         y = doc.y + 4;
       }
 
-      // ---------- Statutory declarations ----------
-      // Rule 46(p): a tax invoice must state whether tax is payable on
-      // reverse charge. Rule 49 / Rule 5(g): a Bill of Supply must declare
-      // that the supplier is not authorised to collect tax (unregistered or
-      // composition). These are mandatory document elements.
       {
         if (y + 26 > 770) { doc.addPage(); y = 40; }
         if (invoice.documentType === 'BILL_OF_SUPPLY') {
@@ -547,13 +477,6 @@ async function renderInvoicePdfPdfKit(
             );
           y = doc.y + 4;
         } else if (invoice.documentType === 'TAX_INVOICE') {
-          // GST-8 / Rule 46(p): a tax invoice MUST state whether tax is payable
-          // on reverse charge — a wrong "No" on an actual RCM supply is a false
-          // statutory declaration. Source it from the invoice's `reverseCharge`
-          // flag rather than hard-coding "No". The column is read defensively
-          // (it is added by a follow-up migration; until then it is undefined
-          // and we render the safe default "No" for the forward-charge case,
-          // which is correct for every invoice this engine currently mints).
           const reverseCharge =
             (invoice as { reverseCharge?: boolean | null }).reverseCharge === true;
           doc
@@ -570,13 +493,6 @@ async function renderInvoicePdfPdfKit(
         }
       }
 
-      // ---------- Payment QR + Supplier signature band ----------
-      // GST-3 — the supplier signature block and the UPI *payment* QR share a
-      // horizontal band but are visually and semantically separate: the QR on
-      // the LEFT is a UPI pay-link (explicitly labelled "Scan to pay"), and the
-      // signature block on the RIGHT is the Rule 46(q) authorised-signatory
-      // attestation. The UPI QR is NEVER presented as an e-invoice IRN/QR — IRP
-      // e-invoice (IRN + signed QR) integration is a separate, documented TODO.
       const bandTop = y;
       if (upiQr) {
         if (y + 140 > 770) { doc.addPage(); y = 40; }
@@ -593,11 +509,6 @@ async function renderInvoicePdfPdfKit(
         y = qY + 140;
       }
 
-      // Supplier signature block — right-aligned, on the same band as the QR
-      // when one is present, otherwise starting fresh. "For <Shop>" + a signing
-      // line + "Authorised Signatory". An uploaded signature image is rendered
-      // above the line when the owner has one configured (hook below); until
-      // that field exists the block degrades to the line + label only.
       {
         const sigW = 200;
         const sigX = RIGHT - sigW;
@@ -610,17 +521,12 @@ async function renderInvoicePdfPdfKit(
           .fillColor('#111827')
           .text(`For ${supplierName}`, sigX, sigY, { width: sigW, align: 'right' });
 
-        // Optional uploaded signature image hook. `signatureUrl` is not yet a
-        // column on the owner row; when added (a Buffer/data-URI fetched into
-        // `signatureImage`) it can be drawn here. Left intentionally inert so
-        // the block renders cleanly today.
         const signatureImage: Buffer | null = null;
         const lineY = sigY + 46;
         if (signatureImage) {
           try {
             doc.image(signatureImage, sigX + sigW - 120, sigY + 12, { width: 120, height: 32 });
           } catch {
-            // never let a bad signature image break the document
           }
         }
         doc.moveTo(sigX, lineY).lineTo(RIGHT, lineY).strokeColor('#9CA3AF').lineWidth(0.7).stroke();
@@ -639,9 +545,6 @@ async function renderInvoicePdfPdfKit(
         doc.font('Helvetica').fontSize(8).fillColor('#374151').text(invoice.note, LEFT, y + 12, { width: W });
       }
 
-      // ---------- Footer with page numbers ----------
-      // PDFKit exposes `bufferedPageRange` so we can iterate after all
-      // content is laid down.
       const range = doc.bufferedPageRange();
       for (let i = 0; i < range.count; i++) {
         doc.switchToPage(range.start + i);
@@ -656,14 +559,10 @@ async function renderInvoicePdfPdfKit(
             { width: W, align: 'center' },
           );
       }
-      // PDFKit doesn't expose PAGE_W on the doc directly; use the constant
-      // so type-checking stays happy without dipping into private fields.
       void PAGE_W;
 
         doc.end();
       } catch (err) {
-        // Synchronous throw inside the PDFKit pipeline — clean up the
-        // writable, otherwise it sits open waiting for `end`.
         if (!settled) {
           settled = true;
           cleanup();
@@ -673,23 +572,6 @@ async function renderInvoicePdfPdfKit(
     });
 }
 
-/// Whether this invoice may print GST and HSN at all.
-///
-/// A merchant who isn't GST-registered (or whose registration starts after
-/// this invoice's own date) charges nothing, so the GST%, tax and HSN-summary
-/// blocks would print `0.00` down the page — and an empty tax column on a bill
-/// reads as a claim that tax was accounted for. Same for HSN: a column of
-/// dashes is worse than no column, so it is dropped unless at least one line
-/// actually carries a code.
-///
-/// `hasTaxFigures` is the safety net, and it is load-bearing. A shop can set
-/// or move `gstEffectiveFrom` *after* issuing invoices, and the registration
-/// gate alone would then hide the tax columns on a document that genuinely
-/// charged tax — leaving its totals visibly not adding up. What the invoice
-/// actually recorded always wins over what the shop's profile says today.
-///
-/// PURCHASE documents record the *vendor's* output tax, so our own
-/// registration is irrelevant there — only whether tax was charged to us.
 export function invoiceGstVisibility(
   invoice: {
     type: string;
@@ -720,8 +602,6 @@ export function invoiceGstVisibility(
   };
 }
 
-/// "TAX_INVOICE" → "TAX INVOICE", etc. Defaults to the underscored value
-/// upper-cased and spaced so future document types still render readably.
 function documentTypeLabel(docType: string): string {
   switch (docType) {
     case 'TAX_INVOICE': return 'TAX INVOICE';
@@ -734,10 +614,6 @@ function documentTypeLabel(docType: string): string {
   }
 }
 
-/// A "Scan to pay" QR only makes sense while money is still owed — once
-/// receipts allocated against the invoice cover its total, showing a
-/// payment QR on an already-settled invoice would prompt the customer to
-/// pay twice. Mirrors the outstanding calc in `payments.service.ts`.
 async function hasOutstandingBalance(shopId: number, invoiceId: number, total: Prisma.Decimal): Promise<boolean> {
   const allocated = await prisma.payment.aggregate({
     where: { invoiceId, shopId, voidedAt: null },
@@ -747,7 +623,6 @@ async function hasOutstandingBalance(shopId: number, invoiceId: number, total: P
   return total.minus(applied).gt(0);
 }
 
-/// Compose a one-line address "addr, city, state - pin", skipping empties.
 function composeAddress(
   addr: string | null | undefined,
   city: string | null | undefined,
@@ -765,8 +640,6 @@ function composeAddress(
   return parts.join(', ');
 }
 
-/// DD/MM/YYYY — Indian invoice convention. `toLocaleDateString('en-IN')`
-/// is locale-sensitive across Node versions; we hand-format to keep it stable.
 function formatDDMMYYYY(d: Date | string): string {
   const dt = d instanceof Date ? d : new Date(d);
   const dd = String(dt.getDate()).padStart(2, '0');
@@ -775,19 +648,11 @@ function formatDDMMYYYY(d: Date | string): string {
   return `${dd}/${mm}/${yy}`;
 }
 
-/// Converts PDFKit-style absolute point widths into percentages summing to
-/// 100 — the react-pdf engine's tables are percentage-based. A ~3-line pure
-/// function, duplicated per-renderer rather than reached for across the
-/// CJS/ESM boundary (same convention as `pctWidths` in `shared/pdf/model.ts`).
 function pct(points: number[]): number[] {
   const total = points.reduce((a, b) => a + b, 0);
   return points.map((p) => (p / total) * 100);
 }
 
-/// Builds the doc-kind-agnostic `PdfDocumentModel` (see `shared/pdf/model.ts`)
-/// from the same invoice query the PDFKit path uses, then renders it through
-/// the shop's chosen template. This is the default path — see the
-/// `PDF_ENGINE=pdfkit` dispatcher above for the rollback.
 async function renderInvoicePdfReactPdf(
   shopId: number,
   id: number,
@@ -814,8 +679,6 @@ async function renderInvoicePdfReactPdf(
           shopPinCode: true,
           shopGstin: true,
           shopPan: true,
-          // Drives whether the GST columns print at all — see
-          // `invoiceGstVisibility`.
           registrationType: true,
           gstEffectiveFrom: true,
           upiVpa: true,
@@ -897,9 +760,6 @@ async function renderInvoicePdfReactPdf(
   const isInter = invoice.isInterstate;
   const { showGst, showHsn } = invoiceGstVisibility(invoice, owner);
 
-  // Without GST the per-line "Taxable" column is just the line total again —
-  // drop it with the rest of the tax columns rather than printing the same
-  // number twice.
   const itemCols = buildPdfColumns<(typeof invoice.items)[number]>(515, [
     { header: 'Sr', width: 22, align: 'left', cell: (_it, i) => String(i + 1) },
     {
@@ -985,8 +845,6 @@ async function renderInvoicePdfReactPdf(
     { label: 'Subtotal', value: currencyFmt(invoice.subtotal) },
   ];
   if (totalDiscount.gt(0)) totals.push({ label: 'Total Discount', value: `- ${currencyFmt(totalDiscount)}` });
-  // "Taxable Value" is a GST term of art, and without tax it just repeats the
-  // discounted subtotal — so it travels with the tax rows.
   if (showGst) {
     totals.push({ label: 'Taxable Value', value: currencyFmt(invoice.taxableValue) });
     if (isInter) {
@@ -1024,8 +882,6 @@ async function renderInvoicePdfReactPdf(
     },
     counterpartyLabel: cpLabel,
     counterparty: { name: cpName, addressLine: cpAddress, gstin: cpGstin, pan: cpPan },
-    // Place of supply only means something under GST, and it printed a bare
-    // "-" whenever the state was unknown — omit it in both cases.
     meta: [
       { label: 'Invoice No', value: invoice.invoiceNo },
       { label: 'Date', value: formatDDMMYYYY(invoice.invoiceDate) },
@@ -1045,8 +901,6 @@ async function renderInvoicePdfReactPdf(
       widths: itemWidths,
       rows: itemRows,
     },
-    // The HSN summary is a tax table (it exists for GSTR-1) — pointless on a
-    // document that charges none.
     hsnSummary: showGst && hsnMap.size > 0
       ? { headers: hsnHeaders.map((text, i) => ({ text, align: hsnAlign(i) })), widths: hsnWidths, rows: hsnRows }
       : undefined,

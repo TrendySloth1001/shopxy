@@ -4,8 +4,6 @@ import { authedFetch, extractError } from "@/server/auth/session";
 const MAX_BYTES = 8 * 1024 * 1024;
 const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp"]);
 
-// POST /api/upload — multipart image upload, forwarded to the backend /upload
-// service. Returns the stored (relative) URL.
 export async function POST(req: Request) {
   const form = await req.formData().catch(() => null);
   const file = form?.get("file");

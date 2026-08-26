@@ -19,8 +19,6 @@ import {
   OPEN_MERCHANT_MOUNTS,
 } from '../../src/shared/http/merchantAreas.js';
 
-// A tiny app that injects a fixed req.user, then gates /x with
-// requireArea('invoices'). Lets us exercise the gate without a DB.
 function gatedApp(user: unknown) {
   const a = express();
   a.use((req, _res, next) => {
@@ -111,16 +109,10 @@ describe('merchant route registry coverage', () => {
     for (const r of ALL_RIGHTS) expect(isValidRight(r)).toBe(true);
   });
 
-  // buildApp() throws at boot if a merchant router is mounted without a
-  // registry entry (mountMerchant fail-closed), so a clean build proves
-  // there's no un-gated merchant mount.
   it('app builds (no un-registered merchant mount)', () => {
     expect(() => buildApp()).not.toThrow();
   });
 
-  // …and every registered prefix is actually mounted behind auth: an
-  // unauthenticated hit returns 401 (gated), never 404 (missing). Catches
-  // stale registry entries whose route was removed.
   it('every registered prefix is mounted behind requireAuth', async () => {
     const app = buildApp();
     for (const prefix of Object.keys(MERCHANT_AREAS)) {

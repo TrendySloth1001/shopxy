@@ -23,18 +23,11 @@ const ERROR_MESSAGES: Record<string, string> = {
 };
 
 export class CouponsController {
-  /// GET /me/coupons — list available coupons for the caller.
   async listAvailable(req: Request, res: Response): Promise<void> {
     const data = await couponsService.listAvailableForUser(req.user!.sub);
     res.json({ data });
   }
 
-  /// POST /me/coupons/auto-apply — given the current cart context,
-  /// returns the single best PUBLIC coupon (if any) so the checkout
-  /// page can pre-apply it without the customer typing a code. Public
-  /// coupons are the "everyone-gets-this" use-case; making the
-  /// customer copy a code that's already in their carousel was the
-  /// "coupons not working" complaint.
   async autoApply(req: Request, res: Response): Promise<void> {
     const payload = autoApplySchema.parse(req.body);
     const result = await couponsService.pickBestPublicForCart({
@@ -49,7 +42,6 @@ export class CouponsController {
     res.json({ ok: true, coupon: result.coupon });
   }
 
-  /// POST /me/coupons/validate — preview the discount without applying.
   async validate(req: Request, res: Response): Promise<void> {
     const payload = validateSchema.parse(req.body);
     const result = await couponsService.validate({
@@ -68,9 +60,6 @@ export class CouponsController {
     res.json({ ok: true, coupon: result.coupon });
   }
 
-  // ── Merchant ──────────────────────────────────────────────────────
-
-  /// GET /me/coupons-admin — every coupon attached to the caller's shop.
   async listMerchant(req: Request, res: Response): Promise<void> {
     const shopId = req.user?.shopId;
     if (!shopId) {

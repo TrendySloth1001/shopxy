@@ -8,11 +8,6 @@ import { BackLink } from "@/shared/ui/page-header";
 import { SelectField, TextAreaField, TextField } from "@/shared/ui/form";
 import { INDIAN_STATES, stateCodeForName, stateNameForCode } from "@/shared/india";
 
-/**
- * Shared write payload for a contact (vendor or party). Empty fields are
- * normalised to null; the create API strips nulls (the backend create schema
- * rejects them) while update sends them through to clear a field.
- */
 export type ContactWrite = {
   name: string;
   contactName: string | null;
@@ -35,12 +30,6 @@ const orNull = (v: string) => {
   return t === "" ? null : t;
 };
 
-/**
- * Full-page contact editor with the standard sticky action bar. Captures the
- * common vendor/party fields (name, contact, phone/email, GSTIN/PAN, address,
- * city/PIN, state). The backend is the authority for GSTIN/PAN/PIN formats and
- * its field errors are surfaced verbatim.
- */
 export function ContactEditor({
   title,
   subtitle,
@@ -148,7 +137,6 @@ export function ContactEditor({
         </div>
       </div>
 
-      {/* Sticky action bar */}
       <div className="sticky bottom-0 mt-xxl -mx-lg flex items-center justify-end gap-md border-t border-hairline bg-canvas px-lg py-md md:-mx-xxl md:px-xxl">
         <Link
           href={backHref}

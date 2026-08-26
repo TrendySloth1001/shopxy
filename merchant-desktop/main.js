@@ -7,18 +7,13 @@ const remember = require("./lib/remember");
 const theme = require("./lib/theme");
 const { clearCacheOnUpgrade } = require("./lib/cache-bust");
 
-// Sets the macOS menu-bar title + about box (instead of "Electron").
 app.setName("ShopXY Merchant");
 
-// App entry path. `/login` is the right door: middleware redirects an already
-// signed-in session straight to /dashboard, and a guest stays on login. (The
-// web app's `/` is a dev design-tokens page, not a real destination.)
 const ENTRY_PATH = "/login";
 
 let server = null;
 let mainWindow = null;
 
-// Single-instance: focus the existing window instead of booting a 2nd server.
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
@@ -46,13 +41,8 @@ if (!app.requestSingleInstanceLock()) {
 
 async function bootstrap() {
   try {
-    // Theme store first — createWindow reads it for the cold-start background.
     theme.configure({ userDataDir: app.getPath("userData") });
     registerThemeIpc();
-    // After an in-place upgrade, Chromium would otherwise keep serving the old
-    // build's immutable `/_next/static` assets for the fixed loopback origin,
-    // leaving the user on a stale UI. Drop the asset cache once per new version
-    // (cookies/login are preserved) before the window loads.
     await clearCacheOnUpgrade({
       userDataDir: app.getPath("userData"),
       version: app.getVersion(),
@@ -81,8 +71,6 @@ async function bootstrap() {
   }
 }
 
-// Remembered-accounts bridge. All token handling stays in main; the renderer
-// only ever receives display profiles + ok/err.
 function registerRememberIpc() {
   ipcMain.handle("remember:list", () => remember.listRememberedAccounts());
   ipcMain.handle("remember:current", () => remember.rememberCurrentAccount());
@@ -90,8 +78,6 @@ function registerRememberIpc() {
   ipcMain.handle("remember:forget", (_e, id) => remember.forgetAccount(id));
 }
 
-// Theme bridge. The renderer owns the visual theme; main only persists it (for
-// the next cold start's window background) and re-tints native chrome live.
 function registerThemeIpc() {
   ipcMain.handle("theme:set", (_e, value) => {
     if (!theme.isValid(value)) return { ok: false };
@@ -104,26 +90,18 @@ function registerThemeIpc() {
   });
 }
 
-// Open a URL in the OS browser, but only ever https:/mailto: — never file:,
-// smb:, or any custom/dangerous protocol the (potentially XSS-controlled)
-// renderer might ask us to launch. (NAV-2)
 function openExternalSafely(target) {
   let parsed;
   try {
     parsed = new URL(target);
   } catch {
-    return; // not a parseable URL — ignore
+    return;
   }
   if (parsed.protocol === "https:" || parsed.protocol === "mailto:") {
     shell.openExternal(parsed.href);
   }
 }
 
-// Pin all in-place navigation to the resolved loopback origin. Without this, a
-// BFF XSS/open-redirect could top-navigate the main window to attacker content
-// that inherits the privileged `shopxyDesktop` preload bridge (account-resume +
-// token side effects). Anything off-origin is cancelled; external https links
-// are punted to the OS browser instead. (NAV-1)
 function hardenNavigation(win, serverUrl) {
   const allowedOrigin = new URL(serverUrl).origin;
 
@@ -135,15 +113,14 @@ function hardenNavigation(win, serverUrl) {
       event.preventDefault();
       return;
     }
-    if (targetOrigin === allowedOrigin) return; // same-origin app navigation
+    if (targetOrigin === allowedOrigin) return;
     event.preventDefault();
-    openExternalSafely(target); // vetted https/mailto goes to the OS browser
+    openExternalSafely(target);
   };
 
   win.webContents.on("will-navigate", guard);
   win.webContents.on("will-redirect", guard);
 
-  // Deny every new window/popup; vetted external links open in the OS browser.
   win.webContents.setWindowOpenHandler(({ url: target }) => {
     openExternalSafely(target);
     return { action: "deny" };
@@ -151,8 +128,6 @@ function hardenNavigation(win, serverUrl) {
 }
 
 async function createWindow(url) {
-  // Match the saved theme on the very first frame — no white flash before the
-  // dark web UI paints. nativeTheme is set here too so OS chrome agrees.
   const savedTheme = theme.readTheme();
   nativeTheme.themeSource = theme.nativeSourceFor(savedTheme);
 
@@ -168,10 +143,6 @@ async function createWindow(url) {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
       nodeIntegration: false,
-      // OS-level renderer sandbox. The preload only uses contextBridge +
-      // ipcRenderer.invoke (sandbox-compatible) — all privileged work lives in
-      // main — so enabling this just shrinks the blast radius of any renderer
-      // compromise without breaking the bridge.
       sandbox: true,
     },
   });

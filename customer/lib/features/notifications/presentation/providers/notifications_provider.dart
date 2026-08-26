@@ -4,16 +4,12 @@ import 'package:shopxy_customer/features/notifications/domain/entities/invitatio
 import 'package:shopxy_customer/features/notifications/domain/entities/notification.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
 
-/// Single provider that owns notifications + invitations. Keeps the
-/// unread count, the inbox feed, and both invitation lists in sync so
-/// the bell badge and inbox page never disagree.
 class NotificationsProvider extends ChangeNotifier {
   NotificationsProvider(this._notifsDs, this._invitesDs);
 
   final NotificationsRemoteDataSource _notifsDs;
   final InvitationsRemoteDataSource _invitesDs;
 
-  // ── Notifications state ─────────────────────────────────────────
   List<AppNotification> _items = const [];
   int _unread = 0;
   bool _loadingInbox = false;
@@ -29,25 +25,17 @@ class NotificationsProvider extends ChangeNotifier {
   bool get hasMoreInbox => _hasMore;
   String? get error => _error;
 
-  /// Pending invitations addressed to current user. Populated by
-  /// [loadIncoming]; surfaces on the dashboard first-login prompt.
   List<Invitation> _incoming = const [];
   List<Invitation> get incoming => _incoming;
   List<Invitation> get pendingIncoming =>
       _incoming.where((i) => i.isPending).toList(growable: false);
 
-  /// Session-local dismissals for the home-screen invite preview. Hides
-  /// the card without calling decline — the invite stays pending on the
-  /// server and the user can still find it on the Invitations page.
-  /// Cleared on logout / app cold start.
   final Set<String> _dismissedFromHome = <String>{};
   bool isDismissedFromHome(String id) => _dismissedFromHome.contains(id);
   void dismissFromHome(String id) {
     if (_dismissedFromHome.add(id)) notifyListeners();
   }
 
-  /// Pending invites filtered by [_dismissedFromHome] — the list the
-  /// home page's preview card should render against.
   List<Invitation> get pendingIncomingForHome => _incoming
       .where((i) => i.isPending && !_dismissedFromHome.contains(i.id))
       .toList(growable: false);
@@ -55,13 +43,9 @@ class NotificationsProvider extends ChangeNotifier {
   List<Invitation> _outgoing = const [];
   List<Invitation> get outgoing => _outgoing;
 
-  /// Whether we've already shown the first-login pending-invite prompt
-  /// in this session. Reset on logout.
   bool _firstLoginPromptShown = false;
   bool get hasFirstLoginPromptBeenShown => _firstLoginPromptShown;
   void markFirstLoginPromptShown() => _firstLoginPromptShown = true;
-
-  // ── Loading ─────────────────────────────────────────────────────
 
   bool _unreadOnly = false;
 
@@ -84,8 +68,6 @@ class NotificationsProvider extends ChangeNotifier {
     }
   }
 
-  /// Fetches the next inbox page and appends it. No-op while a load is
-  /// already in flight or there's nothing further to fetch.
   Future<void> loadMoreInbox() async {
     if (_loadingInbox || _loadingMore || !_hasMore) return;
     _loadingMore = true;
@@ -100,22 +82,17 @@ class NotificationsProvider extends ChangeNotifier {
       _page = next.page;
       _hasMore = next.hasMore;
     } catch (_) {
-      // Best-effort — leave hasMore as-is so the user can retry by
-      // scrolling again or pulling to refresh.
     } finally {
       _loadingMore = false;
       notifyListeners();
     }
   }
 
-  /// Cheap call used on first paint / after login to wire the bell badge
-  /// without paying for the full inbox.
   Future<void> refreshUnreadCount() async {
     try {
       _unread = await _notifsDs.unreadCount();
       notifyListeners();
     } catch (_) {
-      // Network blips shouldn't break the UI — keep the previous count.
     }
   }
 
@@ -139,14 +116,11 @@ class NotificationsProvider extends ChangeNotifier {
     }
   }
 
-  // ── Mutations ───────────────────────────────────────────────────
-
   Future<void> markRead(String id) async {
     final idx = _items.indexWhere((n) => n.id == id);
     if (idx == -1) return;
     final current = _items[idx];
     if (current.readAt != null) return;
-    // Optimistic update — repaint immediately, then sync.
     _items = [
       ..._items.sublist(0, idx),
       AppNotification(
@@ -165,7 +139,6 @@ class NotificationsProvider extends ChangeNotifier {
     try {
       await _notifsDs.markRead(id);
     } catch (_) {
-      // The server didn't accept — best-effort, keep optimistic state.
     }
   }
 
@@ -237,8 +210,6 @@ class NotificationsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Called from AuthProvider after logout so the next user doesn't see
-  /// the previous account's bell/inbox state.
   void reset() {
     _items = const [];
     _unread = 0;

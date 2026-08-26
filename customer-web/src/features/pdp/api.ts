@@ -1,7 +1,3 @@
-/**
- * PDP client-side fetchers — hit /api/* BFF routes only.
- */
-
 import { productDetailSchema, fbtCardSchema, type ProductDetail, type FbtCard } from "./types";
 
 async function getJson(url: string): Promise<unknown> {
@@ -12,20 +8,17 @@ async function getJson(url: string): Promise<unknown> {
       const b = (await res.json()) as { error?: string };
       if (b?.error) message = b.error;
     } catch {
-      // keep default
     }
     throw new Error(message);
   }
   return res.json();
 }
 
-/** Fetch a single product for the PDP. */
 export async function fetchProduct(id: string): Promise<ProductDetail> {
   const raw = await getJson(`/api/marketplace/products/${id}`);
   return productDetailSchema.parse(raw);
 }
 
-/** Fetch frequently-bought-together items. Resolves to [] on any error. */
 export async function fetchFbt(productId: string): Promise<FbtCard[]> {
   try {
     const raw = (await getJson(
@@ -41,7 +34,6 @@ export async function fetchFbt(productId: string): Promise<FbtCard[]> {
   }
 }
 
-/** Add / remove wishlist item (optimistic — caller supplies direction). */
 export async function toggleWishlist(
   productId: string,
   add: boolean,
@@ -55,13 +47,11 @@ export async function toggleWishlist(
       const b = (await res.json()) as { error?: string };
       if (b?.error) msg = b.error;
     } catch {
-      // keep default
     }
     throw new Error(msg);
   }
 }
 
-/** Check wishlist membership for a product. Returns null if not authenticated. */
 export async function getWishlistIds(): Promise<Set<string> | null> {
   const res = await fetch("/api/me/wishlist", { cache: "no-store" });
   if (res.status === 401) return null;
@@ -80,7 +70,6 @@ export async function getWishlistIds(): Promise<Set<string> | null> {
   }
 }
 
-/** Fire-and-forget VIEW event for analytics. */
 export function recordView(productId: string): void {
   if (typeof window === "undefined") return;
   const event = {
@@ -96,6 +85,5 @@ export function recordView(productId: string): void {
     body: JSON.stringify({ events: [event] }),
     keepalive: true,
   }).catch(() => {
-    // best-effort
   });
 }

@@ -44,8 +44,8 @@ function useDashboard(period: DashboardPeriod) {
   const t = useTranslations("dashboard");
   const [data, setData] = useState<DashboardStats | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true); // first load (no data yet)
-  const [refreshing, setRefreshing] = useState(false); // period change / manual refresh
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [nonce, setNonce] = useState(0);
   const hasData = useRef(false);
 
@@ -92,7 +92,6 @@ export function DashboardHome() {
     if (typeof localStorage !== "undefined") localStorage.setItem(PERIOD_STORE_KEY, p);
   }
 
-  // Cashier kiosk lock: a plain Cashier lands on the till, not the dashboard.
   const isKiosk = user?.shopRole === "CASHIER";
   useEffect(() => {
     if (isKiosk) router.replace("/dashboard/pos");
@@ -101,7 +100,6 @@ export function DashboardHome() {
 
   return (
     <div className="w-full px-lg py-xxl md:px-xxl">
-      {/* Header */}
       <div className="flex flex-wrap items-end justify-between gap-md">
         <div>
           <h1 className="text-headline-md text-ink">
@@ -150,7 +148,7 @@ function DashboardBody({
   period: DashboardPeriod;
   refreshing: boolean;
 }) {
-  const [payoutsEnabled, setPayoutsEnabled] = useState(true); // assume enabled until known
+  const [payoutsEnabled, setPayoutsEnabled] = useState(true);
 
   useEffect(() => {
     let active = true;
@@ -159,7 +157,6 @@ function DashboardBody({
         const acct = await getPayoutStatus();
         if (active) setPayoutsEnabled(Boolean(acct?.payoutsEnabled));
       } catch {
-        /* leave default */
       }
     })();
     return () => {
@@ -167,10 +164,6 @@ function DashboardBody({
     };
   }, []);
 
-  // meta.from/to are date-only IST keys (YYYY-MM-DD); the reports endpoints the
-  // KPI drawers call validate `from`/`to` as full ISO datetimes, so widen them
-  // to a day-spanning ISO range. Memoised so the drawers don't refetch on every
-  // dashboard re-render (only when the period window changes).
   const kpiRange = useMemo(
     () => ({
       from: dateInputToIso(stats.meta.from),
@@ -181,7 +174,6 @@ function DashboardBody({
 
   const isFresh = !stats.onboarding.hasInvoices && stats.onboarding.totalProducts === 0;
 
-  // A fresh shop gets guidance, not a wall of zeros.
   if (isFresh) {
     return (
       <div className="space-y-xxl">
@@ -195,7 +187,6 @@ function DashboardBody({
     <div className="space-y-xxl">
       {stats.alerts.length > 0 ? <Alerts alerts={stats.alerts} /> : null}
 
-      {/* Period-scoped money sections dim while a new period loads. */}
       <div className={refreshing ? "pointer-events-none opacity-60 transition-opacity" : "transition-opacity"}>
         <div className="space-y-xxl" aria-busy={refreshing}>
           {stats.kpis ? <KpiRow kpis={stats.kpis} period={period} range={kpiRange} /> : null}
@@ -217,10 +208,6 @@ function DashboardBody({
   );
 }
 
-/**
- * Brand callout for pending incoming invitations (another shop inviting this user
- * as a customer/vendor/team member). Links to the notifications Invites tab.
- */
 function PendingInviteCallout() {
   const t = useTranslations("dashboard");
   const [count, setCount] = useState(0);
@@ -232,7 +219,6 @@ function PendingInviteCallout() {
         const rows = await listIncomingInvitations();
         if (active) setCount(rows.filter((i) => i.status === "PENDING").length);
       } catch {
-        /* no callout on failure */
       }
     })();
     return () => {

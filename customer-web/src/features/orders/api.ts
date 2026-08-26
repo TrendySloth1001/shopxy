@@ -1,7 +1,3 @@
-/**
- * Client-side fetchers for the orders feature.
- * All calls go to /api/me/orders/** (BFF proxies to backend).
- */
 import {
   ordersPageSchema,
   customerOrderDetailSchema,
@@ -24,7 +20,6 @@ async function jsonOrThrow<T>(
       const b = (await res.json()) as { error?: string };
       if (b?.error) message = b.error;
     } catch {
-      /* keep fallback */
     }
     throw new Error(message);
   }
@@ -68,7 +63,6 @@ export async function cancelShopOrder(parentId: string, childId: string): Promis
       if (b?.error) message = b.error;
       if (b?.code) code = b.code;
     } catch {
-      /* keep fallback */
     }
     const err = new Error(message) as Error & { code?: string };
     err.code = code;
@@ -101,7 +95,6 @@ export async function syncOrderPayment(id: string): Promise<string | null> {
   return body?.paymentStatus ?? null;
 }
 
-/** Returns the PDF BFF URL for browser `<a href>` / window.open */
 export function invoicePdfUrl(parentId: string, childId: string): string {
   return `/api/me/orders/${parentId}/shops/${childId}/invoice.pdf`;
 }

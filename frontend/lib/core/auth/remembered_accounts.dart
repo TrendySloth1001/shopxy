@@ -1,9 +1,6 @@
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-/// A remembered account for the one-tap return sign-in picker. The display
-/// fields are safe to render; the device-remember token is kept alongside in
-/// the OS keychain (never surfaced to the UI).
 class RememberedAccount {
   const RememberedAccount({
     required this.id,
@@ -32,9 +29,6 @@ class RememberedAccount {
   );
 }
 
-/// Persists remembered accounts (profile + device-remember token) in the OS
-/// keychain — same secure-storage backing as [TokenManager]. The token only
-/// ever leaves here to call `/auth/remember-login`; it's never shown.
 class RememberedAccountsStore {
   RememberedAccountsStore([FlutterSecureStorage? storage])
     : _storage =
@@ -42,8 +36,6 @@ class RememberedAccountsStore {
           const FlutterSecureStorage(
             aOptions: AndroidOptions(encryptedSharedPreferences: true),
             iOptions: IOSOptions(
-              // *ThisDeviceOnly so the device-remember token (a full
-              // password-less credential) never rides a backup/transfer.
               accessibility: KeychainAccessibility.first_unlock_this_device,
             ),
           );
@@ -64,7 +56,6 @@ class RememberedAccountsStore {
   Future<void> _write(List<Map<String, dynamic>> rows) =>
       _storage.write(key: _key, value: jsonEncode(rows));
 
-  /// Display profiles only (no tokens) for the picker.
   Future<List<RememberedAccount>> list() async {
     final rows = await _read();
     return rows.map(RememberedAccount._fromJson).toList();
@@ -72,14 +63,11 @@ class RememberedAccountsStore {
 
   Future<String?> tokenFor(String id) async {
     for (final row in await _read()) {
-      // .toString() so a row persisted by an older build (numeric id) still
-      // matches the now-String id after the opaque-id migration.
       if (row['id']?.toString() == id) return row['token'] as String?;
     }
     return null;
   }
 
-  /// Upsert (most-recent first), carrying the freshest profile + token.
   Future<void> save(RememberedAccount account, String token) async {
     final rows = await _read()
       ..removeWhere((r) => r['id']?.toString() == account.id);

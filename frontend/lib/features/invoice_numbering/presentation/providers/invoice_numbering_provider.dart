@@ -4,9 +4,6 @@ import 'package:shopxy/features/invoice_numbering/data/datasources/invoice_numbe
 import 'package:shopxy/features/invoice_numbering/domain/entities/numbering_scheme.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 
-/// Owns the shop's 7 document-numbering schemes (Sale invoice, Purchase
-/// invoice, Estimate/Proforma, Credit note, Debit note, Challan,
-/// Quotation). Single source of truth for the numbering settings screen.
 class InvoiceNumberingProvider extends ChangeNotifier {
   InvoiceNumberingProvider(this._ds);
   final InvoiceNumberingRemoteDataSource _ds;
@@ -21,8 +18,6 @@ class InvoiceNumberingProvider extends ChangeNotifier {
   String? get error => _error;
   bool get hasLoadedOnce => _hasLoadedOnce;
 
-  /// Drops the cached schemes on logout so the next account on this device
-  /// doesn't see the previous shop's numbering config flash on screen.
   void reset() {
     _schemes = const [];
     _isLoading = false;

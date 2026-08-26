@@ -11,21 +11,6 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/widgets/app_dialog.dart';
 
-/// Email-OTP verification for first-time signup. Uses an **in-app numeric
-/// keypad** (not the native keyboard) driving six code cells, then confirms via
-/// [AuthProvider.verifyEmail]. On success the auth gate has rebuilt underneath
-/// (→ onboarding), so we pop back to it.
-///
-/// **This screen cannot be dismissed.** There are exactly two ways out —
-/// enter the code, or explicitly cancel the sign-up — because a half-finished
-/// signup that the merchant can back out of leaves them on the login screen
-/// with no account and no explanation. The system back gesture is intercepted
-/// rather than blocked outright, so cancelling stays possible; it just has to
-/// be deliberate.
-///
-/// Nothing is lost by cancelling: the account does not exist yet. The pending
-/// signup lives only in Redis (15-minute TTL) until the code is confirmed,
-/// which is what makes "no unverified account can exist" true server-side.
 class OtpVerifyPage extends StatefulWidget {
   const OtpVerifyPage({super.key, required this.email});
 
@@ -89,14 +74,12 @@ class _OtpVerifyPageState extends State<OtpVerifyPage> {
     });
     try {
       await context.read<AuthProvider>().verifyEmail(widget.email, _code);
-      // Success: the gate rebuilt underneath (→ onboarding). Pop this + the
-      // create-account screen so the gate shows through.
       if (mounted) Navigator.of(context).popUntil((r) => r.isFirst);
     } catch (e) {
       if (mounted) {
         setState(() {
           _error = friendlyError(e);
-          _code = ''; // clear so they can re-enter
+          _code = '';
           _isLoading = false;
         });
       }
@@ -118,8 +101,6 @@ class _OtpVerifyPageState extends State<OtpVerifyPage> {
     }
   }
 
-  /// Abandon the signup, on purpose. Nothing to clean up server-side — the
-  /// pending record expires on its own — so this is purely "are you sure?".
   Future<void> _confirmLeave() async {
     if (_isLoading) return;
     final l10n = AppLocalizations.of(context);
@@ -140,8 +121,6 @@ class _OtpVerifyPageState extends State<OtpVerifyPage> {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return PopScope(
-      // The back gesture must not silently abandon the signup — intercept it
-      // and ask, same as the explicit Cancel action below.
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _confirmLeave();
@@ -204,9 +183,6 @@ class _OtpVerifyPageState extends State<OtpVerifyPage> {
                             onPressed: _code.length == _length ? _verify : null,
                           ),
                           const SizedBox(height: AppSizes.sm),
-                          // The only other way out. Quiet, but present — a
-                          // screen with no exit at all is worse than one whose
-                          // exit costs a confirmation.
                           TextButton(
                             onPressed: _isLoading ? null : _confirmLeave,
                             style: TextButton.styleFrom(
@@ -220,7 +196,6 @@ class _OtpVerifyPageState extends State<OtpVerifyPage> {
                   ),
                 ),
               ),
-              // Our own keypad — no native keyboard.
               _NumericKeypad(onDigit: _onDigit, onBackspace: _onBackspace),
             ],
           ),
@@ -230,8 +205,6 @@ class _OtpVerifyPageState extends State<OtpVerifyPage> {
   }
 }
 
-/// The six code cells. Filled cells carry the digit + a brand border; the next
-/// cell shows a brand cursor ring; the rest are quiet hairline boxes.
 class _OtpCells extends StatelessWidget {
   const _OtpCells({required this.code, required this.length});
   final String code;
@@ -318,7 +291,6 @@ class _ResendRow extends StatelessWidget {
   }
 }
 
-/// In-app numeric keypad: 1–9, then a blank · 0 · backspace row.
 class _NumericKeypad extends StatelessWidget {
   const _NumericKeypad({required this.onDigit, required this.onBackspace});
   final ValueChanged<String> onDigit;

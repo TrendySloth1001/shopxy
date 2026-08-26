@@ -1,13 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, ChevronRight } from "@/shared/icons";
 
-/**
- * Section header shared by the feed blocks — port of the `_BlockHeader`
- * (pill "See all") and `HomeProductCarousel` (black circle) headers.
- *
- * Layout: a 2px brand-green accent dot before the eyebrow, then the title at
- * text-title-md weight, "See all" aligned right as a pill or circle chip.
- */
 export function SectionHeader({
   eyebrow,
   title,
@@ -21,9 +14,7 @@ export function SectionHeader({
 }) {
   return (
     <div className="flex items-center justify-between gap-md px-lg">
-      {/* Title stack */}
       <div className="flex min-w-0 items-center gap-sm">
-        {/* Accent dot motif — brand green, 6px, vertically centred */}
         <span
           className="hidden shrink-0 rounded-full bg-brand phone:block"
           style={{ width: 6, height: 6 }}
@@ -39,7 +30,6 @@ export function SectionHeader({
         </div>
       </div>
 
-      {/* See-all affordance */}
       {seeAllHref ? (
         variant === "circle" ? (
           <Link

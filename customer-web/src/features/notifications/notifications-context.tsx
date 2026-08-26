@@ -22,11 +22,6 @@ const NotificationsContext = createContext<NotificationsValue | null>(null);
 
 const POLL_MS = 60_000;
 
-/**
- * Holds the unread-notification count for the header bell. Polls every minute
- * and on tab focus, but only while signed in (this provider sits at the app
- * root, above public pages). The unread-count BFF route soft-fails to 0.
- */
 export function NotificationsProvider({ children }: { children: ReactNode }) {
   const { status } = useAuth();
   const [unread, setUnread] = useState(0);
@@ -35,7 +30,6 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     void getUnreadCount()
       .then(setUnread)
       .catch(() => {
-        /* keep the previous count on a blip */
       });
   }, []);
 
@@ -51,7 +45,6 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     };
   }, [status, refresh]);
 
-  // Signed-out → always show 0 (without a setState in the effect above).
   const exposed = status === "authed" ? unread : 0;
   const value = useMemo<NotificationsValue>(
     () => ({ unread: exposed, refresh, setUnread }),

@@ -62,9 +62,7 @@ export default function ProfilePage() {
       </p>
 
       <div className="mt-xl flex flex-col gap-xl lg:flex-row lg:items-start lg:gap-xxl">
-        {/* ── Identity sidebar — sticks while the details scroll ───────── */}
         <aside className="shrink-0 space-y-lg lg:sticky lg:top-xxl lg:w-80 xl:w-96">
-          {/* Branded identity snapshot */}
           <div className="flex flex-col items-center rounded-lg bg-hero-panel p-xl text-center">
             <div className="rounded-full bg-surface p-xs shadow-floating">
               <Avatar url={user.avatarUrl} name={user.name} size={88} />
@@ -92,7 +90,6 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Completion meter */}
           {completion.percent < 100 ? (
             <CompletionBar
               percent={completion.percent}
@@ -104,7 +101,6 @@ export default function ProfilePage() {
             />
           ) : null}
 
-          {/* Jump to related shop settings */}
           <div className="rounded-lg border border-hairline p-sm">
             <p className="px-sm pb-xs pt-sm text-label-md uppercase tracking-wide text-subtle">
               {t("profilePage.manage")}
@@ -116,7 +112,6 @@ export default function ProfilePage() {
           </div>
         </aside>
 
-        {/* ── Details pane — fills the remaining width ──────────────────── */}
         <section className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-md border-b border-hairline pb-md">
             <div>

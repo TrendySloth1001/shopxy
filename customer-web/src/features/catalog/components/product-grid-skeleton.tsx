@@ -1,7 +1,3 @@
-/**
- * Skeleton shimmer for the 2-column product grid used on shop and category
- * pages. Mirrors the real CatalogProductCard layout while loading.
- */
 export function ProductGridSkeleton({ count = 8 }: { count?: number }) {
   return (
     <div className="grid grid-cols-2 gap-md sm:grid-cols-3 lg:grid-cols-4">

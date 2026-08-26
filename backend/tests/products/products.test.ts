@@ -19,7 +19,6 @@ describe('products multi-tenant scoping', () => {
     const shopA = await createTestUser();
     const shopB = await createTestUser();
     try {
-      // Seed: 3 in shopA, 2 in shopB. None should leak across.
       await Promise.all([
         createTestProduct(shopA.shopId),
         createTestProduct(shopA.shopId),
@@ -38,7 +37,6 @@ describe('products multi-tenant scoping', () => {
       expect(resA.body.pagination.total).toBe(3);
       expect(resB.body.pagination.total).toBe(2);
 
-      // Every returned product belongs to the caller's shop.
       for (const p of resA.body.data) expect(p.shopId).toBe(shopA.shopId);
       for (const p of resB.body.data) expect(p.shopId).toBe(shopB.shopId);
     } finally {
@@ -61,7 +59,6 @@ describe('products multi-tenant scoping', () => {
       const otherRes = await request(app)
         .get(`/products/${product.id}`)
         .set('Authorization', `Bearer ${shopB.accessToken}`);
-      // Specifically NOT 403 — 404 prevents existence probing.
       expect(otherRes.status).toBe(404);
     } finally {
       await cleanupTestUser(shopA);
@@ -81,7 +78,6 @@ describe('products multi-tenant scoping', () => {
         .send({ name: 'Pwned' });
       expect(res.status).toBe(404);
 
-      // Confirm DB row was not mutated.
       const after = await prisma.product.findUnique({ where: { id: product.id } });
       expect(after?.name).toBe('Original');
     } finally {
@@ -103,7 +99,6 @@ describe('products multi-tenant scoping', () => {
       expect(ok.status).toBe(200);
       expect(ok.body.isPublished).toBe(true);
 
-      // Cross-tenant probe of the same id.
       const cross = await request(app)
         .post(`/products/${product.id}/publish`)
         .set('Authorization', `Bearer ${shopB.accessToken}`)
@@ -127,11 +122,6 @@ describe('products heavy-query paths', () => {
   it('lowStock filter returns ONLY rows where qty>0 AND qty<=threshold', async () => {
     const ctx = await createTestUser();
     try {
-      // 4 products in 4 stock states:
-      //   - low      (qty=3, thr=5)  → should appear
-      //   - at-limit (qty=5, thr=5)  → should appear (<= boundary)
-      //   - healthy  (qty=10, thr=5) → should NOT appear
-      //   - out      (qty=0, thr=5)  → should NOT appear (qty must be > 0)
       const [low, atLimit, healthy, out] = await Promise.all([
         createTestProduct(ctx.shopId, { stockQuantity: 3, lowStockThreshold: 5 }),
         createTestProduct(ctx.shopId, { stockQuantity: 5, lowStockThreshold: 5 }),
@@ -149,7 +139,6 @@ describe('products heavy-query paths', () => {
         .map((p) => p.id)
         .sort();
       expect(returnedIds).toEqual([low.id, atLimit.id].sort());
-      // Defensive: out-of-stock and healthy products must not appear.
       expect(returnedIds).not.toContain(healthy.id);
       expect(returnedIds).not.toContain(out.id);
     } finally {
@@ -160,7 +149,6 @@ describe('products heavy-query paths', () => {
   it('lowStock total matches actual count and respects pagination', async () => {
     const ctx = await createTestUser();
     try {
-      // Seed 6 low-stock products. With limit=2 we expect: total=6, page=2 items.
       await Promise.all(
         Array.from({ length: 6 }).map(() =>
           createTestProduct(ctx.shopId, { stockQuantity: 1, lowStockThreshold: 5 }),

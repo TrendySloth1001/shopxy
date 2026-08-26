@@ -76,9 +76,6 @@ class PartyDto {
     String? gstin,
     bool? isActive,
   }) {
-    /// Distinguishes "field unchanged" (caller passes null) from
-    /// "field cleared by user" (caller passes empty string, which we
-    /// serialise as JSON null).
     final data = <String, dynamic>{};
     if (name != null) data['name'] = name;
     void put(String key, String? value) {

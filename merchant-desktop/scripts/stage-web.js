@@ -1,13 +1,5 @@
 "use strict";
 
-/**
- * After `DESKTOP_BUILD=1 next build`, Next emits a self-contained server at
- * `<distDir>/standalone/server.js` but does NOT copy the static assets or the
- * public/ folder into it (a documented standalone quirk). This stages them so
- * the local prod server can serve CSS/JS/images. distDir is `.next-build`.
- *
- * Run from merchant-desktop: `npm run stage:web` (after `npm run build:web`).
- */
 const fs = require("node:fs");
 const path = require("node:path");
 
@@ -35,7 +27,6 @@ if (!fs.existsSync(path.join(STANDALONE, "server.js"))) {
 }
 
 console.log("Staging static assets into the standalone server…");
-// Next looks for static under <standalone>/<distDir>/static.
 copyDir(path.join(DIST, "static"), path.join(STANDALONE, ".next-build", "static"), "static");
 copyDir(path.join(MERCHANT_WEB, "public"), path.join(STANDALONE, "public"), "public");
 console.log("Done.");

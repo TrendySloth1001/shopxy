@@ -8,13 +8,6 @@ import { formatINR2 } from "@/shared/money";
 import { createPayment } from "./api";
 import { PAYMENT_MODES, PAYMENT_MODE_LABELS } from "./schema";
 
-/**
- * Record a payment — a RECEIPT (money in from a party) or a PAYMENT (money out
- * to a vendor), optionally allocated to an invoice. Mirrors the Flutter
- * `RecordPaymentSheet`. When `max` is supplied (invoice "Mark as paid") the
- * amount is pre-filled and capped at the outstanding; the backend remains the
- * authority on over-allocation.
- */
 export function RecordPaymentModal({
   kind,
   partyId,

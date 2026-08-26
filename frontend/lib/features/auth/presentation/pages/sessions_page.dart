@@ -13,9 +13,6 @@ import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/widgets/app_error_view.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
-/// "Devices & sessions" — where the account is signed in, with the ability to
-/// sign out an individual device (revokes its session immediately) or every
-/// other device at once. Backed by /auth/sessions.
 class SessionsPage extends StatefulWidget {
   const SessionsPage({super.key});
 
@@ -38,9 +35,6 @@ class _SessionsPageState extends State<SessionsPage> {
 
   Future<void> _refresh() async {
     final f = _load();
-    // NB: a block body, not `setState(() => _future = f)`. The arrow form
-    // returns the assignment's value (a Future), which Flutter rejects as an
-    // "async setState callback" and throws — crashing the screen on refresh.
     setState(() {
       _future = f;
     });
@@ -273,8 +267,6 @@ class _SessionCard extends StatelessWidget {
               ],
             ),
           ),
-          // Only non-current sessions can be signed out here (revoking the
-          // current one would log you out — use logout for that).
           if (!session.current)
             TextButton(
               onPressed: busy ? null : onRevoke,

@@ -7,10 +7,6 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// The app's single logout confirmation — a bottom sheet with the logout mark,
-/// a title/message, a destructive confirm button and a cancel. Shared so every
-/// logout entry point (Profile, Settings, …) uses the *same* affordance rather
-/// than a plain dialog. Returns `true` when the user confirms.
 Future<bool?> showLogoutConfirmSheet(BuildContext context) {
   final theme = Theme.of(context);
   final l10n = AppLocalizations.of(context);

@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-/** A single customer review, as returned by the public reviews endpoints. */
 export const reviewSchema = z
   .object({
     id: z.coerce.string(),
@@ -18,11 +17,6 @@ export const reviewSchema = z
   .passthrough();
 export type Review = z.infer<typeof reviewSchema>;
 
-/**
- * One-shot PDP summary: average, count, how many came from verified buyers,
- * a zero-filled 1..5 histogram, and the three most recent reviews so the
- * section renders without a follow-up list call.
- */
 export const reviewSummarySchema = z
   .object({
     ratingAvg: z.coerce.number().nullish(),

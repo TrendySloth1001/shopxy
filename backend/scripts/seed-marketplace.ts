@@ -3,10 +3,6 @@ import crypto from 'crypto';
 import prisma from '../src/infra/db/prisma.js';
 import { trendingService } from '../src/modules/trending/trending.service.js';
 
-/// Seeds marketplace-side test data for nkumawat8956@gmail.com so the
-/// new dashboards / rails surface non-empty state. Idempotent — re-run
-/// safely; existing rows are detected and skipped or refreshed.
-
 const uuid = () => crypto.randomBytes(8).toString('hex');
 
 async function main() {
@@ -17,7 +13,6 @@ async function main() {
   if (!user.shop) throw new Error('User has no shop');
   const shopId = user.shop.id;
 
-  // ── Publish the shop + a handful of products ────────────────────
   if (!user.shop.isPublished) {
     await prisma.shop.update({
       where: { id: shopId },
@@ -42,7 +37,6 @@ async function main() {
   }
   console.log(`SEED: ${products.length} active products`);
 
-  // ── Shop image banner (PROMO, live now) ─────────────────────────
   const existingBanner = await prisma.banner.findFirst({
     where: { shopId, placement: 'PROMO' },
   });
@@ -63,7 +57,6 @@ async function main() {
     console.log('SEED: shop PROMO banner');
   }
 
-  // ── Seed 240 ProductEvents across 4 published products ──────────
   const eventProducts = products.slice(0, 4);
   if (eventProducts.length >= 1) {
     const existing = await prisma.productEvent.count({
@@ -107,7 +100,6 @@ async function main() {
     }
   }
 
-  // ── Recently viewed for the user ────────────────────────────────
   for (const p of products.slice(0, 5)) {
     await prisma.recentlyViewed.upsert({
       where: { userId_productId: { userId: user.id, productId: p.id } },
@@ -117,13 +109,11 @@ async function main() {
   }
   console.log('SEED: recently-viewed (top 5)');
 
-  // ── Trigger trending recompute ──────────────────────────────────
   const trending = await trendingService.recomputeWindow();
   console.log(
     `TRENDING: recomputed snapshot for ${trending.products} products`,
   );
 
-  // ── Build recommendation cache for the user ─────────────────────
   const recResult = await trendingService.recomputeForUser(user.id);
   console.log(`RECS: cached ${recResult.count} products for user`);
 

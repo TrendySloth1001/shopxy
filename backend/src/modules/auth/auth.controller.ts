@@ -13,7 +13,6 @@ import {
   UPI_VPA_REGEX,
 } from '../../shared/validation/indian.js';
 
-/** Pull the device context (IP + UA + explicit device name) off the request. */
 function deviceFromReq(req: Request): DeviceContext {
   return {
     ip: req.ip,
@@ -22,11 +21,6 @@ function deviceFromReq(req: Request): DeviceContext {
   };
 }
 
-/**
- * The one password-strength rule, reused by register + change-password so the
- * policy stays single-sourced. Min 10 + a letter + a number; the breach check
- * (HIBP) runs in the service on top of this.
- */
 const passwordSchema = z
   .string()
   .min(10, 'Password must be at least 10 characters')
@@ -34,11 +28,9 @@ const passwordSchema = z
   .regex(/[A-Za-z]/, 'Password must contain at least one letter')
   .regex(/[0-9]/, 'Password must contain at least one number');
 
-/** Friendly copy for the service's `password_breached` sentinel — one place. */
 const PASSWORD_BREACHED_MSG =
   'This password has appeared in a known data breach. Please choose a different one.';
 
-/** Translate the breach sentinel to a 400; returns true when it handled it. */
 function handlePasswordBreached(res: Response, error: string | undefined): boolean {
   if (error !== 'password_breached') return false;
   res.status(400).json({ error: PASSWORD_BREACHED_MSG });
@@ -50,17 +42,8 @@ const registerSchema = z
     name: z.string().trim().min(2).max(80),
     email: z.string().trim().email(),
     password: passwordSchema,
-    // App-origin role. Merchant app sends OWNER (and a shopName);
-    // customer app sends CUSTOMER. Defaults to CUSTOMER so any
-    // pre-existing client that omits the field stays on the safer side.
     role: z.enum(['OWNER', 'CUSTOMER']).optional().default('CUSTOMER'),
-    // Optional. When an OWNER provides it, the Shop is created in the same
-    // transaction as the user (legacy one-step signup). When omitted, the
-    // OWNER is created shopless and names their shop on the onboarding
-    // screen next (POST /me/onboarding/shop). Either flow is supported.
     shopName: z.string().trim().min(2).max(200).optional(),
-    // DPDP consent gate. We require both checkboxes to be true at the
-    // wire level too, so a malicious client can't bypass the UI ticks.
     acceptedTerms: z.literal(true, {
       errorMap: () => ({ message: 'You must accept the terms of service' }),
     }),
@@ -76,8 +59,6 @@ const deleteAccountSchema = z.object({
 const loginSchema = z.object({
   email: z.string().trim().email(),
   password: z.string().min(1),
-  // Optional second factor: a 6-digit TOTP code or an 8-char recovery code.
-  // Absent on the first attempt; supplied on the retry after `2fa_required`.
   totpCode: z.string().trim().min(6).max(16).optional(),
 });
 
@@ -90,9 +71,6 @@ const changePasswordSchema = z.object({
   newPassword: passwordSchema,
 });
 
-// `.nullable()` on each shop field so the settings screen can clear a value
-// by sending null (e.g. user removes their GSTIN). Format checks run only
-// when a non-null string is supplied — null bypasses the regex.
 const nullableShopString = (max: number) => z.string().trim().max(max).nullable().optional();
 
 const updateProfileSchema = z.object({
@@ -117,9 +95,6 @@ const updateProfileSchema = z.object({
     .regex(GSTIN_REGEX, 'invalid GSTIN')
     .nullable()
     .optional(),
-  // Plain calendar date (no time-of-day) — GST effective date is inherently
-  // day-granular; a full ISO datetime would introduce timezone ambiguity a
-  // merchant picking "the date GST starts" shouldn't have to reason about.
   gstEffectiveFrom: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'must be YYYY-MM-DD')
@@ -136,8 +111,6 @@ const updateProfileSchema = z.object({
     .regex(UPI_VPA_REGEX, 'invalid UPI VPA')
     .nullable()
     .optional(),
-  // Avatar comes from the existing upload service — accept any URL
-  // shape (http(s) or server-relative). null = clear the photo.
   avatarUrl: z
     .string()
     .trim()
@@ -148,8 +121,6 @@ const updateProfileSchema = z.object({
     )
     .nullable()
     .optional(),
-  // Phone: E.164 family — '+' optional prefix, then 7–15 digits.
-  // Loose enough to accept Indian numbers with or without the +91.
   phoneNumber: z
     .string()
     .trim()
@@ -157,7 +128,6 @@ const updateProfileSchema = z.object({
     .transform((v) => v.replace(/[\s\-]/g, ''))
     .nullable()
     .optional(),
-  // Granular notification preferences (Phase 5).
   notifyOrders: z.boolean().optional(),
   notifyDeals: z.boolean().optional(),
   notifyAccount: z.boolean().optional(),
@@ -172,15 +142,10 @@ export async function register(req: Request, res: Response) {
     res.status(400).json({ error: parsed.error.flatten() });
     return;
   }
-  // Drop the consent literals before handing to the service — they
-  // exist only to gate the request, they're not persisted as flags.
   const { acceptedTerms: _t, acceptedPrivacy: _p, ...registerData } = parsed.data;
   const result = await authService.register(registerData, deviceFromReq(req));
   if ('error' in result) {
     if (handlePasswordBreached(res, result.error)) return;
-    // The OTP infra is down. 503, not 409: nothing is wrong with what the
-    // caller sent, and the distinct status is what lets the clients say
-    // "try again shortly" instead of "email already registered".
     if (result.error === 'verification_unavailable') {
       res.status(503).json({
         error: 'verification_unavailable',
@@ -192,16 +157,10 @@ export async function register(req: Request, res: Response) {
     res.status(409).json({ error: result.error });
     return;
   }
-  // The normal path: a code was emailed and NO account exists yet. The client
-  // collects the code and POSTs /auth/verify-email, which is where the account
-  // is actually created and the login recorded.
   if ('pending' in result) {
     res.status(200).json({ pending: true, email: result.email });
     return;
   }
-  // Only reachable via ALLOW_UNVERIFIED_SIGNUP, which is refused in
-  // production — see `unverifiedSignupAllowed`. On a real deployment a
-  // password signup can only ever come back `pending` or an error.
   if (result.user?.id) {
     void loginAlertsService.recordLogin({
       userId: result.user.id,
@@ -217,7 +176,6 @@ const verifyEmailSchema = z.object({
   otp: z.string().trim().regex(/^\d{6}$/, 'Enter the 6-digit code'),
 });
 
-/// POST /auth/verify-email — confirm the signup OTP → create the account + sign in.
 export async function verifyEmail(req: Request, res: Response) {
   const parsed = verifyEmailSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -251,7 +209,6 @@ export async function verifyEmail(req: Request, res: Response) {
 
 const resendOtpSchema = z.object({ email: z.string().trim().email() });
 
-/// POST /auth/resend-otp — re-send the signup verification code (rate-limited).
 export async function resendOtp(req: Request, res: Response) {
   const parsed = resendOtpSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -275,8 +232,6 @@ export async function resendOtp(req: Request, res: Response) {
   res.status(204).end();
 }
 
-/// GET /auth/team-invite/:token — read-only preview for the staff
-/// accept screen. Public (the recipient isn't signed in yet).
 export async function previewTeamInvite(req: Request, res: Response) {
   const result = await authService.previewTeamInvite(req.params.token);
   if ('error' in result) {
@@ -288,14 +243,10 @@ export async function previewTeamInvite(req: Request, res: Response) {
 
 const acceptInviteSchema = z.object({
   token: z.string().min(1),
-  // Optional — the service defaults it from the email when not given, so
-  // an account that isn't set up on either app still has a usable name.
   name: z.string().trim().min(2).max(80).optional(),
   password: passwordSchema,
 });
 
-/// POST /auth/accept-invite — brand-new staffer sets up their account
-/// against a TEAM invite token and is logged straight in.
 export async function acceptTeamInvite(req: Request, res: Response) {
   const parsed = acceptInviteSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -332,9 +283,6 @@ export async function login(req: Request, res: Response) {
       });
       return;
     }
-    // Password was right but the account has 2FA on — tell the client to
-    // collect a code and retry with `totpCode`. A flag (not just the string)
-    // so clients branch on a stable field.
     if (result.error === '2fa_required') {
       res.status(401).json({ error: '2fa_required', twoFactorRequired: true });
       return;
@@ -346,8 +294,6 @@ export async function login(req: Request, res: Response) {
     res.status(401).json({ error: result.error });
     return;
   }
-  // Record the sign-in + alert on a new device. Best-effort, fire-and-forget:
-  // it must never add latency to (or fail) the login response.
   if (result.user?.id) {
     void loginAlertsService.recordLogin({
       userId: result.user.id,
@@ -362,8 +308,6 @@ const googleAuthSchema = z.object({
   idToken: z.string().min(10),
 });
 
-/// POST /auth/google — public. Sign in with a Google-issued ID token
-/// (verified server-side); creates/links the account as needed.
 export async function googleAuth(req: Request, res: Response) {
   const parsed = googleAuthSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -395,8 +339,6 @@ const pinSchema = z
 
 const setRecoveryPinSchema = z.object({ pin: pinSchema });
 
-/// POST /auth/recovery-pin — authenticated. Set (or replace) the recovery
-/// PIN used to sign in if Google is ever unreachable.
 export async function setRecoveryPin(req: Request, res: Response) {
   const parsed = setRecoveryPinSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -413,8 +355,6 @@ const recoveryPinLoginSchema = z.object({
   totpCode: z.string().trim().min(6).max(16).optional(),
 });
 
-/// POST /auth/recovery-pin/login — public. Fallback sign-in for
-/// Google-only accounts when Google itself isn't reachable.
 export async function recoveryPinLogin(req: Request, res: Response) {
   const parsed = recoveryPinLoginSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -482,13 +422,9 @@ export async function logoutAll(req: Request, res: Response) {
   res.status(204).end();
 }
 
-// ── Device-remember (one-tap return sign-in for native apps) ──────────
-
 const rememberSchema = z.object({ label: z.string().trim().max(80).optional() });
 const rememberTokenSchema = z.object({ rememberToken: z.string().min(20).max(256) });
 
-/// POST /auth/remember — authenticated. Mint a device-remember credential
-/// for the signed-in user (called by desktop/Flutter right after login).
 export async function issueRemember(req: Request, res: Response) {
   const parsed = rememberSchema.safeParse(req.body ?? {});
   if (!parsed.success) {
@@ -499,8 +435,6 @@ export async function issueRemember(req: Request, res: Response) {
   res.status(201).json(result);
 }
 
-/// POST /auth/remember-login — public. Exchange a stored device-remember
-/// credential for a fresh session (no password). Rotates the credential.
 export async function rememberLogin(req: Request, res: Response) {
   const parsed = rememberTokenSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -515,29 +449,12 @@ export async function rememberLogin(req: Request, res: Response) {
   res.json(result);
 }
 
-/// POST /auth/remember/forget — public. Revoke a single remembered device
-/// ("Remove this account"). Always 204 (idempotent; reveals nothing).
 export async function forgetRemember(req: Request, res: Response) {
   const parsed = rememberTokenSchema.safeParse(req.body);
   if (parsed.success) await authService.forgetRememberToken(parsed.data.rememberToken);
   res.status(204).end();
 }
 
-/// Attach the caller's team scope to a current-user payload.
-///
-/// `shopId` / `shopRole` / `shopRoleName` / `shopPermissions` are not columns
-/// on User and are deliberately not baked into the JWT — `requireAuth`
-/// hydrates them onto `req.user` from the ShopMember row (null / empty for an
-/// account on no team). That means EVERY endpoint returning "the current user"
-/// has to re-attach them, and `GET /me` and `PATCH /me` must agree: they
-/// describe the same resource, and a client can't tell a missing field from a
-/// genuinely shopless account.
-///
-/// They disagreed. `PATCH /me` returned the bare profile row, so the Flutter
-/// merchant app — which assigns the response straight onto its session user —
-/// saw `shopRole: null` after a profile save and its auth gate dropped a shop
-/// owner onto the "set up your shop" screen. merchant-web papered over it by
-/// re-reading `GET /me` after every PATCH (see its `api/auth/me` route).
 function withShopScope<T extends object>(req: Request, user: T) {
   return {
     ...user,
@@ -603,9 +520,6 @@ export async function deleteAccount(req: Request, res: Response) {
     res.status(404).json({ error: result.error });
     return;
   }
-  // result.mode is 'deleted' (account row removed) or 'pseudonymised'
-  // (PII-4 controlled wipe — identity tombstoned, statutory invoices
-  // retained). The client surfaces a different confirmation per mode.
   res.json(result);
 }
 
@@ -628,19 +542,10 @@ export async function changePassword(req: Request, res: Response) {
   res.status(204).end();
 }
 
-// ── Forgotten password (email OTP) ────────────────────────────────────
-
 const forgotPasswordSchema = z.object({
   email: z.string().trim().email(),
 });
 
-/**
- * POST /auth/forgot-password — email a reset code.
- *
- * Always 204, even for an address with no account. Any observable difference
- * would make this an account-enumeration oracle; the honest answer ("we sent
- * a code if that address has an account") is what the client shows.
- */
 export async function forgotPassword(req: Request, res: Response) {
   const parsed = forgotPasswordSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -654,19 +559,15 @@ export async function forgotPassword(req: Request, res: Response) {
 const resetPasswordSchema = z.object({
   email: z.string().trim().email(),
   otp: z.string().trim().regex(/^\d{6}$/, 'Enter the 6-digit code'),
-  // Same policy as register/change-password — single-sourced above.
   newPassword: passwordSchema,
 });
 
-/// Friendly copy per failure reason. The sentinels stay machine-readable in
-/// `error`; `message` is what a person should be shown.
 const RESET_FAILURE_COPY: Record<string, string> = {
   expired: 'That code has expired. Request a new one.',
   invalid: 'That code is incorrect. Try again.',
   too_many: 'Too many incorrect codes. Request a new one.',
 };
 
-/// POST /auth/reset-password — confirm the code and set a new password.
 export async function resetPassword(req: Request, res: Response) {
   const parsed = resetPasswordSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -687,24 +588,17 @@ export async function resetPassword(req: Request, res: Response) {
     });
     return;
   }
-  // 204, deliberately: no session is issued. The user signs in with the new
-  // password, so this unauthenticated endpoint never hands out credentials.
   res.status(204).end();
 }
 
-// ── Two-factor auth (TOTP) ────────────────────────────────────────────
-
 const twoFactorCodeSchema = z.object({
-  // 6-digit TOTP code or an 8-char recovery code.
   code: z.string().trim().min(6).max(16),
 });
 
-/// GET /auth/2fa/status — is 2FA enabled (or mid-enrollment) for the caller.
 export async function twoFactorStatus(req: Request, res: Response) {
   res.json(await totpService.status(req.user!.sub));
 }
 
-/// POST /auth/2fa/setup — mint a pending secret; returns the QR + otpauth URL.
 export async function twoFactorSetup(req: Request, res: Response) {
   const result = await totpService.beginEnrollment(req.user!.sub);
   if ('error' in result) {
@@ -714,7 +608,6 @@ export async function twoFactorSetup(req: Request, res: Response) {
   res.json(result);
 }
 
-/// POST /auth/2fa/enable — confirm a code, turn 2FA on, return recovery codes.
 export async function twoFactorEnable(req: Request, res: Response) {
   const parsed = twoFactorCodeSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -729,7 +622,6 @@ export async function twoFactorEnable(req: Request, res: Response) {
   res.json(result);
 }
 
-/// POST /auth/2fa/disable — turn 2FA off after re-verifying a current code.
 export async function twoFactorDisable(req: Request, res: Response) {
   const parsed = twoFactorCodeSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -744,20 +636,14 @@ export async function twoFactorDisable(req: Request, res: Response) {
   res.status(204).end();
 }
 
-/// GET /auth/security/logins — the caller's recent sign-ins for a "where
-/// you're signed in" / security-activity screen.
 export async function recentLogins(req: Request, res: Response) {
   res.json(await loginAlertsService.recentLogins(req.user!.sub));
 }
 
-// ── Sessions / devices ────────────────────────────────────────────────
-
-/// GET /auth/sessions — active sessions (device, where, when), current flagged.
 export async function listSessions(req: Request, res: Response) {
   res.json(await sessionsService.list(req.user!.sub, req.user!.sid));
 }
 
-/// DELETE /auth/sessions/:id — revoke one session (signs that device out now).
 export async function revokeSessionById(req: Request, res: Response) {
   const id = decodeId(req.params.id);
   if (id === null) {
@@ -772,7 +658,6 @@ export async function revokeSessionById(req: Request, res: Response) {
   res.status(204).end();
 }
 
-/// POST /auth/sessions/revoke-others — sign out every device except this one.
 export async function revokeOtherSessions(req: Request, res: Response) {
   const revoked = await sessionsService.revokeOthers(req.user!.sub, req.user!.sid);
   res.json({ revoked });

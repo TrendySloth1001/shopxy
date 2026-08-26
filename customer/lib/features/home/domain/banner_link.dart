@@ -1,14 +1,3 @@
-/// Where a banner sends you when it's tapped.
-///
-/// Mirrors `backend/src/modules/banners/banner-link.ts`. Keep the two in step:
-/// the API stores only what it can parse, and anything this can't parse is
-/// treated as decorative rather than guessed at.
-///
-/// Grammar — `<kind>:<value>`:
-///   `product:<publicId>`   a product's detail page
-///   `category:<slug>`      a category listing
-///   `shop:<slug>`          a seller's storefront
-///   `search:<query>`       search results for a phrase
 enum BannerLinkKind { product, category, shop, search }
 
 class BannerLink {
@@ -20,9 +9,6 @@ class BannerLink {
   static final _publicId = RegExp(r'^[A-Za-z0-9_-]{1,64}$');
   static const _maxSearchLength = 120;
 
-  /// Returns null for anything unrecognised — including the legacy
-  /// `https://…` and `/path` values, which used to be fed to the search box
-  /// as a literal query so a URL banner searched for the text of its own URL.
   static BannerLink? parse(String? raw) {
     if (raw == null) return null;
     final trimmed = raw.trim();

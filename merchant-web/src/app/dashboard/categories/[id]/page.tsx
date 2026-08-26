@@ -41,8 +41,6 @@ export default function CategoryProductsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Resolve this category within the tree → its children + breadcrumb path.
-  // Falls back to the flat detail endpoint if it isn't in the active tree.
   useEffect(() => {
     let active = true;
     void (async () => {
@@ -68,7 +66,6 @@ export default function CategoryProductsPage() {
     };
   }, [id]);
 
-  // Debounce the search box; reset to page 1 on a new term.
   useEffect(() => {
     const t = setTimeout(() => {
       setSearch(searchInput.trim());
@@ -116,7 +113,6 @@ export default function CategoryProductsPage() {
     <div className="w-full px-lg py-xxl md:px-xxl">
       <BackLink href={BACK} label={t("detail.back")} />
 
-      {/* Breadcrumb of ancestor categories */}
       {ancestors.length > 0 ? (
         <nav className="mt-sm flex flex-wrap items-center gap-xs text-body-sm text-muted">
           {ancestors.map((a) => (
@@ -131,7 +127,6 @@ export default function CategoryProductsPage() {
         </nav>
       ) : null}
 
-      {/* Header */}
       <div className="mt-md flex items-start gap-md">
         <span className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-accent-teal-soft text-accent-teal">
           <CategoryIcon name={header?.iconName} size={24} />
@@ -150,7 +145,6 @@ export default function CategoryProductsPage() {
         </div>
       </div>
 
-      {/* Subcategories */}
       {children.length > 0 ? (
         <>
           <h2 className="mt-xl mb-md flex items-center gap-sm text-title-md text-ink">
@@ -165,7 +159,6 @@ export default function CategoryProductsPage() {
         </>
       ) : null}
 
-      {/* Products */}
       <h2 className="mt-xl mb-md flex items-center gap-sm text-title-md text-ink">
         <Package size={18} className="text-subtle" /> {t("detail.productsHeading")}
       </h2>

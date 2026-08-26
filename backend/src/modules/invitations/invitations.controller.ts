@@ -13,8 +13,6 @@ const sendSchema = z
     linkType: z.enum(['PARTY', 'VENDOR']),
     partyId: zPublicId.optional(),
     vendorId: zPublicId.optional(),
-    /// Required when neither partyId nor vendorId is provided — used
-    /// to name the Party/Vendor row that's created at accept time.
     displayName: z.string().trim().min(1).max(200).optional(),
     message: z.string().max(500).optional(),
   })
@@ -97,9 +95,6 @@ export class InvitationsController {
     res.json(result.invitation);
   }
 
-  /// POST /invitations/claim — bind a PENDING invite to the caller by
-  /// presenting its token (from the invite link). Secure replacement for the
-  /// removed email-match auto-claim (AUTH-INVITE-1).
   async claim(req: Request, res: Response): Promise<void> {
     const parsed = claimSchema.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ error: 'Invalid invitation token' }); return; }

@@ -1,8 +1,3 @@
-/**
- * Client-side search fetchers. Hit /api/search/* (never the backend directly).
- * All payloads are validated with Zod at the boundary.
- */
-
 import {
   autocompleteSchema,
   hintsSchema,
@@ -13,8 +8,6 @@ import type {
   SearchFilters,
   SearchResult,
 } from "./types";
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
 
 async function jsonOrThrow<T>(
   res: Response,
@@ -27,14 +20,11 @@ async function jsonOrThrow<T>(
       const body = (await res.json()) as { error?: string };
       if (body?.error) message = body.error;
     } catch {
-      /* keep fallback */
     }
     throw new Error(message);
   }
   return parse(await res.json());
 }
-
-// ── Search ───────────────────────────────────────────────────────────────────
 
 export async function fetchSearch(
   query: string,
@@ -95,8 +85,6 @@ export async function fetchSearch(
   };
 }
 
-// ── Autocomplete ─────────────────────────────────────────────────────────────
-
 export async function fetchAutocomplete(
   q: string,
 ): Promise<AutocompleteSuggestions> {
@@ -114,12 +102,9 @@ export async function fetchAutocomplete(
   };
 }
 
-// ── Trending hints ────────────────────────────────────────────────────────────
-
 export async function fetchHints(): Promise<string[]> {
   const res = await fetch("/api/search/hints", {
     headers: { Accept: "application/json" },
-    // Hints are Redis-cached 5 min server-side; allow client to cache briefly.
     next: { revalidate: 120 },
   });
   if (!res.ok) return [];

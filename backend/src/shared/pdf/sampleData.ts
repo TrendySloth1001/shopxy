@@ -1,10 +1,6 @@
 import type { PdfDocumentModel } from './model.js';
 import { pctWidths } from './model.js';
 
-/// Canned "sample" documents (no real shop/customer data) used by the
-/// `GET /pdf-templates/:id/sample` preview endpoint — lets a merchant see
-/// what a template looks like before applying it to their real documents.
-
 const SAMPLE_ITEM_ROWS = [
   { name: 'Cotton Kurti — Blue, Size M', sku: 'KRT-BLU-M', hsn: '6204', qty: '2 pcs', rate: '899.00', disc: '0.00', taxable: '1798.00', gst: '5%', tax1: '44.95', tax2: '44.95', total: '1887.90' },
   { name: 'Denim Jeans — Slim Fit', sku: 'JNS-SLM-32', hsn: '6203', qty: '1 pcs', rate: '1499.00', disc: '100.00', taxable: '1399.00', gst: '12%', tax1: '83.94', tax2: '83.94', total: '1566.88' },
@@ -101,7 +97,7 @@ export function sampleInvoiceModel(): PdfDocumentModel {
     ],
     amountInWords: 'Rupees Four Thousand Six Hundred Ninety and Twenty Four Paise Only',
     declaration: 'Tax payable on reverse charge: No',
-    upiQr: undefined, // sample endpoint skips a live QR — no real VPA to encode
+    upiQr: undefined,
     signatureName: 'For Aanya Fashion House',
     note: 'Thank you for your business!',
     traditionalMeta: {

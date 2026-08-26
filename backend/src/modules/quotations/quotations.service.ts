@@ -17,7 +17,6 @@ export type QuotationStatus =
   | 'CANCELLED'
   | 'EXPIRED';
 
-/// A line the merchant added to the quotation bucket.
 export interface QuotationItemInput {
   productId: number;
   name: string;
@@ -25,13 +24,7 @@ export interface QuotationItemInput {
   quantity: number;
   unitPrice: number;
   taxPercent?: number | null;
-  /// GST compensation cess (tobacco / luxury / aerated). Carried through
-  /// to the spawned invoice so a cess-bearing quote isn't under-billed.
   cessRate?: number | null;
-  /// Whether unitPrice already contains GST. Frozen onto the line at
-  /// hydrate time (same as taxPercent/cessRate) so a merchant changing a
-  /// product's pricingMode after this quote was sent can't retroactively
-  /// change what the customer already saw and is about to accept.
   isPriceInclusive?: boolean | null;
   discount?: number | null;
   imageUrl?: string | null;
@@ -71,36 +64,16 @@ function toDTO(r: QuotationRow) {
   };
 }
 
-/// Compute a per-line total + the quotation roll-up. This drives the display
-/// figures; the authoritative GST split is recomputed by invoicesService when
-/// the customer accepts (so cess/place-of-supply nuances stay in one engine).
-/// Estimate the quotation totals. This is a PREVIEW only — when a customer
-/// accepts, accept() re-prices the same lines through invoicesService (the
-/// authoritative GST engine), which additionally applies cess, the CGST/SGST
-/// place-of-supply split and invoice-level round-off. Rounding here mirrors the
-/// invoice engine's per-line round2 so the common (no-cess) estimate matches.
-///
-/// `chargesGst` is this shop's registration gate (see gst-registration-gate.ts)
-/// — the SAME check the invoice engine applies at accept() time. Without it, a
-/// COMPOSITION/UNREGISTERED shop's quotation preview showed a full GST
-/// breakdown that the spawned invoice then silently zeroed out — the quoted
-/// total and the accepted invoice's total disagreeing is exactly the bug this
-/// gate closes. Mirrors resolveInvoiceFields's `chargesOutputGst ? … : 0`.
 function priceItems(items: QuotationItemInput[], chargesGst: boolean) {
   let subtotal = 0;
   let taxAmount = 0;
   const lines = items.map((it) => {
     const qty = it.quantity;
-    // Clamp the discount to the line's gross so a quote can never preview a
-    // negative line (and so the spawned invoice — which also clamps — agrees).
     const gross = round2(qty * it.unitPrice);
     const discount = Math.min(Math.max(0, it.discount ?? 0), gross);
     const lineAmount = round2(gross - discount);
     const taxPercent = chargesGst ? it.taxPercent ?? 0 : 0;
     const cessRate = chargesGst ? it.cessRate ?? 0 : 0;
-    // GST-5 — inclusive vs exclusive, mirroring resolveInvoiceFields: an
-    // inclusive line's amount already contains GST + cess, so back it out;
-    // an exclusive line adds tax on top of the full discounted amount.
     let taxable: number;
     if (it.isPriceInclusive) {
       const divisor = 100 + taxPercent + cessRate;
@@ -128,13 +101,6 @@ function priceItems(items: QuotationItemInput[], chargesGst: boolean) {
   });
   const netSubtotal = round2(subtotal);
   const netTax = round2(taxAmount);
-  // CWQ-3: keep total === subtotal + taxAmount so the stored quotation row (and
-  // every PDF/DTO derived from it) reconciles with its own breakup. The quote
-  // has no roundOff field, so rounding the grand total to the nearest rupee
-  // (the old `Math.round`) left `subtotal + taxAmount !== total` by up to ₹0.49.
-  // The invoice engine reconciles via an explicit roundOff line; without that
-  // column here we must not rupee-round, or the breakup stops adding up. accept()
-  // re-prices through invoicesService anyway, so this stays a faithful estimate.
   const total = round2(netSubtotal + netTax);
   return {
     lines,
@@ -144,15 +110,6 @@ function priceItems(items: QuotationItemInput[], chargesGst: boolean) {
   };
 }
 
-/// CWQ-4: re-source unitPrice/discount (and rates) from the product master for
-/// a CUSTOMER-originated request. A linked customer's basket carries advisory
-/// prices the client typed; those must NEVER be persisted as the quotation
-/// figures (defense-in-depth — if any future path lets a REQUESTED quote be
-/// accepted without a merchant re-price, customer-controlled prices would flow
-/// to the invoice). We overwrite unitPrice with the product's current
-/// sellingPrice, zero the discount (a customer can't grant themselves one), and
-/// drop any unknown product line. The merchant still re-prices on
-/// respondToRequest before the quote becomes acceptable.
 async function repriceFromMaster(
   shopId: number,
   items: QuotationItemInput[],
@@ -174,12 +131,7 @@ async function repriceFromMaster(
   const out: QuotationItemInput[] = [];
   for (const it of items) {
     const p = byId.get(it.productId);
-    // Silently skip a line whose product isn't in this shop — a customer
-    // request must not seed an invoice line at a client-chosen price.
     if (!p) continue;
-    // The customer's own request must not carry the pricing CONVENTION any
-    // more than it carries the price itself — always the product's own
-    // resolved mode, never something the client could imply.
     const resolved = resolveProductPricing({
       taxPercent: toNumber(p.taxPercent),
       cessRate: toNumber(p.cessRate),
@@ -201,17 +153,6 @@ async function repriceFromMaster(
   return out;
 }
 
-/// Fill missing GST / cess rate / inclusive-flag from the product master
-/// before pricing. A quote line that omits taxPercent/cessRate must inherit
-/// the product's statutory rate — priceItems would otherwise snapshot 0, and
-/// accept() then passes that stored 0 to the invoice engine as an EXPLICIT
-/// rate, overriding the engine's own product fallback (the C1 "₹0 GST" bug
-/// resurfacing via the quotation path). An explicit rate — including a
-/// deliberate 0 for exempt/nil-rated lines — always wins. Same treatment for
-/// isPriceInclusive: it's frozen onto the line HERE (creation/response time),
-/// not left to resolve live at accept() — otherwise a merchant flipping a
-/// product's pricingMode between sending the quote and the customer
-/// accepting it would retroactively change what was already quoted.
 async function hydrateRates(
   shopId: number,
   items: QuotationItemInput[],
@@ -247,12 +188,7 @@ async function hydrateRates(
   });
 }
 
-/// Merchant-built quotations sent to a linked customer for acceptance. The
-/// accept path is the single point that turns a quotation into a real invoice
-/// (via invoicesService.createInvoice with confirm).
 export class QuotationsService {
-  /// Merchant creates + sends a quotation to a LINKED party. Returns
-  /// `{ error }` when the party isn't in this shop or isn't app-linked.
   async create(
     shopId: number,
     partyId: number,
@@ -279,7 +215,6 @@ export class QuotationsService {
     const priced = priceItems(hydrated, chargesGst);
 
     const created = await prisma.$transaction(async (tx) => {
-      // Allocate inside the txn so a rollback doesn't burn the QUO counter.
       const quotationNo = await nextQuotationNo(shopId, new Date(), tx);
       const row = await tx.quotation.create({
         data: {
@@ -318,8 +253,6 @@ export class QuotationsService {
     shopId: number,
     opts: {
       status?: QuotationStatus;
-      /// The "Archived" view. Archived quotations are out of every other
-      /// list — that's the point of archiving.
       archived?: boolean;
       skip: number;
       take: number;
@@ -341,10 +274,6 @@ export class QuotationsService {
     return { data: rows.map(toDTO), total };
   }
 
-  /// The CUSTOMER-facing list. Note the absence of an `archivedAt` filter:
-  /// archiving is the merchant's own filing decision and must not erase the
-  /// counterparty's record of what they were quoted. `listForShop` above is
-  /// the one that hides archived rows.
   async listForParty(
     shopId: number,
     partyId: number,
@@ -365,14 +294,6 @@ export class QuotationsService {
     return { data: rows.map(toDTO), total };
   }
 
-  /// File a settled quotation out of the merchant's working list, or bring it
-  /// back. There is no delete: the quotation number is a per-shop serial
-  /// allocated at create time, so removing a row leaves a hole in the run.
-  ///
-  /// REQUESTED and PENDING are refused. Both mean the customer still has a
-  /// decision to make, and a quotation the merchant can no longer see is one
-  /// nobody will chase — the accept would land against an invisible document.
-  /// Cancel it first if the intent is to withdraw it.
   async setArchived(shopId: number, id: number, archived: boolean) {
     const row = await prisma.quotation.findFirst({
       where: { id, shopId },
@@ -387,8 +308,6 @@ export class QuotationsService {
       };
     }
 
-    // Idempotent: archiving an archived row (or restoring a live one) is a
-    // no-op rather than an error, so a retried tap can't fail.
     const alreadyInState = archived === (row.archivedAt !== null);
     if (!alreadyInState) {
       await prisma.quotation.update({
@@ -415,14 +334,7 @@ export class QuotationsService {
     return row ? toDTO(row) : null;
   }
 
-  /// Customer accepts a PENDING quotation → spawns a CONFIRMED sale invoice
-  /// from the stored line items (authoritative GST via invoicesService), links
-  /// it back, and notifies the merchant. The status claim is the race guard;
-  /// if the invoice can't be confirmed (e.g. stock) the claim is rolled back.
   async accept(shopId: number, partyId: number, id: number, userId: number) {
-    // QUO-1 (defense-in-depth): re-assert the party-link ownership inside
-    // the service rather than trusting the controller's `assertOwnsParty`.
-    // If a second, unguarded caller is ever added this prevents an IDOR.
     const party = await prisma.party.findFirst({
       where: { id: partyId, shopId },
       select: { linkedUserId: true },
@@ -446,7 +358,6 @@ export class QuotationsService {
       throw new HttpError(404, 'QUOTATION_NOT_FOUND', 'Quotation not found');
     }
 
-    // Claim PENDING → ACCEPTED first so concurrent accepts can't both invoice.
     const claimed = await prisma.quotation.updateMany({
       where: { id, shopId, status: 'PENDING' },
       data: { status: 'ACCEPTED', respondedAt: new Date() },
@@ -469,8 +380,6 @@ export class QuotationsService {
       discount?: number;
     }>);
 
-    // Undo the PENDING→ACCEPTED claim so the customer can retry. Used on both
-    // the returned-error path and the (infra) throw path below.
     const restorePending = () =>
       prisma.quotation.updateMany({
         where: { id, shopId, status: 'ACCEPTED' },
@@ -492,10 +401,6 @@ export class QuotationsService {
           unitPrice: l.unitPrice,
           taxPercent: l.taxPercent,
           cessRate: l.cessRate,
-          // Frozen at quote-hydrate time (see hydrateRates) — passed through
-          // explicitly so the invoice bills under the SAME convention the
-          // customer was quoted, not whatever the product's live pricingMode
-          // happens to be by the time they accept.
           isPriceInclusive: l.isPriceInclusive,
           discount: l.discount,
         })),
@@ -503,21 +408,13 @@ export class QuotationsService {
         confirmedById: userId,
       });
     } catch (err) {
-      // createInvoice is documented not to throw on a domain problem, but an
-      // infra failure (DB, numbering, serialization abort) must not leave the
-      // quotation stuck ACCEPTED with no invoice — release the claim and
-      // propagate so the customer can retry.
       await restorePending();
       throw err;
     }
 
-    // On a returned domain error or a failed confirm, undo the claim too.
     if ('error' in result || !('confirmed' in result) || !result.confirmed) {
       await restorePending();
-      // Best-effort cleanup of a left-over draft invoice.
       if (!('error' in result) && result.invoice?.id) {
-        // See the note in challans.service — this was a no-op against the
-        // old `deleteInvoice`, leaving the orphan draft on the list.
         await invoicesService.setArchived(shopId, result.invoice.id, true).catch(() => {});
       }
       const reason =
@@ -551,7 +448,6 @@ export class QuotationsService {
     return toDTO(updated);
   }
 
-  /// Customer declines a PENDING quotation; notifies the merchant.
   async decline(
     shopId: number,
     partyId: number,
@@ -606,7 +502,6 @@ export class QuotationsService {
     return toDTO(updated);
   }
 
-  /// Merchant cancels a PENDING quotation they sent.
   async cancel(shopId: number, id: number) {
     const claimed = await prisma.quotation.updateMany({
       where: { id, shopId, status: 'PENDING' },
@@ -633,9 +528,6 @@ export class QuotationsService {
     return toDTO(updated);
   }
 
-  /// A LINKED customer builds a basket and asks the shop for a quote. Lands as
-  /// status REQUESTED (no `createdById` yet); prices are advisory — the merchant
-  /// re-prices on `respondToRequest`. Notifies the shop owner.
   async requestByCustomer(
     shopId: number,
     partyId: number,
@@ -653,17 +545,13 @@ export class QuotationsService {
     });
     if (!shop) return { error: 'PARTY_NOT_FOUND' as const };
 
-    // CWQ-4: re-source prices/discounts server-side from the product master —
-    // never persist the customer-supplied unitPrice/discount as the figures.
     const repriced = await repriceFromMaster(shopId, input.items);
     if (repriced.length === 0) {
       return { error: 'NO_VALID_ITEMS' as const };
     }
-    // Quotations have no backdating concept — always gated as of "now".
     const priced = priceItems(repriced, isOutputGstRegistered(shop.owner, new Date()));
 
     const created = await prisma.$transaction(async (tx) => {
-      // Allocate inside the txn so a rollback doesn't burn the QUO counter.
       const quotationNo = await nextQuotationNo(shopId, new Date(), tx);
       const row = await tx.quotation.create({
         data: {
@@ -697,9 +585,6 @@ export class QuotationsService {
     return { quotation: toDTO(created) };
   }
 
-  /// Merchant prices a REQUESTED quote (edits items/note/place-of-supply) and
-  /// sends it → status PENDING, now an ordinary quotation the customer accepts.
-  /// Stamps `createdById` and notifies the requesting customer.
   async respondToRequest(
     shopId: number,
     id: number,
@@ -723,7 +608,6 @@ export class QuotationsService {
       chargesOutputGstForSale(prisma, shopId, new Date()),
     ]);
     const priced = priceItems(hydrated, chargesGst);
-    // Claim REQUESTED → PENDING so two merchants can't both send it.
     const claimed = await prisma.quotation.updateMany({
       where: { id, shopId, status: 'REQUESTED' },
       data: {
@@ -765,7 +649,6 @@ export class QuotationsService {
     return toDTO(updated);
   }
 
-  /// Merchant declines a REQUESTED quote; notifies the requesting customer.
   async declineRequest(shopId: number, id: number, declineNote?: string | null) {
     const existing = await prisma.quotation.findFirst({
       where: { id, shopId },
@@ -811,8 +694,6 @@ export class QuotationsService {
     return toDTO(updated);
   }
 
-  /// Customer withdraws their own REQUESTED quote → CANCELLED. Guarded by
-  /// partyId so a customer can only cancel their own shop's request.
   async cancelRequest(shopId: number, partyId: number, id: number) {
     const claimed = await prisma.quotation.updateMany({
       where: { id, shopId, partyId, status: 'REQUESTED' },
@@ -839,9 +720,6 @@ export class QuotationsService {
     return toDTO(updated);
   }
 
-  /// Stream the quotation as a PDF into `out`. `onReady` fires right before
-  /// bytes flow (so the controller can flip response headers); returns
-  /// `{ error }` if the quotation isn't found for this shop.
   async streamPdf(
     shopId: number,
     id: number,

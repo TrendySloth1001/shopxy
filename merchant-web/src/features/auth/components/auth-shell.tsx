@@ -6,20 +6,12 @@ import { LogIn, UserPlus } from "@/shared/icons";
 import { Divider } from "@/shared/ui/divider";
 import { Banner } from "./banner";
 
-/** Boho line-art background for the showcase panel (royalty-free, Pixabay).
- *  Credited at the foot of the panel. */
 const ART = {
   src: "/auth-illustration-1.jpg",
   author: "TianaZZ",
   authorUrl: "https://pixabay.com/users/tianazz-18707913/",
 };
 
-/**
- * Layout for the auth screens. A slim brand header on top, then two columns on
- * large screens: a boho illustration on the left that fades (via a gradient
- * shade) into the canvas so it merges seamlessly into the form column on the
- * right. On phones the illustration is hidden and the form takes over.
- */
 export async function AuthShell({
   title,
   subtitle,
@@ -45,8 +37,6 @@ export async function AuthShell({
       <AuthHeader href={footerHref} cta={footerCta} />
 
       <div className="grid flex-1 grid-cols-1 lg:grid-cols-2">
-        {/* Illustration panel — large screens only. Runs full height *behind*
-            the transparent nav so the bar reads as see-through. */}
         <section className="relative hidden flex-col justify-center overflow-hidden px-huge py-massive lg:flex xl:px-massive">
           <Image
             src={art.src}
@@ -56,14 +46,11 @@ export async function AuthShell({
             sizes="(min-width: 1024px) 50vw, 0px"
             className="object-cover object-center"
           />
-          {/* Gradient shade — dense artwork on the left, fading to solid canvas
-              on the right so the panel merges into the form column. */}
           <div
             aria-hidden
             className="absolute inset-0 bg-linear-to-r from-canvas/10 via-canvas/40 to-canvas"
           />
 
-          {/* Attribution for the royalty-free artwork (Pixabay). */}
           <p className="absolute inset-x-huge bottom-massive text-body-sm text-subtle xl:inset-x-massive">
             {t.rich("shell.attribution", {
               author: () => (
@@ -90,14 +77,7 @@ export async function AuthShell({
           </p>
         </section>
 
-        {/* Focused form column — vertically centred in its half. */}
         <main className="relative flex flex-col justify-center px-lg py-massive">
-          {/* Mobile-only boho backdrop — the large-screen illustration panel is
-              hidden below lg, so the art sits behind the form instead. `fixed`
-              pins it to the viewport so it stays put (and doesn't resize) when
-              the on-screen keyboard opens. A translucent, frosted canvas wash
-              (theme-aware) lets the art read through while keeping the form
-              legible. */}
           <div aria-hidden className="fixed inset-0 z-0 lg:hidden">
             <Image
               src="/auth-boho.jpg"
@@ -140,18 +120,6 @@ export async function AuthShell({
   );
 }
 
-/**
- * Top bar for the auth screens — the signed-OUT counterpart to AppHeader. Brand
- * lockup (the shared ShopXY storefront mark) on the left; a single chip for the
- * *other* auth screen on the right. It deliberately does NOT use `useAuth`, so
- * it can render before there's a session.
- *
- * It used to render both chips on both screens, which meant /login carried a
- * "Sign in" chip linking to /login, and /register carried its own no-op. The
- * create-account chip was also `variant="ink"` — a solid black pill sitting
- * above the green submit button, out-weighting the action each screen exists
- * for. One outline chip, pointing at the way out, fixes both.
- */
 async function AuthHeader({ href, cta }: { href: string; cta: string }) {
   return (
     <header className="absolute inset-x-0 top-0 z-20">
@@ -181,7 +149,6 @@ async function AuthHeader({ href, cta }: { href: string; cta: string }) {
   );
 }
 
-/** Icon + label pill used in the auth header. Sizes to its content (CLAUDE.md). */
 function HeaderChip({
   href,
   icon: Icon,
@@ -202,7 +169,6 @@ function HeaderChip({
   );
 }
 
-/** Inline error banner — hairline error border, no fill, not chunky. */
 export function AuthErrorBanner({ message }: { message: string }) {
   return (
     <div

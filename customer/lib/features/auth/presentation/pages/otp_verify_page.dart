@@ -11,9 +11,6 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/widgets/app_dialog.dart';
 import 'package:shopxy_customer/shared/widgets/app_pill_button.dart';
 
-/// Email-OTP step. `/auth/register` creates nothing — the account is created
-/// here, by `/auth/verify-email`, which is why this screen can't be dismissed
-/// by accident.
 class OtpVerifyPage extends StatefulWidget {
   const OtpVerifyPage({super.key, required this.email});
 
@@ -71,7 +68,6 @@ class _OtpVerifyPageState extends State<OtpVerifyPage> {
     });
     try {
       await context.read<AuthProvider>().verifyEmail(widget.email, code);
-      // Drop this page and the register page so the auth gate shows through.
       if (mounted) Navigator.of(context).popUntil((r) => r.isFirst);
     } catch (e) {
       if (mounted) {

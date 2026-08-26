@@ -1,97 +1,25 @@
-/// The checked-in HSN/SAC → GST rate manifest — **facts only**.
-///
-/// Same shape as `categories/catalog.seed.ts`: edit this file, redeploy, and
-/// [seedHsnMaster] syncs the platform-tier rows. Nothing here is edited through
-/// the API, so no request can move a merchant onto the wrong slab.
-///
-/// ── What lives here vs. in the copy catalogues ──────────────────────────
-/// This file holds codes, rates, rules, dates — things with a legal answer.
-/// The words a merchant reads (plain-language name, definition, and the search
-/// aliases that let them find "kameez" or "chappal") live in
-/// `hsn.copy.<locale>.json`, keyed by the same codes. That split is deliberate:
-/// a translation PR can then never touch a rate, and a rate change can never
-/// silently invalidate a translation. Different risk, different reviewer.
-///
-/// ── Rate basis ──────────────────────────────────────────────────────────
-/// Rates reflect the slab structure in force from **22 September 2025** (the
-/// 56th GST Council's two-slab reform): 5% and 18% as the standard rates, a
-/// 40% demerit rate for sin/luxury goods, nil for essentials, plus the two
-/// surviving special rates — 3% on precious metals and 0.25% on rough
-/// diamonds. The pre-reform 12% and 28% slabs no longer appear.
-///
-/// ⚠️ **This is a curated starter set, not the full tariff.** The official
-/// schedule runs to ~12,000 tariff lines; this covers the ~300 headings a
-/// retail/wholesale merchant actually bills against. Two consequences:
-///   1. Verify against the CBIC rate finder (https://cbic-gst.gov.in) before
-///      relying on any single line commercially — entries here are curated,
-///      not certified, and the Council revises rates.
-///   2. A code we don't carry resolves off its shorter prefix (8→6→4), which
-///      is right far more often than it's wrong but is still an inference —
-///      the API flags it as `exact: false` and the UI says so.
-///
-/// ── Changing a rate ─────────────────────────────────────────────────────
-/// Never edit a rate in place. Bump [HSN_RATE_REVISION] (or set `since` on
-/// the individual entry) so the seed closes the superseded row with an
-/// `effectiveTo` and inserts a new one. Rows are effective-dated precisely so
-/// that history stays reconstructable.
-///
-/// Note we do NOT model pre-22-Sep-2025 history: this master exists to author
-/// *new* products, and an already-raised invoice re-renders from the rate
-/// stamped on its own line items, never from here.
-
-/// A conditional slab we can actually evaluate: the rate turns on the line's
-/// own price, which we hold, so the resolver decides it instead of printing a
-/// note and hoping the merchant reads it.
-///
-/// `price <= threshold` → `atOrBelow`, otherwise `above`. Stated as ≤ because
-/// that's how the notifications are worded ("of sale value not exceeding
-/// ₹2,500 per piece"), and the boundary case is a real SKU price.
 export type HsnRateRule = {
   kind: 'PRICE_THRESHOLD';
   threshold: number;
   atOrBelow: number;
   above: number;
-  /// What the threshold is measured against, for the explanation shown to the
-  /// merchant. Not used in the arithmetic.
   per: 'PIECE' | 'PAIR' | 'UNIT_PER_DAY';
 };
 
 export type HsnMasterEntry = {
-  /// 2/4/6/8 digits for goods; 99xxxx SAC for services.
   code: string;
-  /// Official tariff wording — the **fallback** label only. What the merchant
-  /// actually reads (plain-language name, definition, search aliases) lives in
-  /// the translatable copy catalogues keyed by this code. Keeping the official
-  /// wording here means a locale with no entry degrades to real tariff text
-  /// rather than a bare number.
   description: string;
-  /// Total GST (IGST equivalent); CGST/SGST is this halved by the invoice engine.
   gstRate: number;
-  /// Compensation cess, ad valorem %. Omit for the overwhelming majority.
   cessRate?: number;
-  /// Set false for a row that exists only to give the picker a breadcrumb —
-  /// chapters, and headings whose rate lives entirely in their sub-headings.
-  /// Resolution never returns these.
   isRatable?: boolean;
-  /// Price-conditional slab, evaluated against the line price at billing time.
   rateRule?: HsnRateRule;
-  /// Advisory caveat for conditions we *can't* evaluate — packaging, engine
-  /// capacity, end use. Prefer a [rateRule] whenever the condition is data we
-  /// hold; a note is what you write when it genuinely needs a human.
   rateNote?: string;
   kind?: 'GOODS' | 'SERVICES';
-  /// Per-entry override of [HSN_RATE_REVISION] for a line whose current rate
-  /// started on a different date.
   since?: string;
 };
 
-/// Effective-from date stamped on every seeded row that doesn't override it.
-/// Bumping this rolls the whole master to a new revision.
 export const HSN_RATE_REVISION = '2025-09-22';
 
-/// Apparel, made-up textiles and footwear all turn on the same ₹2,500
-/// threshold. It's arithmetic against a number we hold, so it's a rule, not a
-/// note — the merchant is never asked to work it out.
 const APPAREL_RULE: HsnRateRule = {
   kind: 'PRICE_THRESHOLD',
   threshold: 2500,
@@ -101,21 +29,8 @@ const APPAREL_RULE: HsnRateRule = {
 };
 const FOOTWEAR_RULE: HsnRateRule = { ...APPAREL_RULE, per: 'PAIR' };
 
-/// Packaging genuinely can't be inferred from anything on the product — the
-/// same rice is nil loose and 5% pre-packaged and labelled. Stays a note.
 const PACKAGED_NOTE = 'Nil when sold loose/unbranded; 5% when pre-packaged and labelled.';
 
-/// Chapter rows — **navigation only, never rated**.
-///
-/// These exist so the picker can show a merchant where a code sits before
-/// they commit to it: seeing *"Chapter 62 — Articles of apparel, **not**
-/// knitted or crocheted"* above 6205 is what stops the single most common
-/// apparel misclassification, because 61 (knitted) and 62 (woven) are
-/// indistinguishable from the four-digit code alone.
-///
-/// `isRatable: false` is load-bearing. A chapter has no rate of its own, so if
-/// resolution could land on one it would bill at a slab that doesn't legally
-/// exist. The resolver skips them; only the tree walk sees them.
 const CHAPTERS: HsnMasterEntry[] = (
   [
     ['02', 'Meat and edible meat offal'],
@@ -182,14 +97,10 @@ const CHAPTERS: HsnMasterEntry[] = (
 ).map(([code, description]) => ({
   code,
   description,
-  // Navigation rows still need a number for the NOT NULL column; isRatable
-  // keeps it from ever being read as a rate.
   gstRate: 0,
   isRatable: false,
 }));
 
-/// SAC groupings — the service equivalent of chapter rows. `99` is the root,
-/// and the 4-digit groups give a service code a readable middle level.
 const SERVICE_GROUPS: HsnMasterEntry[] = (
   [
     ['99', 'Services'],
@@ -220,7 +131,6 @@ const SERVICE_GROUPS: HsnMasterEntry[] = (
 }));
 
 const RATED_ENTRIES: HsnMasterEntry[] = [
-  // ── Ch 02–05 · Meat, fish, dairy, eggs ────────────────────────────────
   { code: '0201', description: 'Meat of bovine animals, fresh or chilled', gstRate: 0 },
   { code: '0202', description: 'Meat of bovine animals, frozen', gstRate: 5, rateNote: PACKAGED_NOTE },
   { code: '0203', description: 'Meat of swine, fresh, chilled or frozen', gstRate: 5, rateNote: PACKAGED_NOTE },
@@ -238,7 +148,6 @@ const RATED_ENTRIES: HsnMasterEntry[] = [
   { code: '0407', description: 'Birds eggs, in shell', gstRate: 0 },
   { code: '0409', description: 'Natural honey', gstRate: 5, rateNote: PACKAGED_NOTE },
 
-  // ── Ch 07–08 · Vegetables and fruit ───────────────────────────────────
   { code: '0701', description: 'Potatoes, fresh or chilled', gstRate: 0 },
   { code: '0702', description: 'Tomatoes, fresh or chilled', gstRate: 0 },
   { code: '0703', description: 'Onions, shallots, garlic, leeks, fresh or chilled', gstRate: 0 },
@@ -257,7 +166,6 @@ const RATED_ENTRIES: HsnMasterEntry[] = [
   { code: '0808', description: 'Apples, pears and quinces, fresh', gstRate: 0 },
   { code: '0813', description: 'Dried fruit — apricots, prunes, mixed dry fruit', gstRate: 5 },
 
-  // ── Ch 09–12 · Coffee, tea, spices, cereals, flours, oilseeds ─────────
   { code: '0901', description: 'Coffee, roasted or unroasted; coffee substitutes', gstRate: 5 },
   { code: '0902', description: 'Tea, whether or not flavoured', gstRate: 5 },
   { code: '0904', description: 'Pepper; dried or crushed chillies', gstRate: 5 },
@@ -274,7 +182,6 @@ const RATED_ENTRIES: HsnMasterEntry[] = [
   { code: '1201', description: 'Soya beans', gstRate: 5 },
   { code: '1202', description: 'Groundnuts', gstRate: 5 },
 
-  // ── Ch 15 · Fats and oils ─────────────────────────────────────────────
   { code: '1507', description: 'Soya-bean oil', gstRate: 5 },
   { code: '1508', description: 'Groundnut oil', gstRate: 5 },
   { code: '1509', description: 'Olive oil', gstRate: 5 },
@@ -284,7 +191,6 @@ const RATED_ENTRIES: HsnMasterEntry[] = [
   { code: '1514', description: 'Rape, colza or mustard oil', gstRate: 5 },
   { code: '1517', description: 'Margarine; edible mixtures of fats and oils', gstRate: 5 },
 
-  // ── Ch 17–21 · Sugar, cocoa, bakery, preparations ─────────────────────
   { code: '1701', description: 'Cane or beet sugar', gstRate: 5 },
   { code: '1702', description: 'Other sugars; glucose, jaggery syrup', gstRate: 5 },
   { code: '1704', description: 'Sugar confectionery — toffees, candy (no cocoa)', gstRate: 5 },
@@ -304,26 +210,22 @@ const RATED_ENTRIES: HsnMasterEntry[] = [
   { code: '2106', description: 'Food preparations not elsewhere specified', gstRate: 5, rateNote: 'Pan masala under 2106 90 20 is 40% plus cess — use that code, not the heading.' },
   { code: '21069020', description: 'Pan masala', gstRate: 40, cessRate: 60, rateNote: 'Demerit rate plus compensation cess. Confirm the current cess notification.' },
 
-  // ── Ch 22 · Beverages ─────────────────────────────────────────────────
   { code: '2201', description: 'Waters, incl. packaged drinking and mineral water', gstRate: 5, rateNote: 'Packaged drinking water in 20-litre bottles is 5%; other packaged water may differ.' },
   { code: '2202', description: 'Aerated, carbonated and caffeinated beverages', gstRate: 40, rateNote: 'Demerit rate. Fruit-pulp/juice-based drinks under 2202 99 are 5% — use the sub-heading.' },
   { code: '220299', description: 'Fruit pulp or fruit juice based drinks; plant-based milk drinks', gstRate: 5 },
   { code: '2203', description: 'Beer made from malt', gstRate: 0, rateNote: 'Alcoholic liquor for human consumption is outside GST — state excise/VAT applies.' },
   { code: '2208', description: 'Spirits, liqueurs and other spirituous beverages', gstRate: 0, rateNote: 'Alcoholic liquor for human consumption is outside GST — state excise/VAT applies.' },
 
-  // ── Ch 24 · Tobacco ───────────────────────────────────────────────────
   { code: '2401', description: 'Unmanufactured tobacco; tobacco refuse', gstRate: 40, cessRate: 71 },
   { code: '2402', description: 'Cigars, cheroots and cigarettes', gstRate: 40, cessRate: 36, rateNote: 'Cigarette cess is part ad-valorem, part per-thousand-sticks — verify per SKU.' },
   { code: '2403', description: 'Other manufactured tobacco — chewing tobacco, zarda, hookah', gstRate: 40, cessRate: 96 },
   { code: '2404', description: 'Nicotine products; e-cigarette refills', gstRate: 40 },
 
-  // ── Ch 25–27 · Minerals, cement, fuels ────────────────────────────────
   { code: '2501', description: 'Salt, edible', gstRate: 0 },
   { code: '2523', description: 'Cement — Portland, aluminous, slag', gstRate: 18 },
   { code: '2711', description: 'Petroleum gases — LPG', gstRate: 5, rateNote: 'Domestic LPG 5%; non-domestic/commercial LPG 18%.' },
   { code: '2716', description: 'Electrical energy', gstRate: 0 },
 
-  // ── Ch 28–34 · Chemicals, pharma, cosmetics, soaps ────────────────────
   { code: '2804', description: 'Hydrogen, rare gases and other non-metals — medical oxygen', gstRate: 5 },
   { code: '3002', description: 'Human/animal blood products; vaccines; antisera', gstRate: 5 },
   { code: '3003', description: 'Medicaments, not put up in measured doses', gstRate: 5 },
@@ -343,7 +245,6 @@ const RATED_ENTRIES: HsnMasterEntry[] = [
   { code: '3403', description: 'Lubricating preparations', gstRate: 18 },
   { code: '3406', description: 'Candles, tapers and the like', gstRate: 5 },
 
-  // ── Ch 39–40 · Plastics and rubber ────────────────────────────────────
   { code: '3917', description: 'Plastic tubes, pipes, hoses and fittings', gstRate: 18 },
   { code: '3919', description: 'Self-adhesive plastic plates, sheets, tape', gstRate: 18 },
   { code: '3920', description: 'Plastic sheets, film, foil, non-cellular', gstRate: 18 },
@@ -353,7 +254,6 @@ const RATED_ENTRIES: HsnMasterEntry[] = [
   { code: '4011', description: 'New pneumatic tyres of rubber', gstRate: 18 },
   { code: '4015', description: 'Articles of vulcanised rubber — gloves', gstRate: 5 },
 
-  // ── Ch 42–49 · Leather, wood, paper, print ────────────────────────────
   { code: '4202', description: 'Trunks, suitcases, handbags, wallets, backpacks', gstRate: 18 },
   { code: '4203', description: 'Articles of apparel and accessories of leather', gstRate: 5, rateRule: APPAREL_RULE },
   { code: '4401', description: 'Fuel wood; wood chips and sawdust', gstRate: 5 },
@@ -371,7 +271,6 @@ const RATED_ENTRIES: HsnMasterEntry[] = [
   { code: '4902', description: 'Newspapers, journals and periodicals', gstRate: 0 },
   { code: '4911', description: 'Other printed matter — trade advertising, calendars', gstRate: 18 },
 
-  // ── Ch 50–63 · Textiles and apparel ───────────────────────────────────
   { code: '5007', description: 'Woven fabrics of silk', gstRate: 5 },
   { code: '5111', description: 'Woven fabrics of carded wool', gstRate: 5 },
   { code: '5205', description: 'Cotton yarn (≥85% cotton), not for retail sale', gstRate: 5 },
@@ -406,7 +305,6 @@ const RATED_ENTRIES: HsnMasterEntry[] = [
   { code: '6305', description: 'Sacks and bags for packing of goods', gstRate: 5 },
   { code: '6307', description: 'Other made-up textile articles — face masks, mops', gstRate: 5, rateRule: APPAREL_RULE },
 
-  // ── Ch 64–71 · Footwear, ceramics, glass, jewellery ───────────────────
   { code: '6401', description: 'Waterproof footwear of rubber or plastics', gstRate: 5, rateRule: FOOTWEAR_RULE },
   { code: '6402', description: 'Other footwear with rubber or plastic soles and uppers', gstRate: 5, rateRule: FOOTWEAR_RULE },
   { code: '6403', description: 'Footwear with leather uppers', gstRate: 5, rateRule: FOOTWEAR_RULE },
@@ -425,7 +323,6 @@ const RATED_ENTRIES: HsnMasterEntry[] = [
   { code: '7113', description: 'Articles of jewellery of precious metal', gstRate: 3, rateNote: 'Making charges billed separately are 5%.' },
   { code: '7117', description: 'Imitation jewellery', gstRate: 3 },
 
-  // ── Ch 72–83 · Metals and metal articles ──────────────────────────────
   { code: '7207', description: 'Semi-finished products of iron or non-alloy steel', gstRate: 18 },
   { code: '7213', description: 'Bars and rods of iron or non-alloy steel, hot-rolled (TMT)', gstRate: 18 },
   { code: '7214', description: 'Other bars and rods of iron or non-alloy steel', gstRate: 18 },
@@ -442,7 +339,6 @@ const RATED_ENTRIES: HsnMasterEntry[] = [
   { code: '8301', description: 'Padlocks and locks of base metal', gstRate: 18 },
   { code: '8302', description: 'Base metal mountings and fittings — hinges, handles', gstRate: 18 },
 
-  // ── Ch 84–85 · Machinery and electronics ──────────────────────────────
   { code: '8413', description: 'Pumps for liquids — water pumps', gstRate: 18 },
   { code: '8414', description: 'Air or vacuum pumps; fans, exhaust hoods', gstRate: 18 },
   { code: '8415', description: 'Air conditioning machines', gstRate: 18 },
@@ -472,7 +368,6 @@ const RATED_ENTRIES: HsnMasterEntry[] = [
   { code: '8544', description: 'Insulated wire, cable and optical fibre cables', gstRate: 18 },
   { code: '8541', description: 'Semiconductor devices; photovoltaic cells and solar panels', gstRate: 5 },
 
-  // ── Ch 87 · Vehicles ──────────────────────────────────────────────────
   { code: '8703', description: 'Motor cars and passenger vehicles', gstRate: 18, rateNote: 'Small cars (petrol ≤1200cc / diesel ≤1500cc, ≤4 m) are 18%; larger, luxury and SUVs are 40%.' },
   { code: '8704', description: 'Motor vehicles for the transport of goods', gstRate: 18 },
   { code: '8708', description: 'Parts and accessories of motor vehicles', gstRate: 18 },
@@ -481,7 +376,6 @@ const RATED_ENTRIES: HsnMasterEntry[] = [
   { code: '8714', description: 'Parts and accessories of cycles and motorcycles', gstRate: 18 },
   { code: '8715', description: 'Baby carriages and prams', gstRate: 5 },
 
-  // ── Ch 90–96 · Optical, medical, furniture, toys, misc ────────────────
   { code: '9001', description: 'Optical fibres; spectacle lenses, unmounted', gstRate: 5 },
   { code: '9003', description: 'Frames and mountings for spectacles', gstRate: 5 },
   { code: '9004', description: 'Spectacles, goggles and sunglasses', gstRate: 5, rateNote: 'Corrective spectacles 5%; sunglasses may attract 18% — check the item.' },
@@ -509,7 +403,6 @@ const RATED_ENTRIES: HsnMasterEntry[] = [
   { code: '9619', description: 'Sanitary towels, tampons, napkins and liners', gstRate: 0 },
   { code: '9620', description: 'Monopods, bipods, tripods and similar articles', gstRate: 18 },
 
-  // ── Ch 99 · Services (SAC) ────────────────────────────────────────────
   { code: '995411', kind: 'SERVICES', description: 'Construction of residential buildings', gstRate: 18, rateNote: 'Affordable and other residential real-estate projects run at 1%/5% without ITC — a separate scheme, not this rate.' },
   { code: '995461', kind: 'SERVICES', description: 'Electrical installation services', gstRate: 18 },
   { code: '995462', kind: 'SERVICES', description: 'Water plumbing and drain laying services', gstRate: 18 },
@@ -521,8 +414,6 @@ const RATED_ENTRIES: HsnMasterEntry[] = [
     kind: 'SERVICES',
     description: 'Room or unit accommodation services (hotels, guest houses)',
     gstRate: 5,
-    // Same shape as the apparel threshold, different number and unit: tariff
-    // up to ₹7,500 per unit per day is 5% without ITC, above it 18% with ITC.
     rateRule: { kind: 'PRICE_THRESHOLD', threshold: 7500, atOrBelow: 5, above: 18, per: 'UNIT_PER_DAY' },
     rateNote: 'The 5% band is without input tax credit; the 18% band carries ITC.',
   },
@@ -563,8 +454,6 @@ const RATED_ENTRIES: HsnMasterEntry[] = [
   { code: '999799', kind: 'SERVICES', description: 'Other services not elsewhere classified', gstRate: 18 },
 ];
 
-/// Navigation rows first so a `Map` built by iterating this list ends up with
-/// the rated entry winning any accidental code collision.
 export const HSN_MASTER: HsnMasterEntry[] = [
   ...CHAPTERS,
   ...SERVICE_GROUPS,

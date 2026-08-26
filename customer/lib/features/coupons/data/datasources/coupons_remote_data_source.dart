@@ -19,8 +19,6 @@ class CouponsRemoteDataSource {
         .toList();
   }
 
-  /// Preview a coupon against a cart context. Returns a [CouponPreview]
-  /// regardless of validity — `ok=false` carries the reason.
   Future<CouponPreview> validate({
     required String code,
     required double subtotal,
@@ -38,11 +36,6 @@ class CouponsRemoteDataSource {
     return CouponPreview.fromJson(json);
   }
 
-  /// Ask the server for the best PUBLIC coupon that applies to the
-  /// current cart. Returns a preview with `autoApplied = true` when
-  /// one matches, or `ok = false` when nothing does. The checkout
-  /// page pre-applies the result so customers don't have to type a
-  /// code that's already on their carousel.
   Future<CouponPreview> autoApply({
     required double subtotal,
     required List<String> shopIds,

@@ -1,13 +1,3 @@
-/// Seed a "shopless OWNER" account to test the team-invite join flow.
-///
-/// This account has role=OWNER (so it passes the merchant app's login
-/// gate) but owns NO Shop and has NO ShopMember row — exactly the state
-/// of someone who was invited as staff and hasn't accepted yet. Logging
-/// in lands them on the JoinRequestPage once an owner has invited them.
-///
-/// Usage:
-///   cd backend
-///   npx tsx src/scripts/seed-staff-test.ts
 import bcrypt from 'bcrypt';
 import prisma from '../infra/db/prisma.js';
 
@@ -29,8 +19,6 @@ async function main() {
           `Remove them from the team first to re-test the join flow.`,
       );
     } else {
-      // Make sure it's a clean shopless OWNER (e.g. role drifted to
-      // CUSTOMER from a prior removal test).
       await prisma.user.update({
         where: { id: existing.id },
         data: { role: 'OWNER', isActive: true },

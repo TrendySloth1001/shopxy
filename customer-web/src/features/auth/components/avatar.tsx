@@ -1,6 +1,5 @@
 import Image from "next/image";
 
-/** Resolve a stored relative image URL (`/images/...`) to the media proxy. */
 export function mediaSrc(url?: string | null): string | null {
   if (!url) return null;
   return url.startsWith("/images/") ? `/api/media${url}` : url;
@@ -12,10 +11,6 @@ function initialsOf(name: string): string {
   return letters || "?";
 }
 
-/**
- * Round avatar. Shows the profile photo when set, otherwise a brand-tinted
- * initials puck. Photos are already resized WebP, so we skip the optimizer.
- */
 export function Avatar({
   url,
   name,

@@ -1,7 +1,3 @@
-/**
- * Client-side fetchers for checkout-related BFF routes.
- * All calls go to /api/* — never directly to the backend.
- */
 import {
   placeOrderResponseSchema,
   couponValidateResponseSchema,
@@ -27,14 +23,12 @@ async function jsonOrThrow<T>(
       const b = (await res.json()) as { error?: string };
       if (b?.error) message = b.error;
     } catch {
-      /* keep fallback */
     }
     throw new Error(message);
   }
   return parse(await res.json());
 }
 
-/** POST /api/me/orders — place a new order. */
 export async function placeOrder(
   body: PlaceOrderRequest,
   idempotencyKey: string,
@@ -48,20 +42,18 @@ export async function placeOrder(
     body: JSON.stringify(body),
   });
   if (!res.ok) {
-    // Preserve structured error body (e.g. PRICE_DRIFT details) so call sites can read it
     let errBody: Record<string, unknown> | null = null;
     let message = "Could not place order.";
     try {
       errBody = await res.json() as Record<string, unknown>;
       if (typeof errBody?.error === "string") message = errBody.error;
-    } catch { /* keep fallback */ }
+    } catch {  }
     const err = Object.assign(new Error(message), { body: errBody });
     throw err;
   }
   return placeOrderResponseSchema.parse(await res.json());
 }
 
-/** POST /api/me/coupons/validate — validate a coupon code. */
 export async function validateCoupon(
   code: string,
   subtotal: number,
@@ -73,14 +65,12 @@ export async function validateCoupon(
     body: JSON.stringify({ code, subtotal, shopIds }),
   });
   if (!res.ok) {
-    // 400 from validate is a structured "ok: false" response, not an error
     try {
       const b = (await res.json()) as { ok?: boolean; code?: string; message?: string };
       if (b?.ok === false) {
         return { ok: false, code: b.code ?? "INVALID", message: b.message ?? "Invalid coupon." };
       }
     } catch {
-      /* fall through */
     }
     throw new Error("Could not validate coupon.");
   }
@@ -91,7 +81,6 @@ export async function validateCoupon(
   );
 }
 
-/** POST /api/me/coupons/auto-apply — find the best auto-applicable coupon. */
 export async function autoApplyCoupon(
   subtotal: number,
   shopIds: string[],
@@ -108,7 +97,6 @@ export async function autoApplyCoupon(
   );
 }
 
-/** POST /api/me/orders/:id/pay — initiate Razorpay payment. */
 export async function initiatePayment(orderId: string): Promise<PaySessionResponse> {
   const res = await fetch(`/api/me/orders/${orderId}/pay`, { method: "POST" });
   return jsonOrThrow(
@@ -118,7 +106,6 @@ export async function initiatePayment(orderId: string): Promise<PaySessionRespon
   );
 }
 
-/** POST /api/me/orders/:id/payment/sync — confirm payment status after gateway. */
 export async function syncPayment(orderId: string): Promise<PaySyncResponse> {
   const res = await fetch(`/api/me/orders/${orderId}/payment/sync`, {
     method: "POST",

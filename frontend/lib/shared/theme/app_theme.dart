@@ -5,16 +5,6 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/theme/app_typography.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// Builds the app [ThemeData] from an [AppPalette]. One builder drives all
-/// eight themes (light / beige / rose / sage / dark / OLED / midnight / nord) —
-/// the palette carries the colour differences, this file carries the shared
-/// component styling.
-///
-/// Component surfaces (cards, inputs, sheets, menus, dialogs) read
-/// [AppPalette.surface], text/icons read [AppPalette.ink], the strong neutral
-/// CTA (filled/elevated buttons, snackbar, selected chip) uses the
-/// [AppPalette.inverseSurface] / [AppPalette.onInverse] pair so it stays
-/// high-contrast in every theme.
 class AppTheme {
   AppTheme._();
 
@@ -227,10 +217,6 @@ class AppTheme {
           borderRadius: AppShapes.squircleRadius(AppSizes.radiusInput),
           borderSide: BorderSide(color: p.hairline, width: 1),
         ),
-        // Focus is a brand signal, not an ink one. A near-black 1.4px ring was
-        // the starkest element on any form — on the sign-in screen it out-shone
-        // the green CTA it sat above — and it read as an error state as much as
-        // a focus state, since the only other heavy border here is the red one.
         focusedBorder: OutlineInputBorder(
           borderRadius: AppShapes.squircleRadius(AppSizes.radiusInput),
           borderSide: BorderSide(color: p.brandStrong, width: 1.6),
@@ -256,11 +242,6 @@ class AppTheme {
         backgroundColor: p.surface,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        // Full-width dialogs: Material's default insets are 40px per side
-        // (narrow, floating-in-the-middle). Pull them in to the app's `lg`
-        // content gutter so every dialog spans the screen and lines up with
-        // the page content and the floating app bar. AlertDialog leaves
-        // insetPadding null by default, so this theme value applies app-wide.
         insetPadding: const EdgeInsets.symmetric(
           horizontal: AppSizes.lg,
           vertical: AppSizes.xxl,
@@ -279,8 +260,6 @@ class AppTheme {
         modalBarrierColor: p.scrim,
         elevation: 0,
         modalElevation: 0,
-        // Hairline edge keeps the sheet defined now that its fill matches the
-        // page background (flat surface == canvas).
         shape: AppShapes.squircleTop(
           AppSizes.bottomSheetRadius,
           side: BorderSide(color: p.hairline, width: 1),
@@ -291,12 +270,6 @@ class AppTheme {
         selectedColor: p.inverseSurface,
         secondarySelectedColor: p.inverseSurface,
         disabledColor: p.surface,
-        // Readable label in BOTH states. M3 selectable chips (Choice/Filter/
-        // Input) use `labelStyle` when UNSELECTED and `secondaryLabelStyle`
-        // when SELECTED — and they resolve both as PLAIN TextStyles. A
-        // WidgetStateTextStyle here is silently ignored for the label colour,
-        // leaving it default-black — invisible on the dark selected fill. So
-        // colour each state directly: ink unselected, onInverse when selected.
         labelStyle: (textTheme.labelMedium ?? const TextStyle()).copyWith(
           color: p.ink,
         ),

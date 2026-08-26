@@ -17,10 +17,6 @@ import { FooterStrip } from "./footer-strip";
 
 type Status = "loading" | "ready" | "error";
 
-// Hysteresis band for the header collapse. Collapsing the search bar removes
-// ~88px of page height, which shifts scrollY — a single threshold makes that
-// feed back and flicker the header. Two thresholds with a dead band between
-// them (collapse past 96, only re-expand below 24) break the loop.
 const COLLAPSE_AT = 96;
 const EXPAND_AT = 24;
 
@@ -34,7 +30,6 @@ export function HomeFeed({ initialFeed }: { initialFeed?: HomeFeed }) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [exhausted, setExhausted] = useState(false);
 
-  // Mutable pager state kept in refs (doesn't drive rendering).
   const seed = useRef<number | undefined>(undefined);
   const page = useRef(0);
   const seen = useRef<Set<string>>(new Set());
@@ -97,13 +92,11 @@ export function HomeFeed({ initialFeed }: { initialFeed?: HomeFeed }) {
       setFeed(next);
       setStatus("ready");
       statusRef.current = "ready";
-      // personalised overlay (background) — non-fatal
       void fetchPersonalized()
         .then((p) => {
           setFeed((prev) => ({ ...prev, recommended: p.recommended, recentlyViewed: p.recentlyViewed }));
         })
         .catch(() => {});
-      // prime the first endless page so the first scroll doesn't hit a loader
       void loadMore();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not load home");
@@ -112,11 +105,6 @@ export function HomeFeed({ initialFeed }: { initialFeed?: HomeFeed }) {
     }
   }, [loadMore]);
 
-  // First-mount entry point. When SSR delivered the base feed (see app/page.tsx)
-  // status already starts "ready", so skip the initial fetch — just layer
-  // personalization on top and prime the first endless page so the first scroll
-  // doesn't hit a loader. Otherwise do the full client boot. Manual retry (the
-  // error state) always goes through boot().
   const start = useCallback(async () => {
     if (initialFeed) {
       void fetchPersonalized()
@@ -136,9 +124,6 @@ export function HomeFeed({ initialFeed }: { initialFeed?: HomeFeed }) {
     void start();
   }, [start]);
 
-  // Header collapse + endless prefetch on window scroll. rAF-throttled, with
-  // hysteresis (COLLAPSE_AT / EXPAND_AT) so the height change it triggers can't
-  // bounce the header across the threshold.
   useEffect(() => {
     let ticking = false;
     const measure = () => {
@@ -160,9 +145,6 @@ export function HomeFeed({ initialFeed }: { initialFeed?: HomeFeed }) {
 
   return (
     <div className="min-h-dvh bg-canvas">
-      {/* Marketplace shell — centered at max-w-shell on wide screens, never full
-          bleed (Amazon/Flipkart-style). The sticky header bg spans the viewport
-          while its content stays aligned with the feed. */}
       <header className="sticky top-0 z-20 bg-canvas">
         <div className="mx-auto w-full max-w-shell">
           <TopBar collapsed={collapsed} />
@@ -184,7 +166,6 @@ export function HomeFeed({ initialFeed }: { initialFeed?: HomeFeed }) {
   );
 }
 
-/** A horizontal, snap-scrolling strip of banner images for one placement. */
 function BannerStrip({ slides, widthClass }: { slides: HeroSlide[]; widthClass: string }) {
   if (slides.length === 0) return null;
   return (
@@ -213,7 +194,6 @@ function Feed({
     <main className="flex flex-col gap-xl pb-massive pt-md">
       <CategoryRail pucks={feed.categoryPucks} />
 
-      {/* Hero banners — full-width snap carousel. */}
       <BannerStrip slides={feed.heroSlides} widthClass="w-[88%] sm:w-[70%] lg:w-[48%]" />
 
       <TrustStrip />
@@ -240,20 +220,16 @@ function Feed({
         <BannerStrip slides={feed.curatedRails} widthClass="w-[88%] sm:w-[70%] lg:w-[48%]" />
       ) : null}
 
-      {/* Endless product grid — the main browse surface. */}
       {products.length > 0 ? (
         <section>
           <div className="mt-md grid grid-cols-2 gap-md px-lg md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {products.map((p, i) => (
-              // First row (≤5 cols at xl) loads eagerly as the LCP candidate;
-              // the rest stay lazy.
               <ProductTile key={p.productId} product={p} source="home" priority={i < 5} />
             ))}
           </div>
         </section>
       ) : null}
 
-      {/* Tail sentinel */}
       {exhausted ? (
         <div className="flex flex-col items-center gap-lg px-lg pb-massive">
           <FooterStrip />

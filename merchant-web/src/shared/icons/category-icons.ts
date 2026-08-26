@@ -33,11 +33,6 @@ import {
   Utensils,
 } from "./lucide-compat";
 
-/**
- * Category icon catalogue, mirroring the Flutter `kCategoryIconOptions`. The
- * backend stores an `iconName` string from this fixed set; the merchant browse
- * grid resolves it to a lucide icon (Material → lucide nearest equivalent).
- */
 export type CategoryIconOption = { name: string; label: string; icon: LucideIcon };
 
 export const CATEGORY_ICON_OPTIONS: ReadonlyArray<CategoryIconOption> = [
@@ -75,7 +70,6 @@ export const CATEGORY_ICON_OPTIONS: ReadonlyArray<CategoryIconOption> = [
 
 const ICON_BY_NAME = new Map(CATEGORY_ICON_OPTIONS.map((o) => [o.name, o.icon]));
 
-/** Resolve a stored icon name to a lucide icon; falls back to a neutral tag. */
 export function resolveCategoryIcon(name?: string | null): LucideIcon {
   return (name && ICON_BY_NAME.get(name)) || Tag;
 }

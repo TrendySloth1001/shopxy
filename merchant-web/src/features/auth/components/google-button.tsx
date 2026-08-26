@@ -9,7 +9,6 @@ import { useAuth } from "../auth-context";
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
-/** The tiny slice of the Google Identity Services API this component uses. */
 type GoogleAccountsId = {
   initialize: (config: {
     client_id: string;
@@ -25,18 +24,6 @@ declare global {
   }
 }
 
-/**
- * "Continue with Google" — the Google "G" brand mark lives in the shared
- * icon source (`@/shared/icons`); the button chrome uses tokens like every
- * other control in this app (rather than Google's own button styling).
- *
- * Uses Google Identity Services' "One Tap" moment (`prompt()`) triggered
- * from our own button, not a rendered Google button — this is the
- * officially supported way to keep custom styling while still getting a
- * verified ID token straight from Google, no redirect and no client
- * secret. The token is POSTed to `/api/auth/google`, which verifies it
- * server-side (never trusts the browser) and sets the session cookies.
- */
 export function GoogleButton({ onError }: { onError?: (message: string) => void }) {
   const t = useTranslations("auth");
   const router = useRouter();

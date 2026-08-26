@@ -42,9 +42,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
     });
   }
 
-  /// Fetches the next inbox page once the user scrolls within one screen
-  /// of the bottom — avoids the merchant hitting a hard wall at 50 items
-  /// with no way to see older notifications.
   void _maybeLoadMoreInbox() {
     if (!_inboxScrollCtrl.hasClients) return;
     final position = _inboxScrollCtrl.position;
@@ -87,10 +84,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// Inbox
-// ─────────────────────────────────────────────────────────────────────
-
 typedef _InboxSlice = ({
   List<AppNotification> items,
   bool loading,
@@ -104,8 +97,6 @@ class _InboxTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    // Scoped to just the inbox slice — an incoming/outgoing invite mutation
-    // no longer repaints this tab (and vice versa for _IncomingTab/_OutgoingTab).
     final slice = context.select<NotificationsProvider, _InboxSlice>(
       (p) => (
         items: p.items,
@@ -178,11 +169,6 @@ class _NotificationTile extends StatelessWidget {
     final theme = Theme.of(context);
     final p = context.read<NotificationsProvider>();
     final accent = _accentFor(notification.kind);
-    // Same rounded-surface-card recipe as _PartyTile/_InvoiceTile: a
-    // Material + squircle border, never a flat full-bleed background wash.
-    // Unread swaps to a brand-tinted fill + brand border (the same
-    // "needs attention" treatment _TemplatesCallout uses), light in light
-    // mode and a neutral dark puck in dark/OLED via AppColors.tileBg.
     return Material(
       color: notification.isUnread
           ? AppColors.tileBg(AppColors.brandSoft)
@@ -199,10 +185,6 @@ class _NotificationTile extends StatelessWidget {
         highlightColor: AppColors.surfaceTint,
         onTap: () {
           if (notification.isUnread) p.markRead(notification.id);
-          // Quotation notifications deep-link into the quotations feature;
-          // invite notifications into Invitations (Received for one sent TO
-          // you, Sent for an outcome on one YOU sent). Everything else is
-          // informational (mark-read only).
           if (notification.kind.startsWith('QUOTATION_')) {
             _openQuotation(context);
           } else if (notification.isInvite) {
@@ -294,12 +276,6 @@ class _NotificationTile extends StatelessWidget {
     );
   }
 
-  /// Routes a QUOTATION_* notification to the quotation it references.
-  ///
-  /// There is no fetch-by-id endpoint, so we land on the quotations list
-  /// immediately (fast feedback), reload the list, and — if the referenced
-  /// quotation is found — push its detail page on top so "back" naturally
-  /// returns to the list. Missing/unresolvable ids stop at the list.
   Future<void> _openQuotation(BuildContext context) async {
     final navigator = Navigator.of(context);
     final quotationsProvider = context.read<QuotationsProvider>();
@@ -436,10 +412,6 @@ class _NotificationTile extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// Inbox skeleton
-// ─────────────────────────────────────────────────────────────────────
-
 class _InboxSkeleton extends StatelessWidget {
   const _InboxSkeleton();
 
@@ -479,25 +451,20 @@ class _NotificationTileSkeleton extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Icon squircle placeholder
           AppShimmerBox(
             width: AppSizes.xxxl,
             height: AppSizes.xxxl,
             radius: AppSizes.radiusSm,
           ),
           const SizedBox(width: AppSizes.md),
-          // Text column
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Title line
                 AppShimmerLine(widthFactor: 0.55, height: 14),
                 const SizedBox(height: AppSizes.xs),
-                // Optional body line
                 AppShimmerLine(widthFactor: 0.80, height: 12),
                 const SizedBox(height: AppSizes.xs),
-                // Timestamp line
                 AppShimmerLine(widthFactor: 0.35, height: 11),
               ],
             ),

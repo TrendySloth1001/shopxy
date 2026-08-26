@@ -1,4 +1,3 @@
-/** Stock units — mirrors the backend `UNITS` enum (`shared/constants/units.ts`). */
 export const UNITS = [
   "PCS",
   "KG",

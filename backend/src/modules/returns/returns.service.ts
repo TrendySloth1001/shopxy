@@ -7,9 +7,6 @@ import { paymentGatewayService } from '../payment-gateway/index.js';
 import { enqueueOutbox } from '../../infra/outbox/outbox.js';
 import { notifyShopOwner } from '../purchase-requests/purchase-requests.service.js';
 
-/// Canonical return reasons. Kept loose (string) on the DB so adding
-/// a new category later doesn't require a migration; the enum below
-/// is the source of truth for what the customer app can submit.
 export const RETURN_REASONS = [
   'DAMAGED',
   'WRONG_ITEM',
@@ -100,23 +97,12 @@ const detailSelect = {
 } satisfies Prisma.ReturnRequestSelect;
 
 export class ReturnsService {
-  /// Submit a new return request against a per-shop child slice. The
-  /// caller must own the order (customerUserId match), the request must
-  /// be CONFIRMED, and a DELIVERED event must exist — a return is a
-  /// post-receipt flow (goods came back), so before delivery the right
-  /// action is a CANCEL, gated by the shop's cancellationPolicy. The
-  /// merchant marks DELIVERED from the order detail (web + app), which
-  /// is also what starts the return window.
-  ///
-  /// Returns reason codes the controller maps to status codes.
   async submit(opts: ReturnRequestInput): Promise<
     | { error: 'NOT_FOUND' | 'NOT_DELIVERED' | 'INVALID_ITEMS' | 'ALREADY_REQUESTED' | 'BAD_QTY' | 'RETURNS_DISABLED' | 'WINDOW_EXPIRED' }
     | { id: number }
   > {
     if (opts.items.length === 0) return { error: 'INVALID_ITEMS' };
 
-    // Load the child + items in one shot so we can validate ownership,
-    // status, and that every requested item belongs to this order.
     const child = await prisma.purchaseRequest.findFirst({
       where: {
         id: opts.childId,
@@ -136,8 +122,6 @@ export class ReturnsService {
           },
         },
         events: {
-          // Pull the latest DELIVERED row so the eligibility window
-          // starts ticking from actual delivery, not from confirmation.
           where: { type: 'DELIVERED' },
           select: { id: true, occurredAt: true },
           orderBy: { occurredAt: 'desc' as const },
@@ -157,51 +141,25 @@ export class ReturnsService {
     });
     if (!child) return { error: 'NOT_FOUND' };
     if (child.status !== 'CONFIRMED') return { error: 'NOT_DELIVERED' };
-    // Hard delivery gate: no DELIVERED event → the goods haven't reached
-    // the customer, so there is nothing to "return" yet. (Pre-delivery
-    // the customer cancels instead — see cancelChildForCustomer.)
     const deliveredAt = child.events[0]?.occurredAt ?? null;
     if (!deliveredAt) return { error: 'NOT_DELIVERED' };
     if (!child.shop.returnsEnabled) return { error: 'RETURNS_DISABLED' };
 
-    // Eligibility window: if the merchant has a window > 0, the delivery
-    // must be within that many days. Window=0 means no limit.
     const windowDays = child.shop.returnWindowDays;
     if (windowDays > 0) {
       const ageDays = (Date.now() - deliveredAt.getTime()) / 86_400_000;
       if (ageDays > windowDays) return { error: 'WINDOW_EXPIRED' };
     }
 
-    // Proportional refund — if the parent order used a coupon or paid
-    // partly from wallet, the buyer effectively paid less than the
-    // line total. Scale each line's refund by `paid / list` so we
-    // never refund more than the buyer actually parted with.
-    //
-    //   paidFactor = (subtotal − couponDiscount − walletPaid) / subtotal
-    //
-    // walletPaid is itself a refund-able amount: when the buyer paid
-    // ₹100 of a ₹500 cart from their wallet, returning the goods should
-    // credit ₹500 back to the wallet (the original ₹400 cash + ₹100
-    // wallet). So for the *wallet refund mode* we credit the full price,
-    // and only deduct coupon. For non-wallet modes we deduct both.
     const parent = child.customerOrder;
     const grossSubtotal = parent ? Number(parent.estimatedTotal) : 0;
     const couponDiscount = parent ? Number(parent.couponDiscount) : 0;
-    // Wallet credits are reusable money — so they get refunded in full
-    // back to the wallet. Only the coupon discount is non-recoverable.
     const refundableSubtotal = Math.max(0, grossSubtotal - couponDiscount);
     const paidFactor = grossSubtotal > 0
       ? refundableSubtotal / grossSubtotal
       : 1;
 
     const itemMap = new Map(child.items.map((i) => [i.id, i]));
-    // Cumulative-returned-quantity guard (C4). Without it a line could be
-    // returned and refunded, then returned again and again — minting
-    // unlimited wallet credit for goods bought only once. Sum the quantity
-    // already returned on every still-live or completed return for this
-    // child, then require requested + alreadyReturned to stay within what
-    // was originally purchased. (REJECTED / CANCELLED returns release their
-    // hold and are excluded.)
     const requestedItemIds = opts.items.map((i) => i.purchaseRequestItemId);
     const priorReturns = await prisma.returnRequestItem.groupBy({
       by: ['purchaseRequestItemId'],
@@ -243,10 +201,6 @@ export class ReturnsService {
       });
     }
 
-    // Block creating a new return when the customer has an open one
-    // against the same child slice. Per-line dedupe (allowing two
-    // separate items to be returned in parallel sessions) is a
-    // refinement for later.
     const existingOpen = await prisma.returnRequest.findFirst({
       where: {
         requestId: opts.childId,
@@ -275,9 +229,6 @@ export class ReturnsService {
       return row;
     });
 
-    // Merchant-facing alert — mirrors notifyShopOwner's use in the orders
-    // flow. Names the actual returned product(s) rather than a bare id so
-    // the bell reads like the real order-received notification.
     const returnedNames = [
       ...new Set(
         opts.items
@@ -301,7 +252,6 @@ export class ReturnsService {
     return { id: created.id };
   }
 
-  /// Customer's own list — newest first.
   async listForCustomer(opts: { userId: number; skip: number; limit: number }) {
     const where: Prisma.ReturnRequestWhereInput = { customerUserId: opts.userId };
     const [data, total] = await Promise.all([
@@ -352,7 +302,6 @@ export class ReturnsService {
     return { data, total };
   }
 
-  /// Customer cancels a return — only allowed in REQUESTED.
   async cancelByCustomer(opts: { userId: number; id: number }): Promise<
     | { ok: true }
     | { error: 'NOT_FOUND' | 'NOT_OWNED' | 'NOT_OPEN' }
@@ -380,8 +329,6 @@ export class ReturnsService {
     return { error: 'NOT_OPEN' };
   }
 
-  /// Generic merchant transition — guards against illegal jumps and
-  /// emits the matching event in the same transaction.
   private async _transitionMerchant(opts: {
     shopId: number;
     id: number;
@@ -453,38 +400,6 @@ export class ReturnsService {
     });
   }
 
-  /// REFUND — terminal transition. Mints a GST **credit note** for the returned
-  /// lines and (via the credit note) restocks the goods inside the status-flip
-  /// transaction, then refunds real money to the buyer's ORIGINAL payment
-  /// instrument post-commit. No wallet/store credit is ever involved.
-  ///
-  /// COMPLIANCE (Indian law) — this path satisfies three obligations at once:
-  ///   • CGST Act 2017, Sec 34 — a credit note reverses the output GST charged
-  ///     on the original sale (see createSalesReturnInTx). Retained, numbered
-  ///     document; never a silent edit (Sec 36 / Rule 56).
-  ///   • RBI "refund to source" + Consumer Protection (E-Commerce) Rules 2020,
-  ///     Rule 4(7) — the money goes back to the card/UPI/netbanking instrument
-  ///     the buyer paid with, automatically, not into store credit. Forcing a
-  ///     wallet/voucher refund on the buyer is an unfair trade practice and is
-  ///     not permitted; the wallet refund vehicle has been removed entirely.
-  ///   • PSS Act 2007 / RBI PPI Master Direction — by NOT crediting an in-app
-  ///     wallet we avoid operating an unauthorized prepaid payment instrument.
-  /// A COD / never-captured-online order has no instrument to reverse to, so the
-  /// refund engine reports NO_PAYMENT and the merchant settles offline (the
-  /// credit note + restock still post). A provider rejection is surfaced as
-  /// FAILED (merchant-visible) for follow-up — never silently dropped.
-  ///
-  /// PR-C1 — the online customer-order return previously credited the wallet
-  /// and restocked but minted NO credit note, so the output GST charged on the
-  /// original sale was never reversed (the shop kept tax on goods that came
-  /// back) and the merchant ledger showed no offsetting document. We now route
-  /// this path through the SAME `createSalesReturnInTx` machinery the POS /
-  /// merchant return uses: it issues a CONFIRMED CREDIT_NOTE linked to the
-  /// original SALE invoice, reverses CGST/SGST/IGST proportionally on the
-  /// ORIGINAL invoice's stored place-of-supply (GST-7), restocks the goods
-  /// (RETURN_IN), and sets the credit note's createdById/shiftId. The wallet /
-  /// cash refund amount is then the credit note's tax-inclusive total, so the
-  /// money returned equals the document.
   async refund(opts: {
     shopId: number;
     id: number;
@@ -494,21 +409,14 @@ export class ReturnsService {
     | {
         ok: true;
         refundAmount: number;
-        /** Outcome of the real-money refund-to-source (set post-commit):
-         *  REFUNDED — money is on its way back to the original instrument.
-         *  NO_PAYMENT — order was COD / never captured online (nothing to send
-         *    back; merchant settles offline). NOTHING_TO_REFUND — already fully
-         *    reversed. FAILED — provider rejected; flagged for ops retry. */
         refundStatus: 'REFUNDED' | 'FAILED' | 'NO_PAYMENT' | 'NOTHING_TO_REFUND';
       }
     | { error: 'NOT_FOUND' | 'BAD_STATE' | 'NO_ORIGINAL_INVOICE' | 'CREDIT_NOTE_FAILED' }
   > {
-    // Captured inside the tx for the post-commit Route reversal + refund (below).
     let reverseChildId: number | null = null;
     let reverseAmount = 0;
     let refundOrderId: number | null = null;
     const result = await prisma.$transaction(async (tx) => {
-      // Claim the row from a refund-eligible state.
       const claim = await tx.returnRequest.updateMany({
         where: {
           id: opts.id,
@@ -517,7 +425,6 @@ export class ReturnsService {
         },
         data: {
           status: 'REFUNDED',
-          // Refunds always go back to source now (wallet/store-credit removed).
           refundMethod: 'SOURCE',
           ...(opts.note ? { decisionNote: opts.note } : {}),
         },
@@ -537,8 +444,6 @@ export class ReturnsService {
           customerUserId: true,
           refundAmount: true,
           requestId: true,
-          // Returned line items — feed the credit note (which both reverses
-          // GST and restocks the goods).
           items: {
             select: {
               id: true,
@@ -546,17 +451,9 @@ export class ReturnsService {
               purchaseRequestItem: { select: { productId: true } },
             },
           },
-          // Reach into the parent order so we know how much of the
-          // original payment came from wallet credit. We must credit
-          // wallet money BACK to the wallet regardless of refund method.
-          // invoiceId locates the original SALE invoice the credit note is
-          // raised against (links the reversal + sources the line tax fields).
           request: {
             select: {
               invoiceId: true,
-              // Parent CustomerOrder id — the ORDER-target id the captured
-              // GatewayPayment settles against, so the refund-to-source engine
-              // can find the online payment to reverse.
               customerOrderId: true,
               customerOrder: {
                 select: {
@@ -569,24 +466,11 @@ export class ReturnsService {
         },
       });
 
-      // PR-C1 — mint the GST credit note for the returned lines BEFORE settling
-      // the cash, so the refund amount is the document's tax-inclusive total
-      // (not the wallet-proportional `refundAmount` stored at request time).
       const originalInvoiceId = row.request?.invoiceId ?? null;
       if (originalInvoiceId == null) {
-        // No SALE invoice means there is no document to reverse GST against —
-        // refuse rather than silently fall back to a no-credit-note refund.
         return { error: 'NO_ORIGINAL_INVOICE' as const };
       }
 
-      // Load the ORIGINAL invoice's lines (shop-scoped) so the credit note
-      // mirrors each returned line's frozen unitPrice / discount / tax / cess
-      // and — critically — its `isPriceInclusive` flag. Customer-order sales
-      // are GST-inclusive (MRP), so the credit note must back tax out the same
-      // way; copying the flag keeps the reversal exact. We also inherit the
-      // original invoice's shiftId (a POS-online sale carries one; a pure
-      // online order does not) so a cash-drawer-funded sale's reversal scopes
-      // to the right Z-report.
       const originalInvoice = await tx.invoice.findFirst({
         where: { id: originalInvoiceId, shopId: opts.shopId, type: 'SALE' },
         select: {
@@ -596,8 +480,6 @@ export class ReturnsService {
           customerName: true,
           customerPhone: true,
           placeOfSupplyStateCode: true,
-          // Returned COGS is attributed to the day the goods were SOLD, so the
-          // outbox event (below) buckets the roll-up by the original sale date.
           invoiceDate: true,
           items: {
             select: {
@@ -619,9 +501,6 @@ export class ReturnsService {
         originalInvoice.items.map((it) => [it.productId, it]),
       );
 
-      // Build the credit-note lines from the returned quantities, scaling the
-      // original line discount by the returned proportion so a partial return
-      // reverses a proportional slice of tax (mirrors the POS returnSale path).
       const creditItems: Array<{
         productId: number;
         quantity: number;
@@ -631,19 +510,12 @@ export class ReturnsService {
         cessRate: number;
         isPriceInclusive: boolean;
       }> = [];
-      // PR-H2 — the returned lines' GROSS list value (Σ qty × unitPrice, before
-      // any discount). This is the share of the order being returned and the
-      // basis for prorating what the BUYER actually paid (which, for a
-      // platform-funded coupon, is less than this list value — see below).
       let returnedListValue = new Prisma.Decimal(0);
       for (const it of row.items) {
         const productId = it.purchaseRequestItem?.productId;
         const qty = Number(it.quantity);
         if (productId == null || !(qty > 0)) continue;
         const orig = origByProduct.get(productId);
-        // A returned product that isn't on the original invoice can't have its
-        // tax reversed against that document — skip it (the qty guard at submit
-        // time should already prevent this).
         if (!orig) continue;
         const soldQty = toNumber(orig.quantity);
         const proportion = soldQty > 0 ? qty / soldQty : 0;
@@ -679,24 +551,16 @@ export class ReturnsService {
               originalInvoice.placeOfSupplyStateCode ?? undefined,
             items: creditItems,
           },
-          // createdById = the merchant actor issuing the refund; shiftId
-          // inherited from the original sale (null for pure online orders).
           opts.actorId,
           originalInvoice.shiftId ?? undefined,
         );
       } catch (e) {
         if (e instanceof PosInvoiceError) {
-          // Surface as a structured failure so the whole tx rolls back — a
-          // return must never settle cash without its reversing document.
           return { error: 'CREDIT_NOTE_FAILED' as const };
         }
         throw e;
       }
 
-      // Outbox (same tx): the credit note already emitted its own
-      // `invoice.confirmed` (for the credit-note day); this second event rebuilds
-      // the ORIGINAL sale day's bucket, where returned COGS is booked — matching
-      // the changefeed's return_requests→invoice_date join.
       await enqueueOutbox(
         {
           aggregateType: 'return_request',
@@ -712,51 +576,23 @@ export class ReturnsService {
         tx,
       );
 
-      // PR-H2 — compute the refund and its tender split from a SINGLE source of
-      // truth: the per-tender amounts the buyer actually paid, prorated by the
-      // returned share of the order. Previously the refund was the raw credit-
-      // note total while the wallet/cash split divided by a DIFFERENT base
-      // (gross − coupon), so any order with BOTH a coupon and wallet money
-      // over/under-refunded the cash vs wallet slices and could pay the buyer
-      // MORE than they parted with (a platform-funded coupon's value).
-      //
-      // The credit note's tax-inclusive total is the GST document value (the
-      // supply reversed) — for a platform-funded coupon that is the FULL list
-      // (the seller was owed full value; the platform funded the gap), so it
-      // overstates what the buyer actually paid. We therefore cap the buyer's
-      // refund at the buyer's prorated outlay and split that single figure.
       const parent = row.request?.customerOrder;
       const gross = parent ? new Prisma.Decimal(parent.estimatedTotal) : new Prisma.Decimal(0);
       const coupon = parent ? new Prisma.Decimal(parent.couponDiscount) : new Prisma.Decimal(0);
       const creditNoteTotal = new Prisma.Decimal(creditNote.total);
 
-      // What the buyer actually parted with for the WHOLE order = gross − coupon
-      // (the coupon is a discount, never the buyer's money — regardless of who
-      // funded it). For a current order that whole outlay was paid online; the
-      // refund-to-source engine caps the refund at what was actually captured.
       const buyerOutlay = Prisma.Decimal.max(gross.sub(coupon), new Prisma.Decimal(0));
 
-      // Returned share of the order, by GROSS list value (never > 1).
       const returnFraction = gross.gt(0)
         ? Prisma.Decimal.min(returnedListValue.div(gross), new Prisma.Decimal(1))
         : new Prisma.Decimal(1);
 
-      // Prorated buyer outlay for the returned lines, capped at the credit-note
-      // total so we never refund MORE money than the reversing document (a
-      // seller-funded coupon already nets into the credit note, so there the cap
-      // is a no-op; a platform-funded coupon makes the cap bind, and the
-      // platform absorbs the coupon's returned slice it originally funded).
       const buyerRefund = Prisma.Decimal.min(
         buyerOutlay.mul(returnFraction).toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP),
         creditNoteTotal,
       );
       const refundAmount = round2(buyerRefund.toNumber());
 
-      // Persist the buyer's actual refund (prorated outlay, capped at the credit
-      // note total) as the row's refund amount. This is the figure we send back
-      // to the customer's ORIGINAL payment instrument post-commit — NOT to any
-      // wallet/store credit (which is illegal for an online payment and has been
-      // removed). The wallet/cash tender split is gone with it.
       await tx.returnRequest.update({
         where: { id: row.id },
         data: { refundAmount: new Prisma.Decimal(refundAmount) },
@@ -771,28 +607,12 @@ export class ReturnsService {
       });
       reverseChildId = row.requestId;
       reverseAmount = refundAmount;
-      // Parent order id → the ORDER-target the captured payment settles against.
       refundOrderId = row.request?.customerOrderId ?? null;
-      // NOTE: the goods are restocked by `createSalesReturnInTx` above (it posts
-      // the RETURN_IN ledger movement off the credit note, INVOICE:<cn>:RETURN).
-      // The previous standalone post-commit restock here is therefore removed —
-      // keeping it would double-count the returned stock.
       return { ok: true as const, refundAmount };
     });
 
     if (!('ok' in result) || !result.ok) return result;
 
-    // Post-commit external money movements. Both run AFTER the tx (provider
-    // calls) so a gateway hiccup can't hold the DB tx open or move money against
-    // an uncommitted row. The return itself — credit note, GST reversal, restock,
-    // REFUNDED status — has already committed and stands regardless.
-
-    // (a) If a Route on-hold split funded this child, claw the seller's slice
-    // back FIRST. Razorpay forbids creating transfers on a refunded payment, and
-    // reversing the seller transfer returns the money to the platform balance
-    // the refund is then paid out of — so reverse before refunding. No-op when
-    // the split feature is off. An insufficient-balance reversal is flagged for
-    // manual recovery by reverseTransferForReturn itself (P5).
     if (reverseChildId != null) {
       try {
         await reverseTransferForReturn({
@@ -800,17 +620,9 @@ export class ReturnsService {
           reverseAmount,
         });
       } catch {
-        /* reconciliation re-drives a transient failure; refund stands. */
       }
     }
 
-    // (b) Refund the customer's money to their ORIGINAL payment instrument
-    // (card/UPI/netbanking) via the gateway — the legally-required path (RBI
-    // refund-to-source; Consumer Protection (E-Commerce) Rules 2020). Idempotent
-    // on the return id. A COD/never-captured order returns NO_PAYMENT (nothing
-    // to send back); a provider rejection records a FAILED refund row for ops.
-    // Best-effort: a failure here does NOT roll back the (already-committed)
-    // return — it's surfaced in refundStatus and re-drivable from the audit row.
     let refundStatus: 'REFUNDED' | 'FAILED' | 'NO_PAYMENT' | 'NOTHING_TO_REFUND' =
       'NO_PAYMENT';
     if (refundOrderId != null && result.refundAmount > 0) {
@@ -827,9 +639,6 @@ export class ReturnsService {
         });
         refundStatus = outcome.status;
       } catch {
-        // refundToSource is itself non-throwing for provider errors (records a
-        // FAILED row); a throw here is an unexpected infra fault — leave the
-        // return committed and let reconciliation/ops re-drive from the row.
         refundStatus = 'FAILED';
       }
     }

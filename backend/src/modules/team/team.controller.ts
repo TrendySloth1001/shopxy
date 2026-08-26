@@ -18,8 +18,6 @@ function fail(res: Response, code: string) {
 const ROLE_NAME = z.string().trim().min(1).max(60);
 const RIGHTS = z.array(z.string().refine(isValidRight, 'Invalid right'));
 
-// ── Members ──────────────────────────────────────────────────────────
-
 export async function listMembers(req: Request, res: Response) {
   res.json({ members: await teamService.listMembers(req.shopId!) });
 }
@@ -49,8 +47,6 @@ export async function invite(req: Request, res: Response) {
     teamRoleName: parsed.data.roleName,
     teamPermissions: parsed.data.permissions,
     message: parsed.data.message ?? null,
-    // Delegation cap (AUTH-TR-H1): the invite path must clamp the granted
-    // rights to the inviter's own, exactly like setPermissions/createRole.
     actingShopRole: req.user!.shopRole,
     actingPermissions: req.user!.shopPermissions,
   });
@@ -121,8 +117,6 @@ export async function removeMember(req: Request, res: Response) {
   }
   res.status(204).end();
 }
-
-// ── Roles ────────────────────────────────────────────────────────────
 
 export async function listRoles(req: Request, res: Response) {
   res.json({ roles: await teamService.listRoles(req.shopId!) });

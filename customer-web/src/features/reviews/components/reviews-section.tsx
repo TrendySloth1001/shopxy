@@ -15,35 +15,27 @@ interface Props {
   productName: string;
 }
 
-// ── Histogram bar ─────────────────────────────────────────────────────────────
-
 function HistogramRow({ star, count, total }: { star: number; count: number; total: number }) {
   const fraction = total > 0 ? Math.min(1, count / total) : 0;
-  // Use a star-colour scale matching typical marketplace conventions
   const barColor =
     star <= 2 ? "bg-error" : star === 3 ? "bg-warning" : "bg-success";
 
   return (
     <div className="flex items-center gap-sm">
-      {/* Star label — fixed width so bars align */}
       <span className="flex w-[32px] shrink-0 items-center justify-end gap-xxs">
         <span className="text-label-md font-semibold text-ink">{star}</span>
         <span className="text-nano text-muted">★</span>
       </span>
-      {/* Track + filled bar — bg-hairline gives a visible neutral track */}
       <div className="relative h-[8px] flex-1 overflow-hidden rounded-full bg-hairline">
         <div
           className={`absolute inset-y-0 left-0 rounded-full transition-all ${barColor}`}
           style={{ width: `${fraction * 100}%` }}
         />
       </div>
-      {/* Count — fixed width so bars don't shift */}
       <span className="w-[28px] shrink-0 text-right text-label-md text-muted">{count}</span>
     </div>
   );
 }
-
-// ── Summary block ─────────────────────────────────────────────────────────────
 
 function ReviewSummaryBlock({
   summary,
@@ -57,7 +49,6 @@ function ReviewSummaryBlock({
 
   return (
     <div className="flex items-center gap-xl border-b border-hairline px-lg py-md">
-      {/* Big number */}
       <div className="flex flex-col items-center gap-xs">
         <span className="text-[40px] font-black leading-none text-ink">{avg.toFixed(1)}</span>
         <StarRow rating={avg} size={14} />
@@ -66,7 +57,6 @@ function ReviewSummaryBlock({
         </span>
       </div>
 
-      {/* Histogram */}
       <div className="flex flex-1 flex-col gap-xs">
         {([5, 4, 3, 2, 1] as const).map((s) => (
           <HistogramRow
@@ -78,7 +68,6 @@ function ReviewSummaryBlock({
         ))}
       </div>
 
-      {/* Rate button */}
       <button
         onClick={onRate}
         className="flex shrink-0 items-center gap-xs text-label-md font-extrabold text-brand-strong hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
@@ -89,8 +78,6 @@ function ReviewSummaryBlock({
     </div>
   );
 }
-
-// ── Main section ──────────────────────────────────────────────────────────────
 
 export function ReviewsSection({ productId, productName }: Props) {
   const { status } = useAuth();
@@ -115,8 +102,6 @@ export function ReviewsSection({ productId, productName }: Props) {
     try {
       const s = await fetchReviewSummary(productId);
       setSummary(s);
-      // Find my review in the recent list
-      // (server only returns up to 3 recent; a full my-reviews check would need a separate endpoint)
     } catch (err) {
       setSummaryError(err instanceof Error ? err.message : "Could not load reviews.");
     } finally {
@@ -147,7 +132,6 @@ export function ReviewsSection({ productId, productName }: Props) {
       setReviewPage((prev) => [...prev, ...page.data]);
       setNextCursor(page.nextCursor ?? null);
     } catch {
-      // swallow — user can retry by scrolling again
     } finally {
       setReviewsLoading(false);
     }
@@ -182,12 +166,11 @@ export function ReviewsSection({ productId, productName }: Props) {
   }
 
   if (summaryError || !summary) {
-    return null; // hide section silently on error
+    return null;
   }
 
   return (
     <>
-      {/* Summary + histogram */}
       <ReviewSummaryBlock summary={summary} onRate={handleRate} />
 
       {summary.ratingCount === 0 ? (
@@ -202,7 +185,6 @@ export function ReviewsSection({ productId, productName }: Props) {
         </div>
       ) : (
         <>
-          {/* Recent reviews from summary (dense, always shown) */}
           {!loadedFirst
             ? summary.recent.slice(0, 3).map((r, i) => (
                 <div key={r.id}>
@@ -217,7 +199,6 @@ export function ReviewsSection({ productId, productName }: Props) {
                 </div>
               ))}
 
-          {/* Error state */}
           {reviewsError ? (
             <div className="mx-lg my-sm rounded-sm bg-error-soft px-md py-sm text-body-sm text-error">
               {reviewsError}{" "}
@@ -230,7 +211,6 @@ export function ReviewsSection({ productId, productName }: Props) {
             </div>
           ) : null}
 
-          {/* Load more */}
           {loadedFirst && nextCursor != null ? (
             <button
               onClick={loadMore}
@@ -246,7 +226,6 @@ export function ReviewsSection({ productId, productName }: Props) {
             </button>
           ) : null}
 
-          {/* See all CTA when showing summary's 3 */}
           {!loadedFirst && summary.ratingCount > 3 ? (
             <button
               onClick={loadFirstPage}
@@ -259,7 +238,6 @@ export function ReviewsSection({ productId, productName }: Props) {
         </>
       )}
 
-      {/* Write review modal */}
       {showModal ? (
         <WriteReviewModal
           productId={productId}

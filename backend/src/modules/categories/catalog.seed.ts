@@ -1,24 +1,3 @@
-/// Canonical category taxonomy — **electronics-only**. The marketplace
-/// runs against this fixed list; merchants pick from it but cannot
-/// create / rename / delete entries (those endpoints are
-/// PLATFORM_ADMIN only).
-///
-/// Scope decision: we deliberately limit the catalogue to consumer
-/// electronics rather than a generic everything-store taxonomy. Keeps
-/// onboarding crisp, browse intuitive, and avoids the "Fashion vs
-/// Electronics" identity question for the customer app.
-///
-/// Bumping the manifest:
-///   1. Add or amend entries below.
-///   2. On the next backend boot, [seedCanonicalCategories] upserts by
-///      slug. Existing rows keep their numeric id (FKs are safe).
-///   3. Removed entries are *soft-deactivated* (isActive=false) so any
-///      products still pointing at them keep their FK; a follow-up
-///      mapper can re-bucket them by hand.
-///
-/// Image URLs are pinned Unsplash photo IDs (not random `source`
-/// calls) so the same photo renders on every device. They're network
-/// images by design — we don't ship the catalogue as bundled assets.
 export interface CategorySeed {
   slug: string;
   name: string;
@@ -182,9 +161,6 @@ export const CANONICAL_CATEGORIES: CategorySeed[] = [
   },
 ];
 
-/// Walks the manifest into a flat (parentSlug, child) iterator. Used by
-/// the seeder + the data-migration mapper so they share one source of
-/// truth.
 export function* flattenCanonical(): Iterable<{
   slug: string;
   name: string;
@@ -216,9 +192,6 @@ export function* flattenCanonical(): Iterable<{
   }
 }
 
-/// Slugs the new electronics-only taxonomy is composed of — exported
-/// so the data-migration mapper can DELETE rows that no longer belong
-/// without re-deriving the set from the structured manifest.
 export const CANONICAL_SLUGS: ReadonlySet<string> = new Set(
   Array.from(flattenCanonical()).map((n) => n.slug),
 );

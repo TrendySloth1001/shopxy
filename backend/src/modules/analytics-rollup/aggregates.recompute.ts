@@ -2,13 +2,6 @@ import prisma from '../../infra/db/prisma.js';
 import { reportsService } from '../reports/reports.service.js';
 import { reportDayRange } from '../../shared/time/ist.js';
 
-/// Recompute the roll-up rows for one (shop, day) FROM RAW, reusing the audited
-/// reports.service math scoped to that single IST day. Because it's the same SQL
-/// the Reports screen uses, the roll-ups always reconcile to the rupee. Idempotent
-/// (delete-then-insert in a transaction) so re-running is safe.
-///
-/// `day` is a midnight-UTC Date whose UTC calendar date IS the IST day (see
-/// istDateUTC). The raw filters use the real UTC [from, to) instants.
 export async function recomputeDay(shopId: number, day: Date): Promise<void> {
   const range = reportDayRange(day);
 
@@ -37,7 +30,6 @@ export async function recomputeDay(shopId: number, day: Date): Promise<void> {
        GROUP BY type, mode`,
   ]);
 
-  // Merge GST output + input by rate into one row per rate.
   type GstRow = { taxRate: number; outputTax: number; inputTax: number; outputCess: number; inputCess: number; taxable: number };
   const byRate = new Map<number, GstRow>();
   const ensure = (rate: number): GstRow => {
@@ -62,7 +54,6 @@ export async function recomputeDay(shopId: number, day: Date): Promise<void> {
 
   const s = sales.summary;
   const p = purchases.summary;
-  // Store additive day components: net cogs (pnl.cogs), taxable, refunds, etc.
   const salesNonZero =
     s.invoiceCount > 0 ||
     s.total !== 0 ||

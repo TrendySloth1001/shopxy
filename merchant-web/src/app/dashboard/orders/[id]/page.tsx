@@ -115,8 +115,6 @@ export default function OrderDetailPage({
         if (e.code === "INSUFFICIENT_STOCK" && e.productId != null) {
           setShortfallProductId(e.productId);
         }
-        // The server is the source of truth for stock — re-pull so the page
-        // chips match what just blocked the confirm.
         if (e.code === "INSUFFICIENT_STOCK") reload();
       } else {
         setActionError(e instanceof Error ? e.message : t("detail.confirmError"));
@@ -205,7 +203,6 @@ export default function OrderDetailPage({
     <div className="w-full px-lg py-xxl pb-massive md:px-xxl">
       <BackLink />
 
-      {/* Header */}
       <div className="mt-md flex flex-wrap items-start justify-between gap-md">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-sm">
@@ -230,14 +227,12 @@ export default function OrderDetailPage({
         </div>
       ) : null}
 
-      {/* Summary stats */}
       <div className="mt-lg grid grid-cols-3 divide-x divide-hairline">
         <SummaryStat label={t("detail.statItems")} value={String(order.items.length)} />
         <SummaryStat label={t("detail.statTotalQty")} value={qty(totalQty)} />
         <SummaryStat label={t("detail.statOrderTotal")} value={money(sub)} emphasis />
       </div>
 
-      {/* Shortfall banner */}
       {pending && shortfall ? (
         <div className="mt-lg flex items-start gap-sm rounded-md bg-warning-soft px-md py-md">
           <TriangleAlert size={18} className="mt-px shrink-0 text-warning" />
@@ -257,7 +252,6 @@ export default function OrderDetailPage({
 
       <Divider className="my-xl" />
 
-      {/* Customer */}
       <CustomerBlock order={order} />
 
       {order.customerAddress ? (
@@ -284,14 +278,12 @@ export default function OrderDetailPage({
         </p>
       ) : null}
 
-      {/* Status journey */}
       <div className="mt-xl">
         <StatusJourney order={order} />
       </div>
 
       <Divider className="my-xl" />
 
-      {/* Items */}
       <h2 className="text-title-md text-ink">{t("detail.itemsHeading")}</h2>
       <ul className="mt-sm">
         {order.items.map((item) => (
@@ -303,7 +295,6 @@ export default function OrderDetailPage({
         ))}
       </ul>
 
-      {/* Totals */}
       <div className="mt-lg max-w-form">
         <TotalLine label={t("detail.subtotal")} value={money(sub)} />
         <TotalLine label={t("detail.tax")} value={money(0)} muted />
@@ -317,7 +308,6 @@ export default function OrderDetailPage({
         ) : null}
       </div>
 
-      {/* Shipping timeline — milestones apply once an order is confirmed. */}
       {!pending || order.events.length > 0 ? (
         <>
           <Divider className="my-xl" />
@@ -356,7 +346,6 @@ export default function OrderDetailPage({
 
       {shippingOpen ? <ShippingModal busy={busy} onClose={() => setShippingOpen(false)} onSubmit={onShipping} /> : null}
 
-      {/* Linked invoice CTA */}
       {order.invoice ? (
         <div className="mt-xl">
           <Link
@@ -368,7 +357,6 @@ export default function OrderDetailPage({
         </div>
       ) : null}
 
-      {/* Pending action bar */}
       {pending ? (
         <ActionArea
           mode={mode}
@@ -413,7 +401,6 @@ function ShippingModal({
   const [eta, setEta] = useState<string | null>(null);
   const [note, setNote] = useState("");
 
-  // Courier/AWB are meaningful once shipped/out-for-delivery.
   const showLogistics = type === "SHIPPED" || type === "OUT_FOR_DELIVERY";
 
   return (
@@ -495,7 +482,6 @@ function CustomerBlock({ order }: { order: OrderDetail }) {
 
   return (
     <div className="flex flex-wrap items-start gap-md">
-      {/* Avatar + identity */}
       <div className="flex min-w-0 flex-1 items-start gap-md">
         <span
           aria-hidden
@@ -517,7 +503,6 @@ function CustomerBlock({ order }: { order: OrderDetail }) {
         </div>
       </div>
 
-      {/* Reachability — beside the name on desktop, below it on mobile. */}
       {phone || email ? (
         <div className="flex w-full flex-wrap gap-sm sm:w-auto sm:self-center">
           {phone ? (
@@ -587,7 +572,6 @@ function CopySummaryButton({ order }: { order: OrderDetail }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      /* clipboard unavailable — no-op */
     }
   }
   return (
@@ -625,9 +609,6 @@ function StatusJourney({ order }: { order: OrderDetail }) {
     { key: "paid", label: t("journey.paid"), done: paid },
   ];
 
-  // A segment is "lit" when the step it leads into is reached. Each step paints
-  // the half-segment on either side of its dot with the matching colour so the
-  // line stays continuous while dots remain centred over their labels.
   const segmentLit = (step: { done: boolean; failed?: boolean }) =>
     step.done || step.failed ? "bg-brand" : "bg-hairline";
 

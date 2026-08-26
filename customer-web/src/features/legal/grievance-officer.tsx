@@ -1,15 +1,5 @@
 import { LegalSection } from "@/features/legal/legal-doc";
 
-/**
- * Grievance Officer block — mandated for Indian intermediaries (IT Rules 2021)
- * and as the contact point for consumer / DPDP grievances. Rendered on every
- * legal surface (privacy, terms, consumer policies).
- *
- * The named officer's identity, phone and postal address are pending the
- * company's final appointment — marked with [TO FILL: ...] placeholders so the
- * legal team can drop in real values before launch. The acknowledgement and
- * resolution timelines below are the committed SLAs.
- */
 export function GrievanceOfficerSection() {
   return (
     <LegalSection heading="Grievance Officer">

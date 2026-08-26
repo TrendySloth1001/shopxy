@@ -43,9 +43,6 @@ class ReviewsPage {
   final int? nextCursor;
 }
 
-/// One-shot PDP summary: average, count, how many came from verified
-/// buyers, a zero-filled 1..5 histogram, and the three most recent
-/// reviews so the section renders without a follow-up list call.
 class ReviewSummary {
   const ReviewSummary({
     required this.ratingAvg,
@@ -59,7 +56,6 @@ class ReviewSummary {
   final int ratingCount;
   final int verifiedCount;
 
-  /// Star (1..5) → number of reviews at that star. Always fully keyed.
   final Map<int, int> histogram;
   final List<ProductReview> recent;
 

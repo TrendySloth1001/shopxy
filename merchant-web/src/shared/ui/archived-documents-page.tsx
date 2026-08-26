@@ -9,34 +9,14 @@ import { DayDivider } from "@/shared/ui/day-divider";
 import { ListRowsSkeleton } from "@/shared/ui/skeleton";
 import { isSameDay } from "@/shared/datetime";
 
-/**
- * One page shape for every "Archived …" view — invoices, challans,
- * quotations.
- *
- * Archiving means the same thing for all three: the document leaves the
- * working list and KEEPS its number, because each number is a per-shop serial
- * allocated at create time and a run with a hole in it is a problem with an
- * auditor. None of them can be deleted, so this page is the only way back.
- *
- * Single-sourced rather than copied per feature so the three can't drift, and
- * deliberately the same shape as the Flutter merchant app's
- * `ArchivedDocumentsPage` — a merchant should read the same screen in either.
- */
-
-/** A tab above the list. `key` is passed straight to `load` ("" = All). */
 export type ArchivedFilter = { key: string; label: string };
 
-/** The parts of a row that differ per document kind. */
 export type ArchivedRowData = {
   href: string;
-  /** The serial that stays allocated. The reason archiving exists. */
   number: string;
   status: string;
-  /** Counterparty, usually. */
   subtitle: string;
-  /** Right-hand figure — a total, an item count. Omitted when there isn't one. */
   trailing?: string;
-  /** Optional leading disc (the sale/purchase arrow on invoices). */
   leading?: ReactNode;
 };
 
@@ -61,19 +41,12 @@ export function ArchivedDocumentsPage<T>({
   emptyTitle: string;
   emptyBody: string;
   filters?: ArchivedFilter[];
-  /** Fetches the archived page for the selected filter ("" = All). */
   load: (filter: string) => Promise<T[]>;
   restore: (item: T) => Promise<unknown>;
   rowOf: (item: T) => ArchivedRowData;
-  /**
-   * The date rows are grouped by. Must be the field the server sorts on,
-   * otherwise a day heading repeats further down the scroll.
-   */
   dateOf: (item: T) => string;
   keyOf: (item: T) => string;
 }) {
-  // Neutral strings — this page serves invoices, challans and quotations
-  // alike, so it must not borrow any one feature's catalog.
   const t = useTranslations("common.archived");
   const [rows, setRows] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,11 +55,6 @@ export function ArchivedDocumentsPage<T>({
   const [filter, setFilter] = useState("");
   const [nonce, setNonce] = useState(0);
 
-  // The fetch runs inside an async IIFE so no setState happens synchronously
-  // in the effect body, and `active` guards a response landing after unmount.
-  //
-  // The filter goes to the server rather than being applied over the loaded
-  // page, so it still means something past the fetch limit.
   useEffect(() => {
     let active = true;
     void (async () => {
@@ -105,8 +73,6 @@ export function ArchivedDocumentsPage<T>({
     return () => {
       active = false;
     };
-    // `load` is redefined every render by the calling page; depending on it
-    // would refetch in a loop. Filter + nonce are the real inputs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter, nonce]);
 
@@ -218,8 +184,6 @@ function ArchivedRow({
         {data.leading}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-sm">
-            {/* The number is the point: it stays allocated, which is what
-                makes archiving workable where deleting wasn't. */}
             <span className="truncate text-body-md text-ink">{data.number}</span>
             <span className="inline-flex items-center rounded-full bg-hero-panel px-sm py-px text-body-sm font-semibold text-muted">
               {data.status}

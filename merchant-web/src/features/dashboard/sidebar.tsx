@@ -14,11 +14,6 @@ import { NAV_GROUPS, hrefForNav, type NavItem } from "./nav-items";
 
 const STORAGE_KEY = "sx_sidebar_collapsed";
 
-/**
- * Maps the English group titles from `nav-items.ts` to translation keys under
- * the `nav` namespace. The labels themselves live in `nav-items.ts` (out of
- * this file's edit scope), so we translate at the point of use via key.
- */
 const GROUP_TITLE_KEYS: Record<string, string> = {
   Manage: "group.manage",
   "Shop operations": "group.shopOperations",
@@ -26,11 +21,6 @@ const GROUP_TITLE_KEYS: Record<string, string> = {
   "Platform admin": "group.platformAdmin",
 };
 
-/**
- * Stable store callbacks for `useSyncExternalStore`. Hoisted to module scope so
- * their identities never change between renders — passing fresh closures would
- * make React re-subscribe after every commit (avoidable re-render churn).
- */
 function subscribeCollapsed(cb: () => void): () => void {
   window.addEventListener("storage", cb);
   return () => window.removeEventListener("storage", cb);
@@ -38,11 +28,6 @@ function subscribeCollapsed(cb: () => void): () => void {
 const getCollapsedSnapshot = () => localStorage.getItem(STORAGE_KEY) === "1";
 const getCollapsedServerSnapshot = () => false;
 
-/**
- * Persisted collapse preference, read via useSyncExternalStore so the server
- * snapshot (expanded) and client value reconcile without a hydration mismatch
- * or a setState-in-effect. A synthetic "storage" event re-syncs the same tab.
- */
 function useCollapsed(): [boolean, () => void] {
   const collapsed = useSyncExternalStore(
     subscribeCollapsed,
@@ -63,11 +48,7 @@ export function Sidebar() {
   const t = useTranslations("nav");
   const [collapsed, toggle] = useCollapsed();
   const { unread } = useNotifications();
-  // Styled hover tooltip for the collapsed rail. Rendered `fixed` (outside the
-  // scrolling nav) so it isn't clipped by the rail's overflow.
   const [tip, setTip] = useState<{ label: string; y: number } | null>(null);
-  // Mobile off-canvas drawer (the side rail is hidden < lg; nav moves to a top
-  // bar + slide-in drawer).
   const [mobileOpen, setMobileOpen] = useState(false);
   const closeMobile = () => setMobileOpen(false);
 
@@ -76,8 +57,6 @@ export function Sidebar() {
     router.replace("/login");
   }
 
-  // Cashier kiosk lock: a plain Cashier is confined to the till — only Point of
-  // sale + Cashier are shown (everything else hidden), matching a register.
   const isKiosk = user?.shopRole === "CASHIER";
   const KIOSK_KEYS = new Set(["pos", "cashier"]);
   const groups = NAV_GROUPS.filter((g) => !g.adminOnly || user?.isPlatformAdmin)
@@ -89,14 +68,11 @@ export function Sidebar() {
     return pathname === href || pathname.startsWith(`${href}/`);
   }
 
-  /** A nav item is locked when its area exists and the user can't view it. */
   function isLocked(key: string): boolean {
     const area = areaForPath(hrefForNav(key));
     return area ? !canView(user, area) : false;
   }
 
-  // Nav tree, reused by the desktop rail and the mobile drawer. `compact` is the
-  // collapsed icon-rail mode; `onNavigate` closes the mobile drawer on click.
   const navTree = (compact: boolean, onNavigate?: () => void) => (
     <nav className="flex-1 overflow-y-auto px-sm py-md">
       {groups.map((group, gi) => (
@@ -175,7 +151,6 @@ export function Sidebar() {
 
   return (
     <>
-      {/* ── Desktop rail (lg+) ───────────────────────────────────────── */}
       <aside
         className={`sticky top-0 z-20 hidden h-dvh shrink-0 flex-col border-r border-hairline bg-canvas transition-[width] duration-medium lg:flex ${
           collapsed ? "w-16" : "w-64"
@@ -214,7 +189,6 @@ export function Sidebar() {
         ) : null}
       </aside>
 
-      {/* ── Mobile top bar (< lg) ────────────────────────────────────── */}
       <header className="sticky top-0 z-20 flex h-14 items-center gap-md border-b border-hairline bg-canvas px-md lg:hidden">
         <button
           type="button"
@@ -238,7 +212,6 @@ export function Sidebar() {
         </Link>
       </header>
 
-      {/* ── Mobile drawer (< lg) ─────────────────────────────────────── */}
       <div
         className={`fixed inset-0 z-50 lg:hidden ${mobileOpen ? "" : "pointer-events-none"}`}
         inert={!mobileOpen}
@@ -301,9 +274,6 @@ function NavLink({
   const Icon = item.icon;
   const badgeText = badge > 99 ? "99+" : String(badge);
 
-  // Locked: render a non-interactive row with a lock affordance instead of a
-  // link, so the section stays visible but clearly out of reach (mirrors the
-  // Flutter "lock instead of disappear" pattern).
   if (locked) {
     return (
       <div

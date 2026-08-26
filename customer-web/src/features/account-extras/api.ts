@@ -1,8 +1,3 @@
-/**
- * Client-side fetchers for account extras. All routes are same-origin BFF
- * routes under /api/me/* — never the backend directly.
- */
-
 import {
   wishlistResponseSchema,
   myReviewsResponseSchema,
@@ -23,14 +18,11 @@ async function jsonOrThrow<T>(
       const b = (await res.json()) as { error?: string };
       if (b?.error) message = b.error;
     } catch {
-      /* keep fallback */
     }
     throw new Error(message);
   }
   return parse(await res.json());
 }
-
-// ── Wishlist ─────────────────────────────────────────────────────────────────
 
 export async function fetchWishlist(): Promise<WishlistItem[]> {
   const res = await fetch("/api/me/wishlist", { cache: "no-store" });
@@ -50,7 +42,6 @@ export async function removeFromWishlist(productId: string): Promise<void> {
       const b = (await res.json()) as { error?: string };
       if (b?.error) message = b.error;
     } catch {
-      /* keep fallback */
     }
     throw new Error(message);
   }
@@ -64,13 +55,10 @@ export async function addToWishlist(productId: string): Promise<void> {
       const b = (await res.json()) as { error?: string };
       if (b?.error) message = b.error;
     } catch {
-      /* keep fallback */
     }
     throw new Error(message);
   }
 }
-
-// ── Reviews ──────────────────────────────────────────────────────────────────
 
 export async function fetchMyReviews(opts?: {
   cursor?: number;
@@ -94,7 +82,6 @@ export async function deleteReview(productId: string): Promise<void> {
       const b = (await res.json()) as { error?: string };
       if (b?.error) message = b.error;
     } catch {
-      /* keep fallback */
     }
     throw new Error(message);
   }
@@ -115,14 +102,11 @@ export async function upsertReview(
       const b = (await res.json()) as { error?: string };
       if (b?.error) message = b.error;
     } catch {
-      /* keep fallback */
     }
     throw new Error(message);
   }
   return (await res.json()) as MyReview;
 }
-
-// ── Coupons ───────────────────────────────────────────────────────────────────
 
 export async function fetchMyCoupons(): Promise<Coupon[]> {
   const res = await fetch("/api/me/coupons", { cache: "no-store" });
@@ -133,8 +117,6 @@ export async function fetchMyCoupons(): Promise<Coupon[]> {
   );
   return data.data;
 }
-
-// ── Recently viewed ───────────────────────────────────────────────────────────
 
 export async function fetchRecentlyViewed(): Promise<RecentlyViewedItem[]> {
   const res = await fetch("/api/me/recently-viewed", { cache: "no-store" });

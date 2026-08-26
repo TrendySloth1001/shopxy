@@ -1,14 +1,5 @@
 import { z } from "zod";
 
-/**
- * Coupon shapes, mirroring the backend `coupons` module's merchant admin
- * surface (`/me/coupons-admin`) and the Flutter `MerchantCoupon` domain model.
- *
- * NB: unlike promotions, coupon money is stored in **rupees** (Prisma Decimal,
- * 2dp) — the backend serialises `discountValue` / `maxDiscount` /
- * `minOrderAmount` as numbers. No paise conversion here.
- */
-
 export const DISCOUNT_TYPES = ["PERCENT", "FLAT"] as const;
 export type DiscountType = (typeof DISCOUNT_TYPES)[number];
 
@@ -25,7 +16,6 @@ export const couponSchema = z
     description: z.string().nullish(),
     discountType: z.enum(DISCOUNT_TYPES),
     discountValue: z.coerce.number().default(0),
-    // number | null — must not coerce null to 0, so match null first.
     maxDiscount: z.union([z.null(), z.coerce.number()]).optional(),
     minOrderAmount: z.coerce.number().default(0),
     validFrom: z.string(),
@@ -49,7 +39,6 @@ export const couponListSchema = z.object({
     .transform((v) => v ?? []),
 });
 
-/** A single redemption row from `/me/coupons-admin/:id/redemptions`. */
 export const couponRedemptionSchema = z.object({
   id: z.coerce.string(),
   discountAmount: z.coerce.number().default(0),

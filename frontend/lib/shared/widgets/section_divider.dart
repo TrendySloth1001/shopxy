@@ -7,32 +7,19 @@ import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 
-/// A centred label pill flanked by hairlines — the app's one way of
-/// breaking a scroll into labelled sections.
-///
-/// Used for day groups in every dated list (notifications, invoices,
-/// orders, challans, returns) and for section headings in the menu.
-/// Single-sourced so they can never drift apart.
 class SectionDivider extends StatelessWidget {
   const SectionDivider({super.key, required this.label, this.icon});
 
-  /// Day-group heading for a dated list: "Today" / "Yesterday" / "12 Jul"
-  /// (year appended once the date falls outside the current year).
   SectionDivider.date(DateTime date, {Key? key})
     : this(key: key, label: dateLabel(date));
 
   final String label;
 
-  /// Optional glyph inside the pill, ahead of the label.
   final AppIconData? icon;
 
-  /// True when [a] and [b] fall on the same calendar day — the day-boundary
-  /// test every dated list uses to decide where a divider goes.
   static bool isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
-  /// Relative day label. Kept beside [isSameDay] so grouping and labelling
-  /// always agree about what "a day" means.
   static String dateLabel(DateTime date) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);

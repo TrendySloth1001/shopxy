@@ -1,8 +1,3 @@
-// Report entities mirroring the backend `reports` module (`/reports/*`).
-// Each report takes a `from`/`to` range and returns confirmed-document totals.
-// All money is rupees (a Decimal serialised as a number). Numbers are parsed
-// defensively so a Decimal-as-string never crashes a strict `as num` cast.
-
 double _d(dynamic v) {
   if (v == null) return 0;
   if (v is num) return v.toDouble();
@@ -35,8 +30,6 @@ class ReportSummary {
   final double taxAmount;
   final double total;
 
-  /// Sales-only: gross refunds (incl. tax) on sales in the period, and the
-  /// net revenue (`total − refunds`) that headlines the sales report.
   final double refunds;
   final double netRevenue;
   final int refundCount;
@@ -209,7 +202,6 @@ class GstRate {
       );
 }
 
-/// IGST / CGST / SGST amounts for one column (output, input, or net).
 class GstHead {
   const GstHead({required this.igst, required this.cgst, required this.sgst});
   final double igst;
@@ -223,8 +215,6 @@ class GstHead {
       );
 }
 
-/// Head-wise split (GSTR-3B view): output / input (ITC) / net payable, each
-/// broken into IGST, CGST and SGST.
 class GstByHead {
   const GstByHead({
     required this.output,
@@ -242,8 +232,6 @@ class GstByHead {
       );
 }
 
-/// Output tax reversed on refunded returns in the period (already netted out
-/// of the headline figures).
 class GstReturns {
   const GstReturns({
     required this.gst,
@@ -345,7 +333,6 @@ class PnlReport {
       );
 }
 
-/// Pagination envelope shared by the P&L "products sold" drill-down endpoints.
 class ReportPagination {
   const ReportPagination({
     required this.page,
@@ -366,8 +353,6 @@ class ReportPagination {
       );
 }
 
-/// One aggregated product row in the P&L "products sold" summary
-/// (`/reports/sold-products`).
 class SoldProduct {
   const SoldProduct({
     required this.productId,
@@ -400,7 +385,6 @@ class SoldProduct {
       );
 }
 
-/// Grand totals across every matching product (all pages), for the footer.
 class SoldTotals {
   const SoldTotals({
     required this.salesCount,
@@ -418,7 +402,6 @@ class SoldTotals {
       );
 }
 
-/// Paginated `/reports/sold-products` page (the summary).
 class SoldProductsPage {
   const SoldProductsPage({
     required this.data,
@@ -439,8 +422,6 @@ class SoldProductsPage {
       );
 }
 
-/// One confirmed sale line in the P&L "products sold" drill-down
-/// (`/reports/sold-items`).
 class SoldItem {
   const SoldItem({
     required this.productName,
@@ -473,7 +454,6 @@ class SoldItem {
       );
 }
 
-/// Paginated `/reports/sold-items` page (one product's timeline).
 class SoldItemsPage {
   const SoldItemsPage({required this.data, required this.pagination});
   final List<SoldItem> data;

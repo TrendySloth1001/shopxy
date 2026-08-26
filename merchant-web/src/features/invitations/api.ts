@@ -7,7 +7,6 @@ async function jsonOrThrow<T>(res: Response, parse: (raw: unknown) => T, fallbac
       const body = (await res.json()) as { error?: unknown };
       if (typeof body?.error === "string") message = body.error;
     } catch {
-      /* keep fallback */
     }
     throw new Error(message);
   }
@@ -22,7 +21,6 @@ export function listOutgoingInvitations(): Promise<Invitation[]> {
   );
 }
 
-/** Invitations addressed to the signed-in user (another shop invited them). */
 export function listIncomingInvitations(): Promise<Invitation[]> {
   return fetch("/api/invitations/incoming", { cache: "no-store" }).then((r) =>
     jsonOrThrow(r, (raw) => invitationListSchema.parse(raw).data, "Could not load invitations."),

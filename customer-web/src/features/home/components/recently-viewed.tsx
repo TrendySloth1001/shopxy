@@ -7,11 +7,6 @@ import type { ProductCard } from "../types";
 import { ImageBox } from "./image-box";
 import { productHref } from "./product-tile";
 
-/**
- * "Pick up where you left off" rail — port of `HomeRecentlyViewed`. Horizontal
- * row of wide tiles (square thumbnail + name + price) from the personalised
- * recently-viewed list. Desktop shows left/right scroll arrows on hover.
- */
 export function RecentlyViewed({ items }: { items: ProductCard[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -28,7 +23,6 @@ export function RecentlyViewed({ items }: { items: ProductCard[] }) {
         <h2 className="text-title-md font-extrabold text-ink">Pick up where you left off</h2>
       </div>
       <div className="relative mt-md">
-        {/* Left arrow */}
         <button
           type="button"
           onClick={() => scroll("left")}
@@ -70,7 +64,6 @@ export function RecentlyViewed({ items }: { items: ProductCard[] }) {
           ))}
         </div>
 
-        {/* Right arrow */}
         <button
           type="button"
           onClick={() => scroll("right")}

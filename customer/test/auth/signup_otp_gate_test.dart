@@ -5,9 +5,6 @@ import 'package:shopxy_customer/features/auth/data/datasources/auth_remote_data_
 import 'package:shopxy_customer/features/auth/domain/entities/auth_user.dart';
 import 'package:shopxy_customer/features/auth/presentation/providers/auth_provider.dart';
 
-/// Signing up must not sign you in. `/auth/register` answers
-/// `200 {pending: true}` and creates no account; the app used to require
-/// `201` + tokens, which broke registration outright.
 void main() {
   group('signup OTP gate', () {
     test('register returns pending and does NOT create a session', () async {

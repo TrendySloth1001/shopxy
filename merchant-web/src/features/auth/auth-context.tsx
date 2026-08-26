@@ -13,8 +13,6 @@ import type { AuthUser } from "./types";
 import type { UpdateProfileInput } from "./schema";
 import { rememberCurrentAccount } from "./desktop";
 
-/** Payload the register form sends to the provider (confirm is dropped).
- *  The shop is named later on the onboarding screen, not at signup. */
 export type RegisterPayload = {
   name: string;
   email: string;
@@ -23,7 +21,6 @@ export type RegisterPayload = {
   acceptedPrivacy: true;
 };
 
-/** Payload the accept-invite form sends (confirm dropped). */
 export type AcceptInvitePayload = {
   token: string;
   name?: string;
@@ -32,8 +29,6 @@ export type AcceptInvitePayload = {
 
 type Status = "loading" | "authed" | "guest";
 
-/** Register either emails a verification code (collect it via `verifyEmail`)
- *  or, if the OTP infra is down, signs the user in directly. */
 export type RegisterResult =
   | { pending: true; email: string }
   | { pending: false };
@@ -42,44 +37,32 @@ type AuthContextValue = {
   user: AuthUser | null;
   status: Status;
   login: (email: string, password: string) => Promise<void>;
-  /** Sign in with a Google ID token (from the client-side GSI prompt).
-   *  Returns whether this account still needs to set up its recovery PIN. */
   loginWithGoogle: (idToken: string) => Promise<{ needsPinSetup: boolean }>;
-  /** Set (or replace) the recovery PIN used to sign in if Google is ever
-   *  unreachable. */
   setRecoveryPin: (pin: string) => Promise<void>;
-  /** Fallback sign-in for Google-only accounts when Google isn't reachable. */
   loginWithRecoveryPin: (email: string, pin: string) => Promise<void>;
   register: (payload: RegisterPayload) => Promise<RegisterResult>;
-  /** Confirm the signup OTP → creates the account server-side + signs in. */
   verifyEmail: (email: string, otp: string) => Promise<void>;
-  /** Re-send the signup verification code. */
   resendOtp: (email: string) => Promise<void>;
   acceptInvite: (payload: AcceptInvitePayload) => Promise<void>;
   logout: () => Promise<void>;
-  /** Revoke every session (this device included). */
   logoutEverywhere: () => Promise<void>;
   updateProfile: (input: UpdateProfileInput) => Promise<void>;
-  /** On success the backend revokes all sessions — the caller must re-auth. */
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   deleteAccount: (currentPassword: string) => Promise<void>;
   uploadAvatar: (file: File) => Promise<void>;
   removeAvatar: () => Promise<void>;
-  /** Download the DPDP data export as a file. */
   exportData: () => Promise<void>;
   refresh: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-/** Read `{ error }` from a non-OK BFF response and throw it as an Error. */
 async function throwApiError(res: Response, fallback: string): Promise<never> {
   let message = fallback;
   try {
     const body = (await res.json()) as { error?: string };
     if (body?.error) message = body.error;
   } catch {
-    // keep fallback
   }
   throw new Error(message);
 }
@@ -89,8 +72,6 @@ export function AuthProvider({
   initialUser = null,
 }: {
   children: ReactNode;
-  /** Session resolved server-side (read-only) in the root layout. When set, the
-   *  provider starts authed and skips the mount bootstrap fetch. */
   initialUser?: AuthUser | null;
 }) {
   const [user, setUser] = useState<AuthUser | null>(initialUser);
@@ -108,12 +89,6 @@ export function AuthProvider({
     }
   }, []);
 
-  // Bootstrap the session from the httpOnly cookie on mount — but ONLY when the
-  // server couldn't already resolve it (no fresh access cookie). When
-  // `initialUser` is set we trust the server render and skip this round-trip;
-  // `refresh()` stays available for explicit revalidation. State is only set
-  // after the await (never synchronously) and is guarded against an unmount
-  // race — this is external-system sync, not derived state.
   useEffect(() => {
     if (initialUser) return;
     let active = true;
@@ -145,7 +120,6 @@ export function AuthProvider({
     const body = (await res.json()) as { user: AuthUser };
     setUser(body.user);
     setStatus("authed");
-    // Desktop only: remember this account for one-tap return sign-in.
     void rememberCurrentAccount();
   }, []);
 
@@ -196,11 +170,9 @@ export function AuthProvider({
       const body = (await res.json()) as
         | { pending: true; email: string }
         | { user: AuthUser };
-      // OTP gate — no session yet; the caller collects the code.
       if ("pending" in body && body.pending) {
         return { pending: true, email: body.email };
       }
-      // Fallback path (OTP infra down): signed in directly.
       setUser((body as { user: AuthUser }).user);
       setStatus("authed");
       void rememberCurrentAccount();
@@ -275,7 +247,6 @@ export function AuthProvider({
         body: JSON.stringify({ currentPassword, newPassword }),
       });
       if (!res.ok) await throwApiError(res, "Could not change your password.");
-      // All sessions (including this one) are now revoked — drop local state.
       setUser(null);
       setStatus("guest");
     },

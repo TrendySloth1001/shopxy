@@ -1,12 +1,5 @@
 import { z } from "zod";
 
-/**
- * Challan (delivery note) shapes, mirroring the backend `challans` module
- * (`/challans`). A challan is a quantity-only delivery note — no prices. It
- * posts stock OUT on create; from PENDING it can be cancelled (stock reversed)
- * or converted to a SALE invoice (which adds pricing).
- */
-
 export const CHALLAN_STATUSES = ["PENDING", "CONVERTED", "CANCELLED"] as const;
 export type ChallanStatus = (typeof CHALLAN_STATUSES)[number];
 
@@ -50,8 +43,6 @@ export const challanSchema = z
       .nullish()
       .transform((v) => v ?? []),
     _count: z.object({ items: z.coerce.number().default(0) }).nullish(),
-    /// Set once the merchant files this challan out of the working list. The
-    /// row and its number stay put — a challan is never deleted.
     archivedAt: z.string().nullish(),
     createdAt: z.string(),
     updatedAt: z.string().optional(),

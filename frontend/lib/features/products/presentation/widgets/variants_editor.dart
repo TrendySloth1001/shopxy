@@ -9,14 +9,6 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
-/// Phase E — merchant variant editor. Lets the merchant declare one or
-/// more axes (Colour, Size, …) and edit the per-variant grid. Stores
-/// [axes] + [variants] in place; the parent reads them back on save.
-///
-/// v1 simplifies the experience: axes drive nothing automatically.
-/// The merchant authors variants by hand and tags each with the right
-/// attribute values. A future iteration can generate the cross-product
-/// from axes.
 class VariantsEditor extends StatefulWidget {
   const VariantsEditor({
     super.key,
@@ -38,12 +30,6 @@ class VariantsEditor extends StatefulWidget {
   final String defaultSku;
   final VoidCallback onChange;
 
-  /// Asynchronously upload an image and return its stored URL — the
-  /// page injects its existing upload helper (camera/gallery picker +
-  /// backend POST) so the variant card can reuse the same compressed
-  /// upload path as the main product gallery. Returning null means
-  /// the user cancelled the picker or the upload failed; the card
-  /// just stays as-is.
   final Future<String?> Function(ImageSource source) onUploadImage;
 
   @override
@@ -458,10 +444,6 @@ class _VariantCard extends StatelessWidget {
   }
 }
 
-/// Per-variant image strip + picker. Sits at the bottom of every
-/// variant card. Thumbnails come straight from the upload pipeline
-/// (already resized to 3 widths server-side) so the merchant gets
-/// instant visual confirmation that the upload landed.
 class _VariantImagesRow extends StatelessWidget {
   const _VariantImagesRow({
     required this.urls,

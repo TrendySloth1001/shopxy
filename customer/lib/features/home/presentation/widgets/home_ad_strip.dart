@@ -4,14 +4,10 @@ import 'package:shopxy_customer/features/home/data/models/home_feed_models.dart'
 import 'package:shopxy_customer/features/home/presentation/widgets/home_banner_image.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 
-/// Vertical stack of full-width banner images. Each banner is just a
-/// plain tappable picture + optional link. Powers both the ad-strip and
-/// promo-banner home slots — they share the same data shape and widget.
 class HomeAdStrip extends StatelessWidget {
   const HomeAdStrip({super.key, required this.slides});
   final List<HeroSlide> slides;
 
-  // Wide banner strip aspect ratio.
   static const double _aspectRatio = 16 / 6;
 
   @override

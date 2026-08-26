@@ -2,15 +2,10 @@ import 'dart:convert';
 import 'package:shopxy_customer/core/network/api_client.dart';
 import 'package:shopxy_customer/shared/domain/entities/catalog_product.dart';
 
-/// Server-side cart. Calls /me/cart on the backend so the user's basket
-/// follows them across devices. CartProvider keeps a SharedPreferences
-/// cache for cold-boot rendering, but this data source is the source
-/// of truth once the user is signed in.
 class CartRemoteDataSource {
   const CartRemoteDataSource(this._client);
   final ApiClient _client;
 
-  /// GET /me/cart — returns the full cart in render-ready shape.
   Future<List<CartLineDto>> list() async {
     final res = await _client.get('/me/cart');
     if (res.statusCode != 200) {
@@ -23,9 +18,6 @@ class CartRemoteDataSource {
         .toList();
   }
 
-  /// PUT /me/cart/:productId — sets the absolute quantity. Returns the
-  /// updated line, or null when quantity = 0 cleared the row. Throws
-  /// when the product is out-of-stock or not purchasable.
   Future<CartLineDto?> setQuantity(String productId, double quantity) async {
     final res = await _client.put(
       '/me/cart/$productId',
@@ -61,9 +53,6 @@ class CartRemoteDataSource {
     }
   }
 
-  /// POST /me/cart/merge — incoming items are summed into the server
-  /// cart (capped by stock). Used once on first login to roll a guest
-  /// cart into the user's persistent one.
   Future<List<CartLineDto>> merge(
     List<({String productId, double quantity})> items,
   ) async {
@@ -94,9 +83,6 @@ class CartException implements Exception {
   String toString() => message;
 }
 
-/// Server response shape: `{ productId, quantity, product: {...} }`.
-/// We don't model an `id` field because the customer only needs to
-/// address rows by productId anyway.
 class CartLineDto {
   const CartLineDto({
     required this.product,

@@ -1,10 +1,6 @@
 import prisma from '../../infra/db/prisma.js';
 import { contactChangeLogService } from '../contact-change-log/contact-change-log.service.js';
 
-/// Tenant-scoped party (customer) operations. Every method takes
-/// `shopId` so reads and writes stay isolated to the calling
-/// merchant's address book; `assertOwns` is used before mutate ops to
-/// reject cross-tenant attempts with a clean 404.
 export class PartiesService {
   async createParty(
     shopId: number,
@@ -98,10 +94,6 @@ export class PartiesService {
     });
   }
 
-  /// One-shot detail payload for the party page. Pulls party header,
-  /// recent invoices + challans, totals grouped by invoice type, and the
-  /// linked-user identity in parallel. Used by the merchant-side party
-  /// detail screen.
   async getPartyOverview(shopId: number, id: number) {
     const party = await prisma.party.findFirst({
       where: { id, shopId },
@@ -123,11 +115,6 @@ export class PartiesService {
         createdAt: true,
         updatedAt: true,
         linkedUserId: true,
-        // DPDP §6/§8 — do NOT disclose the linked customer's registered
-        // login email to the merchant. The merchant already holds the
-        // contact `email` they typed on the party row; the account email
-        // is a separate data principal's PII shared with no specific
-        // consent at link time. Name only.
         linkedUser: { select: { id: true, name: true } },
       },
     });
@@ -268,8 +255,6 @@ export class PartiesService {
   }
 
   async deleteParty(shopId: number, id: number) {
-    // First confirm ownership so a 404 (not silent success) is returned
-    // when a merchant tries to delete another shop's party.
     const owned = await prisma.party.findFirst({
       where: { id, shopId },
       select: { id: true },

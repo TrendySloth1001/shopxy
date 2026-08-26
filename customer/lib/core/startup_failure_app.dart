@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// Shown when `main()` throws before `runApp` — otherwise the launch window
-/// stays on screen forever with no message.
-///
-/// Depends on nothing but Flutter (hardcoded colours, no providers/theme):
-/// the thing that failed may well be one of those.
 class StartupFailureApp extends StatelessWidget {
   const StartupFailureApp({super.key, required this.error, this.stack});
 

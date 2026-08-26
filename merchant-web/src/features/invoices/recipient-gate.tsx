@@ -7,17 +7,6 @@ import { Modal, ModalActions } from "@/shared/ui/modal";
 import { SelectField, TextField } from "@/shared/ui/form";
 import { INDIAN_STATES, stateNameForCode } from "@/shared/india";
 
-/**
- * GST Rule 46(e)/(f): once an invoice is B2B (recipient GSTIN present) or
- * worth ≥ ₹50,000, the recipient's name AND address are mandatory. The web
- * mirror of the Flutter merchant app's `showRecipientDetailsSheet`.
- *
- * Checked here rather than left to the server, because the server's rejection
- * is unactionable from this screen — the merchant would just see "Recipient
- * address is required" with nowhere to put one.
- */
-
-/** The ₹50,000 named-recipient threshold. Mirrors `FIFTY_K` in the engine. */
 export const NAMED_RECIPIENT_THRESHOLD = 50000;
 
 export type RecipientRequirement = "b2b" | "highValue";
@@ -31,16 +20,6 @@ export type RecipientDetails = {
   acknowledgeMissingRecipientDetails?: true;
 };
 
-/**
- * Whether the recipient is complete enough to issue, and if not, why it's
- * required and what's absent.
- *
- * This warns in MORE cases than the server blocks, deliberately. The server
- * backfills `customerStateCode` from a recipient GSTIN and then counts a bare
- * state code as an address, so a B2B invoice never trips its address branch
- * however empty the customer's record is. The question worth asking is "do we
- * know where this customer is?", not "will the server let this through?".
- */
 export function checkRecipient(args: {
   type: "SALE" | "PURCHASE";
   documentType: string;
@@ -51,8 +30,6 @@ export function checkRecipient(args: {
 }): { requirement: RecipientRequirement; nameMissing: boolean; addressMissing: boolean } | null {
   const { type, documentType, customerName, customerGstin, total, party } = args;
   if (type !== "SALE") return null;
-  // CREDIT/DEBIT notes inherit their recipient from the original invoice, and
-  // ESTIMATE/PROFORMA are pre-supply offers Rule 46 doesn't govern.
   if (documentType !== "TAX_INVOICE" && documentType !== "BILL_OF_SUPPLY") return null;
 
   const hasGstin = customerGstin.trim().length > 0;
@@ -65,7 +42,6 @@ export function checkRecipient(args: {
 
   const filled = (v?: string | null) => (v ?? "").trim().length > 0;
   const nameMissing = !filled(customerName);
-  // State code is deliberately not counted — see the note above.
   const addressMissing =
     !filled(party?.address) && !filled(party?.city) && !filled(party?.pinCode);
   if (!nameMissing && !addressMissing) return null;
@@ -106,9 +82,6 @@ export function RecipientGateModal({
   const [saveToParty, setSaveToParty] = useState(canSaveToParty);
   const [confirmingSkip, setConfirmingSkip] = useState(false);
 
-  // The server accepts ANY one of address / city / state / PIN as satisfying
-  // Rule 46(f), so this does too — insisting on all four would be stricter
-  // than the rule and would push people towards the skip button.
   const anyFilled =
     address.trim() !== "" || city.trim() !== "" || pinCode.trim() !== "" || stateCode !== "";
 

@@ -1,7 +1,3 @@
-/**
- * Review client-side fetchers. Hit /api/* BFF routes only.
- */
-
 import { reviewSummarySchema, reviewPageSchema, reviewSchema, type ReviewSummary, type ReviewPage, type Review } from "./types";
 
 async function jsonOrThrow<T>(
@@ -15,7 +11,6 @@ async function jsonOrThrow<T>(
       const b = (await res.json()) as { error?: string };
       if (b?.error) message = b.error;
     } catch {
-      // keep fallback
     }
     throw new Error(message);
   }
@@ -59,7 +54,6 @@ export async function deleteReview(productId: string): Promise<void> {
       const b = (await res.json()) as { error?: string };
       if (b?.error) msg = b.error;
     } catch {
-      // keep
     }
     throw new Error(msg);
   }

@@ -31,7 +31,6 @@ import { Divider } from "@/shared/ui/divider";
 import { BackButton } from "@/shared/ui/back-button";
 import { DeveloperEnvironmentSection } from "@/features/settings/environment-picker";
 
-/** A single destination in the account hub. */
 interface HubLink {
   href: string;
   icon: ReactNode;
@@ -160,14 +159,12 @@ export default function AccountPage() {
         <BackButton fallback="/" className="mb-md" />
         <AccountIdentity />
         <AccountHub />
-        {/* Renders nothing unless this is the developer account. */}
         <DeveloperEnvironmentSection />
       </main>
     </RequireAuth>
   );
 }
 
-/** "Jun 2024" from an ISO timestamp, or null if absent / unparseable. */
 function formatMemberSince(createdAt?: string): string | null {
   if (!createdAt) return null;
   const date = new Date(createdAt);
@@ -178,11 +175,6 @@ function formatMemberSince(createdAt?: string): string | null {
   }).format(date);
 }
 
-/**
- * Identity band — the page's anchor. Shows who you're signed in as plus the
- * two highest-value account actions (edit profile, sign out). Built from
- * whitespace + a single hairline, not a chunky card (CLAUDE.md §9b).
- */
 function AccountIdentity() {
   const { user, logout } = useAuth();
   const router = useRouter();
@@ -234,11 +226,6 @@ function AccountIdentity() {
   );
 }
 
-/**
- * Quick-access hub — every account destination, grouped and described so users
- * can scan rather than hunt (Baymard: don't truncate the account menu; group
- * with secondary text). Rendered as a responsive tile grid.
- */
 function AccountHub() {
   return (
     <section className="mt-xxl">

@@ -18,16 +18,6 @@ import { Modal, ModalActions } from "@/shared/ui/modal";
 const LENGTH = 6;
 const COOLDOWN = 30;
 
-/**
- * Signup OTP entry. **Deliberately hard to leave by accident**: the account
- * does not exist until the code is confirmed, so wandering off mid-flow
- * silently discards the signup. Back-navigation and tab-close are both
- * guarded, and there is exactly one explicit way out.
- *
- * The browser can't be prevented from navigating, only asked — so this is a
- * confirmation, not a cage. That's the honest ceiling on the web; the Flutter
- * app can and does intercept its back gesture outright.
- */
 export function VerifyEmailForm({ email }: { email: string }) {
   const { verifyEmail, resendOtp } = useAuth();
   const router = useRouter();
@@ -39,13 +29,10 @@ export function VerifyEmailForm({ email }: { email: string }) {
   const [cooldown, setCooldown] = useState(COOLDOWN);
   const [confirmLeave, setConfirmLeave] = useState(false);
   const inputs = useRef<Array<HTMLInputElement | null>>([]);
-  /// Set once the code is accepted, so the guards below stop firing while we
-  /// navigate on to onboarding — otherwise success itself trips the warning.
   const done = useRef(false);
 
   const code = digits.join("");
 
-  // No email in the URL → nothing to verify; back to signup.
   useEffect(() => {
     if (!email) router.replace("/register");
   }, [email, router]);
@@ -60,8 +47,6 @@ export function VerifyEmailForm({ email }: { email: string }) {
     return () => clearInterval(id);
   }, [cooldown]);
 
-  // Refresh / tab-close warning. The browser shows its own generic copy; we
-  // only get to say that there IS unsaved work.
   useEffect(() => {
     function onBeforeUnload(e: BeforeUnloadEvent) {
       if (done.current) return;
@@ -71,9 +56,6 @@ export function VerifyEmailForm({ email }: { email: string }) {
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, []);
 
-  // Back-button guard. Push a throwaway history entry so the first Back lands
-  // here instead of leaving; on popstate, re-push it and ask. Declining keeps
-  // them on the page with history intact.
   useEffect(() => {
     window.history.pushState(null, "", window.location.href);
     function onPopState() {
@@ -178,8 +160,6 @@ export function VerifyEmailForm({ email }: { email: string }) {
         {t("verify.submit")}
       </SubmitButton>
 
-      {/* The one explicit way out. A screen with no exit at all is worse than
-          one whose exit costs a confirmation. */}
       <button
         type="button"
         onClick={() => setConfirmLeave(true)}

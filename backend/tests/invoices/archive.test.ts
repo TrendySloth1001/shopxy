@@ -3,24 +3,11 @@ import prisma from '../../src/infra/db/prisma.js';
 import { invoicesService } from '../../src/modules/invoices/invoices.service.js';
 import { createTestUser, cleanupTestUser, createTestProduct } from '../helpers/setup.js';
 
-/// Archiving replaces deletion.
-///
-/// GST Rule 46(b) needs the invoice serial run consecutive, and the serial is
-/// allocated at CREATE time — so even an abandoned DRAFT already owns a number
-/// and its row can never go away. `deleteInvoice` reflected that by returning
-/// an error on every branch: it had no success path at all, while both clients
-/// still offered a Delete button that could only ever fail.
-///
-/// The number staying put is the whole point, so it is what these tests check
-/// hardest.
-
 describe('invoices — archive', () => {
   afterAll(async () => {
     await prisma.$disconnect();
   });
 
-  /// A SALE needs exactly one counterparty — the `invoices_vendor_party_xor`
-  /// check constraint rejects a row with neither.
   async function draft(ctx: { shopId: number }) {
     const product = await createTestProduct(ctx.shopId, { sellingPrice: 100 });
     const party = await prisma.party.create({
@@ -45,8 +32,6 @@ describe('invoices — archive', () => {
       if ('error' in result) return;
 
       expect(result.invoice.archivedAt).not.toBeNull();
-      // The serial is retained against the row — this is what makes archiving
-      // legal where deletion wasn't.
       expect(result.invoice.invoiceNo).toBe(invoice.invoiceNo);
       const stillThere = await prisma.invoice.findUnique({ where: { id: invoice.id } });
       expect(stillThere).not.toBeNull();
@@ -105,8 +90,6 @@ describe('invoices — archive', () => {
     }
   });
 
-  // A confirmed invoice has been issued to someone else. Letting the merchant
-  // hide it would put their own books out of step with the customer's copy.
   it('refuses to archive a CONFIRMED invoice', async () => {
     const ctx = await createTestUser();
     try {
@@ -140,7 +123,6 @@ describe('invoices — archive', () => {
     }
   });
 
-  // A retried tap must not fail.
   it('is idempotent in both directions', async () => {
     const ctx = await createTestUser();
     try {
@@ -161,8 +143,6 @@ describe('invoices — archive', () => {
     }
   });
 
-  // Archiving must not free the number for reuse — that's precisely the hole
-  // in the serial run Rule 46(b) forbids.
   it('does not release the number for the next invoice', async () => {
     const ctx = await createTestUser();
     try {

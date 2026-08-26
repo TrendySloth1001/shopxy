@@ -1,5 +1,3 @@
-// Customer-side projections of the backend ReturnRequest models.
-
 import 'package:shopxy_customer/shared/format/json_parse.dart';
 
 const List<String> kReturnReasons = [
@@ -138,17 +136,13 @@ class ReturnRequest {
   });
 
   final String id;
-  /// REQUESTED / APPROVED / REJECTED / CANCELLED / PICKED_UP /
-  /// RECEIVED / REFUNDED.
   final String status;
   final double refundAmount;
   final String? refundMethod;
   final DateTime createdAt;
   final DateTime updatedAt;
   final ReturnShop shop;
-  /// Parent CustomerOrder id — useful for "back to order" navigation.
   final String parentOrderId;
-  /// Underlying PurchaseRequest id.
   final String shopOrderId;
   final List<ReturnItem> items;
   final List<ReturnEvent> events;

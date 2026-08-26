@@ -1,8 +1,3 @@
-/**
- * Permission catalog — mirrors `backend/src/shared/http/permissions.ts`.
- * A right is `"<area>:<action>"`; `manage` implies `view`. `dashboard` and
- * `reports` are view-only. Keep in lockstep with the backend AREAS list.
- */
 export const AREAS = [
   "dashboard",
   "products",
@@ -40,7 +35,6 @@ export const AREA_LABELS: Record<Area, string> = {
   team: "Team",
 };
 
-/** One-line hint per area so the access grid is self-explanatory. */
 export const AREA_HINTS: Record<Area, string> = {
   dashboard: "Home overview",
   products: "Catalogue, prices, stock items",
@@ -59,13 +53,11 @@ export const AREA_HINTS: Record<Area, string> = {
   team: "Team members & roles",
 };
 
-/** Areas with no write surface — only `:view` exists. */
 export const VIEW_ONLY: ReadonlySet<Area> = new Set<Area>(["dashboard", "reports"]);
 
 export const viewRight = (area: Area) => `${area}:view`;
 export const manageRight = (area: Area) => `${area}:manage`;
 
-/** Ensure every `:manage` carries its `:view`, sorted + de-duped. */
 export function normalizeRights(rights: Iterable<string>): string[] {
   const out = new Set<string>();
   for (const r of rights) {
@@ -81,7 +73,6 @@ export function hasRight(rights: readonly string[], right: string): boolean {
   return false;
 }
 
-/** Summarise a grant set, e.g. "Products, Orders +2". */
 export function summariseRights(rights: readonly string[]): string {
   const areas = AREAS.filter((a) => hasRight(rights, viewRight(a)));
   if (areas.length === 0) return "No access";
@@ -90,8 +81,6 @@ export function summariseRights(rights: readonly string[]): string {
   return `${labels.slice(0, 3).join(", ")} +${labels.length - 3}`;
 }
 
-/** The granted areas (in catalog order) behind {@link summariseRights}, so a
- *  localized caller can render its own translated labels + overflow count. */
 export function summaryAreas(rights: readonly string[]): Area[] {
   return AREAS.filter((a) => hasRight(rights, viewRight(a)));
 }

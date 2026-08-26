@@ -3,9 +3,6 @@ import 'dart:convert';
 import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/features/coupons/domain/merchant_coupon.dart';
 
-/// Adapter for the merchant-side coupon admin endpoints under
-/// `/me/coupons-admin`. (Customer-facing `/me/coupons` is a separate
-/// surface that the customer app — not the merchant — talks to.)
 class MerchantCouponsRemoteDataSource {
   const MerchantCouponsRemoteDataSource(this._client);
   final ApiClient _client;

@@ -42,17 +42,11 @@ class InvoiceDetailPage extends StatefulWidget {
 }
 
 class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
-  /// Guards the archive button against a double tap while the request is in
-  /// flight — the page pops on success, so a second call would fire against a
-  /// dead context.
   bool _archiving = false;
 
   Invoice? _invoice;
   bool _isLoading = true;
   bool _isDownloading = false;
-  // Receipts recorded against this invoice (cash/UPI recorded by the merchant
-  // AND platform-collected online/wallet receipts reconciled by the backend).
-  // Drives the paid/outstanding summary + the payments list.
   List<Payment> _payments = const [];
 
   @override
@@ -62,15 +56,10 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
   }
 
   Future<void> _load() async {
-    // Capture both data sources synchronously, before any await, so we never
-    // touch `context` across an async gap.
     final ds = context.read<InvoicesRemoteDataSource>();
     final paymentsDs = context.read<PaymentsRemoteDataSource>();
     try {
       final invoice = await ds.getInvoiceById(widget.invoiceId);
-      // Payments received against this invoice. Best-effort: a failure here
-      // must not blank the invoice — fall back to an empty list so the page
-      // still renders (the paid/outstanding summary just won't show).
       List<Payment> payments = const [];
       try {
         payments = await paymentsDs.listPayments(invoiceId: widget.invoiceId);
@@ -89,18 +78,14 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     }
   }
 
-  /// Sum of receipts recorded against this invoice.
   double get _paidTotal =>
       _payments.fold<double>(0, (sum, p) => sum + p.amount);
 
-  /// Invoice total minus what's been received, floored at 0.
   double _outstanding(Invoice invoice) {
     final out = invoice.total - _paidTotal;
     return out > 0 ? out : 0;
   }
 
-  /// Human label for a receipt's channel. Platform-collected receipts (online
-  /// gateway / wallet) use mode OTHER; their note distinguishes which.
   String _paymentModeLabel(AppLocalizations l10n, Payment p) {
     switch (p.mode) {
       case 'OTHER':
@@ -147,19 +132,11 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     }
   }
 
-  /// Invoice numbers can contain `/` (e.g. `PUR/26-27/00001`). Using
-  /// that raw as a filename makes Dart try to create nested directories
-  /// that don't exist — `PathNotFoundException`. Strip / replace anything
-  /// the host filesystem might choke on.
   static String _safePdfFilename(String invoiceNo) {
     final sanitized = invoiceNo.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
     return '$sanitized.pdf';
   }
 
-  /// Downloads the PDF to the temp dir and pops the native share sheet.
-  /// WhatsApp appears as a share target on both Android and iOS, so users
-  /// effectively get a one-tap WhatsApp share — same flow handles email,
-  /// Drive, etc. without extra integration code.
   Future<void> _sharePdf() async {
     if (_invoice == null) return;
     setState(() => _isDownloading = true);
@@ -188,9 +165,6 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     }
   }
 
-  /// Open WhatsApp pre-filled with an invoice summary. If the invoice has
-  /// a customer phone we deep-link to that chat directly; otherwise we
-  /// fall back to the picker (`wa.me/?text=...`).
   Future<void> _shareViaWhatsApp() async {
     final invoice = _invoice;
     if (invoice == null) return;
@@ -213,23 +187,16 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     }
   }
 
-  /// Strip non-digits and ensure a 91 (India) country prefix. Returns null
-  /// when we can't make sense of the input — caller falls back to the
-  /// generic WhatsApp share link.
   static String? _normalizeIndianPhone(String? raw) {
     if (raw == null) return null;
     final digits = raw.replaceAll(RegExp(r'\D'), '');
     if (digits.isEmpty) return null;
     if (digits.startsWith('91') && digits.length >= 12) return digits;
     if (digits.length == 10) return '91$digits';
-    // Already has some other country code — trust the caller.
     if (digits.length >= 11) return digits;
     return null;
   }
 
-  /// Convert this estimate/proforma into a real tax invoice. The backend
-  /// mints a fresh invoice (new id, INV-prefixed number) from the source's
-  /// items; we navigate to its detail page so the user can confirm/print.
   Future<void> _convertToInvoice() async {
     final invoice = _invoice;
     if (invoice == null) return;
@@ -259,7 +226,6 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     final messenger = ScaffoldMessenger.of(context);
     try {
       final created = await ds.convertEstimate(invoice.id);
-      // Refresh the parent list so the new INV row appears immediately.
       invoicesProvider.loadInvoices(refresh: true);
       navigator.pushReplacement(
         MaterialPageRoute(
@@ -273,10 +239,6 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     }
   }
 
-  /// Raise a Sec 34 credit / debit note against this confirmed sale. The
-  /// composer posts to /invoices/:id/notes and refreshes the list; nothing
-  /// on this page changes (the note is a separate document), so we just
-  /// surface the result and stay put.
   Future<void> _issueNote() async {
     final invoice = _invoice;
     if (invoice == null) return;
@@ -286,17 +248,6 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     );
   }
 
-  /// Open the create form in edit mode for a DRAFT invoice. Once the user
-  /// saves we reload the detail (totals + line items may have changed),
-  /// so the page reflects the new state without a stale snapshot.
-
-  /// File this document out of the working list, or bring it back.
-  ///
-  /// It is never deleted and cannot be: the serial is allocated at create time
-  /// and Rule 46(b) needs the run consecutive, so the row and its number stay
-  /// put. The confirm dialog says exactly that, and is NOT styled destructive
-  /// — nothing is being destroyed. Restoring needs no confirmation at all;
-  /// it only puts the document back where it was.
   Future<void> _setArchived(Invoice invoice, bool archived) async {
     final l10n = AppLocalizations.of(context);
     if (archived) {
@@ -324,8 +275,6 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
           ),
         ),
       );
-      // Either way the document has left the list this page was opened from,
-      // so there's nothing here to return to.
       navigator.pop();
     } catch (e) {
       if (!mounted) return;
@@ -352,8 +301,6 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
       final updated = await provider.updateStatus(widget.invoiceId, status);
       if (!mounted) return;
       setState(() => _invoice = updated);
-      // Confirm/cancel are the page's headline actions — close the loop
-      // with an explicit success cue instead of a silent badge change.
       messenger.showSnackBar(
         SnackBar(
           content: Text(
@@ -372,9 +319,6 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     }
   }
 
-  /// Cancelling a draft is destructive — it reverses any stock movement
-  /// the draft would have posted on confirm. Gate it behind a dialog
-  /// because the bottom bar puts the action one tap away.
   Future<void> _confirmAndCancel() async {
     final invoice = _invoice;
     if (invoice == null) return;
@@ -454,17 +398,6 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
             ),
-          // Draft actions (Confirm / Cancel) live in the sticky bottom bar so
-          // they're impossible to miss. Archiving is a direct icon button
-          // rather than hidden behind an overflow menu — it's a single action,
-          // and burying one item under three dots costs a tap to discover
-          // nothing.
-          //
-          // This slot used to offer Delete, which the server could never
-          // honour: a draft already owns its legal serial and Rule 46(b) needs
-          // the run consecutive, so every delete came back as an error.
-          // Archiving does what the merchant actually wanted — the document
-          // leaves the list, its number stays put.
           if (!_isDownloading && (invoice.isArchived || !invoice.isConfirmed))
             IconButton(
               icon: AppIcon(
@@ -482,8 +415,6 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
         ],
       ),
       bottomNavigationBar: invoice.isDraft ? _buildDraftActionBar(l10n) : null,
-      // Single scroll surface so the hero illustration scrolls away with the
-      // body (it used to be pinned above a nested ListView).
       body: ListView(
         padding: EdgeInsets.zero,
         children: [
@@ -637,9 +568,6 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                       label: l10n.invoicesSubtotal,
                       value: invoice.subtotal,
                     ),
-                    // GST split mirrors how the invoice was saved. For older
-                    // rows without the split (igst/cgst/sgst all 0) we fall
-                    // back to the single taxAmount column.
                     if (invoice.igstAmount == 0 &&
                         invoice.cgstAmount == 0 &&
                         invoice.sgstAmount == 0)
@@ -677,10 +605,6 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                       value: invoice.total,
                       isHighlight: true,
                     ),
-                    // Payments received against this invoice — covers ALL channels:
-                    // cash/UPI recorded by the merchant AND online/wallet receipts
-                    // the backend reconciles from a customer's order payment. Shown
-                    // only once the invoice is a live liability (CONFIRMED).
                     if (invoice.status == 'CONFIRMED') ...[
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: AppSizes.sm),
@@ -712,9 +636,6 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                     ],
                   ],
                 ),
-                // Payments received — a simple timeline: a dot per receipt joined by
-                // a vertical rail, with mode + amount and the date / reference as
-                // plain text lines. No cards.
                 if (invoice.status == 'CONFIRMED' && _payments.isNotEmpty) ...[
                   const SizedBox(height: AppSizes.xxl),
                   AppSectionHeader(
@@ -728,9 +649,6 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                   ),
                 ],
                 const SizedBox(height: AppSizes.lg),
-                // Actions rendered as rounded cards with tinted icon chips. The old
-                // bare ListTiles inherited the theme's `tileColor: surface`, painting
-                // a mismatched lighter strip on the canvas.
                 _ActionTile(
                   iconChild: FaIcon(
                     FontAwesomeIcons.whatsapp,
@@ -746,9 +664,6 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                       : l10n.invoicesPickChatToSend,
                   onTap: _shareViaWhatsApp,
                 ),
-                // Estimates / proformas get a one-tap "Convert to Invoice" tile.
-                // Hidden once cancelled — converting a cancelled quotation makes no
-                // business sense and the backend would reject it anyway.
                 if ((invoice.documentType == 'ESTIMATE' ||
                         invoice.documentType == 'PROFORMA') &&
                     invoice.status != 'CANCELLED') ...[
@@ -789,8 +704,6 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                         vendorId: isSale ? null : invoice.vendorId,
                         partyName: invoice.customerName,
                         vendorName: invoice.vendorName,
-                        // Pre-fill the amount still due, not the full invoice total —
-                        // part-payments would otherwise default to over the balance.
                         initialAmount: _outstanding(invoice),
                         lockedInvoiceId: invoice.id,
                         lockedInvoiceLabel: invoice.invoiceNo,
@@ -800,17 +713,11 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text(l10n.invoicesPaymentRecorded)),
                         );
-                        // Reload so Received / Outstanding reflect the new payment
-                        // immediately — otherwise it still reads ₹0 and looks like
-                        // nothing happened.
                         _load();
                       }
                     },
                   ),
                 ],
-                // Sec 34 credit / debit note. Only against a CONFIRMED sale tax
-                // invoice / bill of supply (mirrors the backend guard) — notes on
-                // purchases, estimates, or drafts make no sense here.
                 if (invoice.status == 'CONFIRMED' &&
                     invoice.type == 'SALE' &&
                     (invoice.documentType == 'TAX_INVOICE' ||
@@ -848,13 +755,6 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     );
   }
 
-  /// Sticky bar shown only while the invoice is a DRAFT. Confirm posts
-  /// the stock movement; Cancel is gated behind a dialog because it's
-  /// destructive (no stock is moved and the row is marked cancelled).
-  ///
-  /// AppButton's inner [Center] expands unbounded in [bottomNavigationBar]
-  /// — wrap each in a [SizedBox] with explicit height so they don't
-  /// stretch to fill the screen.
   Widget _buildDraftActionBar(AppLocalizations l10n) {
     return SafeArea(
       top: false,
@@ -894,7 +794,6 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     );
   }
 
-  /// Compose a one-line "addr, city, state - pin" string, skipping empties.
   static String _addressLine(
     String? addr,
     String? city,
@@ -939,10 +838,6 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
   }
 }
 
-/// A tappable invoice action rendered as a rounded card with a tinted icon
-/// chip (WhatsApp / convert / mark-as-paid / issue-note). Replaces the bare
-/// `ListTile`s, whose theme `tileColor: surface` painted a mismatched lighter
-/// strip on the canvas.
 class _ActionTile extends StatelessWidget {
   const _ActionTile({
     required this.iconChild,
@@ -952,8 +847,6 @@ class _ActionTile extends StatelessWidget {
     this.subtitle,
   });
 
-  /// Pre-built, already-coloured/sized icon (an [Icon] or a [FaIcon]) so the
-  /// tile can host both Material glyphs and Font Awesome brand marks.
   final Widget iconChild;
   final Color iconBackground;
   final String title;
@@ -1013,9 +906,6 @@ class _ActionTile extends StatelessWidget {
   }
 }
 
-/// Payments-received timeline: a hollow dot per receipt joined by a thin
-/// vertical rail, with the mode + amount and the date / reference number as
-/// plain text lines beside it. Deliberately card-less — a light activity feed.
 class _PaymentTimeline extends StatelessWidget {
   const _PaymentTimeline({
     required this.payments,
@@ -1037,7 +927,6 @@ class _PaymentTimeline extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Rail: a hollow dot joined to the next receipt by a hairline.
                 Column(
                   children: [
                     Container(
@@ -1112,11 +1001,6 @@ class _PaymentTimeline extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton shown while the invoice is loading.
-// Mirrors the real page layout: hero → header block → party info →
-// items section → totals section.
-// ---------------------------------------------------------------------------
 class _InvoiceDetailSkeleton extends StatelessWidget {
   const _InvoiceDetailSkeleton();
 
@@ -1131,7 +1015,6 @@ class _InvoiceDetailSkeleton extends StatelessWidget {
         child: Column(
           children: [
             SizedBox(height: FloatingAppBar.contentTopInset(context)),
-            // Hero illustration placeholder
             const AppShimmerBox(
               width: double.infinity,
               height: AppSizes.heroHeightMd,
@@ -1141,28 +1024,22 @@ class _InvoiceDetailSkeleton extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.all(AppSizes.lg),
                 children: const [
-                  // Invoice number + status badge row
                   _SkeletonHeaderRow(),
                   SizedBox(height: AppSizes.sm),
-                  // Document-type badge rows (two chip-sized boxes)
                   _SkeletonBadgeRow(),
                   SizedBox(height: AppSizes.sm),
-                  // Sale/purchase label + date lines
                   AppShimmerLine(widthFactor: 0.45, height: AppSizes.md),
                   SizedBox(height: AppSizes.xs),
                   AppShimmerLine(widthFactor: 0.55, height: AppSizes.sm),
                   SizedBox(height: AppSizes.lg),
-                  // Party details — 4 info rows
                   _SkeletonInfoRow(labelFactor: 0.2, valueFactor: 0.55),
                   _SkeletonInfoRow(labelFactor: 0.15, valueFactor: 0.45),
                   _SkeletonInfoRow(labelFactor: 0.18, valueFactor: 0.6),
                   _SkeletonInfoRow(labelFactor: 0.22, valueFactor: 0.5),
                   SizedBox(height: AppSizes.lg),
-                  // Items section header + divider
                   AppShimmerLine(widthFactor: 0.35, height: AppSizes.md),
                   SizedBox(height: AppSizes.sm),
                   _SkeletonDivider(),
-                  // 3 sample item rows
                   _SkeletonItemRow(),
                   _SkeletonDivider(),
                   _SkeletonItemRow(),
@@ -1171,7 +1048,6 @@ class _InvoiceDetailSkeleton extends StatelessWidget {
                   SizedBox(height: AppSizes.md),
                   _SkeletonDivider(),
                   SizedBox(height: AppSizes.md),
-                  // Totals breakdown — 6 rows (subtotal, tax, cess, discount, divider, total)
                   _SkeletonTotalRow(labelFactor: 0.3, valueFactor: 0.25),
                   _SkeletonTotalRow(labelFactor: 0.25, valueFactor: 0.28),
                   _SkeletonTotalRow(labelFactor: 0.2, valueFactor: 0.22),
@@ -1391,9 +1267,6 @@ class _ItemTile extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSizes.xs),
                 Text(
-                  // HSN sits next to the rate it explains — the printed PDF
-                  // shows both per line plus an HSN summary, and the on-screen
-                  // copy shouldn't be harder to reconcile than the print.
                   '${item.quantity.truncateToDouble() == item.quantity ? item.quantity.toInt() : item.quantity.toStringAsFixed(2)} ${item.unit} × ${AppStrings.currencySymbol}${item.unitPrice.toStringAsFixed(2)}'
                   '${item.taxPercent > 0 ? ' + ${item.taxPercent.toStringAsFixed(0)}% GST' : ''}'
                   '${item.hsn != null && item.hsn!.isNotEmpty ? ' · HSN ${item.hsn}' : ''}',

@@ -5,11 +5,6 @@ import { Link2, CheckCircle2, Loader2 } from "@/shared/icons";
 import { useTranslations } from "next-intl";
 import { verifyConnect, confirmConnect, type ConnectDetails } from "./api";
 
-/**
- * "Connect an existing Razorpay linked account" — paste an acc_XXXX, we verify
- * it (fetch from Razorpay), show the details to confirm, then store it. Skips
- * the full KYC wizard for merchants who already have a Route account.
- */
 export function ConnectAccountCard({ onLinked }: { onLinked: () => void }) {
   const t = useTranslations("payouts");
   const [accountId, setAccountId] = useState("");

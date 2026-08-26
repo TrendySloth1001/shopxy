@@ -85,7 +85,6 @@ export const returnRequestSchema = z.object({
     .optional(),
   items: z.array(returnItemSchema),
   events: z.array(returnEventSchema),
-  // Derived server flag — present on detail
   canCancel: z.boolean().optional(),
 });
 export type ReturnRequest = z.infer<typeof returnRequestSchema>;
@@ -101,7 +100,6 @@ export const returnsPageSchema = z.object({
 });
 export type ReturnsPage = z.infer<typeof returnsPageSchema>;
 
-/** Status visual config (matching Flutter's _StatusPill logic) */
 export function returnStatusVisual(status: string): {
   label: string;
   colorClass: string;

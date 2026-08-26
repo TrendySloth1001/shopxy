@@ -2,10 +2,6 @@ import prisma from '../../infra/db/prisma.js';
 import type { Prisma } from '@prisma/client';
 import { isValidGstin } from '../../shared/validation/indian.js';
 
-// Shop branding (logo/banner/slug) is included so the customer-side
-// "Merchants" tab can render real shop identity instead of an initial
-// chip. The trailing invoice take=1+desc gives us the last-activity
-// timestamp + amount used to sort and label each tile.
 const linkShopSelect = {
   id: true,
   name: true,
@@ -126,19 +122,12 @@ const catalogDetailSelect = {
 } satisfies Prisma.ProductSelect;
 
 export class MeService {
-  /// Customer-side product catalog. Mirrors the merchant `/products`
-  /// list but only ever returns active products and projects the
-  /// minimal fields the customer app actually renders. The same
-  /// (isActive, name) index that powers the merchant page is enough.
   async listCatalog(opts: {
     search: string;
     categoryId?: number;
     skip: number;
     limit: number;
   }) {
-    // Customer-facing catalog: only active AND published products.
-    // Without `isPublished: true` an unpublished draft from any shop
-    // would surface here, leaking work-in-progress catalog rows.
     const where: Prisma.ProductWhereInput = {
       isActive: true,
       isPublished: true,
@@ -171,10 +160,6 @@ export class MeService {
     });
   }
 
-  /// Customer wishlist. Returns the saved products with the same shape
-  /// as the catalog list so the same product card can render either
-  /// surface. Most-recent-first matches how shopping carts/lists
-  /// behave everywhere (newest at the top).
   async listWishlist(userId: number) {
     const rows = await prisma.wishlistItem.findMany({
       where: { userId },
@@ -202,9 +187,6 @@ export class MeService {
     return rows.map((r) => r.productId);
   }
 
-  /// Idempotent add — if the row exists, return it. The unique
-  /// constraint on (userId, productId) means concurrent calls can't
-  /// duplicate.
   async addToWishlist(userId: number, productId: number) {
     const product = await prisma.product.findFirst({
       where: { id: productId, isActive: true },
@@ -219,8 +201,6 @@ export class MeService {
     return { ok: true as const };
   }
 
-  /// Idempotent remove — no error if the row is already gone, so the
-  /// frontend can hammer the toggle without checking state first.
   async removeFromWishlist(userId: number, productId: number) {
     await prisma.wishlistItem.deleteMany({
       where: { userId, productId },
@@ -242,7 +222,6 @@ export class MeService {
     });
   }
 
-  /// Top-level "what am I linked to" list — one query each, parallel.
   async links(userId: number) {
     const [parties, vendors] = await Promise.all([
       prisma.party.findMany({
@@ -259,17 +238,7 @@ export class MeService {
     return { parties, vendors };
   }
 
-  /// Distinct shops the user has at least one active Party or Vendor
-  /// link to. Powers the customer-side "Your linked merchants" rail:
-  /// each result is a clickable shop tile that opens the marketplace
-  /// shop page filtered to that merchant's catalog. Returns shops
-  /// regardless of their `isPublished` flag — the merchant chose to
-  /// invite this user, so they get to browse even if the shop hasn't
-  /// gone fully public yet.
   async linkedShops(userId: number) {
-    // Collect distinct shopIds from active party + vendor rows the
-    // user is the linked user on. One round-trip per side; UNION'd
-    // client-side because Prisma can't `distinct` across two tables.
     const [partyShopIds, vendorShopIds] = await Promise.all([
       prisma.party.findMany({
         where: { linkedUserId: userId, isActive: true },
@@ -290,8 +259,6 @@ export class MeService {
     const shops = await prisma.shop.findMany({
       where: { id: { in: allIds } },
       select: {
-        // DPDP §8 data-minimisation: never expose the merchant owner's
-        // internal User.id to the linked customer. Shop identity only.
         id: true,
         name: true,
         slug: true,
@@ -314,9 +281,6 @@ export class MeService {
     }));
   }
 
-  /// Authorisation gate — does this user own the party/vendor row?
-  /// Returns the row itself so callers can use its name etc. without a
-  /// second round-trip.
   async assertOwnsParty(userId: number, partyId: number) {
     return prisma.party.findFirst({
       where: { id: partyId, linkedUserId: userId },
@@ -330,9 +294,6 @@ export class MeService {
     });
   }
 
-  /// List confirmed invoices that the linking shop has issued *to this
-  /// party*. Cancelled and draft rows are deliberately hidden — the
-  /// customer should only see what's been finalised against them.
   async listInvoicesForParty(opts: {
     partyId: number;
     skip: number;
@@ -377,8 +338,6 @@ export class MeService {
     return { data, total };
   }
 
-  /// Single-invoice detail, gated to the party/vendor that the row
-  /// belongs to so a malicious client can't probe ids they don't own.
   async getInvoiceForParty(opts: { partyId: number; invoiceId: number }) {
     return prisma.invoice.findFirst({
       where: { id: opts.invoiceId, partyId: opts.partyId, status: 'CONFIRMED' },
@@ -392,8 +351,6 @@ export class MeService {
     });
   }
 
-  /// The customer's own GST registration, used to claim input tax credit on
-  /// marketplace purchases. Null on both fields = B2C, which is the default.
   async gstProfile(userId: number) {
     const user = await prisma.user.findUniqueOrThrow({
       where: { id: userId },
@@ -405,11 +362,6 @@ export class MeService {
     };
   }
 
-  /// Save or clear the buyer's GST identity.
-  ///
-  /// Both fields move together: a GSTIN with no registered name cannot be put
-  /// on a Rule 46 tax invoice, and a name alone claims nothing. Passing null
-  /// for the GSTIN clears both, which is how a customer goes back to B2C.
   async updateGstProfile(
     userId: number,
     input: { gstin: string | null; legalName?: string | null },
@@ -427,8 +379,6 @@ export class MeService {
     }
 
     const gstin = input.gstin.trim().toUpperCase();
-    // Checksum, not just shape — see isValidGstin. A typo here surfaces months
-    // later as the buyer's ITC denied and the seller's GSTR-1 mismatched.
     if (!isValidGstin(gstin)) return { error: 'INVALID_GSTIN' };
 
     const legalName = input.legalName?.trim() ?? '';

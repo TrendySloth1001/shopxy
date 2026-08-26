@@ -23,9 +23,6 @@ import {
   type Series,
 } from "@/features/numbering/schema";
 
-/** Display grouping — same series set the backend/Flutter side use, just
- * clustered into three headed groups so the page doesn't read as one flat
- * list of seven unrelated rows. */
 const GROUPS: { titleKey: string; series: Series[] }[] = [
   {
     titleKey: "groups.invoices",
@@ -188,9 +185,6 @@ function SchemeEditorModal({
 
   const paddingNum = Number(padding) || scheme.padding;
   const resetYearlyBool = resetYearly === "yearly";
-  // Next 3, not just 1 — lets the merchant confirm the format looks right
-  // across a few numbers before committing, no extra round-trip (pure math
-  // on the already-fetched nextSeq).
   const previewNext = [0, 1, 2].map((i) =>
     formatDocNoPreview(
       { prefix, suffix, separator, padding: paddingNum, resetYearly: resetYearlyBool },

@@ -246,8 +246,6 @@ class _BannerTile extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onDelete;
 
-  /// Stable status key used for both colour selection and picking the
-  /// localized display label. Kept in English (not user-facing directly).
   String get _status {
     final now = DateTime.now();
     if (!banner.isActive) return 'Off';
@@ -303,8 +301,6 @@ class _BannerTile extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 16:9 — the shape a banner is actually shown in, so the
-                // merchant previews the crop rather than a squashed square.
                 SizedBox(
                   width: 96,
                   child: AspectRatio(
@@ -318,9 +314,6 @@ class _BannerTile extends StatelessWidget {
                       child: Image.network(
                         resolveImageUrl(banner.imageUrl),
                         fit: BoxFit.cover,
-                        // Decode at the size actually drawn — a full hero
-                        // image decoded for a 96px thumb is pure waste, and
-                        // the downsample is what makes it look muddy.
                         cacheWidth: 288,
                         filterQuality: FilterQuality.medium,
                         errorBuilder: (_, _, _) => AppIcon(
@@ -345,9 +338,6 @@ class _BannerTile extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: AppSizes.xs),
-                      // Wrap, not Row: status + sort + product count + a date
-                      // window is more than one line of a phone, and a Row
-                      // painted the overflow stripe instead of wrapping.
                       Wrap(
                         spacing: AppSizes.sm,
                         runSpacing: AppSizes.xs,
@@ -410,8 +400,6 @@ class _BannerTile extends StatelessWidget {
   }
 }
 
-/// One muted metadata chip in the tile's Wrap. A widget rather than a helper
-/// so every entry lines its icon and label up identically.
 class _Meta extends StatelessWidget {
   const _Meta({required this.label, this.icon});
   final String label;
@@ -433,10 +421,6 @@ class _Meta extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Skeleton widgets (shown while isLoading && banners.isEmpty)
-// ---------------------------------------------------------------------------
 
 class _BannersSkeleton extends StatelessWidget {
   const _BannersSkeleton();
@@ -473,7 +457,6 @@ class _PlacementSectionSkeleton extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section header: label shimmer line + badge shimmer box
           Row(
             children: const [
               AppShimmerLine(widthFactor: 0.35, height: 16),
@@ -506,10 +489,8 @@ class _BannerTileSkeleton extends StatelessWidget {
           padding: const EdgeInsets.all(AppSizes.md),
           child: Row(
             children: [
-              // Image placeholder
               AppShimmerBox(width: 72, height: 56, radius: AppSizes.radiusSm),
               const SizedBox(width: AppSizes.md),
-              // Text lines
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -520,7 +501,6 @@ class _BannerTileSkeleton extends StatelessWidget {
                   ],
                 ),
               ),
-              // Delete icon placeholder
               const AppShimmerBox(
                 width: 32,
                 height: 32,

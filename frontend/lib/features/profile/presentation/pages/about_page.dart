@@ -10,9 +10,6 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
-/// The app's About screen — brand lockup (logo, name, "by CloudNSofts",
-/// house tagline), the live app version, quick links to the legal docs, and a
-/// copyright line. Reached from Settings → About.
 class AboutPage extends StatefulWidget {
   const AboutPage({super.key});
 
@@ -54,7 +51,6 @@ class _AboutPageState extends State<AboutPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: AppSizes.xl),
-            // Brand lockup.
             Center(
               child: Column(
                 children: [
@@ -89,7 +85,6 @@ class _AboutPageState extends State<AboutPage> {
                     ),
                   ),
                   const SizedBox(height: AppSizes.lg),
-                  // Version pill.
                   DecoratedBox(
                     decoration: BoxDecoration(
                       color: AppColors.surfaceTint,
@@ -115,7 +110,6 @@ class _AboutPageState extends State<AboutPage> {
 
             const SizedBox(height: AppSizes.xxxl),
 
-            // Legal links.
             _AboutLink(
               icon: AppIcons.shieldOutlined,
               label: l10n.profilePrivacyPolicy,
@@ -150,7 +144,6 @@ class _AboutPageState extends State<AboutPage> {
   }
 }
 
-/// A tappable legal link row on the About page.
 class _AboutLink extends StatelessWidget {
   const _AboutLink({required this.icon, required this.label, required this.onTap});
   final AppIconData icon;

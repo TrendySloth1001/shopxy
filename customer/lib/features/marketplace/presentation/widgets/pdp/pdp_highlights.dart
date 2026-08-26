@@ -2,12 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 
-/// "About this item" bullet list. Renders the first 5 [items] inline;
-/// any remainder hides behind a "See more" toggle so a long highlight
-/// list doesn't push the spec sheet below the fold. Replaces the old
-/// length-heuristic split where chips and bullets were chosen at render
-/// time based on whether the first string was short — the heuristic
-/// fired on legit short bullets too. Deterministic split is cleaner.
 class PdpHighlights extends StatefulWidget {
   const PdpHighlights({super.key, required this.items});
   final List<String> items;

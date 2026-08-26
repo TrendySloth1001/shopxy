@@ -31,7 +31,6 @@ class MerchantCoupon {
   final String code;
   final String title;
   final String? description;
-  /// PERCENT or FLAT.
   final String discountType;
   final double discountValue;
   final double? maxDiscount;
@@ -41,12 +40,7 @@ class MerchantCoupon {
   final int perUserLimit;
   final int totalCap;
   final int totalRedemptions;
-  /// Public coupons auto-apply at checkout and surface on the
-  /// customer's coupon carousel. Private coupons (the default) are
-  /// only redeemed by typing the code — useful for influencer drops,
-  /// B2B deals, and refer-a-friend links.
   final bool isPublic;
-  /// Only redeemable on the customer's first confirmed order.
   final bool firstOrderOnly;
   final bool isActive;
   final DateTime createdAt;

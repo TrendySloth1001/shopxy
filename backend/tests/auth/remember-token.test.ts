@@ -3,10 +3,6 @@ import prisma from '../../src/infra/db/prisma.js';
 import { authService } from '../../src/modules/auth/auth.service.js';
 import { createTestUser, cleanupTestUser } from '../helpers/setup.js';
 
-/// Device-remember credential: a returning user one-taps back in after a
-/// normal logout, without a password. The token is single-use (rotates),
-/// revocable, and killed by sign-out-everywhere / password change.
-
 describe('auth — device-remember token', () => {
   afterAll(async () => {
     await prisma.$disconnect();
@@ -18,24 +14,20 @@ describe('auth — device-remember token', () => {
       const { rememberToken } = await authService.issueRememberToken(ctx.userId, 'mac-desktop');
       expect(rememberToken).toHaveLength(64);
 
-      // Survives a normal logout of the active session (different credential).
       const session = await authService.login(ctx.email, ctx.password);
       if ('error' in session) throw new Error(session.error);
       await authService.logout(session.refreshToken);
 
-      // One-tap back in.
       const res = await authService.rememberLogin(rememberToken);
       if ('error' in res) throw new Error(res.error);
       expect(res.user.id).toBe(ctx.userId);
       expect(res.accessToken).toBeTruthy();
       expect(res.refreshToken).toBeTruthy();
-      expect(res.rememberToken).not.toBe(rememberToken); // rotated
+      expect(res.rememberToken).not.toBe(rememberToken);
 
-      // The old token is now dead (single-use).
       const replay = await authService.rememberLogin(rememberToken);
       expect('error' in replay).toBe(true);
 
-      // The rotated token works.
       const again = await authService.rememberLogin(res.rememberToken);
       expect('error' in again).toBe(false);
     } finally {

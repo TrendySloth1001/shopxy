@@ -1,8 +1,3 @@
-/// A merchant the customer is linked to — distinct from `LinkedShop`
-/// (the legacy party/vendor-row entity) in that this represents the
-/// Shop itself, ready to deep-link into the marketplace ShopProfilePage.
-///
-/// Returned by `GET /me/linked-shops`.
 class LinkedMerchant {
   const LinkedMerchant({
     required this.shopId,
@@ -19,29 +14,18 @@ class LinkedMerchant {
     this.ratingCount = 0,
   });
 
-  /// Marketplace `Shop.id` — distinct from the merchant owner's userId.
   final String shopId;
 
-  /// Owner User.id of the shop. Used by the customer app to skip its
-  /// own shop on browse pages (the "can't buy from your own shop" rule
-  /// is enforced server-side; this is just a UI nicety).
   final String ownerUserId;
 
   final String name;
 
-  /// URL-safe identifier — pushed into `ShopProfilePage(slug)`.
   final String slug;
 
-  /// When false, the shop hasn't gone fully public yet but the customer
-  /// can still browse it because they have an explicit link.
   final bool isPublished;
 
-  /// True when the user is linked as a Party (i.e. a customer of this
-  /// merchant) — invoices issued *to* them live here.
   final bool linkedAsParty;
 
-  /// True when the user is linked as a Vendor (i.e. they supply this
-  /// merchant). Future Vendor portal will hang off this flag.
   final bool linkedAsVendor;
 
   final String? tagline;

@@ -4,11 +4,6 @@ import { zPublicId } from '../../shared/ids/zPublicId.js';
 import { z } from 'zod';
 import { challansService } from './challans.service.js';
 
-// CWQ-11 — bound the per-line quantity. The column is Decimal(12,3), so a
-// value at or above 1e9 (or with finer than milli-unit precision) cannot be
-// stored faithfully; an absurd quantity is also a typo guard before the line
-// hits the stock ledger. Fractional quantities stay allowed (some units are
-// sold by weight/length), but capped to the column's 3-decimal resolution.
 const challanItemSchema = z.object({
   productId: zPublicId,
   quantity: z
@@ -119,15 +114,10 @@ export async function cancelChallan(req: Request, res: Response) {
   res.status(204).end();
 }
 
-/// POST /challans/:id/archive — file a settled challan out of the working
-/// list. There is no DELETE and can't be: the number is allocated at create
-/// time and Rule 55 wants the run serially numbered. See
-/// `challansService.setArchived`.
 export async function archiveChallan(req: Request, res: Response) {
   await setChallanArchived(req, res, true);
 }
 
-/// POST /challans/:id/unarchive — bring it back into the working list.
 export async function unarchiveChallan(req: Request, res: Response) {
   await setChallanArchived(req, res, false);
 }
@@ -157,7 +147,6 @@ export async function downloadChallanPdf(req: Request, res: Response) {
     return;
   }
 
-  // Look up once so we can 404 before streaming headers and name the download.
   const challan = await challansService.getChallanById(shopId, id);
   if (!challan) {
     res.status(404).json({ error: 'Challan not found' });
@@ -165,8 +154,6 @@ export async function downloadChallanPdf(req: Request, res: Response) {
   }
   const filename = `challan-${challan.challanNo ?? id}.pdf`;
 
-  // onReady fires only after the renderer re-verifies the challan and right
-  // before bytes flow, so a late error still yields a clean JSON 5xx.
   const err = await challansService.streamPdf(shopId, id, res, () => {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);

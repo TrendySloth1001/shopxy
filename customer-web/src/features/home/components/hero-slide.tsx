@@ -2,18 +2,11 @@ import Link from "next/link";
 import type { HeroSlide } from "../types";
 import { ImageBox } from "./image-box";
 
-/** Tap destination for a banner: a product-backed banner opens its detail
- *  page; otherwise the merchant's link; otherwise the home page. */
 export function slideHref(slide: HeroSlide): string {
   if (slide.productCount > 0) return `/banner/${slide.bannerId}`;
   return slide.linkUrl && slide.linkUrl.length > 0 ? slide.linkUrl : "/";
 }
 
-/**
- * A banner is just the merchant's uploaded image wrapped in its link.
- * No templates, overlays, or text — whatever the merchant designed into
- * the artwork is what shows.
- */
 export function HeroSlideCard({ slide }: { slide: HeroSlide }) {
   return (
     <Link

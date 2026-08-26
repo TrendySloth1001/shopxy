@@ -142,9 +142,6 @@ class _StockAdjustmentsPageState extends State<StockAdjustmentsPage> {
           bottom: AppSizes.sm,
         ),
         itemCount: _items.length,
-        // Suppress the hairline directly above a day header — the pill
-        // divider already draws its own rules, and stacking both reads as
-        // a double line.
         separatorBuilder: (_, i) =>
             _startsNewDay(i + 1) ? const SizedBox.shrink() : const AppDivider(),
         itemBuilder: (_, i) {
@@ -171,10 +168,6 @@ class _StockAdjustmentsPageState extends State<StockAdjustmentsPage> {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Skeleton
-// ---------------------------------------------------------------------------
 
 class _StockAdjustmentsSkeleton extends StatelessWidget {
   const _StockAdjustmentsSkeleton();
@@ -206,7 +199,6 @@ class _AdjustmentTileSkeleton extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Icon avatar placeholder
           AppShimmerBox(
             width: AppSizes.avatarXs,
             height: AppSizes.avatarXs,
@@ -219,17 +211,14 @@ class _AdjustmentTileSkeleton extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    // Adjustment number line
                     const Expanded(
                       child: AppShimmerLine(widthFactor: 0.55, height: 14),
                     ),
                     const SizedBox(width: AppSizes.sm),
-                    // Status badge placeholder
                     AppShimmerBox(width: 60, height: 20, radius: AppSizes.xs),
                   ],
                 ),
                 const SizedBox(height: AppSizes.xs),
-                // Subtitle line (count · date)
                 const AppShimmerLine(widthFactor: 0.75, height: 12),
               ],
             ),
@@ -239,10 +228,6 @@ class _AdjustmentTileSkeleton extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Tile
-// ---------------------------------------------------------------------------
 
 class _AdjustmentTile extends StatelessWidget {
   const _AdjustmentTile({required this.adjustment, this.onTap});

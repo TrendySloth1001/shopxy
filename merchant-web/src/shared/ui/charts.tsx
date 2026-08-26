@@ -2,22 +2,10 @@
 
 import { useState } from "react";
 
-/**
- * Lightweight, dependency-free SVG charts in the token palette. The stroke uses
- * `currentColor` (set a `text-*` class) with a non-scaling stroke so the line
- * stays crisp while the SVG stretches to fill its container. Heights come from a
- * Tailwind class, not inline pixels.
- */
-
 export type ChartPoint = { label: string; value: number };
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 
-/**
- * Interactive filled line chart. Hovering shows a guide line, a marker on the
- * nearest point and a tooltip with that point's label + value. `overlay` (e.g. a
- * moving average) draws as a muted dashed line behind the primary series.
- */
 export function LineChart({
   points,
   overlay,
@@ -88,7 +76,6 @@ export function LineChart({
         />
       </svg>
 
-      {/* point markers (only when sparse enough to read) */}
       {showDots
         ? points.map((p, i) => (
             <span
@@ -99,7 +86,6 @@ export function LineChart({
           ))
         : null}
 
-      {/* hover affordances */}
       {hv ? (
         <>
           <span

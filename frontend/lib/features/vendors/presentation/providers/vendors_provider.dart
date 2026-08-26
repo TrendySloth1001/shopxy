@@ -18,7 +18,6 @@ class VendorsProvider extends ChangeNotifier {
   String? get error => _error;
   String get search => _search;
 
-  /// Drop cached vendors on logout so user-B doesn't briefly see A's list.
   void reset() {
     _vendors = [];
     _isLoading = false;

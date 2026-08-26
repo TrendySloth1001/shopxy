@@ -7,12 +7,6 @@ import { ImagePlus, Trash2, Upload } from "@/shared/icons";
 import { mediaSrc } from "@/features/products/components/product-thumb";
 import { uploadImage } from "@/features/products/api";
 
-/**
- * Reusable image-upload control: a preview tile (square or banner) plus an
- * upload / replace / remove action. Forwards the file to `/api/upload` and
- * stores the returned relative URL. Used by the marketing editors (slide
- * background + brand logo, spotlight hero).
- */
 export function ImageUploadField({
   label,
   helper,
@@ -24,7 +18,6 @@ export function ImageUploadField({
   helper?: string;
   url: string | null;
   onChange: (url: string | null) => void;
-  /** "banner" → wide 3:1 tile; "square" → 96px; "round" → 96px circle. */
   aspect?: "banner" | "square" | "round";
 }) {
   const t = useTranslations("common");

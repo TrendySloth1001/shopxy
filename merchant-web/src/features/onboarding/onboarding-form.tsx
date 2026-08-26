@@ -8,15 +8,6 @@ import { Field } from "@/features/auth/components/field";
 import { SubmitButton } from "@/features/auth/components/submit-button";
 import { AuthErrorBanner } from "@/features/auth/components/auth-shell";
 
-/**
- * First-shop onboarding, shown straight after signup. Registration creates
- * only the merchant account; this is where they name their shop.
- *
- * "Check requests, then skip": an account that was invited to a team is
- * already made staff at signup (the backend accepts a matching pending
- * invite during register), so it arrives here carrying a `shopId` and is
- * forwarded to the dashboard — it never sees the shop form.
- */
 export function OnboardingForm() {
   const { status, user, refresh } = useAuth();
   const router = useRouter();
@@ -29,8 +20,6 @@ export function OnboardingForm() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Gate: guests to login; anyone who already has a shop or joined a team
-  // (shopId present) straight to the dashboard — they don't onboard.
   useEffect(() => {
     if (status === "guest") {
       router.replace("/login");
@@ -71,8 +60,6 @@ export function OnboardingForm() {
         const body = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(body.error ?? "Could not create your shop.");
       }
-      // Pull the enriched session so `shopId` is set before the dashboard
-      // loads (the backend busts the membership cache on create).
       await refresh();
       router.replace("/dashboard");
     } catch (err) {
@@ -81,8 +68,6 @@ export function OnboardingForm() {
     }
   }
 
-  // Don't flash the form while the session resolves or while a redirect (to
-  // login / recovery-pin / dashboard) is in flight.
   if (
     status !== "authed" ||
     (user && (needsRecoveryPinSetup(user) || user.shopId != null))

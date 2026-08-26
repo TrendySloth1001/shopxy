@@ -34,14 +34,9 @@ String _elapsedSince(Object? openedAt) {
   return '${two(d.inHours)}:${two(d.inMinutes % 60)}:${two(d.inSeconds % 60)}';
 }
 
-/// Phone POS till: scan items into the shared cart, see it live (shared with the
-/// web till), and check out to a GST bill. Reuses the same backend + the
-/// scan-console WebSocket as the web till.
 class PosPage extends StatefulWidget {
   const PosPage({super.key, this.kiosk = false});
 
-  /// Kiosk mode (a Cashier-role login): the till is the whole app, so a log-out
-  /// action is surfaced in the app bar.
   final bool kiosk;
 
   @override
@@ -79,7 +74,6 @@ class _PosPageState extends State<PosPage> {
         setState(() => _shift = res['shift'] as Map<String, dynamic>?);
       }
     } catch (_) {
-      /* the WS gate is the backstop */
     }
   }
 
@@ -92,7 +86,6 @@ class _PosPageState extends State<PosPage> {
       _controller.stop();
       WidgetsBinding.instance.addPostFrameCallback((_) => _showReceipt(inv));
     } else if (inv == null && _client.isClosed && !_shownInvoice) {
-      // Closed on another till (or voided) — show a terminal state too.
       _shownInvoice = true;
       _controller.stop();
       WidgetsBinding.instance.addPostFrameCallback(
@@ -106,7 +99,6 @@ class _PosPageState extends State<PosPage> {
         (_) => _showQuickAdd(unknown),
       );
     }
-    // Online payment settled → terminal receipt.
     final paid = _client.onlinePaidAmount;
     if (paid != null && !_shownInvoice) {
       _shownInvoice = true;
@@ -120,15 +112,12 @@ class _PosPageState extends State<PosPage> {
   bool _quickAddOpen = false;
   bool _payingOnline = false;
 
-  /// Online tender: create an order, open Razorpay Checkout (UPI QR + cards),
-  /// then settle. The pos.checkout event flips the till to paid; syncOnline is
-  /// the webhook backstop.
   Future<void> _payOnline() async {
     if (_payingOnline) return;
     _payingOnline = true;
     try {
       final session = await _client.startOnline();
-      if (session == null || !mounted) return; // error shown in the banner
+      if (session == null || !mounted) return;
       final clientParams = (session['clientParams'] as Map)
           .cast<String, dynamic>();
       final result = await RazorpayCheckout().open(clientParams: clientParams);
@@ -229,7 +218,7 @@ class _PosPageState extends State<PosPage> {
   }
 
   void _onDetect(BarcodeCapture capture) {
-    if (!_shiftOpen) return; // gate: no scanning until a shift is open
+    if (!_shiftOpen) return;
     final code = capture.barcodes.firstOrNull?.rawValue;
     if (code == null || code.isEmpty) return;
     final now = DateTime.now();
@@ -270,7 +259,7 @@ class _PosPageState extends State<PosPage> {
           FilledButton(
             onPressed: () {
               Navigator.pop(ctx);
-              Navigator.pop(context); // leave the till; reopen for a fresh sale
+              Navigator.pop(context);
             },
             child: Text(l10n.posDone),
           ),
@@ -279,7 +268,6 @@ class _PosPageState extends State<PosPage> {
     );
   }
 
-  /// Fetch the invoice PDF (authed) and open it in the device viewer (print/share).
   Future<void> _printReceipt(String invoiceId, String invoiceNo) async {
     final messenger = ScaffoldMessenger.of(context);
     final l10n = AppLocalizations.of(context);
@@ -586,7 +574,6 @@ class _PosPageState extends State<PosPage> {
     );
   }
 
-  /// Tap a line's quantity to type it directly (0 removes the line).
   Future<void> _editQty(SaleLine line) async {
     final l10n = AppLocalizations.of(context);
     final ctrl = TextEditingController(
@@ -912,7 +899,6 @@ class _CartTile extends StatelessWidget {
           icon: const AppIcon(AppIcons.removeCircleOutline),
           iconSize: AppSizes.iconMd,
         ),
-        // Tap the quantity to type it directly.
         InkWell(
           onTap: onTapQty,
           borderRadius: BorderRadius.circular(AppSizes.radiusSm),

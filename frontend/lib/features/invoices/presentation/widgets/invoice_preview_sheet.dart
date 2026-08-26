@@ -8,7 +8,6 @@ import 'package:shopxy/shared/theme/app_text_styles.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/widgets/app_divider.dart';
 
-/// One line as it will appear on the issued document.
 class InvoicePreviewLine {
   const InvoicePreviewLine({
     required this.name,
@@ -21,7 +20,6 @@ class InvoicePreviewLine {
   final double amount;
 }
 
-/// A totals row. [emphasis] marks the grand total.
 class InvoicePreviewTotal {
   const InvoicePreviewTotal(this.label, this.value, {this.emphasis = false});
   final String label;
@@ -29,9 +27,6 @@ class InvoicePreviewTotal {
   final bool emphasis;
 }
 
-/// Everything the preview shows. Assembled by the form rather than fetched, so
-/// this is a faithful picture of what is about to be sent — not a re-read that
-/// could differ from the unsaved state on screen.
 class InvoicePreviewData {
   const InvoicePreviewData({
     required this.documentTypeLabel,
@@ -48,9 +43,6 @@ class InvoicePreviewData {
   final String counterpartyLabel;
   final String counterpartyName;
 
-  /// Null when nothing is on file — rendered as an explicit "no address"
-  /// rather than a blank, since that absence is exactly what the merchant is
-  /// being asked to check.
   final String? counterpartyAddress;
   final String? placeOfSupply;
   final String supplyTypeLabel;
@@ -58,13 +50,6 @@ class InvoicePreviewData {
   final List<InvoicePreviewTotal> totals;
 }
 
-/// Last look before an invoice is issued.
-///
-/// Confirming is the irreversible step — it issues the document, posts the
-/// stock movement and burns an invoice number — so it gets a deliberate
-/// review. Saving a draft does not, and deliberately stays one tap.
-///
-/// Returns true when the merchant confirmed.
 Future<bool> showInvoicePreviewSheet(
   BuildContext context,
   InvoicePreviewData data,
@@ -143,8 +128,6 @@ class _InvoicePreviewSheet extends StatelessWidget {
                 Text(
                   data.counterpartyAddress ?? l10n.invoicesPreviewNoAddress,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    // An absent address is the thing most worth noticing here,
-                    // so it reads as a flag rather than as muted filler.
                     color: data.counterpartyAddress == null
                         ? AppColors.warning
                         : AppColors.muted,

@@ -1,8 +1,3 @@
-/**
- * Client-side home-feed fetchers. Hit the same-origin BFF routes (never the
- * backend directly) and return mapped presentation models.
- */
-
 import { mapEndlessProducts, mapFeed, mapPersonalized } from "./mapper";
 import type { EndlessPage, HomeFeed, ProductCard } from "./types";
 

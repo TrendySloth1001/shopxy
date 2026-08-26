@@ -179,7 +179,6 @@ export default function CustomFieldsPage() {
         </p>
       ) : null}
 
-      {/* Templates */}
       {templates.length > 0 ? (
         <div className="mt-xl">
           <p className="text-label-md uppercase tracking-wide text-subtle">

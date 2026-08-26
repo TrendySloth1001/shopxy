@@ -1,11 +1,3 @@
-// Smoke tests for the merchant pages added in P4–P9.
-//
-// Each test mounts a page wrapped in MaterialApp + its provider and
-// asserts the static chrome (app bar title, FAB label) renders on the
-// first frame. The provider's `load()` fires a network call that will
-// fail in the test environment (no server) — that's fine; providers
-// catch the error and the page still renders.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -29,9 +21,6 @@ import 'package:shopxy/l10n/app_localizations.dart';
 
 ApiClient _api() => ApiClient(TokenManager());
 
-/// These pages read their chrome from AppLocalizations, whose lookup is
-/// null-checked — a bare MaterialApp throws before the first paint. Locale is
-/// pinned to English so the string assertions below stay deterministic.
 MaterialApp _app(Widget home) => MaterialApp(
   localizationsDelegates: AppLocalizations.localizationsDelegates,
   supportedLocales: AppLocalizations.supportedLocales,
@@ -66,10 +55,6 @@ void main() {
     expect(find.text('New collection'), findsOneWidget);
   });
 
-  // Payout onboarding surfaces — guard the provider wiring (ShopProvider +
-  // LinkedAccountProvider + AuthProvider for operations; ApiClient +
-  // LinkedAccountProvider for the payouts form). A missing provider would
-  // throw on first pump.
   testWidgets('ShopOperationsPage renders its tiles', (tester) async {
     final api = _api();
     final tokens = TokenManager();
@@ -91,11 +76,6 @@ void main() {
       ),
     );
     await tester.pump();
-    // Only the chrome is asserted: every tile below it is gated on
-    // AuthProvider.user.canView(...), and `user` is populated exclusively by a
-    // live getMe() round-trip, so no widget test can make the tiles appear
-    // without a fake auth stack. The provider-wiring guard this test exists
-    // for still holds — a missing provider throws during build.
     expect(tester.takeException(), isNull);
     expect(find.text('Shop operations'), findsOneWidget);
   });

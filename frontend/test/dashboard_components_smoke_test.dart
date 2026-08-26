@@ -1,9 +1,3 @@
-// Smoke tests for the rebuilt merchant dashboard components (the 1:1 port of
-// merchant-web). Each component is rendered with realistic sample data at
-// phone (360), tablet (768) and desktop (1440) widths, and we assert no
-// layout/paint exception was thrown — the responsive grids, custom-painted
-// trend chart and infographic pies are the risk surface.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shopxy/features/dashboard/domain/entities/dashboard_stats.dart';
@@ -83,9 +77,6 @@ Future<void> _pump(WidgetTester tester, double width, Widget child) async {
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
     MaterialApp(
-      // These widgets all read AppLocalizations.of(context), which null-checks
-      // the Localizations lookup — without the delegates every one of them
-      // throws before it can paint.
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(

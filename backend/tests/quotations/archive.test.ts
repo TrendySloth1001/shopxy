@@ -3,24 +3,7 @@ import prisma from '../../src/infra/db/prisma.js';
 import { quotationsService } from '../../src/modules/quotations/quotations.service.js';
 import { createTestUser, cleanupTestUser, createTestProduct } from '../helpers/setup.js';
 
-/// Archiving for quotations, mirroring invoices and challans.
-///
-/// The quotation number is a per-shop serial allocated at CREATE time, so a
-/// quotation can't be deleted without leaving a hole in the run. Archiving
-/// files it out of the merchant's working list and keeps the number.
-///
-/// Two rules are specific to quotations and are what these tests pin down:
-///   (a) REQUESTED and PENDING are refused — the customer still has a decision
-///       to make, and an accept landing against a document the merchant can no
-///       longer see is the failure mode worth preventing;
-///   (b) the customer-facing list ignores `archivedAt` entirely. Archiving is
-///       the merchant's own filing decision; it must not erase the
-///       counterparty's record of what they were quoted.
-
 describe('quotations — archive', () => {
-  /// Buyer accounts the fixtures mint, torn down together at the end. They
-  /// belong to no shop under test, so the per-test `cleanupTestUser(ctx)`
-  /// calls can't reach them and would otherwise leave users behind.
   const buyers: Awaited<ReturnType<typeof createTestUser>>[] = [];
 
   afterAll(async () => {
@@ -28,9 +11,6 @@ describe('quotations — archive', () => {
     await prisma.$disconnect();
   });
 
-  /// A quotation is always sent to a LINKED customer — `create` rejects a
-  /// bare party with PARTY_NOT_LINKED — so every fixture needs a buyer user
-  /// behind the party.
   async function pendingQuote(ctx: { shopId: number; userId: number }) {
     const buyer = await createTestUser({ role: 'CUSTOMER' as never });
     buyers.push(buyer);

@@ -13,9 +13,6 @@ import {
   deleteRole,
 } from './team.controller.js';
 
-/// Mounted at /me/team behind requireAuth + requireRole('OWNER') +
-/// requireArea('team') + resolveShop. The area gate handles authz: GETs
-/// need team:view, mutations need team:manage (OWNER bypasses).
 const router = Router();
 
 router.get('/members', asyncHandler(listMembers));
@@ -26,7 +23,6 @@ router.get('/invites', asyncHandler(listInvites));
 router.post('/invites', asyncHandler(invite));
 router.delete('/invites/:id', asyncHandler(cancelInvite));
 
-// Owner-defined roles (named permission templates).
 router.get('/roles', asyncHandler(listRoles));
 router.post('/roles', asyncHandler(createRole));
 router.patch('/roles/:id', asyncHandler(updateRole));

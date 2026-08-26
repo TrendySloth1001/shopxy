@@ -20,7 +20,6 @@ async function jsonOrThrow<T>(res: Response, parse: (raw: unknown) => T, fallbac
       const body = (await res.json()) as { error?: string };
       if (body?.error) message = body.error;
     } catch {
-      /* keep fallback */
     }
     throw new Error(message);
   }
@@ -57,8 +56,6 @@ export function getPnlReport(range: Range): Promise<PnlReport> {
   );
 }
 
-/** Aggregated "products sold" summary — one row per product, biggest revenue
- *  first, optionally filtered by a product name / SKU search. */
 export function getSoldProducts(
   range: Range,
   page = 1,
@@ -77,7 +74,6 @@ export function getSoldProducts(
   );
 }
 
-/** One page of a single product's sale timeline (newest first). */
 export function getSoldItems(
   range: Range,
   productId: string,

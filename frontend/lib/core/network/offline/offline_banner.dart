@@ -11,16 +11,6 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 
-/// Hosts the app under a single, app-wide status banner. Mounted once via
-/// `MaterialApp.builder` (the only spot that covers every gate branch —
-/// splash / login / onboarding / shell — since the app has no root Scaffold).
-///
-/// A thin frosted pill slides down from the top safe area (same frosted-island
-/// language as `FloatingAppBar`) in two situations, and overlays content
-/// (doesn't reflow it):
-/// - **offline** → "No network — showing saved data".
-/// - **online with pending offline writes** → "Syncing N change(s)…", until the
-///   outbox drains.
 class OfflineBannerHost extends StatelessWidget {
   const OfflineBannerHost({super.key, required this.child});
 
@@ -42,8 +32,6 @@ class OfflineBannerHost extends StatelessWidget {
   }
 }
 
-/// Resolves the current banner state from the two SSOTs (connectivity + the
-/// outbox's pending count) and renders the pill.
 class _StatusPill extends StatelessWidget {
   const _StatusPill();
 
@@ -51,7 +39,6 @@ class _StatusPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final offline = context.select<NetworkStatus, bool>((n) => n.offline);
-    // Outbox may be absent in non-app contexts (e.g. isolated widget tests).
     final outbox = context.read<Outbox?>();
 
     return ValueListenableBuilder<int>(
@@ -75,7 +62,6 @@ class _StatusPill extends StatelessWidget {
   }
 }
 
-/// A never-changing 0 for when no Outbox is provided.
 final ValueNotifier<int> _zero = ValueNotifier<int>(0);
 
 class _OfflinePill extends StatelessWidget {

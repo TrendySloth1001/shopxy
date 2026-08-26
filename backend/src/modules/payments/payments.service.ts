@@ -26,23 +26,14 @@ export interface CreatePaymentInput {
   invoiceId?: number | null;
   note?: string | null;
   createdById?: number | null;
-  /// Client-supplied retry-safe key. Unique per (shopId, type, key).
-  /// When set, a replay returns the original row instead of inserting.
   idempotencyKey?: string | null;
 }
 
-/// Decimal helper — Prisma returns Decimal, the front-end wants double.
 export class PaymentsService {
-  /// Round to paise. Ledger balances and outstanding amounts must be
-  /// rounded after every float accumulation or they render binary-float
-  /// fuzz (e.g. 11111.039999999995) that won't tie to a client re-sum.
   private round2(v: number): number {
     return Math.round((v + Number.EPSILON) * 100) / 100;
   }
 
-  /// Create a payment row, atomically allocating the next reference
-  /// number. Caller passes the merchant's userId in `createdById` so we
-  /// can attribute the row.
   async createPayment(input: CreatePaymentInput) {
     const {
       shopId,
@@ -59,11 +50,6 @@ export class PaymentsService {
       idempotencyKey,
     } = input;
 
-    // Idempotency replay: if this (shop, type, key) tuple already
-    // exists, validate the caller's other params match the row we'd
-    // return — without that check, a bug or attacker could reuse a
-    // key with a different amount/party/invoice and silently get the
-    // original row back, masking the mismatch.
     if (idempotencyKey) {
       const replay = await prisma.payment.findFirst({
         where: { shopId, type, idempotencyKey },
@@ -102,7 +88,6 @@ export class PaymentsService {
     if (!(amount > 0)) {
       throw new Error('Amount must be positive');
     }
-    // Exactly one of partyId / vendorId is set, matching the `type`.
     const hasParty = partyId != null;
     const hasVendor = vendorId != null;
     if (hasParty === hasVendor) {
@@ -115,10 +100,6 @@ export class PaymentsService {
       throw new Error('PAYMENT payments must reference a vendor');
     }
 
-    // Validate the counterparty belongs to this shop. Without this an
-    // authenticated merchant could `POST /payments` with another shop's
-    // partyId/vendorId — the row would be inserted with their own
-    // shopId, silently falsifying the attacker's ledger and reports.
     if (hasParty) {
       const owns = await prisma.party.findFirst({
         where: { id: partyId!, shopId },
@@ -133,13 +114,6 @@ export class PaymentsService {
       if (!owns) throw new Error('Vendor not found');
     }
 
-    // Invoice over-allocation must be race-safe: two concurrent
-    // payments both reading `alreadyApplied` before either insert lets
-    // an invoice be paid down twice. We solve it by doing the aggregate
-    // check + insert inside a single transaction at Serializable
-    // isolation. The DB rejects one of the racing transactions with
-    // SQLSTATE 40001, which Prisma surfaces and we re-throw as the
-    // user-facing over-allocation error.
     return prisma.$transaction(
       async (tx) => {
         if (invoiceId != null) {
@@ -156,11 +130,6 @@ export class PaymentsService {
             },
           });
           if (!invoice) throw new Error('Invoice not found');
-          // Only billable documents carry an outstanding. An ESTIMATE /
-          // PROFORMA is an offer (its total is not a receivable), and a
-          // CREDIT_NOTE is money owed in the OTHER direction — allocating
-          // a receipt against any of them fabricates settlement of a
-          // liability that doesn't exist.
           if (
             invoice.documentType === 'ESTIMATE' ||
             invoice.documentType === 'PROFORMA' ||
@@ -170,15 +139,9 @@ export class PaymentsService {
               `Cannot record a payment against a ${invoice.documentType.toLowerCase().replace('_', ' ')}`,
             );
           }
-          // Only a live (CONFIRMED) invoice carries a real liability. A
-          // DRAFT isn't yet a payable, and a CANCELLED invoice's `total`
-          // is stale — allocating to either mints a phantom credit that
-          // drives the party/vendor balance negative (H7).
           if (invoice.status !== 'CONFIRMED') {
             throw new Error('Cannot record a payment against a non-confirmed invoice');
           }
-          // A receipt settles a SALE; a vendor payment settles a PURCHASE.
-          // Cross-wiring them corrupts both ledgers.
           if (type === 'RECEIPT' && invoice.type !== 'SALE') {
             throw new Error('Receipts can only be applied to sale invoices');
           }
@@ -198,8 +161,6 @@ export class PaymentsService {
           });
           const alreadyApplied = toNumber(allocated._sum.amount);
           const outstanding = this.round2(toNumber(invoice.total) - alreadyApplied);
-          // Compare on whole paise with a strict threshold so a receipt can
-          // never overshoot the outstanding by the old one-tenth-paisa slack.
           if (this.round2(amount - outstanding) > 0) {
             throw new Error(
               `Amount exceeds outstanding (${outstanding.toFixed(2)}) on invoice`,
@@ -237,8 +198,6 @@ export class PaymentsService {
             },
           },
         });
-        // Outbox (same tx): a receipt/payment shifts the day's cash position, so
-        // the roll-up rebuilds for the payment's own date.
         await enqueueOutbox(
           {
             aggregateType: 'payment',
@@ -255,11 +214,6 @@ export class PaymentsService {
     );
   }
 
-  /// POS support: record a full RECEIPT against a just-created invoice inside a
-  /// caller-provided transaction, so the POS checkout (invoice + stock +
-  /// payment) commits all-or-nothing. No outstanding re-check — the invoice was
-  /// created in this same transaction for exactly `amount`. The idempotency key
-  /// (`POS:<saleId>:PAY`) guards retries.
   async recordReceiptInTx(
     tx: Prisma.TransactionClient,
     input: {
@@ -290,7 +244,6 @@ export class PaymentsService {
         idempotencyKey: input.idempotencyKey ?? null,
       },
     });
-    // Outbox (same tx): the POS receipt is part of the all-or-nothing checkout.
     await enqueueOutbox(
       {
         aggregateType: 'payment',
@@ -315,9 +268,6 @@ export class PaymentsService {
       skip: number;
     },
   ) {
-    // Exclude voided payments — they're retained for audit but are reversed,
-    // so they must not appear in ledgers or count toward an invoice's
-    // "Received" (mirrors the outstanding calc, which already filters them).
     const where: Prisma.PaymentWhereInput = { shopId, voidedAt: null };
     if (options.partyId != null) where.partyId = options.partyId;
     if (options.vendorId != null) where.vendorId = options.vendorId;
@@ -354,29 +304,6 @@ export class PaymentsService {
     });
   }
 
-  /// Soft-void a payment. The row is retained (statutory retention + audit
-  /// trail) but stamped voided, so every balance / outstanding / ledger
-  /// aggregate excludes it. Replaces the old hard delete, which silently
-  /// reopened an invoice's outstanding with no trace and enabled
-  /// undetectable tampering. Idempotent — voiding an already-voided payment
-  /// is a no-op.
-  ///
-  /// Returns:
-  ///   - `false`           — the payment doesn't exist (404).
-  ///   - `'PLATFORM_COLLECTED'` — the receipt backs real money the PLATFORM
-  ///     collected (customer wallet/gateway, or a POS QR/online settlement).
-  ///     Silently voiding it would reopen the invoice's outstanding while the
-  ///     money still sits at the platform — the merchant ledger would then show
-  ///     UNPAID against cash already taken. Such a receipt may only be unwound
-  ///     through a refund / credit-note flow, never a bare void (PR-C2).
-  ///   - `true`            — voided (or already void).
-  ///
-  /// `allowPlatformCollected` lets a TRUSTED internal refund flow (e.g. order
-  /// cancellation, which hands the money straight back to the customer's wallet
-  /// in the same operation) void a platform-collected receipt — that IS the
-  /// required refund flow, so the guard would otherwise wrongly block it. The
-  /// public DELETE /payments endpoint never sets it, so a bare merchant void of
-  /// a platform receipt is still refused.
   async voidPayment(
     shopId: number,
     id: number,
@@ -397,20 +324,8 @@ export class PaymentsService {
       },
     });
     if (!owned) return false;
-    if (owned.voidedAt) return true; // already voided
+    if (owned.voidedAt) return true;
 
-    // PR-C2 — refuse to silently void a platform-collected receipt. Two signals:
-    //
-    //   1. The order reconciler (order-receipts.ts) posts wallet/gateway receipts
-    //      with mode='OTHER' and an idempotencyKey prefixed `wltrcpt:` / `gwrcpt:`.
-    //      That money was collected by the platform off the customer's order, not
-    //      handed across a counter — a void here desyncs the merchant ledger from
-    //      real, already-captured funds.
-    //
-    //   2. A POS QR / POS online settlement records a UPI receipt whose
-    //      `modeReference` is the gateway's payment ref. If a CAPTURED
-    //      GatewayPayment for THIS shop carries that same ref, the receipt is
-    //      backed by a real gateway capture and must be refunded, not voided.
     if (owned.type === 'RECEIPT' && !opts?.allowPlatformCollected) {
       const key = owned.idempotencyKey ?? '';
       const isOrderReconciled =
@@ -419,7 +334,6 @@ export class PaymentsService {
 
       let backedByCapture = false;
       if (!isOrderReconciled && owned.modeReference) {
-        // Scope by shopId so we never read another tenant's gateway row.
         const capture = await prisma.gatewayPayment.findFirst({
           where: {
             shopId,
@@ -442,10 +356,6 @@ export class PaymentsService {
       voidReason: reason ?? null,
     };
 
-    // Void + its outbox event go in one transaction (the bare update was
-    // promoted to a tx for exactly this) so the roll-up can never miss that the
-    // payment left the day's cash position. occurredAt = the payment's ORIGINAL
-    // date — that is the day whose bucket changes when the row is voided out.
     await prisma.$transaction(async (tx) => {
       await tx.payment.update({ where: { id }, data: voidData });
       await enqueueOutbox(
@@ -484,8 +394,6 @@ export class PaymentsService {
           shopId,
           type: 'SALE',
           status: 'CONFIRMED',
-          // Estimates / proformas are not accounting documents — they must
-          // never appear on the receivables ledger.
           documentType: { notIn: ['ESTIMATE', 'PROFORMA'] },
         },
         orderBy: [{ invoiceDate: 'asc' }, { id: 'asc' }],
@@ -514,9 +422,6 @@ export class PaymentsService {
       }),
     ]);
 
-    // Interleave invoices and payments into a single timeline. The
-    // running balance is recomputed in one pass so debit/credit columns
-    // line up with the displayed total.
     type Entry =
       | {
           kind: 'invoice';
@@ -566,8 +471,6 @@ export class PaymentsService {
     ].sort((a, b) => {
       const cmp = a.date.getTime() - b.date.getTime();
       if (cmp !== 0) return cmp;
-      // Stable secondary sort on (kind, id) — invoices before payments on
-      // the same instant so a same-day receipt nets against its bill.
       if (a.kind !== b.kind) return a.kind === 'invoice' ? -1 : 1;
       return a.id - b.id;
     });
@@ -577,9 +480,6 @@ export class PaymentsService {
       if (row.kind === 'invoice') {
         const inv = row.payload as (typeof invoices)[number];
         const amount = toNumber(inv.total);
-        // A credit note REDUCES the receivable (it's the merchant crediting
-        // the customer), so it lands in the credit column with a negative
-        // running effect — not added as a positive debit like a tax invoice.
         const isCreditNote = inv.documentType === 'CREDIT_NOTE';
         const debit = isCreditNote ? 0 : amount;
         const credit = isCreditNote ? amount : 0;
@@ -723,8 +623,6 @@ export class PaymentsService {
       if (row.kind === 'invoice') {
         const inv = row.payload as (typeof invoices)[number];
         const amount = toNumber(inv.total);
-        // A purchase credit note REDUCES what we owe the vendor, so it
-        // lands in the credit column rather than adding to the payable.
         const isCreditNote = inv.documentType === 'CREDIT_NOTE';
         const debit = isCreditNote ? 0 : amount;
         const credit = isCreditNote ? amount : 0;

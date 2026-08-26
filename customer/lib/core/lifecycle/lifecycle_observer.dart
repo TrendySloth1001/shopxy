@@ -1,14 +1,6 @@
 import 'dart:async';
 import 'package:flutter/widgets.dart';
 
-/// Top-level [AppLifecycleState] observer. Wired in [ShopxyCustomerApp]
-/// so a foreground/background transition can:
-///   * flush the analytics queue (avoid losing events on app kill)
-///   * re-sync the cart (pick up server-side price changes / removals)
-///   * trigger an opportunistic refresh of the home feed when stale
-///
-/// The wrapper takes plain callbacks rather than concrete provider
-/// references so it doesn't pull the dependency graph into core/.
 class LifecycleObserver extends StatefulWidget {
   const LifecycleObserver({
     super.key,

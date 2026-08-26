@@ -1,28 +1,8 @@
 import { NextResponse } from "next/server";
 import { env } from "@/shared/config/env";
 
-/**
- * Public media proxy. Avatar/image URLs from the backend are stored relative
- * (`/images/<key>`); the browser can't resolve them because the backend base
- * is server-only. This streams them through the same origin so we never ship
- * `API_BASE_URL` to the client. Only the public `/images/` path is proxied.
- *
- * Hardening:
- *  - The path is locked to exactly `images/<filename>` where `<filename>`
- *    matches a strict safe-filename allowlist, so percent-encoded `..` segments
- *    can't normalise their way out of `/images/` to reach other backend GETs.
- *  - The upstream `Content-Type` is pinned to an image allowlist (anything else
- *    is served as a non-renderable `application/octet-stream` attachment), and
- *    `nosniff` / `inline` / same-origin CORP headers are always re-attached so a
- *    smuggled non-image object can't be MIME-sniffed and executed against the
- *    cookie-bearing BFF origin.
- */
-
-// Strict filename allowlist — no slashes, no `..`, no encoded traversal.
 const SAFE_FILENAME = /^[A-Za-z0-9._-]+$/;
 
-// Image content-types we are willing to serve as-is. SVG is intentionally
-// excluded — it can carry script and would defeat the point of `nosniff`.
 const ALLOWED_IMAGE_TYPES = new Set([
   "image/webp",
   "image/jpeg",
@@ -46,8 +26,6 @@ export async function GET(
     return new NextResponse(null, { status: 404 });
   }
 
-  // Defence-in-depth: build the upstream URL so the resolved path provably
-  // stays under `/images/` even if the filename check is ever loosened.
   const upstreamUrl = new URL(filename, `${env.API_BASE_URL}/images/`);
   if (!upstreamUrl.pathname.startsWith("/images/")) {
     return new NextResponse(null, { status: 404 });
@@ -64,7 +42,6 @@ export async function GET(
   return new NextResponse(upstream.body, {
     status: 200,
     headers: {
-      // Pin to the allowlisted image type; refuse to echo anything else.
       "Content-Type": isImage ? upstreamType : "application/octet-stream",
       "Content-Disposition": isImage ? "inline" : "attachment",
       "X-Content-Type-Options": "nosniff",

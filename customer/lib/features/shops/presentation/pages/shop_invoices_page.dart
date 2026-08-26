@@ -143,10 +143,6 @@ class _InvoiceTile extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton widgets (loading state)
-// ---------------------------------------------------------------------------
-
 class _InvoiceListSkeleton extends StatelessWidget {
   const _InvoiceListSkeleton();
 
@@ -173,28 +169,23 @@ class _InvoiceTileSkeleton extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Icon placeholder — mirrors the squircle avatar
           AppShimmerBox(
             width: AppSizes.avatarSm,
             height: AppSizes.avatarSm,
             radius: AppSizes.radiusSm,
           ),
           const SizedBox(width: AppSizes.md),
-          // Title + subtitle column
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Invoice number (bold title line)
                 const AppShimmerLine(widthFactor: 0.55, height: 14),
                 const SizedBox(height: AppSizes.xs),
-                // Date · item count (subtitle line)
                 const AppShimmerLine(widthFactor: 0.75, height: 11),
               ],
             ),
           ),
           const SizedBox(width: AppSizes.md),
-          // Amount box (right-aligned)
           AppShimmerBox(width: 64, height: 16, radius: AppSizes.radiusXs),
         ],
       ),

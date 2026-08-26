@@ -517,7 +517,6 @@ class _BalanceTile extends StatelessWidget {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
     final balance = vendor.balance;
-    // Vendor balance convention: positive = we owe the vendor; negative = advance.
     final positive = balance > 0;
     final settled = balance.abs() < 0.005;
     final color = settled
@@ -578,8 +577,6 @@ class _BalanceTile extends StatelessWidget {
     );
   }
 }
-
-// ── Skeleton ────────────────────────────────────────────────────────────────
 
 class _VendorDetailSkeleton extends StatelessWidget {
   const _VendorDetailSkeleton();
@@ -777,8 +774,6 @@ class _LedgerSectionSkeleton extends StatelessWidget {
   }
 }
 
-// ── Ledger row ───────────────────────────────────────────────────────────────
-
 class _LedgerRow extends StatelessWidget {
   const _LedgerRow({
     required this.entry,
@@ -793,7 +788,6 @@ class _LedgerRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
-    // Vendor side: invoice = bill we owe (credit); payment = money we paid (debit).
     final isInvoice = entry.isInvoice;
     final amount = isInvoice ? entry.credit : entry.debit;
     return Padding(

@@ -4,9 +4,6 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/format/app_format.dart';
 
-/// Price block — selling price + struck-through MRP + a discount chip.
-/// When a variant is selected its pricing wins over the product-level
-/// fields; otherwise the product's own selling price / MRP are used.
 class PdpPriceBlock extends StatelessWidget {
   const PdpPriceBlock({
     super.key,
@@ -15,11 +12,6 @@ class PdpPriceBlock extends StatelessWidget {
   });
   final MarketplaceProduct product;
 
-  /// Phase E — when set, the price block reads pricing/stock from this
-  /// variant instead of the product-level fields. Null while the
-  /// customer hasn't picked anything; the picker seeds with the
-  /// default variant on load so this is effectively non-null in
-  /// practice.
   final MarketplaceVariant? variantOverride;
 
   @override
@@ -81,9 +73,6 @@ class PdpPriceBlock extends StatelessWidget {
                 ),
             ],
           ),
-          // MRP is ALWAYS shown and labelled inclusive of all taxes (Legal
-          // Metrology). When discounted the struck-through M.R.P. above already
-          // carries it; otherwise show an explicit MRP line.
           Padding(
             padding: const EdgeInsets.only(top: AppSizes.xs),
             child: Text(
@@ -96,8 +85,6 @@ class PdpPriceBlock extends StatelessWidget {
                   ),
             ),
           ),
-          // Legal Metrology disclosures — country of origin + net quantity +
-          // marketed-by, shown before add-to-cart where available.
           ..._complianceRows(context, p),
         ],
       ),

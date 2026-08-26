@@ -1,8 +1,6 @@
 import { z } from "zod";
 import { zNum } from "@/shared/zod";
 
-// ── Place Order ───────────────────────────────────────────────────────────────
-
 export const placeOrderRequestSchema = z.object({
   items: z.array(
     z.object({
@@ -28,8 +26,6 @@ export const placeOrderResponseSchema = z.object({
 });
 
 export type PlaceOrderResponse = z.infer<typeof placeOrderResponseSchema>;
-
-// ── Coupon preview ────────────────────────────────────────────────────────────
 
 export const couponSchema = z.object({
   id: z.coerce.string(),
@@ -58,7 +54,6 @@ export const autoApplyResponseSchema = z.union([
 
 export type AutoApplyResponse = z.infer<typeof autoApplyResponseSchema>;
 
-/** Computed coupon discount given a subtotal. */
 export function computeCouponDiscount(coupon: Coupon, subtotal: number): number {
   let discount = 0;
   if (coupon.discountType === "PERCENT") {
@@ -67,13 +62,10 @@ export function computeCouponDiscount(coupon: Coupon, subtotal: number): number 
       discount = Math.min(discount, coupon.maxDiscountAmount);
     }
   } else {
-    // FLAT
     discount = coupon.discountValue;
   }
   return Math.min(discount, subtotal);
 }
-
-// ── Pay session ───────────────────────────────────────────────────────────────
 
 export const paySessionSchema = z.object({
   intentId: z.coerce.string(),
@@ -91,8 +83,6 @@ export const paySessionSchema = z.object({
 });
 
 export type PaySessionResponse = z.infer<typeof paySessionSchema>;
-
-// ── Payment sync ──────────────────────────────────────────────────────────────
 
 export const paySyncResponseSchema = z.object({
   paymentStatus: z.enum(["COD", "PENDING", "PAID"]),

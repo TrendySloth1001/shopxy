@@ -15,10 +15,6 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
-/// Modal sheet for creating or editing a banner. The slim banner is just
-/// an image + placement + optional link + optional schedule, so the editor
-/// is correspondingly lean: upload the artwork, pick where it shows, and
-/// (optionally) when and where it links.
 class AdminBannerEditorSheet extends StatefulWidget {
   const AdminBannerEditorSheet({super.key, this.existing});
   final AdminBanner? existing;
@@ -107,9 +103,6 @@ class _AdminBannerEditorSheetState extends State<AdminBannerEditorSheet> {
     setState(() => _imageUrl = url);
   }
 
-  /// Hard 5 MB ceiling — anything bigger usually means the admin
-  /// uploaded a raw camera capture, which both blows past the backend
-  /// limit and stalls on slow connections.
   bool _validateImageSize(File file) {
     const maxBytes = 5 * 1024 * 1024;
     if (file.lengthSync() > maxBytes) {

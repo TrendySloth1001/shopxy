@@ -24,8 +24,6 @@ class _Item {
   final Widget Function() page;
 }
 
-/// Prioritised "needs attention" queue — one tile per non-empty counter.
-/// Mirrors `components/action-center.tsx`.
 class ActionCenter extends StatelessWidget {
   const ActionCenter({super.key, required this.queue});
   final DashboardActionQueue queue;

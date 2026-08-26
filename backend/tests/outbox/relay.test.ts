@@ -7,11 +7,6 @@ import { runOutboxRelay } from '../../src/infra/outbox/relay.js';
 import type { OutboxEnvelope } from '../../src/infra/outbox/types.js';
 import { createTestUser, cleanupTestUser } from '../helpers/setup.js';
 
-/// Exercises the relay's delivery guarantees directly, using throwaway event
-/// types so it needs only the `outbox_events` table — no invoices/MinIO. A
-/// per-run `tag` keeps event types + aggregateType unique so a parallel session
-/// sharing the dev DB can't collide with us, and so `runOutboxRelay()` (which
-/// drains globally) only ever asserts against OUR rows, by id.
 const tag = crypto.randomBytes(6).toString('hex');
 const AGG = `test-${tag}`;
 
@@ -76,10 +71,9 @@ describe('outbox relay', () => {
     await runOutboxRelay();
 
     const row = await prisma.outboxEvent.findFirst({ where: { aggregateType: AGG, aggregateId: 'a3' } });
-    expect(row?.status).toBe('PENDING'); // back in the queue, not lost
+    expect(row?.status).toBe('PENDING');
     expect(row?.attempts).toBe(1);
     expect(row?.lastError).toContain('boom');
-    // Backed off into the future so it doesn't hot-loop.
     expect(row && row.availableAt.getTime()).toBeGreaterThan(Date.now());
   });
 
@@ -97,15 +91,12 @@ describe('outbox relay', () => {
     });
 
     await runOutboxRelay();
-    await runOutboxRelay(); // a second drain must not see it again
+    await runOutboxRelay();
 
     expect(count).toBe(1);
   });
 
   it('drives a real invoice.confirmed event through to the roll-up handler', async () => {
-    // End-to-end: the registered `invoice.confirmed` handler recomputes the
-    // (shop, day) roll-up. A real shop id makes `recomputeDay` run for real;
-    // proving it reaches PUBLISHED proves the producer→relay→derived-store loop.
     const ctx = await createTestUser();
     try {
       await enqueueOutbox({
@@ -137,7 +128,7 @@ describe('outbox relay', () => {
           { aggregateType: AGG, aggregateId: 'rollback', eventType: `test.ok.${tag}`, payload: {} },
           tx,
         );
-        throw new Error('abort'); // roll the whole unit back
+        throw new Error('abort');
       })
       .catch(() => {});
 

@@ -9,11 +9,6 @@ import {
   type Area,
 } from "./permissions";
 
-/**
- * Area × action grant grid. `manage` implies `view`; clearing `view` clears
- * `manage` too. The selected set is the source of truth (normalised by the
- * caller before sending).
- */
 export function PermissionMatrix({
   value,
   onChange,
@@ -21,11 +16,6 @@ export function PermissionMatrix({
 }: {
   value: Set<string>;
   onChange: (next: Set<string>) => void;
-  /**
-   * The rights the current actor is allowed to grant (their own, normalised).
-   * Rights outside it are disabled up front — the backend rejects
-   * `CANNOT_GRANT_BEYOND_OWN_RIGHTS` anyway. `null`/undefined = owner (no limit).
-   */
   ceiling?: Set<string> | null;
 }) {
   const t = useTranslations("team");
@@ -38,10 +28,10 @@ export function PermissionMatrix({
     const m = manageRight(area as never);
     if (next.has(right)) {
       next.delete(right);
-      if (kind === "view") next.delete(m); // clearing view clears manage
+      if (kind === "view") next.delete(m);
     } else {
       next.add(right);
-      if (kind === "manage") next.add(v); // manage implies view
+      if (kind === "manage") next.add(v);
     }
     onChange(next);
   }

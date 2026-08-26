@@ -49,10 +49,6 @@ describe('cta-target — ReDoS safety', () => {
     expect(parseCtaTarget(tooLong)).toBeNull();
   });
 
-  // Stress: 2048 chars of a single letter has no ":" so it bails at the
-  // length / indexOf check. The whole validator must finish in well
-  // under 10ms — if a future change makes a regex backtrack on this
-  // shape, the assertion will flag it.
   it('isValidCtaTarget completes <10ms on a 2048-char input', () => {
     const big = 'a'.repeat(2048);
     const start = process.hrtime.bigint();
@@ -62,9 +58,6 @@ describe('cta-target — ReDoS safety', () => {
   });
 
   it('isValidCtaTarget completes <10ms on a 2048-char colon-prefixed input', () => {
-    // Worst case shape: passes the indexOf guard, then hits the slug
-    // regex with 2046 characters. The regex is anchored + bounded, so
-    // it should reject in O(1)-ish time.
     const big = 'category:' + 'a'.repeat(2048 - 'category:'.length);
     const start = process.hrtime.bigint();
     isValidCtaTarget(big);

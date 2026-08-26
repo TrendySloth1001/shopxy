@@ -2,8 +2,6 @@ import { Router } from 'express';
 import asyncHandler from '../../shared/http/asyncHandler.js';
 import { quotationsController } from './quotations.controller.js';
 
-/// Merchant-side quotation routes (mounted ownerOnly). Customers act on
-/// quotations via the read+accept/decline routes under /me/parties/:id.
 const router = Router();
 
 router.post('/', asyncHandler((req, res) => quotationsController.create(req, res)));

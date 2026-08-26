@@ -91,15 +91,6 @@ export default function ChallanDetailPage() {
     }
   }
 
-  /**
-   * File this challan away, or bring it back. There is no delete and can't
-   * be: the number is allocated at create time and Rule 55 wants the run
-   * serially numbered. The backend refuses a PENDING challan — goods are
-   * still out against it.
-   *
-   * Either way we return to the list, where a restored challan reappears and
-   * an archived one has gone.
-   */
   async function onSetArchived(archived: boolean) {
     setBusy(true);
     setActionError(null);
@@ -151,7 +142,6 @@ export default function ChallanDetailPage() {
     <div className="w-full px-lg py-xxl pb-massive md:px-xxl">
       <BackLink href={BACK} label={t("list.title")} />
 
-      {/* Header */}
       <div className="mt-md flex flex-wrap items-start justify-between gap-md">
         <div className="flex min-w-0 items-start gap-md">
           <span className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-accent-amber-soft text-accent-amber">
@@ -171,10 +161,7 @@ export default function ChallanDetailPage() {
             <p className="mt-xs text-body-sm text-muted">{formatDateTime(challan.createdAt)}</p>
           </div>
         </div>
-        {/* A settled challan can be filed away; an archived one brought back.
-            A PENDING one offers neither — goods are still out against it. */}
         {challan.archivedAt ? (
-          // Restoring needs no confirmation: it only puts the challan back.
           <button
             type="button"
             onClick={() => void onSetArchived(false)}
@@ -199,7 +186,6 @@ export default function ChallanDetailPage() {
         <p className="mt-md rounded-md bg-error-soft px-md py-sm text-body-sm text-error">{actionError}</p>
       ) : null}
 
-      {/* Party / meta */}
       <div className="mt-xl">
         <p className="text-label-md uppercase tracking-wide text-subtle">{t("detail.deliveredTo")}</p>
         <p className="mt-xs text-title-md text-ink">{challan.partyName ?? "—"}</p>
@@ -219,14 +205,12 @@ export default function ChallanDetailPage() {
         ) : null}
       </div>
 
-      {/* Items */}
       <Divider className="my-xl" />
       <h2 className="mb-sm text-label-md uppercase tracking-wide text-subtle">{t("detail.items")}</h2>
       {challan.items.map((it, i) => (
         <ItemRow key={it.id ?? i} item={it} />
       ))}
 
-      {/* Action */}
       {isPending ? (
         <div className="mt-xxl flex flex-wrap items-center gap-sm">
           <button

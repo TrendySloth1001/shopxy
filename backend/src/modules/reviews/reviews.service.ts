@@ -12,15 +12,6 @@ const reviewSelect = {
   user: { select: { id: true, name: true } },
 } as const;
 
-/// The review gate: a user may only review a product they purchased
-/// through this marketplace. "Purchased" = at least one CONFIRMED
-/// invoice with a line for this product, where the invoice's party is
-/// linked to the calling user.
-///
-/// DRAFT invoices don't count — the merchant could spin up a fake
-/// invoice to seed reviews. The CONFIRMED gate also matches how the
-/// app already treats invoices as "issued/final" elsewhere (see
-/// invoices.service status transitions).
 export async function canReview(userId: number, productId: number): Promise<boolean> {
   const hit = await prisma.invoiceItem.findFirst({
     where: {
@@ -35,9 +26,6 @@ export async function canReview(userId: number, productId: number): Promise<bool
   return hit !== null;
 }
 
-/// Recomputes (ratingAvg, ratingCount) for a product from product_reviews
-/// and writes them back to products. Always called inside the same
-/// transaction as the upsert/delete so the denorm can't drift.
 async function recomputeRatingDenorm(
   txClient: typeof prisma | Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
   productId: number,
@@ -57,12 +45,6 @@ async function recomputeRatingDenorm(
 }
 
 export class ReviewsService {
-  /// Upserts the caller's review for a product. The (productId, userId)
-  /// unique index makes editing a review a same-row update. Denorms on
-  /// Product get recomputed in the same transaction.
-  ///
-  /// Returns `{ error: 'not_purchased' }` instead of throwing so the
-  /// controller can map to 403 without parsing exception text.
   async upsertReview(args: {
     userId: number;
     productId: number;
@@ -103,8 +85,6 @@ export class ReviewsService {
     return { review };
   }
 
-  /// Deletes the caller's review and recomputes denorms. Idempotent —
-  /// returns null when the caller has no review for this product.
   async deleteOwnReview(userId: number, productId: number) {
     return prisma.$transaction(async (tx) => {
       const existing = await tx.productReview.findUnique({
@@ -118,13 +98,6 @@ export class ReviewsService {
     });
   }
 
-  /// One-shot summary payload for the PDP review block: average,
-  /// total count, per-star histogram (always 1..5 keyed and
-  /// zero-filled so the client doesn't need to guard for missing
-  /// keys), how many of those came from CONFIRMED-invoice buyers
-  /// (measured, not assumed — see verifiedCount below), and the three
-  /// most recent reviews so the section can render without a
-  /// follow-up list call.
   async getSummary(productId: number) {
     const [agg, buckets, recent, verifiedCount] = await Promise.all([
       prisma.productReview.aggregate({
@@ -143,13 +116,6 @@ export class ReviewsService {
         take: 3,
         select: reviewSelect,
       }),
-      // CP (E-Commerce) Rules 2020 r.4 / IS 19000 — "verified buyer" must
-      // be a measured purchase signal, NOT assumed equal to ratingCount.
-      // A review is verified iff its author has a CONFIRMED-invoice line
-      // for this product whose party is linked to that author (the same
-      // condition canReview enforces at write time). Count distinct
-      // reviewers who satisfy it so a seeded/imported/ungated review is
-      // never mislabeled.
       this.countVerifiedReviews(productId),
     ]);
 
@@ -165,19 +131,12 @@ export class ReviewsService {
     return {
       ratingAvg: agg._avg.rating,
       ratingCount,
-      // Measured from actual verified-purchase rows (see above), capped
-      // at ratingCount defensively. Never assumed equal to ratingCount.
       verifiedCount: Math.min(verifiedCount, ratingCount),
       histogram,
       recent,
     };
   }
 
-  /// Counts how many reviewers of this product are verified buyers — i.e.
-  /// have at least one CONFIRMED-invoice line for the product whose party
-  /// is linked to them (the canReview condition). One review per user is
-  /// enforced by the (productId, userId) unique index, so a distinct
-  /// reviewer count equals a distinct verified-review count.
   private async countVerifiedReviews(productId: number): Promise<number> {
     const reviewers = await prisma.productReview.findMany({
       where: { productId },
@@ -204,8 +163,6 @@ export class ReviewsService {
     return verifiedUserIds.size;
   }
 
-  /// Cursor-paginated public listing — id-based cursor for stable
-  /// ordering when reviews land mid-scroll. Newest first.
   async listForProduct(
     productId: number,
     opts: { cursor?: number; limit?: number },
@@ -224,10 +181,6 @@ export class ReviewsService {
     return { data, nextCursor };
   }
 
-  /// "My reviews" feed — every review the caller has written, with
-  /// the product (name + first image) joined so the profile page
-  /// can render a card per row without a second fetch. Cursor on
-  /// id for stable ordering when the user edits an old review.
   async listForUser(
     userId: number,
     opts: { cursor?: number; limit?: number },

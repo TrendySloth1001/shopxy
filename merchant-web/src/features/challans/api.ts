@@ -7,7 +7,6 @@ async function jsonOrThrow<T>(res: Response, parse: (raw: unknown) => T, fallbac
       const body = (await res.json()) as { error?: string };
       if (body?.error) message = body.error;
     } catch {
-      /* keep fallback */
     }
     throw new Error(message);
   }
@@ -22,7 +21,6 @@ async function okOrThrow(res: Response, fallback: string): Promise<void> {
 export function listChallans(opts?: {
   status?: string;
   search?: string;
-  /** The "Archived" view. Archived challans are out of every other list. */
   archived?: boolean;
 }): Promise<Challan[]> {
   const qs = new URLSearchParams({ limit: "50" });
@@ -59,13 +57,6 @@ export async function cancelChallan(id: string): Promise<void> {
   await okOrThrow(res, "Could not cancel the challan.");
 }
 
-/**
- * File a settled challan out of the working list, or bring it back.
- *
- * There is no delete: the challan number is allocated at create time and
- * Rule 55 wants the run serially numbered. The backend refuses a PENDING
- * challan — goods are still out against it.
- */
 export function setChallanArchived(id: string, archived: boolean): Promise<Challan> {
   const qs = archived ? "" : "?restore=1";
   return fetch(`/api/challans/${id}/archive${qs}`, { method: "POST" }).then((r) =>
@@ -77,7 +68,6 @@ export function setChallanArchived(id: string, archived: boolean): Promise<Chall
   );
 }
 
-/** Convert a PENDING challan into a draft SALE invoice; returns the new id. */
 export function convertChallan(
   id: string,
   input?: { customerName?: string; customerGstin?: string; discount?: number; note?: string },

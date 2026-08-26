@@ -3,8 +3,6 @@ import { z } from "zod";
 import { authedFetch, extractError } from "@/server/auth/session";
 import { categorySchema } from "@/features/products/schema";
 
-// GET /api/categories — the (global) category taxonomy, for filters + the
-// product category select. Tolerant of `[...]` or `{ data: [...] }` shapes.
 export async function GET() {
   const res = await authedFetch("/categories");
   if (!res) return NextResponse.json({ error: "Session expired." }, { status: 401 });

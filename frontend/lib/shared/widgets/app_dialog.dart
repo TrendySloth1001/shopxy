@@ -3,7 +3,6 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/constants/app_strings.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
 
-/// Standardised confirm dialog. Returns `true` if user confirms.
 class AppConfirmDialog extends StatelessWidget {
   const AppConfirmDialog({
     super.key,
@@ -56,9 +55,6 @@ class AppConfirmDialog extends StatelessWidget {
             fullWidth: true,
           );
 
-    // Buttons live inside `content` (not `actions`) so they can be full-width
-    // Expanded halves of a single row — AlertDialog's `actions` OverflowBar
-    // can't bound Expanded children, and would otherwise stack them.
     return AlertDialog(
       title: Text(title),
       content: Column(

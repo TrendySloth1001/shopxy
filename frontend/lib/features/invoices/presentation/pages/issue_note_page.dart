@@ -15,13 +15,6 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// Composer for a Sec 34 credit / debit note raised against a CONFIRMED sale
-/// invoice. The merchant picks which of the original lines the note covers
-/// (and, for a debit note, the supplementary amount per unit). A credit note
-/// reverses the original price and — unless the restock switch is off — puts
-/// the goods back on the shelf; a debit note only adds value. The heavy
-/// lifting (GST split, numbering, restock, roll-up) happens server-side via
-/// POST /invoices/:id/notes; this page just gathers the lines.
 class IssueNotePage extends StatefulWidget {
   const IssueNotePage({super.key, required this.invoice});
 
@@ -39,8 +32,8 @@ class _NoteLineDraft {
 
   final InvoiceItem item;
   bool include;
-  final TextEditingController qtyCtrl; // units to credit/debit
-  final TextEditingController priceCtrl; // debit-note extra ₹/unit
+  final TextEditingController qtyCtrl;
+  final TextEditingController priceCtrl;
 
   void dispose() {
     qtyCtrl.dispose();
@@ -71,8 +64,6 @@ class _IssueNotePageState extends State<IssueNotePage> {
     super.dispose();
   }
 
-  /// Rough pre-tax + GST preview so the merchant sees the note's magnitude
-  /// before submitting. The server computes the authoritative total.
   double get _approxTotal {
     var total = 0.0;
     for (final l in _lines) {
@@ -123,7 +114,6 @@ class _IssueNotePageState extends State<IssueNotePage> {
         restock: _isCredit ? _restock : null,
         lines: lines,
       );
-      // The note is a new CONFIRMED row — refresh the parent list so it shows.
       invoicesProvider.loadInvoices(refresh: true);
       navigator.pop(true);
       messenger.showSnackBar(
@@ -157,7 +147,6 @@ class _IssueNotePageState extends State<IssueNotePage> {
             style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
           ),
           const SizedBox(height: AppSizes.md),
-          // Credit vs debit selector.
           Wrap(
             spacing: AppSizes.sm,
             children: [
@@ -188,9 +177,6 @@ class _IssueNotePageState extends State<IssueNotePage> {
           for (final line in _lines) _buildLineCard(line, theme, l10n),
           const SizedBox(height: AppSizes.md),
           if (_isCredit) ...[
-            // Wrapped in a card so the switch reads as an intentional control,
-            // not the mismatched strip the theme's ListTile `tileColor` paints
-            // straight on the canvas.
             Material(
               color: AppColors.surface,
               clipBehavior: Clip.antiAlias,
@@ -269,9 +255,6 @@ class _IssueNotePageState extends State<IssueNotePage> {
         ),
         child: Column(
           children: [
-            // Tap anywhere on the header to include/exclude the line. The
-            // qty / extra-price inputs sit OUTSIDE this InkWell so editing
-            // them doesn't toggle the row off.
             InkWell(
               onTap: () => setState(() => line.include = !line.include),
               child: Padding(

@@ -1,11 +1,5 @@
-/**
- * Zod schemas + TypeScript types for the merchant-ledger feature.
- * Covers invoices and quotations for both linked parties and vendors.
- */
 import { z } from "zod";
 import { zNum } from "@/shared/zod";
-
-// ─── Common ──────────────────────────────────────────────────────────────────
 
 export const pageMetaSchema = z.object({
   pagination: z.object({
@@ -15,8 +9,6 @@ export const pageMetaSchema = z.object({
     totalPages: z.number(),
   }),
 });
-
-// ─── Invoices ────────────────────────────────────────────────────────────────
 
 export const invoiceListItemSchema = z.object({
   id: z.coerce.string(),
@@ -84,8 +76,6 @@ export const invoiceDetailSchema = z.object({
 });
 export type InvoiceDetail = z.infer<typeof invoiceDetailSchema>;
 
-// ─── Quotations ──────────────────────────────────────────────────────────────
-
 export const quotationLineSchema = z.object({
   productId: z.coerce.string().nullable().optional(),
   name: z.string(),
@@ -105,7 +95,7 @@ export const quotationSchema = z.object({
   shopId: z.coerce.string(),
   partyId: z.coerce.string(),
   quotationNo: z.string(),
-  status: z.string(), // REQUESTED | PENDING | ACCEPTED | DECLINED | CANCELLED | EXPIRED
+  status: z.string(),
   items: z.array(quotationLineSchema),
   subtotal: z.coerce.number(),
   taxAmount: z.coerce.number(),
@@ -127,8 +117,6 @@ export const quotationsPageSchema = pageMetaSchema.extend({
   data: z.array(quotationSchema),
 });
 export type QuotationsPage = z.infer<typeof quotationsPageSchema>;
-
-// ─── Catalog (for request-quote page) ───────────────────────────────────────
 
 export const catalogProductSchema = z.object({
   id: z.coerce.string(),
@@ -166,8 +154,6 @@ export const catalogCategorySchema = z.object({
 });
 export type CatalogCategory = z.infer<typeof catalogCategorySchema>;
 
-// ─── Basket item (for request-quote submit) ──────────────────────────────────
-
 export interface BasketItem {
   productId: string;
   name: string;
@@ -178,9 +164,6 @@ export interface BasketItem {
   imageUrl?: string | null;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-/** Type of the route: "party" or "vendor" (from URL [role]) */
 export type MerchantRole = "party" | "vendor";
 
 export function txnIncreasesHeld(type: string): boolean {

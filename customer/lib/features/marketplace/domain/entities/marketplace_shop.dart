@@ -1,6 +1,3 @@
-/// Public storefront a customer can browse. Subset of the merchant
-/// Shop model — never carries `isPublished` (would-be 404s never reach
-/// the client) or owner identity.
 class MarketplaceShop {
   const MarketplaceShop({
     required this.id,
@@ -31,27 +28,17 @@ class MarketplaceShop {
   final String? bannerUrl;
   final double? rating;
   final int ratingCount;
-  /// Platform-admin curated trust badge.
   final bool isVerified;
-  /// Where the shop physically operates from. Drives the "Based in …"
-  /// trust line. Either field may be null independently.
   final String? locationCity;
   final String? locationState;
-  /// Free-text policy bodies (sanitised on render). Empty → hide tab.
   final String? returnPolicy;
   final String? shippingPolicy;
   final String? refundPolicy;
-  /// When the shop was first created — surfaced as "Selling since …"
-  /// on the public shop page. Backend exposes this as `createdAt`.
   final DateTime? joinedAt;
-  /// When true, the shop is on vacation — the customer PDP shows a
-  /// banner and add-to-cart is muted with a snackbar.
   final bool vacationMode;
   final String? vacationMessage;
-  /// `mon` → ['09:00', '21:00']. Days not in the map = closed.
   final Map<String, List<String>>? operatingHours;
 
-  /// Composed "City, State" or just whichever half is present.
   String? get locationLabel {
     final parts = <String>[
       if ((locationCity ?? '').isNotEmpty) locationCity!.trim(),

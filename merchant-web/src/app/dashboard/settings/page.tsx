@@ -50,8 +50,6 @@ type SectionKey =
   | "about"
   | "developer";
 
-// Labels + blurbs come from the message catalog (settings.sections.<key>); the
-// array carries only the stable key + icon.
 const SECTIONS: { key: SectionKey; icon: LucideIcon }[] = [
   { key: "account", icon: UserPen },
   { key: "shop", icon: Store },
@@ -64,7 +62,6 @@ const SECTIONS: { key: SectionKey; icon: LucideIcon }[] = [
   { key: "about", icon: Info },
 ];
 
-/** Responsive tile grid — fills the pane, gaining columns as width grows. */
 function TileGrid({ children }: { children: React.ReactNode }) {
   return <div className="grid grid-cols-1 gap-md sm:grid-cols-2 xl:grid-cols-3">{children}</div>;
 }
@@ -75,9 +72,6 @@ export default function SettingsPage() {
   const t = useTranslations("settings");
   const [active, setActive] = useState<SectionKey>("account");
   const [signingOut, setSigningOut] = useState(false);
-  // Developer-only backend switcher. `available` is decided by the server
-  // (the endpoint 404s for everyone else), so the rail entry below simply
-  // doesn't exist for a normal merchant.
   const { available: devAvailable, state: devState } = useDeveloperEnvironments();
 
   async function onSignOut() {
@@ -95,9 +89,6 @@ export default function SettingsPage() {
     : SECTIONS;
   const current = sections.find((s) => s.key === active) ?? sections[0];
 
-  // The developer section is deliberately absent from the message catalogs —
-  // it's gated to one hardcoded account, so a Hindi translation would be
-  // shipped weight nobody can ever read.
   const sectionLabel = (key: SectionKey) =>
     key === "developer" ? "Developer" : t(`sections.${key}.label`);
   const sectionBlurb = (key: SectionKey) =>
@@ -111,7 +102,6 @@ export default function SettingsPage() {
       <p className="mt-xs text-body-md text-muted">{t("subtitle")}</p>
 
       <div className="mt-xl flex flex-col gap-xl md:flex-row md:gap-xxl">
-        {/* Category rail */}
         <nav className="flex shrink-0 gap-xs overflow-x-auto md:w-60 md:flex-col md:overflow-visible">
           {sections.map((s) => {
             const on = s.key === active;
@@ -144,7 +134,6 @@ export default function SettingsPage() {
           </div>
         </nav>
 
-        {/* Content pane — fills the remaining width */}
         <section className="min-w-0 flex-1">
           <div className="flex items-center gap-md border-b border-hairline pb-md">
             <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand-strong">
@@ -238,7 +227,6 @@ export default function SettingsPage() {
             ) : null}
           </div>
 
-          {/* Sign out — inline on mobile where the rail footer is hidden */}
           <button
             type="button"
             onClick={onSignOut}

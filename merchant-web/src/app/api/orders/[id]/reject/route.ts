@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { authedFetch, extractError } from "@/server/auth/session";
 
-// POST /api/orders/:id/reject — decline the order (optional note). Backend
-// answers 204 on success.
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },

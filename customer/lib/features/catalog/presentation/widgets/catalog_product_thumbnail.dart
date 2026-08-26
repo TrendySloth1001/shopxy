@@ -5,11 +5,6 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 
-/// Image-or-monogram thumbnail for products on the customer side.
-/// Mirrors the merchant app's `ProductThumbnail`: real photo when
-/// available, hash-tinted monogram fallback when not (or when the
-/// network image fails). Used in the grid card, cart row, and detail
-/// hero so a product reads the same wherever it appears.
 class CatalogProductThumbnail extends StatelessWidget {
   const CatalogProductThumbnail({
     super.key,
@@ -22,7 +17,6 @@ class CatalogProductThumbnail extends StatelessWidget {
   final double size;
   final double? cornerRadius;
 
-  /// Stable per-product hash → one of six brand-friendly accents.
   static const _accents = <(Color bg, Color fg)>[
     (AppColors.brandSoft, AppColors.brandStrong),
     (AppColors.accentTealSoft, AppColors.accentTeal),
@@ -65,8 +59,6 @@ class CatalogProductThumbnail extends StatelessWidget {
               child: Image.network(
                 resolved,
                 fit: BoxFit.cover,
-                // Decode at thumbnail size, not at the stored resolution —
-                // this widget appears once per row in long lists.
                 cacheWidth: (size * MediaQuery.devicePixelRatioOf(context))
                     .round(),
                 filterQuality: FilterQuality.medium,

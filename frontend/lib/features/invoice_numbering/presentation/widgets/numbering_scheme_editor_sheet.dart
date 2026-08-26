@@ -10,8 +10,6 @@ import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
-/// GSTIN/PAN-style code — letters, digits, `-_.` only. The separator is its
-/// own field, not something merchants embed inside prefix/suffix.
 final _codeRegex = RegExp(r'^[A-Za-z0-9\-_.]*$');
 
 const _separators = ['/', '-', '.', ''];
@@ -82,9 +80,6 @@ class _NumberingSchemeEditorSheetState
 
   int get _paddingValue => int.tryParse(_padding.text) ?? widget.scheme.padding;
 
-  // Next 3, not just 1 — lets the merchant confirm the format looks right
-  // across a few numbers before committing, no extra round-trip (pure math
-  // on the already-fetched nextSeq).
   List<String> get _previewNext => [
     for (var i = 0; i < 3; i++)
       formatDocNoPreview(

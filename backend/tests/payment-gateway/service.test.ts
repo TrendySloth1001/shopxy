@@ -1,15 +1,3 @@
-/**
- * PURE unit tests for the payment-gateway core orchestrator.
- *
- * No DB, no network. We construct PaymentGatewayService directly with
- * hand-rolled in-memory fake repositories and a fake PaymentGatewayPort.
- *
- * The service statically imports three collaborators that we cannot exercise
- * for real in a unit test, so we vi.mock them:
- *   - providers/registry.js   → getProvider returns OUR fake provider
- *   - settlement/settlement.js → settlementFor returns a spy with onPaid
- *   - infra/db/prisma.js       → $transaction just runs the callback (no DB)
- */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { PaymentGatewayPort, HeaderBag } from '../../src/modules/payment-gateway/ports/payment-provider.port.js';
 import type {
@@ -23,7 +11,6 @@ import type {
   NormalizedEvent,
 } from '../../src/modules/payment-gateway/ports/types.js';
 
-// ── Mocks for the statically-imported collaborators ──────────────────────
 const getProvider = vi.fn();
 const onPaid = vi.fn();
 const settlementFor = vi.fn(() => ({ onPaid }));
@@ -36,18 +23,6 @@ vi.mock('../../src/modules/payment-gateway/settlement/settlement.js', () => ({
   settlementFor: (type: string) => settlementFor(type),
 }));
 
-// Transactions must actually ROLL BACK in these tests, not just run the callback:
-// two correctness properties the service documents depend on it — a settlement
-// throw must undo the CAPTURED status flip, and a refund insert that loses the
-// idempotency-key unique must undo the reservation it just made. A mock that
-// swallowed rollback would report both as leaked state.
-//
-// Rollback is per-transaction, not a whole-store snapshot: two refunds racing on
-// one capture have OVERLAPPING transactions, and a snapshot taken at the loser's
-// BEGIN predates the winner's commit — restoring it would wipe committed work
-// that Postgres would have kept. So each tx gets a token, every tx-scoped
-// mutation registers a targeted undo against it, and rollback replays only that
-// token's undos in reverse.
 const txLog = vi.hoisted(() => ({
   entries: [] as Array<{ token: unknown; undo: () => void }>,
   record(token: unknown, undo: () => void) {
@@ -68,8 +43,6 @@ const txLog = vi.hoisted(() => ({
 
 vi.mock('../../src/infra/db/prisma.js', () => ({
   default: {
-    // Run the callback with a per-call token as the tx handle, so we exercise the
-    // real updateStatus + settlement wiring (and rollback) without a database.
     $transaction: vi.fn(async (cb: (t: unknown) => Promise<unknown>) => {
       const token = { __fakeTx: true };
       try {
@@ -84,10 +57,7 @@ vi.mock('../../src/infra/db/prisma.js', () => ({
   },
 }));
 
-// Import the subject AFTER the mocks are registered.
 import { PaymentGatewayService } from '../../src/modules/payment-gateway/payment-gateway.service.js';
-
-// ── Hand-rolled in-memory fakes ───────────────────────────────────────────
 
 function makeRecord(over: Partial<GatewayPaymentRecord> = {}): GatewayPaymentRecord {
   return {
@@ -103,8 +73,6 @@ function makeRecord(over: Partial<GatewayPaymentRecord> = {}): GatewayPaymentRec
     providerPaymentRef: null,
     amountRefunded: 0,
     idempotencyKey: null,
-    // Fresh by default: replay/resume tests exercise the within-window
-    // contract. Staleness tests pass an explicit old createdAt.
     createdAt: new Date(),
     updatedAt: new Date(),
     ...over,
@@ -217,10 +185,6 @@ class FakeRepo implements GatewayPaymentRepository {
     );
   }
 
-  // Mirrors the locked SQL implementation: cap-check and increment in one step,
-  // granting only what's actually left. (The real one holds a row lock; a
-  // single-threaded fake serializes anyway — what matters is that the check and
-  // the increment are one indivisible step, which is what this asserts.)
   async reserveRefundable(id: number, requested: number, tx?: unknown) {
     const row = this.rows.find((r) => r.id === id);
     if (!row) return { granted: 0, fullyRefunded: false };
@@ -297,8 +261,6 @@ class FakeRefundRepo {
     input: Omit<FakeRefundRepo['rows'][number], 'id' | 'createdAt' | 'updatedAt'>,
     tx?: unknown,
   ) {
-    // Enforce the real unique (idempotency_key) so the racing-same-key path is
-    // exercisable: the service must translate P2002 into a replay, not an error.
     if (this.rows.some((r) => r.idempotencyKey === input.idempotencyKey)) {
       throw Object.assign(new Error('Unique constraint failed on idempotencyKey'), {
         code: 'P2002',
@@ -334,7 +296,6 @@ class FakeEvents implements WebhookEventRepository {
   claimed = new Set<string>();
   processed: string[] = [];
   released: string[] = [];
-  // Override per-test if we need a specific claim outcome.
   claimResult: boolean | null = null;
   claimCalls: Array<{ provider: string; eventId: string }> = [];
 
@@ -354,14 +315,10 @@ class FakeEvents implements WebhookEventRepository {
   async release(provider: string, eventId: string) {
     const key = `${provider}:${eventId}`;
     this.released.push(key);
-    // Only an unprocessed claim is releasable — mirrors the `processedAt: null`
-    // guard in the SQL, so a settled event stays deduped forever.
     if (!this.processed.includes(key)) this.claimed.delete(key);
   }
 }
 
-// Fake provider port. Only the methods the core touches are real; the rest
-// throw if ever called so a test that depends on them fails loudly.
 function makeProvider(over: Partial<PaymentGatewayPort> = {}): PaymentGatewayPort {
   return {
     name: 'RAZORPAY',
@@ -374,8 +331,6 @@ function makeProvider(over: Partial<PaymentGatewayPort> = {}): PaymentGatewayPor
     verifyWebhookSignature: vi.fn(() => true),
     parseWebhookEvent: vi.fn(),
     fetchPaymentStatus: vi.fn(),
-    // Default: the live provider order is still unpaid, so a retry resumes it.
-    // Tests that exercise reconciliation override this with a PAID status.
     fetchOrderStatus: vi.fn(async () => ({
       status: 'CREATED' as const,
       amountPaidMinor: 0,
@@ -418,12 +373,10 @@ describe('PaymentGatewayService', () => {
     provider = makeProvider();
     getProvider.mockReturnValue(provider);
     settlementFor.mockReturnValue({ onPaid });
-    txLog.reset(); // no undo entries leak between tests
+    txLog.reset();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     svc = new PaymentGatewayService(repo, events, refunds as any);
   });
-
-  // ── initiatePayment ─────────────────────────────────────────────────────
 
   describe('initiatePayment', () => {
     it('creates an intent, attaches the order ref, and returns client params', async () => {
@@ -436,11 +389,9 @@ describe('PaymentGatewayService', () => {
         idempotencyKey: null,
       });
 
-      // Provider key is upper-cased on persistence.
       expect(repo.createInput?.provider).toBe('RAZORPAY');
       expect(repo.createInput?.currency).toBe('INR');
 
-      // Session created and the resulting order ref attached back to the intent.
       expect(provider.createSession).toHaveBeenCalledTimes(1);
       expect(repo.attached).toEqual([
         { id: res.intentId, refs: { providerOrderRef: 'order_FAKE' } },
@@ -480,16 +431,12 @@ describe('PaymentGatewayService', () => {
       expect(res.reused).toBe(true);
       expect(res.intentId).toBe(55);
       expect(res.providerOrderRef).toBe('order_EXISTING');
-      // No new order/session minted on replay; client params rebuilt instead.
       expect(provider.createSession).not.toHaveBeenCalled();
       expect(provider.buildClientParams).toHaveBeenCalledTimes(1);
       expect(repo.createInput).toBeNull();
     });
 
     it('does NOT reopen checkout when the prior order was already PAID — reconciles + throws ALREADY_PAID', async () => {
-      // A prior attempt actually paid, but the webhook never arrived (the classic
-      // localhost-dev case). The intent is still CREATED locally; the LIVE order
-      // reports paid. Reopening it is what froze Razorpay — we must not.
       const seeded = repo.seed(
         makeRecord({
           id: 55,
@@ -519,8 +466,6 @@ describe('PaymentGatewayService', () => {
         }),
       ).rejects.toMatchObject({ code: 'ALREADY_PAID', status: 409 });
 
-      // Reconciled: marked CAPTURED + settled exactly once, the captured ref
-      // attached. No fresh order minted, sheet never re-presented.
       expect(seeded.status).toBe('CAPTURED');
       expect(onPaid).toHaveBeenCalledTimes(1);
       expect(repo.attached).toContainEqual({ id: 55, refs: { providerPaymentRef: 'pay_recon' } });
@@ -551,18 +496,13 @@ describe('PaymentGatewayService', () => {
         idempotencyKey: 'order:11',
       });
 
-      // A failed attempt must NOT be resumed (its order_id is spent) — a brand
-      // new provider order is created so the retry opens a clean sheet.
       expect(res.reused).toBe(false);
       expect(res.intentId).not.toBe(60);
       expect(provider.createSession).toHaveBeenCalledTimes(1);
       expect(repo.createInput).not.toBeNull();
-      // We never probe a dead order's live status.
       expect(provider.fetchOrderStatus).not.toHaveBeenCalled();
     });
   });
-
-  // ── handleWebhook ─────────────────────────────────────────────────────────
 
   describe('handleWebhook', () => {
     it('throws 400 on a bad signature and never parses the event', async () => {
@@ -580,7 +520,6 @@ describe('PaymentGatewayService', () => {
       (provider.parseWebhookEvent as ReturnType<typeof vi.fn>).mockReturnValue(
         evt({ providerOrderRef: 'order_FROM_OTHER_APP' }),
       );
-      // repo has no rows → findByProviderOrderRef returns null.
 
       await expect(svc.handleWebhook('razorpay', BODY, HEADERS)).resolves.toBeUndefined();
 
@@ -592,7 +531,7 @@ describe('PaymentGatewayService', () => {
     it('is a no-op on a duplicate event (claim returns false): does not transition or settle', async () => {
       repo.seed(makeRecord({ id: 10, providerOrderRef: 'order_FAKE', status: 'PENDING' }));
       (provider.parseWebhookEvent as ReturnType<typeof vi.fn>).mockReturnValue(evt());
-      events.claimResult = false; // already claimed elsewhere
+      events.claimResult = false;
 
       await expect(svc.handleWebhook('razorpay', BODY, HEADERS)).resolves.toBeUndefined();
 
@@ -615,14 +554,12 @@ describe('PaymentGatewayService', () => {
       expect(row.status).toBe('CAPTURED');
       expect(repo.statusUpdates).toEqual([{ id: 10, status: 'CAPTURED', hadTx: true }]);
 
-      // settlement resolved for the target type and invoked once, inside the tx.
       expect(settlementFor).toHaveBeenCalledWith('WALLET');
       expect(onPaid).toHaveBeenCalledTimes(1);
       const [settledArg, txArg] = onPaid.mock.calls[0];
       expect(settledArg).toMatchObject({ id: 10, status: 'CAPTURED', providerPaymentRef: 'pay_1' });
       expect(txArg).toEqual({ __fakeTx: true });
 
-      // payment ref attached, event marked processed after success.
       expect(repo.attached).toContainEqual({ id: 10, refs: { providerPaymentRef: 'pay_1' } });
       expect(events.processed).toEqual(['RAZORPAY:ev_1']);
     });
@@ -632,7 +569,7 @@ describe('PaymentGatewayService', () => {
         makeRecord({ id: 10, providerOrderRef: 'order_FAKE', status: 'PENDING', amount: 100 }),
       );
       (provider.parseWebhookEvent as ReturnType<typeof vi.fn>).mockReturnValue(
-        evt({ type: 'PAID', amountMinor: 9999 }), // expected 10000
+        evt({ type: 'PAID', amountMinor: 9999 }),
       );
 
       await expect(svc.handleWebhook('razorpay', BODY, HEADERS)).rejects.toMatchObject({
@@ -643,7 +580,7 @@ describe('PaymentGatewayService', () => {
       expect(onPaid).not.toHaveBeenCalled();
       expect(repo.statusUpdates).toHaveLength(0);
       expect(row.status).toBe('PENDING');
-      expect(events.processed).toHaveLength(0); // processedAt stays null on failure
+      expect(events.processed).toHaveLength(0);
     });
 
     it('PAID on an already-CAPTURED intent is idempotent: no settlement, but event is marked processed', async () => {
@@ -656,7 +593,6 @@ describe('PaymentGatewayService', () => {
 
       expect(onPaid).not.toHaveBeenCalled();
       expect(repo.statusUpdates).toHaveLength(0);
-      // claim succeeded (fresh) and confirm short-circuited → still marked processed.
       expect(events.processed).toEqual(['RAZORPAY:ev_1']);
     });
 
@@ -676,18 +612,11 @@ describe('PaymentGatewayService', () => {
       expect(events.processed).toEqual(['RAZORPAY:ev_1']);
     });
 
-    // ── claim release on transient failure (the 500 must mean something) ──
-    //
-    // The claim commits before settlement runs, so a claim kept after a transient
-    // failure would make the provider's redelivery a no-op and the 500 we return
-    // a lie. These two tests pin the transient/permanent split.
-
     it('releases the claim when settlement fails TRANSIENTLY, so a redelivery re-runs it', async () => {
       repo.seed(makeRecord({ id: 10, providerOrderRef: 'order_FAKE', status: 'PENDING', amount: 100 }));
       (provider.parseWebhookEvent as ReturnType<typeof vi.fn>).mockReturnValue(
         evt({ type: 'PAID', amountMinor: 10000 }),
       );
-      // A DB blip inside settlement — no `status`, so transient.
       onPaid.mockRejectedValueOnce(new Error('deadlock detected'));
 
       await expect(svc.handleWebhook('razorpay', BODY, HEADERS)).rejects.toThrow(
@@ -696,7 +625,6 @@ describe('PaymentGatewayService', () => {
       expect(events.released).toEqual(['RAZORPAY:ev_1']);
       expect(events.processed).toHaveLength(0);
 
-      // The redelivery the 500 asked for now actually lands and settles.
       onPaid.mockResolvedValueOnce(undefined);
       await svc.handleWebhook('razorpay', BODY, HEADERS);
 
@@ -708,7 +636,7 @@ describe('PaymentGatewayService', () => {
     it('KEEPS the claim on a PERMANENT (4xx) failure — a redelivery would fail identically', async () => {
       repo.seed(makeRecord({ id: 10, providerOrderRef: 'order_FAKE', status: 'PENDING', amount: 100 }));
       (provider.parseWebhookEvent as ReturnType<typeof vi.fn>).mockReturnValue(
-        evt({ type: 'PAID', amountMinor: 9999 }), // amount mismatch → 400
+        evt({ type: 'PAID', amountMinor: 9999 }),
       );
 
       await expect(svc.handleWebhook('razorpay', BODY, HEADERS)).rejects.toMatchObject({
@@ -720,10 +648,7 @@ describe('PaymentGatewayService', () => {
     });
   });
 
-  // ── reconcileStaleIntents (the scheduled liveness net) ─────────────────────
-
   describe('reconcileStaleIntents', () => {
-    // A fixed clock so age windows are deterministic. `now` is injected.
     const NOW = new Date('2026-06-01T12:00:00Z');
     const minsAgo = (m: number) => new Date(NOW.getTime() - m * 60_000);
     const hoursAgo = (h: number) => new Date(NOW.getTime() - h * 3_600_000);
@@ -735,7 +660,7 @@ describe('PaymentGatewayService', () => {
           status: 'PENDING',
           amount: 100,
           providerOrderRef: 'order_PAID',
-          createdAt: minsAgo(30), // past the 15-min recheck window
+          createdAt: minsAgo(30),
         }),
       );
       (provider.fetchOrderStatus as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -748,7 +673,6 @@ describe('PaymentGatewayService', () => {
 
       expect(res).toMatchObject({ scanned: 1, captured: 1, abandoned: 0, stillOpen: 0, errors: 0 });
       expect(row.status).toBe('CAPTURED');
-      // Settled through the SAME path as a webhook — exactly once, inside a tx.
       expect(onPaid).toHaveBeenCalledTimes(1);
       expect(repo.statusUpdates).toEqual([{ id: 10, status: 'CAPTURED', hadTx: true }]);
       expect(repo.attached).toContainEqual({ id: 10, refs: { providerPaymentRef: 'pay_recon' } });
@@ -760,7 +684,7 @@ describe('PaymentGatewayService', () => {
           id: 10,
           status: 'CREATED',
           providerOrderRef: 'order_FRESH',
-          createdAt: minsAgo(5), // within the 15-min window
+          createdAt: minsAgo(5),
         }),
       );
 
@@ -776,7 +700,7 @@ describe('PaymentGatewayService', () => {
           id: 10,
           status: 'PENDING',
           providerOrderRef: 'order_PENDING',
-          createdAt: hoursAgo(2), // past recheck, within the 24h abandon window
+          createdAt: hoursAgo(2),
         }),
       );
       (provider.fetchOrderStatus as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -788,7 +712,7 @@ describe('PaymentGatewayService', () => {
       const res = await svc.reconcileStaleIntents({ now: NOW });
 
       expect(res).toMatchObject({ scanned: 1, captured: 0, abandoned: 0, stillOpen: 1, errors: 0 });
-      expect(row.status).toBe('PENDING'); // not abandoned on age alone
+      expect(row.status).toBe('PENDING');
     });
 
     it('abandons an unpaid intent past the abandon window → FAILED (stops re-scanning)', async () => {
@@ -797,7 +721,7 @@ describe('PaymentGatewayService', () => {
           id: 10,
           status: 'PENDING',
           providerOrderRef: 'order_STUCK',
-          createdAt: hoursAgo(48), // past the 24h abandon window
+          createdAt: hoursAgo(48),
         }),
       );
       (provider.fetchOrderStatus as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -817,7 +741,7 @@ describe('PaymentGatewayService', () => {
         makeRecord({
           id: 10,
           status: 'CREATED',
-          providerOrderRef: null, // createSession failed after the row was written
+          providerOrderRef: null,
           createdAt: hoursAgo(48),
         }),
       );
@@ -826,7 +750,7 @@ describe('PaymentGatewayService', () => {
 
       expect(res).toMatchObject({ scanned: 1, abandoned: 1, errors: 0 });
       expect(row.status).toBe('FAILED');
-      expect(provider.fetchOrderStatus).not.toHaveBeenCalled(); // nothing to probe
+      expect(provider.fetchOrderStatus).not.toHaveBeenCalled();
     });
 
     it('counts a provider error per-intent and keeps going — the bad intent stays OPEN', async () => {
@@ -843,7 +767,7 @@ describe('PaymentGatewayService', () => {
       const res = await svc.reconcileStaleIntents({ now: NOW });
 
       expect(res).toMatchObject({ scanned: 2, captured: 1, errors: 1 });
-      expect(bad.status).toBe('PENDING'); // left open, retried next tick
+      expect(bad.status).toBe('PENDING');
       expect(good.status).toBe('CAPTURED');
     });
 
@@ -859,13 +783,12 @@ describe('PaymentGatewayService', () => {
 
       const res = await svc.reconcileStaleIntents({ now: NOW });
 
-      expect(res.scanned).toBe(0); // CAPTURED is not "open" — never fetched
+      expect(res.scanned).toBe(0);
       expect(provider.fetchOrderStatus).not.toHaveBeenCalled();
       expect(onPaid).not.toHaveBeenCalled();
     });
   });
 
-  // ── refundToSource (real-money refund to the original instrument) ─────────
   describe('refundToSource', () => {
     function seedCapture(over: Partial<GatewayPaymentRecord> = {}) {
       return repo.seed(
@@ -899,11 +822,9 @@ describe('PaymentGatewayService', () => {
       });
 
       expect(res.status).toBe('REFUNDED');
-      // Provider called with paise + the deterministic idempotency key.
       expect(provider.refund).toHaveBeenCalledWith(
         expect.objectContaining({ providerPaymentRef: 'pay_CAP', amountMinor: 40000, idempotencyKey: 'return-refund-7' }),
       );
-      // One persisted refund row, tied to its trigger.
       expect(refunds.rows).toHaveLength(1);
       expect(refunds.rows[0]).toMatchObject({
         amount: 400,
@@ -912,7 +833,6 @@ describe('PaymentGatewayService', () => {
         sourceType: 'RETURN',
         sourceId: 7,
       });
-      // Capture's cap advanced; not yet fully refunded (400 of 1000).
       expect(repo.rows[0].amountRefunded).toBe(400);
       expect(repo.rows[0].status).toBe('CAPTURED');
     });
@@ -947,7 +867,6 @@ describe('PaymentGatewayService', () => {
         status: 'PROCESSED' as const,
       }));
 
-      // Ask for 400 when only 100 is left — must clamp to 100.
       const res = await svc.refundToSource({
         targetType: 'ORDER',
         targetId: 99,
@@ -959,14 +878,13 @@ describe('PaymentGatewayService', () => {
 
       expect(res.status).toBe('REFUNDED');
       expect(provider.refund).toHaveBeenCalledWith(
-        expect.objectContaining({ amountMinor: 10000 }), // ₹100, not ₹400
+        expect.objectContaining({ amountMinor: 10000 }),
       );
       expect(refunds.rows[0].amount).toBe(100);
       expect(repo.rows[0].amountRefunded).toBe(1000);
     });
 
     it('returns NO_PAYMENT for a COD / never-captured order (no provider call)', async () => {
-      // No captured GatewayPayment seeded.
       const res = await svc.refundToSource({
         targetType: 'ORDER',
         targetId: 99,
@@ -1018,9 +936,9 @@ describe('PaymentGatewayService', () => {
 
       expect(first.status).toBe('REFUNDED');
       expect(second.status).toBe('REFUNDED');
-      expect(provider.refund).toHaveBeenCalledTimes(1); // replay short-circuits
+      expect(provider.refund).toHaveBeenCalledTimes(1);
       expect(refunds.rows).toHaveLength(1);
-      expect(repo.rows[0].amountRefunded).toBe(400); // not double-counted
+      expect(repo.rows[0].amountRefunded).toBe(400);
     });
 
     it('records a FAILED refund row (no cap consumed) when the provider throws', async () => {
@@ -1040,27 +958,18 @@ describe('PaymentGatewayService', () => {
 
       expect(res.status).toBe('FAILED');
       expect(refunds.rows[0].status).toBe('FAILED');
-      // A failed refund must NOT consume refundable amount.
       expect(repo.rows[0].amountRefunded).toBe(0);
       expect(repo.rows[0].status).toBe('CAPTURED');
     });
 
-    // ── concurrent refunds on ONE capture must not sum past it ────────────
-    //
-    // The real-world shape: two children of the same order cancelled at once.
-    // Different idempotency keys (so no replay short-circuit), same targetId, so
-    // both resolve the SAME capture. Reserving before the provider call is what
-    // makes the second one see the first's consumption.
-
     it('two concurrent refunds on one capture cannot over-refund it (reservation serializes)', async () => {
-      seedCapture(); // ₹1000 captured, nothing refunded yet
+      seedCapture();
       provider.refund = vi.fn(async (p: { amountMinor: number }) => ({
         providerRefundRef: `rfnd_${p.amountMinor}`,
         amountMinor: p.amountMinor,
         status: 'PROCESSED' as const,
       }));
 
-      // Each asks for ₹600 — individually under the ₹1000 cap, together over it.
       const [a, b] = await Promise.all([
         svc.refundToSource({
           targetType: 'ORDER',
@@ -1081,12 +990,10 @@ describe('PaymentGatewayService', () => {
       ]);
 
       expect([a.status, b.status]).toEqual(['REFUNDED', 'REFUNDED']);
-      // The cap held: ₹600 + ₹400, never ₹1200.
       const total = refunds.rows.reduce((s, r) => s + r.amount, 0);
       expect(total).toBe(1000);
       expect(repo.rows[0].amountRefunded).toBe(1000);
       expect(repo.rows[0].status).toBe('REFUNDED');
-      // And the provider was only ever asked for what was reserved.
       const askedPaise = (provider.refund as ReturnType<typeof vi.fn>).mock.calls.map(
         (c) => (c[0] as { amountMinor: number }).amountMinor,
       );
@@ -1109,18 +1016,15 @@ describe('PaymentGatewayService', () => {
         idempotencyKey: 'return-refund-22',
       };
 
-      // Both pass the replay lookup (neither row exists yet), so the loser hits
-      // the unique on insert — which must resolve to the winner's refund.
       const [a, b] = await Promise.all([svc.refundToSource(input), svc.refundToSource(input)]);
 
       expect([a.status, b.status]).toEqual(['REFUNDED', 'REFUNDED']);
       expect(refunds.rows).toHaveLength(1);
-      expect(repo.rows[0].amountRefunded).toBe(400); // charged once
+      expect(repo.rows[0].amountRefunded).toBe(400);
     });
 
     it('refund.processed webhook flips a PENDING refund row to PROCESSED', async () => {
       seedCapture();
-      // A refund that came back PENDING from the provider (normal, non-instant).
       await refunds.create({
         gatewayPaymentId: 50,
         provider: 'RAZORPAY',
@@ -1133,8 +1037,6 @@ describe('PaymentGatewayService', () => {
         reason: null,
         idempotencyKey: 'return-refund-14',
       });
-      // The refund webhook resolves the captured intent by its order ref, then
-      // our refund row by the refund entity id.
       provider.parseWebhookEvent = vi.fn(() =>
         evt({
           type: 'REFUNDED',
@@ -1151,11 +1053,10 @@ describe('PaymentGatewayService', () => {
     });
   });
 
-  // ── reconcileStaleRefunds (the liveness net for un-settled refunds) ────────
   describe('reconcileStaleRefunds', () => {
     const NOW = new Date('2026-06-24T12:00:00Z');
-    const STALE = new Date(NOW.getTime() - 30 * 60_000); // 30 min ago → past recheck
-    const FRESH = new Date(NOW.getTime() - 60_000); // 1 min ago → within recheck
+    const STALE = new Date(NOW.getTime() - 30 * 60_000);
+    const FRESH = new Date(NOW.getTime() - 60_000);
 
     function cap(over: Partial<GatewayPaymentRecord> = {}) {
       return repo.seed(
@@ -1194,7 +1095,7 @@ describe('PaymentGatewayService', () => {
     }
 
     it('heals a PENDING refund whose webhook was missed (provider → PROCESSED)', async () => {
-      cap({ amountRefunded: 400 }); // PENDING reserved the cap at create
+      cap({ amountRefunded: 400 });
       const row = refundRow({ status: 'PENDING', providerRefundRef: 'rfnd_p' });
       provider.fetchRefundStatus = vi.fn(async () => ({
         providerRefundRef: 'rfnd_p',
@@ -1206,7 +1107,7 @@ describe('PaymentGatewayService', () => {
 
       expect(res).toMatchObject({ scanned: 1, processed: 1 });
       expect(row.status).toBe('PROCESSED');
-      expect(repo.rows[0].amountRefunded).toBe(400); // unchanged (already reserved)
+      expect(repo.rows[0].amountRefunded).toBe(400);
       expect(provider.refund).not.toHaveBeenCalled();
     });
 
@@ -1223,12 +1124,12 @@ describe('PaymentGatewayService', () => {
 
       expect(res.errors).toBe(1);
       expect(row.status).toBe('FAILED');
-      expect(repo.rows[0].amountRefunded).toBe(0); // reservation released
-      expect(repo.rows[0].status).toBe('CAPTURED'); // no longer fully refunded
+      expect(repo.rows[0].amountRefunded).toBe(0);
+      expect(repo.rows[0].status).toBe('CAPTURED');
     });
 
     it('re-drives a FAILED refund and reserves the cap on success (idempotent)', async () => {
-      cap({ amountRefunded: 0 }); // FAILED never reserved
+      cap({ amountRefunded: 0 });
       const row = refundRow({ status: 'FAILED', providerRefundRef: null });
       provider.refund = vi.fn(async () => ({
         providerRefundRef: 'rfnd_new',
@@ -1241,8 +1142,7 @@ describe('PaymentGatewayService', () => {
       expect(res.redriven).toBe(1);
       expect(row.status).toBe('PROCESSED');
       expect(row.providerRefundRef).toBe('rfnd_new');
-      expect(repo.rows[0].amountRefunded).toBe(400); // reserved now
-      // Re-issue reuses the SAME idempotency key → Razorpay dedupes (no double pay).
+      expect(repo.rows[0].amountRefunded).toBe(400);
       expect(provider.refund).toHaveBeenCalledWith(
         expect.objectContaining({ idempotencyKey: row.idempotencyKey }),
       );
@@ -1269,7 +1169,7 @@ describe('PaymentGatewayService', () => {
       refundRow({
         status: 'FAILED',
         providerRefundRef: null,
-        createdAt: new Date(NOW.getTime() - 8 * 24 * 60 * 60_000), // 8 days old
+        createdAt: new Date(NOW.getTime() - 8 * 24 * 60 * 60_000),
       });
 
       const res = await svc.reconcileStaleRefunds({ now: NOW });

@@ -1,9 +1,5 @@
 import 'package:shopxy_customer/features/marketplace/domain/entities/marketplace_shop.dart';
 
-/// Detail-level product as returned by `GET /marketplace/products/:id`.
-/// Carries enough fields to render the V2 PDP: gallery, price/MRP +
-/// derived discount, rating denorms, the owning shop, and
-/// tags-as-highlights.
 class MarketplaceProduct {
   const MarketplaceProduct({
     required this.id,
@@ -45,57 +41,32 @@ class MarketplaceProduct {
   final List<String> images;
   final List<String> tags;
 
-  /// Short above-the-fold bullets ("6.7-inch AMOLED", "7 years OS").
-  /// Distinct from [tags] — those drive filtering; these drive
-  /// presentation.
   final List<String> highlights;
 
-  /// Long-form grouped spec sheet. Empty when the merchant hasn't
-  /// filled one in; PDP collapses the section in that case.
   final List<SpecGroup> specs;
 
-  /// Bank / coupon / EMI / exchange offers rendered beneath the
-  /// price block.
   final List<ProductOffer> offers;
   final int totalSold;
   final String? description;
 
-  /// Legal Metrology — country of origin (mandatory for imported goods),
-  /// shown on the PDP before add-to-cart. Null for domestic items that
-  /// leave it unset.
   final String? countryOfOrigin;
   final double? ratingAvg;
   final int ratingCount;
   final MarketplaceShop? shop;
   final ProductCategoryRef? category;
 
-  /// Free-text brand surfaced under the title.
   final String? brand;
 
-  /// Trailing-30-day sold quantity — drives "X bought in past month".
   final int soldLast30d;
 
-  /// Curated system tags (BESTSELLER, EDITORS_PICK, NEW_ARRIVAL,
-  /// TRENDING). Rendered as black pills above the title.
   final List<String> systemTags;
 
-  /// A+ content blocks. Discriminated by `kind`; the renderer
-  /// dispatches per kind and falls back to a "Unknown block" stub
-  /// when it doesn't recognise the kind (forward-compat).
   final List<ContentBlock> contentBlocks;
 
-  /// Phase E — variant axis definitions ({name, values}). Empty for
-  /// single-variant products.
   final List<MarketplaceVariantAxis> variantAxes;
 
-  /// Phase E — purchasable variant rows. Always has ≥1 entry; the
-  /// default variant (attributes={}) is sentinel for flat-SKU
-  /// products. The customer PDP renders a swatch picker only when
-  /// `variants.length > 1`.
   final List<MarketplaceVariant> variants;
 
-  /// Default variant — what the PDP shows before the customer picks
-  /// anything. Always exists because every product has ≥1 variant.
   MarketplaceVariant? get defaultVariant {
     if (variants.isEmpty) return null;
     for (final v in variants) {
@@ -189,7 +160,6 @@ class MarketplaceProduct {
 
 }
 
-/// Phase E — variant axis definition surfaced to the customer client.
 class MarketplaceVariantAxis {
   const MarketplaceVariantAxis({required this.name, required this.values});
   final String name;
@@ -202,9 +172,6 @@ class MarketplaceVariantAxis {
       );
 }
 
-/// Phase E — read-side variant payload. Single class on the customer
-/// side; the cart add-to-cart payload includes [id] so the order
-/// preserves which variant the customer chose.
 class MarketplaceVariant {
   const MarketplaceVariant({
     required this.id,
@@ -259,9 +226,6 @@ class MarketplaceVariant {
   }
 }
 
-/// Phase G — slim product card returned by the FBT rail endpoint.
-/// Same shape as the backend `listSelect`, no shop relation projection
-/// since the rail is intra-shop already and we don't need the badge.
 class MarketplaceFbtCard {
   const MarketplaceFbtCard({
     required this.id,
@@ -307,10 +271,6 @@ class MarketplaceFbtCard {
   }
 }
 
-/// Phase C — A+ content block. Single class with a `kind` discriminator
-/// and a free-form `data` map so the customer can render newer kinds
-/// the server adds before the client release ships. Unknown kinds
-/// collapse to a placeholder rather than crashing the PDP.
 class ContentBlock {
   const ContentBlock({required this.kind, required this.data});
   final String kind;
@@ -323,10 +283,6 @@ class ContentBlock {
   }
 }
 
-/// One section of the spec sheet — title plus N (label, value) rows.
-/// Phase D: an optional [tab] bucket; when any group on a product
-/// carries a tab the PDP renders a chip row above the table and
-/// filters groups by selection. `null` ⇒ legacy flat list.
 class SpecGroup {
   const SpecGroup({required this.title, this.tab, required this.rows});
   final String title;
@@ -358,7 +314,6 @@ class SpecRow {
       );
 }
 
-/// A single bank / coupon / EMI / exchange offer.
 class ProductOffer {
   const ProductOffer({
     required this.kind,
@@ -367,9 +322,6 @@ class ProductOffer {
     this.code,
   });
 
-  /// 'BANK' | 'COUPON' | 'EMI' | 'EXCHANGE' — kept as a String so the
-  /// customer model survives new server-side kinds without a client
-  /// release. The PDP falls back to a generic icon for unknown kinds.
   final String kind;
   final String headline;
   final String? detail;

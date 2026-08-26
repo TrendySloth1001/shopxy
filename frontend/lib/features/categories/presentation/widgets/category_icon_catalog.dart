@@ -1,11 +1,5 @@
 import 'package:shopxy/core/icons/app_icons.dart';
 
-/// Curated set of icons offered when creating or editing a category.
-///
-/// The DB stores the kebab-case key; the merchant app resolves it back
-/// to an [AppIconData] via [resolveCategoryIcon]. Keeping the mapping in a
-/// single place means adding a new option only requires touching this
-/// file — the picker and tile pick it up automatically.
 class CategoryIconOption {
   const CategoryIconOption({
     required this.name,
@@ -159,9 +153,6 @@ const List<CategoryIconOption> kCategoryIconOptions = [
   ),
 ];
 
-/// Resolves a stored icon name to an [AppIconData]. Falls back to a
-/// neutral category glyph when the name is null or unknown — keeps
-/// legacy rows rendering without a crash.
 AppIconData resolveCategoryIcon(String? name) {
   if (name == null) return AppIcons.categoryRounded;
   for (final opt in kCategoryIconOptions) {

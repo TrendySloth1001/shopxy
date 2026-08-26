@@ -15,7 +15,6 @@ const styles = StyleSheet.create({
   cell: { paddingHorizontal: 2, paddingVertical: 3 },
 });
 
-/// ---------- Title + badge lines ----------
 export function TitleBlock({
   title,
   badgeLines,
@@ -52,7 +51,6 @@ export function TitleBlock({
   );
 }
 
-/// ---------- Shop block (left) + Counterparty block (right) ----------
 function PartyBlock({
   heading,
   headingSize,
@@ -139,7 +137,6 @@ export function PartiesRow({ model, config }: { model: PdfDocumentModel; config:
   );
 }
 
-/// ---------- Meta strip ----------
 function MetaRow({ fields, config }: { fields: PdfMetaField[]; config: TemplateConfig }) {
   return (
     <View style={[styles.row, { marginBottom: 6 }]}>
@@ -184,7 +181,6 @@ export function MetaStrip({ model, config }: { model: PdfDocumentModel; config: 
   );
 }
 
-/// ---------- Items / HSN summary table ----------
 function TableHeaderRow({ table, config }: { table: Pick<PdfTable, 'headers' | 'widths'>; config: TemplateConfig }) {
   return (
     <View
@@ -298,7 +294,6 @@ export function HsnSummaryBlock({ table, config }: { table: PdfTable; config: Te
   );
 }
 
-/// ---------- Totals block ----------
 export function TotalsBlock({ model, config }: { model: PdfDocumentModel; config: TemplateConfig }) {
   return (
     <View style={{ marginBottom: 8 }}>
@@ -354,7 +349,6 @@ export function TotalsBlock({ model, config }: { model: PdfDocumentModel; config
   );
 }
 
-/// ---------- Statutory declaration / disclaimer ----------
 export function DeclarationBlock({ text, config }: { text: string; config: TemplateConfig }) {
   return (
     <Text
@@ -370,7 +364,6 @@ export function DeclarationBlock({ text, config }: { text: string; config: Templ
   );
 }
 
-/// ---------- UPI QR (left) + supplier signature (right) ----------
 export function SignatureQrBlock({ model, config }: { model: PdfDocumentModel; config: TemplateConfig }) {
   if (!model.upiQr && !model.signatureName) return null;
   return (
@@ -413,7 +406,6 @@ export function SignatureQrBlock({ model, config }: { model: PdfDocumentModel; c
   );
 }
 
-/// ---------- Notes ----------
 export function NoteBlock({ note, config }: { note: string; config: TemplateConfig }) {
   return (
     <View style={{ marginBottom: 4 }}>
@@ -425,7 +417,6 @@ export function NoteBlock({ note, config }: { note: string; config: TemplateConf
   );
 }
 
-/// ---------- Footer with "Page X of Y" ----------
 export function Footer({ config }: { config: TemplateConfig }) {
   return (
     <Text

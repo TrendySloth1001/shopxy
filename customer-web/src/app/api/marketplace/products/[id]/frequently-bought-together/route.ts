@@ -2,7 +2,6 @@ import { proxyPublic } from "@/server/bff";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-/** GET /marketplace/products/:id/frequently-bought-together */
 export async function GET(_req: Request, { params }: Ctx) {
   const { id } = await params;
   return proxyPublic(

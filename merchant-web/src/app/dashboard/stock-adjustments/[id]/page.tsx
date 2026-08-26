@@ -90,7 +90,6 @@ export default function AdjustmentDetailPage() {
     <div className="w-full px-lg py-xxl pb-massive md:px-xxl">
       <BackLink href={BACK} label={t("detail.back")} />
 
-      {/* Header */}
       <div className="mt-md flex flex-wrap items-start justify-between gap-md">
         <div className="flex min-w-0 items-start gap-md">
           <span
@@ -140,7 +139,6 @@ export default function AdjustmentDetailPage() {
 
       {adjustment.note ? <p className="mt-lg text-body-md text-muted">{adjustment.note}</p> : null}
 
-      {/* Items */}
       <Divider className="my-xl" />
       <h2 className="mb-sm text-label-md uppercase tracking-wide text-subtle">{t("detail.products")}</h2>
       {adjustment.items.map((it, i) => (

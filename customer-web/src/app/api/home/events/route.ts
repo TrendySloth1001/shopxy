@@ -2,13 +2,6 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { authedFetch } from "@/server/auth/session";
 
-/**
- * Best-effort analytics ingest. Forwards a batch of product events to the
- * backend `/v1/events` (impressions, taps). The backend attributes the whole
- * batch to the caller's JWT, so this is a no-op for anonymous visitors — we
- * swallow everything and always answer 204 so a tracking blip never disrupts
- * the page. Validated at the boundary (CLAUDE.md §auth&data).
- */
 const eventSchema = z.object({
   clientUuid: z.string().min(8).max(80),
   eventType: z.enum(["IMPRESSION", "TAP", "VIEW", "ADD_TO_CART", "PURCHASE", "WISHLIST_ADD"]),
@@ -29,7 +22,6 @@ export async function POST(req: Request) {
       body: JSON.stringify(parsed.data),
     });
   } catch {
-    // analytics is best-effort — never propagate failures
   }
   return new NextResponse(null, { status: 204 });
 }

@@ -3,16 +3,6 @@ import 'dart:convert';
 import 'package:shopxy_customer/core/network/api_client.dart';
 import 'package:shopxy_customer/features/marketplace/domain/entities/listing_filters.dart';
 
-/// Adapter for the public marketplace search endpoints.
-///
-///   POST /search                    — hybrid semantic + FTS ranker
-///   GET  /search/autocomplete?q=    — short product/term suggestions
-///   GET  /search/hints              — top trending terms (24h, cached)
-///
-/// All three are public (no auth needed). The hybrid ranker is
-/// transparent to the client — the response carries a `semantic`
-/// boolean flag so the UI can optionally surface "AI-powered search
-/// is on" when it's running.
 class MarketplaceSearchRemoteDataSource {
   const MarketplaceSearchRemoteDataSource(this._client);
   final ApiClient _client;
@@ -88,14 +78,8 @@ class MarketplaceSearchResult {
     this.facets,
   });
   final String query;
-  /// True when the backend's hybrid semantic + FTS ranker ran. False
-  /// means it fell back to pure FTS (no OPENAI_API_KEY configured or
-  /// the embedding call failed).
   final bool semantic;
   final List<MarketplaceSearchHit> results;
-  /// Populated only when the request set `includeFacets: true`. The
-  /// payload is computed against the unfiltered FTS candidate set so
-  /// the chips don't collapse when a filter is applied.
   final ListingFacets? facets;
 
   factory MarketplaceSearchResult.fromJson(Map<String, dynamic> j) {
@@ -148,8 +132,6 @@ class MarketplaceSearchHit {
     return null;
   }
 
-  /// Minimal projection from the autocomplete endpoint which only
-  /// returns `{id, name}`. All other fields are nulled/zeroed.
   factory MarketplaceSearchHit.minimal(Map<String, dynamic> j) =>
       MarketplaceSearchHit(
         id: j['id'].toString(),

@@ -1,10 +1,3 @@
-/**
- * Lightweight audit tracker for the gateway lifecycle. Structured, non-throwing,
- * non-blocking — mirrors the prior project's PaymentTracker but logs only for
- * now. When the `GatewayPaymentEvent` table lands, back this with a DB writer
- * (keep the same call sites); the in-memory fallback pattern from the prior
- * implementation is the model.
- */
 export type GatewayStep =
   | 'INTENT_CREATED'
   | 'INTENT_REUSED'
@@ -12,8 +5,6 @@ export type GatewayStep =
   | 'WEBHOOK_RECEIVED'
   | 'WEBHOOK_DEDUPED'
   | 'WEBHOOK_IGNORED'
-  /** A dedupe claim was handed back after a transient settlement failure, so the
-   *  provider's redelivery can retry it. Pairs with the 500 the route returns. */
   | 'WEBHOOK_RELEASED'
   | 'PAYMENT_CONFIRMED'
   | 'PAYMENT_FAILED'
@@ -57,7 +48,6 @@ export const tracker = {
         JSON.stringify({ tag: 'payment-gateway', ts: new Date().toISOString(), ...evt }),
       );
     } catch {
-      /* never let audit logging break the payment path */
     }
   },
 };

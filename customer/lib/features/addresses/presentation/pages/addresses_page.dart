@@ -14,10 +14,6 @@ import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
-/// Manage delivery addresses. Reached from the home top-bar
-/// location chip and from the profile screen. The default flag
-/// is enforced server-side via a partial unique index, so the UI
-/// just exposes the toggle.
 class AddressesPage extends StatefulWidget {
   const AddressesPage({super.key});
 
@@ -114,10 +110,6 @@ class _AddressesPageState extends State<AddressesPage> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton widgets (loading state)
-// ---------------------------------------------------------------------------
-
 class _AddressesLoadingSkeleton extends StatelessWidget {
   const _AddressesLoadingSkeleton();
 
@@ -155,27 +147,20 @@ class _AddressTileSkeleton extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: const [
-          // Label / title row
           AppShimmerLine(widthFactor: 0.35, height: 14),
           SizedBox(height: AppSizes.xs),
-          // Full name
           AppShimmerLine(widthFactor: 0.55, height: 13),
           SizedBox(height: AppSizes.xs),
-          // Address one-liner
           AppShimmerLine(widthFactor: 0.85, height: 13),
           SizedBox(height: AppSizes.xs),
-          // Phone number
           AppShimmerLine(widthFactor: 0.4, height: 12),
           SizedBox(height: AppSizes.sm),
-          // Action row (button area)
           AppShimmerBox(width: 120, height: 32, radius: AppSizes.radiusSm),
         ],
       ),
     );
   }
 }
-
-// ---------------------------------------------------------------------------
 
 class _AddressTile extends StatelessWidget {
   const _AddressTile({

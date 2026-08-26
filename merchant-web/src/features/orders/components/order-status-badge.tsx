@@ -7,7 +7,6 @@ const TONE_STYLES: Record<OrderTone, string> = {
   neutral: "bg-surface-tint text-muted",
 };
 
-/** Soft-filled status pill — no border (house style). */
 export function OrderStatusBadge({ status }: { status: string }) {
   return (
     <span

@@ -6,7 +6,6 @@ import { useTranslations } from "next-intl";
 import { useAuth } from "../auth-context";
 import { Avatar } from "./avatar";
 
-/** Top bar for signed-in pages. Hairline underline, no elevation. */
 export function AppHeader() {
   const { user, logout } = useAuth();
   const router = useRouter();

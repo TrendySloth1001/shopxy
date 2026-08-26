@@ -16,9 +16,6 @@ customerCouponsRouter.post(
   asyncHandler((req, res) => couponsController.autoApply(req, res)),
 );
 
-/// Merchant-scoped admin surface. Mounted under `/me/coupons-admin` so
-/// the customer-facing `/me/coupons` path stays clean (the customer
-/// app calls it on every checkout to load redeemable codes).
 const merchantCouponsRouter = Router();
 merchantCouponsRouter.get(
   '/',

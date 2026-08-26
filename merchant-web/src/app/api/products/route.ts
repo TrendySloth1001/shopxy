@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 import { authedFetch, extractError } from "@/server/auth/session";
 import { productListSchema, productSchema } from "@/features/products/schema";
 
-// GET /api/products — list (forwards the query string: search, categoryId,
-// lowStock, outOfStock, active, sortBy, sortOrder, page, limit).
 export async function GET(req: Request) {
   const qs = new URL(req.url).searchParams.toString();
   const res = await authedFetch(`/products${qs ? `?${qs}` : ""}`);
@@ -21,8 +19,6 @@ export async function GET(req: Request) {
   return NextResponse.json(parsed.data);
 }
 
-// POST /api/products — create. Body is forwarded to the backend, which is the
-// validation authority and returns structured 400s we surface.
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   if (!body || typeof body !== "object") {

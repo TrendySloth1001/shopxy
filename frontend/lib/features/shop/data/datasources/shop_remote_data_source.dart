@@ -17,8 +17,6 @@ class ShopRemoteDataSource {
     return Shop.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  /// Create the caller's first shop during onboarding (a shopless OWNER names
-  /// their shop after signup). POST /me/onboarding/shop → 201 with the shop.
   Future<Shop> createMyShop(String name) async {
     final res = await _client.post(
       '/me/onboarding/shop',
@@ -30,9 +28,6 @@ class ShopRemoteDataSource {
     return Shop.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  /// Patches only the supplied fields. Pass `null` for fields that
-  /// should be cleared on the server (matches the PUT contract; the
-  /// service interprets explicit-null vs. absent as clear vs. ignore).
   Future<Shop> updateMyShop({
     String? name,
     Object? tagline = _absent,
@@ -118,10 +113,6 @@ class ShopRemoteDataSource {
     return Shop.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  /// Uploads a single image and returns the **md variant URL**. The
-  /// backend generates 3 sizes; the returned `url` is the medium one
-  /// (suitable for cards). Banner/logo previews resolve `lg` on demand
-  /// by string-replacing the `-md` suffix.
   Future<String> uploadImage(File file) async {
     final streamed = await _client.multipart(
       '/upload',

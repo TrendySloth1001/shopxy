@@ -14,9 +14,6 @@ import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
-/// Paginated product feed for a single canonical category. Backend
-/// rolls children up under the parent slug, so picking "Electronics"
-/// shows laptops, cameras and headphones in one stream.
 class CategoryProductsPage extends StatefulWidget {
   const CategoryProductsPage({super.key, required this.category});
   final Category category;
@@ -177,11 +174,6 @@ class _CategoryProductsPageState extends State<CategoryProductsPage> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton widgets
-// ---------------------------------------------------------------------------
-
-/// Full-page skeleton that mirrors the 2-column product grid.
 class _CategoryProductsSkeleton extends StatelessWidget {
   const _CategoryProductsSkeleton();
 
@@ -202,7 +194,6 @@ class _CategoryProductsSkeleton extends StatelessWidget {
   }
 }
 
-/// Single skeleton tile mirroring _ProductTile layout.
 class _ProductTileSkeleton extends StatelessWidget {
   const _ProductTileSkeleton();
 
@@ -211,7 +202,6 @@ class _ProductTileSkeleton extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Image area — 1:1
         AspectRatio(
           aspectRatio: 1,
           child: AppShimmerBox(
@@ -221,12 +211,10 @@ class _ProductTileSkeleton extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSizes.sm),
-        // Product name — two lines
         AppShimmerLine(widthFactor: 0.9, height: 12),
         const SizedBox(height: AppSizes.xs),
         AppShimmerLine(widthFactor: 0.65, height: 12),
         const Spacer(),
-        // Price row
         Row(
           children: [
             AppShimmerLine(widthFactor: 0.4, height: 14),
@@ -238,8 +226,6 @@ class _ProductTileSkeleton extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
 
 class _ProductTile extends StatelessWidget {
   const _ProductTile({required this.product, required this.onTap});

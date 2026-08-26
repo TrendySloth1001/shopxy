@@ -4,10 +4,6 @@ import prisma from '../../src/infra/db/prisma.js';
 import { authService } from '../../src/modules/auth/auth.service.js';
 import { shopService } from '../../src/modules/shop/shop.service.js';
 
-/// Two-step onboarding: register makes a shopless OWNER, then
-/// createMyShop seeds the Shop + owner membership + starter roles. A user
-/// who's already on a team can't create a shop (one membership per user).
-
 describe('shop onboarding — createMyShop', () => {
   const cleanupUserIds: number[] = [];
   const cleanupShopIds: number[] = [];
@@ -53,11 +49,9 @@ describe('shop onboarding — createMyShop', () => {
     expect(membership?.shopId).toBe(out.shop!.id);
     expect(membership?.role).toBe('OWNER');
 
-    // Starter roles seeded (Manager/Stockist/Cashier or similar).
     const roleCount = await prisma.teamRole.count({ where: { shopId: out.shop!.id } });
     expect(roleCount).toBeGreaterThan(0);
 
-    // Details mirrored onto the user for invoice headers.
     const user = await prisma.user.findUnique({ where: { id: userId }, select: { shopName: true, shopCity: true } });
     expect(user?.shopName).toBe('Corner Store');
     expect(user?.shopCity).toBe('Pune');

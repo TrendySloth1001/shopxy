@@ -105,8 +105,6 @@ function Tab({
   );
 }
 
-/* ─────────────────────────── Inbox ─────────────────────────── */
-
 function accentFor(kind: string): { Icon: LucideIcon; cls: string } {
   if (kind === "INVITE_RECEIVED") return { Icon: Mail, cls: "bg-brand-soft text-brand-strong" };
   if (kind === "INVITE_ACCEPTED") return { Icon: CheckCircle2, cls: "bg-success-soft text-success" };
@@ -173,7 +171,6 @@ function InboxTab() {
       try {
         await markNotificationRead(n.id);
       } catch {
-        /* best-effort */
       } finally {
         refresh();
       }
@@ -189,7 +186,6 @@ function InboxTab() {
     try {
       await markAllNotificationsRead();
     } catch {
-      /* best-effort */
     } finally {
       refresh();
     }
@@ -267,8 +263,6 @@ function InboxRow({ n, onOpen }: { n: AppNotification; onOpen: () => void }) {
   );
 }
 
-/* ─────────────────────── Invitations (shared) ─────────────────────── */
-
 function linkAccent(linkType: string): { Icon: LucideIcon; cls: string } {
   if (linkType === "VENDOR") return { Icon: Store, cls: "bg-accent-indigo-soft text-accent-indigo" };
   if (linkType === "TEAM") return { Icon: UserCog, cls: "bg-brand-soft text-brand-strong" };
@@ -292,8 +286,6 @@ function StatusPill({ status }: { status: string }) {
     </span>
   );
 }
-
-/* ─────────────────────────── Invites (incoming) ─────────────────────────── */
 
 function InvitesTab() {
   const t = useTranslations("notifications");
@@ -395,8 +387,6 @@ function InvitesTab() {
   );
 }
 
-/* ─────────────────────────── Sent (outgoing) ─────────────────────────── */
-
 function SentTab() {
   const t = useTranslations("notifications");
   const [items, setItems] = useState<Invitation[]>([]);
@@ -475,8 +465,6 @@ function SentTab() {
     </ul>
   );
 }
-
-/* ─────────────────────────── shared empty ─────────────────────────── */
 
 function EmptyState({ title, body }: { title: string; body: string }) {
   return (

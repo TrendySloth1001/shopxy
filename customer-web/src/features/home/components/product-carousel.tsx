@@ -6,19 +6,10 @@ import type { ProductCard } from "../types";
 import { ProductTile } from "./product-tile";
 import { SectionHeader } from "./section-header";
 
-/** Search destination for a "see all" — the dedicated section page is future work. */
 export function searchHref(query: string): string {
   return `/search?q=${encodeURIComponent(query)}`;
 }
 
-/**
- * Product section — header (eyebrow + title + circular see-all) over a set of
- * product tiles. Two layouts:
- *  - "grid" (default): tiles wrap into a responsive grid that flows DOWN the
- *    page (no nested horizontal scroll) — the primary storefront feel.
- *  - "rail": a horizontally-scrolling row with hover arrow chips — used for
- *    secondary strips like Sponsored where a compact single line reads better.
- */
 export function ProductCarousel({
   eyebrow,
   title,
@@ -42,7 +33,6 @@ export function ProductCarousel({
 
   if (products.length === 0) return null;
 
-  // Grid: tiles wrap into rows that continue below as the list grows.
   if (layout === "grid") {
     return (
       <section>
@@ -60,7 +50,6 @@ export function ProductCarousel({
     <section className="group/rail">
       <SectionHeader eyebrow={eyebrow} title={title} seeAllHref={searchHref(title)} variant="circle" />
       <div className="relative mt-md">
-        {/* Left scroll arrow — desktop only, appears on rail hover */}
         <button
           type="button"
           onClick={() => scroll("left")}
@@ -81,7 +70,6 @@ export function ProductCarousel({
           ))}
         </div>
 
-        {/* Right scroll arrow — desktop only, appears on rail hover */}
         <button
           type="button"
           onClick={() => scroll("right")}

@@ -58,9 +58,7 @@ describe('isOutputGstRegistered', () => {
 
   it('compares UTC calendar days, not local time — a non-UTC-midnight asOf near the day boundary still resolves correctly', () => {
     const owner = registered(new Date('2026-08-10'));
-    // 2026-08-09T20:00:00 in UTC+5:30 is 2026-08-10T01:30:00Z — still the 10th in UTC.
     expect(isOutputGstRegistered(owner, new Date('2026-08-10T01:30:00.000Z'))).toBe(true);
-    // 2026-08-09T23:00:00Z is still the 9th in UTC, regardless of any local offset.
     expect(isOutputGstRegistered(owner, new Date('2026-08-09T23:00:00.000Z'))).toBe(false);
   });
 });

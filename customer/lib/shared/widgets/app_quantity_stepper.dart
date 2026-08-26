@@ -5,13 +5,6 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 
-/// Quantity control for cart rows and detail pages. Two states:
-///   * `quantity == 0` → renders a single "Add" button.
-///   * `quantity > 0`  → renders [−] {count} [+] segmented control.
-///
-/// 48dp tall by default to satisfy the tap-target rule. Optimistic by
-/// design — the visible count updates instantly; the caller's
-/// onChanged is fired asynchronously.
 class AppQuantityStepper extends StatelessWidget {
   const AppQuantityStepper({
     super.key,
@@ -26,16 +19,12 @@ class AppQuantityStepper extends StatelessWidget {
   final int quantity;
   final ValueChanged<int> onChanged;
 
-  /// Stops + from being tappable past this. Pass `null` for unlimited.
   final int? maxQuantity;
 
-  /// When `quantity == minQuantity`, − becomes a "remove" affordance.
   final int minQuantity;
 
-  /// Label used for the zero-state add button.
   final String addLabel;
 
-  /// Smaller footprint for use in dense lists. 36dp tall, smaller text.
   final bool dense;
 
   bool get _canDec => quantity > minQuantity;

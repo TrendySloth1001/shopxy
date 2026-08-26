@@ -1,7 +1,3 @@
-/**
- * Client-side fetchers for address BFF routes.
- * All calls go to /api/* — never directly to the backend.
- */
 import {
   userAddressSchema,
   addressListSchema,
@@ -20,14 +16,12 @@ async function jsonOrThrow<T>(
       const b = (await res.json()) as { error?: string };
       if (b?.error) message = b.error;
     } catch {
-      /* keep fallback */
     }
     throw new Error(message);
   }
   return parse(await res.json());
 }
 
-/** GET /api/me/addresses — list saved addresses. */
 export async function fetchAddresses(): Promise<UserAddress[]> {
   const res = await fetch("/api/me/addresses", { cache: "no-store" });
   const { data } = await jsonOrThrow(
@@ -38,7 +32,6 @@ export async function fetchAddresses(): Promise<UserAddress[]> {
   return data;
 }
 
-/** POST /api/me/addresses — create a new address. */
 export async function createAddress(
   values: AddressFormValues,
 ): Promise<UserAddress> {
@@ -54,7 +47,6 @@ export async function createAddress(
   );
 }
 
-/** PATCH /api/me/addresses/:id — update address. */
 export async function updateAddress(
   id: string,
   values: Partial<AddressFormValues>,
@@ -71,7 +63,6 @@ export async function updateAddress(
   );
 }
 
-/** DELETE /api/me/addresses/:id — remove an address. */
 export async function deleteAddress(id: string): Promise<void> {
   const res = await fetch(`/api/me/addresses/${id}`, { method: "DELETE" });
   if (!res.ok && res.status !== 204) {
@@ -80,13 +71,11 @@ export async function deleteAddress(id: string): Promise<void> {
       const b = (await res.json()) as { error?: string };
       if (b?.error) message = b.error;
     } catch {
-      /* keep fallback */
     }
     throw new Error(message);
   }
 }
 
-/** POST /api/me/addresses/:id/default — set default address. */
 export async function setDefaultAddress(id: string): Promise<void> {
   const res = await fetch(`/api/me/addresses/${id}/default`, {
     method: "POST",

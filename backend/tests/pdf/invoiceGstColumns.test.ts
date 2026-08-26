@@ -5,14 +5,6 @@ import { invoicesService } from '../../src/modules/invoices/invoices.service.js'
 import { renderInvoicePdf } from '../../src/modules/invoices/invoice-pdf-renderer.js';
 import { createTestUser, cleanupTestUser, createTestProduct } from '../helpers/setup.js';
 
-/// Reads the visible text back out of a rendered PDF: inflate the content
-/// streams, then decode the hex glyph runs react-pdf emits
-/// (`[<48656c6c6f> -15 <21>] TJ`). The fonts are WinAnsi subsets, so a hex
-/// pair maps straight to a byte.
-///
-/// Asserting on the *rendered bytes* rather than on the intermediate model is
-/// the point of this file — the model is built in one place and consumed by
-/// eight template presets, and it's the paper the merchant complains about.
 function pdfText(buf: Buffer): string {
   let streams = '';
   let i = 0;
@@ -25,7 +17,6 @@ function pdfText(buf: Buffer): string {
     try {
       streams += zlib.inflateSync(buf.subarray(s, end)).toString('latin1');
     } catch {
-      // not a deflate stream (fonts, images) — skip
     }
     i = end + 9;
   }
@@ -36,10 +27,6 @@ function pdfText(buf: Buffer): string {
   return text.toUpperCase();
 }
 
-/// Every marker is a column heading or meta label, and deliberately none of
-/// them is a substring of the Bill-of-Supply declaration ("…not registered to
-/// collect GST / is under the composition scheme…"), which legitimately names
-/// GST as the statutory explanation for the absence of tax.
 const GST_MARKERS = ['HSN', 'CGST', 'SGST', 'IGST', 'TAXABLE', 'GST%', 'PLACE OF SUPPLY'];
 
 async function renderToBuffer(shopId: number, invoiceId: number): Promise<Buffer> {
@@ -54,11 +41,9 @@ describe('invoice PDF — GST/HSN columns are omitted, not blank-filled', () => 
   });
 
   it('prints no GST or HSN anywhere for an unregistered shop selling an HSN-less product', async () => {
-    const ctx = await createTestUser(); // registrationType defaults to UNREGISTERED
+    const ctx = await createTestUser();
     try {
       const product = await createTestProduct(ctx.shopId, { sellingPrice: 140 });
-      // Belt-and-braces: the fixture doesn't set one, but the column is the
-      // whole subject of this test.
       await prisma.product.update({ where: { id: product.id }, data: { hsnCode: null } });
       const party = await prisma.party.create({
         data: { shopId: ctx.shopId, name: 'Ravi Verma' },
@@ -73,7 +58,6 @@ describe('invoice PDF — GST/HSN columns are omitted, not blank-filled', () => 
       if ('error' in result) return;
 
       const text = pdfText(await renderToBuffer(ctx.shopId, result.invoice.id));
-      // Sanity: the extractor really did read the page.
       expect(text).toContain('BILL TO');
       expect(text).toContain('RAVI VERMA');
       expect(text).toContain('280.00');
@@ -86,8 +70,6 @@ describe('invoice PDF — GST/HSN columns are omitted, not blank-filled', () => 
     }
   });
 
-  // The positive control. Without it, a broken extractor would make the test
-  // above pass for the wrong reason.
   it('still prints every GST and HSN column for a registered shop', async () => {
     const ctx = await createTestUser();
     try {
@@ -110,14 +92,10 @@ describe('invoice PDF — GST/HSN columns are omitted, not blank-filled', () => 
       if ('error' in result) return;
 
       const text = pdfText(await renderToBuffer(ctx.shopId, result.invoice.id));
-      // IGST is excluded: this is an intra-state supply, so the tax splits
-      // into CGST + SGST and the IGST column is (correctly, and already)
-      // absent. That mutual exclusion predates this change.
       for (const marker of GST_MARKERS.filter((m) => m !== 'IGST')) {
         expect(text, `"${marker}" missing from a GST invoice`).toContain(marker);
       }
       expect(text).not.toContain('IGST');
-      // The HSN summary block is a tax table — it belongs here and nowhere else.
       expect(text).toContain('HSN SUMMARY');
       await prisma.invoice.delete({ where: { id: result.invoice.id } });
     } finally {

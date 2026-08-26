@@ -7,14 +7,6 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 
-/// Shown right after a Google sign-in creates (or first links) an account —
-/// the root auth gate (`_AuthGate` in app.dart) routes here whenever
-/// `AuthUser.needsRecoveryPinSetup` is true, ahead of shop onboarding.
-/// Google accounts have no password, so this PIN is the only fallback if
-/// Google itself is ever unreachable — mirrors WhatsApp's 2-step PIN: short,
-/// numeric, chosen by the user (not a generated code to save). Mirrors
-/// OnboardingShopPage's bare-Scaffold layout — this isn't a sign-in/register
-/// toggle, so AuthScaffold doesn't fit.
 class RecoveryPinSetupPage extends StatefulWidget {
   const RecoveryPinSetupPage({super.key});
 
@@ -48,9 +40,6 @@ class _RecoveryPinSetupPageState extends State<RecoveryPinSetupPage> {
       _error = null;
     });
     try {
-      // The auth gate reads AuthUser.recoveryPinSetAt (refreshed by
-      // setRecoveryPin itself), so no manual navigation is needed here —
-      // it swaps this screen for onboarding/the shell on its own.
       await context.read<AuthProvider>().setRecoveryPin(_pin.text);
     } catch (e) {
       if (mounted) setState(() => _error = friendlyError(e));
@@ -152,7 +141,6 @@ class _RecoveryPinSetupPageState extends State<RecoveryPinSetupPage> {
                       onPressed: _isLoading ? null : _submit,
                     ),
                     const SizedBox(height: AppSizes.lg),
-                    // Escape hatch — sign out if this isn't the account they meant.
                     TextButton(
                       onPressed: _isLoading
                           ? null

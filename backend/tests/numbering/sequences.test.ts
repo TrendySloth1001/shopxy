@@ -73,8 +73,6 @@ describe('nextDocNo / scheme resolution (DB-backed)', () => {
       });
 
       const second = await prisma.$transaction((tx) => nextDocNo(ctx.shopId, 'CHALLAN', date, tx));
-      // Same running count (00002), new prefix — proves the counter is keyed
-      // by the stable series name, not by the display prefix text.
       expect(second.docNo).toMatch(/^DEL\/\d{2}-\d{2}\/00002$/);
     });
   });
@@ -89,8 +87,6 @@ describe('nextDocNo / scheme resolution (DB-backed)', () => {
         data: { shopId: ctx.shopId, series: 'QUOTATION', prefix: 'QUO', suffix: '', separator: '/', padding: 5, resetYearly: false },
       });
 
-      // A brand-new counter key (no FY suffix) — starts over at 1, not 2.
-      // This is the one deliberate exception to "renaming never resets".
       const second = await prisma.$transaction((tx) => nextDocNo(ctx.shopId, 'QUOTATION', date, tx));
       expect(second.docNo).toBe('QUO/00001');
     });
@@ -100,7 +96,6 @@ describe('nextDocNo / scheme resolution (DB-backed)', () => {
     await withTestUser(async (ctx) => {
       const before = await previewNextDocNo(ctx.shopId, 'DEBIT_NOTE', prisma);
       expect(before).toMatch(/00001$/);
-      // Preview again — must be stable (no side effect from the read above).
       const again = await previewNextDocNo(ctx.shopId, 'DEBIT_NOTE', prisma);
       expect(again).toBe(before);
 
@@ -140,7 +135,6 @@ describe('nextDocNo / scheme resolution (DB-backed)', () => {
         }),
       ).rejects.toThrow('simulated failure');
 
-      // If the bump had escaped the rollback, this would read 00002.
       const preview = await previewNextDocNo(ctx.shopId, 'CREDIT_NOTE', prisma);
       expect(preview).toMatch(/00001$/);
     });

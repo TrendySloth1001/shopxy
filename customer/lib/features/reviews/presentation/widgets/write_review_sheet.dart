@@ -9,10 +9,6 @@ import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
-/// Bottom-sheet rating editor. Tap-stars 1..5, optional title, optional
-/// body. Server enforces the "only buyers who purchased" rule and
-/// returns 403; we surface it inline so the user understands why
-/// their post was rejected.
 class WriteReviewSheet extends StatefulWidget {
   const WriteReviewSheet({
     super.key,
@@ -22,8 +18,6 @@ class WriteReviewSheet extends StatefulWidget {
   final String productId;
   final String productName;
 
-  /// Returns `true` when a review was successfully posted so the
-  /// caller can refresh its summary / list.
   static Future<bool?> show(
     BuildContext context, {
     required String productId,
@@ -104,8 +98,6 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        // Split the "not purchased" case from generic 400s so the
-        // explanatory callout reads naturally without the raw message.
         if (e.statusCode == 403) {
           _notPurchased = true;
           _serverError = null;

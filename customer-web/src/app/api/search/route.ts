@@ -1,7 +1,6 @@
 import { backendFetch, extractError } from "@/server/auth/session";
 import { NextResponse } from "next/server";
 
-/** POST /search — full-text / hybrid product search. Auth optional. */
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const res = await backendFetch("/search", {

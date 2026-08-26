@@ -1,10 +1,5 @@
 import { Star, StarHalf } from "@/shared/icons";
 
-/**
- * A 5-star rating display. Renders full / half / empty stars for `value`
- * (0..5). Decorative by default; pass an `aria-label` via `label` for the
- * accessible name when the stars are the only representation of the score.
- */
 export function Stars({
   value,
   size = 16,

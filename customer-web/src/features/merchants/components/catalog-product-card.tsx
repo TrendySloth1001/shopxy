@@ -25,7 +25,6 @@ export function CatalogProductCard({ product }: CatalogProductCardProps) {
 
   return (
     <div className="group overflow-hidden rounded-lg border border-hairline bg-white">
-      {/* Product image */}
       <div className="relative aspect-square overflow-hidden bg-hero-panel">
         {imgSrc ? (
           <Image
@@ -42,7 +41,6 @@ export function CatalogProductCard({ product }: CatalogProductCardProps) {
         )}
       </div>
 
-      {/* Info */}
       <div className="px-md py-sm">
         {product.category && (
           <p className="mb-xxs text-label-md font-bold text-brand line-clamp-1">
@@ -81,8 +79,6 @@ export function CatalogProductCard({ product }: CatalogProductCardProps) {
     </div>
   );
 }
-
-// ─── Skeleton ─────────────────────────────────────────────────────────────
 
 export function CatalogProductCardSkeleton() {
   return (

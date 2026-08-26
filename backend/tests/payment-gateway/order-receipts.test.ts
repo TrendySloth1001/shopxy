@@ -1,15 +1,3 @@
-/**
- * Integration test for the order-payment → merchant-ledger reconciler.
- *
- * The bug class: a customer pays for an order (wallet at checkout, and/or online
- * via the gateway), the merchant later confirms (minting the per-shop invoice),
- * and the invoice shows UNPAID because no RECEIPT was ever posted. Covers wallet,
- * gateway, both-together, both timing paths, and idempotency.
- *
- * Uses the real test DB (localhost:5433) + the real service methods, so it
- * exercises the actual cross-module money flow (gateway/wallet → purchase-requests
- * → invoice → payment ledger). Fixtures follow tests/helpers/setup.ts.
- */
 import { describe, it, expect, afterEach } from 'vitest';
 import prisma from '../../src/infra/db/prisma.js';
 import { purchaseRequestsService } from '../../src/modules/purchase-requests/purchase-requests.service.js';
@@ -22,13 +10,12 @@ import {
   type TestUserCtx,
 } from '../helpers/setup.js';
 
-// Track fixtures + orders for teardown so we don't litter the shared dev DB.
 const merchants: TestUserCtx[] = [];
 const buyers: TestUserCtx[] = [];
 const orderIds: number[] = [];
 
 async function setup(price = 100) {
-  const merchant = await createTestUser(); // OWNER + shop
+  const merchant = await createTestUser();
   const buyer = await createTestUser({ role: 'CUSTOMER' as never });
   merchants.push(merchant);
   buyers.push(buyer);
@@ -52,7 +39,7 @@ async function placeOrder(
   });
   if ('error' in res) throw new Error(`placeOrder failed: ${res.error}`);
   orderIds.push(res.order.id);
-  return res.order; // { id, shopOrders: [{ id, shopId }], walletPaid, ... }
+  return res.order;
 }
 
 async function confirm(shopId: number, requestId: number, decidedById: number) {
@@ -65,7 +52,6 @@ async function confirm(shopId: number, requestId: number, decidedById: number) {
   return conf.invoice;
 }
 
-/** Give a user wallet balance directly (simulates prior refunds/top-ups). */
 async function fundWallet(userId: number, amount: number) {
   await prisma.user.update({
     where: { id: userId },
@@ -73,7 +59,6 @@ async function fundWallet(userId: number, amount: number) {
   });
 }
 
-/** Simulate the DB state a successful gateway capture produces (no Razorpay). */
 async function fakeCapture(orderId: number, amount: number) {
   await prisma.gatewayPayment.create({
     data: {
@@ -119,7 +104,7 @@ describe('order payment → merchant ledger reconcile', () => {
     const { merchant, buyer, product } = await setup(100);
     const order = await placeOrder(buyer.userId, product.id, 100);
 
-    await fakeCapture(order.id, 100); // customer pays online BEFORE confirm
+    await fakeCapture(order.id, 100);
 
     const invoiceRef = await confirm(merchant.shopId, order.shopOrders[0].id, merchant.userId);
     const invoice = await prisma.invoice.findUniqueOrThrow({
@@ -151,7 +136,6 @@ describe('order payment → merchant ledger reconcile', () => {
     const { merchant, buyer, product } = await setup(100);
     await fundWallet(buyer.userId, 100);
     const order = await placeOrder(buyer.userId, product.id, 100, { useWallet: true });
-    // The whole order was covered by wallet.
     expect(Number(order.walletPaid)).toBeCloseTo(100, 2);
 
     const invoiceRef = await confirm(merchant.shopId, order.shopOrders[0].id, merchant.userId);
@@ -169,11 +153,10 @@ describe('order payment → merchant ledger reconcile', () => {
 
   it('WALLET + GATEWAY split: partial wallet + online remainder posts BOTH receipts summing to the total', async () => {
     const { merchant, buyer, product } = await setup(100);
-    await fundWallet(buyer.userId, 40); // wallet covers ₹40 of ₹100
+    await fundWallet(buyer.userId, 40);
     const order = await placeOrder(buyer.userId, product.id, 100, { useWallet: true });
     expect(Number(order.walletPaid)).toBeCloseTo(40, 2);
 
-    // Customer pays the ₹60 remainder online, then merchant confirms.
     await fakeCapture(order.id, 60);
     const invoiceRef = await confirm(merchant.shopId, order.shopOrders[0].id, merchant.userId);
 
@@ -188,7 +171,6 @@ describe('order payment → merchant ledger reconcile', () => {
       select: { total: true },
     });
     const totalReceipts = receipts.reduce((s, r) => s + Number(r.amount), 0);
-    // Receipts never exceed the invoice total (cap), and here cover it fully.
     expect(totalReceipts).toBeLessThanOrEqual(Number(invoice.total) + 0.01);
     expect(totalReceipts).toBeCloseTo(Number(invoice.total), 2);
   });
@@ -197,14 +179,13 @@ describe('order payment → merchant ledger reconcile', () => {
     const { merchant, buyer, product } = await setup(100);
     await fundWallet(buyer.userId, 100);
     const order = await placeOrder(buyer.userId, product.id, 100, { useWallet: true });
-    await fakeCapture(order.id, 0.0); // no online slice; wallet covered it
+    await fakeCapture(order.id, 0.0);
     const invoiceRef = await confirm(merchant.shopId, order.shopOrders[0].id, merchant.userId);
 
     const a = await ensureOrderInvoiceReceipts(order.id);
     const b = await ensureOrderInvoiceReceipts(order.id);
     expect(a.created).toBe(0);
     expect(b.created).toBe(0);
-    // Exactly the one wallet receipt (the 0-amount capture posts nothing).
     expect(await receiptsFor(invoiceRef.id)).toHaveLength(1);
   });
 

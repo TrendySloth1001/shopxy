@@ -6,18 +6,10 @@ import { ChevronLeft, ChevronRight } from "@/shared/icons";
 import type { CategoryPuck } from "../types";
 import { ImageBox } from "./image-box";
 
-/** Category destination — canonical category products route. */
 function categoryHref(p: CategoryPuck): string {
   return p.slug ? `/c/${p.slug}` : "/categories";
 }
 
-/**
- * Category chips — a horizontally scrolling rail of pill chips, each with a
- * small round thumbnail and the full category label inline (chips size to
- * content, so long names aren't truncated). Falls back to the tint + first
- * letter when a category has no image. Desktop shows left/right scroll arrows
- * on hover.
- */
 export function CategoryRail({ pucks }: { pucks: CategoryPuck[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -30,7 +22,6 @@ export function CategoryRail({ pucks }: { pucks: CategoryPuck[] }) {
   if (pucks.length === 0) return null;
   return (
     <nav aria-label="Categories" className="group/rail relative bg-white">
-      {/* Left arrow */}
       <button
         type="button"
         onClick={() => scroll("left")}
@@ -67,7 +58,6 @@ export function CategoryRail({ pucks }: { pucks: CategoryPuck[] }) {
         ))}
       </div>
 
-      {/* Right arrow */}
       <button
         type="button"
         onClick={() => scroll("right")}

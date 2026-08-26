@@ -3,14 +3,6 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:shopxy_customer/core/network/api_client.dart';
 
-/// Batched event ingest for the customer marketplace.
-///
-/// Calls into the `/v1/events` endpoint introduced in Phase 5. The
-/// server expects up to 100 events per batch and deduplicates on
-/// `clientUuid`, so a retried POST is a no-op. We batch on two
-/// triggers: when the in-memory queue crosses [_batchSize] OR when
-/// the debounce timer fires. Either way, the user only pays the
-/// round-trip occasionally rather than per-impression.
 class TrackingService {
   TrackingService(this._client);
   final ApiClient _client;
@@ -56,9 +48,6 @@ class TrackingService {
     }
   }
 
-  /// Flush pending events. Safe to call directly (e.g. on app backgrounding).
-  /// Errors are swallowed — analytics is best-effort and we never want a
-  /// network blip to surface to the user.
   Future<void> flush() => _flush();
 
   Future<void> _flush() async {
@@ -66,8 +55,6 @@ class TrackingService {
     _flushTimer = null;
     if (_flushing || _queue.isEmpty) return;
     _flushing = true;
-    // Snapshot + clear up front so newly-enqueued events don't get
-    // lost if the POST hangs and a second flush trigger fires.
     final batch = _queue.take(100).toList();
     _queue.removeRange(0, batch.length);
     try {
@@ -76,7 +63,6 @@ class TrackingService {
       };
       await _client.post('/v1/events', body: body);
     } catch (_) {
-      // Re-queue on failure so retries pick them up on the next flush.
       _queue.insertAll(0, batch);
     } finally {
       _flushing = false;
@@ -85,8 +71,6 @@ class TrackingService {
   }
 
   String _uuid() {
-    // RFC-4122 v4 (random) — enough for `clientUuid` idempotency on the
-    // server. Avoids pulling in a `uuid` dep for one call site.
     final bytes = List<int>.generate(16, (_) => _rand.nextInt(256));
     bytes[6] = (bytes[6] & 0x0f) | 0x40;
     bytes[8] = (bytes[8] & 0x3f) | 0x80;
@@ -121,8 +105,5 @@ class _Event {
       };
 }
 
-/// Hook the JSON encoder uses on `_Event` instances — keeps the
-/// `_flush` body lean. Public so tests can construct an instance and
-/// verify the shape.
 String encodeEventBatch(List<Map<String, dynamic>> events) =>
     jsonEncode({'events': events});

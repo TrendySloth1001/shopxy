@@ -1,25 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Resolved colour palette for one theme (light / dark / OLED).
-///
-/// This is the Flutter analogue of the web app's CSS colour tokens. Because
-/// Flutter `Color`s are compile-time constants baked into widgets, we can't
-/// cascade a variable the way CSS does — instead the *active* palette is held
-/// in [AppPalette.active] and swapped by the theme controller before the app
-/// rebuilds. `AppColors.*` are getters that read this active palette, so the
-/// existing ~1.8k call sites re-tint automatically when the theme changes.
-///
-/// Token roles (the important distinctions for theming):
-///   • [surface]        — raised card / input / sheet fill. White in light,
-///                        a step above the canvas in dark. NOT the same as…
-///   • [onAccent]       — literal white foreground for text/icons sitting on a
-///                        coloured fill (brand button, FAB). White in every
-///                        theme. (`AppColors.white` maps here.)
-///   • [ink]            — primary text/icon colour. Flips light on dark.
-///                        (`AppColors.black` maps here.)
-///   • [inverseSurface] — high-contrast neutral *fill* (avatar, selected chip):
-///                        dark in light mode, light in dark mode.
-///   • [scrim]          — modal/drawer barrier. Near-black in every theme.
 @immutable
 class AppPalette {
   const AppPalette({
@@ -67,7 +47,6 @@ class AppPalette {
 
   final Brightness brightness;
 
-  // Inks
   final Color ink;
   final Color muted;
   final Color subtle;
@@ -75,30 +54,23 @@ class AppPalette {
   final Color hairline;
   final Color surfaceTint;
 
-  // Surfaces
   final Color canvas;
   final Color pageTint;
   final Color heroPanel;
   final Color surface;
 
-  /// Input/field fill. Distinct from [surface] so text fields stay defined even
-  /// where cards are flat (surface == canvas in dark/OLED): white in light, a
-  /// raised dark in dark/OLED.
   final Color field;
 
-  // Inverse / literal
   final Color onAccent;
   final Color inverseSurface;
   final Color onInverse;
   final Color scrim;
   final Color shadow;
 
-  // Brand
   final Color brand;
   final Color brandStrong;
   final Color brandSoft;
 
-  // Status
   final Color success;
   final Color successSoft;
   final Color warning;
@@ -108,7 +80,6 @@ class AppPalette {
   final Color info;
   final Color infoSoft;
 
-  // Editorial accents
   final Color accentTeal;
   final Color accentTealSoft;
   final Color accentIndigo;
@@ -118,7 +89,6 @@ class AppPalette {
   final Color accentRose;
   final Color accentRoseSoft;
 
-  // Merchant-only
   final Color flashDeal;
   final Color flashDealSoft;
   final Color flashDealSoftAlt;
@@ -126,34 +96,27 @@ class AppPalette {
 
   bool get isDark => brightness == Brightness.dark;
 
-  /// The palette every `AppColors.*` getter reads from. Swapped by the theme
-  /// controller (see ShopxyApp) before the widget tree rebuilds. Defaults to
-  /// [light] so colours resolve correctly before the controller loads.
   static AppPalette active = light;
 
-  /// WhatsApp-calm light theme — a cool, low-glare off-white frame (#F0F2F5)
-  /// with white cards, muted blue-grey secondary text and WhatsApp's teal-green
-  /// accent. Softer contrast than pure-white-on-near-black, so it doesn't
-  /// needle the eyes on long sessions.
   static const AppPalette light = AppPalette(
     brightness: Brightness.light,
-    ink: Color(0xFF111B21), // WhatsApp primary text
-    muted: Color(0xFF667781), // WhatsApp secondary text
+    ink: Color(0xFF111B21),
+    muted: Color(0xFF667781),
     subtle: Color(0xFF8696A0),
     disabled: Color(0xFFBFC8CE),
-    hairline: Color(0x1A111B21), // softer, cool divider
+    hairline: Color(0x1A111B21),
     surfaceTint: Color(0x08111B21),
-    canvas: Color(0xFFF0F2F5), // WhatsApp app background (cool light grey)
+    canvas: Color(0xFFF0F2F5),
     pageTint: Color(0xFFF6F7F9),
     heroPanel: Color(0xFFE4E8EB),
-    surface: Color(0xFFFFFFFF), // white cards float on the grey canvas
+    surface: Color(0xFFFFFFFF),
     field: Color(0xFFFFFFFF),
     onAccent: Color(0xFFFFFFFF),
     inverseSurface: Color(0xFF111B21),
     onInverse: Color(0xFFFFFFFF),
     scrim: Color(0x66111B21),
     shadow: Color(0x14000000),
-    brand: Color(0xFF008069), // WhatsApp teal-green
+    brand: Color(0xFF008069),
     brandStrong: Color(0xFF006E5A),
     brandSoft: Color(0xFFE7F3EF),
     success: Color(0xFF16A34A),
@@ -178,11 +141,6 @@ class AppPalette {
     whatsapp: Color(0xFF25D366),
   );
 
-  /// Beige — a second light-family theme: soft sepia paper. Warm dark ink on a
-  /// beige canvas with cream raised surfaces; lower glare than the white light
-  /// theme. Brand + status foregrounds are shared with [light]; only the surface
-  /// /ink neutrals and the warm-tinted soft fills differ. Mirrors the
-  /// `html[data-theme="beige"]` block in the web app's globals.css.
   static const AppPalette beige = AppPalette(
     brightness: Brightness.light,
     ink: Color(0xFF241F16),
@@ -226,10 +184,6 @@ class AppPalette {
     whatsapp: Color(0xFF25D366),
   );
 
-  /// Rose — a light-family theme: warm blush / rosé. Warm plum-dark ink on a
-  /// soft pink canvas with lighter blush surfaces. Brand + status foregrounds
-  /// are shared with [light]; only neutrals and soft fills are re-tinted.
-  /// Mirrors the `html[data-theme="rose"]` block in the web app's globals.css.
   static const AppPalette rose = AppPalette(
     brightness: Brightness.light,
     ink: Color(0xFF3A2530),
@@ -273,9 +227,6 @@ class AppPalette {
     whatsapp: Color(0xFF25D366),
   );
 
-  /// Sage — a light-family theme: cool mint-green, calm. Deep green-dark ink on
-  /// a soft mint canvas with lighter surfaces. Mirrors the
-  /// `html[data-theme="sage"]` block in the web app's globals.css.
   static const AppPalette sage = AppPalette(
     brightness: Brightness.light,
     ink: Color(0xFF1C2B23),
@@ -319,32 +270,25 @@ class AppPalette {
     whatsapp: Color(0xFF25D366),
   );
 
-  /// WhatsApp dark — the signature desaturated near-black (#0B141A) that's easy
-  /// on the eyes (not pure black, not blue-slate), with gently raised panels
-  /// (#111B21) and WhatsApp's green accent. Soft status fills are low-alpha
-  /// tints so chips don't glow on the dark ground.
   static const AppPalette dark = AppPalette(
     brightness: Brightness.dark,
-    ink: Color(0xFFE9EDEF), // WhatsApp primary text
-    muted: Color(0xFF8696A0), // WhatsApp secondary text
+    ink: Color(0xFFE9EDEF),
+    muted: Color(0xFF8696A0),
     subtle: Color(0xFF667781),
     disabled: Color(0xFF3B4A54),
     hairline: Color(0x1FFFFFFF),
     surfaceTint: Color(0x0DFFFFFF),
-    canvas: Color(0xFF0B141A), // WhatsApp background
+    canvas: Color(0xFF0B141A),
     pageTint: Color(0xFF0E181F),
     heroPanel: Color(0xFF202C33),
-    // Gently raised panel over the canvas (WhatsApp layers cards a step up
-    // rather than staying dead-flat) — still defined by hairline borders.
     surface: Color(0xFF111B21),
-    // Inputs get WhatsApp's raised input fill.
     field: Color(0xFF202C33),
     onAccent: Color(0xFFFFFFFF),
     inverseSurface: Color(0xFFE9EDEF),
     onInverse: Color(0xFF0B141A),
     scrim: Color(0xB3000000),
     shadow: Color(0x66000000),
-    brand: Color(0xFF00A884), // WhatsApp dark-mode green
+    brand: Color(0xFF00A884),
     brandStrong: Color(0xFF25D366),
     brandSoft: Color(0x2600A884),
     success: Color(0xFF3ECF86),
@@ -369,8 +313,6 @@ class AppPalette {
     whatsapp: Color(0xFF25D366),
   );
 
-  /// OLED — shares the dark palette but with a true-black canvas and near-black
-  /// surfaces so unlit pixels stay off on OLED panels.
   static const AppPalette oled = AppPalette(
     brightness: Brightness.dark,
     ink: Color(0xFFE7EAEE),
@@ -382,11 +324,7 @@ class AppPalette {
     canvas: Color(0xFF000000),
     pageTint: Color(0xFF060809),
     heroPanel: Color(0xFF14181D),
-    // Surface == canvas (absolute black): cards/inputs/sheets are the exact
-    // same black as the page, defined by hairline borders — no "lighter card"
-    // shade. True flat OLED, consistent across every screen.
     surface: Color(0xFF000000),
-    // Inputs get a subtle raised fill so fields stay visible on pure black.
     field: Color(0xFF14181D),
     onAccent: Color(0xFFFFFFFF),
     inverseSurface: Color(0xFFE7EAEE),
@@ -418,9 +356,6 @@ class AppPalette {
     whatsapp: Color(0xFF25D366),
   );
 
-  /// Midnight — a dark-family theme: deep navy / indigo. Light ink on a
-  /// navy-black canvas; brand emerald brightened for the ground. Mirrors the
-  /// `html[data-theme="midnight"]` block in the web app's globals.css.
   static const AppPalette midnight = AppPalette(
     brightness: Brightness.dark,
     ink: Color(0xFFE6E9F2),
@@ -464,9 +399,6 @@ class AppPalette {
     whatsapp: Color(0xFF25D366),
   );
 
-  /// Nord — a dark-family theme: muted arctic blue-grey (the Nord palette).
-  /// Softer than the deep-slate dark; status colours take on Nord's aurora
-  /// hues. Mirrors the `html[data-theme="nord"]` block in the web globals.css.
   static const AppPalette nord = AppPalette(
     brightness: Brightness.dark,
     ink: Color(0xFFE5E9F0),

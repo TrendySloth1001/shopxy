@@ -15,16 +15,6 @@ import { runChangefeed, reconcileRecent } from '../modules/analytics-rollup/chan
 import { runOutboxRelay } from './outbox/relay.js';
 import { tryAcquireJobLock } from './redis.js';
 
-/// Lightweight in-process cron registry. We deliberately stay on
-/// node-cron (rather than BullMQ) until durability matters — every
-/// job here is idempotent and OK to skip if the process crashes
-/// mid-tick. Promote when:
-///   - jobs need retries across worker boots, or
-///   - we add work that *can't* be safely re-run.
-///
-/// Each job wraps its body in try/catch and structured logging so a
-/// failure in one tick never tears down the scheduler.
-
 const jobs: ScheduledTask[] = [];
 
 async function runSafely(name: string, body: () => Promise<unknown>): Promise<void> {
@@ -47,9 +37,6 @@ export function startScheduler(): void {
     return;
   }
 
-  // Every minute — analytics roll-up changefeed: recompute (shop, day) for any
-  // source rows changed since the cursor. Job-locked so only one instance runs;
-  // idempotent (recomputeDay delete-then-inserts).
   jobs.push(
     cron.schedule('* * * * *', () =>
       runSafely('rollup:changefeed', async () => {
@@ -59,20 +46,12 @@ export function startScheduler(): void {
     ),
   );
 
-  // Every minute — drain the transactional outbox: fan PENDING domain events
-  // out to their derived-store handlers (today: analytics roll-ups). Deliberately
-  // NOT job-locked — the relay claims with FOR UPDATE SKIP LOCKED, so every
-  // instance can drain in parallel without double-dispatching. This is the
-  // durable, event-driven path that supersedes the polling changefeed above; the
-  // changefeed + nightly reconcile stay on as a safety net while we build trust.
   jobs.push(
     cron.schedule('* * * * *', () =>
       runSafely('outbox:relay', () => runOutboxRelay()),
     ),
   );
 
-  // Nightly (02:20 IST ≈ 20:50 UTC) — reconcile the trailing 35 days from raw to
-  // heal any missed changefeed tick. Job-locked; idempotent.
   jobs.push(
     cron.schedule('50 20 * * *', () =>
       runSafely('rollup:reconcile', async () => {
@@ -82,8 +61,6 @@ export function startScheduler(): void {
     ),
   );
 
-  // Hourly — cap each user's recently_viewed list at 20 rows.
-  // Cheap window-function DELETE; safe to skip a tick.
   jobs.push(
     cron.schedule('0 * * * *', () =>
       runSafely('events:trim-recently-viewed', () =>
@@ -92,8 +69,6 @@ export function startScheduler(): void {
     ),
   );
 
-  // Hourly — void abandoned POS carts (OPEN, no lines, untouched > 6h) so empty
-  // sales don't accumulate. Idempotent; safe to skip a tick (review H4).
   jobs.push(
     cron.schedule('30 * * * *', () =>
       runSafely('pos:sweep-stale-sales', () =>
@@ -102,17 +77,12 @@ export function startScheduler(): void {
     ),
   );
 
-  // Every 15min — recompute the trending snapshot from the last 24h
-  // of product_events. Single big SQL + upserts; runs fine even when
-  // there are no events (no-ops cheaply).
   jobs.push(
     cron.schedule('*/15 * * * *', () =>
       runSafely('trending:recompute', () => trendingService.recomputeWindow()),
     ),
   );
 
-  // Nightly at 04:00 server-local — rebuild for-you cache for any
-  // user with activity in the last 30 days.
   jobs.push(
     cron.schedule('0 4 * * *', () =>
       runSafely('recs:rebuild-all', () =>
@@ -121,18 +91,12 @@ export function startScheduler(): void {
     ),
   );
 
-  // Daily at 03:00 server-local — drop product_events older than 90d.
-  // Bigtable-style retention; aggregates live elsewhere.
   jobs.push(
     cron.schedule('0 3 * * *', () =>
       runSafely('events:prune-old', () => eventsService.pruneOldEvents()),
     ),
   );
 
-  // Daily at 03:00 server-local — refresh the soldLast30d denorm from
-  // the trailing-30-day confirmed-invoice window. Shares the 03:00 slot
-  // with events:prune-old; both are SQL-heavy, idempotent, and tolerate
-  // running in parallel.
   jobs.push(
     cron.schedule('0 3 * * *', () =>
       runSafely('products:refresh-sold-last-30d', () =>
@@ -141,10 +105,6 @@ export function startScheduler(): void {
     ),
   );
 
-  // Daily at 03:30 server-local — recompute the frequently-bought-
-  // together cache from 90 days of confirmed-invoice co-occurrence.
-  // Offset from the 03:00 batch so the two big SQL passes don't fight
-  // for the same connection slot.
   jobs.push(
     cron.schedule('30 3 * * *', () =>
       runSafely('marketplace:recompute-fbt', () =>
@@ -153,10 +113,6 @@ export function startScheduler(): void {
     ),
   );
 
-  // Every 2 minutes — embed up to 50 unembedded products. No-op when
-  // OLLAMA_KEY isn't set (embeddingService.isEnabled === false), so
-  // dev environments without an Ollama key still boot cleanly and the
-  // search service falls back to FTS-only.
   if (embeddingService.isEnabled) {
     jobs.push(
       cron.schedule('*/2 * * * *', () =>
@@ -171,19 +127,9 @@ export function startScheduler(): void {
     );
   }
 
-  // Every 15 min — intent-level payment reconciliation. Re-checks open gateway
-  // intents whose webhook may have been missed (localhost dev; a dropped or
-  // delayed delivery in prod): PAID → mark CAPTURED + settle (idempotent with
-  // the webhook); definitively-unpaid past the abandon window → FAILED. The
-  // liveness net for online collection. Unlike the DB-only jobs above, this hits
-  // a rate-limited external API, so we best-effort lock to ONE instance per tick
-  // (degrades open when Redis is down — correctness is settlement-idempotent
-  // regardless). See PAYMENT_GATEWAY_ARCHITECTURE.md §8.
   jobs.push(
     cron.schedule('*/15 * * * *', () =>
       runSafely('gateway:reconcile-intents', async () => {
-        // Lock TTL just under the interval so a held lock auto-releases before
-        // the next tick rather than wedging the sweep.
         if (!(await tryAcquireJobLock('gateway:reconcile-intents', 14 * 60_000))) {
           return { skipped: 'lock held by another instance' };
         }
@@ -192,14 +138,6 @@ export function startScheduler(): void {
     ),
   );
 
-  // Every 15 min — refund reconciliation. Heals refunds that didn't settle on
-  // the happy path: a PENDING refund whose `refund.processed` webhook was missed
-  // (re-fetch + confirm), and a FAILED refund (re-issue; the provider
-  // Idempotency-Key makes the retry safe — no double refund). This is what makes
-  // the legally-required refund ALWAYS eventually reach the buyer's original
-  // instrument even after a transient failure (Consumer Protection (E-Commerce)
-  // Rules 2020, Rule 4(7)). Same best-effort single-instance lock as the intent
-  // sweep so only one node polls Razorpay per tick.
   jobs.push(
     cron.schedule('*/15 * * * *', () =>
       runSafely('gateway:reconcile-refunds', async () => {
@@ -211,11 +149,6 @@ export function startScheduler(): void {
     ),
   );
 
-  // Every 15 min — transfer-level reconciliation for the Route on-hold split:
-  // heal HELD rows whose provider transfer never landed (P1) and release holds
-  // past their window whose child has no open return (P2). Only runs when the
-  // split feature is on (no transfers exist otherwise). Same best-effort lock as
-  // the intent sweep so only one instance polls Razorpay per tick.
   jobs.push(
     cron.schedule('*/15 * * * *', () =>
       runSafely('gateway:reconcile-transfers', async () => {
@@ -228,11 +161,6 @@ export function startScheduler(): void {
     ),
   );
 
-  // Hourly — flip PENDING invitations past their expiresAt to EXPIRED and
-  // notify the sender. Nothing else ever revisits an untouched invite after
-  // it goes stale (the lazy checks on accept/decline/claim only run if
-  // someone actually tries to act on it), so without this sweep a dead
-  // invite sits at PENDING forever. Idempotent; safe to skip a tick.
   jobs.push(
     cron.schedule('0 * * * *', () =>
       runSafely('invitations:expire-stale', () =>
@@ -241,9 +169,6 @@ export function startScheduler(): void {
     ),
   );
 
-  // Every 30 min — re-poll linked-account KYC for accounts not yet payout-
-  // enabled, so a dropped/early account.activated webhook self-heals (the seller
-  // would otherwise be stranded KYC_GATED). Flag-gated + lock-guarded.
   jobs.push(
     cron.schedule('*/30 * * * *', () =>
       runSafely('gateway:reconcile-kyc', async () => {

@@ -8,15 +8,9 @@ import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// Member-access editor returns the role label + exact grant.
 typedef PermissionResult = ({String roleName, List<String> permissions});
 
-/// Role create/edit returns a name + grant.
 typedef RoleResult = ({String name, List<String> permissions});
-
-// ─────────────────────────────────────────────────────────────────────
-// Shared: a flat View/Manage matrix (divider rows, no boxes)
-// ─────────────────────────────────────────────────────────────────────
 
 class _PermissionMatrix extends StatelessWidget {
   const _PermissionMatrix({required this.granted, required this.onToggle});
@@ -31,7 +25,6 @@ class _PermissionMatrix extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     return Column(
       children: [
-        // Column headers
         Padding(
           padding: const EdgeInsets.fromLTRB(
             AppSizes.lg,
@@ -148,8 +141,6 @@ class _AreaRow extends StatelessWidget {
   }
 }
 
-/// Applies a toggle to a grant set honouring the invariants: manage⇒view,
-/// and removing view removes manage.
 Set<String> applyToggle(
   Set<String> granted,
   String area,
@@ -179,10 +170,6 @@ Set<String> applyToggle(
   return next;
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// Member access editor — pick a role to pre-fill, then tweak
-// ─────────────────────────────────────────────────────────────────────
-
 class PermissionEditorPage extends StatefulWidget {
   const PermissionEditorPage({
     super.key,
@@ -197,7 +184,6 @@ class PermissionEditorPage extends StatefulWidget {
   final String title;
   final String submitLabel;
 
-  /// The shop's roles, offered as quick-fill chips.
   final List<TeamRole> roles;
   final String? initialRoleName;
   final List<String> initialPermissions;
@@ -216,7 +202,6 @@ class _PermissionEditorPageState extends State<PermissionEditorPage> {
     super.initState();
     _roleName = widget.initialRoleName;
     _granted = normalizeRights(widget.initialPermissions);
-    // If no initial perms, seed from the named role (if it still exists).
     if (_granted.isEmpty && _roleName != null) {
       final r = _roleByName(_roleName!);
       if (r != null) _granted = normalizeRights(r.permissions);
@@ -230,7 +215,6 @@ class _PermissionEditorPageState extends State<PermissionEditorPage> {
     return null;
   }
 
-  /// The role whose normalised permissions exactly match the current set.
   TeamRole? get _matchingRole {
     for (final r in widget.roles) {
       final p = normalizeRights(r.permissions);
@@ -345,10 +329,6 @@ class _PermissionEditorPageState extends State<PermissionEditorPage> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// Role create/edit — name + the same matrix
-// ─────────────────────────────────────────────────────────────────────
-
 class RoleEditorPage extends StatefulWidget {
   const RoleEditorPage({
     super.key,
@@ -460,8 +440,6 @@ class _RoleEditorPageState extends State<RoleEditorPage> {
     );
   }
 }
-
-// ── small shared bits ──────────────────────────────────────────────
 
 class _Eyebrow extends StatelessWidget {
   const _Eyebrow(this.text);

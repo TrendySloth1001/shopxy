@@ -3,18 +3,6 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 
-/**
- * Infographic-style pie: variable-radius wedges (bigger value → reaches further
- * out), gaps between slices, a % label on each slice, a dark centre hub, and
- * leader-line callouts. Pure SVG in the token palette; accessible via role=img +
- * aria-label and an sr-only data table. Slices beyond the palette length are
- * grouped as "Other".
- *
- * Right side carries a written summary of the whole chart (with emphasised
- * numbers/names). Hovering (or keyboard-focusing) a slice highlights it and
- * slides in that slice's detail at the bottom.
- */
-
 export type PieRow = { label: string; value: number };
 export type PieSwatch = { text: string; bg: string };
 
@@ -43,8 +31,6 @@ export const PIE_PALETTE_C: PieSwatch[] = [
   { text: "text-accent-teal", bg: "bg-accent-teal" },
 ];
 
-// Geometry (SVG user units). Wide viewBox so the two callout columns get real
-// horizontal room on either side of the pie (that's what stops label overlap).
 const W = 900;
 const H = 520;
 const CX = W / 2;
@@ -53,15 +39,13 @@ const HUB = 86;
 const R_MIN = 184;
 const R_MAX = 228;
 const GAP_DEG = 3;
-const EXPLODE = 14; // how far the hovered slice lifts out (smoothly, via CSS transform)
+const EXPLODE = 14;
 
-// Callout layout. Labels are stacked along a fixed outer column per side with a
-// minimum vertical gap; the leader line stretches horizontally out to it.
-const COL_R = R_MAX + 26; // radius of the label column (just past the widest slice)
-const TAIL = 22; // length of the final horizontal run into the text
-const LABEL_GAP = 34; // min vertical spacing between two stacked callouts
-const LABEL_TOP = 22; // top bound of a callout column
-const LABEL_BOT = H - 14; // bottom bound of a callout column
+const COL_R = R_MAX + 26;
+const TAIL = 22;
+const LABEL_GAP = 34;
+const LABEL_TOP = 22;
+const LABEL_BOT = H - 14;
 
 function polar(r: number, angleDeg: number): [number, number] {
   const a = ((angleDeg - 90) * Math.PI) / 180;
@@ -121,9 +105,6 @@ export function InfographicPie({
     const rOut = single ? R_MAX : R_MIN + (s.value / maxVal) * (R_MAX - R_MIN);
     return { ...s, color: palette[i % palette.length], pct: Math.round((s.value / total) * 100), start, end, mid, rOut };
   });
-  // De-collide the callouts: for each slice compute its leader-line tip/knee,
-  // pick a side, then stack the labels along that side's column, pushing any
-  // that land too close apart (and back inside the frame). Indexed by slice.
   const layout = segs.map((s, i) => {
     const ang = single ? 0 : s.mid;
     const [tipX, tipY] = polar(s.rOut + 4, ang);
@@ -155,13 +136,11 @@ export function InfographicPie({
   return (
     <div>
       <div className="flex flex-col gap-lg lg:flex-row lg:items-center">
-        {/* chart */}
         <div className="min-w-0 lg:flex-1" onMouseLeave={() => setActive(null)}>
           <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label={ariaLabel} preserveAspectRatio="xMidYMid meet">
             {segs.map((s, i) => {
               const a0 = single ? s.start : s.start + GAP_DEG / 2;
               const a1 = single ? s.end : s.end - GAP_DEG / 2;
-              // A lone 100% slice renders as a full ring; put its % at the top.
               const [lx, ly] = polar((HUB + s.rOut) / 2, single ? 0 : s.mid);
               const L = layout[i];
               const right = L.right;
@@ -185,10 +164,6 @@ export function InfographicPie({
                   onBlur={() => setActive(null)}
                   className="cursor-pointer outline-none"
                   style={{
-                    // CSS transform (not the SVG attr) so the lift + fade animate
-                    // smoothly. The hub is drawn on top, so the lift reads as the
-                    // slice pulling out, not a gap bug.
-                    // A lone full ring has nothing to lift away from, so skip the explode.
                     transform: sel && !single ? `translate(${(ux * EXPLODE).toFixed(2)}px, ${(uy * EXPLODE).toFixed(2)}px)` : "translate(0px, 0px)",
                     opacity: dimmed ? 0.4 : 1,
                     transition: "transform 260ms cubic-bezier(0.22, 0.61, 0.36, 1), opacity 200ms ease",
@@ -226,14 +201,11 @@ export function InfographicPie({
                 </g>
               );
             })}
-            {/* Dark hub drawn 1px OVER the slice inner edge so there's no cream
-                gap ("halo") and the slice-gap convergence at the centre is hidden. */}
             <circle cx={CX} cy={CY} r={HUB + 1} fill="currentColor" className="text-ink" pointerEvents="none" />
             <circle cx={CX} cy={CY} r={HUB - 28} fill="currentColor" className="text-canvas" pointerEvents="none" />
           </svg>
         </div>
 
-        {/* whole-chart written summary + full ranked breakdown */}
         <aside className="lg:w-64 lg:shrink-0">
           <p className="text-label-md uppercase tracking-wide text-muted">{t("pie.about")}</p>
           <p className="mt-sm text-body-md leading-relaxed text-ink">
@@ -285,7 +257,6 @@ export function InfographicPie({
             {segs.length > 2 ? "." : null}
           </p>
 
-          {/* full breakdown */}
           <ul className="mt-md divide-y divide-hairline border-t border-hairline">
             {segs.map((s, i) => (
               <li
@@ -307,7 +278,6 @@ export function InfographicPie({
         </aside>
       </div>
 
-      {/* hovered-slice detail (slides in at the bottom) */}
       <div
         aria-live="polite"
         className={`overflow-hidden transition-all duration-300 ease-out ${

@@ -16,11 +16,6 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// Read-only browse of the canonical taxonomy. Merchants don't manage
-/// categories any more — the seed lives in the backend manifest. This
-/// page just lets the merchant browse "my products by category".
-/// Tapping a tile drops into [CategoryProductsPage] which lists the
-/// merchant's own products in that bucket.
 class CategoriesPage extends StatefulWidget {
   const CategoriesPage({super.key});
 
@@ -119,9 +114,6 @@ class _CategoryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // The image *flexes* to fill whatever the label leaves, so a name
-          // that wraps to two lines can never overflow the fixed grid cell
-          // (the old square AspectRatio forced a fixed height → 17px overflow).
           Expanded(
             child: ClipRRect(
               borderRadius: AppShapes.squircleRadius(AppSizes.radiusButton),
@@ -132,8 +124,6 @@ class _CategoryCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSizes.xs),
-          // A fixed two-line slot keeps every tile's image the same height
-          // regardless of whether the name is one or two lines.
           SizedBox(
             height: _twoLineHeight(context, labelStyle),
             child: Text(
@@ -149,9 +139,6 @@ class _CategoryCard extends StatelessWidget {
   }
 }
 
-/// Height of exactly two lines of [style], honouring the user's text-scale and
-/// the active font's line height (Devanagari runs taller than Latin). Used to
-/// reserve a uniform label slot so category tiles align and never overflow.
 double _twoLineHeight(BuildContext context, TextStyle? style) {
   final fontSize = style?.fontSize ?? 14;
   final lineHeight = style?.height ?? 1.3;
@@ -159,11 +146,6 @@ double _twoLineHeight(BuildContext context, TextStyle? style) {
   return scaled * lineHeight * 2;
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton widgets (loading state)
-// ---------------------------------------------------------------------------
-
-/// Full-grid skeleton: 6 placeholder cells in the same 3-column layout.
 class _CategoriesGridSkeleton extends StatelessWidget {
   const _CategoriesGridSkeleton();
 
@@ -184,7 +166,6 @@ class _CategoriesGridSkeleton extends StatelessWidget {
   }
 }
 
-/// Single skeleton cell: square image block + two text lines.
 class _CategoryCardSkeleton extends StatelessWidget {
   const _CategoryCardSkeleton();
 
@@ -193,8 +174,6 @@ class _CategoryCardSkeleton extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Flex the shimmer block the same way the real image does, so the
-        // skeleton matches the loaded layout and can't overflow the cell.
         Expanded(
           child: AppShimmerBox(
             width: double.infinity,
@@ -211,8 +190,6 @@ class _CategoryCardSkeleton extends StatelessWidget {
   }
 }
 
-/// Category artwork. Falls back to the iconName-derived icon over a
-/// tinted background when the network image fails or no URL is set.
 class _CategoryImage extends StatelessWidget {
   const _CategoryImage({required this.category});
   final Category category;

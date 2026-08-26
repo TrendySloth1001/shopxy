@@ -1,32 +1,13 @@
-/**
- * Compliance documentation content — the Indian acts, rules and exact formulas
- * the ShopXY merchant & customer apps follow. Extracted from and verified
- * against the live codebase. Shared by the docs layout (sidebar nav) and the
- * per-topic pages so the two never drift.
- *
- * User-facing strings live in the message catalog under `legal.compliance.*`;
- * this module carries only the stable structure (ids, translation keys and the
- * count of each repeated block) so the render components can resolve labels via
- * `t()` at the point of use.
- */
-
 export type Formula = {
-  /** Translation key for the formula label. */
   labelKey: string;
-  /** Translation key for the (mostly symbolic) expression. */
   expressionKey: string;
-  /** Translation key for the explanatory note. */
   noteKey: string;
 };
 export type Section = {
   id: string;
-  /** camelCase key of this section's subtree in the catalog (`legal.compliance.<key>`). */
   key: string;
-  /** Number of body paragraphs (keys are `<key>.body.0`, `.1`, …). */
   bodyCount: number;
-  /** Number of key points (keys are `<key>.keyPoints.0`, `.1`, …). */
   keyPointCount: number;
-  /** Number of law references (keys are `<key>.lawRefs.0`, `.1`, …). */
   lawRefCount: number;
   formulas: Formula[];
 };

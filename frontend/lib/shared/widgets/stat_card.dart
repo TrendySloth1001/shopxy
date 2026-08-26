@@ -20,7 +20,6 @@ class StatCard extends StatelessWidget {
   final AppIconData icon;
   final VoidCallback? onTap;
 
-  /// When true, renders inverted: black background with white content.
   final bool emphasis;
 
   @override

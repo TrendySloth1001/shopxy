@@ -25,8 +25,6 @@ String _fmtDay(String key) {
   return DateFormat('d MMM').format(d);
 }
 
-/// Sales trend with comparison lines + a line per payment mode. Mirrors
-/// `components/trend-card.tsx`.
 class TrendCard extends StatelessWidget {
   const TrendCard({super.key, required this.trend});
   final DashboardTrend trend;

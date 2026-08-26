@@ -3,12 +3,6 @@ import 'dart:convert';
 import 'package:shopxy_customer/core/network/api_client.dart';
 import 'package:shopxy_customer/features/returns/domain/entities/return_request.dart';
 
-/// Adapter for the customer-side returns endpoints.
-///
-///   POST /me/orders/:parentId/returns      — submit
-///   GET  /me/returns?page=&limit=          — list
-///   GET  /me/returns/:id                   — detail
-///   POST /me/returns/:id/cancel            — cancel (REQUESTED only)
 class ReturnsRemoteDataSource {
   const ReturnsRemoteDataSource(this._client);
   final ApiClient _client;

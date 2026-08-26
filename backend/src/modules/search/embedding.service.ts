@@ -4,38 +4,19 @@ import { activeProvider, EMBEDDING_DIM } from './embedding.providers.js';
 
 export { EMBEDDING_DIM };
 
-/// Embedding generator for product semantic search.
-///
-/// The backend is chosen at call time by [activeProvider]: Gemini when
-/// `GEMINI_API_KEY` is set, otherwise Ollama when `OLLAMA_KEY` is, otherwise
-/// disabled. All providers emit 768 dimensions because the pgvector column
-/// width is fixed at migration time, so swapping providers does **not** require
-/// re-embedding the catalogue.
-///
-/// Throws on transport-level failures (network down, 5xx, malformed JSON) so
-/// callers can back off. Returns null only when intentionally disabled — that
-/// distinction matters for the cron, which treats "no embedding for this batch"
-/// as a permanent state rather than "retry in 5 minutes."
 export class EmbeddingService {
   get isEnabled(): boolean {
     return activeProvider().isEnabled;
   }
 
-  /// Which backend is answering, for diagnostics and the admin surface.
   get providerName(): string {
     return activeProvider().name;
   }
 
-  /// Embed a batch of inputs in one API call, order-preserving. Returns null
-  /// when embeddings are disabled by configuration.
   async embedBatch(texts: string[]): Promise<number[][] | null> {
     return activeProvider().embedBatch(texts);
   }
 
-  /// One-shot helper for query-time use: returns the query vector
-  /// formatted as a pgvector literal string (`'[0.1,0.2,…]'`) so the
-  /// caller can splice it into a `$queryRaw` without a second round
-  /// trip. Null when disabled or on hard failure.
   async embedQuery(query: string): Promise<string | null> {
     if (!this.isEnabled || query.trim().length === 0) return null;
     try {
@@ -47,12 +28,6 @@ export class EmbeddingService {
     }
   }
 
-  /// Build the canonical embedding source for a product. Concatenates
-  /// the columns that carry semantic intent (name + description +
-  /// tags + highlights + spec rows + category name). Labelled markers
-  /// stop the model from blending unrelated text together; keeping
-  /// the build deterministic means a re-embed of an unchanged row
-  /// produces the same vector (saves a write).
   buildProductText(p: {
     name: string;
     description: string | null;
@@ -69,9 +44,6 @@ export class EmbeddingService {
     if (p.highlights && p.highlights.length > 0) {
       parts.push(`highlights: ${p.highlights.join('; ')}`);
     }
-    // Flatten the spec JSON into "title: label=value, ..." lines.
-    // Defensive: anything that doesn't match the expected shape is
-    // silently skipped so a bad write can't poison the embedding.
     if (Array.isArray(p.specs)) {
       for (const group of p.specs as Array<{ title?: string; rows?: Array<{ label?: string; value?: string }> }>) {
         if (!group || !Array.isArray(group.rows)) continue;
@@ -86,10 +58,6 @@ export class EmbeddingService {
     return parts.join('\n');
   }
 
-  /// Embed up to [limit] products that have no embedding yet. Run
-  /// from the cron tick or invoked ad-hoc from an admin endpoint.
-  /// Returns the count actually processed; 0 when nothing pending
-  /// or the service is disabled.
   async embedPendingProducts(limit = 50): Promise<{ embedded: number }> {
     if (!this.isEnabled) return { embedded: 0 };
     const candidates = await prisma.product.findMany({
@@ -115,11 +83,6 @@ export class EmbeddingService {
     const vectors = await this.embedBatch(texts);
     if (!vectors) return { embedded: 0 };
 
-    // pgvector's input parser accepts the `'[v1,v2,…]'` literal. We
-    // update one row at a time (the volume is bounded by `limit`).
-    // A bulk UPDATE … FROM (VALUES …) is possible but the per-row
-    // cost is dominated by the embedding call anyway, so the simpler
-    // form wins on readability.
     const now = new Date();
     for (let i = 0; i < candidates.length; i++) {
       const literal = toPgVectorLiteral(vectors[i]);
@@ -134,12 +97,6 @@ export class EmbeddingService {
     return { embedded: candidates.length };
   }
 
-  /// Force a re-embed for one product. Called inline when the
-  /// merchant edits name / description / tags so search reflects
-  /// the change without waiting for the cron sweep. Idempotent —
-  /// re-running is a no-op for unchanged content (same vector).
-  /// Failures are logged + swallowed: a flaky embedding call must
-  /// not block the underlying product write.
   async reembedProduct(productId: number): Promise<void> {
     if (!this.isEnabled) return;
     try {
@@ -173,14 +130,6 @@ export class EmbeddingService {
   }
 }
 
-/// Pgvector's input parser is `'[0.1,0.2,...]'` (no spaces matter).
-/// Exported for tests; safe to splice into `$queryRaw` because the
-/// values come from the Ollama response, not user input.
-///
-/// SHM-1: enforce the "number-only" invariant rather than merely
-/// documenting it — assert every element is a finite number before
-/// formatting, so a future change that let a non-numeric value reach
-/// this splice fails loudly instead of becoming an injection vector.
 export function toPgVectorLiteral(v: number[]): string {
   for (const x of v) {
     if (typeof x !== 'number' || !Number.isFinite(x)) {

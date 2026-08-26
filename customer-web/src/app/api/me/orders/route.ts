@@ -1,7 +1,6 @@
 import { authedFetch, extractError } from "@/server/auth/session";
 import { NextResponse } from "next/server";
 
-/** GET /me/orders — paginated order list. Auth required. */
 export async function GET(req: Request) {
   const qs = new URL(req.url).searchParams.toString();
   const res = await authedFetch(`/me/orders${qs ? `?${qs}` : ""}`);
@@ -16,7 +15,6 @@ export async function GET(req: Request) {
   return NextResponse.json(await res.json().catch(() => null), { status: res.status });
 }
 
-/** POST /me/orders — place a new order. Auth required. */
 export async function POST(req: Request) {
   const idempotencyKey =
     req.headers.get("Idempotency-Key") ??
@@ -34,8 +32,6 @@ export async function POST(req: Request) {
   if (!res)
     return NextResponse.json({ error: "Session expired." }, { status: 401 });
   if (!res.ok) {
-    // Pass through the full body so callers can read structured fields like `details`
-    // (e.g. PRICE_DRIFT returns { error, details: [{ productId, name, oldPrice, newPrice }] })
     const errBody = await res.json().catch(() => null) as Record<string, unknown> | null;
     return NextResponse.json(errBody ?? { error: "Could not place order." }, { status: res.status });
   }

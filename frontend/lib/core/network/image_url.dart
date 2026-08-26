@@ -1,19 +1,5 @@
 import 'package:shopxy/core/config/app_config.dart';
 
-/// Joins a stored image reference with the current API base URL.
-///
-/// Backend stores **relative** image paths (e.g. `/images/abc.jpg`) so
-/// the database doesn't carry an environment-specific host. The
-/// frontend joins each path with whatever URL it's currently talking
-/// to the backend on — so the same row works against localhost,
-/// devtunnels, and prod without a migration.
-///
-/// Also handles two legacy / edge cases:
-/// * Already-absolute URLs that point at `localhost` or `127.0.0.1`
-///   (rows written by an older backend build that baked the host
-///   into the URL). We strip the host and rejoin against the live
-///   API base so they don't break on a real device.
-/// * Already-absolute URLs on a remote host — passed through unchanged.
 String resolveImageUrl(String raw) {
   final trimmed = raw.trim();
   if (trimmed.isEmpty) return trimmed;
@@ -26,7 +12,6 @@ String resolveImageUrl(String raw) {
     final isLoopback =
         host == 'localhost' || host == '127.0.0.1' || host == '0.0.0.0';
     if (isLoopback) {
-      // Re-anchor the loopback URL against the live base.
       return _join(uri.path);
     }
     return trimmed;

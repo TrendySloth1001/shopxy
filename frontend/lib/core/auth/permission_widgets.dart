@@ -8,17 +8,6 @@ import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// Hybrid-gating UX primitives.
-///
-///   • Things a staffer can't *view* → not rendered (callers just omit
-///     them; use [NoAccessView] for a whole screen/tab they reached but
-///     can't see).
-///   • Things they can view but can't *manage* → shown but locked:
-///     greyed, a small padlock, and a tap surfaces [showLockedHint]
-///     ("Ask an owner for access") instead of doing the action.
-
-/// Floating snackbar explaining a locked control. [what] names the thing,
-/// e.g. showLockedHint(context, 'edit products').
 void showLockedHint(BuildContext context, [String? what]) {
   final msg = what == null
       ? 'You don\'t have access to do that. Ask an owner.'
@@ -43,9 +32,6 @@ void showLockedHint(BuildContext context, [String? what]) {
     );
 }
 
-/// Wraps any interactive [child] (button, FAB, tile). When [allowed] is
-/// false the child is greyed + non-interactive, with a padlock badge, and
-/// a tap shows the locked hint. Use for can-view-can't-manage actions.
 class MaybeLocked extends StatelessWidget {
   const MaybeLocked({
     super.key,
@@ -93,14 +79,6 @@ class MaybeLocked extends StatelessWidget {
   }
 }
 
-/// AppBar action that re-checks the caller's permissions on demand:
-/// refetches /auth/me (so role/permission changes the owner made show
-/// up) and reloads the page's own data via [onReload]. The gated widgets
-/// re-evaluate reactively and any newly-allowed section mounts fresh.
-///
-/// Rate-limited via AuthProvider.manualRefresh (a global cooldown), so
-/// it can't be used to spam the server; a tap during cooldown just
-/// surfaces a "try again in Ns" hint instead of hitting the network.
 class AccessReloadButton extends StatefulWidget {
   const AccessReloadButton({
     super.key,
@@ -108,8 +86,6 @@ class AccessReloadButton extends StatefulWidget {
     this.tooltip = 'Refresh',
   });
 
-  /// Optional page-data reloader (e.g. `() => provider.load()`), run
-  /// after the permission re-check.
   final Future<void> Function()? onReload;
   final String tooltip;
 
@@ -139,10 +115,9 @@ class _AccessReloadButtonState extends State<AccessReloadButton> {
     }
     setState(() => _busy = true);
     try {
-      await auth.manualRefresh(); // re-check role + permissions
-      await widget.onReload?.call(); // reload this page's data
+      await auth.manualRefresh();
+      await widget.onReload?.call();
     } catch (_) {
-      // Permission re-check / reload is best-effort; ignore transient errors.
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -164,8 +139,6 @@ class _AccessReloadButtonState extends State<AccessReloadButton> {
   }
 }
 
-/// An AppBar-style icon action that locks (greys + padlock + hint) when
-/// [allowed] is false instead of disappearing.
 class LockedIconButton extends StatelessWidget {
   const LockedIconButton({
     super.key,
@@ -220,9 +193,6 @@ class LockedIconButton extends StatelessWidget {
   }
 }
 
-/// Full-screen placeholder for a tab/screen the staffer reached but isn't
-/// permitted to view (used for the fixed bottom-nav tabs, which stay put
-/// rather than disappearing).
 class NoAccessView extends StatelessWidget {
   const NoAccessView({super.key, required this.title, this.message});
 

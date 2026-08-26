@@ -13,9 +13,6 @@ import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// Bottom-sheet editor for creating or updating a single coupon.
-/// Returns `true` to the caller iff the save succeeded so the list can
-/// refresh; null otherwise.
 Future<bool?> showCouponEditorSheet({
   required BuildContext context,
   MerchantCoupon? existing,

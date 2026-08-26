@@ -5,13 +5,6 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 
-/// Wrapper around [showModalBottomSheet] with our defaults locked in:
-/// canvas-on-white surface, top-rounded squircle, grab handle, padded
-/// for safe-area + keyboard insets, scroll-controlled by default so
-/// content can fill up to 90% of the viewport.
-///
-/// Pages should use this everywhere instead of constructing
-/// `showModalBottomSheet` from scratch.
 Future<T?> showAppBottomSheet<T>(
   BuildContext context, {
   required WidgetBuilder builder,

@@ -16,13 +16,6 @@ import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// "More about this product" — drops into Add/Edit Product.
-///
-/// Renders the shop's custom-field tree as a grouped form: section
-/// header (icon + name) followed by its fields, then ungrouped
-/// fields. Inline affordances let the user add a brand-new section
-/// or field without leaving the form, and apply a quick-start
-/// template when they have nothing yet.
 class CustomFieldsFormSection extends StatefulWidget {
   const CustomFieldsFormSection({
     super.key,

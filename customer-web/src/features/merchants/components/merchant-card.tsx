@@ -13,8 +13,6 @@ import { merchantBase, roleLabelOf, roleColorOf } from "../types";
 import { formatINR } from "@/shared/format";
 import { formatRelativeTime } from "@/shared/datetime";
 
-// ─── Logo ──────────────────────────────────────────────────────────────────
-
 function ShopLogo({ logoUrl, initial }: { logoUrl?: string | null; initial: string }) {
   const src = logoUrl
     ? logoUrl.startsWith("/images/")
@@ -34,8 +32,6 @@ function ShopLogo({ logoUrl, initial }: { logoUrl?: string | null; initial: stri
     </div>
   );
 }
-
-// ─── Banner ────────────────────────────────────────────────────────────────
 
 function CardBanner({ bannerUrl }: { bannerUrl?: string | null }) {
   const src = bannerUrl
@@ -59,8 +55,6 @@ function CardBanner({ bannerUrl }: { bannerUrl?: string | null }) {
   );
 }
 
-// ─── Quick-links strip ─────────────────────────────────────────────────────
-
 type QuickLink = { href: string; icon: React.ReactNode; label: string };
 
 function QuickLinks({ links }: { links: QuickLink[] }) {
@@ -80,8 +74,6 @@ function QuickLinks({ links }: { links: QuickLink[] }) {
   );
 }
 
-// ─── MerchantCard ─────────────────────────────────────────────────────────
-
 type MerchantCardProps = {
   item: Party | Vendor;
   role: MerchantRole;
@@ -96,7 +88,6 @@ export function MerchantCard({ item, role }: MerchantCardProps) {
   const invoiceCount = item._count?.invoices ?? 0;
   const base = merchantBase(role, item.id);
 
-  // Last invoice activity
   const lastInvoice = item.invoices?.[0] ?? null;
   const activityText = lastInvoice
     ? `Last invoice ${formatRelativeTime(lastInvoice.invoiceDate ?? undefined)}${
@@ -128,22 +119,16 @@ export function MerchantCard({ item, role }: MerchantCardProps) {
       : []),
   ];
 
-  // NOTE: the card must NOT itself be a <Link> — the quick-links strip renders
-  // links inside it, and <a> nested in <a> is invalid HTML (hydration error).
-  // The banner + title area carries the catalog link instead.
   return (
     <div className="overflow-hidden rounded-lg border border-hairline bg-white hover:shadow-floating focus-within:ring-2 focus-within:ring-brand transition-shadow">
       <Link
         href={`${base}/catalog`}
         className="block focus-visible:outline-none"
       >
-        {/* Banner */}
         <CardBanner bannerUrl={bannerUrl} />
       </Link>
 
-      {/* Card body */}
       <div className="px-md pb-md">
-        {/* Logo + title row: logo overlaps banner */}
         <div className="-mt-7 flex items-start gap-md">
           <ShopLogo logoUrl={logoUrl} initial={initial} />
           <div className="min-w-0 flex-1 pt-md">
@@ -156,7 +141,6 @@ export function MerchantCard({ item, role }: MerchantCardProps) {
               </p>
             </Link>
             <div className="mt-xxs flex flex-wrap items-center gap-xs">
-              {/* Role pill */}
               <span
                 className={`inline-block rounded-full px-sm py-xxs text-caption font-extrabold ${roleColorOf(role)}`}
               >
@@ -173,13 +157,11 @@ export function MerchantCard({ item, role }: MerchantCardProps) {
           <ArrowRight size={16} className="mt-md flex-shrink-0 text-muted" />
         </div>
 
-        {/* Activity line */}
         <div className="mt-xs flex items-center gap-xs">
           <ReceiptText size={13} className="flex-shrink-0 text-muted" />
           <p className="text-body-sm text-muted line-clamp-1">{activityText}</p>
         </div>
 
-        {/* Quick-links strip */}
         <div className="mt-sm">
           <QuickLinks links={quickLinks} />
         </div>
@@ -187,8 +169,6 @@ export function MerchantCard({ item, role }: MerchantCardProps) {
     </div>
   );
 }
-
-// ─── Skeleton ──────────────────────────────────────────────────────────────
 
 export function MerchantCardSkeleton() {
   return (

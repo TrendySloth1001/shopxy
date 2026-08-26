@@ -17,8 +17,6 @@ import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
-/// Full quotation detail for the customer: line items, totals, status timeline
-/// and Accept / Decline. Accepting turns it into a confirmed invoice.
 class ShopQuotationDetailPage extends StatefulWidget {
   const ShopQuotationDetailPage({
     super.key,
@@ -39,8 +37,6 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
   bool _busy = false;
   bool _sharing = false;
 
-  /// Re-read the live copy from the provider cache so status/invoice update
-  /// in place after Accept/Decline without leaving the page.
   ShopQuotation get _q {
     final list = context.read<ShopsProvider>().quotationsFor(widget.shop);
     return list?.firstWhere(
@@ -204,7 +200,7 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    context.watch<ShopsProvider>(); // rebuild on accept/decline
+    context.watch<ShopsProvider>();
     final theme = Theme.of(context);
     final q = _q;
     final (fg, _, statusLabel) = _statusStyle(q.status);
@@ -247,7 +243,6 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
       body: ListView(
         padding: const EdgeInsets.all(AppSizes.lg),
         children: [
-          // Status + dates — flat, no box.
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -297,7 +292,6 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
           const AppDivider.flush(),
           const SizedBox(height: AppSizes.lg),
 
-          // Items.
           _Label('Items (${q.items.length})'),
           const SizedBox(height: AppSizes.xs),
           for (int i = 0; i < q.items.length; i++) ...[
@@ -309,7 +303,6 @@ class _ShopQuotationDetailPageState extends State<ShopQuotationDetailPage> {
             child: AppDivider.flush(),
           ),
 
-          // Totals.
           _totalRow('Subtotal', _currency.format(q.subtotal), theme),
           _totalRow('GST', _currency.format(q.taxAmount), theme),
           const Padding(

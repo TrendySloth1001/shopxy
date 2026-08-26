@@ -23,7 +23,6 @@ import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/widgets/app_search_bar.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// Internal mutable bucket line.
 class _Line {
   _Line({
     required this.productId,
@@ -40,25 +39,17 @@ class _Line {
   final String name;
   final String? sku;
 
-  /// The quoted unit price — editable by the merchant in the builder.
   double unitPrice;
   final double taxPercent;
 
-  /// Whether [unitPrice] already contains GST, seeded from the product's own
-  /// pricingMode when added — editable via the line's badge, same as the
-  /// invoice editor.
   bool isPriceInclusive;
   final String? imageUrl;
 
-  /// Backs the inline price field so the merchant can set their own quote
-  /// price (the whole point of a quotation), seeded from the catalogue price.
   late final TextEditingController priceCtrl;
   int qty = 1;
 
   double get gross => qty * unitPrice;
 
-  /// Pre-tax value: for an inclusive line, back GST out of the gross amount;
-  /// for an exclusive line the gross amount already IS the taxable value.
   double get taxable => isPriceInclusive
       ? (taxPercent > 0 ? (gross * 100) / (100 + taxPercent) : gross)
       : gross;
@@ -70,18 +61,10 @@ class _Line {
       v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(2);
 }
 
-/// Merchant flow: browse the catalogue → add products to a bucket → pick a
-/// linked customer → send a quotation. On the customer's acceptance it becomes
-/// a confirmed invoice (handled server-side).
-///
-/// In *respond* mode ([respondTo] set) the merchant is pricing a customer's
-/// quote request: the customer is fixed, lines are pre-filled from the request,
-/// and sending calls `respond` (REQUESTED → PENDING) instead of `create`.
 class CreateQuotationPage extends StatefulWidget {
   const CreateQuotationPage({super.key}) : respondTo = null;
   const CreateQuotationPage.respondTo(this.respondTo, {super.key});
 
-  /// The customer-initiated request being priced, or null for a fresh quote.
   final Quotation? respondTo;
 
   @override
@@ -109,7 +92,6 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
   @override
   void initState() {
     super.initState();
-    // Warm the catalogue so the first typed character already has an answer.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       unawaited(context.read<ProductCatalogue>().ensureLoaded());
@@ -149,12 +131,9 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
   double get _total => _subtotal + _tax;
 
   void _onProductSearchChanged(String value) {
-    // Local catalogue answers in this frame — nothing to debounce.
     final catalogue = context.read<ProductCatalogue>();
     if (catalogue.isSearchable) {
       _searchDebounce?.cancel();
-      // Bump the sequence so a server response still in flight from before the
-      // catalogue warmed can't land on top of these results.
       _searchSeq++;
       setState(() {
         _results = catalogue.search(value, limit: 8);
@@ -163,7 +142,6 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
       return;
     }
 
-    // Cold or oversized catalogue — back to the server, still debounced.
     _searchDebounce?.cancel();
     _searchDebounce = Timer(AppDurations.searchDebounce, () {
       if (!mounted) return;
@@ -279,7 +257,6 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
           AppSizes.lg,
         ),
         children: [
-          // Customer selector (fixed when responding to a request).
           _SectionLabel('Customer'),
           const AppDivider.flush(),
           if (_isRespond)
@@ -339,14 +316,12 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
           const AppDivider.flush(),
           const SizedBox(height: AppSizes.lg),
 
-          // Product search.
           _SectionLabel('Add products'),
           const SizedBox(height: AppSizes.xs),
           AppSearchBar(
             hint: 'Search your catalogue',
             controller: _searchCtrl,
             onChanged: _onProductSearchChanged,
-            // _onProductSearchChanged runs its own debounce.
             debounce: Duration.zero,
             trailing: _searching
                 ? const SizedBox(
@@ -385,7 +360,6 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
             ),
           const SizedBox(height: AppSizes.lg),
 
-          // Bucket.
           _SectionLabel('Items (${_lines.length})'),
           const SizedBox(height: AppSizes.xs),
           if (_lines.isEmpty)
@@ -408,7 +382,6 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
           ],
           const SizedBox(height: AppSizes.lg),
 
-          // Note.
           TextField(
             controller: _noteCtrl,
             maxLines: 2,
@@ -421,7 +394,6 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
           ),
           const SizedBox(height: AppSizes.lg),
 
-          // Totals.
           if (_lines.isNotEmpty) ...[
             _totalRow('Subtotal', _subtotal, theme),
             _totalRow('GST', _tax, theme),
@@ -481,8 +453,6 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: AppSizes.xs),
-                // Editable quote price — the merchant sets what they're
-                // quoting, seeded from the catalogue price.
                 Row(
                   children: [
                     SizedBox(

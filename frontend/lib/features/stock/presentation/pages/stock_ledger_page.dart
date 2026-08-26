@@ -25,11 +25,6 @@ import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// Full chronological stock ledger for a single product.
-///
-/// Each row shows: when it happened, what kind of movement (reason code
-/// badge), the signed quantity, the running stock after, and the source
-/// document. Tapping a row with a source doc opens that invoice/challan.
 class StockLedgerPage extends StatefulWidget {
   const StockLedgerPage({
     super.key,
@@ -200,10 +195,6 @@ class _StockLedgerPageState extends State<StockLedgerPage> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton widgets
-// ---------------------------------------------------------------------------
-
 class _StockLedgerSkeleton extends StatelessWidget {
   const _StockLedgerSkeleton();
 
@@ -237,18 +228,15 @@ class _LedgerEntryCardSkeleton extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Primary row: squircle icon + text column + quantity
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Squircle icon placeholder
               AppShimmerBox(
                 width: AppSizes.avatarSm,
                 height: AppSizes.avatarSm,
                 radius: AppSizes.radiusSm,
               ),
               const SizedBox(width: AppSizes.md),
-              // Reason-code label + date
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -260,22 +248,17 @@ class _LedgerEntryCardSkeleton extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSizes.md),
-              // Quantity box
               AppShimmerBox(width: 52, height: 18, radius: AppSizes.radiusXs),
             ],
           ),
-          // Secondary section (badge + metadata lines)
           const SizedBox(height: AppSizes.md),
           const AppDivider.flush(),
           const SizedBox(height: AppSizes.md),
           Row(
             children: [
-              // Source-type badge placeholder
               AppShimmerBox(width: 60, height: 20, radius: AppSizes.radiusSm),
               const SizedBox(width: AppSizes.sm),
-              // Supplier / created-by text line
               Expanded(child: AppShimmerLine(widthFactor: 0.5, height: 11)),
-              // Balance text
               AppShimmerLine(widthFactor: 0.18, height: 11),
             ],
           ),
@@ -284,10 +267,6 @@ class _LedgerEntryCardSkeleton extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Entry card
-// ---------------------------------------------------------------------------
 
 class _LedgerEntryCard extends StatelessWidget {
   const _LedgerEntryCard({required this.entry, required this.unit, this.onTap});

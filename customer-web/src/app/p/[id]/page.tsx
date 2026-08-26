@@ -8,7 +8,6 @@ type PageProps = {
   params: Promise<{ id: string }>;
 };
 
-/** Server-side product fetch for SSR + generateMetadata. Returns null on any error. */
 async function fetchProductServer(id: string): Promise<ProductDetail | null> {
   try {
     const res = await backendFetch(`/marketplace/products/${encodeURIComponent(id)}`);
@@ -47,14 +46,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-/**
- * Product Detail Page — server-rendered shell with client interactivity.
- *
- * The Server Component fetches the initial product data for SEO / LCP and
- * passes it as `initialData` to the `PdpClient` hydration boundary. If the
- * server fetch fails (404, 500, timeout) the client component falls through to
- * its own loading + error states.
- */
 export default async function ProductDetailPage({ params }: PageProps) {
   const { id } = await params;
   const product = await fetchProductServer(id);

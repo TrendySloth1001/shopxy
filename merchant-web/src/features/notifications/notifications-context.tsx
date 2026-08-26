@@ -12,11 +12,8 @@ import {
 import { getUnreadCount } from "./api";
 
 type NotificationsValue = {
-  /** Unread count powering the sidebar bell badge. */
   unread: number;
-  /** Re-fetch the unread count from the server. */
   refresh: () => void;
-  /** Optimistically set the count (e.g. after mark-read on the page). */
   setUnread: (n: number) => void;
 };
 
@@ -24,12 +21,6 @@ const NotificationsContext = createContext<NotificationsValue | null>(null);
 
 const POLL_MS = 60_000;
 
-/**
- * Holds the unread-notification count for the dashboard shell. Polls every
- * minute and re-checks when the tab regains focus, so the bell badge stays
- * roughly live without a realtime channel. Mounted inside the authed
- * dashboard layout; the unread-count BFF route soft-fails to 0.
- */
 export function NotificationsProvider({ children }: { children: ReactNode }) {
   const [unread, setUnread] = useState(0);
 
@@ -37,7 +28,6 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     void getUnreadCount()
       .then(setUnread)
       .catch(() => {
-        /* keep the previous count on a blip */
       });
   }, []);
 

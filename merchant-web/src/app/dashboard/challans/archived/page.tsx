@@ -9,14 +9,6 @@ import {
   type Challan,
 } from "@/features/challans/schema";
 
-/**
- * Delivery challans the merchant filed out of the working list.
- *
- * Only settled ones get here — the backend refuses to archive a PENDING
- * challan, because goods are physically out against it and it has been
- * neither invoiced nor cancelled. So the tabs are the settled states, not
- * the full status set.
- */
 export default function ArchivedChallansPage() {
   const t = useTranslations("challans");
 
@@ -38,7 +30,6 @@ export default function ArchivedChallansPage() {
       }
       restore={(challan) => setChallanArchived(challan.id, false)}
       keyOf={(challan) => challan.id}
-      // createdAt is what the server sorts challans by.
       dateOf={(challan) => challan.createdAt}
       rowOf={(challan) => {
         const count = challanItemCount(challan);
@@ -47,7 +38,6 @@ export default function ArchivedChallansPage() {
           number: challan.challanNo,
           status: CHALLAN_STATUS_LABELS[challan.status] ?? challan.status,
           subtitle: challan.partyName ?? "—",
-          // A challan carries no money — the line count is the useful figure.
           trailing: `${count} ${count === 1 ? t("list.item") : t("list.items")}`,
         };
       }}

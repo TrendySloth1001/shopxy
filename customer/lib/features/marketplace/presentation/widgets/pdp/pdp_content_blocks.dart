@@ -5,11 +5,6 @@ import 'package:shopxy_customer/features/marketplace/domain/entities/marketplace
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 
-/// Phase C — renders the merchant-authored A+ content blocks beneath
-/// the highlights in the PDP Details tab. Dispatches on `block.kind`
-/// to a per-kind widget; an unknown kind collapses to a tiny "Unsupported
-/// content" stub so a server-side schema bump never crashes a shipped
-/// client.
 class PdpContentBlocks extends StatelessWidget {
   const PdpContentBlocks({super.key, required this.blocks});
   final List<ContentBlock> blocks;

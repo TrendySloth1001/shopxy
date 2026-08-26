@@ -21,10 +21,6 @@ import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 class ShopxyCustomerApp extends StatelessWidget {
   const ShopxyCustomerApp({super.key, this.navigatorKey});
 
-  /// Shared root navigator key — wired up by `main.dart` so the
-  /// DeepLinkHandler can push routes from outside any BuildContext.
-  /// Nullable so legacy entry points (tests) can build the app without
-  /// a key.
   final GlobalKey<NavigatorState>? navigatorKey;
 
   @override
@@ -38,10 +34,6 @@ class ShopxyCustomerApp extends StatelessWidget {
       navigatorKey: navigatorKey,
       home: LifecycleObserver(
         onResumed: () async {
-          // Best-effort re-sync on foreground: drop any locally-queued
-          // analytics events so a kill from now on doesn't lose them,
-          // and pull a fresh cart snapshot (server may have removed
-          // out-of-stock lines or changed prices).
           final tracking = _maybeRead<TrackingService>(context);
           if (tracking != null) {
             unawaited(tracking.flush());
@@ -63,9 +55,6 @@ class ShopxyCustomerApp extends StatelessWidget {
     );
   }
 
-  /// Tolerant Provider.of lookup — returns null when the type isn't
-  /// registered (mostly relevant for widget tests that only mount a
-  /// subset of providers).
   static T? _maybeRead<T>(BuildContext context) {
     try {
       return Provider.of<T>(context, listen: false);
@@ -75,11 +64,6 @@ class ShopxyCustomerApp extends StatelessWidget {
   }
 }
 
-/// Boot gate. Shows the splash while the token-check OR the onboarding
-/// flag is still resolving. Once both have settled: a first-run user
-/// sees onboarding; everyone else lands in the customer shell — whether
-/// signed in or a guest, with individual screens deciding what to show
-/// for guests (sign-in CTAs, public content, etc.).
 class _RootView extends StatelessWidget {
   const _RootView();
 

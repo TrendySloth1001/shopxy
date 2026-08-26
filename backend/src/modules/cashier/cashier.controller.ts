@@ -7,14 +7,6 @@ import * as returns from './returns.service.js';
 import { authorizeOverride, verifyOverride } from './override.js';
 import { hasRight, POS_OVERRIDE_RIGHT } from '../../shared/http/permissions.js';
 
-/// Cashier control center REST endpoints (mounted at /me/cashier, invoices area).
-/// The shift lifecycle is low-frequency and stateful, so it's plain REST rather
-/// than riding the POS WebSocket.
-
-// CASH-7 — cash inputs are money: constrain to whole paise (2dp) at the
-// boundary so a 3rd-decimal value is rejected here rather than silently
-// rounded by the Decimal(12,2)/(15,2) column on store. multipleOf(0.01)
-// rejects e.g. 100.999; the service still rounds defensively in Decimal.
 const paise = (n: z.ZodNumber) => n.multipleOf(0.01);
 const openSchema = z.object({ openingFloat: paise(z.number().min(0).max(10_000_000)).default(0) });
 const movementSchema = z.object({
@@ -31,7 +23,6 @@ const isErr = (r: unknown): r is { error: string } =>
   typeof r === 'object' && r !== null && 'error' in r;
 
 export const cashierController = {
-  /// Current open shift (or null) for the caller — boots the control center.
   async current(req: Request, res: Response): Promise<void> {
     const shift = await cashier.getOpenShift(req.shopId!, req.user!.sub);
     const report = shift ? await cashier.xReport(req.shopId!, req.user!.sub) : null;
@@ -80,7 +71,6 @@ export const cashierController = {
     res.json(r);
   },
 
-  /// Live X-report for the current open shift.
   async report(req: Request, res: Response): Promise<void> {
     const r = await cashier.xReport(req.shopId!, req.user!.sub);
     if (!r) {
@@ -90,9 +80,6 @@ export const cashierController = {
     res.json(r);
   },
 
-  /// Shift history (Z-receipt list). A plain cashier sees only their own
-  /// shifts; an owner/manager (the override right) sees every employee's,
-  /// labelled by name + email.
   async shifts(req: Request, res: Response): Promise<void> {
     const limit = Number(req.query.limit) || 30;
     const seesAll = hasRight(req.user!.shopRole, req.user!.shopPermissions, POS_OVERRIDE_RIGHT);
@@ -104,8 +91,6 @@ export const cashierController = {
     );
   },
 
-  /// Full Z-report for a past (or open) shift. Same scope as the list: a
-  /// cashier may only open their own; managers/owners may open any.
   async shiftReport(req: Request, res: Response): Promise<void> {
     const id = decodeId(req.params.id);
     if (id === null) {
@@ -123,7 +108,6 @@ export const cashierController = {
     res.json(r);
   },
 
-  /// The original sale + per-line returnable quantities, for the return screen.
   async returnable(req: Request, res: Response): Promise<void> {
     const invoiceId = decodeId(req.params.invoiceId);
     if (invoiceId === null) {
@@ -144,9 +128,6 @@ export const cashierController = {
       res.status(400).json({ error: 'Invalid return payload' });
       return;
     }
-    // Returns are a privileged action: require the override right or a manager
-    // grant. CASH-2 — the grant is single-use and bound to THIS original sale +
-    // the 'return' op, so it can't be replayed or reused for another action.
     const allowed =
       hasRight(req.user!.shopRole, req.user!.shopPermissions, POS_OVERRIDE_RIGHT) ||
       (await verifyOverride(parsed.data.override, req.shopId!, parsed.data.originalInvoiceId, 'return')) != null;
@@ -162,8 +143,6 @@ export const cashierController = {
     res.json(r);
   },
 
-  /// Manager-authorise a privileged till action — verify credentials + privilege,
-  /// return a short-lived grant the cashier replays on the action.
   async authorize(req: Request, res: Response): Promise<void> {
     const parsed = authorizeSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -192,16 +171,12 @@ const returnSchema = z.object({
     .array(z.object({ productId: zPublicId, quantity: z.number().positive().max(100_000) }))
     .min(1)
     .max(200),
-  /// A manager-authorisation grant, when the cashier lacks the override right.
   override: z.string().optional(),
 });
 
 const authorizeSchema = z.object({
   email: z.string().trim().email().max(200),
   password: z.string().min(1).max(200),
-  /// CASH-2 — the grant is bound to one sale (the POS saleId, or the original
-  /// invoice id for a return) + one privileged op, so it is single-use and
-  /// can't be replayed against a different action.
   saleId: zPublicId,
   op: z.enum(['setLineDiscount', 'setUnitPrice', 'setHeaderDiscount', 'void', 'return']),
 });

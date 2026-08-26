@@ -7,8 +7,6 @@ class PaymentsRemoteDataSource {
   const PaymentsRemoteDataSource(this._client);
   final ApiClient _client;
 
-  /// POST /payments. `type` is RECEIPT for party receipts or PAYMENT for
-  /// vendor payouts. Exactly one of partyId / vendorId must be set.
   Future<Payment> createPayment({
     required String type,
     required double amount,

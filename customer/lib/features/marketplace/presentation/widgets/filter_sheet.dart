@@ -7,13 +7,6 @@ import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
-/// Modal bottom sheet for editing [ListingFilters] against a fixed set
-/// of [ListingFacets]. Local mutation only — the caller commits the
-/// edited filters by reading the return value of [showModalBottomSheet].
-///
-/// Returns:
-///   * the edited [ListingFilters] when the user taps "Apply"
-///   * null when the sheet is dismissed without applying
 Future<ListingFilters?> showFilterSheet({
   required BuildContext context,
   required ListingFilters initial,

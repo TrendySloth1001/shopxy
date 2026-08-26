@@ -46,15 +46,8 @@ export class AddressesService {
     });
   }
 
-  /// Creating an address may also set it as default. We wrap in a
-  /// transaction so the "unset previous default" + "insert new
-  /// default" steps land atomically — the partial unique index
-  /// `user_addresses_one_default_per_user` would otherwise reject
-  /// the second write in race conditions.
   async create(userId: number, input: AddressInput) {
     const wantsDefault = input.isDefault ?? false;
-    // First address for a user is implicitly the default — no point
-    // in forcing the customer to flip a switch on their only address.
     const existing = await prisma.userAddress.count({ where: { userId } });
     const isDefault = wantsDefault || existing === 0;
 
@@ -96,9 +89,6 @@ export class AddressesService {
     if (!existing) return { ok: false, reason: 'not_found' };
 
     return prisma.$transaction(async (tx) => {
-      // Promoting a non-default address to default → demote the
-      // current one first so the unique index doesn't reject the
-      // write.
       if (input.isDefault === true && !existing.isDefault) {
         await tx.userAddress.updateMany({
           where: { userId, isDefault: true },
@@ -133,9 +123,6 @@ export class AddressesService {
       });
       if (!target) return 'not_found' as const;
       await tx.userAddress.delete({ where: { id: target.id } });
-      // ADDR-1: if we just removed the default, promote the most-recent
-      // remaining address so checkout always has a pre-selected address
-      // (getDefault would otherwise return null).
       if (target.isDefault) {
         const next = await tx.userAddress.findFirst({
           where: { userId },
@@ -153,8 +140,6 @@ export class AddressesService {
     });
   }
 
-  /// Promote one address to default. Idempotent — already-default
-  /// addresses stay default.
   async setDefault(userId: number, id: number): Promise<'ok' | 'not_found'> {
     const target = await prisma.userAddress.findFirst({
       where: { id, userId },

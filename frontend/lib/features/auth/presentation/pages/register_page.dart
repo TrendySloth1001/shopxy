@@ -19,17 +19,12 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  // TODO SECURITY (SCRN-1): auth surface (credentials entered here). Enable
-  // screenshot/recents-thumbnail protection (Android FLAG_SECURE / iOS
-  // app-switcher blur) on entry and disable on exit. No cross-platform
-  // package is a dependency yet — needs a package decision before wiring.
   final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
   final _email = TextEditingController();
   final _password = TextEditingController();
   final _confirm = TextEditingController();
   bool _isLoading = false;
-  // DPDP §6 consent gate — both must be ticked before submit enables.
   bool _acceptedTerms = false;
   bool _acceptedPrivacy = false;
   String? _error;
@@ -57,8 +52,6 @@ class _RegisterPageState extends State<RegisterPage> {
       _error = null;
     });
     try {
-      // Shop name is collected in onboarding (name-your-shop) after signup —
-      // mirrors merchant-web, which creates the owner shopless here.
       final result = await context.read<AuthProvider>().register(
         _name.text.trim(),
         _email.text.trim(),
@@ -67,13 +60,10 @@ class _RegisterPageState extends State<RegisterPage> {
       if (!mounted) return;
       switch (result) {
         case RegisterPending(:final email):
-          // Verify the email before the account is created — collect the OTP.
           Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => OtpVerifyPage(email: email)),
           );
         case RegisterSignedIn():
-          // OTP infra was down → account created + signed in directly. The auth
-          // gate rebuilt underneath (→ onboarding); pop back to reveal it.
           Navigator.of(context).popUntil((r) => r.isFirst);
       }
     } catch (e) {
@@ -182,8 +172,6 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 }
 
-/// Compact consent row used twice (terms + privacy): a checkbox, an inline
-/// label, and a link that opens the matching [LegalPage].
 class _ConsentCheckbox extends StatelessWidget {
   const _ConsentCheckbox({
     required this.value,

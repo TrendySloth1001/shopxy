@@ -9,31 +9,7 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
-/// The app-wide **floating app bar** — the single source of truth for every
-/// screen's top bar. Replace `AppBar(...)` with `FloatingAppBar(...)`.
-///
-/// Instead of a flat, edge-to-edge Material bar, content sits inside rounded
-/// "islands" that float over the page:
-///
-/// ```
-///  ┌──────────────┐            ┌───────────┐
-///  │ ◫  Shopxy     │           │  🔔   👤  │
-///  └──────────────┘            └───────────┘
-/// ```
-///
-/// - **Leading island** — a brand lockup (`FloatingAppBar.brand`) on the
-///   primary bottom-nav destinations, or a back button + page title on
-///   pushed screens (`FloatingAppBar`).
-/// - **Trailing island** — groups the action buttons; hidden when there are
-///   none. Any `IconButton` passed as an action is auto-compacted to fit.
-///
-/// It implements [PreferredSizeWidget], so it is a drop-in for
-/// `Scaffold.appBar`. The Scaffold adds the status-bar inset on top of
-/// [preferredSize]; the inner [SafeArea] consumes it, leaving exactly the
-/// island band visible.
 class FloatingAppBar extends StatelessWidget implements PreferredSizeWidget {
-  /// Pushed-screen bar: a back button (auto-shown when the route can pop) and
-  /// the page [title].
   const FloatingAppBar({
     super.key,
     this.title,
@@ -44,8 +20,6 @@ class FloatingAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.onBack,
   }) : _brand = false;
 
-  /// Root-screen bar: the Shopxy mark + wordmark instead of a back button.
-  /// Use on the primary bottom-nav destinations.
   const FloatingAppBar.brand({
     super.key,
     this.title,
@@ -58,15 +32,11 @@ class FloatingAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   final String? title;
 
-  /// Overrides [title] when the title needs to be more than plain text.
   final Widget? titleWidget;
   final List<Widget> actions;
 
-  /// Optional band below the islands — e.g. a `TabBar`. Rendered inset to the
-  /// island margins so it lines up with them.
   final PreferredSizeWidget? bottom;
 
-  /// Whether to show a back button. Null = auto (shown when the route can pop).
   final bool? showBack;
   final VoidCallback? onBack;
   final bool _brand;
@@ -79,11 +49,6 @@ class FloatingAppBar extends StatelessWidget implements PreferredSizeWidget {
     _islandHeight + _vMargin * 2 + (bottom?.preferredSize.height ?? 0),
   );
 
-  /// The top inset a page's scroll content needs so it clears (and can scroll
-  /// behind) this bar: the device status bar + the island band. Read from the
-  /// raw view, so it's correct whether measured at the page build context or a
-  /// nested body context — unlike `MediaQuery.paddingOf(context).top`, which
-  /// changes by depth under an `extendBodyBehindAppBar` Scaffold.
   static double contentTopInset(BuildContext context) {
     final statusBar = MediaQueryData.fromView(View.of(context)).padding.top;
     return statusBar + _islandHeight + _vMargin * 2;
@@ -94,10 +59,6 @@ class FloatingAppBar extends StatelessWidget implements PreferredSizeWidget {
     final canPop = ModalRoute.of(context)?.canPop ?? false;
     final showBackBtn = showBack ?? (!_brand && canPop);
 
-    // The bar paints no background of its own — the islands float over
-    // whatever is behind them. Material `AppBar` used to manage the system
-    // status-bar style; since we replace it, restore a transparent status
-    // bar with icons that suit the current theme brightness.
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final overlayStyle =
         (isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark)
@@ -110,11 +71,6 @@ class FloatingAppBar extends StatelessWidget implements PreferredSizeWidget {
       value: overlayStyle,
       child: Stack(
         children: [
-          // Status-bar safe area: a clean, solid surface scrim covering the
-          // OS status bar (clock, battery, signal) so it always has a
-          // dedicated, legible backdrop — content never collides with system
-          // indicators. Solid over the status-bar height, then a short fade
-          // into the transparent bar below (no blur box).
           Positioned(
             top: 0,
             left: 0,
@@ -147,9 +103,6 @@ class FloatingAppBar extends StatelessWidget implements PreferredSizeWidget {
                   ),
                   child: Row(
                     children: [
-                      // Leading island hugs its content on the left and
-                      // ellipsises long titles rather than colliding with the
-                      // trailing island.
                       Expanded(
                         child: Align(
                           alignment: Alignment.centerLeft,
@@ -185,7 +138,6 @@ class FloatingAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 }
 
-/// Shared rounded-pill container for both islands.
 class _Island extends StatelessWidget {
   const _Island({required this.child, required this.padding});
   final Widget child;
@@ -193,17 +145,10 @@ class _Island extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // RepaintBoundary isolates the island so page repaints behind it don't also
-    // repaint the bar chrome. The blur sigma is kept moderate (12, not 18): a
-    // BackdropFilter re-blurs the live content behind it every scrolled frame
-    // and the kernel cost scales with the radius, so this shaves the per-frame
-    // GPU cost on the ~60 pages that carry this bar while staying frosted.
     return RepaintBoundary(
       child: ClipRRect(
         borderRadius: BorderRadius.circular(AppSizes.radiusFull),
         child: BackdropFilter(
-          // Frosted glass: blur whatever scrolls behind the island so its
-          // text/icons stay legible, while the page still shows through.
           filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
           child: Container(
             height: FloatingAppBar._islandHeight,
@@ -242,8 +187,6 @@ class _LeadingIsland extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // The label chip: a frosted pill with the title (and, in brand mode, the
-    // logo tile in front of it).
     Widget titleChip({Widget? leading}) {
       return _Island(
         padding: EdgeInsets.only(
@@ -275,9 +218,6 @@ class _LeadingIsland extends StatelessWidget {
       );
     }
 
-    // Brand lockup: logo tile + wordmark in a single chip. The asset is the
-    // self-contained CloudNSofts badge (its own orange ground), clipped to a
-    // circle here so it echoes the round launcher icon. It reads on any theme.
     if (brand) {
       return titleChip(
         leading: ClipOval(
@@ -286,8 +226,6 @@ class _LeadingIsland extends StatelessWidget {
       );
     }
 
-    // Pushed pages: the back button gets its OWN round chip, separate from
-    // the title chip.
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -322,8 +260,6 @@ class _TrailingIsland extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Force any IconButton passed as an action into a compact, square tap
-    // target so several fit neatly inside one pill.
     return _Island(
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.xs),
       child: IconButtonTheme(

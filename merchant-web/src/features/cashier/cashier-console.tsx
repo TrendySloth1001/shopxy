@@ -44,8 +44,6 @@ export function CashierConsole() {
     }
   }, [t]);
 
-  // Initial load via an inline IIFE (state is only set after the await, so the
-  // effect never sets state synchronously). `load` stays for buttons/mutations.
   useEffect(() => {
     let active = true;
     (async () => {
@@ -139,7 +137,6 @@ export function CashierConsole() {
   );
 }
 
-/** Live elapsed-since-open timer (HH:MM:SS). */
 function ConsoleTimer({ since }: { since: string }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -155,13 +152,9 @@ function ConsoleTimer({ since }: { since: string }) {
   );
 }
 
-/** Past shifts = the Z-receipt archive. Tap one to view/print its Z-report. */
 function ShiftHistory() {
   const t = useTranslations("cashier");
   const { user } = useAuth();
-  // Owners + managers (the override right) see every employee's Z-reports;
-  // a plain cashier sees only their own. The backend enforces this scope —
-  // this only adjusts the copy so each role knows what they're looking at.
   const seesAll =
     isShopOwner(user) || (user?.shopPermissions ?? []).includes("invoices:override");
   const [shifts, setShifts] = useState<ShiftSummary[] | null>(null);
@@ -261,7 +254,6 @@ function ZReportModal({ report, onClose }: { report: ShiftReport; onClose: () =>
   );
 }
 
-/** Open a print-friendly Z-receipt in a new window and trigger print. */
 function printZReport(r: ShiftReport, t: (key: string) => string) {
   const rows: Array<[string, string]> = [
     [t("zReport.openingFloat"), formatINR2(r.cash.openingFloat)],

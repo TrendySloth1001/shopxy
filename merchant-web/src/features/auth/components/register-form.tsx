@@ -36,8 +36,6 @@ export function RegisterForm() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    // Authed visitors continue to onboarding; its own gate forwards anyone
-    // who already has a shop (or joined a team) straight to the dashboard.
     if (status === "authed") router.replace("/onboarding");
   }, [status, router]);
 
@@ -76,10 +74,8 @@ export function RegisterForm() {
         acceptedPrivacy: true,
       });
       if (result.pending) {
-        // Verify the emailed code before the account exists.
         router.replace(`/verify-email?email=${encodeURIComponent(result.email)}`);
       } else {
-        // Fallback (OTP infra down): signed in → name the shop next.
         router.replace("/onboarding");
       }
     } catch (err) {

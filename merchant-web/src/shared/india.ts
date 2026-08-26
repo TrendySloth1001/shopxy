@@ -1,9 +1,3 @@
-/**
- * Indian GST state codes ↔ names. Mirrors the Flutter `IndianStates.all`
- * catalogue used by the vendor/party editors. The backend is the validation
- * authority for GSTIN/PAN/PIN; this list just powers the State select and the
- * paired 2-digit `stateCode` it writes alongside the full name.
- */
 export type IndianState = { code: string; name: string };
 
 export const INDIAN_STATES: ReadonlyArray<IndianState> = [

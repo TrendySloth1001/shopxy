@@ -7,13 +7,6 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
-/// Subcategory drill-down. Two pieces:
-///   1. A hero card for the parent — tap pushes the rolled-up products
-///      page (parent slug → backend rolls up children).
-///   2. A list of child chips/tiles. Tap loads only that subcategory.
-///
-/// Pure-presentational — the tree comes pre-loaded in the provider so
-/// the page doesn't fire a network request.
 class CategoryDetailPage extends StatelessWidget {
   const CategoryDetailPage({super.key, required this.node});
   final CategoryNode node;

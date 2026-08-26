@@ -4,9 +4,6 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 
-/// Urgency line: "Only N left" when stock is at or below the merchant's
-/// low-stock threshold (or a hard floor of 5 — whichever is higher).
-/// Returns SizedBox.shrink when stock is comfortable so nothing renders.
 class PdpStockChip extends StatelessWidget {
   const PdpStockChip({
     super.key,

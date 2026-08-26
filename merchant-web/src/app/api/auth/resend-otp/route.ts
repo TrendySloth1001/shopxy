@@ -4,8 +4,6 @@ import { backendFetch, extractError } from "@/server/auth/session";
 
 const bodySchema = z.object({ email: z.string().trim().email() });
 
-// POST /api/auth/resend-otp — re-send the signup verification code
-// (rate-limited server-side).
 export async function POST(req: Request) {
   const json = await req.json().catch(() => null);
   const parsed = bodySchema.safeParse(json);

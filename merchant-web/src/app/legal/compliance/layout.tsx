@@ -3,12 +3,6 @@ import { getTranslations } from "next-intl/server";
 import { ArrowLeft } from "@/shared/icons";
 import { ComplianceNav } from "@/features/legal/compliance-nav";
 
-/**
- * Documentation shell for /legal/compliance: a shared header, a sticky topic
- * sidebar on the left (large screens) and the per-topic content on the right.
- * Each topic is its own route, so the content stays readable instead of one
- * endless page.
- */
 export default async function ComplianceLayout({
   children,
 }: {

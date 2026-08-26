@@ -18,10 +18,6 @@ import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
-/// Public shop landing page. Reached from any "brand" tap — brand
-/// spotlight cards, sponsored product rails, and the PDP "Visit shop"
-/// link. Calls `/marketplace/shops/:slug/products` once on mount and
-/// renders shop chrome + a product grid with pagination.
 class ShopProfilePage extends StatefulWidget {
   const ShopProfilePage({super.key, required this.slug});
   final String slug;
@@ -31,9 +27,6 @@ class ShopProfilePage extends StatefulWidget {
 }
 
 class _ShopProfilePageState extends State<ShopProfilePage> {
-  /// Page size — small enough that the first paint is fast on slow
-  /// networks, large enough that scrolling past the visible viewport
-  /// triggers the next page once.
   static const int _pageSize = 24;
 
   MarketplaceShop? _shop;
@@ -118,9 +111,6 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
         _hasMore = _products.length < _total;
       });
     } catch (_) {
-      // Silent on incremental load failure — the retry button on the
-      // top-level error state covers full failures; a paginate hiccup
-      // shouldn't blow away what's already on screen.
     } finally {
       if (mounted) setState(() => _loadingMore = false);
     }
@@ -565,10 +555,6 @@ class _InlineStat extends StatelessWidget {
   }
 }
 
-/// Pill row that opens a bottom-sheet with the shop's return /
-/// shipping / refund policies. Only the policies that have content
-/// render as pills — keeps the row tight when the merchant has
-/// filled in only one.
 class _PoliciesCard extends StatelessWidget {
   const _PoliciesCard({required this.shop});
   final MarketplaceShop shop;
@@ -905,13 +891,6 @@ class _ProductTile extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton / shimmer loading state
-// ---------------------------------------------------------------------------
-
-/// Full-page skeleton that mirrors the real layout: SliverAppBar (banner +
-/// title area), shop-info row (logo + name + stats), sort-chips row, and a
-/// 2-column product grid with 6 shimmer tiles.
 class _ShopProfileSkeleton extends StatelessWidget {
   const _ShopProfileSkeleton();
 
@@ -920,11 +899,9 @@ class _ShopProfileSkeleton extends StatelessWidget {
     return CustomScrollView(
       physics: const NeverScrollableScrollPhysics(),
       slivers: [
-        // ── Banner (SliverAppBar stand-in) ──────────────────────────────
         SliverToBoxAdapter(
           child: AppShimmerBox(width: double.infinity, height: 200, radius: 0),
         ),
-        // ── Shop-info row ────────────────────────────────────────────────
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -936,20 +913,16 @@ class _ShopProfileSkeleton extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Logo
                 AppShimmerBox(width: 56, height: 56, radius: AppSizes.radiusSm),
                 const SizedBox(width: AppSizes.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Shop name
                       const AppShimmerLine(widthFactor: 0.55, height: 18),
                       const SizedBox(height: AppSizes.xs),
-                      // Tagline
                       const AppShimmerLine(widthFactor: 0.75, height: 12),
                       const SizedBox(height: AppSizes.sm),
-                      // Stat chips row
                       Row(
                         children: const [
                           AppShimmerLine(widthFactor: 0.22, height: 12),
@@ -966,7 +939,6 @@ class _ShopProfileSkeleton extends StatelessWidget {
             ),
           ),
         ),
-        // ── Sort chips row ───────────────────────────────────────────────
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.symmetric(
@@ -987,7 +959,6 @@ class _ShopProfileSkeleton extends StatelessWidget {
             ),
           ),
         ),
-        // ── Product grid skeleton (6 tiles) ──────────────────────────────
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(
             AppSizes.lg,
@@ -1013,8 +984,6 @@ class _ShopProfileSkeleton extends StatelessWidget {
   }
 }
 
-/// Single skeleton cell that mirrors _ProductTile:
-/// square image placeholder + two text lines + a price line.
 class _ProductTileSkeleton extends StatelessWidget {
   const _ProductTileSkeleton();
 
@@ -1023,7 +992,6 @@ class _ProductTileSkeleton extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Square image block
         AspectRatio(
           aspectRatio: 1,
           child: AppShimmerBox(
@@ -1033,19 +1001,15 @@ class _ProductTileSkeleton extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSizes.sm),
-        // Product name — two lines
         const AppShimmerLine(widthFactor: 0.9, height: 12),
         const SizedBox(height: AppSizes.xs),
         const AppShimmerLine(widthFactor: 0.65, height: 12),
         const SizedBox(height: AppSizes.xs),
-        // Price line
         const AppShimmerLine(widthFactor: 0.45, height: 14),
       ],
     );
   }
 }
-
-// ---------------------------------------------------------------------------
 
 class _ErrorState extends StatelessWidget {
   const _ErrorState({required this.message, required this.onRetry});

@@ -30,7 +30,6 @@ import { useCanManage, useGrantCeiling } from "@/features/auth/use-can";
 import { ListRowsSkeleton } from "@/shared/ui/skeleton";
 import { ComboSelect } from "@/shared/ui/combo-select";
 
-/** Translated, comma-joined access summary, e.g. "Products, Orders +2". */
 function useSummary() {
   const t = useTranslations("team");
   return (rights: readonly string[]): string => {
@@ -139,7 +138,6 @@ export default function TeamPage() {
         </div>
       ) : (
         <>
-          {/* Members */}
           <h2 className="mt-xl text-title-md text-ink">
             {t("members.title")} <span className="text-subtle">· {members.length}</span>
           </h2>
@@ -194,7 +192,6 @@ export default function TeamPage() {
             ))}
           </ul>
 
-          {/* Pending invites */}
           {invites.length > 0 ? (
             <>
               <Divider className="my-xl" />
@@ -235,7 +232,6 @@ export default function TeamPage() {
             </>
           ) : null}
 
-          {/* Roles */}
           <Divider className="my-xl" />
           <div className="flex items-center justify-between gap-md">
             <h2 className="text-title-md text-ink">
@@ -344,10 +340,6 @@ export default function TeamPage() {
   );
 }
 
-/** Copies a shareable `/accept-invite?token=…` URL for a pending invite.
- *  The link is the only delivery channel (there's no invite email), so this
- *  is how a brand-new hire reaches the correct onboarding screen instead of
- *  the "Set up your shop" register form. */
 function CopyInviteLink({ token }: { token: string | null }) {
   const [copied, setCopied] = useState(false);
   const t = useTranslations("team");
@@ -355,15 +347,12 @@ function CopyInviteLink({ token }: { token: string | null }) {
   if (!token) return null;
 
   const onCopy = async () => {
-    // Built from the current origin so it works in any environment.
     const url = `${window.location.origin}/accept-invite?token=${encodeURIComponent(token)}`;
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Clipboard blocked (insecure context / permissions) — surface the
-      // URL so the owner can copy it by hand rather than failing silently.
       window.prompt(t("invites.copyPrompt"), url);
     }
   };

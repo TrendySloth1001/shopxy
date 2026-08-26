@@ -1,14 +1,3 @@
-// Hugeicons wrapper components — the icon set behind `@/shared/icons`.
-//
-// Each export keeps the icon NAME the app already imports, but renders the
-// Hugeicons glyph via `<HugeiconsIcon icon={...} />`. Call sites are unchanged
-// (`<Store size={40} className="..." />`), and swapping the underlying glyph is
-// a one-line edit here. Names/targets are seeded from a lucide->hugeicons map;
-// the `size`/`className`/`strokeWidth`/`color` props pass straight through.
-//
-// This file is generated — edit the source map + regenerate, or hand-tweak an
-// individual mapping here.
-
 import { HugeiconsIcon, type HugeiconsProps } from "@hugeicons/react";
 import type { ReactElement } from "react";
 import {
@@ -98,10 +87,8 @@ import {
   ZapIcon as _ZapIcon,
 } from "@hugeicons/core-free-icons";
 
-/** Props accepted by every icon in `@/shared/icons` (Hugeicons, minus `icon`). */
 export type IconProps = Omit<HugeiconsProps, "icon">;
 
-/** Back-compat alias for code that typed an icon component as `LucideIcon`. */
 export type LucideIcon = (props: IconProps) => ReactElement;
 
 export function AlertCircle(props: IconProps): ReactElement {

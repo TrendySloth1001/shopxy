@@ -52,14 +52,6 @@ export class ChallansService {
       }
     }
 
-    // CWQ-5 — allocate the challan number, create the challan, and post the
-    // OUT movement to the ledger inside ONE transaction. The quotation path
-    // already does this "so a rollback doesn't burn the counter"; challans
-    // previously allocated on the global client and `delete`-d on a ledger
-    // failure, leaving a permanent gap in CH/FY/NNNNN. With the allocation
-    // enrolled in the txn, a ledger failure rolls back the counter bump too,
-    // keeping the sequence contiguous. We surface a typed sentinel for the
-    // insufficient-stock case so the controller can echo the line details.
     type InsufficientStock = {
       kind: 'INSUFFICIENT_STOCK';
       productId?: number;
@@ -94,10 +86,6 @@ export class ChallansService {
           include: { items: true, party: true },
         });
 
-        // Post stock movement to the ledger — goods have physically left
-        // the building. A failure (e.g. insufficient stock) throws, which
-        // rolls back the whole transaction: challan, items, AND the counter
-        // bump, so no number is burned.
         const result = await ledgerService.post(
           {
             shopId,
@@ -153,8 +141,6 @@ export class ChallansService {
     options: {
       status?: string;
       search: string;
-      /// The "Archived" view. Archived challans are out of every other list —
-      /// that's the point of archiving.
       archived?: boolean;
       page: number;
       limit: number;
@@ -209,16 +195,6 @@ export class ChallansService {
     });
   }
 
-  /// File a settled challan out of the working list, or bring it back.
-  ///
-  /// Deleting is not on offer, and can't be: the challan number is allocated
-  /// at create time and Rule 55 wants the run serially numbered, so removing
-  /// a row would leave a permanent hole. Archiving hides the document and
-  /// keeps its number.
-  ///
-  /// A PENDING challan is refused — goods are out against it and it has been
-  /// neither invoiced nor cancelled, so hiding it would lose track of stock
-  /// that has physically left. Settle it first (convert or cancel).
   async setArchived(shopId: number, id: number, archived: boolean) {
     const challan = await prisma.challan.findFirst({
       where: { id, shopId },
@@ -233,8 +209,6 @@ export class ChallansService {
       };
     }
 
-    // Idempotent: archiving an archived row (or restoring a live one) is a
-    // no-op rather than an error, so a retried tap can't fail.
     const alreadyInState = archived === (challan.archivedAt !== null);
     if (!alreadyInState) {
       await prisma.challan.update({
@@ -255,7 +229,6 @@ export class ChallansService {
       return { error: 'Only pending challans can be cancelled' as const };
     }
 
-    // Reverse all ledger entries posted by this challan.
     const entries = await prisma.stockTransaction.findMany({
       where: { sourceType: 'CHALLAN', sourceId: id, reversesId: null, shopId },
       select: { id: true },
@@ -302,11 +275,6 @@ export class ChallansService {
     });
     const priceMap = new Map(products.map((p) => [p.id, p]));
 
-    // CWQ-2: a delivered challan line whose product was deleted/archived or
-    // moved to another shop between challan creation and conversion is absent
-    // from priceMap. Defaulting its unitPrice to 0 would silently under-bill
-    // goods that have already left the building and emit a ₹0 taxable GST line.
-    // Reject instead so the merchant resolves the catalogue gap before billing.
     const missingPrice = challan.items.find((item) => {
       const price = priceMap.get(item.productId)?.sellingPrice;
       return price == null;
@@ -320,12 +288,6 @@ export class ChallansService {
       };
     }
 
-    // Route through the shared invoice engine instead of hand-building the
-    // invoice — that hand-built path never set the IGST/CGST/SGST split,
-    // ignored the GST-registration gate (always a TAX_INVOICE) and applied
-    // the discount after tax. createInvoice fills the GST split, downgrades
-    // to a Bill of Supply for an unregistered shop, defaults each line's tax
-    // rate from the product, and applies the discount before tax.
     const result = await invoicesService.createInvoice({
       shopId,
       type: 'SALE',
@@ -340,23 +302,16 @@ export class ChallansService {
         productId: item.productId,
         quantity: Number(item.quantity),
         unitPrice: Number(priceMap.get(item.productId)!.sellingPrice),
-        // taxPercent omitted → engine fills it from the product's GST rate.
       })),
     });
     if ('error' in result) return { error: result.error };
 
-    // Link the challan to the freshly-minted draft invoice. If this fails,
-    // roll back the orphan draft so a retry doesn't strand two invoices.
     try {
       await prisma.challan.update({
         where: { id },
         data: { status: 'CONVERTED', invoiceId: result.invoice.id },
       });
     } catch (err) {
-      // File the orphan draft away. (This used to call `deleteInvoice`, which
-      // never had a success path — so the orphan was silently left sitting in
-      // the merchant's invoice list. Its serial is already allocated and can't
-      // be reclaimed; archiving at least gets it out of the way.)
       await invoicesService.setArchived(shopId, result.invoice.id, true).catch(() => {});
       throw err;
     }
@@ -364,9 +319,6 @@ export class ChallansService {
     return { invoice: result.invoice };
   }
 
-  /// Stream the Rule 55 delivery-challan PDF into `out`. `onReady` fires right
-  /// before bytes flow (so the controller can flip response headers); returns
-  /// `{ error }` if the challan isn't found for this shop.
   async streamPdf(
     shopId: number,
     id: number,

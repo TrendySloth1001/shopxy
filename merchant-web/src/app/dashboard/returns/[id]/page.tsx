@@ -131,7 +131,6 @@ export default function ReturnDetailPage() {
     <div className="w-full px-lg py-xxl pb-massive md:px-xxl">
       <BackLink href={BACK} label={t("list.title")} />
 
-      {/* Header */}
       <div className="mt-md flex flex-wrap items-start justify-between gap-md">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-sm">
@@ -176,14 +175,12 @@ export default function ReturnDetailPage() {
         </p>
       ) : null}
 
-      {/* Items */}
       <Divider className="my-xl" />
       <h2 className="mb-sm text-label-md uppercase tracking-wide text-subtle">{t("detail.itemsHeading")}</h2>
       {ret.items.map((it) => (
         <ItemRow key={it.id} item={it} />
       ))}
 
-      {/* Notes */}
       {ret.note ? (
         <>
           <Divider className="my-xl" />
@@ -201,7 +198,6 @@ export default function ReturnDetailPage() {
         </>
       ) : null}
 
-      {/* Timeline */}
       {ret.events.length > 0 ? (
         <>
           <Divider className="my-xl" />
@@ -212,7 +208,6 @@ export default function ReturnDetailPage() {
         </>
       ) : null}
 
-      {/* Action bar */}
       <div className="mt-xxl flex flex-wrap items-center gap-sm">
         {canApprove(ret) ? (
           <>
@@ -275,7 +270,6 @@ export default function ReturnDetailPage() {
         ) : null}
       </div>
 
-      {/* Modals */}
       {modal === "approve" ? (
         <Modal title={t("approveModal.title")} onClose={() => setModal(null)}>
           <p className="text-body-md text-muted">{t("approveModal.body")}</p>

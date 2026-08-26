@@ -1,26 +1,10 @@
 import "server-only";
 import { env } from "./env";
 
-/**
- * The backends this BFF can proxy to, mirroring the Flutter merchant app's
- * `lib/core/config/app_environment.dart`. Each environment runs its own
- * database, so choosing a backend chooses the data you see.
- *
- * This is an allow-list, not a free-text field, and deliberately so: the BFF
- * attaches the signed-in merchant's bearer token to every upstream call, so a
- * switcher that accepted a typed-in URL would be a one-request way to forward
- * that token — and the whole shop's data — to any host on the internet.
- * Adding an environment is a code change.
- *
- * Server-only. The `baseUrl`s never reach the browser (see `env.ts`); the
- * picker is sent `{ id, label, description }` and nothing else.
- */
 export type BackendEnvironment = {
-  /** Stable key stored in the cookie. Never renamed. */
   id: string;
   label: string;
   description: string;
-  /** No trailing slash — `backendFetch` joins with an explicit `/`. */
   baseUrl: string;
 };
 
@@ -45,13 +29,6 @@ export const BACKEND_ENVIRONMENTS: readonly BackendEnvironment[] = [
   },
 ] as const;
 
-/**
- * Cookie carrying the chosen environment. `sxm_` prefixed like the session
- * cookies (merchant-web and customer-web share a host in dev and cookies are
- * not port-scoped), and httpOnly so only our own route handler can set it —
- * page scripts can neither read which backend is in use nor redirect the
- * proxy at one.
- */
 export const ENV_COOKIE = "sxm_env";
 
 export function environmentById(id: string | undefined | null) {
@@ -59,16 +36,10 @@ export function environmentById(id: string | undefined | null) {
   return BACKEND_ENVIRONMENTS.find((e) => e.id === id);
 }
 
-/**
- * Which entry `baseUrl` corresponds to, or undefined when it matches none —
- * the normal case for a deployment whose `API_BASE_URL` points somewhere
- * bespoke.
- */
 export function environmentMatching(baseUrl: string) {
   const normalise = (u: string) => u.trim().toLowerCase().replace(/\/+$/, "");
   const needle = normalise(baseUrl);
   return BACKEND_ENVIRONMENTS.find((e) => normalise(e.baseUrl) === needle);
 }
 
-/** The deployment's configured backend, used when no environment is chosen. */
 export const DEFAULT_BACKEND_BASE_URL = env.API_BASE_URL;

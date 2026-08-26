@@ -8,7 +8,6 @@ import { MiniButton } from "./form-controls";
 const cell =
   "h-10 rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none placeholder:text-subtle focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft";
 
-/** Grouped spec sheet editor — groups of (label, value) rows, optional tab. */
 export function SpecsEditor({
   groups,
   onChange,

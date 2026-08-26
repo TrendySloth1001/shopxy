@@ -43,8 +43,6 @@ class ReportsRemoteDataSource {
     return PnlReport.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  /// Aggregated "products sold" summary — one row per product, biggest revenue
-  /// first, optionally filtered by a product name / SKU [search].
   Future<SoldProductsPage> soldProducts(
     DateTime from,
     DateTime to, {
@@ -64,7 +62,6 @@ class ReportsRemoteDataSource {
     return SoldProductsPage.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  /// One page of a single product's sale timeline (newest first).
   Future<SoldItemsPage> soldItems(
     DateTime from,
     DateTime to, {

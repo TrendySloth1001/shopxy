@@ -26,9 +26,6 @@ type QuoteLine = {
   quantity: number;
   unitPrice: number;
   taxPercent: number;
-  /// Whether unitPrice already contains GST, seeded from the product's own
-  /// pricingMode when added to the line (mirrors the invoice editor and the
-  /// backend's resolveProductPricing()).
   isPriceInclusive: boolean;
   imageUrl: string | null;
 };
@@ -60,9 +57,6 @@ export function QuotationEditor({ existing }: { existing?: Quotation }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Per-line inclusive/exclusive, mirroring computeInvoiceTotals: an
-  // inclusive line's amount already contains GST — back it out — while an
-  // exclusive line adds GST on top. A quote can mix both, same as an invoice.
   const totals = useMemo(() => {
     let subtotal = 0;
     let tax = 0;
@@ -163,7 +157,6 @@ export function QuotationEditor({ existing }: { existing?: Quotation }) {
         <p className="mt-md rounded-md bg-error-soft px-md py-sm text-body-sm text-error">{error}</p>
       ) : null}
 
-      {/* Customer */}
       <div className="mt-xl">
         <p className="text-label-md uppercase tracking-wide text-subtle">{t("editor.customer")}</p>
         {party ? (
@@ -195,7 +188,6 @@ export function QuotationEditor({ existing }: { existing?: Quotation }) {
         )}
       </div>
 
-      {/* Items */}
       <div className="mt-xl">
         <div className="flex flex-wrap items-center justify-between gap-sm">
           <p className="text-label-md uppercase tracking-wide text-subtle">{t("editor.items")}</p>
@@ -229,7 +221,6 @@ export function QuotationEditor({ existing }: { existing?: Quotation }) {
         )}
       </div>
 
-      {/* Totals + note */}
       {lines.length > 0 ? (
         <div className="mt-xl grid grid-cols-1 gap-xl lg:grid-cols-2">
           <TextAreaField label={t("editor.noteLabel")} value={note} onChange={setNote} rows={3} />
@@ -244,7 +235,6 @@ export function QuotationEditor({ existing }: { existing?: Quotation }) {
         </div>
       ) : null}
 
-      {/* Action */}
       <div className="mt-xxl flex flex-wrap items-center gap-sm">
         <button
           type="button"
@@ -302,8 +292,6 @@ function QuoteLineRow({
 }) {
   const t = useTranslations("quotations");
   const gross = line.quantity * line.unitPrice;
-  // Mirrors the totals-level math: an inclusive line's price already
-  // contains GST (lineTotal = gross), an exclusive line adds GST on top.
   const lineTotal = line.isPriceInclusive ? gross : gross * (1 + line.taxPercent / 100);
   return (
     <div className="flex flex-wrap items-end gap-md border-b border-hairline py-md">

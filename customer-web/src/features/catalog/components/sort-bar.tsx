@@ -2,10 +2,6 @@
 
 import { SORT_OPTIONS, type SortOption } from "../types";
 
-/**
- * Horizontal chip-strip sort control. Emits the new sort value via `onChange`.
- * Stays scrollable on mobile (overflow-x-auto).
- */
 export function SortBar({
   value,
   onChange,

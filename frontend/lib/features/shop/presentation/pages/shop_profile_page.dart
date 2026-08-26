@@ -15,10 +15,6 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
-/// Merchant-side editor for the marketplace shop profile. Distinct from
-/// the legal/GST shop details on EditProfilePage — those drive invoice
-/// headers, while everything here drives how customers see the shop on
-/// the marketplace (logo, banner, public name, publish state).
 class ShopProfilePage extends StatefulWidget {
   const ShopProfilePage({super.key});
 
@@ -76,8 +72,6 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
     _refundPolicy.text = shop.refundPolicy ?? '';
     _returnsEnabled = shop.returnsEnabled;
     _returnWindowDays.text = shop.returnWindowDays.toString();
-    // WALLET refunds are deprecated; coerce any legacy stored value so the
-    // dropdown (which no longer offers WALLET) has a matching selection.
     _refundMode = shop.refundMode == 'WALLET' ? 'ORIGINAL' : shop.refundMode;
     _returnPolicyNote.text = shop.returnPolicyNote ?? '';
     _cancellationPolicy = shop.cancellationPolicy;
@@ -145,9 +139,6 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
     }
   }
 
-  /// Helper — null when the controller's text matches the stored
-  /// value (so we don't send a no-op), or the canonical normalised
-  /// value (empty string → null clear) when it differs.
   String? _diffText(TextEditingController c, String? stored) {
     final next = c.text.trim().isEmpty ? null : c.text.trim();
     final prev = stored?.trim().isEmpty == true ? null : stored?.trim();
@@ -179,10 +170,6 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
     final provider = context.read<ShopProvider>();
     final newName = _name.text.trim();
 
-    // For each text field: send the new value when changed, the
-    // sentinel `_absent` when not. `_diffText` returns null only when
-    // unchanged, so a non-null value means "send this" (including the
-    // explicit-null sentinel for clears).
     Object? maybe(String? diff) => diff ?? const Object();
 
     final newWindowDays = int.tryParse(_returnWindowDays.text.trim());
@@ -261,8 +248,6 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
     );
   }
 
-  /// Returns true when the user confirms they want to discard
-  /// unsaved edits. Used by PopScope to guard the back gesture.
   Future<bool> _confirmDiscard(BuildContext context) async {
     final l10n = AppLocalizations.of(context);
     final ok = await showDialog<bool>(
@@ -298,8 +283,6 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
         if (!mounted) return;
-        // Snapshot the Navigator BEFORE the dialog await so we don't
-        // touch context after the gap (lint use_build_context_sync).
         final nav = Navigator.of(context);
         final discard = await _confirmDiscard(context);
         if (discard && mounted) nav.pop();
@@ -619,10 +602,6 @@ class _ShopProfilePageState extends State<ShopProfilePage> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton shown while provider.isLoading && shop == null
-// ---------------------------------------------------------------------------
-
 class _ShopProfileSkeleton extends StatelessWidget {
   const _ShopProfileSkeleton();
 
@@ -673,10 +652,8 @@ class _HeaderRowSkeleton extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Logo placeholder
           AppShimmerBox(width: 72, height: 72, radius: AppSizes.radiusLg),
           const SizedBox(width: AppSizes.lg),
-          // Title + metadata lines
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -703,16 +680,12 @@ class _FormFieldsSkeleton extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Shop name field
           const AppShimmerLine(widthFactor: 1.0, height: 48),
           const SizedBox(height: AppSizes.lg),
-          // Tagline field
           const AppShimmerLine(widthFactor: 1.0, height: 48),
           const SizedBox(height: AppSizes.lg),
-          // Location section header
           const AppShimmerLine(widthFactor: 0.3, height: 16),
           const SizedBox(height: AppSizes.md),
-          // City + State row
           Row(
             children: [
               Expanded(child: AppShimmerLine(widthFactor: 1.0, height: 48)),
@@ -721,24 +694,20 @@ class _FormFieldsSkeleton extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSizes.xl),
-          // Policies section header
           const AppShimmerLine(widthFactor: 0.25, height: 16),
           const SizedBox(height: AppSizes.md),
-          // Return policy (multi-line)
           AppShimmerBox(
             width: double.infinity,
             height: 88,
             radius: AppSizes.radiusMd,
           ),
           const SizedBox(height: AppSizes.md),
-          // Shipping policy (multi-line)
           AppShimmerBox(
             width: double.infinity,
             height: 88,
             radius: AppSizes.radiusMd,
           ),
           const SizedBox(height: AppSizes.md),
-          // Refund policy (multi-line)
           AppShimmerBox(
             width: double.infinity,
             height: 88,
@@ -788,8 +757,6 @@ class _PublishCardSkeleton extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
 
 class _SectionHeader extends StatelessWidget {
   const _SectionHeader({required this.title, this.subtitle});

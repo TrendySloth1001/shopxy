@@ -1,5 +1,3 @@
-/// A money-movement against a party (RECEIPT) or vendor (PAYMENT).
-/// Backend assigns the reference no (RCT/FY/00001 or PAY/FY/00001).
 class Payment {
   const Payment({
     required this.id,
@@ -22,12 +20,10 @@ class Payment {
 
   final String id;
 
-  /// 'RECEIPT' (money in) or 'PAYMENT' (money out).
   final String type;
   final String referenceNo;
   final double amount;
 
-  /// CASH | UPI | NEFT | RTGS | CHEQUE | CARD | OTHER.
   final String mode;
   final String? modeReference;
   final DateTime paymentDate;
@@ -45,9 +41,6 @@ class Payment {
   bool get isPayment => type == 'PAYMENT';
 }
 
-/// One row in the party/vendor ledger timeline. Either an invoice debit
-/// or a payment credit — the kind switch + running balance is computed
-/// server-side so the UI just renders.
 class LedgerEntry {
   const LedgerEntry({
     required this.kind,
@@ -65,7 +58,6 @@ class LedgerEntry {
     this.status,
   });
 
-  /// 'invoice' or 'payment'.
   final String kind;
   final String id;
   final DateTime date;
@@ -74,13 +66,11 @@ class LedgerEntry {
   final double credit;
   final double runningBalance;
 
-  // Payment-only fields.
   final String? mode;
   final String? modeReference;
   final String? note;
   final String? invoiceId;
 
-  // Invoice-only fields.
   final String? documentType;
   final String? status;
 
@@ -88,7 +78,6 @@ class LedgerEntry {
   bool get isPayment => kind == 'payment';
 }
 
-/// Aggregated ledger response for one party or vendor.
 class Ledger {
   const Ledger({
     required this.balance,

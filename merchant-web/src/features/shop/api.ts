@@ -14,7 +14,6 @@ async function okJson<T>(res: Response, parse: (raw: unknown) => T, fallback: st
       const body = (await res.json()) as { error?: string };
       if (body?.error) message = body.error;
     } catch {
-      /* keep fallback */
     }
     throw new Error(message);
   }
@@ -64,7 +63,6 @@ export function setShopPublished(isPublished: boolean): Promise<Shop> {
   }).then((r) => okJson(r, (raw) => shopSchema.parse(raw), "Could not update publish state."));
 }
 
-/** Upload an image; returns the stored relative URL. */
 export async function uploadShopImage(file: File): Promise<string> {
   const form = new FormData();
   form.append("file", file);
@@ -72,12 +70,9 @@ export async function uploadShopImage(file: File): Promise<string> {
   return okJson(res, (raw) => (raw as { url: string }).url, "Upload failed.");
 }
 
-/** Returns null when onboarding hasn't started (backend 404). */
 export async function getPayoutStatus(opts?: { refresh?: boolean }): Promise<PayoutAccount | null> {
-  // refresh=1 makes the backend re-poll Razorpay live (picks up an activation
-  // that happened after we last stored the status).
   const res = await fetch(`/api/payouts${opts?.refresh ? "?refresh=1" : ""}`, { cache: "no-store" });
-  if (res.status === 404) return null; // safety: the route now returns 200/null instead
+  if (res.status === 404) return null;
   return okJson(
     res,
     (raw) => (raw == null ? null : payoutAccountSchema.parse(raw)),

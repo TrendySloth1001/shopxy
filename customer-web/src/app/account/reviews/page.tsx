@@ -31,7 +31,6 @@ function MyReviewsBody() {
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Editing state
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const load = useCallback((reset: boolean, cursor?: number) => {
@@ -56,7 +55,6 @@ function MyReviewsBody() {
     startTransition(() => load(true));
   }, [load]);
 
-  // Scroll-to-bottom pagination
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -137,8 +135,6 @@ function MyReviewsBody() {
   );
 }
 
-// ── Star display ────────────────────────────────────────────────────────────
-
 function StarDisplay({ rating }: { rating: number }) {
   return (
     <span className="inline-flex items-center gap-xs">
@@ -157,8 +153,6 @@ function StarDisplay({ rating }: { rating: number }) {
     </span>
   );
 }
-
-// ── Star picker (for editing) ───────────────────────────────────────────────
 
 function StarPicker({
   value,
@@ -191,8 +185,6 @@ function StarPicker({
   );
 }
 
-// ── Review card ─────────────────────────────────────────────────────────────
-
 function ReviewCard({
   review,
   onEdit,
@@ -207,7 +199,6 @@ function ReviewCard({
 
   return (
     <div className="rounded-md border border-hairline bg-white p-md">
-      {/* Header: product thumb + name + rating + date */}
       <div className="flex items-start gap-md">
         <Link href={`/p/${review.productId}`} className="shrink-0">
           <div className="size-14 overflow-hidden rounded-sm bg-hero-panel">
@@ -234,7 +225,6 @@ function ReviewCard({
         </span>
       </div>
 
-      {/* Body */}
       {review.title && (
         <p className="mt-sm text-body-md font-semibold text-ink">{review.title}</p>
       )}
@@ -242,7 +232,6 @@ function ReviewCard({
         <p className="mt-xs line-clamp-4 text-body-md text-muted">{review.body}</p>
       )}
 
-      {/* Actions */}
       <div className="mt-md flex items-center gap-sm border-t border-hairline pt-md">
         <button
           type="button"
@@ -282,8 +271,6 @@ function ReviewCard({
     </div>
   );
 }
-
-// ── Inline edit card ────────────────────────────────────────────────────────
 
 function ReviewEditCard({
   review,
@@ -384,8 +371,6 @@ function ReviewEditCard({
     </form>
   );
 }
-
-// ── Skeleton / Empty / Error ─────────────────────────────────────────────────
 
 function ReviewsSkeleton() {
   return (

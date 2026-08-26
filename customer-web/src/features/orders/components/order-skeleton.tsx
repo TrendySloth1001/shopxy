@@ -1,6 +1,5 @@
 "use client";
 
-/** Shimmer placeholder for the order list rows */
 export function OrderListSkeleton() {
   return (
     <div className="flex flex-col gap-sm">
@@ -32,11 +31,9 @@ export function OrderCardSkeleton() {
   );
 }
 
-/** Shimmer for the full order detail page */
 export function OrderDetailSkeleton() {
   return (
     <div className="animate-pulse">
-      {/* Delivering to */}
       <div className="px-lg pt-md pb-sm">
         <div className="h-3 w-28 rounded bg-surface-tint mb-sm" />
       </div>
@@ -48,12 +45,10 @@ export function OrderDetailSkeleton() {
         </div>
       </div>
       <div className="h-px bg-hairline" />
-      {/* Two package sections */}
       <ShopSectionSkeleton />
       <div className="h-px bg-hairline" />
       <ShopSectionSkeleton />
       <div className="h-px bg-hairline" />
-      {/* Summary */}
       <div className="px-lg pt-md pb-sm">
         <div className="h-3 w-28 rounded bg-surface-tint mb-sm" />
       </div>

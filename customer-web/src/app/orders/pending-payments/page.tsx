@@ -56,7 +56,7 @@ function PendingPaymentsContent() {
       });
       let syncedStatus: string | null = null;
       if (result.outcome === "success") {
-        try { syncedStatus = await syncOrderPayment(order.id); } catch { /* non-fatal */ }
+        try { syncedStatus = await syncOrderPayment(order.id); } catch {  }
       }
       if (result.outcome === "success") {
         const confirmed = syncedStatus === "PAID";
@@ -134,7 +134,6 @@ function PendingPaymentsContent() {
 
   return (
     <>
-      {/* Total due header */}
       <div className="px-lg py-lg">
         <p className="text-caption font-extrabold tracking-[0.8px] text-muted uppercase">Total due</p>
         <p className="text-display-sm font-extrabold text-ink tracking-tight">

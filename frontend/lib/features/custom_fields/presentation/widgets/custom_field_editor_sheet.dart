@@ -14,15 +14,6 @@ import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// Create-or-edit sheet for a custom field definition.
-///
-/// Used from:
-///   * Settings — managing definitions
-///   * Inline `+ Add field` on the product form
-///
-/// Pre-selecting a `defaultSectionId` lets the caller scope the new
-/// field straight into the section the user is editing (saves a tap
-/// + reduces "where did my field go" surprise).
 class CustomFieldEditorSheet extends StatefulWidget {
   const CustomFieldEditorSheet({
     super.key,
@@ -131,15 +122,9 @@ class _CustomFieldEditorSheetState extends State<CustomFieldEditorSheet> {
           unitSuffix: unitSuffix,
           icon: _iconName,
         );
-        // Re-assign section in a follow-up call so the null case
-        // ("ungroup") survives our null-strip JSON serialisation.
         if (_sectionId != widget.existing!.sectionId) {
           await provider.assignToSection(widget.existing!.id, _sectionId);
         }
-        // firstWhere would throw if the just-edited field is no
-        // longer in [allActiveDefinitions] (e.g. the user archived
-        // it concurrently). Falling back to the existing reference
-        // is harmless — the sheet just pops successfully.
         for (final d in provider.allActiveDefinitions) {
           if (d.id == widget.existing!.id) {
             result = d;
@@ -168,11 +153,6 @@ class _CustomFieldEditorSheetState extends State<CustomFieldEditorSheet> {
     final isEditing = widget.existing != null;
     final sections = context.watch<CustomFieldsProvider>().sections;
     final activeSections = sections.where((s) => s.isActive).toList();
-    // If the field is currently in a section that's been archived,
-    // [activeSections] won't contain it — Dropdown would assert "no
-    // item matches value". Pin the displayed value to null in that
-    // case (still saveable; user can pick the live section if they
-    // want to change it).
     final dropdownSectionValue =
         _sectionId != null && activeSections.any((s) => s.id == _sectionId)
         ? _sectionId

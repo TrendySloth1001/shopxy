@@ -15,18 +15,6 @@ import 'package:shopxy/shared/widgets/empty_state.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/shared/widgets/section_divider.dart';
 
-/// One screen shape for every `Archived …` view — invoices, challans,
-/// quotations.
-///
-/// Archiving means the same thing for all three: the document leaves the
-/// working list and KEEPS its number, because each number is a per-shop
-/// serial allocated at create time and a run with a hole in it is a problem
-/// with an auditor. None of them can be deleted, so this screen is the only
-/// way back.
-///
-/// Single-sourced rather than copied per feature so the three can't drift —
-/// the filter strip, the day grouping, the restore affordance and the empty
-/// state are decided once here.
 class ArchivedDocumentsPage<T> extends StatefulWidget {
   const ArchivedDocumentsPage({
     super.key,
@@ -43,27 +31,19 @@ class ArchivedDocumentsPage<T> extends StatefulWidget {
 
   final String title;
 
-  /// Fetches the archived page for the selected filter (null = "All").
   final Future<List<T>> Function(String? filter) load;
 
-  /// Brings one document back. Throwing surfaces as a snack bar.
   final Future<void> Function(T item) restore;
 
   final ArchivedRowData Function(T item) rowOf;
 
-  /// The date rows are grouped by. Must be the field the server sorts on,
-  /// otherwise a day heading repeats further down the scroll.
   final DateTime Function(T item) dateOf;
 
-  /// Opens the detail screen. Awaited, then the list reloads — the detail
-  /// screen can restore the document, which takes it out of this list.
   final Future<void> Function(BuildContext context, T item) onOpen;
 
   final String emptyTitle;
   final String emptyBody;
 
-  /// Optional pills above the list. The first should be the "All" entry
-  /// (`value: null`). Empty means no strip is drawn.
   final List<ArchivedFilter> filters;
 
   @override
@@ -71,7 +51,6 @@ class ArchivedDocumentsPage<T> extends StatefulWidget {
       _ArchivedDocumentsPageState<T>();
 }
 
-/// A pill in the filter strip. [value] is passed straight to `load`.
 class ArchivedFilter {
   const ArchivedFilter({required this.label, this.value, this.icon});
   final String label;
@@ -79,8 +58,6 @@ class ArchivedFilter {
   final AppIconData? icon;
 }
 
-/// The parts of an archived row that differ per document kind. Everything
-/// else — layout, the retained-number chip, the restore button — is fixed.
 class ArchivedRowData {
   const ArchivedRowData({
     required this.number,
@@ -89,14 +66,11 @@ class ArchivedRowData {
     this.trailing,
   });
 
-  /// The serial that stays allocated. The reason archiving exists.
   final String number;
   final String status;
 
-  /// Counterparty, usually.
   final String subtitle;
 
-  /// Right-hand figure — a total, an item count. Omitted when there isn't one.
   final String? trailing;
 }
 
@@ -148,8 +122,6 @@ class _ArchivedDocumentsPageState<T> extends State<ArchivedDocumentsPage<T>> {
     try {
       await widget.restore(item);
       if (!mounted) return;
-      // Indices shift when a row goes, so the busy set is cleared wholesale
-      // rather than having stale entries point at the wrong rows.
       setState(() {
         _items = List.of(_items)..removeAt(index);
         _restoring.clear();
@@ -181,7 +153,6 @@ class _ArchivedDocumentsPageState<T> extends State<ArchivedDocumentsPage<T>> {
                       icon: f.icon,
                       selected: _filter == f.value,
                       onTap: () => _setFilter(
-                        // Tapping the active pill clears back to All.
                         _filter == f.value ? null : f.value,
                       ),
                     ),
@@ -206,7 +177,6 @@ class _ArchivedDocumentsPageState<T> extends State<ArchivedDocumentsPage<T>> {
       return AppErrorView(message: _error, onRetry: _load);
     }
     if (_items.isEmpty) {
-      // Always scrollable so pull-to-refresh still works on an empty list.
       return ListView(
         padding: const EdgeInsets.only(top: AppSizes.huge),
         children: [
@@ -295,8 +265,6 @@ class _ArchivedRow extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: AppSizes.sm),
-                    // The number is the point: it stays allocated, which is
-                    // what makes archiving workable where deleting wasn't.
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: AppSizes.sm,
@@ -317,8 +285,6 @@ class _ArchivedRow extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 2),
-                // The date lives in the day divider above, so the row keeps
-                // only what differs between rows in the same group.
                 Text(
                   data.subtitle,
                   style: theme.textTheme.bodySmall?.copyWith(

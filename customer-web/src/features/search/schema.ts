@@ -1,10 +1,6 @@
 import { z } from "zod";
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
 const asNumber = z.union([z.number(), z.string().transform((s) => parseFloat(s))]).nullable().optional();
-
-// ── Search hit ───────────────────────────────────────────────────────────────
 
 export const searchHitSchema = z.object({
   id: z.coerce.string(),
@@ -35,8 +31,6 @@ export const searchHitSchema = z.object({
 
 export type RawSearchHit = z.infer<typeof searchHitSchema>;
 
-// ── Facets ───────────────────────────────────────────────────────────────────
-
 export const searchFacetsSchema = z.object({
   priceMin: z.number().default(0),
   priceMax: z.number().default(0),
@@ -55,16 +49,12 @@ export const searchFacetsSchema = z.object({
     .default([]),
 });
 
-// ── Full search response ─────────────────────────────────────────────────────
-
 export const searchResultSchema = z.object({
   query: z.string().default(""),
   semantic: z.boolean().default(false),
   results: z.array(searchHitSchema).default([]),
   facets: searchFacetsSchema.nullable().optional(),
 });
-
-// ── Autocomplete ─────────────────────────────────────────────────────────────
 
 export const autocompleteSchema = z.object({
   products: z
@@ -79,8 +69,6 @@ export const autocompleteSchema = z.object({
     )
     .default([]),
 });
-
-// ── Hints ────────────────────────────────────────────────────────────────────
 
 export const hintsSchema = z.object({
   data: z

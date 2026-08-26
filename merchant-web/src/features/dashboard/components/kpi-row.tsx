@@ -8,14 +8,6 @@ import type { DashboardKpis, DashboardPeriod } from "../stats";
 import { DeltaChip, inr } from "./ui";
 import { KpiDrawer, type KpiDrawerKind } from "./kpi-drawers";
 
-/**
- * Hero KPI row — the 5-second money story, importance left→right: what you sold,
- * what you kept, what you're owed, what you owe. Each card opens a drill-down
- * slide-over: Sales → products sold (filterable), Net profit → the traced
- * calculation, Receivables/Payables → debtors/creditors, each expandable to the
- * documents behind the balance. Sales/Profit carry a delta vs the previous equal
- * window; balances carry a debtor/creditor count.
- */
 export function KpiRow({
   kpis,
   period,

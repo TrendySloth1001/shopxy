@@ -14,17 +14,6 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 
-/// Login-screen entry point for one-tap return sign-in.
-///
-/// Renders as a single pill above the Google button — deliberately the same
-/// height and shape, so the two read as one pair of "get in without typing"
-/// options rather than a list competing with the form. The accounts themselves
-/// live in a bottom sheet ([showRememberedAccountsSheet]): with more than one
-/// remembered account the old inline list pushed the email field below the
-/// fold, and a picker is a modal decision anyway.
-///
-/// Hidden entirely when nothing is remembered, so a first-ever launch shows the
-/// plain form.
 class RememberedAccountsButton extends StatefulWidget {
   const RememberedAccountsButton({super.key});
 
@@ -49,8 +38,6 @@ class _RememberedAccountsButtonState extends State<RememberedAccountsButton> {
 
   Future<void> _open() async {
     await showRememberedAccountsSheet(context);
-    // The sheet can remove accounts (and a dead credential drops itself), so
-    // the pill re-reads rather than trusting the list it opened with.
     if (mounted) await _load();
   }
 
@@ -64,11 +51,6 @@ class _RememberedAccountsButtonState extends State<RememberedAccountsButton> {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSizes.sm),
       child: Material(
-        // Brand-tinted, unlike the neutral Google pill below it and the input
-        // fields further down. Three surfaces of identical cream read as one
-        // undifferentiated stack; this is the fastest way in and should look
-        // like it — without going as loud as the green Sign in button, which
-        // stays the screen's only saturated element.
         color: AppColors.tileBg(AppColors.brandSoft),
         shape: AppShapes.squircle(
           AppSizes.radiusFull,
@@ -81,18 +63,11 @@ class _RememberedAccountsButtonState extends State<RememberedAccountsButton> {
             height: 50,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppSizes.md),
-              // Centred, mirroring the Google pill directly below: the two are
-              // the same kind of offer and should be composed the same way. A
-              // left-aligned label with a trailing chevron made this read as a
-              // list row that had wandered up out of the form.
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   _AvatarCluster(accounts: _accounts),
                   const SizedBox(width: AppSizes.sm),
-                  // Flexible, not Expanded — the text takes only the width it
-                  // needs so the pair stays centred, and a long name ellipsises
-                  // instead of pushing the avatars off-centre.
                   Flexible(
                     child: Text(
                       single != null
@@ -116,8 +91,6 @@ class _RememberedAccountsButtonState extends State<RememberedAccountsButton> {
   }
 }
 
-/// Up to three avatars, overlapped. Shows at a glance *whose* accounts these
-/// are before the sheet is opened — a generic person icon would not.
 class _AvatarCluster extends StatelessWidget {
   const _AvatarCluster({required this.accounts});
 
@@ -136,18 +109,12 @@ class _AvatarCluster extends StatelessWidget {
       height: _size,
       child: Stack(
         children: [
-          // Reversed so the most-recent account paints on top of the stack.
           for (var i = shown.length - 1; i >= 0; i--)
             Positioned(
               left: i * _step,
               child: Container(
                 width: _size,
                 height: _size,
-                // foregroundDecoration, so the separator ring paints over the
-                // face instead of being added to its size. As a background
-                // border it inflated each avatar past the box measured for it
-                // and the Stack silently clipped the difference — flat-bottomed
-                // discs, and the last one shaved on the right.
                 foregroundDecoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
@@ -168,11 +135,7 @@ class _AvatarCluster extends StatelessWidget {
   }
 }
 
-/// The account picker. Resolves once the user signs in (the auth gate swaps the
-/// screen out from under it) or when they dismiss it to type an email instead.
 Future<void> showRememberedAccountsSheet(BuildContext context) {
-  // Captured here rather than read inside the sheet: the modal route is a
-  // sibling of this subtree, so the provider isn't guaranteed to be above it.
   final auth = context.read<AuthProvider>();
   return showModalBottomSheet<void>(
     context: context,
@@ -222,8 +185,6 @@ class _RememberedAccountsSheetState extends State<_RememberedAccountsSheet> {
     });
     try {
       await widget.auth.loginWithRemembered(id);
-      // Success: the auth gate replaces the login screen. Close the sheet so it
-      // doesn't linger over the app underneath.
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
@@ -231,8 +192,6 @@ class _RememberedAccountsSheetState extends State<_RememberedAccountsSheet> {
         _busyId = null;
         _error = friendlyError(e);
       });
-      // A server-refused credential deletes itself, so re-read: the row the
-      // user just tapped may be gone.
       await _load();
     }
   }
@@ -240,7 +199,6 @@ class _RememberedAccountsSheetState extends State<_RememberedAccountsSheet> {
   Future<void> _forget(String id) async {
     await widget.auth.forgetRemembered(id);
     await _load();
-    // Nothing left to pick — drop back to the form instead of an empty sheet.
     if (mounted && (_accounts?.isEmpty ?? false)) Navigator.of(context).pop();
   }
 
@@ -253,8 +211,6 @@ class _RememberedAccountsSheetState extends State<_RememberedAccountsSheet> {
 
     return SafeArea(
       child: ConstrainedBox(
-        // Tall lists scroll inside the sheet rather than growing past the top
-        // of the screen.
         constraints: BoxConstraints(
           maxHeight: MediaQuery.sizeOf(context).height * 0.75,
         ),
@@ -320,8 +276,6 @@ class _RememberedAccountsSheetState extends State<_RememberedAccountsSheet> {
                       itemBuilder: (_, i) => _AccountTile(
                         account: accounts[i],
                         busy: _busyId == accounts[i].id,
-                        // One sign-in at a time: a second tap mid-request would
-                        // race two credential rotations against each other.
                         enabled: !busy,
                         onTap: () => _resume(accounts[i].id),
                         onForget: () => _forget(accounts[i].id),
@@ -473,7 +427,5 @@ class _AccountTile extends StatelessWidget {
   }
 }
 
-/// Falls back to the email when the stored profile has no name — an unnamed
-/// row would otherwise render as a blank line above the address.
 String _displayName(RememberedAccount a) =>
     a.name.trim().isNotEmpty ? a.name.trim() : a.email;

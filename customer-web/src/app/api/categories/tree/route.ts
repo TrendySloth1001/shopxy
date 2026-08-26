@@ -1,7 +1,6 @@
 import { backendFetch, extractError } from "@/server/auth/session";
 import { NextResponse } from "next/server";
 
-/** GET /categories/tree — full category hierarchy. Public. */
 export async function GET(req: Request) {
   const qs = new URL(req.url).searchParams.toString();
   const res = await backendFetch(`/categories/tree${qs ? `?${qs}` : ""}`);

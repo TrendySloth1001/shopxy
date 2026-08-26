@@ -1,24 +1,5 @@
 import prisma from '../../infra/db/prisma.js';
 
-// Bucket "day" by IST ('Asia/Kolkata') so a sale at 11:30pm local doesn't
-// land on the next UTC day.
-//
-// SHOP SCOPING: every query here is scoped to a single `shopId`. The
-// reports used to aggregate across ALL shops (no shop_id filter), which
-// leaked other tenants' revenue, GST and customer PII into one merchant's
-// dashboard. The shopId is threaded from resolveShop via the controller.
-//
-// DOCUMENT SEMANTICS: every aggregate excludes ESTIMATE / PROFORMA rows
-// (offers, not transactions — a confirmed estimate must not count as
-// revenue, and its converted TAX_INVOICE would double-count it), and
-// counts CREDIT_NOTE rows with a NEGATIVE sign (Sec 34: a credit note
-// reduces turnover and output tax; the party ledger already credits it —
-// adding it to revenue as a positive was a live miscalculation).
-// DEBIT_NOTE stays positive (a supplementary invoice increases both).
-
-/// All numeric aggregates come back from Postgres as strings (because
-/// numeric / decimal types can't safely round-trip through JS doubles).
-/// Cast to Number once at the edge.
 function n(v: string | number | null | undefined): number {
   if (v === null || v === undefined) return 0;
   return typeof v === 'string' ? Number(v) : v;
@@ -27,23 +8,13 @@ function n(v: string | number | null | undefined): number {
 const r2 = (v: number) => Math.round(v * 100) / 100;
 
 export interface DateRange {
-  /// Lower bound (inclusive). UTC.
   from: Date;
-  /// Upper bound (exclusive). UTC. Pass a value 1 ms after the day end
-  /// to include the entire end-day.
   to: Date;
 }
 
 export class ReportsService {
-  // ─────────────────────────────────────────────────────────────────
-  // Sales report — single aggregate query + per-day series + top
-  // products, each one round-trip. No N+1.
-  // ─────────────────────────────────────────────────────────────────
   async sales(shopId: number, range: DateRange) {
     const [summaryRow, daily, topProducts, topCustomers, refundRow] = await Promise.all([
-      // Aggregate totals. `subtotal` is gross-of-discount and
-      // `taxable_value` is the net taxable (after every discount) — the
-      // latter is the real turnover figure. Credit notes subtract.
       prisma.$queryRaw<
         {
           invoices: bigint;
@@ -66,7 +37,6 @@ export class ReportsService {
           AND document_type NOT IN ('ESTIMATE', 'PROFORMA')
           AND invoice_date >= ${range.from} AND invoice_date < ${range.to}
       `,
-      // Daily series — single GROUP BY ... ORDER BY day
       prisma.$queryRaw<
         { day: Date; invoices: bigint; revenue: string; tax: string }[]
       >`
@@ -82,8 +52,6 @@ export class ReportsService {
         GROUP BY day
         ORDER BY day ASC
       `,
-      // Top 10 products by quantity + revenue (single query w/ join +
-      // group-by, no per-product round-trip).
       prisma.$queryRaw<
         {
           product_id: number;
@@ -129,11 +97,6 @@ export class ReportsService {
         ORDER BY revenue DESC
         LIMIT 10
       `,
-      // Returns/refunds netted against the period the original sale was
-      // booked in (by the source invoice's date), so a returned sale no
-      // longer inflates the headline revenue (C2). The GST leg of the
-      // reversal is netted in gstSummary() from the refunded lines'
-      // stored tax columns.
       prisma.$queryRaw<{ refunds: string; count: bigint }[]>`
         SELECT
           COALESCE(SUM(rr.refund_amount), 0)::text AS refunds,
@@ -154,19 +117,12 @@ export class ReportsService {
       range,
       summary: {
         invoiceCount: Number(summary?.invoices ?? 0),
-        /// Confirmed sale credit notes in range (already netted out of
-        /// every money figure above).
         creditNoteCount: Number(summary?.credit_notes ?? 0),
-        /// Gross of all discounts — sum of (qty × unitPrice).
         subtotal: n(summary?.subtotal ?? 0),
-        /// Net taxable turnover after every discount (the real "sales" base).
         taxableValue: n(summary?.taxable_value ?? 0),
         taxAmount: n(summary?.tax_amount ?? 0),
-        /// Gross collected (taxable + tax + round-off), net of credit notes.
         total: grossRevenue,
-        /// Refunds for sales booked in this period (gross, incl. tax).
         refunds,
-        /// Headline revenue after returns.
         netRevenue: r2(grossRevenue - refunds),
         refundCount: Number(refundRow[0]?.count ?? 0),
       },
@@ -192,10 +148,6 @@ export class ReportsService {
     };
   }
 
-  // ─────────────────────────────────────────────────────────────────
-  // Purchase report — same shape as sales but vendor-side. A purchase
-  // CREDIT_NOTE (vendor reduced our bill) subtracts from spend/tax.
-  // ─────────────────────────────────────────────────────────────────
   async purchases(shopId: number, range: DateRange) {
     const [summaryRow, daily, topProducts, topVendors] = await Promise.all([
       prisma.$queryRaw<
@@ -312,21 +264,6 @@ export class ReportsService {
     };
   }
 
-  // ─────────────────────────────────────────────────────────────────
-  // GST summary — output (sale) tax vs input (purchase) tax, bucketed
-  // per tax rate. Uses the STORED per-line GST columns (igst/cgst/sgst/
-  // cess) rather than recomputing qty*price*rate — the stored columns
-  // already reflect the GST registration gate (zero on a Bill of Supply)
-  // and the discount apportionment, so recomputing would disagree.
-  // Cess is reported separately because it is not creditable against
-  // CGST/SGST/IGST — only against cess.
-  //
-  // Returns: a REFUNDED return reverses the output tax on the refunded
-  // quantity (CGST Sec 34 — the credit-note adjustment). The reversal is
-  // computed from the source invoice line's stored tax, pro-rated by the
-  // returned quantity, and netted out of both the headline figures and
-  // the matching by-rate bucket.
-  // ─────────────────────────────────────────────────────────────────
   async gstSummary(shopId: number, range: DateRange) {
     const byRate = (type: 'SALE' | 'PURCHASE') => prisma.$queryRaw<
       { tax_rate: string; taxable: string; tax: string; igst: string; cgst: string; sgst: string; cess: string }[]
@@ -381,20 +318,6 @@ export class ReportsService {
           AND document_type NOT IN ('ESTIMATE', 'PROFORMA')
           AND invoice_date >= ${range.from} AND invoice_date < ${range.to}
       `,
-      // Output-tax reversal for refunded returns, pro-rated from the
-      // source invoice line by returned quantity and grouped by rate so
-      // the headline and by-rate figures stay consistent.
-      //
-      // AUTH-TR-C1: resolve the reversed invoice line via a LATERAL that
-      // returns EXACTLY ONE invoice_items row per return item, so a product
-      // billed on several lines of the same invoice can't fan the reversal
-      // out N×. Preference order inside the LATERAL:
-      //   1. the exact billed line (rri.invoice_item_id) when set;
-      //   2. legacy null rows fall back to the matching (invoice, product)
-      //      line, deterministically pinned to the lowest ii.id so multiple
-      //      same-product lines pick one — never multiply.
-      // This keys off the same per-line resolution the P&L refund leg uses,
-      // so the GST and sales/P&L reports reconcile on identical returns.
       prisma.$queryRaw<
         { tax_rate: string; taxable: string; tax: string; igst: string; cgst: string; sgst: string; cess: string }[]
       >`
@@ -445,12 +368,6 @@ export class ReportsService {
     const outputCess = r2(n(totalsRow[0]?.output_cess ?? 0) - returnedCess);
     const inputCess = n(totalsRow[0]?.input_cess ?? 0);
 
-    // GST-11 — IGST, CGST and SGST are distinct tax heads (different ledgers,
-    // head-wise ITC set-off under CGST Sec 49 / Rule 88A), so GSTR-1 / GSTR-3B
-    // must report each separately. The headline `outputTax`/`inputTax`/`tax`
-    // figures (sum of all three) are kept for existing consumers, but each head
-    // is now surfaced net of refunded returns so a return can be filed without
-    // re-deriving the split from raw invoice rows.
     const outputIgst = r2(n(totalsRow[0]?.output_igst ?? 0) - returnedIgst);
     const outputCgst = r2(n(totalsRow[0]?.output_cgst ?? 0) - returnedCgst);
     const outputSgst = r2(n(totalsRow[0]?.output_sgst ?? 0) - returnedSgst);
@@ -462,17 +379,10 @@ export class ReportsService {
       range,
       outputTax: outputGst,
       inputTax: inputGst,
-      // ITC offsets like-for-like: GST against GST, cess only against cess.
-      // Input tax is shown as fully creditable here; blocked credits
-      // (Sec 17(5)) and RCM are not yet modelled — a documented gap.
       netPayable: r2(outputGst - inputGst),
       outputCess,
       inputCess,
       netCessPayable: r2(outputCess - inputCess),
-      // GST-11 — head-wise output/input (net of returns) so the dashboard can
-      // present, and a merchant can file, IGST / CGST / SGST separately. The
-      // per-head net is the simple like-for-like offset (Sec 49); the broader
-      // cross-head utilisation order of Rule 88A is a documented downstream gap.
       byHead: {
         output: { igst: outputIgst, cgst: outputCgst, sgst: outputSgst },
         input: { igst: inputIgst, cgst: inputCgst, sgst: inputSgst },
@@ -482,8 +392,6 @@ export class ReportsService {
           sgst: r2(outputSgst - inputSgst),
         },
       },
-      /// Output tax reversed on refunded returns in this period (already
-      /// netted out of outputTax / outputCess / the by-rate buckets).
       returns: {
         gst: r2(returnedGst),
         igst: r2(returnedIgst),
@@ -515,12 +423,6 @@ export class ReportsService {
     };
   }
 
-  // ─────────────────────────────────────────────────────────────────
-  // P&L — revenue (net taxable from confirmed sales) minus COGS minus
-  // operating write-offs. Revenue uses taxable_value (net of every
-  // discount); the old `subtotal - discount` broke once the engine moved
-  // to gross subtotal + distributed line discounts.
-  // ─────────────────────────────────────────────────────────────────
   async pnl(shopId: number, range: DateRange) {
     const [revenueRow, cogsRow, expenseRow, refundRow, returnedCogsRow] = await Promise.all([
       prisma.$queryRaw<{ revenue: string }[]>`
@@ -530,9 +432,6 @@ export class ReportsService {
           AND document_type NOT IN ('ESTIMATE', 'PROFORMA')
           AND invoice_date >= ${range.from} AND invoice_date < ${range.to}
       `,
-      // COGS: consumptions are recorded against the SALE ledger row at
-      // confirm time. Join consumption -> ledger -> source invoice, filter
-      // to this shop's confirmed sales in range.
       prisma.$queryRaw<{ cogs: string }[]>`
         SELECT COALESCE(SUM(cc.qty_consumed * cc.unit_cost), 0)::text AS cogs
         FROM cost_consumptions cc
@@ -542,12 +441,6 @@ export class ReportsService {
         WHERE i.shop_id = ${shopId} AND i.type = 'SALE' AND i.status = 'CONFIRMED'
           AND i.invoice_date >= ${range.from} AND i.invoice_date < ${range.to}
       `,
-      // Adjustment write-offs (damage, expiry, shrinkage) are an
-      // operating expense in this lightweight P&L. Scoped to this shop.
-      // Bucketed by created_at deliberately: a stock adjustment has no
-      // user-settable business date (it can't be backdated), so its
-      // created_at IS the event date — the same basis invoice_date gives
-      // revenue/COGS for invoices.
       prisma.$queryRaw<{ writeoffs: string }[]>`
         SELECT COALESCE(SUM(sai.quantity * sai.unit_cost), 0)::text AS writeoffs
         FROM stock_adjustment_items sai
@@ -555,19 +448,6 @@ export class ReportsService {
         WHERE sa.shop_id = ${shopId} AND sa.direction = 'OUT'
           AND sa.created_at >= ${range.from} AND sa.created_at < ${range.to}
       `,
-      // Returns reduce revenue by the refunded lines' EX-TAX value (the
-      // taxable slice of the original invoice line, pro-rated by returned
-      // quantity). Subtracting the gross refund here over-stated the hit:
-      // revenue is ex-tax, and the GST slice of the refund is reversed in
-      // gstSummary, not in the P&L.
-      //
-      // AUTH-TR-C1: same single-line LATERAL resolution as gstSummary's
-      // reversal leg — exactly one invoice_items row per return item
-      // (exact rri.invoice_item_id when set, else the lowest-id matching
-      // (invoice, product) line for legacy nulls). Prevents the old
-      // product_id join from fanning the ex-tax reversal out N× when a
-      // product was billed on several lines of the same invoice, and keeps
-      // the P&L reconciling with the GST report on identical returns.
       prisma.$queryRaw<{ refunds: string }[]>`
         SELECT COALESCE(SUM(line.taxable_value * rri.quantity / NULLIF(line.quantity, 0)), 0)::text AS refunds
         FROM return_request_items rri
@@ -589,9 +469,6 @@ export class ReportsService {
         WHERE rr.shop_id = ${shopId} AND rr.status = 'REFUNDED'
           AND i.invoice_date >= ${range.from} AND i.invoice_date < ${range.to}
       `,
-      // Returned goods come back into stock via the RETURN_IN restock at
-      // the cost they were consumed at — that value offsets the period's
-      // COGS (the goods were not, in the end, sold).
       prisma.$queryRaw<{ returned_cogs: string }[]>`
         SELECT COALESCE(SUM(st.total_value), 0)::text AS returned_cogs
         FROM stock_transactions st
@@ -626,23 +503,12 @@ export class ReportsService {
     };
   }
 
-  // ─────────────────────────────────────────────────────────────────
-  // Paginated "products sold" feed backing the P&L drill-down. Each row is one
-  // confirmed sale line (credit notes excluded — those are returns, not sales),
-  // newest first. Offset-paginated so the client pulls one page at a time
-  // instead of materialising every line of a busy period in a single response.
-  // ─────────────────────────────────────────────────────────────────
   async soldItems(
     shopId: number,
     range: DateRange,
     opts: { skip: number; limit: number; search?: string; productId?: number },
   ) {
-    // Optional product-name / SKU search. A null pattern makes the guard a
-    // no-op (`NULL IS NULL` → match all) so the same query serves both the
-    // unfiltered feed and a search without composing SQL fragments.
     const q = opts.search?.trim() ? `%${opts.search.trim()}%` : null;
-    // Optional single-product filter (the per-product timeline drill-down).
-    // Same null-as-no-op trick.
     const pid = opts.productId ?? null;
     const [rows, countRows] = await Promise.all([
       prisma.$queryRaw<{
@@ -699,13 +565,6 @@ export class ReportsService {
     };
   }
 
-  // ─────────────────────────────────────────────────────────────────
-  // Aggregated "products sold" summary — ONE row per product over the range
-  // (count of sales, total qty, total revenue, last-sold), bounded by the
-  // number of distinct products rather than the raw line count. The heavy
-  // per-line history is fetched lazily via soldItems(productId) when a row is
-  // expanded, so the summary stays light even for a high-volume period.
-  // ─────────────────────────────────────────────────────────────────
   async soldProducts(
     shopId: number,
     range: DateRange,
@@ -753,9 +612,6 @@ export class ReportsService {
           GROUP BY ii.product_id
         ) t
       `,
-      // Grand totals across EVERY matching product (all pages, search applied)
-      // so the table footer always shows the true total, not just the loaded
-      // page's sum.
       prisma.$queryRaw<{ salesCount: string; totalQuantity: string; totalAmount: string }[]>`
         SELECT COUNT(*)::text             AS "salesCount",
                COALESCE(SUM(ii.quantity), 0)::text AS "totalQuantity",

@@ -8,10 +8,6 @@ import {
 import { ledgerService } from '../ledger/ledger.service.js';
 import { enqueueOutbox } from '../../infra/outbox/outbox.js';
 
-/// Sentinel used to surface a ledger-post failure out of an adjustment
-/// `$transaction` so Prisma rolls back the header/items, while still
-/// letting the caller return the original error shape (and not a thrown
-/// exception).
 class AdjustmentLedgerFailure extends Error {
   constructor(public readonly result: { error: string } & Record<string, unknown>) {
     super(typeof result.error === 'string' ? result.error : 'Ledger post failed');
@@ -113,9 +109,6 @@ export class StockAdjustmentsService {
         throw new AdjustmentLedgerFailure(result);
       }
 
-      // Outbox (same tx): an adjustment changes COGS / write-offs for its own
-      // day, so the roll-up rebuilds that bucket. Bucketed by the adjustment's
-      // createdAt — matching the changefeed's `stock_adjustments.created_at`.
       await enqueueOutbox(
         {
           aggregateType: 'stock_adjustment',
@@ -163,9 +156,6 @@ export class StockAdjustmentsService {
     });
   }
 
-  /// Post a counter-entry for every ledger row this adjustment created.
-  /// The adjustment itself stays around as an audit trail; the ledger
-  /// effect is what gets unwound.
   async reverse(shopId: number, id: number, opts: { createdById?: number; note?: string } = {}) {
     const adjustment = await prisma.stockAdjustment.findFirst({
       where: { id, shopId },

@@ -30,7 +30,6 @@ import {
 
 const BACK = "/dashboard/banners";
 
-/** A pinned product being edited in the form. */
 type PinnedRow = {
   productId: string;
   name: string;
@@ -47,7 +46,6 @@ function rupee(n: number): string {
   return `₹${Math.round(n).toLocaleString("en-IN")}`;
 }
 
-/** Effective sale price preview, mirroring the backend clamp. */
 function salePreview(sellingPrice: number, type: DiscountType, raw: string): number {
   const v = Number.parseFloat(raw);
   if (!Number.isFinite(v) || v <= 0) return sellingPrice;
@@ -58,7 +56,6 @@ function salePreview(sellingPrice: number, type: DiscountType, raw: string): num
   return Math.max(0, +(sellingPrice - perUnit).toFixed(2));
 }
 
-/** Create / edit a single image banner + its pinned products. */
 export function BannerEditor({ banner }: { banner?: Banner }) {
   const router = useRouter();
   const t = useTranslations("banners");
@@ -82,7 +79,6 @@ export function BannerEditor({ banner }: { banner?: Banner }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load existing pinned products when editing.
   useEffect(() => {
     if (!banner) return;
     let active = true;
@@ -189,7 +185,6 @@ export function BannerEditor({ banner }: { banner?: Banner }) {
       ) : null}
 
       <div className="mt-xl grid gap-xl lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] xl:grid-cols-[440px_minmax(0,1fr)]">
-        {/* Preview */}
         <div className="lg:sticky lg:top-lg lg:self-start">
           <p className="mb-sm text-label-md uppercase tracking-wide text-subtle">{t("form.preview")}</p>
           <div className="relative aspect-[16/10] w-full overflow-hidden rounded-lg border border-hairline bg-hero-panel">
@@ -204,7 +199,6 @@ export function BannerEditor({ banner }: { banner?: Banner }) {
           </div>
         </div>
 
-        {/* Form */}
         <div className="flex max-w-content flex-col gap-lg">
           <ImageUploadField
             label={t("form.imageLabel")}
@@ -245,7 +239,6 @@ export function BannerEditor({ banner }: { banner?: Banner }) {
             onChange={setIsActive}
           />
 
-          {/* Pinned products */}
           <div className="flex flex-col gap-sm">
             <div className="flex items-center justify-between">
               <span className="text-label-md text-muted">{t("products.title")}</span>
@@ -317,7 +310,6 @@ export function BannerEditor({ banner }: { banner?: Banner }) {
         </div>
       </div>
 
-      {/* Sticky action bar */}
       <div className="sticky bottom-0 mt-xxl -mx-lg flex items-center justify-end gap-md border-t border-hairline bg-canvas px-lg py-md md:-mx-xxl md:px-xxl">
         <Link
           href={BACK}

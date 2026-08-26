@@ -15,11 +15,7 @@ import type { Invitation } from "@/features/merchants/types";
 import { useNotifications } from "@/features/notifications/notifications-context";
 import { BackButton } from "@/shared/ui/back-button";
 
-// ─── Types ──────────────────────────────────────────────────────────────────
-
 type Tab = "pending" | "history";
-
-// ─── Tab bar ────────────────────────────────────────────────────────────────
 
 function TabBar({
   active,
@@ -54,8 +50,6 @@ function TabBar({
   );
 }
 
-// ─── Empty state ─────────────────────────────────────────────────────────────
-
 function EmptyState({ tab }: { tab: Tab }) {
   return (
     <div className="flex flex-col items-center py-massive text-center">
@@ -88,8 +82,6 @@ function EmptyState({ tab }: { tab: Tab }) {
     </div>
   );
 }
-
-// ─── Actionable invite row ────────────────────────────────────────────────────
 
 function ActionableRow({
   invite,
@@ -153,8 +145,6 @@ function ActionableRow({
   );
 }
 
-// ─── Main page content ────────────────────────────────────────────────────────
-
 function InvitationsContent() {
   const [all, setAll] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -191,7 +181,6 @@ function InvitationsContent() {
   const history = all.filter((i) => i.status !== "PENDING");
   const visible = tab === "pending" ? pending : history;
 
-  // ── Error state ─────────────────────────────────────────────────────────
   if (error && all.length === 0) {
     return (
       <div className="mx-auto max-w-content px-lg py-massive text-center">
@@ -209,7 +198,6 @@ function InvitationsContent() {
 
   return (
     <div className="mx-auto max-w-shell">
-      {/* Tab bar */}
       <div className="sticky top-0 z-10 bg-canvas">
         <TabBar
           active={tab}
@@ -219,7 +207,6 @@ function InvitationsContent() {
       </div>
 
       <div className="px-lg py-md">
-        {/* Loading skeletons */}
         {loading && all.length === 0 ? (
           <div className="flex flex-col gap-md">
             {[0, 1, 2].map((i) => (
@@ -244,8 +231,6 @@ function InvitationsContent() {
     </div>
   );
 }
-
-// ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function InvitationsPage() {
   return (

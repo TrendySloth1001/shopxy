@@ -1,8 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shopxy_customer/features/orders/domain/entities/customer_order.dart';
 
-/// What the order detail keys its "you can claim this" line off. Getting this
-/// wrong tells a buyer they hold a claimable invoice when they do not.
 void main() {
   group('OrderInvoiceRef.supportsInputCredit', () {
     OrderInvoiceRef parse(Map<String, dynamic> extra) => OrderInvoiceRef.fromJson({
@@ -31,8 +29,6 @@ void main() {
     });
 
     test('a bill of supply is never claimable, GSTIN or not', () {
-      // An unregistered seller charges no GST, so there is no credit to take
-      // even though the buyer asked and their GSTIN was recorded.
       final invoice = parse({
         'documentType': 'BILL_OF_SUPPLY',
         'customerGstin': '19AAACI1681G1ZM',

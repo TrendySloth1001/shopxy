@@ -1,15 +1,7 @@
 import type { NextConfig } from "next";
 
-// Docker packaging (`DOCKER_BUILD=1`, see Dockerfile) emits a self-contained
-// server under `<distDir>/standalone` — a portable image that doesn't need
-// `sharp` compiled for the container's platform. Mirrors merchant-web.
 const isDockerBuild = process.env.DOCKER_BUILD === "1";
 
-// Conservative security-header set applied to every response. The CSP is kept
-// intentionally minimal — `frame-ancestors`/`object-src`/`base-uri` are safe
-// to pin hard, while a tight `script-src` would need a nonce for Next's runtime
-// inline bootstrap, so that is deferred (see TODO) rather than risk breaking the
-// app. Headers mirror merchant-web — keep the two in sync.
 const SECURITY_HEADERS = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "DENY" },
@@ -23,22 +15,13 @@ const SECURITY_HEADERS = [
     value: "camera=(), microphone=(), geolocation=()",
   },
   {
-    // TODO: tighten script-src with a per-request nonce once the inline theme
-    // boot script is nonced; until then only the non-script directives are
-    // pinned so the CSP can't break Next's runtime.
     key: "Content-Security-Policy",
     value: "frame-ancestors 'none'; object-src 'none'; base-uri 'self'",
   },
 ];
 
 const nextConfig: NextConfig = {
-  /* config options here */
   reactCompiler: true,
-  // Icons funnel through the `@/shared/icons` barrel (Hugeicons wrappers).
-  // Register it here so Next rewrites barrel imports to direct member imports —
-  // keeping the icon set fully tree-shaken despite the barrel. The underlying
-  // Hugeicons packages are also listed: `core-free-icons` is ~90 MB of icon-data
-  // exports, so this is a safety net against a stray import pulling the whole set.
   experimental: {
     optimizePackageImports: [
       "@/shared/icons",
@@ -46,20 +29,8 @@ const nextConfig: NextConfig = {
       "@hugeicons/core-free-icons",
     ],
   },
-  // `next build` writes to a separate dir (set by the build/start scripts) so a
-  // production build never clobbers the live `next dev` Turbopack cache in
-  // `.next/` — that overlap corrupts the dev cache (missing .sst files). Dev
-  // stays on the default `.next`; build/start use `.next-build`.
   distDir: process.env.NEXT_DIST_DIR ?? ".next",
   images: {
-    // Product/banner imagery is merchant-supplied and can live on any https
-    // host (seed data uses Unsplash). We do NOT open the Next image optimizer
-    // to arbitrary remote hosts — `remotePatterns: hostname:"**"` is a
-    // server-side SSRF primitive (the optimizer would fetch any attacker URL,
-    // e.g. cloud metadata). Instead the optimizer is disabled and images are
-    // served as-is: backend-relative images go through the same-origin
-    // `/api/media` proxy, and absolute merchant URLs load directly in the
-    // browser. Mirrors merchant-web's desktop config.
     unoptimized: true,
   },
   async headers() {
@@ -68,8 +39,6 @@ const nextConfig: NextConfig = {
   ...(isDockerBuild
     ? {
         output: "standalone" as const,
-        // The Docker standalone bundle is verified separately (tsc + eslint)
-        // before build, so skip the in-build re-check.
         typescript: { ignoreBuildErrors: true },
         eslint: { ignoreDuringBuilds: true },
       }

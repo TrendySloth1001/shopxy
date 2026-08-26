@@ -14,7 +14,6 @@ const STYLE: Record<DashboardAlert["severity"], SevStyle> = {
   info: { icon: Info, iconClass: "text-brand-strong" },
 };
 
-// Per-alert call-to-action label keys (the message already carries the detail).
 const CTA_KEY: Record<string, string> = {
   "low-stock": "alert.cta.reorder",
   "gst-due": "alert.cta.fileGst",
@@ -33,7 +32,6 @@ function readDismissed(): Set<string> {
   }
 }
 
-/** Dismissible smart-alert notifications (session-scoped dismissal). */
 export function Alerts({ alerts }: { alerts: DashboardAlert[] }) {
   const t = useTranslations("dashboard");
   const [dismissed, setDismissed] = useState<Set<string>>(readDismissed);

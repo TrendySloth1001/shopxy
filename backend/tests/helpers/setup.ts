@@ -5,16 +5,6 @@ import jwt from 'jsonwebtoken';
 import { Role } from '@prisma/client';
 import prisma from '../../src/infra/db/prisma.js';
 
-/// Tests share the dev Postgres. To stay isolated:
-///   - every fixture user gets a `test+<uuid>@shopxy.test` email
-///   - every fixture shop slug is suffixed with the same uuid
-///   - tracked rows are returned to the caller and deleted on cleanup
-///
-/// `withTestData` is the standard wrapper: gives you a populated
-/// `ctx` (user, shop, accessToken), runs your test, deletes the rows.
-/// Failures still trigger cleanup (try/finally) so flaky tests don't
-/// leave junk behind.
-
 export interface TestUserCtx {
   userId: number;
   shopId: number;
@@ -29,7 +19,7 @@ const PASSWORD = 'TestPassw0rd!';
 export async function createTestUser(opts: { role?: Role; isPlatformAdmin?: boolean } = {}): Promise<TestUserCtx> {
   const id = crypto.randomBytes(6).toString('hex');
   const email = `test+${id}@shopxy.test`;
-  const passwordHash = await bcrypt.hash(PASSWORD, 4); // low cost: speed > strength in tests
+  const passwordHash = await bcrypt.hash(PASSWORD, 4);
   const user = await prisma.user.create({
     data: {
       email,
@@ -41,7 +31,6 @@ export async function createTestUser(opts: { role?: Role; isPlatformAdmin?: bool
     },
   });
 
-  // Every OWNER gets a shop — same pattern as the prod backfill.
   let shopId = -1;
   let shopSlug = '';
   if (user.role === Role.OWNER) {
@@ -67,13 +56,7 @@ export async function createTestUser(opts: { role?: Role; isPlatformAdmin?: bool
   return { userId: user.id, shopId, shopSlug, email, password: PASSWORD, accessToken };
 }
 
-/// Hard-delete a fixture user + cascade everything that belongs to them.
-/// Order matters: invoices RESTRICT on products, and products RESTRICT
-/// on shops, so we wipe invoices+items first, then parties, then
-/// products. Flash sales cascade from product so they ride along.
-/// Idempotent — safe in `finally` after partial setup.
 export async function cleanupTestUser(ctx: TestUserCtx): Promise<void> {
-  // 1. Invoices issued to parties this user is linked to (buyer side).
   const parties = await prisma.party.findMany({
     where: { linkedUserId: ctx.userId },
     select: { id: true },
@@ -88,20 +71,15 @@ export async function cleanupTestUser(ctx: TestUserCtx): Promise<void> {
       .catch(() => undefined);
   }
 
-  // 2. Products this user's shop owns. Wipes images via cascade.
   if (ctx.shopId > 0) {
     await prisma.product
       .deleteMany({ where: { shopId: ctx.shopId } })
       .catch(() => undefined);
-    // Outbox rows carry shopId as a plain column (no FK → no cascade from the
-    // shop delete below), so confirming an invoice in a test would otherwise
-    // leave orphan event rows in the shared dev DB. Clear them explicitly.
     await prisma.outboxEvent
       .deleteMany({ where: { shopId: ctx.shopId } })
       .catch(() => undefined);
   }
 
-  // 3. The user row itself — cascades Shop, ProductReview, etc.
   await prisma.user
     .delete({ where: { id: ctx.userId } })
     .catch(() => undefined);
@@ -119,9 +97,6 @@ export async function withTestUser<T>(
   }
 }
 
-/// Insert a product directly via Prisma for a given shop. Tests that
-/// need to verify listing/filtering behaviour seed without going
-/// through the HTTP layer first.
 export async function createTestProduct(
   shopId: number,
   overrides: Partial<{
@@ -153,12 +128,6 @@ export async function createTestProduct(
   });
 }
 
-/// Records a CONFIRMED invoice for a buyer-Party that's linked to a
-/// User, with a line for the given product. Lets review-gate tests
-/// simulate a real purchase without going through the invoice creation
-/// pipeline. Returns the invoice + party ids so cleanup helpers can
-/// tear them down. NOTE: skips ledger entries — this is fixture data,
-/// stock-quantity correctness is not under test here.
 export async function recordTestPurchase(args: {
   shopId: number;
   buyerUserId: number;

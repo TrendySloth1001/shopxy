@@ -1,11 +1,3 @@
-/**
- * Account extras — types for wishlist, reviews, coupons, recently-viewed.
- * Ported from the Flutter customer app (features/wishlist, features/reviews,
- * features/coupons, features/recently_viewed).
- */
-
-// ── Wishlist ────────────────────────────────────────────────────────────────
-
 export interface WishlistProduct {
   id: string;
   name: string;
@@ -28,8 +20,6 @@ export interface WishlistItem {
   product: WishlistProduct;
 }
 
-// ── Reviews ─────────────────────────────────────────────────────────────────
-
 export interface MyReview {
   id: string;
   productId: string;
@@ -47,8 +37,6 @@ export interface MyReview {
   };
 }
 
-// ── Coupons ─────────────────────────────────────────────────────────────────
-
 export type DiscountType = "PERCENT" | "FLAT";
 
 export interface Coupon {
@@ -65,16 +53,13 @@ export interface Coupon {
   isPublic: boolean;
   firstOrderOnly: boolean;
   perUserLimit?: number | null;
-  /** How many times this caller has already used this coupon. */
   usedCount: number;
 }
 
-/** True if this coupon is fully used up for the caller. */
 export function isCouponExhausted(c: Coupon): boolean {
   return c.perUserLimit != null && c.usedCount >= c.perUserLimit;
 }
 
-/** Short human-readable discount headline, e.g. "20% off up to ₹200". */
 export function couponHeadline(c: Coupon, formatINR: (v: number) => string): string {
   if (c.discountType === "PERCENT") {
     const base = `${c.discountValue}% off`;
@@ -83,12 +68,9 @@ export function couponHeadline(c: Coupon, formatINR: (v: number) => string): str
   return `${formatINR(c.discountValue)} off`;
 }
 
-/** "Min order ₹500" or empty. */
 export function couponMinOrderLabel(c: Coupon, formatINR: (v: number) => string): string {
   return c.minOrderValue ? `Min order ${formatINR(c.minOrderValue)}` : "";
 }
-
-// ── Recently viewed ──────────────────────────────────────────────────────────
 
 export interface RecentlyViewedProduct {
   id: string;

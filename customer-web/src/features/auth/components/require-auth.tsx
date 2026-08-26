@@ -4,12 +4,6 @@ import { useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../auth-context";
 
-/**
- * Client gate for protected pages. Middleware already blocks cookieless
- * visitors; this handles the case where the cookie exists but the session is
- * actually invalid (expired + refresh failed), and avoids flashing protected
- * content before the session resolves.
- */
 export function RequireAuth({ children }: { children: ReactNode }) {
   const { status } = useAuth();
   const router = useRouter();

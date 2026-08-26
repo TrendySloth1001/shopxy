@@ -1,7 +1,3 @@
-/**
- * Client-side fetchers for the returns feature.
- * All calls go to /api/me/returns/** (BFF proxies to backend).
- */
 import { returnsPageSchema, returnRequestSchema, type ReturnsPage, type ReturnRequest } from "./types";
 
 async function jsonOrThrow<T>(
@@ -15,7 +11,6 @@ async function jsonOrThrow<T>(
       const b = (await res.json()) as { error?: string };
       if (b?.error) message = b.error;
     } catch {
-      /* keep fallback */
     }
     throw new Error(message);
   }
@@ -51,7 +46,6 @@ export async function cancelReturn(id: string): Promise<void> {
       const b = (await res.json()) as { error?: string };
       if (b?.error) message = b.error;
     } catch {
-      /* keep fallback */
     }
     throw new Error(message);
   }

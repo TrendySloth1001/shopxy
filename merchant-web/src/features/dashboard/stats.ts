@@ -1,13 +1,5 @@
 import { z } from "zod";
 
-/**
- * Dashboard payload, mirroring the backend `GET /dashboard/stats?period=…`
- * response (`backend/src/modules/dashboard/dashboard.service.ts`). Money
- * sections (`kpis`, `trend`, `insights`, `operations.gstMtd`) are null unless
- * the caller holds `reports:view`. Decimal money/qty fields are coerced to
- * numbers; validated at the BFF boundary so the screen gets a clean typed object.
- */
-
 export const PERIODS = ["today", "week", "month"] as const;
 export type DashboardPeriod = (typeof PERIODS)[number];
 
@@ -180,7 +172,6 @@ function isPeriod(value: string): value is DashboardPeriod {
   return (PERIODS as readonly string[]).includes(value);
 }
 
-/** Client-side fetch of the dashboard stats via the BFF for a given period. */
 export async function fetchDashboardStats(period: DashboardPeriod): Promise<DashboardStats> {
   const safe = isPeriod(period) ? period : "today";
   const res = await fetch(`/api/dashboard/stats?period=${safe}`, { cache: "no-store" });
@@ -190,7 +181,6 @@ export async function fetchDashboardStats(period: DashboardPeriod): Promise<Dash
       const body = (await res.json()) as { error?: string };
       if (body?.error) message = body.error;
     } catch {
-      // keep default
     }
     throw new Error(message);
   }

@@ -1,9 +1,6 @@
 import 'dotenv/config';
 import prisma from '../src/infra/db/prisma.js';
 
-/// Reassigns products misallocated by the P0 backfill (which dumped
-/// every pre-multi-tenant product into shop_id=1) over to the actual
-/// account that's been managing them.
 async function main() {
   const email = 'nkumawat8956@gmail.com';
   const user = await prisma.user.findUniqueOrThrow({

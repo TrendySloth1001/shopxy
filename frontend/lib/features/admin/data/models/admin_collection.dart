@@ -1,7 +1,3 @@
-// Admin-side view of a curated collection. Two shapes:
-//   * AdminCollectionSummary  — list row (admin index page)
-//   * AdminCollection         — full detail with embedded items
-
 class AdminCollectionSummary {
   const AdminCollectionSummary({
     required this.id,

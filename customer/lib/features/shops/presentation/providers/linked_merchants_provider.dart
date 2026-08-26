@@ -3,8 +3,6 @@ import 'package:shopxy_customer/features/shops/data/datasources/me_remote_data_s
 import 'package:shopxy_customer/features/shops/domain/entities/linked_merchant.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
 
-/// Owns the customer's "Your linked merchants" list. Eagerly loaded
-/// on auth via main.dart so the Home rail can render without waiting.
 class LinkedMerchantsProvider extends ChangeNotifier {
   LinkedMerchantsProvider(this._ds);
   final MeRemoteDataSource _ds;

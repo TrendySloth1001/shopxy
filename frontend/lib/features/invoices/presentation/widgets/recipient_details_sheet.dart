@@ -11,43 +11,26 @@ import 'package:shopxy/shared/theme/app_text_styles.dart';
 import 'package:shopxy/shared/widgets/app_button.dart';
 import 'package:shopxy/shared/widgets/app_dialog.dart';
 
-/// Why this invoice needs the recipient's details — drives the explanation at
-/// the top of the sheet, because "required" without "why" reads as the app
-/// being obstructive.
 enum RecipientRequirement {
-  /// A recipient GSTIN is on the invoice, so it's a B2B document.
   b2b,
 
-  /// At or above the ₹50,000 named-recipient threshold.
   highValue,
 }
 
-/// What the merchant chose when told the recipient details are incomplete.
 sealed class RecipientOutcome {
   const RecipientOutcome();
 }
 
-/// They filled the details in. [details] carries them to the invoice; when
-/// [saveToParty] is set the caller should also write them back to the party
-/// row so the same gap doesn't reappear on the next invoice.
 class RecipientFilled extends RecipientOutcome {
   const RecipientFilled(this.details, {required this.saveToParty});
   final RecipientDetails details;
   final bool saveToParty;
 }
 
-/// They chose to issue the invoice incomplete, having been told what that
-/// means. Carries the acknowledgement the server needs to let it past.
 class RecipientSkipped extends RecipientOutcome {
   const RecipientSkipped();
 }
 
-/// Asks for the recipient details GST Rule 46(e)/(f) requires, at the moment
-/// they're needed, instead of failing the save with a server error the
-/// merchant can do nothing about from this screen.
-///
-/// Returns null if the sheet is dismissed — treat that as "go back to the
-/// form", not as a skip: skipping has to be chosen deliberately.
 Future<RecipientOutcome?> showRecipientDetailsSheet(
   BuildContext context, {
   required RecipientRequirement requirement,
@@ -142,8 +125,6 @@ class _RecipientDetailsSheetState extends State<_RecipientDetailsSheet> {
 
   Future<void> _skip() async {
     final l10n = AppLocalizations.of(context);
-    // A second, explicit confirmation: the first screen explains the rule, this
-    // one makes accepting the consequence a separate decision.
     final confirmed = await AppConfirmDialog.show(
       context,
       title: l10n.invoicesRecipientSkipWarnTitle,
@@ -239,9 +220,6 @@ class _RecipientDetailsSheetState extends State<_RecipientDetailsSheet> {
                       minLines: 2,
                       maxLines: 3,
                       autofocus: true,
-                      // Any one postal field satisfies the rule, so the form
-                      // only insists when the merchant has filled in nothing
-                      // at all — see [_anyFilled].
                       validator: (_) => _anyFilled ? null : '',
                     ),
                     const SizedBox(height: AppSizes.md),
@@ -335,9 +313,6 @@ class _RecipientDetailsSheetState extends State<_RecipientDetailsSheet> {
     );
   }
 
-  /// The server accepts ANY one of address / city / state / PIN as satisfying
-  /// Rule 46(f), so the form does too — insisting on all four would be
-  /// stricter than the rule and would push people towards the skip button.
   bool get _anyFilled =>
       _address.text.trim().isNotEmpty ||
       _city.text.trim().isNotEmpty ||

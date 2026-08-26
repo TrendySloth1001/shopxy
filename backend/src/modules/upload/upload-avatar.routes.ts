@@ -4,18 +4,12 @@ import { fromBuffer as fileTypeFromBuffer } from 'file-type';
 import asyncHandler from '../../shared/http/asyncHandler.js';
 import { uploadImageWithVariants } from './upload.service.js';
 
-/// Customer-facing avatar upload. Same byte-sniffing + Sharp re-encode
-/// as the merchant `/upload` route but mounted under `/me/upload/avatar`
-/// with `requireAuth` upstream (no `ownerOnly`). Split into its own
-/// file so the merchant upload router can `export default` cleanly,
-/// matching every other module's route shape.
-
 const router = Router();
 const ALLOWED_MIMES = new Set<string>(['image/jpeg', 'image/png', 'image/webp']);
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 8 * 1024 * 1024 }, // 8 MB
+  limits: { fileSize: 8 * 1024 * 1024 },
 });
 
 router.post(

@@ -33,11 +33,6 @@ import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
-/// Checkout page — full Amazon/Flipkart-style rebuild (May 2026,
-/// build3). Built on a Column { Header, Expanded(Body), Footer }
-/// shell so the layout regions can never reorder. A "BUILD 3" pill
-/// in the header is the canary that confirms this file is the one
-/// running on the device.
 class CheckoutPage extends StatefulWidget {
   const CheckoutPage({super.key});
 
@@ -45,44 +40,26 @@ class CheckoutPage extends StatefulWidget {
   State<CheckoutPage> createState() => _CheckoutPageState();
 }
 
-/// How a single Razorpay attempt resolved, from the customer's point of
-/// view. `pendingConfirmation` = the sheet succeeded but the server
-/// hasn't confirmed PAID yet (webhook lag) — calm copy, not an error.
 enum _PayAttemptOutcome { paid, pendingConfirmation, dismissed, failed }
 
 class _CheckoutPageState extends State<CheckoutPage> {
   String? _selectedAddressId;
   static const double _deliveryStandard = 0;
 
-  /// Validated coupon currently applied — null when no code has been
-  /// entered. The preview lives in state so the price card can show
-  /// "− ₹X coupon" before the actual place-order RPC fires.
   CouponPreview? _appliedCoupon;
 
-  /// false = Cash on Delivery (default); true = pay now via Razorpay.
   bool _payOnline = false;
 
-  /// Buyer asked for the order to be invoiced to their own GSTIN. Off by
-  /// default: a saved GSTIN is not standing consent to use it, and a personal
-  /// purchase on a business account should not land in the business's books.
   bool _claimGst = false;
 
   @override
   void initState() {
     super.initState();
-    // Public coupons should auto-apply without a code entry — the
-    // "your coupon code doesn't work" complaint was almost always
-    // about a store-wide coupon the customer expected to be applied
-    // for them already. Fire-and-forget after the first frame so the
-    // checkout UI doesn't block on a network round-trip.
     WidgetsBinding.instance.addPostFrameCallback((_) => _tryAutoApply());
   }
 
   Future<void> _tryAutoApply() async {
     if (!mounted) return;
-    // Don't override a manual entry — if the customer typed a code
-    // first, leave it. The auto-apply call only ever upgrades the
-    // empty-coupon state.
     if (_appliedCoupon?.ok == true) return;
     final cart = context.read<CartProvider>();
     if (cart.isEmpty) return;
@@ -96,8 +73,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
         setState(() => _appliedCoupon = preview);
       }
     } catch (_) {
-      // Best-effort — a failure here just means the customer falls
-      // back to typing a code, same as before.
     }
   }
 
@@ -245,14 +220,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
     setState(() => _appliedCoupon = null);
   }
 
-  /// Synchronous guard against double-taps — `_placing` on the cart
-  /// flips inside an `await` so a fast double-tap fires twice. Setting
-  /// this synchronously inside the tap handler closes the window.
   bool _submitting = false;
 
-  /// The same "Total payable" number the price card and footer render —
-  /// items − coupon, never negative. Kept in one place so the ≥₹500
-  /// confirm sheet can't quote a different figure than the bill.
   double _currentGrandTotal(CartProvider cart) {
     final subtotal = cart.totalPrice;
     final couponDiscount = _appliedCoupon?.ok == true
@@ -273,9 +242,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
       );
       return;
     }
-    // Confirm above a reasonable threshold so an accidental tap doesn't
-    // commit a meaningful order silently. Quotes the exact figure the
-    // bill card shows, and explains why we ask.
     final cart = context.read<CartProvider>();
     final grandTotal = _currentGrandTotal(cart);
     if (grandTotal >= 500) {
@@ -313,28 +279,18 @@ class _CheckoutPageState extends State<CheckoutPage> {
       );
       return;
     }
-    // Refresh My Orders so the new parent shows up if the user pops
-    // back to the inbox later.
     final orderId = result.orderId!;
     // ignore: unawaited_futures
     context.read<OrdersProvider>().load();
-    // Ordering links the buyer to the shop, so a first purchase adds a new
-    // entry to My Shops — reload or it stays missing until the next launch.
     // ignore: unawaited_futures
     context.read<ShopsProvider>().loadShops();
 
-    // Online payment: open the Razorpay sheet for the order's payable
-    // remainder, then land on the order detail regardless of outcome (the
-    // order exists either way; the webhook is the source of truth for PAID).
     if (_payOnline) {
       final outcome = await _startOnlinePayment(orderId);
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => OrderDetailPage(orderId: orderId)),
       );
-      // Distinguish the calm cases (dismissed sheet, webhook lag) from a
-      // genuine failure — a closed sheet isn't an error, and a pending
-      // confirmation isn't either.
       final (message, tone) = switch (outcome) {
         _PayAttemptOutcome.paid => (
           'Payment successful',
@@ -370,9 +326,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
     }
   }
 
-  /// Initiate the gateway payment for [orderId] and open the Razorpay sheet.
-  /// A `paid` result is still only the client-side handshake — the backend
-  /// webhook is what authoritatively flips the order to PAID.
   Future<_PayAttemptOutcome> _startOnlinePayment(String orderId) async {
     try {
       final cart = context.read<CartProvider>();
@@ -382,11 +335,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
         description: 'Order #$orderId',
       );
       if (result.isSuccess) {
-        // The webhook can't reach a localhost dev server (and may lag in
-        // prod), so confirm with the server now — it settles the payment by
-        // checking the live provider order. Best-effort: the webhook is still
-        // authoritative, so a sync failure shouldn't flip success to failure;
-        // it just means the confirmation is still in flight.
         try {
           final status = await cart.syncOrderPayment(orderId);
           return status == 'PAID'
@@ -400,8 +348,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
           ? _PayAttemptOutcome.dismissed
           : _PayAttemptOutcome.failed;
     } catch (e, st) {
-      // Surface the real cause instead of silently falling back to COD.
-      // Debug-only: never leak the payment error + stack trace to release logs.
       if (kDebugMode) {
         debugPrint('[checkout] online payment failed: $e\n$st');
       }
@@ -416,10 +362,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     }
   }
 
-  /// Cash-on-Delivery vs Pay-Online selector. Toggles [_payOnline].
   Widget _buildPaymentMethod() {
-    // Same horizontal inset as every other card on the page — without it these
-    // two ran edge to edge and broke the page's margin.
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
       child: Column(
@@ -446,9 +389,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
     required bool value,
   }) {
     final selected = _payOnline == value;
-    // Both stay white like every other card here: `brandSoft` is so close to
-    // the canvas that tinting the selected one made it recede behind the
-    // unselected white one. Selection reads off the border, radio and title.
     return Semantics(
       inMutuallyExclusiveGroup: true,
       selected: selected,
@@ -562,28 +502,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
     final productSavings = (mrpTotal - subtotal)
         .clamp(0, double.infinity)
         .toDouble();
-    // Coupon discount preview — drives the price card row + the bottom
-    // bar total. If the user has typed a code but it's no longer
-    // applicable (subtotal dropped below min, etc) we drop it from the
-    // preview here too.
     final couponDiscount = _appliedCoupon?.ok == true
         ? (_appliedCoupon!.discount ?? 0).clamp(0, subtotal).toDouble()
         : 0.0;
     final afterCoupon = (subtotal + _deliveryStandard - couponDiscount)
         .clamp(0, double.infinity)
         .toDouble();
-    // Savings reflect only real reductions — product (MRP − selling) and
-    // coupon. Delivery is genuinely free, so there is no waived fee to strike:
-    // do NOT fabricate a ₹49 reference price. (CP E-Commerce Rules r.4 / CCPA
-    // dark-pattern guidance — no fictitious reference prices.)
     final totalSavings = productSavings + couponDiscount;
     final grandTotal = afterCoupon;
 
-    // GST breakup — selling prices are tax-inclusive, so back the tax out of
-    // the line amounts grouped by rate to show the statutory "of which taxes"
-    // split before placing the order (CP E-Commerce Rules r.4(3)). Derived
-    // client-side from cart line tax rates; the backend invoice is
-    // authoritative.
     final taxBreakup = _GstBreakup.fromLines(cart.lines);
 
     return Scaffold(
@@ -695,8 +622,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 }
 
-// ─── Header (replaces Scaffold appBar so layout slots can't swap) ───
-
 class _Header extends StatelessWidget {
   const _Header();
   @override
@@ -752,8 +677,6 @@ class _Header extends StatelessWidget {
     );
   }
 }
-
-// ─── Step indicator strip ───────────────────────────────────────────
 
 class _StepStrip extends StatelessWidget {
   @override
@@ -823,16 +746,6 @@ class _StepStrip extends StatelessWidget {
   );
 }
 
-// ─── Section primitives ─────────────────────────────────────────────
-
-/// Opt-in to having this order invoiced to the buyer's own GSTIN.
-///
-/// Three states, because promising input credit the buyer will not get is
-/// worse than not offering it:
-///   * no saved GSTIN     -> a link to add one, no toggle
-///   * no registered seller in the cart -> explained, no toggle
-///   * otherwise          -> a toggle, plus a note about any seller in the
-///                           cart that cannot issue a tax invoice
 class _GstClaimCard extends StatelessWidget {
   const _GstClaimCard({
     required this.lines,
@@ -1064,8 +977,6 @@ class _LoadingCard extends StatelessWidget {
   );
 }
 
-// ─── Address ────────────────────────────────────────────────────────
-
 class _SelectedAddressCard extends StatelessWidget {
   const _SelectedAddressCard({required this.address});
   final UserAddress address;
@@ -1238,9 +1149,6 @@ class _AddAddressCard extends StatelessWidget {
   }
 }
 
-/// Shown when the address book failed to load — without this the page
-/// would render the "Add a delivery address" card, which lies to a
-/// customer who *has* addresses but lost connectivity.
 class _AddressErrorCard extends StatelessWidget {
   const _AddressErrorCard({required this.onRetry});
   final VoidCallback onRetry;
@@ -1339,8 +1247,6 @@ class _AddressPickerRow extends StatelessWidget {
   }
 }
 
-// ─── Delivery estimate ──────────────────────────────────────────────
-
 class _DeliveryEstimateCard extends StatelessWidget {
   const _DeliveryEstimateCard();
   @override
@@ -1398,12 +1304,6 @@ class _DeliveryEstimateCard extends StatelessWidget {
   }
 }
 
-// ─── Items ──────────────────────────────────────────────────────────
-
-/// Splits the cart into one card per owning shop so the customer can
-/// see — before tapping place — that they're submitting one order per
-/// shop. Each card carries the shop name, its lines, and its subtotal;
-/// the price card below still rolls everything up into a single total.
 class _ItemsByShop extends StatelessWidget {
   const _ItemsByShop({required this.lines});
   final List<CartItem> lines;
@@ -1482,10 +1382,6 @@ class _ShopGroupCard extends StatelessWidget {
                 ],
               ),
             ),
-          // Seller identity disclosure — the buyer contracts with the shop, not
-          // ShopXY (CP E-Commerce Rules r.5/r.6). The cart payload carries only
-          // the seller name; full legal name / address / GSTIN are surfaced on
-          // the shop page (and tracked for the order/checkout payload — LDC-7).
           if (showHeader && shopName != null)
             Padding(
               padding: const EdgeInsets.fromLTRB(
@@ -1556,8 +1452,6 @@ class _ShopGroupCard extends StatelessWidget {
   }
 }
 
-/// Inset to the card's content padding — a full-bleed rule cuts the card in
-/// two instead of separating the rows inside it.
 class _RowDivider extends StatelessWidget {
   const _RowDivider();
   @override
@@ -1708,10 +1602,6 @@ class _ItemRow extends StatelessWidget {
   }
 }
 
-// ─── Price ──────────────────────────────────────────────────────────
-
-/// GST breakup derived from tax-INCLUSIVE cart line amounts grouped by rate.
-/// taxable = inclusive × 100 / (100 + rate); tax = inclusive − taxable.
 class _GstBreakup {
   const _GstBreakup({
     required this.taxableValue,
@@ -1722,7 +1612,6 @@ class _GstBreakup {
   final double taxableValue;
   final double taxTotal;
 
-  /// Per-rate rows ascending by rate: (rate, tax). Only rate > 0 entries.
   final List<({double rate, double tax})> perRate;
 
   factory _GstBreakup.fromLines(List<CartItem> lines) {
@@ -1809,9 +1698,6 @@ class _PriceCard extends StatelessWidget {
             value: grandTotal,
             bold: true,
           ),
-          // The coupon discount is a client estimate; the shop
-          // re-computes eligibility/caps when the order is placed, and
-          // the order confirmation shows the final charged amount.
           Padding(
             padding: const EdgeInsets.only(top: AppSizes.xs),
             child: Text(
@@ -1822,8 +1708,6 @@ class _PriceCard extends StatelessWidget {
               ),
             ),
           ),
-          // Statutory GST breakup — prices are inclusive of tax, so this is the
-          // "of which" split backed out of the item amounts.
           if (taxBreakup.taxTotal > 0) ...[
             const Divider(height: AppSizes.lg, color: AppColors.hairline),
             _PriceRow(
@@ -1995,8 +1879,6 @@ class _CouponCardState extends State<_CouponCard> {
                     _ctrl.clear();
                     widget.onRemove();
                   },
-                  // Not error-red: dropping a coupon is reversible, and red
-                  // next to the discount read as a warning about the offer.
                   style: TextButton.styleFrom(foregroundColor: AppColors.muted),
                   child: const Text('Remove'),
                 )
@@ -2113,8 +1995,6 @@ class _PriceRow extends StatelessWidget {
   }
 }
 
-// ─── Savings banner + trust ─────────────────────────────────────────
-
 class _SavingsBanner extends StatelessWidget {
   const _SavingsBanner({required this.amount});
   final double amount;
@@ -2181,9 +2061,6 @@ class _TrustFooter extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Qualified trust strip — cancellation depends on each shop's
-          // cancellation policy, so describe the mechanic rather than promise
-          // a blanket "easy cancel" (CP Act 2019; CCPA dark-pattern guidance).
           Row(
             children: const [
               Expanded(
@@ -2275,8 +2152,6 @@ class _Grabber extends StatelessWidget {
   );
 }
 
-// ─── Footer (replaces Scaffold bottomNavigationBar) ─────────────────
-
 class _Footer extends StatelessWidget {
   const _Footer({
     required this.total,
@@ -2293,8 +2168,6 @@ class _Footer extends StatelessWidget {
   final bool canPlace;
   final VoidCallback onPlace;
 
-  /// Why [canPlace] is false, shown above the disabled CTA. Without it the
-  /// greyed-out button is a dead end — the reason is scrolled off-screen.
   final String? blockedHint;
   final VoidCallback? onBlockedTap;
 
@@ -2361,9 +2234,6 @@ class _Footer extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // "Estimate" — the coupon is re-validated server-side at
-                      // place-order; the order confirmation shows the final charged
-                      // amount (CP E-Commerce Rules r.4(3)).
                       Text(
                         'Total payable (est.)',
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -2398,8 +2268,6 @@ class _Footer extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: AppSizes.md),
-                // See cart_page: Flexible let the button size to its content
-                // and strand the rest of the slot as dead space on the right.
                 Expanded(
                   flex: 6,
                   child: AppButton.primary(

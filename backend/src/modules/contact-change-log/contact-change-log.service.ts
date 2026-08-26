@@ -3,10 +3,6 @@ import prisma from '../../infra/db/prisma.js';
 
 export type ContactEntityType = 'PARTY' | 'VENDOR';
 
-/// Fields we audit on parties and vendors. Identity (id, isSystem,
-/// linked_user_id, created/updated timestamps) is deliberately excluded
-/// — the log is for *contact details the merchant deliberately edits*,
-/// not for system bookkeeping.
 const TRACKED_FIELDS = [
   'name',
   'contactName',
@@ -34,11 +30,6 @@ function normalize(v: string | null | boolean | undefined): string | null {
 }
 
 export class ContactChangeLogService {
-  /// Diffs `before` against `after` (both keyed by the same field names
-  /// used on the API) and writes one row per actually-changed field.
-  /// Pass an open Prisma transaction client to keep the log write
-  /// inside the same transaction as the entity update — otherwise we
-  /// could log a change that never happened.
   async recordChanges(args: {
     entityType: ContactEntityType;
     entityId: number;
@@ -76,10 +67,6 @@ export class ContactChangeLogService {
     limit: number;
     skip: number;
   }) {
-    // CCL-1: verify the entity belongs to this shop *inside the service*
-    // (the log rows carry no shopId) so safety doesn't depend on every
-    // caller pre-checking ownership. A foreign/unknown entity returns an
-    // empty page rather than leaking another shop's contact PII history.
     const owns =
       args.entityType === 'PARTY'
         ? await prisma.party.findFirst({

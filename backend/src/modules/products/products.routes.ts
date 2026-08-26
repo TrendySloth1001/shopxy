@@ -8,22 +8,16 @@ const router = Router();
 router.post('/', asyncHandler(productsController.create.bind(productsController)));
 router.get('/', asyncHandler(productsController.list.bind(productsController)));
 router.get('/lookup', asyncHandler(productsController.lookup.bind(productsController)));
-// Must stay above '/:id' — Express matches in order, so a later declaration
-// would be swallowed by the id route and answer 404 for "catalogue".
 router.get('/catalogue', asyncHandler(productsController.catalogue.bind(productsController)));
 router.get('/:id', asyncHandler(productsController.getById.bind(productsController)));
 router.patch('/:id', asyncHandler(productsController.update.bind(productsController)));
 router.post('/:id/publish', asyncHandler(productsController.setPublished.bind(productsController)));
 router.delete('/:id', asyncHandler(productsController.delete.bind(productsController)));
 
-// Product images
 router.post('/:id/images', asyncHandler(productsController.addImage.bind(productsController)));
 router.delete('/:id/images/:imageId', asyncHandler(productsController.deleteImage.bind(productsController)));
 router.patch('/:id/images/reorder', asyncHandler(productsController.reorderImages.bind(productsController)));
 
-// Per-product custom field values. Definitions are shop-wide and live
-// under /custom-fields; values are owned by a product, so the URL
-// reflects that ownership ("a product has values").
 router.get(
   '/:id/custom-fields',
   asyncHandler(customFieldsController.listValuesForProduct.bind(customFieldsController)),

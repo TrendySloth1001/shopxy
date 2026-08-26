@@ -7,7 +7,6 @@ async function okJson<T>(res: Response, parse: (raw: unknown) => T, fallback: st
       const body = (await res.json()) as { error?: string };
       if (body?.error) message = body.error;
     } catch {
-      /* keep fallback */
     }
     throw new Error(message);
   }

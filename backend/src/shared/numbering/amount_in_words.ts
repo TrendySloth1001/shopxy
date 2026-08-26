@@ -1,14 +1,3 @@
-/**
- * Indian-numbering amount-to-words formatter.
- *
- * Used by the invoice service to pre-render the "Rupees ... only" line that
- * sits above the GST summary on the printed PDF. Indian convention uses
- * lakh (1,00,000) and crore (1,00,00,000) rather than the Western thousand /
- * million groupings, and paise is the standard 1/100 fractional rupee unit.
- *
- * Pure — no I/O, no Prisma. Safe to call from anywhere in the request path.
- */
-
 const ONES = [
   'Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine',
   'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen',
@@ -19,8 +8,6 @@ const TENS = [
   '', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety',
 ];
 
-/// Converts an integer 0–999 into words. Used by the Indian-system wrapper
-/// below — caller is responsible for grouping (thousand / lakh / crore).
 function under1000(n: number): string {
   if (n < 0 || n > 999) throw new Error(`under1000: out of range (${n})`);
   if (n < 20) return ONES[n];
@@ -36,8 +23,6 @@ function under1000(n: number): string {
     : `${ONES[h]} Hundred ${under1000(r)}`;
 }
 
-/// Indian-system integer-to-words. 1,23,45,678 → "One Crore Twenty Three
-/// Lakh Forty Five Thousand Six Hundred Seventy Eight".
 function intToWordsIndian(n: number): string {
   if (!Number.isFinite(n)) throw new Error('intToWordsIndian: not finite');
   if (n < 0) return `Minus ${intToWordsIndian(-n)}`;
@@ -59,16 +44,10 @@ function intToWordsIndian(n: number): string {
   return parts.join(' ');
 }
 
-/// Formats a rupee amount as "Rupees X and Paise Y only". The input is a
-/// Number or numeric string — both come up because Prisma returns Decimal
-/// for the invoice total. Anything past two decimal places is rounded to
-/// match the displayed amount on the invoice.
 export function amountInWords(amount: number | string): string {
   const n = typeof amount === 'string' ? Number(amount) : amount;
   if (!Number.isFinite(n)) return 'Rupees Zero only';
 
-  // Half-away-from-zero rounding on the paise so we agree with the
-  // displayed total after `roundOff` has been applied.
   const sign = n < 0 ? -1 : 1;
   const abs = Math.abs(n);
   const totalPaise = Math.round(abs * 100);

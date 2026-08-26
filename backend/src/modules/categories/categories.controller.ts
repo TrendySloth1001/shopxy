@@ -113,7 +113,6 @@ export class CategoriesController {
         });
         return;
       }
-      // HAS_CHILDREN
       res.status(409).json({
         error: `Category has ${result.children} child category(ies); delete or re-home them first`,
       });

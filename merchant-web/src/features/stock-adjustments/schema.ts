@@ -1,12 +1,5 @@
 import { z } from "zod";
 
-/**
- * Stock-adjustment shapes, mirroring the backend `stock-adjustments` module
- * (`/stock-adjustments`). A manual correction to on-hand stock — damage,
- * expiry, shrinkage, a recount or an opening balance — that posts an IN/OUT
- * movement to the stock ledger. Quantities are Decimals serialised as numbers.
- */
-
 export const ADJUSTMENT_REASONS = ["DAMAGE", "EXPIRED", "SHRINKAGE", "RECOUNT", "OPENING"] as const;
 export type AdjustmentReason = (typeof ADJUSTMENT_REASONS)[number];
 
@@ -26,7 +19,6 @@ export const ADJUSTMENT_REASON_CLASSES: Record<string, string> = {
   OPENING: "bg-accent-indigo-soft text-accent-indigo",
 };
 
-/** Default movement direction for a reason; RECOUNT/OPENING let the user pick. */
 export function defaultDirection(reason: string): "IN" | "OUT" {
   return reason === "OPENING" ? "IN" : "OUT";
 }

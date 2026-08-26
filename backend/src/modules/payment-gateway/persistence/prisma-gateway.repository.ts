@@ -1,8 +1,3 @@
-/**
- * Prisma-backed persistence for the gateway module. Maps DB rows ↔ the neutral
- * `GatewayPaymentRecord` so the core never sees a Prisma type. Amounts are
- * stored as Decimal(12,2) and surfaced as plain numbers (rupees).
- */
 import { Prisma } from '@prisma/client';
 import prisma from '../../../infra/db/prisma.js';
 import { round2, toNumber } from '../../../shared/numbering/decimal.js';
@@ -117,9 +112,6 @@ class PrismaGatewayPaymentRepository implements GatewayPaymentRepository {
     customerUserId: number | null,
     key: string,
   ): Promise<GatewayPaymentRecord | null> {
-    // findFirst (not findUnique): the composite unique includes a nullable
-    // customerUserId, and Postgres treats NULLs as distinct — findFirst gives a
-    // correct lookup for both the keyed-customer and (rare) null-customer cases.
     const row = await prisma.gatewayPayment.findFirst({
       where: { customerUserId, idempotencyKey: key },
       orderBy: { id: 'desc' },
@@ -160,9 +152,6 @@ class PrismaGatewayPaymentRepository implements GatewayPaymentRepository {
     createdBefore: Date;
     limit: number;
   }): Promise<GatewayPaymentRecord[]> {
-    // Open = not yet terminal. CAPTURED/REFUNDED/FAILED need no re-check.
-    // Oldest first so a backlog drains deterministically and the abandon
-    // window is applied to the longest-waiting intents first.
     const rows = await prisma.gatewayPayment.findMany({
       where: {
         status: { in: ['CREATED', 'PENDING'] },
@@ -209,15 +198,6 @@ class PrismaGatewayPaymentRepository implements GatewayPaymentRepository {
     return row ? toRecord(row) : null;
   }
 
-  /**
-   * Lock the capture row, then grant what's actually left of it. The
-   * SELECT … FOR UPDATE is the serialization point: a second reservation against
-   * the same capture blocks here until the first commits, so it sees the updated
-   * `amount_refunded` and can only take the remaining headroom. Without the lock
-   * two concurrent refunds both read the pre-refund value and together exceed
-   * the captured amount (Razorpay then rejects the second one, leaving a FAILED
-   * row the sweep churns on — see reserveRefundable's port doc).
-   */
   async reserveRefundable(
     id: number,
     requested: number,
@@ -231,8 +211,6 @@ class PrismaGatewayPaymentRepository implements GatewayPaymentRepository {
 
     const amount = Number(row.amount);
     const alreadyRefunded = Number(row.amount_refunded);
-    // Clamp (never reject) an overshoot: a rounding artefact in a caller's
-    // proportional share must not strand a legitimate refund.
     const granted = round2(Math.min(requested, round2(amount - alreadyRefunded)));
     if (!(granted > 0)) return { granted: 0, fullyRefunded: false };
 
@@ -258,9 +236,6 @@ class PrismaGatewayPaymentRepository implements GatewayPaymentRepository {
     const row = locked[0];
     if (!row) return;
 
-    // Derive the post-release status from the LOCKED value, not a caller
-    // snapshot: another refund may have reserved headroom since the caller read
-    // the capture, and that one still legitimately covers the capture in full.
     const remainingRefunded = round2(Number(row.amount_refunded) - amount);
     await tx.gatewayPayment.update({
       where: { id },
@@ -365,7 +340,6 @@ class PrismaWebhookEventRepository implements WebhookEventRepository {
       });
       return true;
     } catch (e) {
-      // Unique (provider, event_id) violation = already seen → not fresh.
       if ((e as { code?: string }).code === 'P2002') return false;
       throw e;
     }
@@ -379,16 +353,6 @@ class PrismaWebhookEventRepository implements WebhookEventRepository {
   }
 
   async release(provider: string, eventId: string): Promise<void> {
-    // Delete only an UNPROCESSED claim, so a redelivery re-claims and re-runs
-    // settlement. `processedAt: null` is the guard that makes this safe: a
-    // completed event keeps its row and stays deduped forever.
-    //
-    // Trade-off, stated plainly: dropping the row also drops the stored payload
-    // for that attempt. The alternative (an attempts/failedAt column) needs a
-    // migration; until then the failure is recorded in the tracker log with the
-    // event id and error, the payload is still in the provider's dashboard, and
-    // a redelivery re-inserts it. A retryable money event is worth more than one
-    // audit row of a failed attempt.
     await prisma.gatewayWebhookEvent.deleteMany({
       where: { provider, eventId, processedAt: null },
     });

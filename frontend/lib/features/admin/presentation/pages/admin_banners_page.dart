@@ -382,10 +382,6 @@ class _BannerTile extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton widgets (shown while isLoading && banners.isEmpty)
-// ---------------------------------------------------------------------------
-
 class _BannersSkeleton extends StatelessWidget {
   const _BannersSkeleton();
 
@@ -421,7 +417,6 @@ class _PlacementSectionSkeleton extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section header: label shimmer line + badge shimmer box
           Row(
             children: const [
               AppShimmerLine(widthFactor: 0.35, height: 16),
@@ -454,10 +449,8 @@ class _BannerTileSkeleton extends StatelessWidget {
           padding: const EdgeInsets.all(AppSizes.md),
           child: Row(
             children: [
-              // Image placeholder
               AppShimmerBox(width: 72, height: 56, radius: AppSizes.radiusSm),
               const SizedBox(width: AppSizes.md),
-              // Text lines
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -468,7 +461,6 @@ class _BannerTileSkeleton extends StatelessWidget {
                   ],
                 ),
               ),
-              // Delete icon placeholder
               const AppShimmerBox(
                 width: 32,
                 height: 32,

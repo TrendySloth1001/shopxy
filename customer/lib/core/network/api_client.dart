@@ -4,10 +4,6 @@ import 'package:http/http.dart' as http;
 import 'package:shopxy_customer/core/auth/token_manager.dart';
 import 'package:shopxy_customer/core/config/app_config.dart';
 
-/// Default timeout for every HTTP call. A hung connection on a flaky
-/// mobile network would otherwise wedge save buttons + PopScope
-/// indefinitely. 20s is comfortably above the slowest legit response
-/// we expect, while still bounded.
 const Duration _kDefaultTimeout = Duration(seconds: 20);
 
 class ApiClient {
@@ -29,16 +25,11 @@ class ApiClient {
         ...?extra,
       };
 
-  // ── Public HTTP methods ───────────────────────────────────────────────────
-
   Future<http.Response> get(String path, {Map<String, String>? queryParameters}) =>
       _withRetry(() => http
           .get(_buildUri(path, queryParameters), headers: _headers())
           .timeout(_kDefaultTimeout));
 
-  /// [extraHeaders] are merged on top of the defaults — used for things
-  /// like `X-Idempotency-Key` on cart submit so a flaky retry doesn't
-  /// double-book the customer.
   Future<http.Response> post(
     String path, {
     Object? body,
@@ -74,11 +65,6 @@ class ApiClient {
             .timeout(_kDefaultTimeout),
       );
 
-  // Body-bearing DELETE kept in sync with the merchant ApiClient even
-  // though the customer app doesn't currently use the body slot —
-  // CLAUDE.md's "duplicate, don't extract" rule says the two clients
-  // stay structurally identical so a future caller doesn't trip on
-  // missing parity.
   Future<http.Response> delete(String path, {Object? body}) => _withRetry(
         () => http
             .delete(
@@ -89,14 +75,6 @@ class ApiClient {
             .timeout(_kDefaultTimeout),
       );
 
-  /// Multipart file upload — includes auth header. Takes a *factory*
-  /// (not a built [http.MultipartFile]) because [_withRetry] may invoke
-  /// this closure twice — once for the original request, once after a
-  /// silent token refresh. A MultipartFile's stream is consumed by
-  /// `request.send()`, so reusing the same instance on a retry would
-  /// throw "Stream has already been listened to" and surface as a
-  /// generic multipart failure to the user. Rebuilding per attempt
-  /// keeps the retry path safe.
   Future<http.StreamedResponse> multipart(
     String path, {
     required Future<http.MultipartFile> Function() makeFile,
@@ -108,18 +86,10 @@ class ApiClient {
         return request.send().timeout(const Duration(seconds: 60));
       });
 
-  // ── 401 interception + transparent token refresh ──────────────────────────
-
   Future<T> _withRetry<T extends http.BaseResponse>(Future<T> Function() call) async {
     final response = await call();
     if (response.statusCode != 401) return response;
 
-    // Guest path: no token was attached, so there's no session to
-    // refresh and no "you got logged out" event to fire. The caller
-    // (a feature that tried to read /me/*) gets the 401 as-is and
-    // decides how to render — typically by prompting sign-in. Without
-    // this guard every gated request a guest makes would cascade into
-    // a full state-reset via onUnauthorized → clearAuth.
     if (_tokenManager.accessToken == null) return response;
 
     final refreshed = await _tryRefresh();
@@ -127,13 +97,10 @@ class ApiClient {
       _tokenManager.onUnauthorized?.call();
       return response;
     }
-    // Retry original call once with the new token.
     return call();
   }
 
   Future<bool> _tryRefresh() async {
-    // Deduplicate concurrent refresh calls — only one network round-trip
-    // even when N waiting requests all hit 401 at once.
     final pending = _refreshCompleter;
     if (pending != null) return pending.future;
 

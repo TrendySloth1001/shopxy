@@ -5,16 +5,6 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/constants/app_curves.dart';
 
-/// Skeleton-loader primitive. Rule from DESIGN.md #4: loading uses
-/// skeletons (mirroring final layout) instead of spinners.
-///
-/// Use `AppShimmerBox` for arbitrary blocks (image placeholders,
-/// rounded rectangles). Use `AppShimmerLine` for text lines —
-/// pre-styled to 12dp tall with a sane radius.
-///
-/// All shimmer boxes pulse in sync (one shared `AnimationController`
-/// would be ideal but a tiny per-widget ticker is cheap on a phone and
-/// avoids leaking state across routes).
 class AppShimmerBox extends StatefulWidget {
   const AppShimmerBox({
     super.key,
@@ -80,8 +70,6 @@ class _AppShimmerBoxState extends State<AppShimmerBox>
   }
 }
 
-/// One line of skeleton text. `widthFactor` controls how wide the line
-/// is relative to its parent (0.6 means 60% — useful for headings).
 class AppShimmerLine extends StatelessWidget {
   const AppShimmerLine({
     super.key,
@@ -101,8 +89,6 @@ class AppShimmerLine extends StatelessWidget {
   }
 }
 
-/// Convenience: animate any child in once it's ready, after a brief
-/// fade from the shimmer. Use sparingly — for hero list reveals only.
 class AppFadeIn extends StatelessWidget {
   const AppFadeIn({
     super.key,

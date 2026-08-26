@@ -7,7 +7,6 @@ import type {
   ProductList,
 } from "./schema";
 
-/** Payload sent to create/update — assembled by the form, validated by the backend. */
 export type ProductWritePayload = Record<string, unknown>;
 
 async function jsonOrThrow<T>(res: Response, fallback: string): Promise<T> {
@@ -17,7 +16,6 @@ async function jsonOrThrow<T>(res: Response, fallback: string): Promise<T> {
       const body = (await res.json()) as { error?: string };
       if (body?.error) message = body.error;
     } catch {
-      // keep fallback
     }
     throw new Error(message);
   }
@@ -104,7 +102,6 @@ export function reorderImages(
   }).then((r) => jsonOrThrow<ProductImage[]>(r, "Could not reorder images."));
 }
 
-/** Upload an image file; returns the stored relative URL. */
 export async function uploadImage(file: File): Promise<string> {
   const form = new FormData();
   form.append("file", file);

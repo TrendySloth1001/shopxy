@@ -1,14 +1,3 @@
-/**
- * Shop capability helpers — the web mirror of the Flutter merchant app's
- * `lib/core/auth/shop_capabilities.dart`. The backend is the source of truth
- * (`requireArea` 403s); these gate the UI so people only see what they can use.
- *
- * Rules, identical to `backend/src/shared/http/permissions.ts#hasRight`:
- *   - `shopRole === "OWNER"` bypasses every check (full access).
- *   - otherwise a grant must exist in `shopPermissions` ("area:view"/"area:manage").
- *   - `:manage` implies `:view`.
- *   - no grant → denied (fail-closed).
- */
 import type { AuthUser } from "./types";
 import { type Area, hasRight, manageRight, viewRight } from "@/features/team/permissions";
 
@@ -16,33 +5,22 @@ export function isShopOwner(user: AuthUser | null | undefined): boolean {
   return user?.shopRole === "OWNER";
 }
 
-/** Can the user see this area at all? */
 export function canView(user: AuthUser | null | undefined, area: Area): boolean {
   if (!user) return false;
   if (isShopOwner(user)) return true;
   return hasRight(user.shopPermissions ?? [], viewRight(area));
 }
 
-/** Can the user make changes in this area? */
 export function canManage(user: AuthUser | null | undefined, area: Area): boolean {
   if (!user) return false;
   if (isShopOwner(user)) return true;
   return hasRight(user.shopPermissions ?? [], manageRight(area));
 }
 
-/**
- * Map a dashboard path to the permission area that guards it — mirrors the
- * backend route→area table (`backend/src/shared/http/merchantAreas.ts`).
- * Most-specific prefixes first. Returns null for ungated sections (the
- * dashboard home, profile, settings, categories) which everyone may reach.
- */
 const PATH_AREAS: readonly [string, Area][] = [
   ["/dashboard/products", "products"],
   ["/dashboard/scan-console", "products"],
   ["/dashboard/custom-fields", "products"],
-  // Saved HSN shortcuts are classification, so `products` gates the page. The
-  // rate-override section inside it is separately gated on `shop`, matching
-  // the backend's per-route guards in `modules/hsn/hsn.routes.ts`.
   ["/dashboard/hsn-codes", "products"],
   ["/dashboard/orders", "orders"],
   ["/dashboard/returns", "orders"],

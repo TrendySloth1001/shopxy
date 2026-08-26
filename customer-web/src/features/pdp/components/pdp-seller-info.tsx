@@ -2,16 +2,6 @@ import Link from "next/link";
 import { Store } from "@/shared/icons";
 import type { ShopSummary } from "../types";
 
-/**
- * Seller identity disclosure (CP E-Commerce Rules r.5(3)/r.6(5)).
- *
- * A marketplace must let the buyer know WHO they are contracting with before
- * they purchase: the seller's legal name, principal geographic address, GSTIN
- * and a customer-care contact. We render whatever the shop payload carries and
- * mark the statutory fields that are not yet surfaced as "Not provided" rather
- * than hiding the block — so the disclosure is always present and visibly
- * incomplete until the backend payload is extended (tracked: LDC-7 follow-up).
- */
 export function PdpSellerInfo({ shop }: { shop: ShopSummary }) {
   const location =
     shop.locationCity && shop.locationState

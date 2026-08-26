@@ -85,7 +85,6 @@ export function AdjustmentEditor() {
         <p className="mt-md rounded-md bg-error-soft px-md py-sm text-body-sm text-error">{error}</p>
       ) : null}
 
-      {/* Reason */}
       <div className="mt-xl">
         <p className="text-label-md uppercase tracking-wide text-subtle">{t("editor.reason")}</p>
         <div className="mt-sm flex flex-wrap items-center gap-sm">
@@ -104,7 +103,6 @@ export function AdjustmentEditor() {
         </div>
       </div>
 
-      {/* Direction (only when the reason can go either way) */}
       {directionIsEditable(reason) ? (
         <div className="mt-lg">
           <p className="text-label-md uppercase tracking-wide text-subtle">{t("editor.direction")}</p>
@@ -131,7 +129,6 @@ export function AdjustmentEditor() {
         </div>
       ) : null}
 
-      {/* Items */}
       <div className="mt-xl">
         <div className="flex flex-wrap items-center justify-between gap-sm">
           <p className="text-label-md uppercase tracking-wide text-subtle">{t("editor.products")}</p>
@@ -163,12 +160,10 @@ export function AdjustmentEditor() {
         )}
       </div>
 
-      {/* Note */}
       <div className="mt-xl max-w-content">
         <TextAreaField label={t("editor.noteLabel")} value={note} onChange={setNote} rows={2} />
       </div>
 
-      {/* Action */}
       <div className="mt-xxl flex flex-wrap items-center gap-sm">
         <button
           type="button"

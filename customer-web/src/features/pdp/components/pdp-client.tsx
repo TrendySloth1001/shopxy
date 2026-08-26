@@ -18,8 +18,6 @@ import { PdpSpecs } from "./pdp-specs";
 import { ReviewsSection } from "@/features/reviews/components/reviews-section";
 import { BackButton } from "@/shared/ui/back-button";
 
-// ── System tag badge ──────────────────────────────────────────────────────────
-
 const TAG_CONFIG: Record<string, { label: string; className: string }> = {
   BESTSELLER: { label: "Bestseller", className: "bg-ink text-white" },
   EDITORS_PICK: { label: "Editor's pick", className: "bg-info text-white" },
@@ -37,8 +35,6 @@ function SystemTagPill({ tag }: { tag: string }) {
     </span>
   );
 }
-
-// ── Toast ─────────────────────────────────────────────────────────────────────
 
 function Toast({
   message,
@@ -69,8 +65,6 @@ function Toast({
   );
 }
 
-// ── Section divider + header ──────────────────────────────────────────────────
-
 function SectionDivider() {
   return <div className="mt-lg h-[6px] bg-canvas" />;
 }
@@ -83,8 +77,6 @@ function SectionHeader({ title }: { title: string }) {
   );
 }
 
-// ── Skeleton ──────────────────────────────────────────────────────────────────
-
 function Shimmer({ className }: { className: string }) {
   return (
     <div
@@ -96,11 +88,8 @@ function Shimmer({ className }: { className: string }) {
 function PdpSkeleton() {
   return (
     <div className="pb-[80px] lg:pb-0">
-      {/* Two-column skeleton on desktop, single column on mobile */}
       <div className="lg:grid lg:grid-cols-[minmax(0,45fr)_minmax(0,55fr)] lg:items-start lg:gap-xl lg:px-lg lg:pt-lg">
-        {/* Gallery shimmer */}
         <div className="aspect-square w-full animate-pulse bg-canvas sm:aspect-[4/3] md:aspect-video lg:aspect-square lg:max-h-[420px]" />
-        {/* Buy-box shimmer */}
         <div className="px-lg pb-sm pt-lg lg:px-0 lg:pt-0">
           <Shimmer className="mb-sm h-[10px] w-1/4" />
           <Shimmer className="mb-xs h-[18px] w-4/5" />
@@ -130,8 +119,6 @@ function PdpSkeleton() {
   );
 }
 
-// ── Error state ───────────────────────────────────────────────────────────────
-
 function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-md p-xl text-center">
@@ -148,8 +135,6 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
     </div>
   );
 }
-
-// ── Stock chip ────────────────────────────────────────────────────────────────
 
 function StockChip({ qty }: { qty: number }) {
   if (qty <= 0) {
@@ -176,8 +161,6 @@ function StockChip({ qty }: { qty: number }) {
   );
 }
 
-// ── Sold-by chip ──────────────────────────────────────────────────────────────
-
 function SoldByChip({ product }: { product: ProductDetail }) {
   const shop = product.shop;
   if (!shop) return null;
@@ -193,8 +176,6 @@ function SoldByChip({ product }: { product: ProductDetail }) {
   );
 }
 
-// ── Share button ──────────────────────────────────────────────────────────────
-
 function ShareButton({ productName }: { productName: string }) {
   const handleShare = async () => {
     const url = window.location.href;
@@ -202,7 +183,6 @@ function ShareButton({ productName }: { productName: string }) {
       try {
         await navigator.share({ title: productName, url });
       } catch {
-        // cancelled — ignore
       }
     } else {
       await navigator.clipboard.writeText(url).catch(() => {});
@@ -219,8 +199,6 @@ function ShareButton({ productName }: { productName: string }) {
     </button>
   );
 }
-
-// ── PDP body ──────────────────────────────────────────────────────────────────
 
 interface BodyProps {
   product: ProductDetail;
@@ -247,10 +225,8 @@ function PdpBody({ product }: BodyProps) {
     return `${Math.floor(n / 10) * 10}`;
   };
 
-  // ── Buy-box content (shared between mobile inline and desktop right column) ──
   const buyBoxContent = (
     <>
-      {/* Title block */}
       <div className="px-lg pb-sm pt-lg lg:px-0 lg:pt-0">
         {product.systemTags.length > 0 ? (
           <div className="mb-sm flex flex-wrap gap-xs">
@@ -280,7 +256,6 @@ function PdpBody({ product }: BodyProps) {
             {product.description}
           </p>
         ) : null}
-        {/* Rating chip */}
         {product.ratingAvg != null ? (
           <div className="mt-sm flex items-center gap-sm">
             <span className="flex items-center gap-xs rounded-[3px] bg-success px-sm py-xs">
@@ -300,32 +275,26 @@ function PdpBody({ product }: BodyProps) {
         )}
       </div>
 
-      {/* Variant picker */}
       <div className="lg:[&>div]:px-0">
         <PdpVariantPicker product={product} onSelect={setSelectedVariant} />
       </div>
 
-      {/* Price block */}
       <div className="lg:[&>div]:px-0">
         <PdpPriceBlock product={product} selectedVariant={selectedVariant} />
       </div>
 
-      {/* Stock chip */}
       <div className="lg:[&>div]:mx-0">
         <StockChip qty={displayQty} />
       </div>
 
-      {/* Offers */}
       <div className="lg:[&>div]:px-0">
         <PdpOffersStrip offers={offers} />
       </div>
 
-      {/* Desktop-only buy actions (inline in right column, hidden on mobile) */}
       <div className="hidden lg:block lg:px-0 lg:pb-md lg:pt-sm">
         <PdpActionBar product={product} selectedVariant={selectedVariant} onMessage={showToast} desktopInline />
       </div>
 
-      {/* Seller card */}
       {product.shop ? (
         <Link
           href={`/shop/${product.shop.slug}`}
@@ -348,57 +317,42 @@ function PdpBody({ product }: BodyProps) {
         </Link>
       ) : null}
 
-      {/* Seller identity disclosure (CP E-Commerce Rules r.5/r.6) */}
       {product.shop ? <PdpSellerInfo shop={product.shop} /> : null}
     </>
   );
 
   return (
     <>
-      {/*
-       * Mobile layout: single column, sticky bottom bar.
-       * Desktop (lg+): two-column grid — left sticky gallery (~45%), right buy-box.
-       * Below the grid: Details, FBT rail, Specs, Reviews (full-width).
-       */}
       <div className="pb-[80px] lg:pb-0">
         <div className="px-sm pt-sm">
           <BackButton fallback="/" />
         </div>
 
-        {/* ── Two-column grid on lg+ ── */}
         <div className="lg:grid lg:grid-cols-[minmax(0,45fr)_minmax(0,55fr)] lg:items-start lg:gap-xl lg:px-lg lg:pt-lg">
 
-          {/* Left: gallery (sticky within column on desktop) */}
           <div className="relative lg:sticky lg:top-[72px]">
             <PdpGallery
               images={selectedVariant?.imageUrls.map((url, i) => ({ url, sortOrder: i })) ?? product.images}
               offers={offers}
               productName={product.name}
             />
-            {/* Overlay buttons (wishlist + share) */}
             <div className="absolute right-md top-md flex flex-col gap-sm">
               <PdpWishlistButton productId={product.id} />
               <ShareButton productName={product.name} />
             </div>
           </div>
 
-          {/* Right: buy-box — shown inline on desktop, hidden on mobile (rendered below) */}
           <div className="hidden lg:block">
             {buyBoxContent}
           </div>
         </div>
 
-        {/* Mobile buy-box (below gallery, single column) */}
         <div className="lg:hidden">
           {buyBoxContent}
         </div>
 
-        {/* ── Below-the-fold sections (full width on both breakpoints) ── */}
-
-        {/* FBT */}
         <PdpFbtRail productId={product.id} />
 
-        {/* Details section */}
         <SectionDivider />
         <SectionHeader title="Details" />
         {product.highlights.length > 0 ? (
@@ -418,23 +372,19 @@ function PdpBody({ product }: BodyProps) {
           </div>
         ) : null}
 
-        {/* Specs section */}
         <SectionDivider />
         <SectionHeader title="Specifications" />
         <PdpSpecs groups={specGroups} />
 
-        {/* Reviews section */}
         <SectionDivider />
         <SectionHeader title="Ratings & Reviews" />
         <ReviewsSection productId={product.id} productName={product.name} />
       </div>
 
-      {/* Sticky bottom bar — mobile only (hidden on lg+) */}
       <div className="lg:hidden">
         <PdpActionBar product={product} selectedVariant={selectedVariant} onMessage={showToast} />
       </div>
 
-      {/* Toast */}
       {toast ? (
         <Toast
           message={toast.message}
@@ -446,11 +396,8 @@ function PdpBody({ product }: BodyProps) {
   );
 }
 
-// ── Main export — handles hydration (SSR data → client state) ─────────────────
-
 interface PdpClientProps {
   productId: string;
-  /** Server-rendered initial product data (for hydration) */
   initialData?: ProductDetail;
 }
 
@@ -473,12 +420,10 @@ export function PdpClient({ productId, initialData }: PdpClientProps) {
     }
   }, [productId]);
 
-  // Only fetch client-side if we don't have initialData
   useEffect(() => {
     if (!initialData) startTransition(() => { void load(); });
   }, [initialData, load]);
 
-  // Fire-and-forget view event
   useEffect(() => {
     if (viewFired.current) return;
     viewFired.current = true;

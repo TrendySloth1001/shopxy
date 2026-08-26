@@ -1,6 +1,3 @@
-/// One product review as the customer app consumes it. Mirrors the
-/// `reviewSelect` shape on the backend so any field added there only
-/// needs a single setter wired in fromJson.
 class Review {
   const Review({
     required this.id,
@@ -35,8 +32,6 @@ class Review {
   }
 }
 
-/// One-shot summary payload from /products/:id/reviews/summary —
-/// drives the PDP block without a follow-up list call.
 class ReviewSummary {
   const ReviewSummary({
     required this.ratingAvg,
@@ -45,11 +40,8 @@ class ReviewSummary {
     required this.recent,
   });
 
-  /// May be null if the product has no reviews yet — the section
-  /// switches to its "Be the first to review" empty state.
   final double? ratingAvg;
   final int ratingCount;
-  /// 5 -> count, 4 -> count, ..., 1 -> count. Always present (zero-filled).
   final Map<int, int> histogram;
   final List<Review> recent;
 
@@ -81,9 +73,6 @@ class ReviewsPage {
   final int? nextCursor;
 }
 
-/// One row in the customer's "My reviews" page — a review plus the
-/// product it's attached to, so the profile feed can render a
-/// thumbnail-and-name card without a second product fetch.
 class MyReview {
   const MyReview({
     required this.review,

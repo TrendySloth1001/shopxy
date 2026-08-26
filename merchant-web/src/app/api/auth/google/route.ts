@@ -12,11 +12,6 @@ import {
 
 const idTokenSchema = z.object({ idToken: z.string().min(10) });
 
-// POST /api/auth/google — verify the Google ID token server-side (proxied to
-// the backend), gate on role, and on success persist the token pair as
-// httpOnly cookies — same contract as /api/auth/login. Returns
-// `needsPinSetup` so the client knows to route to the recovery-PIN setup
-// screen before continuing (new Google signups always need it).
 export async function POST(req: Request) {
   const json = await req.json().catch(() => null);
   const parsed = idTokenSchema.safeParse(json);

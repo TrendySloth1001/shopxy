@@ -112,15 +112,10 @@ export class QuotationsController {
     res.json(quotation);
   }
 
-  /// POST /quotations/:id/archive — file a settled quotation out of the
-  /// merchant's working list. There is no DELETE and can't be: the quotation
-  /// number is a per-shop serial allocated at create time. See
-  /// `quotationsService.setArchived`.
   async archive(req: Request, res: Response): Promise<void> {
     await this.setArchived(req, res, true);
   }
 
-  /// POST /quotations/:id/unarchive — bring it back into the working list.
   async unarchive(req: Request, res: Response): Promise<void> {
     await this.setArchived(req, res, false);
   }
@@ -139,7 +134,6 @@ export class QuotationsController {
     res.json(result.quotation);
   }
 
-  /// Merchant prices a customer's REQUESTED quote and sends it (→ PENDING).
   async respond(req: Request, res: Response): Promise<void> {
     const shopId = requireShopId(req, res);
     if (!shopId) return;
@@ -159,7 +153,6 @@ export class QuotationsController {
     res.json(quotation);
   }
 
-  /// Stream a quotation as a PDF (attachment).
   async downloadPdf(req: Request, res: Response): Promise<void> {
     const shopId = requireShopId(req, res);
     if (!shopId) return;
@@ -178,7 +171,6 @@ export class QuotationsController {
     }
   }
 
-  /// Merchant declines a customer's REQUESTED quote.
   async declineRequest(req: Request, res: Response): Promise<void> {
     const shopId = requireShopId(req, res);
     if (!shopId) return;

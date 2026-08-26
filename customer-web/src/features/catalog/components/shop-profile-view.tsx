@@ -13,12 +13,6 @@ import { resolveImageUrl } from "@/features/home/format";
 
 const PAGE_SIZE = 24;
 
-/**
- * Client component for /shop/[slug]. Fetches shop + paginated products via
- * BFF, supports infinite scroll and sort.
- *
- * Port of the Flutter ShopProfilePage.
- */
 export function ShopProfileView({ slug }: { slug: string }) {
   const [shop, setShop] = useState<ShopProfile | null>(null);
   const [products, setProducts] = useState<CatalogProduct[]>([]);
@@ -56,7 +50,6 @@ export function ShopProfileView({ slug }: { slug: string }) {
     void load(1, sort, true);
   }, [load, sort]);
 
-  // Infinite scroll via IntersectionObserver
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el) return;
@@ -77,7 +70,6 @@ export function ShopProfileView({ slug }: { slug: string }) {
     void load(1, s, true);
   };
 
-  // ── Skeleton ────────────────────────────────────────────────────────────
   if (loading && !shop) {
     return (
       <div className="mx-auto max-w-shell px-lg">
@@ -90,7 +82,6 @@ export function ShopProfileView({ slug }: { slug: string }) {
     );
   }
 
-  // ── Error ────────────────────────────────────────────────────────────────
   if (error && !shop) {
     return (
       <div className="mx-auto max-w-shell px-lg py-xxxl">
@@ -114,7 +105,6 @@ export function ShopProfileView({ slug }: { slug: string }) {
 
   return (
     <div className="mx-auto max-w-shell">
-      {/* Back nav */}
       <div className="px-lg pt-lg">
         <Link
           href="/"
@@ -124,15 +114,12 @@ export function ShopProfileView({ slug }: { slug: string }) {
         </Link>
       </div>
 
-      {/* Shop header */}
       {shop ? <ShopHeader shop={shop} total={pagination.total} /> : null}
 
-      {/* Sort bar */}
       <div className="px-lg">
         <SortBar value={sort} onChange={handleSort} />
       </div>
 
-      {/* Product grid */}
       <div className="px-lg pb-xxxl pt-sm">
         {loading ? (
           <ProductGridSkeleton count={8} />
@@ -162,8 +149,6 @@ export function ShopProfileView({ slug }: { slug: string }) {
   );
 }
 
-// ── Shop header ──────────────────────────────────────────────────────────────
-
 function ShopHeader({ shop, total }: { shop: ShopProfile; total: number }) {
   const logoUrl = resolveImageUrl(shop.logoUrl);
   const bannerUrl = resolveImageUrl(shop.bannerUrl);
@@ -171,7 +156,6 @@ function ShopHeader({ shop, total }: { shop: ShopProfile; total: number }) {
 
   return (
     <div className="mb-sm">
-      {/* Banner image — only render when a banner exists; no 200px empty gray otherwise */}
       {bannerUrl ? (
         <div className="relative h-[160px] w-full overflow-hidden sm:h-[200px]">
           <ImageBox url={bannerUrl} alt="" fit="cover" />
@@ -185,10 +169,8 @@ function ShopHeader({ shop, total }: { shop: ShopProfile; total: number }) {
         </div>
       ) : null}
 
-      {/* Logo + info row — logo overlaps banner when banner exists */}
       <div className={["px-lg pb-md", bannerUrl ? "-mt-7" : "pt-lg"].join(" ")}>
         <div className="flex items-end gap-md">
-          {/* Shop logo — ring-white + shadow for overlap effect when banner present */}
           <div
             className={[
               "size-14 shrink-0 overflow-hidden rounded-lg bg-white",
@@ -206,7 +188,6 @@ function ShopHeader({ shop, total }: { shop: ShopProfile; total: number }) {
             )}
           </div>
 
-          {/* Name + stats */}
           <div className="min-w-0 flex-1 pb-xs">
             <h1 className="text-title-lg font-extrabold text-ink">{shop.name}</h1>
             {shop.tagline ? (
@@ -233,8 +214,6 @@ function ShopHeader({ shop, total }: { shop: ShopProfile; total: number }) {
     </div>
   );
 }
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
 
 function EmptyState() {
   return (

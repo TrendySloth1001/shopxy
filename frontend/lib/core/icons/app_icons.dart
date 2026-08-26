@@ -1,20 +1,7 @@
-// Single source of truth for icons in this app (Hugeicons stroke-rounded).
-//
-// Every icon the app uses is named here exactly once. UI code renders
-// `AppIcon(AppIcons.<name>)` (see app_icon.dart) and references the glyph
-// only through `AppIcons.<name>`, so changing or retiring an icon is a
-// one-line edit here.
-//
-// NOTE: the WhatsApp mark is intentionally NOT here — it comes from
-// font_awesome as an FaIconData and renders via the FaIcon widget at its
-// single call site (invoice_detail_page.dart).
-
 import 'package:hugeicons/hugeicons.dart';
 
-/// SVG glyph payload used across the app (a Hugeicons icon, `List<List>`).
 typedef AppIconData = List<List<dynamic>>;
 
-/// Central icon registry. See file header.
 abstract final class AppIcons {
   static const AppIconData accountBalanceOutlined = HugeIcons.strokeRoundedBank;
   static const AppIconData accountBalanceRounded = HugeIcons.strokeRoundedBank;
@@ -41,19 +28,11 @@ abstract final class AppIcons {
   static const AppIconData apps = HugeIcons.strokeRoundedDashboardSquare01;
   static const AppIconData appsOutlined =
       HugeIcons.strokeRoundedDashboardSquare01;
-  /// The archive itself — a lidded box. A noun: section headings, menu rows,
-  /// empty states. Same glyph merchant-web draws for `Archive`.
   static const AppIconData archiveOutlined = HugeIcons.strokeRoundedArchive02;
 
-  /// "File this away" — a tray with the arrow going in.
-  ///
-  /// Deliberately the mirror of [unarchiveRounded] (same tray, arrow reversed)
-  /// so a button that toggles between the two reads as one control changing
-  /// direction rather than two unrelated icons.
   static const AppIconData archiveAddRounded =
       HugeIcons.strokeRoundedArchiveArrowDown;
 
-  /// "Take it back out" — see [archiveAddRounded].
   static const AppIconData unarchiveRounded =
       HugeIcons.strokeRoundedArchiveArrowUp;
   static const AppIconData arrowBackIosNewRounded =

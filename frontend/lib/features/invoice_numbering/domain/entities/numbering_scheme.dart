@@ -1,9 +1,3 @@
-/// The 7 document series that carry independently customizable numbering —
-/// mirrors the backend's `Series` union (`backend/src/shared/numbering/
-/// sequences.ts`) exactly. `PURCHASE_INVOICE`/`CREDIT_NOTE`/`DEBIT_NOTE`
-/// stay distinct from `SALE_INVOICE` even though they're all "invoices" —
-/// this is the same grouping the backend already used before numbering
-/// became customizable.
 enum NumberingSeries {
   saleInvoice,
   purchaseInvoice,
@@ -15,7 +9,6 @@ enum NumberingSeries {
 }
 
 extension NumberingSeriesWire on NumberingSeries {
-  /// The wire value the backend expects/returns.
   String get wire => switch (this) {
     NumberingSeries.saleInvoice => 'SALE_INVOICE',
     NumberingSeries.purchaseInvoice => 'PURCHASE_INVOICE',
@@ -38,8 +31,6 @@ extension NumberingSeriesWire on NumberingSeries {
   };
 }
 
-/// A shop's numbering configuration for one series — mirrors the backend's
-/// `SchemeDto` (`backend/src/modules/numbering/numbering.service.ts`).
 class NumberingScheme {
   const NumberingScheme({
     required this.series,
@@ -61,15 +52,10 @@ class NumberingScheme {
   final int padding;
   final bool resetYearly;
 
-  /// Whether this shop has a saved override, or is still on the system
-  /// default.
   final bool isCustom;
 
-  /// What the next document in this series would look like right now.
   final String nextPreview;
 
-  /// The raw parts behind [nextPreview] — lets the editor recompute the
-  /// preview locally as the merchant edits fields, via [formatDocNoPreview].
   final int nextSeq;
   final String financialYear;
 
@@ -87,11 +73,6 @@ class NumberingScheme {
   );
 }
 
-/// Pure formatter — ported from the backend's `formatDocNo`
-/// (`backend/src/shared/numbering/sequences.ts`). A ~10-line pure function,
-/// safe to duplicate rather than share across the Dart/Node boundary. Lets
-/// the editor sheet recompute the preview locally as the merchant edits
-/// prefix/suffix/padding, without a round-trip per keystroke.
 String formatDocNoPreview({
   required String prefix,
   required String suffix,

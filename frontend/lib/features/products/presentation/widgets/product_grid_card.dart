@@ -11,11 +11,6 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
-/// Product card for the masonry grid on the products screen. Carries the
-/// same signals as the list row — image, name, SKU·HSN·category, optional
-/// description, sell/cost/margin, stock (with reorder context), and the
-/// last-activity + vendor hints — but stacked, so cards vary in height with
-/// their content (capped by the 2-line name/description limits).
 class ProductGridCard extends StatelessWidget {
   const ProductGridCard({
     super.key,
@@ -137,7 +132,6 @@ class ProductGridCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Square, full-bleed image with an out/low badge overlay.
             AspectRatio(
               aspectRatio: 1,
               child: Stack(
@@ -190,7 +184,6 @@ class ProductGridCard extends StatelessWidget {
                     ),
                   ],
                   const SizedBox(height: AppSizes.sm),
-                  // Sell price (+ cost, margin, above-MRP).
                   Wrap(
                     crossAxisAlignment: WrapCrossAlignment.center,
                     spacing: AppSizes.sm,
@@ -233,7 +226,6 @@ class ProductGridCard extends StatelessWidget {
                     ),
                   ],
                   const SizedBox(height: AppSizes.sm),
-                  // Stock pill with reorder context.
                   Align(
                     alignment: Alignment.centerLeft,
                     child: _Pill(
@@ -244,7 +236,6 @@ class ProductGridCard extends StatelessWidget {
                       bold: true,
                     ),
                   ),
-                  // Last-activity + vendor hints.
                   if (activity != null || hasVendor) ...[
                     const SizedBox(height: AppSizes.xs),
                     Wrap(
@@ -277,7 +268,6 @@ class ProductGridCard extends StatelessWidget {
     );
   }
 
-  /// SKU · HSN · category (with its picked icon), one ellipsised line.
   Widget _identifiers(ThemeData theme) {
     final base = theme.textTheme.bodySmall?.copyWith(
       color: AppColors.muted,
@@ -328,7 +318,6 @@ String _relativeTime(DateTime when) {
   return '${(days / 365).floor()}y ago';
 }
 
-/// Full-bleed product image (cover) with a hash-tinted monogram fallback.
 class _ProductImage extends StatelessWidget {
   const _ProductImage({required this.product});
   final Product product;
@@ -362,9 +351,6 @@ class _ProductImage extends StatelessWidget {
       ),
     );
     if (raw.isEmpty) return monogram();
-    // Decode to roughly the card's physical width (2-col grid ≈ half the
-    // screen) instead of the full source resolution — dozens of oversized
-    // textures in the masonry grid are the main scroll-jank + memory source.
     final decodeWidth =
         (MediaQuery.sizeOf(context).width / 2 *
                 MediaQuery.devicePixelRatioOf(context))
@@ -379,7 +365,6 @@ class _ProductImage extends StatelessWidget {
   }
 }
 
-/// Compact rounded pill (optional icon) used for stock / margin / meta.
 class _Pill extends StatelessWidget {
   const _Pill({
     required this.label,

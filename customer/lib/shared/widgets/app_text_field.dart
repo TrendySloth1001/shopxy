@@ -6,13 +6,6 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 
-/// The one text-field widget for the app. Wraps Material's [TextField]
-/// with consistent shape, label-above pattern, helper/error below, and
-/// a 48dp minimum tap target — all per `DESIGN.md` rules.
-///
-/// Label is rendered outside the input (Material 3's "outlined with
-/// floating label" looks busy on a phone — outside-label keeps the
-/// content density honest).
 class AppTextField extends StatelessWidget {
   const AppTextField({
     super.key,

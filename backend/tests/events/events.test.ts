@@ -85,7 +85,6 @@ describe('events — POST /v1/events ingest', () => {
       expect(first.body.inserted).toBe(2);
       expect(first.body.deduped).toBe(0);
 
-      // Replay the same batch — both rows already exist.
       const replay = await request(app)
         .post('/v1/events')
         .set('Authorization', `Bearer ${user.accessToken}`)
@@ -163,7 +162,6 @@ describe('events — POST /v1/events ingest', () => {
         .get('/me/recently-viewed')
         .set('Authorization', `Bearer ${user.accessToken}`);
       expect(list.status).toBe(200);
-      // Most-recent first → p2 then p1.
       expect(
         list.body.data.map((r: { product: { id: number } }) => r.product.id),
       ).toEqual([p2.id, p1.id]);
@@ -249,8 +247,6 @@ describe('events — cron helpers', () => {
   it('trimRecentlyViewed caps each user at 20 rows', async () => {
     const user = await createTestUser();
     try {
-      // 25 distinct product views — direct insert is fine; we're
-      // exercising the trim helper, not the ingest path.
       const products = [] as Array<{ id: number }>;
       for (let i = 0; i < 25; i++) {
         products.push(await createTestProduct(user.shopId));

@@ -37,7 +37,6 @@ import { ContentBlocksEditor, type Block } from "./content-blocks-editor";
 import { VariantsEditor } from "./variants-editor";
 import { CustomFieldsEditor } from "./custom-fields-editor";
 
-/** Keep only content blocks that satisfy the backend's per-kind requirements. */
 function cleanBlocks(blocks: Block[]): Block[] {
   const out: Block[] = [];
   for (const b of blocks) {
@@ -65,9 +64,6 @@ function num(s: string): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
-/// HSN/SAC codes are digits only; merchants paste them with spaces and dots.
-/// Mirrors `normalizeHsn` on the backend so the two agree on what "the same
-/// code" means.
 function normalizeCode(s: string): string {
   return s.replace(/\D/g, "");
 }
@@ -96,14 +92,8 @@ export function ProductForm({ product }: { product?: Product }) {
   const [pricingMode, setPricingMode] = useState(
     product?.pricingMode ?? "TAX_EXCLUSIVE",
   );
-  // What the HSN master last said, and which code it said it about. The pair
-  // is what lets us tell "no rate on file for this code" apart from "haven't
-  // looked this one up yet" — only the former is worth warning about.
   const [hsnRate, setHsnRate] = useState<HsnResolution | null>(null);
   const [hsnCheckedFor, setHsnCheckedFor] = useState<string | null>(null);
-  // Whether the merchant has taken the rate off the code. Editing an existing
-  // product starts manual only when its stored rate was hand-typed — anything
-  // the master derived stays derived, so a re-save re-derives it.
   const [taxManual, setTaxManual] = useState(
     product ? product.taxSource === "MANUAL" && !!product.hsnCode : false,
   );
@@ -158,28 +148,15 @@ export function ProductForm({ product }: { product?: Product }) {
     };
   }, [categoriesNonce]);
 
-  // ── HSN → GST ──────────────────────────────────────────────────────────
-  // The rate is a consequence of the classification, so a resolved code sets
-  // it. The tax field is a readout unless the merchant explicitly takes it
-  // manual, which is what removes the old conflict: there is only one thing to
-  // fill in, and the number next to it can't disagree with the code.
-  //
-  // A code with no rate on file deliberately leaves the value untouched — a
-  // silent 0% is an under-charged invoice, which is the failure this whole
-  // feature exists to prevent.
   const applyHsnRate = useCallback(
     (hit: HsnResolution | null) => {
       setHsnRate(hit);
       setHsnCheckedFor(hit ? hit.requestedCode : normalizeCode(hsnCode));
-      // Never overwrite a rate the merchant has taken responsibility for.
       if (hit && !taxManual) setTaxPercent(String(hit.gstRate));
     },
     [hsnCode, taxManual],
   );
 
-  // NO_GST is exempt/nil-rated — the tax field has nothing to show, so
-  // switching into this mode clears it rather than letting a stale rate sit
-  // disabled and confusing (and mirrors the backend's own normalization).
   const onPricingModeChange = useCallback((mode: string) => {
     setPricingMode(mode as typeof pricingMode);
     if (mode === "NO_GST") {
@@ -232,8 +209,6 @@ export function ProductForm({ product }: { product?: Product }) {
         ...(o.code?.trim() ? { code: o.code.trim() } : {}),
       }))
       .filter((o) => o.headline);
-    // categoryId is an opaque id (string) — pass it through, never Number() it
-    // (a token isn't numeric; Number(token) would be NaN).
     const catId = categoryId || undefined;
 
     const base: ProductWritePayload = {
@@ -253,8 +228,6 @@ export function ProductForm({ product }: { product?: Product }) {
       contentBlocks: cleanBlocks(contentBlocks),
     };
 
-    // Only touch variant data when axes are defined — otherwise we'd wipe the
-    // backend's implicit default variant.
     const namedAxes = variantAxes
       .map((a) => ({
         name: a.name.trim(),
@@ -280,7 +253,6 @@ export function ProductForm({ product }: { product?: Product }) {
     }
 
     if (isEdit) {
-      // Send nullable string fields as value-or-null so they can be cleared.
       base.description = description.trim() || null;
       base.brand = brand.trim() || null;
       base.barcode = barcode.trim() || null;
@@ -347,7 +319,6 @@ export function ProductForm({ product }: { product?: Product }) {
       ) : null}
 
       <div className="mt-xl max-w-content">
-        {/* Core */}
         <div className="grid gap-lg sm:grid-cols-2">
           <div className="sm:col-span-2">
             <TextField label={t("form.nameLabel")} value={name} onChange={setName} error={errors.name} />
@@ -371,7 +342,6 @@ export function ProductForm({ product }: { product?: Product }) {
           </div>
         </div>
 
-        {/* Pricing */}
         <div className="mt-lg grid gap-lg sm:grid-cols-3">
           <NumberField label={t("form.mrpLabel")} value={mrp} onChange={setMrp} error={errors.mrp} min={0} step={0.01} />
           <NumberField
@@ -441,7 +411,6 @@ export function ProductForm({ product }: { product?: Product }) {
           />
         </div>
 
-        {/* Classification */}
         <div className="mt-lg grid gap-lg sm:grid-cols-2">
           <SelectField
             label={t("form.unitLabel")}
@@ -484,7 +453,6 @@ export function ProductForm({ product }: { product?: Product }) {
           </div>
         ) : null}
 
-        {/* Images */}
         <div className="mt-xl">
           <FormSection title={t("form.sections.images.title")} description={t("form.sections.images.description")} defaultOpen>
             <ImageManager

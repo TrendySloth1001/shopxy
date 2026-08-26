@@ -30,8 +30,6 @@ const _electronics = Category(
 );
 const _laptops = Category(id: '2', slug: 'laptops', name: 'Laptops');
 
-/// Resolves [link] the way a banner tap would, and returns the widget the
-/// route builds.
 Future<Widget> _destination(
   WidgetTester tester,
   BannerLink link, {
@@ -105,9 +103,6 @@ void main() {
   testWidgets('an unloaded category falls back to searching its words', (
     tester,
   ) async {
-    // Cold start: the tree hasn't arrived. A search for "home kitchen" is a
-    // worse destination than the listing but still a real one — the old code
-    // opened a search for the literal string "/home-kitchen".
     final page = await _destination(
       tester,
       const BannerLink(BannerLinkKind.category, 'home-kitchen'),

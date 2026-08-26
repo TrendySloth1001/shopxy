@@ -1,9 +1,5 @@
 import { z } from "zod";
 
-/**
- * Per-user notifications — mirrors the backend `/notifications` module
- * (shared by both apps). `kind` is a free-form string; `readAt` null = unread.
- */
 export const notificationSchema = z
   .object({
     id: z.coerce.string(),

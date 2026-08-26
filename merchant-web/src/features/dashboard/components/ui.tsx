@@ -3,7 +3,6 @@ import { useTranslations } from "next-intl";
 import { ArrowDown, ArrowUp } from "@/shared/icons";
 import type { DashboardPeriod } from "../stats";
 
-/** INR formatters shared across the dashboard. */
 export const inr = new Intl.NumberFormat("en-IN", {
   style: "currency",
   currency: "INR",
@@ -21,15 +20,10 @@ const PERIOD_PHRASE_KEY: Record<DashboardPeriod, string> = {
   month: "delta.phrase.month",
 };
 
-/** Small uppercase section eyebrow. */
 export function Eyebrow({ children }: { children: React.ReactNode }) {
   return <p className="text-label-md uppercase tracking-wide text-muted">{children}</p>;
 }
 
-/**
- * A labelled section landmark with a heading and an optional action link. The
- * heading is wired to the section via `aria-labelledby` for screen readers.
- */
 export function Section({
   id,
   title,
@@ -64,11 +58,6 @@ export function Section({
   );
 }
 
-/**
- * Period-over-period delta chip. Colour is paired with an arrow icon and a sign
- * (never colour alone, per WCAG) and carries a full text alternative. `null`
- * delta (no prior base) renders a neutral "New" chip.
- */
 export function DeltaChip({ value, period }: { value: number | null; period: DashboardPeriod }) {
   const t = useTranslations("dashboard");
   if (value === null) {

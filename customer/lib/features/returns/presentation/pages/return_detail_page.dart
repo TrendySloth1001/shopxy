@@ -421,10 +421,6 @@ class _NoteBlock extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton widgets
-// ---------------------------------------------------------------------------
-
 class _ReturnDetailSkeleton extends StatelessWidget {
   const _ReturnDetailSkeleton();
 
@@ -463,16 +459,12 @@ class _HeroCardSkeleton extends StatelessWidget {
         child: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Shop name
             AppShimmerLine(widthFactor: 0.45, height: 14),
             SizedBox(height: AppSizes.xs),
-            // Timestamp
             AppShimmerLine(widthFactor: 0.6, height: 11),
             SizedBox(height: AppSizes.md),
-            // "REFUND" label
             AppShimmerLine(widthFactor: 0.2, height: 10),
             SizedBox(height: AppSizes.xs),
-            // Refund amount
             AppShimmerLine(widthFactor: 0.35, height: 24),
           ],
         ),
@@ -556,7 +548,6 @@ class _TimelineEventSkeleton extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Circle indicator
           AppShimmerBox(
             width: AppSizes.iconSm,
             height: AppSizes.iconSm,

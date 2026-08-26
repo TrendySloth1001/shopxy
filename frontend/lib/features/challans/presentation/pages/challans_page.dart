@@ -93,8 +93,6 @@ class _ChallansPageState extends State<ChallansPage> {
                 onChanged: context.read<ChallansProvider>().setSearch,
               ),
             ),
-            // Was a raw Material FilterChip, which ignores the app theme
-            // entirely — same strip as every other list screen now.
             AppFilterStrip(
               children: <String?>[null, 'PENDING', 'CONVERTED', 'CANCELLED']
                   .map(
@@ -204,8 +202,6 @@ AppStatusTone challanStatusTone(String status) {
   }
 }
 
-/// Human label for a challan status — the filter strip used to render the
-/// raw enum ("CONVERTED"), which is database vocabulary, not user language.
 String challanStatusLabel(AppLocalizations l10n, String status) {
   switch (status) {
     case 'CONVERTED':
@@ -217,8 +213,6 @@ String challanStatusLabel(AppLocalizations l10n, String status) {
   }
 }
 
-/// Fill colour for a selected status pill, matching the badge tone the
-/// same status gets on a challan row.
 Color challanStatusAccent(String status) {
   switch (status) {
     case 'CONVERTED':

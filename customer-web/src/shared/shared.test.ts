@@ -52,8 +52,6 @@ describe("authUserSchema", () => {
   });
 });
 
-// ── zNum (Prisma Decimal coercion) ───────────────────────────────────────────
-
 import { zNum } from "./zod";
 import { cartResponseSchema } from "@/features/cart/types";
 

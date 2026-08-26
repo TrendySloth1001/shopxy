@@ -57,9 +57,6 @@ class AdminCollectionsRemoteDataSource {
     }
   }
 
-  /// PUT replaces the entire item list — simpler and safer than diffing
-  /// on the client. See backend collections.service.replaceItems for
-  /// the transactional guarantees.
   Future<List<AdminCollectionItem>> replaceItems(
     String id,
     List<({String productId, int position})> items,

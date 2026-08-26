@@ -16,17 +16,6 @@ import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
-/// Payouts & settlement onboarding. Wires the shop to a Razorpay Route linked
-/// account so the shop's slice of each marketplace order can settle to its bank.
-///
-/// Onboarding is a 4-step wizard — Business → Identity (PAN/GST) → Registered
-/// address → Settlement bank — matching what Razorpay's `POST /v2/accounts`
-/// needs for a submittable account (legal_info + profile + bank). KYC then runs
-/// asynchronously at Razorpay; we poll status until payouts go live.
-///
-/// PAN/GST and bank details are sent straight to Razorpay and never stored.
-/// Layout is editorial: a fixed progress header, a scrollable step body, and a
-/// pinned footer — no cards.
 class ShopPayoutsPage extends StatefulWidget {
   const ShopPayoutsPage({super.key});
 
@@ -37,13 +26,10 @@ class ShopPayoutsPage extends StatefulWidget {
 class _ShopPayoutsPageState extends State<ShopPayoutsPage>
     with WidgetsBindingObserver {
   late final LinkedAccountRemoteDataSource _ds;
-  // Cached in initState — safe to use in dispose (context.read isn't).
   late final LinkedAccountProvider _provider;
 
-  // One form key per step so "Continue" only validates the visible fields.
   final _stepKeys = List.generate(4, (_) => GlobalKey<FormState>());
 
-  // Business
   final _legalName = TextEditingController();
   final _customerFacing = TextEditingController();
   final _contact = TextEditingController();
@@ -51,16 +37,13 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
   final _phone = TextEditingController();
   String _businessType = 'proprietorship';
   String _category = 'ecommerce';
-  // Identity
   final _pan = TextEditingController();
   final _gst = TextEditingController();
-  // Address
   final _street1 = TextEditingController();
   final _street2 = TextEditingController();
   final _city = TextEditingController();
   final _postal = TextEditingController();
   String? _state;
-  // Bank
   final _beneficiary = TextEditingController();
   final _account = TextEditingController();
   final _ifsc = TextEditingController();
@@ -71,7 +54,6 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
   String? _error;
   LinkedAccountStatus? _status;
 
-  /// A resumable draft exists and the user hasn't yet chosen Resume/Discard.
   bool _resumeOffered = false;
 
   static const _steps = ['Business', 'Identity', 'Address', 'Bank'];
@@ -79,11 +61,6 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
   @override
   void initState() {
     super.initState();
-    // TODO SECURITY (SCRN-1): this screen renders/collects KYC PII (PAN/GST/
-    // bank). Enable screenshot + recents-thumbnail protection here (Android
-    // FLAG_SECURE / iOS app-switcher blur) and disable it in dispose(). No
-    // cross-platform package is currently a dependency — needs a package
-    // decision (e.g. screen_protector / no_screenshot) before wiring.
     _ds = LinkedAccountRemoteDataSource(context.read<ApiClient>());
     _provider = context.read<LinkedAccountProvider>();
     WidgetsBinding.instance.addObserver(this);
@@ -92,8 +69,6 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
 
   @override
   void dispose() {
-    // Last-chance save in case the page is popped mid-edit. Runs unconditionally
-    // (mounted is already false here) via the cached provider.
     _persist();
     WidgetsBinding.instance.removeObserver(this);
     for (final c in [
@@ -119,8 +94,6 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Save when backgrounded — catches "filled a step then left the app"
-    // without writing secure storage on every keystroke.
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive ||
         state == AppLifecycleState.hidden) {
@@ -131,7 +104,6 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
   Future<void> _init() async {
     await _load();
     if (!mounted || _status != null) return;
-    // No account yet → see if there's a saved draft to resume.
     await _provider.refreshDraft();
     if (mounted && _provider.draft != null) {
       setState(() => _resumeOffered = true);
@@ -156,10 +128,6 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
     }
   }
 
-  // ── Draft persistence ──────────────────────────────────────────────────────
-
-  /// True once the user has typed anything worth saving — avoids persisting an
-  /// empty draft that would wrongly flip the dashboard to "Continue".
   bool _hasAnyInput() =>
       _step > 0 ||
       [
@@ -202,15 +170,11 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
     savedAtMs: DateTime.now().millisecondsSinceEpoch,
   );
 
-  /// Persist the current form (best-effort) unless we've already submitted or
-  /// there's nothing meaningful to save. No `mounted` check — also called from
-  /// dispose(), where mounted is already false.
   void _persist() {
     if (_submitting || _status != null || !_hasAnyInput()) return;
     _provider.saveDraft(_snapshot());
   }
 
-  /// Mounted-safe wrapper for the lifecycle/step-transition callbacks.
   void _autosave() {
     if (!mounted) return;
     _persist();
@@ -277,8 +241,6 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
       );
       if (mounted) {
         setState(() => _status = status);
-        // Onboarding done → reflect status, stop the nudge, and wipe the draft
-        // (it holds PAN/bank and is no longer needed).
         _provider
           ..setStatus(status)
           ..dismissPrompt();
@@ -299,7 +261,6 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
     }
   }
 
-  /// Localized display title for a wizard step index.
   String _stepTitle(AppLocalizations l10n, int i) {
     switch (i) {
       case 0:
@@ -344,7 +305,6 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
     );
   }
 
-  // Existing account → just show its KYC status (no wizard).
   Widget _statusView() {
     return ListView(
       padding: EdgeInsets.only(
@@ -527,10 +487,6 @@ class _ShopPayoutsPageState extends State<ShopPayoutsPage>
   }
 }
 
-// ── Skeleton ─────────────────────────────────────────────────────────────────
-
-/// Mirrors the wizard's fixed chrome (progress header, divider, form fields,
-/// footer) while the initial status fetch is in flight.
 class _PayoutsWizardSkeleton extends StatelessWidget {
   const _PayoutsWizardSkeleton();
 
@@ -544,7 +500,6 @@ class _PayoutsWizardSkeleton extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           SizedBox(height: FloatingAppBar.contentTopInset(context)),
-          // ── Progress header (4-step indicator + step label) ──────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(
               AppSizes.lg,
@@ -574,7 +529,6 @@ class _PayoutsWizardSkeleton extends StatelessWidget {
             ),
           ),
           Divider(height: 1, thickness: 1, color: AppColors.hairline),
-          // ── Form body — mirrors _BusinessStep's label + input structure ───────
           Expanded(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(
@@ -586,27 +540,22 @@ class _PayoutsWizardSkeleton extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Step intro title + subtitle
                   const AppShimmerLine(widthFactor: 0.55, height: 22),
                   const SizedBox(height: AppSizes.xs),
                   const AppShimmerLine(widthFactor: 0.85, height: 13),
                   const SizedBox(height: AppSizes.lg),
-                  // Field 1 — label chip + input box
                   const AppShimmerLine(widthFactor: 0.3, height: 11),
                   const SizedBox(height: AppSizes.xs),
                   AppShimmerBox(height: 48, radius: AppSizes.radiusSm),
                   const SizedBox(height: AppSizes.md),
-                  // Field 2
                   const AppShimmerLine(widthFactor: 0.4, height: 11),
                   const SizedBox(height: AppSizes.xs),
                   AppShimmerBox(height: 48, radius: AppSizes.radiusSm),
                   const SizedBox(height: AppSizes.md),
-                  // Field 3
                   const AppShimmerLine(widthFactor: 0.35, height: 11),
                   const SizedBox(height: AppSizes.xs),
                   AppShimmerBox(height: 48, radius: AppSizes.radiusSm),
                   const SizedBox(height: AppSizes.md),
-                  // Field 4
                   const AppShimmerLine(widthFactor: 0.25, height: 11),
                   const SizedBox(height: AppSizes.xs),
                   AppShimmerBox(height: 48, radius: AppSizes.radiusSm),
@@ -614,7 +563,6 @@ class _PayoutsWizardSkeleton extends StatelessWidget {
               ),
             ),
           ),
-          // ── Footer — buttons visible but disabled ────────────────────────────
           SafeArea(
             top: false,
             child: Container(
@@ -640,8 +588,6 @@ class _PayoutsWizardSkeleton extends StatelessWidget {
     );
   }
 }
-
-// ── Step bodies ──────────────────────────────────────────────────────────────
 
 typedef _FieldBuilder =
     Widget Function(
@@ -837,7 +783,7 @@ class _IdentityStep extends StatelessWidget {
           ],
           validator: (v) {
             final s = (v ?? '').trim().toUpperCase();
-            if (s.isEmpty) return null; // optional
+            if (s.isEmpty) return null;
             return RegExp(
                   r'^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][0-9A-Z]Z[0-9A-Z]$',
                 ).hasMatch(s)
@@ -971,8 +917,6 @@ class _BankStep extends StatelessWidget {
   }
 }
 
-// ── Pieces ───────────────────────────────────────────────────────────────────
-
 class _StepProgress extends StatelessWidget {
   const _StepProgress({
     required this.step,
@@ -1030,8 +974,6 @@ class _StepProgress extends StatelessWidget {
   }
 }
 
-/// "You left off here — Resume / Start over" prompt shown on wizard entry when
-/// a saved draft exists. Asks before restoring, per the resume UX.
 class _ResumeBanner extends StatelessWidget {
   const _ResumeBanner({
     required this.draft,
@@ -1167,7 +1109,6 @@ class _StatusSection extends StatelessWidget {
               AppColors.info,
               AppIcons.hourglassTopRounded,
             ),
-            // 'created' (and anything else) = not yet submitted/activated for Route.
             _ => (
               l10n.shopStatusNotActivated,
               AppColors.warning,
@@ -1276,7 +1217,6 @@ class _DetailRow extends StatelessWidget {
   }
 }
 
-/// Flat error line (icon + colored text + retry), no filled banner.
 class _ErrorLine extends StatelessWidget {
   const _ErrorLine({
     required this.message,
@@ -1325,8 +1265,6 @@ class _ErrorLine extends StatelessWidget {
   }
 }
 
-/// Force-uppercases input (PAN/GST/IFSC) as the user types so the on-screen
-/// value matches what we submit.
 class _UpperCaseFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(

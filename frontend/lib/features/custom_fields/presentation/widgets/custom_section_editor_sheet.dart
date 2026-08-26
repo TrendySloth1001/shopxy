@@ -14,9 +14,6 @@ import 'package:shopxy/shared/utils/error_text.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// Create-or-edit sheet for a custom-field [CustomFieldSection].
-/// Mirrors [CustomFieldEditorSheet]'s ergonomics: name + icon picker,
-/// returns the created/updated section.
 class CustomSectionEditorSheet extends StatefulWidget {
   const CustomSectionEditorSheet({super.key, this.existing});
 

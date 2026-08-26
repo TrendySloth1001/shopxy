@@ -2,8 +2,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shopxy/core/network/api_client.dart';
 
-/// Cashier control center HTTP client (/me/cashier/*). Returns the parsed JSON
-/// maps; the page reads fields directly (lightweight — no model layer yet).
 class CashierRemoteDataSource {
   const CashierRemoteDataSource(this._client);
   final ApiClient _client;
@@ -17,7 +15,6 @@ class CashierRemoteDataSource {
     return (body as Map).cast<String, dynamic>();
   }
 
-  /// { shift, report } — both null when no shift is open.
   Future<Map<String, dynamic>> current() async => _ok(await _client.get('/me/cashier/current'));
 
   Future<void> openShift(double openingFloat) async {
@@ -37,7 +34,6 @@ class CashierRemoteDataSource {
             if (note != null && note.isNotEmpty) 'note': note,
           }));
 
-  /// Shift history (Z-receipts), newest first.
   Future<List<Map<String, dynamic>>> listShifts() async {
     final r = await _client.get('/me/cashier/shifts');
     final dynamic body = r.body.isEmpty ? [] : jsonDecode(r.body);
@@ -47,7 +43,6 @@ class CashierRemoteDataSource {
     return body is List ? body.cast<Map<String, dynamic>>() : <Map<String, dynamic>>[];
   }
 
-  /// Full Z-report for a past shift.
   Future<Map<String, dynamic>> shiftReport(String shiftId) async =>
       _ok(await _client.get('/me/cashier/shifts/$shiftId/report'));
 

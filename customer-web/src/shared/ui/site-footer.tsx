@@ -3,21 +3,12 @@
 import Link from "next/link";
 import { Store, Truck, RotateCcw, ShieldCheck, BadgePercent } from "@/shared/icons";
 
-// ── Trust promise row ─────────────────────────────────────────────────────────
-
-// Storefront promises — qualified, not blanket guarantees. Delivery, returns
-// and authenticity are set per shop/SKU (a shop's returns can be disabled, an
-// item may not be returnable, delivery isn't always free), so we describe the
-// platform mechanics here rather than asserting an unconditional guarantee.
-// (CP Act 2019 s.2(28)/(47); CCPA Dark-Patterns Guidelines 2023.)
 const PROMISES = [
   { icon: ShieldCheck, label: "Secure checkout" },
   { icon: RotateCcw,   label: "Returns per shop policy" },
   { icon: Truck,        label: "Delivery set by each shop" },
   { icon: BadgePercent, label: "Compare prices across shops" },
 ] as const;
-
-// ── Link columns ──────────────────────────────────────────────────────────────
 
 const COLUMNS = [
   {
@@ -53,31 +44,13 @@ const COLUMNS = [
   },
 ] as const;
 
-// ── Component ─────────────────────────────────────────────────────────────────
-
-/**
- * Site-wide footer.
- *
- * Layout: responsive — stacked on mobile, 4-column grid on tablet+.
- *   col 1 — brand block (logo + tagline)
- *   col 2 — Shop links
- *   col 3 — Account links
- *   col 4 — Help links
- *
- * Below columns: hairline divider → trust-promise row → copyright line.
- *
- * Styling: bg-white, border-t hairline, muted text, hover:text-ink links.
- * No chunky borders or elevation — minimal-premium.
- */
 export function SiteFooter() {
   return (
     <footer className="border-t border-hairline bg-white">
       <div className="mx-auto max-w-shell px-lg py-xxxl">
 
-        {/* ── Column grid ──────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 gap-xxxl tablet:grid-cols-3 desktop:grid-cols-5">
 
-          {/* Brand block */}
           <div className="col-span-2 tablet:col-span-3 desktop:col-span-1">
             <Link
               href="/"
@@ -98,7 +71,6 @@ export function SiteFooter() {
             </p>
           </div>
 
-          {/* Link columns */}
           {COLUMNS.map((col) => (
             <div key={col.heading}>
               <h3 className="mb-md text-label-md text-ink">{col.heading}</h3>
@@ -118,13 +90,10 @@ export function SiteFooter() {
           ))}
         </div>
 
-        {/* ── Hairline divider ─────────────────────────────────────────── */}
         <div className="my-xxl border-t border-hairline" />
 
-        {/* ── Trust row + copyright ────────────────────────────────────── */}
         <div className="flex flex-col items-start gap-lg tablet:flex-row tablet:items-center tablet:justify-between">
 
-          {/* Four storefront promises */}
           <ul className="flex flex-wrap gap-x-xl gap-y-sm">
             {PROMISES.map(({ icon: Icon, label }) => (
               <li key={label} className="flex items-center gap-xs text-body-sm text-muted">
@@ -134,7 +103,6 @@ export function SiteFooter() {
             ))}
           </ul>
 
-          {/* Copyright */}
           <p className="text-body-sm text-subtle">© 2026 ShopXY</p>
         </div>
 

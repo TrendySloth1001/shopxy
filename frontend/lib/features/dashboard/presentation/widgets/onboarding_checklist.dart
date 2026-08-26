@@ -16,8 +16,6 @@ class _Step {
   const _Step(this.done, this.icon, this.title, this.desc, this.cta, this.onTap);
   final bool done;
 
-  /// A step-specific glyph (box / receipt / customer / wallet) so each row
-  /// reads at a glance instead of four identical circles.
   final AppIconData icon;
   final String title;
   final String desc;
@@ -25,8 +23,6 @@ class _Step {
   final VoidCallback onTap;
 }
 
-/// First-run setup checklist, shown in place of the KPI grid until the shop
-/// has products and invoices. Mirrors `components/onboarding-checklist.tsx`.
 class OnboardingChecklist extends StatelessWidget {
   const OnboardingChecklist({
     super.key,
@@ -122,8 +118,6 @@ class OnboardingChecklist extends StatelessWidget {
   }
 }
 
-/// A compact completion ring for the header — a stronger visual anchor than a
-/// bare "1/4" and reinforces the progress bar below it.
 class _ProgressRing extends StatelessWidget {
   const _ProgressRing({required this.completed, required this.total});
   final int completed;
@@ -164,7 +158,6 @@ class _ProgressRing extends StatelessWidget {
   }
 }
 
-/// Full-width rounded progress track — fills as steps complete.
 class _ProgressBar extends StatelessWidget {
   const _ProgressBar({required this.completed, required this.total});
   final int completed;
@@ -196,8 +189,6 @@ class _StepRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
       child: Row(
         children: [
-          // Leading: the step's own icon in a tinted squircle. Done steps flip
-          // to a success tint + check so completion is obvious without reading.
           Container(
             width: AppSizes.huge,
             height: AppSizes.huge,

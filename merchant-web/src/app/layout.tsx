@@ -8,16 +8,12 @@ import { ThemeProvider } from "@/features/theme/theme-context";
 import { THEME_INIT_SCRIPT } from "@/features/theme/theme";
 import "./globals.css";
 
-// Inter — same typeface as the Flutter merchant app. Exposed as the
-// `--font-inter` CSS variable consumed by the type tokens in globals.css.
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
   display: "swap",
 });
 
-// Plus Jakarta Sans — display face for auth-screen headings (`--font-display`
-// → `font-display` utility). Body text stays on Inter.
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
   subsets: ["latin"],
@@ -25,10 +21,6 @@ const jakarta = Plus_Jakarta_Sans({
   display: "swap",
 });
 
-// Noto Sans Devanagari — covers the Devanagari script (Hindi). Exposed as
-// `--font-noto-devanagari`; globals.css swaps `--font-sans` to it for `lang="hi"`
-// so Hindi renders instead of tofu (□) boxes. Latin subset kept so mixed strings
-// (e.g. "ShopXY") stay consistent.
 const notoDevanagari = Noto_Sans_Devanagari({
   variable: "--font-noto-devanagari",
   subsets: ["devanagari", "latin"],
@@ -49,15 +41,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Active UI locale (from the `locale` cookie via src/i18n/request.ts) drives
-  // `<html lang>` — which in turn selects the Devanagari font in globals.css —
-  // and the messages handed to the client provider.
   const locale = await getLocale();
   const messages = await getMessages();
-  // Resolve the session server-side (read-only) so a logged-in merchant renders
-  // authed immediately, skipping the blocking client /api/auth/me bootstrap on
-  // every navigation. Null → the client bootstraps as before (guest, or an
-  // expired access token that needs a cookie-rotating refresh).
   const initialUser = await peekSessionUser();
 
   return (
@@ -67,8 +52,6 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        {/* Apply the stored theme to <html> before first paint — no light-mode
-            flash for dark users. Must run before the body renders. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="min-h-full bg-canvas text-ink antialiased">

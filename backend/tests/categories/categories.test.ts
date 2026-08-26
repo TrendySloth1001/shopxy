@@ -6,9 +6,6 @@ import { createTestUser, cleanupTestUser } from '../helpers/setup.js';
 
 const app = buildApp();
 
-// Snapshot which categories existed before the test, restore by deleting
-// anything new it created. Tests share the dev DB, so this prevents the
-// suite from accumulating fixture rows.
 async function preExistingIds(): Promise<Set<number>> {
   const all = await prisma.category.findMany({ select: { id: true } });
   return new Set(all.map((c) => c.id));
@@ -49,10 +46,6 @@ describe('categories — slug auto-generate + uniqueness', () => {
     baseline = await preExistingIds();
     const owner = await createTestUser({ isPlatformAdmin: true });
     try {
-      // Two category names differ only in casing → same slug base.
-      // Postgres name @unique is case-sensitive so both inserts succeed,
-      // but the slug must stay unique (it's @unique too) — the second
-      // gets `outdoors-2`.
       const first = await request(app)
         .post('/categories')
         .set('Authorization', `Bearer ${owner.accessToken}`)
@@ -133,7 +126,6 @@ describe('categories — taxonomy tree + cycle prevention', () => {
         .set('Authorization', `Bearer ${owner.accessToken}`)
         .send({ name: 'Cycle C', parentId: b.body.id });
 
-      // Try to set A's parent to C → A → C → B → A would loop.
       const bad = await request(app)
         .patch(`/categories/${a.body.id}`)
         .set('Authorization', `Bearer ${owner.accessToken}`)
@@ -141,7 +133,6 @@ describe('categories — taxonomy tree + cycle prevention', () => {
       expect(bad.status).toBe(400);
       expect(bad.body.error).toMatch(/cycle/i);
 
-      // Self-parent also rejected.
       const self = await request(app)
         .patch(`/categories/${a.body.id}`)
         .set('Authorization', `Bearer ${owner.accessToken}`)

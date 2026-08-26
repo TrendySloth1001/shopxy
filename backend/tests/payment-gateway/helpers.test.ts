@@ -10,9 +10,6 @@ import {
   foldBelowMinimum,
 } from '../../src/modules/payment-gateway/helpers.js';
 
-/// Pure unit tests for the provider-neutral payment-gateway helpers.
-/// No DB, no network. Assertions pin the actual implementation behaviour.
-
 describe('toMinorUnits — float-safe rupee -> paise', () => {
   it('converts whole rupees', () => {
     expect(toMinorUnits(100)).toBe(10000);
@@ -23,7 +20,6 @@ describe('toMinorUnits — float-safe rupee -> paise', () => {
   });
 
   it('avoids the IEEE-754 0.615 artefact (G23 fix)', () => {
-    // 0.615 * 100 === 61.499... in float; naive Math.round would give 61.
     expect(toMinorUnits(0.615)).toBe(62);
   });
 
@@ -60,7 +56,6 @@ describe('fromMinorUnits — paise -> rupees', () => {
 
 describe('hmacSha256Hex', () => {
   it('matches the canonical SHA-256 HMAC test vector', () => {
-    // RFC-style vector: key="key", msg="The quick brown fox jumps over the lazy dog"
     expect(
       hmacSha256Hex('key', 'The quick brown fox jumps over the lazy dog'),
     ).toBe('f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8');
@@ -100,8 +95,6 @@ describe('timingSafeEqualHex', () => {
   });
 
   it('treats malformed (odd-length) hex as a length mismatch -> false', () => {
-    // Buffer.from('abc', 'hex') silently drops the trailing nibble, yielding
-    // a 1-byte buffer that won't match a clean 2-byte buffer.
     expect(timingSafeEqualHex('abc', 'abcd')).toBe(false);
   });
 
@@ -120,15 +113,13 @@ describe('allocateProportional — split that sums EXACTLY to the total', () => 
   });
 
   it('distributes the rounding residue so parts always re-sum to the total', () => {
-    // 10000 paise across 3 equal shares = 3333.33… each; residue of 1 paisa
-    // goes to the largest fractional remainder (ties broken by index).
     const out = allocateProportional([1, 1, 1], 10000);
     expect(out.reduce((a, b) => a + b, 0)).toBe(10000);
     expect(out).toEqual([3334, 3333, 3333]);
   });
 
   it('weights by share size', () => {
-    const out = allocateProportional([300, 100], 10000); // 3:1
+    const out = allocateProportional([300, 100], 10000);
     expect(out).toEqual([7500, 2500]);
     expect(out.reduce((a, b) => a + b, 0)).toBe(10000);
   });
@@ -155,7 +146,7 @@ describe('allocateProportional — split that sums EXACTLY to the total', () => 
 
 describe('foldBelowMinimum — no sub-₹1 transfer slice', () => {
   it('folds a sub-floor slice into the largest entry, preserving the total', () => {
-    const out = foldBelowMinimum([9950, 50], 100); // ₹0.50 slice < ₹1
+    const out = foldBelowMinimum([9950, 50], 100);
     expect(out).toEqual([10000, 0]);
     expect(out.reduce((a, b) => a + b, 0)).toBe(10000);
   });

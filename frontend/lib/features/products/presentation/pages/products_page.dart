@@ -37,12 +37,6 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
-/// Products listing — same chassis as the Parties and Vendors pages
-/// (AppBar `+` action, [AppSearchBar] header, [ListView.separated]
-/// with [AppDivider] rows). Extras specific to inventory: a scan
-/// trailing in the search field, a filter strip for low-stock and
-/// categories, and section headers grouping by category when the
-/// user hasn't narrowed the list.
 class ProductsPage extends StatefulWidget {
   const ProductsPage({super.key});
 
@@ -55,19 +49,10 @@ class _ProductsPageState extends State<ProductsPage> {
   final _scrollCtrl = ScrollController();
   late final ScrollBoundaryHaptics _scrollHaptics;
 
-  // Picker returns the chosen category's name so the chip can display
-  // it without us having to fetch the full category list up-front
-  // (which doesn't scale past a few hundred entries).
   String? _selectedCategoryName;
 
-  /// Grid (card) view vs the vertical list. Grid is the default.
   bool _grid = true;
 
-  /// This grid stays server-authoritative — its pagination, total count and
-  /// low/out-of-stock filters are all computed there, and the cards read
-  /// fields the light catalogue doesn't carry. So the fix here is the one it
-  /// was missing: every other search in the app debounces, this one fired a
-  /// request per character, meaning "sugar" cost five.
   Timer? _searchDebounce;
 
   @override
@@ -131,10 +116,6 @@ class _ProductsPageState extends State<ProductsPage> {
     );
   }
 
-  /// Opens the StockBottomSheet for the given product pre-set to either
-  /// STOCK_IN or STOCK_OUT — wired from the Slidable actions on each
-  /// product row. On a successful post we kick a list reload so qty +
-  /// stock state stay in sync.
   Future<void> _openStockSheet(Product product, String type) async {
     final draftId = await showModalBottomSheet<String>(
       context: context,
@@ -168,16 +149,6 @@ class _ProductsPageState extends State<ProductsPage> {
     provider.setCategoryFilter(result.categoryId);
   }
 
-  /// Compose (`section header`, `product rows...`) entries.
-  ///
-  /// Section headers are only meaningful when the *full* result set is
-  /// already on-screen (small shop, single page). Once the list is
-  /// paginated, a category's products can span pages and the header
-  /// would repeat (or worse, mislead). Same when a single category is
-  /// already selected: the header is just redundant noise.
-  ///
-  /// In the no-grouping case the category lives on each tile, so the
-  /// row still tells the user what bucket it belongs to.
   List<_ListItem> _buildItems(ProductsProvider provider) {
     final items = <_ListItem>[];
     final canGroup =
@@ -193,8 +164,6 @@ class _ProductsPageState extends State<ProductsPage> {
     }
 
     final buckets = <String, List<Product>>{};
-    // Remember the first iconName seen per group label so the section
-    // header can render the picked glyph alongside the title.
     final groupIcons = <String, String?>{};
     for (final p in provider.products) {
       final group = p.category?.name ?? AppStrings.uncategorised;
@@ -217,10 +186,6 @@ class _ProductsPageState extends State<ProductsPage> {
     return items;
   }
 
-  /// Grid view: a continuous 2-column masonry of all products (flat, no
-  /// category headers — grouping wastes columns when sections are small;
-  /// the category filter covers narrowing). Cards vary in height with their
-  /// content, so the masonry tiles them without gaps.
   Widget _buildGrid({required ProductsProvider provider}) {
     final products = provider.products;
     return CustomScrollView(
@@ -256,7 +221,6 @@ class _ProductsPageState extends State<ProductsPage> {
               },
             ),
           ),
-        // Clear the floating bottom nav so the last row isn't hidden behind it.
         SliverToBoxAdapter(
           child: SizedBox(
             height: FloatingBottomNav.contentBottomInset(context) + AppSizes.sm,
@@ -270,15 +234,12 @@ class _ProductsPageState extends State<ProductsPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final provider = context.watch<ProductsProvider>();
-    // select the exact gating slice → rebuilds only when one of these
-    // flips, not on unrelated AuthProvider changes.
     final (canView, canWrite, canStock) = context
         .select<AuthProvider, (bool, bool, bool)>((a) {
           final u = a.user;
           return (
             u?.canViewProducts ?? false,
             u?.canWriteProducts ?? false,
-            // Swipe-to-stock is an inventory action (stockists have it too).
             u?.canWriteStock ?? false,
           );
         });
@@ -288,8 +249,6 @@ class _ProductsPageState extends State<ProductsPage> {
         provider.outOfStockOnly;
     final isSearching = provider.search.isNotEmpty;
     final items = _buildItems(provider);
-    // Hoisted out of the itemBuilder so we don't re-scan the whole
-    // list for every row.
     final hasHeaders = items.any((e) => e.isHeader);
     final showCategoryOnRow = !hasHeaders && provider.categoryFilter == null;
 
@@ -320,7 +279,6 @@ class _ProductsPageState extends State<ProductsPage> {
           ? NoAccessView(title: l10n.productsHidden)
           : Column(
               children: [
-                // Drop the fixed search/filter header below the floating app bar.
                 SizedBox(height: FloatingAppBar.contentTopInset(context)),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(
@@ -370,10 +328,6 @@ class _ProductsPageState extends State<ProductsPage> {
                       onTap: () =>
                           provider.setOutOfStockOnly(!provider.outOfStockOnly),
                     ),
-                    // One picker chip replaces the per-category pill list.
-                    // Stays a single fixed-width affordance regardless of
-                    // how many categories the shop has — the searchable
-                    // bottom sheet handles 10 or 10,000 the same way.
                     AppFilterPill(
                       label: provider.categoryFilter == null
                           ? l10n.productsCategoryPickerLabel
@@ -395,10 +349,6 @@ class _ProductsPageState extends State<ProductsPage> {
                       ? AppErrorView(onRetry: () => provider.loadProducts())
                       : provider.products.isEmpty
                       ? () {
-                          // Low-stock or out-of-stock with zero
-                          // results is good news, not "no matches" —
-                          // show a positive confirmation instead of
-                          // the generic empty-search state.
                           final isAllStockedUp =
                               (provider.lowStockOnly ||
                                   provider.outOfStockOnly) &&
@@ -444,9 +394,6 @@ class _ProductsPageState extends State<ProductsPage> {
                                   itemCount:
                                       items.length + (provider.hasMore ? 1 : 0),
                                   separatorBuilder: (context, index) {
-                                    // No divider before a section header
-                                    // (the header carries enough vertical
-                                    // space on its own).
                                     if (index + 1 >= items.length) {
                                       return const AppDivider();
                                     }
@@ -476,9 +423,6 @@ class _ProductsPageState extends State<ProductsPage> {
                                           ),
                                       product: (p) => Slidable(
                                         key: ValueKey('product_${p.id}'),
-                                        // Swipe right (start) → Stock In.
-                                        // Inventory action — hidden for roles
-                                        // without inventory:write (e.g. Cashier).
                                         startActionPane: canStock
                                             ? ActionPane(
                                                 motion: const StretchMotion(),
@@ -505,7 +449,6 @@ class _ProductsPageState extends State<ProductsPage> {
                                                 ],
                                               )
                                             : null,
-                                        // Swipe left (end) → Stock Out.
                                         endActionPane: canStock
                                             ? ActionPane(
                                                 motion: const StretchMotion(),
@@ -549,7 +492,6 @@ class _ProductsPageState extends State<ProductsPage> {
   }
 }
 
-/// Discriminated union for items rendered in the products list.
 class _ListItem {
   const _ListItem._(this._label, this._iconName, this._product);
   factory _ListItem.header(String label, {String? iconName}) =>
@@ -571,9 +513,6 @@ class _ListItem {
   }
 }
 
-/// Subtle section divider between groups of products. Echoes the
-/// section-header eyebrows used elsewhere in the app (dashboard,
-/// settings) so the visual language stays consistent.
 class _CategoryHeader extends StatelessWidget {
   const _CategoryHeader({
     required this.label,
@@ -618,12 +557,6 @@ class _CategoryHeader extends StatelessWidget {
   }
 }
 
-/// Full-list skeleton shown while the initial product fetch is in
-/// flight. Renders 6 placeholder rows that mirror the real
-/// [ProductListTile] layout (thumbnail + name lines + SKU line +
-/// price line + stock pill), separated by [AppDivider]s exactly as
-/// the real list is. Density is read from [NavigationPrefsProvider]
-/// so the skeleton matches whichever mode the user last chose.
 class _ProductListSkeleton extends StatelessWidget {
   const _ProductListSkeleton();
 
@@ -640,8 +573,6 @@ class _ProductListSkeleton extends StatelessWidget {
   }
 }
 
-/// Grid-view loading skeleton — 6 placeholder cards mirroring
-/// [ProductGridCard] (square image + name + price lines).
 class _ProductGridSkeleton extends StatelessWidget {
   const _ProductGridSkeleton();
 
@@ -683,7 +614,6 @@ class _ProductGridSkeleton extends StatelessWidget {
   }
 }
 
-/// One skeleton row. Mirrors [ProductListTile] for the given density.
 class _ProductRowSkeleton extends StatelessWidget {
   const _ProductRowSkeleton({required this.compact});
   final bool compact;
@@ -698,7 +628,6 @@ class _ProductRowSkeleton extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Thumbnail placeholder
           AppShimmerBox(
             width: imageSide,
             height: imageSide,
@@ -709,20 +638,16 @@ class _ProductRowSkeleton extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Name — 1 line compact, 2 lines card
                 AppShimmerLine(widthFactor: 0.75),
                 if (!compact) ...[
                   const SizedBox(height: AppSizes.xs),
                   AppShimmerLine(widthFactor: 0.55),
                 ],
                 const SizedBox(height: AppSizes.xs),
-                // SKU / identifier line — narrower
                 AppShimmerLine(widthFactor: 0.45, height: AppSizes.sm),
                 const SizedBox(height: AppSizes.sm),
-                // Price line
                 AppShimmerLine(widthFactor: 0.6),
                 const SizedBox(height: AppSizes.xs),
-                // Stock pill — fixed width rounded capsule
                 AppShimmerBox(
                   width: 96,
                   height: AppSizes.lg,
@@ -737,9 +662,6 @@ class _ProductRowSkeleton extends StatelessWidget {
   }
 }
 
-/// Trailing scan icon for the search bar. Compact, hairline-divided
-/// from the input so it reads as a peer affordance without breaking
-/// the search bar's silhouette.
 class _ScanAction extends StatelessWidget {
   const _ScanAction({required this.onTap});
   final VoidCallback onTap;
@@ -768,9 +690,6 @@ class _ScanAction extends StatelessWidget {
   }
 }
 
-/// Icon-over-label content for a stock [CustomSlidableAction] — replicates the
-/// built-in [SlidableAction] layout, which only accepts a Material `IconData`
-/// (incompatible with the app's SVG [AppIcon]).
 class _StockActionLabel extends StatelessWidget {
   const _StockActionLabel({required this.icon, required this.label});
 

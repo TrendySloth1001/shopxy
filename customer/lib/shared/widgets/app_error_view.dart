@@ -6,7 +6,6 @@ import 'package:shopxy_customer/shared/widgets/app_button.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 
-/// Centered error message with optional retry action.
 class AppErrorView extends StatelessWidget {
   const AppErrorView({
     super.key,

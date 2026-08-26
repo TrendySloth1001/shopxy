@@ -1,7 +1,3 @@
-/// One of the ~7 preset PDF look-and-feels a shop's invoices/quotations/
-/// challans can render with — metadata only (name/description). The
-/// thumbnail image is a bundled asset at `assets/template_thumbnails/<id>.png`,
-/// not fetched — see `assets/template_thumbnails/` and `pubspec.yaml`.
 class PdfTemplate {
   const PdfTemplate({
     required this.id,

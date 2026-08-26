@@ -14,7 +14,6 @@ function parseId(raw: string): number | null {
 }
 
 export class ReviewsController {
-  /// POST /products/:id/reviews — auth required (customer).
   async upsert(req: Request, res: Response): Promise<void> {
     const productId = parseId(req.params.id);
     if (!productId) {
@@ -42,7 +41,6 @@ export class ReviewsController {
     res.status(200).json(result.review);
   }
 
-  /// DELETE /products/:id/reviews/mine — caller removes their own review.
   async deleteOwn(req: Request, res: Response): Promise<void> {
     const productId = parseId(req.params.id);
     if (!productId) {
@@ -57,9 +55,6 @@ export class ReviewsController {
     res.status(204).send();
   }
 
-  /// GET /products/:id/reviews/summary — public. One-shot histogram +
-  /// recent reviews payload that drives the PDP reviews block without
-  /// a follow-up list call.
   async summary(req: Request, res: Response): Promise<void> {
     const productId = parseId(req.params.id);
     if (!productId) {
@@ -70,9 +65,6 @@ export class ReviewsController {
     res.json(result);
   }
 
-  /// GET /me/reviews — every review the caller has written, with
-  /// product join so the profile "My reviews" page can render
-  /// thumbnails without a second round trip.
   async listMine(req: Request, res: Response): Promise<void> {
     const cursorRaw = req.query.cursor as string | undefined;
     const cursor = cursorRaw ? Number(cursorRaw) : undefined;
@@ -84,7 +76,6 @@ export class ReviewsController {
     res.json(result);
   }
 
-  /// GET /products/:id/reviews — public.
   async list(req: Request, res: Response): Promise<void> {
     const productId = parseId(req.params.id);
     if (!productId) {

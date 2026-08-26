@@ -5,9 +5,6 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 
-/// Large, fully-rounded primary CTA used by onboarding + auth. Bigger
-/// touch target and softer corners than [AppButton] so the first-run
-/// flows feel friendly. Shows a centred spinner while [loading].
 class AppPillButton extends StatelessWidget {
   const AppPillButton({
     super.key,

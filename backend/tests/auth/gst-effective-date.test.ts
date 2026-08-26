@@ -3,11 +3,6 @@ import prisma from '../../src/infra/db/prisma.js';
 import { authService } from '../../src/modules/auth/auth.service.js';
 import { createTestUser, cleanupTestUser } from '../helpers/setup.js';
 
-/// The GST-effective-date guard in updateProfile: forces the merchant to
-/// pick the exact date GST starts applying at the precise moment they
-/// newly register a GSTIN, without ever blocking an unrelated profile edit
-/// on a shop that's already registered.
-
 describe('auth.service.updateProfile — GST effective date guard', () => {
   afterAll(async () => {
     await prisma.$disconnect();
@@ -68,10 +63,9 @@ describe('auth.service.updateProfile — GST effective date guard', () => {
       await prisma.user.update({
         where: { id: ctx.userId },
         data: { shopGstin: '27ABCDE1234F1Z5', registrationType: 'REGULAR' },
-        // gstEffectiveFrom left null — pre-feature row.
       });
       const result = await authService.updateProfile(ctx.userId, {
-        shopGstin: '29ABCDE1234F1Z5', // different GSTIN, different state
+        shopGstin: '29ABCDE1234F1Z5',
       });
       expect(result).toEqual({ error: 'GST_EFFECTIVE_DATE_REQUIRED' });
     } finally {

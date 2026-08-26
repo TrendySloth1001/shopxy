@@ -3,9 +3,6 @@ import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/features/dashboard/domain/entities/dashboard_stats.dart';
 import 'package:shopxy/features/dashboard/domain/entities/kpi_breakdown.dart';
 
-/// Fetches + parses the v2 dashboard payload. Mirrors the zod schema in
-/// `merchant-web/src/features/dashboard/stats.ts`: money sections are
-/// nullable, decimals are coerced to doubles.
 class DashboardRemoteDataSource {
   const DashboardRemoteDataSource(this._client);
   final ApiClient _client;
@@ -30,9 +27,6 @@ class DashboardRemoteDataSource {
     );
   }
 
-  /// Per-debtor receivables drill-down for the Receivables KPI card
-  /// (`GET /dashboard/receivables`). Not period-scoped — mirrors the web
-  /// drawer, which shows the full outstanding balance.
   Future<KpiBreakdown> receivables() async {
     final response = await _client.get('/dashboard/receivables');
     if (response.statusCode != 200) {
@@ -41,8 +35,6 @@ class DashboardRemoteDataSource {
     return KpiBreakdown.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
   }
 
-  /// Per-creditor payables drill-down for the Payables KPI card
-  /// (`GET /dashboard/payables`) — the vendor-side mirror of [receivables].
   Future<KpiBreakdown> payables() async {
     final response = await _client.get('/dashboard/payables');
     if (response.statusCode != 200) {
@@ -50,8 +42,6 @@ class DashboardRemoteDataSource {
     }
     return KpiBreakdown.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
   }
-
-  // ── parsers ─────────────────────────────────────────────────────────
 
   static DashboardOnboarding _onboarding(Map<String, dynamic>? j) =>
       DashboardOnboarding(
@@ -200,8 +190,6 @@ class DashboardRemoteDataSource {
           .toList(),
     );
   }
-
-  // ── coercion helpers ────────────────────────────────────────────────
 
   static int _int(dynamic v) {
     if (v is int) return v;

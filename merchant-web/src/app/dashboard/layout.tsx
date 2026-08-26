@@ -6,11 +6,6 @@ import { Sidebar } from "@/features/dashboard/sidebar";
 import { PageTransition } from "@/features/dashboard/page-transition";
 import { EnvironmentBadge } from "@/features/settings/environment-badge";
 
-/**
- * Authenticated shell for the whole dashboard area. Persistent collapsible
- * sidebar + a full-width content outlet. Child routes (/dashboard,
- * /dashboard/products, …) render into `children`.
- */
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <RequireAuth>
@@ -22,8 +17,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               <SectionGuard>{children}</SectionGuard>
             </PageTransition>
           </main>
-          {/* Developer-only, and only when a non-default backend is in force.
-              Silent for every real merchant. */}
           <EnvironmentBadge />
         </div>
       </NotificationsProvider>

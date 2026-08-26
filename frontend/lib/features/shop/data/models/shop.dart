@@ -1,8 +1,5 @@
-/// How refunds are issued when a return is approved.
 const kRefundModes = ['WALLET', 'ORIGINAL', 'REPLACEMENT'];
 
-/// Latest order stage at which a customer may still cancel; after that
-/// they must use a post-delivery return.
 const kCancellationPolicies = [
   'UNTIL_CONFIRMED',
   'UNTIL_PACKED',
@@ -47,34 +44,20 @@ class Shop {
   final bool isPublished;
   final double? rating;
   final int ratingCount;
-  /// Platform-admin verified flag — drives the "Verified" badge.
   final bool isVerified;
   final String? locationCity;
   final String? locationState;
   final String? returnPolicy;
   final String? shippingPolicy;
   final String? refundPolicy;
-  /// When true, the shop blocks new orders and shows a "Vacation"
-  /// banner on every PDP. Existing orders continue normally.
   final bool vacationMode;
-  /// Customer-visible message rendered alongside the vacation banner.
   final String? vacationMessage;
-  /// Whether customers may request post-delivery returns at all.
   final bool returnsEnabled;
-  /// Days after delivery a return can be requested. 0 = no limit.
   final int returnWindowDays;
-  /// One of [kRefundModes].
   final String refundMode;
-  /// Optional customer-visible note shown with the return policy.
   final String? returnPolicyNote;
-  /// One of [kCancellationPolicies] — the latest order stage at which
-  /// a customer may still cancel.
   final String cancellationPolicy;
-  /// Day → [open, close] in HH:MM. Missing days = closed. Null when
-  /// the merchant hasn't set any hours.
   final Map<String, List<String>>? operatingHours;
-  /// Which of the ~7 preset PDF looks this shop's invoices/quotations/
-  /// challans render with — see `PdfTemplate` in the `pdf_templates` feature.
   final String pdfTemplateId;
 
   factory Shop.fromJson(Map<String, dynamic> json) => Shop(
@@ -108,8 +91,6 @@ class Shop {
         pdfTemplateId: (json['pdfTemplateId'] as String?) ?? 'classic',
       );
 
-  /// Tolerant enum parse — unknown server values fall back so a newer
-  /// backend can't crash an older app build.
   static String _enumOr(dynamic raw, List<String> allowed, String fallback) =>
       raw is String && allowed.contains(raw) ? raw : fallback;
 

@@ -7,16 +7,10 @@ type FieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "id" | "type"> & {
   label: string;
   type?: InputHTMLAttributes<HTMLInputElement>["type"];
   error?: string;
-  /** Render a show/hide toggle (for password fields). */
   toggleable?: boolean;
   helper?: string;
 };
 
-/**
- * Single text field: label, input, optional helper, and an inline error.
- * Hairline border + brand focus ring, all from tokens — no boxes, nothing
- * chunky (CLAUDE.md §9). The whole control is the tap target.
- */
 export function Field({
   label,
   type = "text",

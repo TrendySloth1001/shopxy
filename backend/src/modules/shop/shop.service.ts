@@ -27,10 +27,6 @@ const merchantShopSelect = {
   ...publicShopSelect,
   isPublished: true,
   updatedAt: true,
-  // Operational return/cancel rules — merchant settings screens edit
-  // these; the public select intentionally omits them (customers see
-  // them reflected as canCancel/canReturn flags on their orders, plus
-  // the marketing policy texts above).
   returnsEnabled: true,
   returnWindowDays: true,
   refundMode: true,
@@ -39,9 +35,6 @@ const merchantShopSelect = {
   pdfTemplateId: true,
 } as const;
 
-/// Lower-cases, collapses non-alphanumerics to single dashes, trims
-/// leading/trailing dashes. Used both at first-save and at every rename
-/// so the public URL stays stable to the merchant's choice.
 function slugify(input: string): string {
   return input
     .toLowerCase()
@@ -49,10 +42,6 @@ function slugify(input: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
-/// Returns `base`, `base-2`, `base-3`, … until a slug is free. Cheap
-/// even at scale because the unique index makes the lookup O(log n)
-/// and contention here is naturally bounded by how many merchants ever
-/// pick the same brand name.
 async function uniqueSlug(base: string, excludeShopId?: number): Promise<string> {
   let candidate = base || 'shop';
   let suffix = 1;
@@ -68,10 +57,6 @@ async function uniqueSlug(base: string, excludeShopId?: number): Promise<string>
 }
 
 export class ShopService {
-  /// Returns the caller-merchant's shop. Every OWNER has one (created
-  /// at signup once the Shop module wires that path; the P0 backfill
-  /// guarantees it for existing accounts). Null only if the caller is
-  /// CUSTOMER, which the route guard already prevents.
   async getMyShop(userId: number) {
     return prisma.shop.findUnique({
       where: { ownerUserId: userId },
@@ -79,12 +64,6 @@ export class ShopService {
     });
   }
 
-  /// First-shop onboarding for a freshly-registered OWNER who signed up
-  /// without a shop name (the new two-step flow: account → onboarding).
-  /// Creates the Shop + the owner's ShopMember + seeds the starter roles,
-  /// and mirrors the name + a few details onto the User so invoice headers
-  /// have a value. Refuses if the caller already owns a shop or is already
-  /// on a team (ShopMember.userId is unique — one team per user).
   async createMyShop(
     userId: number,
     data: {
@@ -124,7 +103,6 @@ export class ShopService {
         },
         select: merchantShopSelect,
       });
-      // Seed the owner's membership + starter roles, same as one-step signup.
       await tx.shopMember.create({
         data: { shopId: created.id, userId, role: 'OWNER' },
       });
@@ -141,8 +119,6 @@ export class ShopService {
       return created;
     });
 
-    // The membership was cached as "none" during the shopless window
-    // (60s TTL) — bust it so the very next request resolves the new shopId.
     invalidateMembershipCache(userId);
     return { shop };
   }
@@ -162,8 +138,6 @@ export class ShopService {
       vacationMode?: boolean;
       vacationMessage?: string | null;
       operatingHours?: Record<string, [string, string]> | null;
-      /// Operational return/cancel rules (distinct from the marketing
-      /// policy TEXTS above): these drive actual backend gating.
       returnsEnabled?: boolean;
       returnWindowDays?: number;
       refundMode?: string;
@@ -180,9 +154,6 @@ export class ShopService {
       throw new Error('Shop not found for this merchant');
     }
 
-    // If the merchant renames the shop, regenerate the slug from the
-    // new name — keeps `/shops/:slug` matching whatever the customer
-    // typed. We don't re-slug for tagline/image changes.
     let slug = existing.slug;
     if (data.name && data.name !== existing.name) {
       slug = await uniqueSlug(slugify(data.name), existing.id);
@@ -239,9 +210,6 @@ export class ShopService {
     });
   }
 
-  /// Platform-admin verified toggle. Independent of any merchant
-  /// surface — the merchant cannot self-verify. Returns the updated
-  /// shop or null if the id doesn't resolve.
   async setVerified(shopId: number, isVerified: boolean) {
     const existing = await prisma.shop.findUnique({
       where: { id: shopId },
@@ -255,10 +223,6 @@ export class ShopService {
     });
   }
 
-  /// Platform-admin listing — every shop regardless of publish state
-  /// so the verification UI can show drafts too. Ordered isVerified
-  /// desc → newest, so the admin sees freshly-flipped shops first
-  /// and the unverified backlog stays visible.
   async listForAdmin(opts: { search?: string; limit?: number }) {
     const limit = Math.min(100, Math.max(1, opts.limit ?? 50));
     const search = (opts.search ?? '').trim();
@@ -277,9 +241,6 @@ export class ShopService {
     });
   }
 
-  /// Marketplace publish toggle. Separate from updateMyShop so the
-  /// merchant's "publish" action is a deliberate, audit-able event
-  /// rather than a side-effect of an unrelated field save.
   async setPublished(userId: number, isPublished: boolean) {
     return prisma.shop.update({
       where: { ownerUserId: userId },
@@ -288,10 +249,6 @@ export class ShopService {
     });
   }
 
-  /// Public shop view by slug. Returns null when the slug doesn't
-  /// resolve OR when the shop hasn't published yet — the unpublished
-  /// state must look identical to a missing shop so unfinished shops
-  /// don't leak metadata via 200-vs-404 probing.
   async getPublicShopBySlug(slug: string) {
     return prisma.shop.findFirst({
       where: { slug, isPublished: true },

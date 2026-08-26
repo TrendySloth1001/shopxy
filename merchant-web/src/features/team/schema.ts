@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-/** Team shapes, mirroring `backend/src/modules/team/*`. */
-
 const arr = <T extends z.ZodTypeAny>(s: T) =>
   z
     .array(s)
@@ -36,8 +34,6 @@ export const inviteSchema = z
     teamPermissions: arr(z.string()),
     createdAt: z.string(),
     expiresAt: z.string().nullish(),
-    // Single-use accept-invite token; present for the owner's own pending
-    // invites so the UI can build a shareable `/accept-invite?token=` link.
     token: z.string().nullish(),
   })
   .passthrough();

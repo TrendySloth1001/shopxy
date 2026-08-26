@@ -1,8 +1,6 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
 
-/// Supported field types. Lives next to the service so controller +
-/// frontend can both reference the same set without drift.
 export const CUSTOM_FIELD_TYPES = [
   'TEXT',
   'LONG_TEXT',
@@ -23,11 +21,6 @@ export interface CustomFieldDefinitionInput {
   sortOrder?: number;
 }
 
-/// Validate a raw string value against a definition's declared type.
-/// Returns either the normalised string we'll persist, or an error
-/// message the controller can surface. The store keeps everything as
-/// String (one column, one index strategy) — typed parsing happens at
-/// read/write boundaries.
 export function validateValueForType(
   rawValue: string,
   type: CustomFieldType,
@@ -42,7 +35,6 @@ export function validateValueForType(
       return { ok: true, value: v };
 
     case 'NUMBER': {
-      // Locale-loose: accept "1,234.5" and "1234.5" alike.
       const cleaned = v.replace(/,/g, '');
       if (!/^-?\d+(\.\d+)?$/.test(cleaned)) {
         return { ok: false, error: 'Value must be a number' };
@@ -51,8 +43,6 @@ export function validateValueForType(
     }
 
     case 'DATE': {
-      // Persist as ISO-8601 for ordering. Reject obvious garbage but
-      // be forgiving about input formats.
       const parsed = new Date(v);
       if (Number.isNaN(parsed.getTime())) {
         return { ok: false, error: 'Value must be a valid date' };
@@ -89,9 +79,6 @@ export interface CustomFieldSectionInput {
   sortOrder?: number;
 }
 
-/// Predefined section + field bundles the user can stamp in one tap.
-/// Names are stored exactly as written — if the user already has a
-/// matching section, applying a template merges instead of duplicating.
 export const PREDEFINED_TEMPLATES: ReadonlyArray<{
   id: string;
   label: string;
@@ -169,8 +156,6 @@ export const PREDEFINED_TEMPLATES: ReadonlyArray<{
 ];
 
 export class CustomFieldsService {
-  // ── Sections ───────────────────────────────────────────────────────
-
   async getTree(shopId: number, { activeOnly }: { activeOnly: boolean }) {
     const where: Record<string, unknown> = { shopId };
     if (activeOnly) where.isActive = true;
@@ -256,12 +241,6 @@ export class CustomFieldsService {
     return this.listSections(shopId, { activeOnly: false });
   }
 
-  // ── Templates ──────────────────────────────────────────────────────
-
-  /// Stamps a predefined section + its fields into the shop. If a
-  /// section with the same name exists, we reuse it and only create
-  /// missing fields underneath. Idempotent enough that tapping the
-  /// template twice doesn't pile up duplicates.
   async applyTemplate(shopId: number, templateId: string) {
     const template = PREDEFINED_TEMPLATES.find((t) => t.id === templateId);
     if (!template) return { error: 'Unknown template' };
@@ -341,8 +320,6 @@ export class CustomFieldsService {
     }));
   }
 
-  // ── Definitions ────────────────────────────────────────────────────
-
   async listDefinitions(shopId: number, { activeOnly }: { activeOnly: boolean }) {
     return prisma.customFieldDefinition.findMany({
       where: activeOnly ? { shopId, isActive: true } : { shopId },
@@ -355,9 +332,6 @@ export class CustomFieldsService {
   }
 
   async createDefinition(shopId: number, data: CustomFieldDefinitionInput) {
-    // If a sectionId is supplied, confirm it belongs to this shop —
-    // otherwise the create would silently link a field to another
-    // merchant's section.
     if (data.sectionId != null) {
       const ownedSection = await prisma.customFieldSection.findFirst({
         where: { id: data.sectionId, shopId },
@@ -372,8 +346,6 @@ export class CustomFieldsService {
         shopId,
         name: data.name,
         type: data.type,
-        // Prisma needs Prisma.JsonNull (not bare null) to write SQL
-        // NULL into a JSONB column.
         options:
           data.type === 'DROPDOWN' && data.options
             ? data.options
@@ -392,9 +364,6 @@ export class CustomFieldsService {
     id: number,
     data: Partial<CustomFieldDefinitionInput> & { isActive?: boolean },
   ) {
-    // Only persist the type-shaped extras when type is the matching
-    // shape, so a TEXT field doesn't accidentally carry dropdown
-    // options from a stale form payload.
     const existing = await prisma.customFieldDefinition.findFirst({
       where: { id, shopId },
     });
@@ -425,8 +394,6 @@ export class CustomFieldsService {
     });
   }
 
-  /// Soft-delete by default — flip isActive=false so historical values
-  /// remain readable. Hard-delete is exposed separately if needed.
   async softDeleteDefinition(shopId: number, id: number) {
     const owned = await prisma.customFieldDefinition.findFirst({
       where: { id, shopId },
@@ -451,10 +418,7 @@ export class CustomFieldsService {
     return this.listDefinitions(shopId, { activeOnly: false });
   }
 
-  // ── Per-product values ─────────────────────────────────────────────
-
   async listValuesForProduct(shopId: number, productId: number) {
-    // Authorize: only return values for products in this shop.
     const product = await prisma.product.findFirst({
       where: { id: productId, shopId },
       select: { id: true },
@@ -470,9 +434,6 @@ export class CustomFieldsService {
     });
   }
 
-  /// Upsert a single (productId, definitionId) row. Empty/whitespace
-  /// value deletes the row instead of storing a blank — keeps the
-  /// table clean and the "no value" detail-row rendering simple.
   async setValue(
     shopId: number,
     productId: number,
@@ -516,8 +477,6 @@ export class CustomFieldsService {
     });
   }
 
-  /// Bulk-replace a product's values in one transaction. Empty values
-  /// clear the row. Used by Add/Edit Product save path.
   async bulkSetValues(
     shopId: number,
     productId: number,
@@ -534,8 +493,6 @@ export class CustomFieldsService {
     });
     const byId = new Map(definitions.map((d) => [d.id, d]));
 
-    // Validate everything before we open the transaction so a single
-    // bad row doesn't leave half the bulk applied.
     const ops: { definitionId: number; value: string }[] = [];
     for (const e of entries) {
       const def = byId.get(e.definitionId);

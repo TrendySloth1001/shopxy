@@ -12,40 +12,11 @@ import {
   type AuthUser,
 } from "@/features/auth/types";
 
-/**
- * Server-only session layer for the Backend-for-Frontend (BFF).
- *
- * The browser never sees the JWTs: the access + refresh tokens issued by the
- * ShopXY backend are stored in httpOnly, SameSite=Lax cookies set by the
- * `/api/auth/*` route handlers. This is the web equivalent of the mobile apps'
- * encrypted secure storage (see `customer/lib/core/auth/token_manager.dart`) —
- * tokens out of reach of XSS, and the backend URL never shipped to the client.
- *
- * Refresh rotation mirrors the mobile ApiClient: on a 401 we transparently
- * exchange the refresh token for a new pair and retry once.
- */
-
-// App-scoped cookie names. customer-web and merchant-web run on the same host
-// in dev (localhost:3009 / :3010) and cookies are NOT port-scoped, so identical
-// names would let one app read the other's session. Distinct prefixes keep the
-// two sessions isolated. (`sxc_` = ShopXY customer.)
 const ACCESS_COOKIE = "sxc_access";
 const REFRESH_COOKIE = "sxc_refresh";
-/** Matches the backend refresh-token lifetime (7 days). */
 const REFRESH_MAX_AGE = 7 * 24 * 60 * 60;
-/**
- * Matches the backend access-token lifetime (15 min). The access cookie is
- * scoped to the token's own TTL so a stale access JWT isn't kept presentable
- * for days; the refresh cookie (above) carries the long-lived session and
- * `authedFetch`/`getCurrentUser` transparently re-mint the access token from it.
- */
 const ACCESS_MAX_AGE = 15 * 60;
 
-/**
- * This app admits CUSTOMER accounts only. An OWNER (merchant) account that
- * authenticates here is rejected and never persisted as a session — parity
- * with the Flutter customer app's `merchantAccountBlocked` gate.
- */
 export const ALLOWED_ROLE = "CUSTOMER" as const;
 export const ROLE_REJECTED_MESSAGE =
   "This is a merchant account. Please use the ShopXY merchant app to sign in.";
@@ -79,20 +50,6 @@ async function getRefreshToken(): Promise<string | null> {
   return store.get(REFRESH_COOKIE)?.value ?? null;
 }
 
-/**
- * Raw fetch to the backend. Never throws on non-2xx — returns the Response.
- * Defaults to a JSON content-type, but leaves FormData bodies alone so fetch
- * can set the multipart boundary itself (used by the avatar upload).
- */
-/**
- * Which backend this browser talks to.
- *
- * The deployment's configured `API_BASE_URL` unless the developer switcher
- * has stored a choice. The cookie is only ever set by `/api/dev/environment`
- * (which 404s for everyone but the developer account), and an unrecognised id
- * — a retired environment, or a hand-forged cookie — falls back to the
- * default rather than being trusted.
- */
 export async function resolveBackendBaseUrl(): Promise<string> {
   const store = await cookies();
   return (
@@ -117,7 +74,6 @@ export async function backendFetch(
   return fetch(url, { ...init, headers, cache: "no-store" });
 }
 
-/** Flatten a backend error body (string | zod flatten) to one message. */
 export async function extractError(
   res: Response,
   fallback = "Something went wrong",
@@ -135,7 +91,6 @@ export async function extractError(
     }
     if (err?.formErrors && err.formErrors.length > 0) return err.formErrors[0];
   } catch {
-    // non-JSON body — fall through to the fallback
   }
   return fallback;
 }
@@ -146,7 +101,6 @@ function fetchMe(accessToken: string): Promise<Response> {
   });
 }
 
-/** Exchange the stored refresh token for a fresh pair, persisting the result. */
 async function tryRefresh(): Promise<TokenPair | null> {
   const refreshToken = await getRefreshToken();
   if (!refreshToken) return null;
@@ -161,7 +115,6 @@ async function tryRefresh(): Promise<TokenPair | null> {
   return parsed.data;
 }
 
-/** Fetch the enriched `/auth/me` user for a known-good access token. */
 export async function fetchMeUser(accessToken: string): Promise<AuthUser | null> {
   const res = await fetchMe(accessToken);
   if (!res.ok) return null;
@@ -169,19 +122,6 @@ export async function fetchMeUser(accessToken: string): Promise<AuthUser | null>
   return parsed.success ? parsed.data : null;
 }
 
-/**
- * Read-only session peek, safe to call from a **Server Component** (layout).
- *
- * Unlike {@link getCurrentUser}, this never refreshes or mutates cookies —
- * Server Components cannot set cookies, so this only trusts a still-valid access
- * cookie. Returns the user when the 15-min access token is present and good;
- * returns null (no backend call) when it's absent or expired, leaving the client
- * `AuthProvider` to bootstrap via the route handler (which *can* rotate cookies).
- *
- * Passing the result as `initialUser` lets a signed-in shopper render authed on
- * the server for the common hot path, skipping the blocking client
- * `/api/auth/me` round-trip on every navigation.
- */
 export async function peekSessionUser(): Promise<AuthUser | null> {
   const store = await cookies();
   const access = store.get(ACCESS_COOKIE)?.value ?? null;
@@ -196,11 +136,6 @@ async function currentAccessToken(): Promise<string | null> {
   return store.get(ACCESS_COOKIE)?.value ?? null;
 }
 
-/**
- * Call a protected backend endpoint with the caller's bearer token, refreshing
- * once on a 401 (mirrors the mobile ApiClient retry). Returns null when there
- * is no valid session — the route handler should answer 401 in that case.
- */
 export async function authedFetch(
   path: string,
   init?: RequestInit,
@@ -229,11 +164,6 @@ export async function authedFetch(
   return res;
 }
 
-/**
- * Resolve the current session user, refreshing once on a 401. Returns null
- * (and clears the session) when no valid, role-appropriate session exists.
- * Only call from a Route Handler — it may set/clear cookies.
- */
 export async function getCurrentUser(): Promise<AuthUser | null> {
   const store = await cookies();
   let access = store.get(ACCESS_COOKIE)?.value ?? null;
@@ -259,7 +189,6 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   if (!parsed.success) return null;
 
   if (parsed.data.role !== ALLOWED_ROLE) {
-    // Cross-app account — never expose it as a session in this app.
     await clearSessionCookies();
     return null;
   }

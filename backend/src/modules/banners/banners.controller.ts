@@ -25,16 +25,10 @@ const imageRef = z
     message: 'Must be an http(s) URL or a server-relative path',
   });
 
-// A click-through, in the shared banner-link grammar. Parsed rather than
-// pattern-matched so the API, the merchant editor and the customer resolver
-// all agree on what a link means — they previously did not, and the result
-// was that no banner link worked at all. See banner-link.ts.
 const linkRef = z
   .string()
   .max(2048)
   .refine((v) => parseBannerLink(v) !== null, { message: BANNER_LINK_HELP })
-  // Store the canonical form, so a link typed as `Category: Home-Kitchen`
-  // reaches the client the same way as one picked from the dropdown.
   .transform((v) => formatBannerLink(parseBannerLink(v)!));
 
 const createBannerSchema = z.object({
@@ -53,10 +47,6 @@ const updateBannerSchema = createBannerSchema
     message: 'At least one field is required',
   });
 
-// Replace-the-list payload for PUT /me/banners/:id/products. Empty `items`
-// clears the banner's pinned products. Accepts the typed shape
-// (discountType + discountValue) and the legacy `discountPct` int; the
-// service clamps per-product.
 const replaceBannerProductsSchema = z.object({
   items: z
     .array(
@@ -69,8 +59,6 @@ const replaceBannerProductsSchema = z.object({
       }),
     )
     .max(60)
-    // The join table is unique on (bannerId, productId); reject dupes with a
-    // clear 400 instead of letting createMany throw a P2002 → 500.
     .refine((items) => new Set(items.map((i) => i.productId)).size === items.length, {
       message: 'A product can only be pinned to a banner once',
     }),
@@ -87,7 +75,6 @@ function toDate(v: string | null | undefined): Date | null | undefined {
 }
 
 export class BannersController {
-  /// GET /banners?placement=HERO — public read of the live placement.
   async listPublic(req: Request, res: Response): Promise<void> {
     const placementRaw = (req.query.placement as string | undefined) ?? '';
     const placement = PLACEMENTS.find((p) => p === placementRaw);
@@ -98,8 +85,6 @@ export class BannersController {
     const data = await bannersService.getActiveByPlacement(placement);
     res.json({ data });
   }
-
-  // ── Admin endpoints (requirePlatformAdmin) ───────────────────────
 
   async listAdmin(req: Request, res: Response): Promise<void> {
     const placementRaw = req.query.placement as string | undefined;
@@ -174,11 +159,6 @@ export class BannersController {
     res.status(204).send();
   }
 
-  // ── Merchant endpoints (OWNER + resolveShop) ─────────────────────
-  // Every endpoint scopes through req.shopId so a merchant can never
-  // read or mutate another shop's banner by guessing an id. The owning
-  // shop is force-set by the service from the caller's shop.
-
   async listForShop(req: Request, res: Response): Promise<void> {
     const data = await bannersService.listForShop(req.shopId!);
     res.json({ data });
@@ -241,8 +221,6 @@ export class BannersController {
     res.status(204).send();
   }
 
-  // ── Pinned products ──────────────────────────────────────────────
-
   async listProductsForShopBanner(req: Request, res: Response): Promise<void> {
     const id = parseId(req.params.id);
     if (!id) {
@@ -286,8 +264,6 @@ export class BannersController {
     res.json({ data: rows });
   }
 
-  /// GET /banners/:id — public banner detail (banner + pinned products
-  /// with computed sale prices). 404 when the banner isn't visible.
   async getPublicDetail(req: Request, res: Response): Promise<void> {
     const id = parseId(req.params.id);
     if (!id) {

@@ -1,7 +1,3 @@
-/**
- * Unit tests for the buyer-driven half of the on-hold split
- * (settlement/transfer-actions.ts): release-on-confirm + reverse-on-return + P5.
- */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 const { gatewayTransfer, gatewayPayment, releaseTransfer, reverseTransfer, provider, flag } =
@@ -134,28 +130,23 @@ describe('reverseTransferForReturn', () => {
   });
 
   it('caps the reversal at the remaining un-reversed amount (no shortfall when refund fits)', async () => {
-    // ₹50 already reversed of ₹60 → ₹10 remains; a ₹10 refund fits exactly.
     gatewayTransfer.findFirst.mockResolvedValue(transfer({ amount: 60, reversedAmount: 50 }));
 
     const r = await reverseTransferForReturn({ purchaseRequestId: 11, reverseAmount: 10 });
 
-    expect(reverseTransfer).toHaveBeenCalledWith('trf_1', 1000); // ₹10
+    expect(reverseTransfer).toHaveBeenCalledWith('trf_1', 1000);
     expect(r).toEqual({ reversed: true, flagged: false, shortfall: 0 });
-    // 50 + 10 == 60 → fully reversed.
     expect(gatewayTransfer.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ status: 'REVERSED' }) }),
     );
   });
 
   it('PR-M2: reverses the seller slice AND flags the shortfall when the customer refund exceeds it', async () => {
-    // ₹50 already reversed of ₹60 → only ₹10 of seller slice remains, but the
-    // customer refund is ₹30 (e.g. platform-funded coupon). We claw back the
-    // ₹10 we can and flag the ₹20 gap for manual recovery — never silently drop.
     gatewayTransfer.findFirst.mockResolvedValue(transfer({ amount: 60, reversedAmount: 50 }));
 
     const r = await reverseTransferForReturn({ purchaseRequestId: 11, reverseAmount: 30 });
 
-    expect(reverseTransfer).toHaveBeenCalledWith('trf_1', 1000); // ₹10 seller slice
+    expect(reverseTransfer).toHaveBeenCalledWith('trf_1', 1000);
     expect(r).toEqual({ reversed: true, flagged: true, shortfall: 20 });
     expect(gatewayTransfer.update).toHaveBeenCalledWith({
       where: { id: 1 },
@@ -168,7 +159,6 @@ describe('reverseTransferForReturn', () => {
 
     const r = await reverseTransferForReturn({ purchaseRequestId: 11, reverseAmount: 60 });
 
-    // Nothing reversible at the provider; the whole ₹60 is unrecoverable → flag.
     expect(r).toEqual({ reversed: false, flagged: true, shortfall: 60 });
     expect(reverseTransfer).not.toHaveBeenCalled();
     expect(gatewayTransfer.update).toHaveBeenCalledWith({
@@ -201,12 +191,12 @@ describe('reverseTransferForReturn', () => {
 
   it('does NOT call the provider when the compare-and-set claim is lost (concurrent reversal)', async () => {
     gatewayTransfer.findFirst.mockResolvedValue(transfer());
-    gatewayTransfer.updateMany.mockResolvedValue({ count: 0 }); // another reversal won the row
+    gatewayTransfer.updateMany.mockResolvedValue({ count: 0 });
 
     const r = await reverseTransferForReturn({ purchaseRequestId: 11, reverseAmount: 60 });
 
     expect(r).toEqual({ reversed: false, flagged: false, shortfall: 0 });
-    expect(reverseTransfer).not.toHaveBeenCalled(); // never double-reverses at the provider
+    expect(reverseTransfer).not.toHaveBeenCalled();
   });
 
   it('rolls the claim back and FLAGS on a 400 insufficient-balance message', async () => {

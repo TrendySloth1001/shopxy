@@ -1,8 +1,3 @@
-/**
- * Client-side fetchers for the merchants / invitations feature.
- * All calls go to /api/* BFF routes (never the backend directly).
- */
-
 import {
   invitationPageSchema,
   invitationSchema,
@@ -18,8 +13,6 @@ import {
   type CatalogProductsPage,
 } from "./types";
 
-// ─── Shared helpers ────────────────────────────────────────────────────────
-
 async function jsonOrThrow<T>(
   res: Response,
   parse: (raw: unknown) => T,
@@ -31,14 +24,11 @@ async function jsonOrThrow<T>(
       const b = (await res.json()) as { error?: string };
       if (b?.error) message = b.error;
     } catch {
-      /* keep fallback */
     }
     throw new Error(message);
   }
   return parse(await res.json());
 }
-
-// ─── Invitations ───────────────────────────────────────────────────────────
 
 export async function fetchIncomingInvitations(opts?: {
   status?: string;
@@ -75,8 +65,6 @@ export async function declineInvitation(id: string): Promise<Invitation> {
   );
 }
 
-// ─── Links / merchants hub ─────────────────────────────────────────────────
-
 export async function fetchLinks(): Promise<LinksResponse> {
   const res = await fetch("/api/me/links", { cache: "no-store" });
   return jsonOrThrow(
@@ -94,8 +82,6 @@ export async function fetchLinkedShops(): Promise<LinkedShop[]> {
     "Could not load linked shops.",
   );
 }
-
-// ─── Catalog ───────────────────────────────────────────────────────────────
 
 export async function fetchCatalogCategories(): Promise<CatalogCategory[]> {
   const res = await fetch("/api/me/catalog/categories", { cache: "no-store" });

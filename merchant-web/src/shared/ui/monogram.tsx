@@ -1,4 +1,3 @@
-/** Initials avatar for a contact (vendor / party). Pure token styling. */
 export function Monogram({ name, size = 44 }: { name: string; size?: number }) {
   const initials =
     name

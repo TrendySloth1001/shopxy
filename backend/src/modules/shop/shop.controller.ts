@@ -3,10 +3,6 @@ import { z } from 'zod';
 import { decodeId } from '../../shared/ids/publicId.js';
 import { shopService } from './shop.service.js';
 
-// Image fields accept either an absolute http(s) URL or a server-relative
-// path. Uploaded variants come back as `/images/<uuid>-md.webp`, so the
-// strict `z.string().url()` we shipped initially rejected every save the
-// merchant made right after uploading a logo / banner.
 const imageRef = z
   .string()
   .min(1)
@@ -21,9 +17,6 @@ const updateShopSchema = z
     tagline: z.string().max(140).nullable().optional(),
     logoUrl: imageRef.nullable().optional(),
     bannerUrl: imageRef.nullable().optional(),
-    // Public-facing policy text and location. Caps borrowed from
-    // common marketplace usage — 4 KB is more than enough for a
-    // returns blurb without enabling a wall-of-text customer scroll.
     locationCity: z.string().trim().max(120).nullable().optional(),
     locationState: z.string().trim().max(120).nullable().optional(),
     returnPolicy: z.string().trim().max(4096).nullable().optional(),
@@ -31,9 +24,6 @@ const updateShopSchema = z
     refundPolicy: z.string().trim().max(4096).nullable().optional(),
     vacationMode: z.boolean().optional(),
     vacationMessage: z.string().trim().max(280).nullable().optional(),
-    // Operating hours map. Keys are 3-letter lowercase day codes
-    // (mon, tue, …, sun); values are [open, close] tuples in HH:MM.
-    // Missing days mean closed.
     operatingHours: z
       .record(
         z.enum(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']),
@@ -44,9 +34,6 @@ const updateShopSchema = z
       )
       .nullable()
       .optional(),
-    // Operational return/cancel rules — these drive backend gating
-    // (returns.submit and cancelChildForCustomer), unlike the marketing
-    // policy texts above.
     returnsEnabled: z.boolean().optional(),
     returnWindowDays: z.number().int().min(0).max(365).optional(),
     refundMode: z.enum(['WALLET', 'ORIGINAL', 'REPLACEMENT']).optional(),
@@ -54,10 +41,6 @@ const updateShopSchema = z
     cancellationPolicy: z
       .enum(['UNTIL_CONFIRMED', 'UNTIL_PACKED', 'UNTIL_SHIPPED', 'UNTIL_DELIVERED'])
       .optional(),
-    // Loosely validated (not a strict enum against `TEMPLATE_PRESETS`) —
-    // `resolveTemplateConfig` already falls back to "classic" for any id
-    // it doesn't recognize, so this is just a sane-shape check, not the
-    // source of truth for which ids are real.
     pdfTemplateId: z
       .string()
       .min(1)
@@ -69,9 +52,6 @@ const updateShopSchema = z
     message: 'At least one field is required',
   });
 
-// First-shop onboarding. A small, low-friction set of details collected
-// right after signup — name is required, the rest optional (the merchant
-// fills GSTIN/PAN/policies later in settings).
 const createShopSchema = z.object({
   name: z.string().trim().min(2).max(200),
   phoneNumber: z.string().trim().max(20).optional(),
@@ -98,9 +78,6 @@ export class ShopController {
     res.json(shop);
   }
 
-  /// POST /me/onboarding/shop — create the caller's first shop. Sits
-  /// behind ownerOnly (not requireArea): a shopless OWNER has no ShopMember
-  /// yet, so the area gate would 403. Returns 409 if they already have one.
   async createMine(req: Request, res: Response): Promise<void> {
     const parsed = createShopSchema.safeParse(req.body);
     if (!parsed.success) {

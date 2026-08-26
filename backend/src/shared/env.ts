@@ -1,8 +1,3 @@
-/**
- * Read a required environment variable. Throws on import-time if the var is
- * missing — fail fast so production deployments don't silently fall back to
- * an insecure default.
- */
 export function requireEnv(name: string): string {
   const v = process.env[name];
   if (!v || !v.trim()) {
@@ -11,29 +6,17 @@ export function requireEnv(name: string): string {
   return v;
 }
 
-/** Read an env var, returning `fallback` when unset/empty. */
 export function envOr(name: string, fallback: string): string {
   const v = process.env[name];
   return v && v.trim() ? v : fallback;
 }
 
-/**
- * Read a boolean env flag. Truthy values: `1`, `true`, `yes`, `on` (any case).
- * Everything else — including unset — is `false`, so a feature gated on this is
- * off unless explicitly switched on. `fallback` applies only when unset/empty.
- */
 export function envBool(name: string, fallback = false): boolean {
   const v = process.env[name];
   if (v === undefined || !v.trim()) return fallback;
   return ['1', 'true', 'yes', 'on'].includes(v.trim().toLowerCase());
 }
 
-/**
- * Read a required *secret* — like {@link requireEnv}, but also refuses to start
- * if the value is too short to be safe. HS256 signing is only as strong as the
- * key; a short/guessable `JWT_*_SECRET` undermines every token. Enforce at least
- * `minChars` (default 32 ≈ 256 bits) so a weak secret can never reach prod.
- */
 export function requireSecret(name: string, minChars = 32): string {
   const v = requireEnv(name);
   if (v.trim().length < minChars) {

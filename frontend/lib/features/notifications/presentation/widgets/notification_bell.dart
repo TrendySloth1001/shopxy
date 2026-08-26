@@ -8,8 +8,6 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
-/// AppBar action that opens the notifications inbox and surfaces a
-/// small unread badge on the bell glyph.
 class NotificationBell extends StatelessWidget {
   const NotificationBell({super.key});
 

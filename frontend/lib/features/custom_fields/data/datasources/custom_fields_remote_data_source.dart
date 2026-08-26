@@ -6,11 +6,6 @@ import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/features/custom_fields/data/models/custom_field_dto.dart';
 import 'package:shopxy/features/custom_fields/domain/entities/custom_field.dart';
 
-/// Throw a clean error message when the server returns a non-2xx
-/// status. Without this, the data source happily casts the error map
-/// (`{error: "..."}`) to a `List` and the user sees a confusing
-/// "_Map is not a subtype of List" cast crash instead of the actual
-/// backend error.
 void _expectOk(http.Response response) {
   if (response.statusCode >= 200 && response.statusCode < 300) return;
   try {
@@ -19,7 +14,6 @@ void _expectOk(http.Response response) {
       throw Exception(body['error']);
     }
   } catch (_) {
-    // fall through to the generic message
   }
   throw Exception(
     'Request failed (${response.statusCode}): ${response.body}',
@@ -29,8 +23,6 @@ void _expectOk(http.Response response) {
 class CustomFieldsRemoteDataSource {
   const CustomFieldsRemoteDataSource(this._client);
   final ApiClient _client;
-
-  // ── Tree + templates ───────────────────────────────────────────────
 
   Future<CustomFieldsTree> getTree({bool activeOnly = true}) async {
     final response = await _client.get(
@@ -62,8 +54,6 @@ class CustomFieldsRemoteDataSource {
       jsonDecode(response.body) as Map<String, dynamic>,
     );
   }
-
-  // ── Sections ───────────────────────────────────────────────────────
 
   Future<List<CustomFieldSection>> listSections({
     bool activeOnly = true,
@@ -136,8 +126,6 @@ class CustomFieldsRemoteDataSource {
         .toList();
   }
 
-  // ── Definitions ────────────────────────────────────────────────────
-
   Future<List<CustomFieldDefinition>> listDefinitions({
     bool activeOnly = true,
   }) async {
@@ -208,10 +196,6 @@ class CustomFieldsRemoteDataSource {
     );
   }
 
-  /// Move a field between sections (or pass `sectionId: null` to
-  /// detach). Kept separate from [updateDefinition] because `null`
-  /// here is the meaningful "ungroup" signal, while in
-  /// [updateDefinition] null fields are stripped from the payload.
   Future<CustomFieldDefinition> assignSection(
     String definitionId, {
     required String? sectionId,
@@ -245,8 +229,6 @@ class CustomFieldsRemoteDataSource {
         .toList();
   }
 
-  // ── Per-product values ─────────────────────────────────────────────
-
   Future<List<ProductCustomFieldValue>> listValuesForProduct(
     String productId,
   ) async {
@@ -259,8 +241,6 @@ class CustomFieldsRemoteDataSource {
         .toList();
   }
 
-  /// Bulk-replace values for a product in one call. Empty-string
-  /// values clear that field's row.
   Future<List<ProductCustomFieldValue>> bulkSetValuesForProduct(
     String productId,
     List<({String definitionId, String value})> entries,

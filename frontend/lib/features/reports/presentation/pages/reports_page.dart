@@ -17,9 +17,6 @@ import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// The reports workspace: four date-ranged reports (Sales, Purchases, GST, P&L)
-/// plus a live Calculator tool — a faithful port of merchant-web's
-/// `dashboard/reports` page.
 enum _ReportTab { sales, purchases, gst, pnl, calculator }
 
 class ReportsPage extends StatefulWidget {
@@ -74,7 +71,6 @@ class _ReportsPageState extends State<ReportsPage> {
         now.month,
         now.day,
       ).subtract(const Duration(days: 30)),
-      // Indian financial year runs April → March.
       _Preset.fy =>
         now.month >= 4
             ? DateTime(now.year, 4, 1)
@@ -124,7 +120,6 @@ class _ReportsPageState extends State<ReportsPage> {
         child: Column(
           children: [
             SizedBox(height: FloatingAppBar.contentTopInset(context)),
-            // Tabs.
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.fromLTRB(
@@ -146,7 +141,6 @@ class _ReportsPageState extends State<ReportsPage> {
                 ],
               ),
             ),
-            // Date range + presets — hidden for the live calculator tool.
             if (!isCalculator)
               Padding(
                 padding: const EdgeInsets.fromLTRB(
@@ -393,11 +387,6 @@ class _ReportBody extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// Skeleton widgets
-// ─────────────────────────────────────────────────────────────────────
-
-/// Full-page skeleton that mirrors the report layout while data loads.
 class _ReportSkeleton extends StatelessWidget {
   const _ReportSkeleton();
 
@@ -529,10 +518,6 @@ class _SkeletonDivider extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// Shared primitives
-// ─────────────────────────────────────────────────────────────────────
-
 NumberFormat _money() =>
     NumberFormat.currency(symbol: AppStrings.currencySymbol, decimalDigits: 0);
 
@@ -627,7 +612,6 @@ class _Divider extends StatelessWidget {
 }
 
 class _MiniBar extends StatelessWidget {
-  /// Tiny inline bar chart for daily series.
   const _MiniBar({required this.series});
   final List<DailyPoint> series;
 
@@ -792,10 +776,6 @@ class _LeaderRow extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// Views
-// ─────────────────────────────────────────────────────────────────────
-
 class _SalesView extends StatelessWidget {
   const _SalesView({required this.report, required this.scrollController});
   final SalesReport report;
@@ -942,7 +922,6 @@ class _GstView extends StatelessWidget {
       controller: scrollController,
       padding: const EdgeInsets.only(bottom: AppSizes.huge),
       children: [
-        // Headline — three stats.
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
           child: Row(
@@ -981,7 +960,6 @@ class _GstView extends StatelessWidget {
           ),
         ),
 
-        // Head-wise split (GSTR-3B).
         if (head != null && hasGst) ...[
           _Eyebrow(l10n.reportsNetPayableByTaxHead),
           Padding(
@@ -1004,7 +982,6 @@ class _GstView extends StatelessWidget {
           ),
         ],
 
-        // By rate.
         _Eyebrow(l10n.reportsOutputGstByRate),
         _RateBreakdown(
           rows: report.outputByRate,
@@ -1016,7 +993,6 @@ class _GstView extends StatelessWidget {
           empty: l10n.reportsNoInputGstInRange,
         ),
 
-        // Cess — only when there is any.
         if (hasCess) ...[
           _Eyebrow(l10n.reportsCess),
           _PnlRow(
@@ -1050,7 +1026,6 @@ class _GstView extends StatelessWidget {
           ),
         ],
 
-        // Returns note.
         if (returnedGst > 0)
           Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -1071,8 +1046,6 @@ class _GstView extends StatelessWidget {
   }
 }
 
-/// GSTR-3B head-wise split: IGST / CGST / SGST rows with output, input (ITC)
-/// and net columns, plus a totals footer.
 class _GstHeadTable extends StatelessWidget {
   const _GstHeadTable({required this.report, required this.head});
   final GstReport report;
@@ -1266,7 +1239,6 @@ class _GstHeadTable extends StatelessWidget {
   }
 }
 
-/// GST-by-rate breakdown — a Rate · Taxable · GST table with a total row.
 class _RateBreakdown extends StatelessWidget {
   const _RateBreakdown({required this.rows, required this.empty});
   final List<GstRate> rows;
@@ -1564,7 +1536,6 @@ class _PnlView extends StatelessWidget {
           big: true,
         ),
 
-        // Proof — every headline figure traced back to its documents.
         _Eyebrow(l10n.reportsHowThisIsCalculated),
         _StatementRow(
           label: l10n.reportsConfirmedSales,
@@ -1626,8 +1597,6 @@ class _PnlView extends StatelessWidget {
           ),
         ),
 
-        // Products sold in this range — one row per product; expand for its
-        // full sale timeline.
         SoldProductsTable(from: from, to: to),
       ],
     );
@@ -1636,8 +1605,6 @@ class _PnlView extends StatelessWidget {
 
 enum _RowKind { line, subtotal, total }
 
-/// One row of the P&L "proof" statement (a contributing line with a muted
-/// basis note, a ruled subtotal, or the final total).
 class _StatementRow extends StatelessWidget {
   const _StatementRow({
     required this.label,

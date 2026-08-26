@@ -1,7 +1,3 @@
-/**
- * Client-side fetchers for the merchant-ledger feature.
- * All calls go to /api/me/{parties|vendors}/** (BFF proxies to backend).
- */
 import {
   invoicesPageSchema,
   invoiceDetailSchema,
@@ -28,19 +24,15 @@ async function jsonOrThrow<T>(
       const b = (await res.json()) as { error?: string };
       if (b?.error) message = b.error;
     } catch {
-      /* keep fallback */
     }
     throw new Error(message);
   }
   return parse(await res.json());
 }
 
-/** Base path: /api/me/parties/:id  or  /api/me/vendors/:id */
 function basePath(role: MerchantRole, id: string): string {
   return `/api/me/${role === "party" ? "parties" : "vendors"}/${encodeURIComponent(id)}`;
 }
-
-// ─── Invoices ────────────────────────────────────────────────────────────────
 
 export async function fetchInvoices(
   role: MerchantRole,
@@ -69,12 +61,9 @@ export async function fetchInvoiceDetail(
   return jsonOrThrow(res, (raw) => invoiceDetailSchema.parse(raw), "Could not load invoice.");
 }
 
-/** Returns a BFF URL safe for <a href> / window.open */
 export function invoicePdfUrl(role: MerchantRole, id: string, invoiceId: string): string {
   return `${basePath(role, id)}/invoices/${encodeURIComponent(invoiceId)}/pdf`;
 }
-
-// ─── Quotations ──────────────────────────────────────────────────────────────
 
 export async function fetchQuotations(
   partyId: string,
@@ -146,12 +135,9 @@ export async function requestQuotation(
   return jsonOrThrow(res, (raw) => quotationSchema.parse(raw), "Could not send quote request.");
 }
 
-/** Returns a BFF URL for quotation PDF download */
 export function quotationPdfUrl(partyId: string, quotationId: string): string {
   return `/api/me/parties/${encodeURIComponent(partyId)}/quotations/${encodeURIComponent(String(quotationId))}/pdf`;
 }
-
-// ─── Catalog (for request-quote page) ────────────────────────────────────────
 
 export async function fetchCatalogProducts(
   opts?: { search?: string; categoryId?: string; page?: number; limit?: number },

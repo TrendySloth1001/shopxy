@@ -5,7 +5,6 @@ import { productImageSchema } from "@/features/products/schema";
 
 const bodySchema = z.object({ url: z.string().min(1) });
 
-// POST /api/products/:id/images — attach an (already-uploaded) image URL.
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },

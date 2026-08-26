@@ -9,10 +9,6 @@ import { useAuth } from "../auth-context";
 import { areaForPath, canManage, canView } from "../capabilities";
 import { AREA_LABELS } from "@/features/team/permissions";
 
-/**
- * Full-section lock screen — the web equivalent of the Flutter app's
- * `NoAccessView`. Shown when a user reaches a section they may not view.
- */
 export function NoAccessView({ label }: { label?: string }) {
   const t = useTranslations("auth");
   return (
@@ -36,12 +32,6 @@ export function NoAccessView({ label }: { label?: string }) {
   );
 }
 
-/**
- * Wraps the dashboard outlet and locks the whole section when the signed-in
- * user can't view the area the current route maps to. Owners bypass; ungated
- * routes (home, profile, settings) always render. Auth loading is handled
- * upstream by `RequireAuth`, so `user` is present whenever this renders.
- */
 export function SectionGuard({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const pathname = usePathname();
@@ -49,8 +39,6 @@ export function SectionGuard({ children }: { children: ReactNode }) {
 
   if (!user || !area) return <>{children}</>;
 
-  // Create/edit routes need `manage`; everything else only needs `view`. This
-  // blocks a view-only member who navigates straight to a `/new` or `/edit` URL.
   const needsManage = /\/(new|edit)$/.test(pathname);
   const allowed = needsManage ? canManage(user, area) : canView(user, area);
 

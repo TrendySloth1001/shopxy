@@ -3,16 +3,6 @@ import prisma from '../../src/infra/db/prisma.js';
 import { challansService } from '../../src/modules/challans/challans.service.js';
 import { createTestUser, cleanupTestUser, createTestProduct } from '../helpers/setup.js';
 
-/// Archiving for delivery challans, mirroring invoices.
-///
-/// A challan number is a per-shop serial allocated at CREATE time and Rule 55
-/// wants the run serially numbered, so a challan can't be deleted without
-/// leaving a hole. Archiving hides it and keeps the number.
-///
-/// The one rule that differs from invoices: a PENDING challan is refused.
-/// Goods are physically out against it and it has been neither invoiced nor
-/// cancelled — filing it away would lose track of stock that has left.
-
 describe('challans — archive', () => {
   afterAll(async () => {
     await prisma.$disconnect();
@@ -29,7 +19,6 @@ describe('challans — archive', () => {
     return result.challan;
   }
 
-  /// Cancelling reverses the ledger and lands the challan in a settled state.
   async function settledChallan(ctx: { shopId: number; userId: number }) {
     const challan = await pendingChallan(ctx);
     const cancelled = await challansService.cancelChallan(ctx.shopId, challan.id, ctx.userId);
@@ -45,7 +34,6 @@ describe('challans — archive', () => {
       expect('error' in result).toBe(true);
       if ('error' in result) expect(result.error).toMatch(/pending challan/i);
 
-      // Still visible, which is the point of the refusal.
       const list = await challansService.listChallans(ctx.shopId, {
         search: '', page: 1, limit: 50, skip: 0,
       });
@@ -64,8 +52,6 @@ describe('challans — archive', () => {
       if ('error' in result) return;
 
       expect(result.challan?.archivedAt).not.toBeNull();
-      // The serial is retained against the row — this is what makes archiving
-      // acceptable where deletion wasn't.
       expect(result.challan?.challanNo).toBe(challan.challanNo);
       const stillThere = await prisma.challan.findUnique({ where: { id: challan.id } });
       expect(stillThere).not.toBeNull();

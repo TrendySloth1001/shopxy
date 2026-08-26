@@ -9,8 +9,6 @@ import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/shared/constants/app_curves.dart';
 
-/// Full-width banner carousel. Each slide is now just a plain tappable
-/// image (see [HomeBannerImage]) — the templated card system is gone.
 class HomeHeroCarousel extends StatefulWidget {
   const HomeHeroCarousel({super.key, required this.slides});
   final List<HeroSlide> slides;
@@ -20,15 +18,10 @@ class HomeHeroCarousel extends StatefulWidget {
 }
 
 class _HomeHeroCarouselState extends State<HomeHeroCarousel> {
-  // Full-width pages: a fractional viewport leaks the next slide into
-  // the right margin and reads as a dead strip. Symmetric breathing
-  // room comes from the itemBuilder padding instead.
   final _controller = PageController();
   int _page = 0;
   Timer? _autoPlay;
 
-  // Banner aspect ratio — a wide marketing strip. Drives the carousel's
-  // definite height so the PageView never overflows.
   static const double _aspectRatio = 16 / 7;
 
   @override

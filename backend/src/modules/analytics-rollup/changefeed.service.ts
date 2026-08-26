@@ -2,16 +2,9 @@ import prisma from '../../infra/db/prisma.js';
 import { recomputeDay } from './aggregates.recompute.js';
 import { logger } from '../../shared/logging/logger.js';
 
-/// Roll-up maintenance: a cron changefeed recomputes each (shop, day) whose
-/// source rows changed since a watermark; a nightly reconcile + one-time backfill
-/// heal any miss. All idempotent (recomputeDay delete-then-inserts).
-
 const CURSOR_NAME = 'main';
-const BATCH = 8; // concurrent recomputes per wave
+const BATCH = 8;
 
-// day_key is YYYY-MM-DD (IST) as TEXT — we build the UTC-midnight Date in JS to
-// avoid node-postgres parsing `::date` at the machine's LOCAL midnight, which
-// would shift every day by the IST offset.
 type DirtyRow = { shop_id: number; day_key: string };
 
 async function recomputeAll(pairs: DirtyRow[]): Promise<number> {
@@ -33,7 +26,6 @@ async function recomputeAll(pairs: DirtyRow[]): Promise<number> {
   return done;
 }
 
-/// Incremental: recompute (shop, day) for rows changed since the cursor.
 export async function runChangefeed(): Promise<{ days: number }> {
   const runStart = new Date();
   const cursorRow = await prisma.aggChangefeedCursor.findUnique({ where: { name: CURSOR_NAME } });
@@ -57,7 +49,6 @@ export async function runChangefeed(): Promise<{ days: number }> {
 
   const days = await recomputeAll(pairs);
 
-  // Overlap by 30s so a row committed mid-run isn't skipped next tick.
   const next = new Date(runStart.getTime() - 30 * 1000);
   await prisma.aggChangefeedCursor.upsert({
     where: { name: CURSOR_NAME },
@@ -67,8 +58,6 @@ export async function runChangefeed(): Promise<{ days: number }> {
   return { days };
 }
 
-/// Recompute every (shop, day) with activity since `since` (omit = all history).
-/// Used for the one-time backfill and the nightly reconcile.
 export async function backfillAll(since?: Date): Promise<{ days: number }> {
   const floor = since ?? new Date(0);
   const pairs = await prisma.$queryRaw<DirtyRow[]>`
@@ -90,7 +79,6 @@ export async function backfillAll(since?: Date): Promise<{ days: number }> {
   return { days };
 }
 
-/// Nightly safety net — recompute a trailing window to heal any missed tick.
 export async function reconcileRecent(days = 35): Promise<{ days: number }> {
   return backfillAll(new Date(Date.now() - days * 24 * 60 * 60 * 1000));
 }

@@ -18,10 +18,6 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
-/// The tax + payment fields that identify a shop on its invoices — split out
-/// of the general Edit Profile form into their own screen so GSTIN/PAN/GST
-/// date/UPI ID (invoicing config) aren't mixed in with personal identity and
-/// shop-location fields.
 class InvoiceSettingsPage extends StatefulWidget {
   const InvoiceSettingsPage({
     super.key,
@@ -29,14 +25,8 @@ class InvoiceSettingsPage extends StatefulWidget {
     this.focusGstEffectiveDate = false,
   });
 
-  /// Deep-link into one of the text fields (from the profile-completion
-  /// meter's "what's left" chips). Only [ProfileField.shopGstin],
-  /// [ProfileField.shopPan] and [ProfileField.upiVpa] apply here.
   final ProfileField? focusField;
 
-  /// Scrolls straight to the GST-effective-date row and opens its date
-  /// picker — used when the dashboard startup nudge's "Declare the date"
-  /// hands the merchant off here instead of picking inline itself.
   final bool focusGstEffectiveDate;
 
   @override
@@ -48,19 +38,11 @@ class _InvoiceSettingsPageState extends State<InvoiceSettingsPage> {
   late final TextEditingController _shopGstin;
   late final TextEditingController _shopPan;
   late final TextEditingController _upiVpa;
-  // Calendar date GST starts applying — see AuthUser.gstEffectiveFrom. Not a
-  // text field (no keyboard entry), so tracked separately and picked via
-  // showDatePicker.
   DateTime? _gstEffectiveFrom;
   String? _gstEffectiveFromError;
   final _gstEffectiveFromKey = GlobalKey();
   bool _busy = false;
 
-  // GSTIN/PAN open read-only when a value is already on file — these are
-  // sensitive, rarely-changed identifiers, so the screen shows them locked
-  // by default and only unlocks into an editable field on an explicit tap.
-  // A field that's still empty opens straight into edit mode since there's
-  // nothing to protect and the merchant needs to fill it in.
   bool _editingGstin = false;
   bool _editingPan = false;
 
@@ -90,8 +72,6 @@ class _InvoiceSettingsPageState extends State<InvoiceSettingsPage> {
     };
     final target = widget.focusField;
     if (target != null && _focusNodes.containsKey(target)) {
-      // A deep-link always means "go edit this field" — unlock it first so
-      // there's something to focus instead of landing on the locked chip.
       if (target == ProfileField.shopGstin) _editingGstin = true;
       if (target == ProfileField.shopPan) _editingPan = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -162,28 +142,17 @@ class _InvoiceSettingsPageState extends State<InvoiceSettingsPage> {
     if (!_formKey.currentState!.validate()) return;
     final auth = context.read<AuthProvider>();
     final user = auth.user;
-    // Diff each field against the stored value so we only PATCH what
-    // actually changed. The provider treats `null` as "leave it alone" and
-    // `''` as "clear it" — see updateProfile.
     String? diff(String current, String? stored) {
       final next = current.trim();
       final prev = stored ?? '';
       if (next == prev) return null;
-      return next; // empty string → clear
+      return next;
     }
 
     final shopGstinArg = diff(_shopGstin.text.toUpperCase(), user?.shopGstin);
     final shopPanArg = diff(_shopPan.text.toUpperCase(), user?.shopPan);
     final upiArg = diff(_upiVpa.text, user?.upiVpa);
 
-    // Mirrors the backend guard exactly: a NEW/changed GSTIN requires an
-    // effective date before it's ever sent to the server. Rather than a
-    // blocking inline error, prompt with the same declaration-sheet pattern
-    // as payout setup — "Declare" opens the date picker right there; "Skip
-    // for now" leaves the whole save untouched (nothing is sent, nothing
-    // typed is lost) and scrolls to the date field so the merchant can set
-    // it themselves whenever — it's editable indefinitely, on them to come
-    // back to it.
     final isNewGstinRegistration =
         shopGstinArg != null && shopGstinArg.isNotEmpty;
     if (isNewGstinRegistration && _gstEffectiveFrom == null) {
@@ -233,10 +202,6 @@ class _InvoiceSettingsPageState extends State<InvoiceSettingsPage> {
       if (upiArg != null) (l10n.profileUpiId, shown(upiArg)),
     ];
 
-    // Review-before-save: a summary sheet of exactly what's about to change,
-    // so nothing hits the merchant's invoices without them explicitly
-    // confirming it — GSTIN/PAN/GST date are hard to notice a typo in
-    // otherwise, and this is the last checkpoint before they're live.
     final confirmed = await _showPreviewSheet(context, rows);
     if (confirmed != true || !mounted) return;
 
@@ -252,9 +217,6 @@ class _InvoiceSettingsPageState extends State<InvoiceSettingsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.profileProfileUpdated)),
       );
-      // These are invoice-facing settings — exit straight to the Invoices
-      // tab so the merchant lands where the change actually shows up,
-      // regardless of which screen this page was opened from.
       context.findAncestorStateOfType<AppShellState>()?.selectDestination(
         'invoices',
       );
@@ -515,11 +477,6 @@ class _InvoiceSettingsPageState extends State<InvoiceSettingsPage> {
   }
 }
 
-/// A sensitive text field (GSTIN/PAN) that opens read-only when a value is
-/// already on file — tapping it (or the edit glyph) unlocks an ordinary
-/// [TextFormField] in its place. A field that's still empty is rendered
-/// straight in edit mode by the caller, so this widget only ever needs to
-/// render one state or the other, never a transition between them.
 class _LockableField extends StatelessWidget {
   const _LockableField({
     required this.editing,
@@ -564,10 +521,6 @@ class _LockableField extends StatelessWidget {
   }
 }
 
-/// Review-before-save sheet — a summary of exactly which fields are about
-/// to change (label → new value) with a final Save/Cancel, matching the
-/// declaration-sheet pattern used elsewhere on this screen (payout setup,
-/// GST effective date).
 class _InvoiceSettingsPreviewSheet extends StatelessWidget {
   const _InvoiceSettingsPreviewSheet({required this.rows});
   final List<(String, String)> rows;

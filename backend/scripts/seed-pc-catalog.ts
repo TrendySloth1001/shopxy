@@ -1,18 +1,3 @@
-/// Seed: PC-merchant marketplace catalog.
-///
-/// Builds 7 merchants, ~300 published products across PC categories,
-/// brand spotlights, sponsored banners, flash sales, promotions, and
-/// enough ProductEvents to populate the trending snapshot so the
-/// customer home feed lights up (Offers / Best value / New in stock /
-/// Trending all read off that snapshot).
-///
-/// Idempotent on a per-shop basis: any existing shop whose slug starts
-/// with `pc-` is dropped (cascade deletes its products, banners,
-/// spotlights, etc) and rebuilt. Users, categories outside this script's
-/// scope, and non-PC shops are left alone.
-///
-/// Run with: `npx tsx scripts/seed-pc-catalog.ts`
-
 import 'dotenv/config';
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
@@ -25,11 +10,6 @@ const DEFAULT_PASSWORD = 'shopxy123';
 
 const uuid = () => crypto.randomBytes(8).toString('hex');
 const pick = <T,>(arr: T[], i: number): T => arr[i % arr.length];
-
-// ── Merchant definitions ─────────────────────────────────────────
-// Each merchant gets one Shop (slug-prefixed `pc-`) and a slice of
-// the product catalog. nkumawat8956@gmail.com is the live dev user
-// and keeps its existing password; the rest get DEFAULT_PASSWORD.
 
 interface MerchantSeed {
   email: string;
@@ -177,11 +157,6 @@ const MERCHANTS: MerchantSeed[] = [
   },
 ];
 
-// ── Image library ────────────────────────────────────────────────
-// Real Unsplash CDN URLs, grouped by category bucket. Each product
-// gets 1-3 images round-robined from its bucket. Listed once so we
-// can keep the catalog readable below.
-
 const IMAGES = {
   laptop: [
     'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800',
@@ -315,11 +290,6 @@ const IMAGES = {
   ],
 };
 
-// ── Product templates ────────────────────────────────────────────
-// `categorySlug` must match an existing or to-be-created Category.slug.
-// Each template spawns 1 product per merchant that "stocks" it; the
-// final SKU is prefixed with the merchant marker for uniqueness.
-
 type Bucket = keyof typeof IMAGES;
 
 interface ProductTemplate {
@@ -333,7 +303,6 @@ interface ProductTemplate {
 }
 
 const TEMPLATES: ProductTemplate[] = [
-  // ── Laptops (under laptops-and-computers) ─────────────────────
   { name: 'ASUS ROG Strix G16 i7-13650HX Gaming Laptop', mrp: 134990, selling: 109990, categorySlug: 'laptops', bucket: 'laptop', highlights: ['16" 165Hz QHD+', 'RTX 4060 8GB', '16GB DDR5'], tags: ['Bestseller', 'Gaming'] },
   { name: 'Lenovo IdeaPad Slim 5 Ryzen 7 7730U', mrp: 78990, selling: 59990, categorySlug: 'laptops', bucket: 'laptop', highlights: ['14" WUXGA', '512GB SSD', 'Backlit keyboard'], tags: ['Bestseller'] },
   { name: 'HP Pavilion Plus 14 Intel Core i5-13500H', mrp: 89999, selling: 68990, categorySlug: 'laptops', bucket: 'laptop', highlights: ['2.8K OLED', '16GB LPDDR5', 'Iris Xe Graphics'] },
@@ -342,7 +311,6 @@ const TEMPLATES: ProductTemplate[] = [
   { name: 'Acer Predator Helios Neo 16 i9-14900HX', mrp: 189990, selling: 154990, categorySlug: 'laptops', bucket: 'laptop', highlights: ['RTX 4070 8GB', '240Hz WQXGA', 'Vapor chamber cooling'], tags: ['Gaming'] },
   { name: 'MSI Modern 14 C12M Intel i5-1235U', mrp: 64990, selling: 44990, categorySlug: 'laptops', bucket: 'laptop', highlights: ['1.4kg', '14" FHD IPS', 'Backlit'] },
 
-  // ── Monitors (laptops-and-computers > monitors) ───────────────
   { name: 'LG UltraGear 27GP850 27" 1440p 180Hz IPS', mrp: 44999, selling: 33990, categorySlug: 'monitors', bucket: 'monitor', highlights: ['Nano IPS', '1ms GtG', 'G-SYNC Compatible'], tags: ['Gaming'] },
   { name: 'Samsung Odyssey G7 32" 240Hz Curved QHD', mrp: 79999, selling: 56990, categorySlug: 'monitors', bucket: 'monitor', highlights: ['1000R curve', 'HDR600', 'FreeSync Premium Pro'], tags: ['Bestseller'] },
   { name: 'Dell UltraSharp U2723QE 27" 4K USB-C Hub', mrp: 79000, selling: 63990, categorySlug: 'monitors', bucket: 'monitor', highlights: ['IPS Black', '90W PD', 'KVM switch'] },
@@ -350,33 +318,28 @@ const TEMPLATES: ProductTemplate[] = [
   { name: 'Acer Nitro VG240Y 24" 100Hz FHD IPS', mrp: 18999, selling: 9990, categorySlug: 'monitors', bucket: 'monitor', highlights: ['ZeroFrame', 'AMD FreeSync', '1ms VRB'] },
   { name: 'LG 34WP65C 34" UltraWide Curved QHD', mrp: 54999, selling: 39990, categorySlug: 'monitors', bucket: 'monitor', highlights: ['1500R curve', 'sRGB 99%', 'USB-C 60W'] },
 
-  // ── Storage / SSDs ───────────────────────────────────────────
   { name: 'Samsung 990 Pro 2TB NVMe Gen4 SSD', mrp: 22999, selling: 16990, categorySlug: 'storage-drives', bucket: 'ssd', highlights: ['7450 MB/s read', '5-yr warranty', 'PS5 compatible'], tags: ['Bestseller'] },
   { name: 'WD Black SN850X 1TB NVMe Gen4 SSD', mrp: 12999, selling: 8490, categorySlug: 'storage-drives', bucket: 'ssd', highlights: ['7300 MB/s read', 'Game Mode 2.0'] },
   { name: 'Crucial MX500 1TB SATA SSD', mrp: 7499, selling: 5490, categorySlug: 'storage-drives', bucket: 'ssd', highlights: ['560 MB/s read', 'AES-256 encryption'] },
   { name: 'Seagate Barracuda 2TB 7200RPM HDD', mrp: 5990, selling: 4290, categorySlug: 'storage-drives', bucket: 'ssd', highlights: ['SATA 6Gb/s', '256MB cache'] },
 
-  // ── Keyboards (peripherals > keyboards) ───────────────────────
   { name: 'Logitech MX Keys S Wireless Backlit Keyboard', mrp: 14995, selling: 11990, categorySlug: 'keyboards', bucket: 'keyboard', highlights: ['Perfect-stroke', 'Smart Actions', '10-day battery'], tags: ['Bestseller'] },
   { name: 'Keychron K2 V2 Hot-Swappable Mechanical', mrp: 11990, selling: 8990, categorySlug: 'keyboards', bucket: 'keyboard', highlights: ['75% layout', 'RGB backlight', 'Bluetooth 5.1'] },
   { name: 'Razer BlackWidow V4 Pro Green Switch', mrp: 24999, selling: 19990, categorySlug: 'keyboards', bucket: 'keyboard', highlights: ['Doubleshot ABS', 'Wrist rest', 'Chroma RGB'], tags: ['Gaming'] },
   { name: 'Corsair K70 RGB MK.2 Cherry MX Red', mrp: 17999, selling: 13490, categorySlug: 'keyboards', bucket: 'keyboard', highlights: ['8000Hz polling', 'Aluminum frame'] },
   { name: 'Redragon Kumara K552 TKL Mechanical', mrp: 4999, selling: 2299, categorySlug: 'keyboards', bucket: 'keyboard', highlights: ['Outemu Blue', 'Rainbow LED', 'Anti-ghost'] },
 
-  // ── Mice (peripherals > mice) ─────────────────────────────────
   { name: 'Logitech MX Master 3S Wireless Mouse', mrp: 11995, selling: 9490, categorySlug: 'mice', bucket: 'mouse', highlights: ['8K DPI', 'Quiet clicks', 'Multi-device'], tags: ['Bestseller'] },
   { name: 'Razer DeathAdder V3 Pro Wireless', mrp: 16999, selling: 13990, categorySlug: 'mice', bucket: 'mouse', highlights: ['63g ultralight', 'Focus Pro 30K', '90hr battery'], tags: ['Gaming'] },
   { name: 'Glorious Model O Wireless Pro 4K', mrp: 12999, selling: 10490, categorySlug: 'mice', bucket: 'mouse', highlights: ['62g', '4000Hz polling', 'BAMF 2.0 sensor'] },
   { name: 'Logitech G502 Hero High-Performance', mrp: 6995, selling: 4290, categorySlug: 'mice', bucket: 'mouse', highlights: ['25K DPI', '11 programmable', 'LightSync RGB'] },
   { name: 'HP M280 Wired USB Optical Mouse', mrp: 999, selling: 449, categorySlug: 'mice', bucket: 'mouse', highlights: ['1000 DPI', 'Ambidextrous', 'Plug-and-play'] },
 
-  // ── Mousepads ─────────────────────────────────────────────────
   { name: 'Logitech G840 XL Cloth Gaming Mousepad', mrp: 4995, selling: 3290, categorySlug: 'mousepads', bucket: 'mousepad', highlights: ['400x900mm', 'Rubber base', 'Stitched edges'], tags: ['Gaming'] },
   { name: 'Razer Goliathus Extended Chroma RGB', mrp: 5990, selling: 4290, categorySlug: 'mousepads', bucket: 'mousepad', highlights: ['RGB underglow', '294x920mm', 'Micro-textured'] },
   { name: 'Corsair MM350 Pro Premium Spill-Proof', mrp: 3490, selling: 2390, categorySlug: 'mousepads', bucket: 'mousepad', highlights: ['Anti-fray edges', 'Splash-proof surface'] },
   { name: 'AmazonBasics XXL Mousepad 900x400', mrp: 1499, selling: 799, categorySlug: 'mousepads', bucket: 'mousepad', highlights: ['Non-slip rubber', 'Stitched border'] },
 
-  // ── Headphones / Audio (audio > headphones, earbuds) ──────────
   { name: 'Sony WH-1000XM5 Wireless ANC Headphones', mrp: 34990, selling: 24990, categorySlug: 'headphones', bucket: 'headphone', highlights: ['Industry-leading ANC', '30hr battery', 'Multipoint'], tags: ['Bestseller'] },
   { name: 'Bose QuietComfort Ultra Headphones', mrp: 41900, selling: 33900, categorySlug: 'headphones', bucket: 'headphone', highlights: ['Immersive Audio', 'CustomTune'] },
   { name: 'Sennheiser HD 660S2 Open-back', mrp: 49990, selling: 39990, categorySlug: 'headphones', bucket: 'headphone', highlights: ['Audiophile grade', '300Ω drivers'] },
@@ -386,42 +349,34 @@ const TEMPLATES: ProductTemplate[] = [
   { name: 'Sony WF-C700N True Wireless ANC', mrp: 8990, selling: 6990, categorySlug: 'earbuds', bucket: 'earbud', highlights: ['DSEE', '15hr w/ case', 'Multipoint'] },
   { name: 'Nothing Ear (a) TWS Earbuds', mrp: 7999, selling: 5499, categorySlug: 'earbuds', bucket: 'earbud', highlights: ['LDAC', 'Active Noise Cancellation'] },
 
-  // ── Speakers (audio > bluetooth-speakers) ─────────────────────
   { name: 'JBL Flip 6 Portable Bluetooth Speaker', mrp: 11999, selling: 8490, categorySlug: 'bluetooth-speakers', bucket: 'speaker', highlights: ['IP67 dust/water', '12hr playtime', 'PartyBoost'] },
   { name: 'Sony SRS-XB100 Compact Wireless Speaker', mrp: 4990, selling: 3490, categorySlug: 'bluetooth-speakers', bucket: 'speaker', highlights: ['16hr battery', 'IP67'] },
   { name: 'Marshall Emberton II Portable Speaker', mrp: 17999, selling: 13990, categorySlug: 'bluetooth-speakers', bucket: 'speaker', highlights: ['30hr+ battery', 'IP67', 'True Stereophonic'] },
 
-  // ── Cables (power-and-charging > chargers-and-cables) ─────────
   { name: 'Anker PowerLine III USB-C to USB-C 1.8m', mrp: 1799, selling: 999, categorySlug: 'chargers-and-cables', bucket: 'cable', highlights: ['100W PD', 'Braided nylon', '12,000-bend tested'] },
   { name: 'Belkin HDMI 2.1 Ultra HD Cable 2m', mrp: 2999, selling: 1499, categorySlug: 'chargers-and-cables', bucket: 'cable', highlights: ['48Gbps', '8K@60Hz', 'eARC'] },
   { name: 'Mi Type-C to Type-C 5A 1m Cable', mrp: 599, selling: 249, categorySlug: 'chargers-and-cables', bucket: 'cable', highlights: ['100W PD', 'Aramid fiber'] },
   { name: 'Apple Thunderbolt 4 USB-C Pro Cable 1m', mrp: 11900, selling: 9990, categorySlug: 'chargers-and-cables', bucket: 'cable', highlights: ['40Gbps', '100W PD'] },
   { name: 'UGREEN DisplayPort 1.4 Cable 2m', mrp: 2299, selling: 1290, categorySlug: 'chargers-and-cables', bucket: 'cable', highlights: ['8K@60Hz', 'DSC 1.2', 'Gold plated'] },
 
-  // ── Chargers (power-and-charging > wall-chargers) ─────────────
   { name: 'Anker 100W GaN Prime 3-Port Charger', mrp: 7999, selling: 5490, categorySlug: 'wall-chargers', bucket: 'charger', highlights: ['GaNPrime', 'PD 3.0 + PPS'] },
   { name: 'Apple 35W Dual USB-C Power Adapter', mrp: 4900, selling: 3990, categorySlug: 'wall-chargers', bucket: 'charger', highlights: ['Two USB-C ports', 'Compact'] },
   { name: 'Mi 67W SonicCharge 3.0 Charger', mrp: 1799, selling: 999, categorySlug: 'wall-chargers', bucket: 'charger', highlights: ['67W output', 'QC4+', 'PD 3.0'] },
 
-  // ── Power banks ──────────────────────────────────────────────
   { name: 'Anker 737 PowerCore 24000mAh 140W', mrp: 14999, selling: 11490, categorySlug: 'power-banks', bucket: 'powerBank', highlights: ['140W output', 'Smart display'] },
   { name: 'Mi 20000mAh Power Bank 3i 18W', mrp: 2499, selling: 1799, categorySlug: 'power-banks', bucket: 'powerBank', highlights: ['Triple output', '18W PD'] },
 
-  // ── USB hubs / docks (peripherals > usb-hubs) ─────────────────
   { name: 'Anker 555 USB-C Hub 8-in-1 4K HDMI', mrp: 6999, selling: 4990, categorySlug: 'usb-hubs', bucket: 'hub', highlights: ['100W PD passthrough', '4K@60Hz HDMI', 'SD/microSD'] },
   { name: 'UGREEN Revodok Pro 109 9-in-1 Dock', mrp: 8990, selling: 6490, categorySlug: 'usb-hubs', bucket: 'hub', highlights: ['Dual HDMI', '1Gbps Ethernet'] },
   { name: 'CalDigit TS4 Thunderbolt 4 Dock', mrp: 41990, selling: 35990, categorySlug: 'usb-hubs', bucket: 'hub', highlights: ['18 ports', '98W charging'] },
 
-  // ── Webcams (peripherals > webcams) ───────────────────────────
   { name: 'Logitech C920 HD Pro Webcam 1080p', mrp: 6995, selling: 4990, categorySlug: 'webcams', bucket: 'webcam', highlights: ['1080p/30fps', 'Stereo mic'] },
   { name: 'Razer Kiyo Pro Ultra 4K HDR', mrp: 31999, selling: 24990, categorySlug: 'webcams', bucket: 'webcam', highlights: ['Sony STARVIS sensor', '4K@24fps'] },
 
-  // ── Controllers (gaming > controllers) ────────────────────────
   { name: 'Sony DualSense Edge PS5 Controller', mrp: 19999, selling: 17490, categorySlug: 'controllers', bucket: 'controller', highlights: ['Customisable mappings', 'Replaceable sticks'], tags: ['Gaming'] },
   { name: 'Xbox Wireless Controller Carbon Black', mrp: 5499, selling: 4290, categorySlug: 'controllers', bucket: 'controller', highlights: ['Bluetooth', 'Hybrid D-pad'] },
   { name: '8BitDo Ultimate 2.4G Controller Black', mrp: 6990, selling: 5490, categorySlug: 'controllers', bucket: 'controller', highlights: ['Hall-effect sticks', 'Charging dock'] },
 
-  // ── Laptop bags / stands / covers (laptop-accessories) ────────
   { name: 'Targus CityGear 15.6" Laptop Backpack', mrp: 6995, selling: 3990, categorySlug: 'laptop-bags', bucket: 'laptopBag', highlights: ['SafeFit padding', 'Trolley strap'] },
   { name: 'WiWU Alpha 15.4" Slim Laptop Sleeve', mrp: 2499, selling: 1499, categorySlug: 'laptop-bags', bucket: 'laptopBag', highlights: ['PU leather', 'Water resistant'] },
   { name: 'Lenovo Legion Gaming Backpack 17"', mrp: 4999, selling: 3290, categorySlug: 'laptop-bags', bucket: 'laptopBag', highlights: ['RFID pocket', 'Bottle holder'] },
@@ -431,61 +386,48 @@ const TEMPLATES: ProductTemplate[] = [
   { name: 'Saco TPU Keyboard Cover for MacBook Air 13', mrp: 999, selling: 399, categorySlug: 'keyboard-covers', bucket: 'keyboardCover', highlights: ['Ultra-thin', 'Spill resistant'] },
   { name: 'Tukzer Silicone Keyboard Skin for HP Pavilion 14', mrp: 799, selling: 299, categorySlug: 'keyboard-covers', bucket: 'keyboardCover', highlights: ['Dust-proof', 'Washable'] },
 
-  // ── Cleaners (peripherals > cleaning-kits) ────────────────────
   { name: '3M Screen & Keyboard Cleaning Kit', mrp: 1490, selling: 899, categorySlug: 'cleaning-kits', bucket: 'cleaner', highlights: ['Anti-static cloth', '60ml solution'] },
   { name: 'OXO Good Grips Electronics Cleaning Brush', mrp: 990, selling: 590, categorySlug: 'cleaning-kits', bucket: 'cleaner', highlights: ['Soft bristle', 'Silicone tip'] },
   { name: 'Logitech Cleaning Putty for Keyboards', mrp: 599, selling: 349, categorySlug: 'cleaning-kits', bucket: 'cleaner', highlights: ['Reusable', 'Non-residue'] },
 
-  // ── CPUs (pc-components > cpus) ───────────────────────────────
   { name: 'AMD Ryzen 7 7800X3D 8-Core 16-Thread', mrp: 44999, selling: 36490, categorySlug: 'cpus', bucket: 'cpu', highlights: ['3D V-Cache', '5.0 GHz boost', 'AM5'], tags: ['Bestseller'] },
   { name: 'Intel Core i7-14700K 20-Core LGA1700', mrp: 39999, selling: 32490, categorySlug: 'cpus', bucket: 'cpu', highlights: ['5.6 GHz boost', 'Intel UHD 770'] },
   { name: 'AMD Ryzen 5 7600 6-Core 12-Thread', mrp: 21999, selling: 17490, categorySlug: 'cpus', bucket: 'cpu', highlights: ['5.1 GHz boost', 'AM5', 'Wraith Stealth'] },
   { name: 'Intel Core i5-13600KF 14-Core LGA1700', mrp: 29999, selling: 23490, categorySlug: 'cpus', bucket: 'cpu', highlights: ['5.1 GHz turbo', 'Hybrid arch'] },
   { name: 'AMD Ryzen 9 7950X 16-Core 32-Thread', mrp: 69990, selling: 54990, categorySlug: 'cpus', bucket: 'cpu', highlights: ['5.7 GHz boost', '170W TDP'] },
 
-  // ── GPUs (pc-components > graphics-cards) ─────────────────────
   { name: 'ASUS TUF Gaming GeForce RTX 4070 Super 12GB', mrp: 78999, selling: 64990, categorySlug: 'graphics-cards', bucket: 'gpu', highlights: ['12GB GDDR6X', '2640 MHz boost', 'Axial-tech fans'], tags: ['Bestseller'] },
   { name: 'MSI Gaming X Trio RTX 4080 Super 16GB', mrp: 124999, selling: 104990, categorySlug: 'graphics-cards', bucket: 'gpu', highlights: ['Tri Frozr 3', '16GB GDDR6X'] },
   { name: 'Sapphire Pulse Radeon RX 7800 XT 16GB', mrp: 59999, selling: 47990, categorySlug: 'graphics-cards', bucket: 'gpu', highlights: ['Dual-X cooling', '16GB GDDR6'] },
   { name: 'Gigabyte RTX 4060 Eagle OC 8GB', mrp: 32999, selling: 26490, categorySlug: 'graphics-cards', bucket: 'gpu', highlights: ['Windforce 3X', 'OC mode 2475 MHz'] },
   { name: 'Zotac RTX 4090 AMP Extreme AIRO 24GB', mrp: 269999, selling: 224990, categorySlug: 'graphics-cards', bucket: 'gpu', highlights: ['IceStorm 3.0', '24GB GDDR6X'], tags: ['Flagship'] },
 
-  // ── Motherboards (pc-components > motherboards) ───────────────
   { name: 'ASUS ROG Strix B650E-F Gaming WiFi', mrp: 34999, selling: 27490, categorySlug: 'motherboards', bucket: 'motherboard', highlights: ['AM5', 'PCIe 5.0', 'WiFi 6E'] },
   { name: 'MSI MAG B760 Tomahawk WiFi DDR5', mrp: 24999, selling: 19990, categorySlug: 'motherboards', bucket: 'motherboard', highlights: ['LGA1700', 'WiFi 6E', '2.5G LAN'] },
   { name: 'Gigabyte X670 Aorus Elite AX', mrp: 36990, selling: 28490, categorySlug: 'motherboards', bucket: 'motherboard', highlights: ['AM5', '16+2+2 phases', 'PCIe 5.0'] },
 
-  // ── RAM (pc-components > ram) ─────────────────────────────────
   { name: 'Corsair Vengeance DDR5 32GB (2x16) 6000 MT/s', mrp: 14999, selling: 10490, categorySlug: 'ram', bucket: 'ram', highlights: ['EXPO', 'CL30', 'Aluminium heatspreader'] },
   { name: 'G.Skill Trident Z5 RGB DDR5 32GB 6400 MT/s', mrp: 18999, selling: 14490, categorySlug: 'ram', bucket: 'ram', highlights: ['CL32', 'RGB lightbar'] },
   { name: 'Crucial Pro DDR4 32GB (2x16) 3200 MT/s', mrp: 9499, selling: 6490, categorySlug: 'ram', bucket: 'ram', highlights: ['Low-profile', 'XMP 2.0'] },
 
-  // ── PSUs (pc-components > psus) ───────────────────────────────
   { name: 'Corsair RM850x 850W 80+ Gold Fully Modular', mrp: 16999, selling: 12490, categorySlug: 'psus', bucket: 'psu', highlights: ['Cybenetics Gold', 'Zero RPM fan'] },
   { name: 'Seasonic Focus GX 750W 80+ Gold', mrp: 12999, selling: 9490, categorySlug: 'psus', bucket: 'psu', highlights: ['10-yr warranty', 'Hybrid fan'] },
 
-  // ── Cabinets / cases (pc-components > cabinets) ───────────────
   { name: 'NZXT H7 Flow ATX Mid-Tower Case', mrp: 14999, selling: 10990, categorySlug: 'cabinets', bucket: 'cabinet', highlights: ['Perforated front', 'USB-C front IO'] },
   { name: 'Lian Li O11 Dynamic EVO RGB', mrp: 21999, selling: 16490, categorySlug: 'cabinets', bucket: 'cabinet', highlights: ['Reversible chassis', 'Tempered glass'] },
   { name: 'Cooler Master MasterBox TD500 Mesh V2', mrp: 11999, selling: 8490, categorySlug: 'cabinets', bucket: 'cabinet', highlights: ['Crystalline front', 'ARGB fans included'] },
   { name: 'Phanteks Eclipse G500A DRGB', mrp: 13999, selling: 9990, categorySlug: 'cabinets', bucket: 'cabinet', highlights: ['Ultra-fine mesh', '3x 140mm fans'] },
 
-  // ── Air coolers (pc-components > cpu-coolers) ─────────────────
   { name: 'Noctua NH-D15 Chromax.Black Dual-Tower', mrp: 11999, selling: 9490, categorySlug: 'cpu-coolers', bucket: 'airCooler', highlights: ['6 heat pipes', '2x NF-A15 fans'], tags: ['Editor\'s pick'] },
   { name: 'Cooler Master Hyper 212 Black Edition', mrp: 3499, selling: 2290, categorySlug: 'cpu-coolers', bucket: 'airCooler', highlights: ['4 direct-contact pipes', 'PWM fan'] },
   { name: 'be quiet! Dark Rock Pro 4 Air Cooler', mrp: 8999, selling: 6990, categorySlug: 'cpu-coolers', bucket: 'airCooler', highlights: ['Silent Wings fans', '250W TDP'] },
 
-  // ── AIO liquid coolers (pc-components > aio-coolers) ──────────
   { name: 'Corsair iCUE H150i Elite Capellix XT', mrp: 23999, selling: 17990, categorySlug: 'aio-coolers', bucket: 'aio', highlights: ['360mm rad', 'Magnetic Levitation fans', 'iCUE LCD'] },
   { name: 'NZXT Kraken Z73 RGB AIO 360mm', mrp: 29999, selling: 22990, categorySlug: 'aio-coolers', bucket: 'aio', highlights: ['LCD pump head', '7th gen Asetek'] },
   { name: 'Arctic Liquid Freezer III 240', mrp: 11999, selling: 8490, categorySlug: 'aio-coolers', bucket: 'aio', highlights: ['VRM fan', 'P12 PWM PST'] },
 ];
 
-// ── Helpers ──────────────────────────────────────────────────────
-
 function logoUrl(seed: string): string {
-  // Cheap consistent shop logo from DiceBear shapes — deterministic
-  // by seed, transparent bg, fits the 64px round avatar in the UI.
   return `https://api.dicebear.com/7.x/shapes/svg?seed=${seed}&backgroundColor=eef2ff`;
 }
 
@@ -513,10 +455,6 @@ function buildOffers(selling: number): Prisma.JsonValue {
   ];
 }
 
-// ── Category setup ───────────────────────────────────────────────
-// Add new sub-categories for PC builds + accessories that the
-// existing taxonomy doesn't yet cover. Idempotent on slug.
-
 const NEW_CATEGORIES: Array<{
   name: string;
   slug: string;
@@ -532,7 +470,6 @@ const NEW_CATEGORIES: Array<{
   { name: 'Cabinets', slug: 'cabinets', parentSlug: 'pc-components', imageUrl: IMAGES.cabinet[0] },
   { name: 'CPU Coolers', slug: 'cpu-coolers', parentSlug: 'pc-components', imageUrl: IMAGES.airCooler[0] },
   { name: 'AIO Coolers', slug: 'aio-coolers', parentSlug: 'pc-components', imageUrl: IMAGES.aio[0] },
-  // Sub-cats under existing parents (only created if missing)
   { name: 'Mousepads', slug: 'mousepads', parentSlug: 'peripherals', imageUrl: IMAGES.mousepad[0] },
   { name: 'Cleaning Kits', slug: 'cleaning-kits', parentSlug: 'peripherals', imageUrl: IMAGES.cleaner[0] },
   { name: 'Laptop Bags', slug: 'laptop-bags', parentSlug: 'laptop-accessories', imageUrl: IMAGES.laptopBag[0] },
@@ -565,8 +502,6 @@ async function ensureCategories(): Promise<Map<string, number>> {
   return bySlug;
 }
 
-// ── User + shop setup ────────────────────────────────────────────
-
 async function ensureUser(m: MerchantSeed) {
   const existing = await prisma.user.findUnique({ where: { email: m.email } });
   if (existing) return existing;
@@ -594,11 +529,7 @@ async function wipePcShops() {
     console.log('  (no existing PC shops to wipe)');
     return;
   }
-  // Most relations cascade on shop delete; the few that don't
-  // (products via Restrict) need manual cleanup first.
   const shopIds = shops.map((s) => s.id);
-  // Detach products: nuke flash sales, promotions, events, recently
-  // viewed, trending, then the products themselves, then the shop.
   const productIds = (
     await prisma.product.findMany({
       where: { shopId: { in: shopIds } },
@@ -615,8 +546,6 @@ async function wipePcShops() {
     await prisma.productReview.deleteMany({ where: { productId: { in: productIds } } });
     await prisma.product.deleteMany({ where: { id: { in: productIds } } });
   }
-  // Banners point at the shop via shopId (SetNull on shop delete); clear
-  // the seed's shop-scoped banners explicitly so re-runs stay idempotent.
   await prisma.banner.deleteMany({ where: { shopId: { in: shopIds } } });
   await prisma.shop.deleteMany({ where: { id: { in: shopIds } } });
   console.log(`  - wiped ${shops.length} PC shops (${productIds.length} products)`);
@@ -647,8 +576,6 @@ async function ensureShop(userId: number, m: MerchantSeed) {
   });
 }
 
-// ── Product seeding ──────────────────────────────────────────────
-
 async function seedProductsForShop(opts: {
   shopId: number;
   slugPrefix: string;
@@ -662,8 +589,6 @@ async function seedProductsForShop(opts: {
     const categoryId = catBySlug.get(t.categorySlug) ?? null;
     const sku = `${slugPrefix}-${i.toString().padStart(3, '0')}-${uuid().slice(0, 4)}`;
     const bucket = IMAGES[t.bucket];
-    // 1-3 images per product, round-robin from the bucket so the
-    // PDP image carousel has more than one shot.
     const imageCount = 1 + (i % 3);
     const images = Array.from({ length: imageCount }, (_, k) => ({
       url: pick(bucket, i + k),
@@ -683,7 +608,6 @@ async function seedProductsForShop(opts: {
         shopId,
         isActive: true,
         isPublished: true,
-        // Sprinkle some rating so the cards don't all read 0.0.
         ratingAvg: new Prisma.Decimal((3.8 + (i % 12) * 0.1).toFixed(2)),
         ratingCount: 12 + (i % 200),
         tags: t.tags ?? [],
@@ -699,12 +623,7 @@ async function seedProductsForShop(opts: {
   return createdIds;
 }
 
-// ── Image banners ────────────────────────────────────────────────
-// A banner is now just an uploaded image + an optional click-through
-// link + a placement. No templates, colours, or product pinning.
-
 async function seedHeroBanners() {
-  // 4 platform-wide hero slides (shopId = null). Re-created each run.
   await prisma.banner.deleteMany({ where: { placement: 'HERO', shopId: null } });
   const slides = [
     { imageUrl: IMAGES.gpu[0], linkUrl: '/search?q=gpu' },
@@ -729,7 +648,6 @@ async function seedHeroBanners() {
 }
 
 async function seedShopBanners(shopIds: Map<string, number>) {
-  // Shop-authored image banners across AD_STRIP / PROMO / CURATED_RAIL.
   const cards: Array<{ placement: 'AD_STRIP' | 'PROMO' | 'CURATED_RAIL'; imageUrl: string; slug: string }> = [
     { placement: 'AD_STRIP', imageUrl: IMAGES.keyboard[0], slug: 'pc-techbazaar-india' },
     { placement: 'AD_STRIP', imageUrl: IMAGES.charger[0], slug: 'pc-powergrid-accessories' },
@@ -765,10 +683,6 @@ async function seedShopBanners(shopIds: Map<string, number>) {
 }
 
 async function seedEvents(allProductIds: number[], userId: number) {
-  // Trending recompute needs ProductEvents in the last 24h, weighted
-  // mostly toward IMPRESSION (cheap signal) with sprinkles of higher-
-  // intent events. We spray ~10 events per product randomly so the
-  // recompute has meaningful per-category aggregates.
   const types: Array<'IMPRESSION' | 'TAP' | 'VIEW' | 'WISHLIST_ADD' | 'PURCHASE'> = [
     'IMPRESSION', 'IMPRESSION', 'IMPRESSION', 'IMPRESSION', 'IMPRESSION',
     'IMPRESSION', 'TAP', 'TAP', 'VIEW', 'WISHLIST_ADD',
@@ -782,14 +696,11 @@ async function seedEvents(allProductIds: number[], userId: number) {
         clientUuid: `${uuid()}-${productId}-${i}`,
         eventType: pick(types, i),
         productId,
-        // ~30% of events attribute to the dev user so their
-        // recommendation cache has real categories to pivot on.
         userId: Math.random() < 0.3 ? userId : null,
         occurredAt: new Date(now - Math.floor(Math.random() * 22 * 3_600_000)),
       });
     }
   }
-  // Insert in chunks — Postgres parameter limit caps single inserts.
   const chunkSize = 1000;
   for (let i = 0; i < rows.length; i += chunkSize) {
     await prisma.productEvent.createMany({
@@ -801,8 +712,6 @@ async function seedEvents(allProductIds: number[], userId: number) {
 }
 
 async function seedRecentlyViewed(productIds: number[], userId: number) {
-  // Top 6 products into the dev user's recently-viewed so the
-  // "Recently viewed" rail on the home page renders out of the box.
   for (const id of productIds.slice(0, 6)) {
     await prisma.recentlyViewed.upsert({
       where: { userId_productId: { userId, productId: id } },
@@ -812,8 +721,6 @@ async function seedRecentlyViewed(productIds: number[], userId: number) {
   }
   console.log(`  + recently-viewed seeded for user #${userId}`);
 }
-
-// ── Main ─────────────────────────────────────────────────────────
 
 async function main() {
   console.log('— Seeding PC catalog —');
@@ -835,21 +742,12 @@ async function main() {
   }
 
   console.log('5. Creating products…');
-  // Distribute templates across merchants by interleaving: each
-  // merchant gets every Nth template starting at their index, so each
-  // shop stocks a varied mix and the catalog hits ~300 total.
   const productsByShop = new Map<number, number[]>();
   let totalProducts = 0;
-  // Each merchant carries a duplicate pass through the catalog with a
-  // different SKU prefix, so 7 merchants × ~80 templates ≈ ~300 products
-  // across distinct merchants — perfect for marketplace exploration.
   for (let m = 0; m < MERCHANTS.length; m++) {
     const merchant = MERCHANTS[m];
     const shopId = shopBySlug.get(merchant.slug)!;
-    // Take every template, but rotated, so each shop's lineup starts
-    // at a different point in the catalog (varies the visual mix).
     const rotated = [...TEMPLATES.slice(m * 7), ...TEMPLATES.slice(0, m * 7)];
-    // Keep ~40-50 products per shop so we land near 300 total.
     const take = Math.min(45, rotated.length);
     const slice = rotated.slice(0, take);
     const slugPrefix = merchant.slug.replace(/^pc-/, '').slice(0, 12);

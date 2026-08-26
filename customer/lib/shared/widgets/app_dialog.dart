@@ -6,13 +6,6 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/shared/widgets/app_button.dart';
 import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
-/// A bottom-sheet confirmation with two actions. Returns `true` when the
-/// user taps the confirm button, `false`/`null` otherwise.
-///
-/// Preferred over [AppConfirmDialog] for action confirmations on phones:
-/// the sheet rises from the thumb, the destructive action sits full-width
-/// on top, and "keep / cancel" is a quieter ghost button below. Mirrors
-/// the [AppConfirmDialog.show] API so callers can swap one for the other.
 class AppConfirmSheet extends StatelessWidget {
   const AppConfirmSheet({
     super.key,
@@ -65,7 +58,6 @@ class AppConfirmSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Grab handle
             Container(
               width: 40,
               height: AppSizes.handleHeight,
@@ -122,7 +114,6 @@ class AppConfirmSheet extends StatelessWidget {
   }
 }
 
-/// Standardised confirm dialog. Returns `true` if user confirms.
 class AppConfirmDialog extends StatelessWidget {
   const AppConfirmDialog({
     super.key,

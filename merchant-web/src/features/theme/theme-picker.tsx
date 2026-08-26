@@ -5,7 +5,6 @@ import { useTranslations } from "next-intl";
 import { useTheme } from "./theme-context";
 import { THEME_META, THEMES, type Theme } from "./theme";
 
-/** A single selectable theme tile: a mini window preview + label + radio role. */
 function ThemeOption({
   value,
   selected,
@@ -15,8 +14,6 @@ function ThemeOption({
   selected: boolean;
   onSelect: (theme: Theme) => void;
 }) {
-  // Swatch colours stay in THEME_META (each tile previews a fixed palette); the
-  // label + description are localized so the picker reads in the active language.
   const meta = THEME_META[value];
   const t = useTranslations("themes");
   return (
@@ -31,7 +28,6 @@ function ThemeOption({
           : "border-hairline hover:border-brand-soft hover:bg-surface-tint"
       }`}
     >
-      {/* Mini window preview — fixed palette of the theme it represents. */}
       <span
         className="flex h-16 w-full items-end gap-xs overflow-hidden rounded-md border border-hairline p-sm"
         style={{ backgroundColor: meta.swatch.canvas }}
@@ -68,11 +64,6 @@ function ThemeOption({
   );
 }
 
-/**
- * Theme picker for the settings → Preferences pane. Light, Dark and OLED, where
- * the two dark variants share a palette (OLED only deepens the blacks). Applies
- * instantly and persists across reloads via the ThemeProvider.
- */
 export function ThemePicker() {
   const { theme, setTheme } = useTheme();
   return (

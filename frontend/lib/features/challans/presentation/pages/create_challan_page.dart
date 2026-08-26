@@ -45,8 +45,6 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
   bool _isSearching = false;
   bool _isSaving = false;
   Party? _selectedParty;
-  // Heuristic unsaved-changes guard. Not exact — only watches the
-  // party-name/note controllers plus item adds.
   bool _dirty = false;
 
   void _markDirty() {
@@ -58,7 +56,6 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
     super.initState();
     _partyName.addListener(_markDirty);
     _note.addListener(_markDirty);
-    // Warm the catalogue so the first typed character already has an answer.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       unawaited(context.read<ProductCatalogue>().ensureLoaded());
@@ -76,7 +73,6 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
   }
 
   void _onProductSearchChanged(String value) {
-    // Local catalogue answers in this frame — nothing to debounce.
     final catalogue = context.read<ProductCatalogue>();
     if (catalogue.isSearchable) {
       _searchDebounce?.cancel();
@@ -87,7 +83,6 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
       return;
     }
 
-    // Cold or oversized catalogue — back to the server, still debounced.
     _searchDebounce?.cancel();
     _searchDebounce = Timer(AppDurations.searchDebounce, () {
       if (!mounted) return;
@@ -104,8 +99,6 @@ class _CreateChallanPageState extends State<CreateChallanPage> {
     try {
       final ds = context.read<ProductsRemoteDataSource>();
       final result = await ds.getProducts(search: query, limit: 8);
-      // Catalogue may have warmed while this was in flight — see the same
-      // guard in CreateInvoicePage.
       if (!mounted || context.read<ProductCatalogue>().isSearchable) return;
       setState(() => _searchResults = result.products);
     } catch (_) {

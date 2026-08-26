@@ -5,10 +5,6 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 
-/// Square (squircle) icon container — used as a leading element in list rows.
-/// Two variants:
-/// * [AppIconAvatar] (filled black) — for emphasis (FAB-like).
-/// * [AppIconAvatar.outlined] — neutral hairline border, black icon.
 class AppIconAvatar extends StatelessWidget {
   const AppIconAvatar({
     super.key,
@@ -51,7 +47,6 @@ class AppIconAvatar extends StatelessWidget {
   }
 }
 
-/// Circular monogram avatar — letter on hairline-bordered surface circle.
 class AppMonogramAvatar extends StatelessWidget {
   const AppMonogramAvatar({
     super.key,

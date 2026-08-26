@@ -7,16 +7,6 @@ import { useAuth } from "../auth-context";
 import { canManage, canView } from "../capabilities";
 import type { Area } from "@/features/team/permissions";
 
-/**
- * Gates a write action by permission — the web mirror of the Flutter app's
- * `MaybeLocked`. When the user may act, it renders the action untouched. When
- * they can't, it swaps in a greyed, non-interactive chip with a lock icon and
- * an "ask the owner" tooltip (instead of letting the click 403 on the backend).
- *
- * Used inside sections the user *can* view but not manage (e.g. a cashier with
- * `products:view` browsing Products): the list shows, the "New product" button
- * locks. Owners and members with `:manage` see the real action.
- */
 export function MaybeLocked({
   area,
   action = "manage",
@@ -24,9 +14,7 @@ export function MaybeLocked({
   children,
 }: {
   area: Area;
-  /** Which right unlocks the action. Defaults to `manage` (write). */
   action?: "view" | "manage";
-  /** Text shown on the locked chip in place of the action. */
   label?: string;
   children: ReactNode;
 }) {

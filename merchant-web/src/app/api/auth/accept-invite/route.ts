@@ -10,9 +10,6 @@ import {
   setSessionCookies,
 } from "@/server/auth/session";
 
-// POST /api/auth/accept-invite — a brand-new staffer sets a password against a
-// TEAM invite token and is signed straight in (creates an OWNER account joined
-// to the inviting shop's team).
 export async function POST(req: Request) {
   const json = await req.json().catch(() => null);
   const parsed = acceptInviteSchema.safeParse(json);

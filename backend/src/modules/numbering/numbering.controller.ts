@@ -5,8 +5,6 @@ import { numberingService } from './numbering.service.js';
 
 const SERIES_VALUES = ALL_SERIES as readonly [Series, ...Series[]];
 
-/// A bare code (letters/digits/`-_.`), no `/` — the separator is a
-/// dedicated field, not something merchants embed inside prefix/suffix.
 const CODE_RE = /^[A-Za-z0-9\-_.]*$/;
 
 const schemeSchema = z

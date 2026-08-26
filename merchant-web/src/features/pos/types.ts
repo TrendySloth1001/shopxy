@@ -45,7 +45,6 @@ export const saleSnapshotSchema = z.object({
 });
 export type SaleSnapshot = z.infer<typeof saleSnapshotSchema>;
 
-/** Unknown-scan response (P2 quick-add hook point). */
 export const unknownScanSchema = z.object({ unknown: z.literal(true), code: z.string() });
 
 export const ticketSchema = z.object({
@@ -68,7 +67,6 @@ export type CheckoutResult = z.infer<typeof checkoutResultSchema>;
 export const TENDER_MODES = ["CASH", "UPI", "CARD", "OTHER"] as const;
 export type TenderMode = (typeof TENDER_MODES)[number];
 
-/** Pay-session returned by the `payOnline` command — opens Razorpay Checkout. */
 export const posPaySessionSchema = z.object({
   intentId: z.coerce.string(),
   provider: z.string(),
@@ -87,7 +85,6 @@ export type PosPaySession = z.infer<typeof posPaySessionSchema>;
 
 export type ConnStatus = "connecting" | "live" | "reconnecting" | "offline";
 
-/** A catalogue search hit for the "add without a barcode" picker. */
 export const productSearchResultSchema = z.object({
   id: z.coerce.string(),
   name: z.string(),
@@ -99,7 +96,6 @@ export const productSearchResultSchema = z.object({
 });
 export type ProductSearchResult = z.infer<typeof productSearchResultSchema>;
 
-/** A parked (held) bill summary from the `listOpen` command. */
 export const openSaleSummarySchema = z.object({
   id: z.coerce.string(),
   customerName: z.string().nullable(),

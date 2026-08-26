@@ -4,10 +4,6 @@ import 'package:shopxy/features/pdf_templates/data/datasources/pdf_templates_rem
 import 'package:shopxy/features/pdf_templates/domain/entities/pdf_template.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 
-/// Owns the read-only catalog of ~7 preset PDF templates (id/name/
-/// description). The shop's CURRENT selection lives on [Shop.pdfTemplateId]
-/// and is read/saved through `ShopProvider` — this provider only fetches
-/// the catalog, so a new preset shows up without an app release.
 class PdfTemplatesProvider extends ChangeNotifier {
   PdfTemplatesProvider(this._ds);
   final PdfTemplatesRemoteDataSource _ds;

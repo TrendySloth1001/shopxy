@@ -5,42 +5,18 @@ import { WebSocketServer, WebSocket, type RawData } from 'ws';
 import { productsService } from '../products/products.service.js';
 import { logger } from '../../shared/logging/logger.js';
 
-/**
- * Scan-console realtime backbone (PROTOTYPE).
- *
- * Both ends connect to ONE WebSocket room keyed by shopId:
- *   • the phone joins with role=scanner and pushes `{type:'scan', code}`
- *     messages; the backend resolves each code to a product and fans it out;
- *   • the web joins with role=console and renders the live list.
- *
- * Presence is broadcast on every join/leave so each end can show "connection
- * established · N watching". Scope is the shop: a scan reaches every console
- * subscribed to that shopId.
- *
- * PROTOTYPE LIMITS (single-instance only — see PENDING / production notes):
- *   • Rooms + tickets live in-process. Behind >1 node the fan-out won't reach
- *     sockets on another instance — swap this Map for a Redis pub/sub channel.
- *   • No scan history/replay: a console that connects after a scan misses it.
- */
-
 export type ScanRole = 'scanner' | 'console';
 
-// ── Realtime payloads (mirrored by the web client's zod schema) ───────────────
-
 export type ScanItem = {
-  /** Unique per scan event (not the product id) so the client can key a list. */
   scanId: string;
   productId: number;
   name: string;
   sku: string;
   barcode: string | null;
-  /** Decimal serialised to a string. */
   sellingPrice: string;
   mrp: string | null;
   imageUrl: string | null;
-  /** ISO timestamp the scan was received. */
   scannedAt: string;
-  /** userId of the team member who scanned (shop-wide consoles show all). */
   scannedBy: number;
 };
 
@@ -54,8 +30,6 @@ export type ScanConsoleEvent =
   | { type: 'clear'; by: number };
 
 type TaggedWs = WebSocket & { isAlive?: boolean; scanRole?: ScanRole; auth?: WsAuthCtx };
-
-// ── Subscriber hub: shopId → set of live sockets (tagged by role) ─────────────
 
 class ScanConsoleHub {
   private readonly rooms = new Map<number, Set<TaggedWs>>();
@@ -77,7 +51,6 @@ class ScanConsoleHub {
     if (room.size === 0) this.rooms.delete(shopId);
   }
 
-  /** Live counts per role for a shop — drives the "N watching" presence line. */
   presence(shopId: number): Presence {
     const room = this.rooms.get(shopId);
     let consoles = 0;
@@ -91,11 +64,6 @@ class ScanConsoleHub {
     return { consoles, scanners };
   }
 
-  /**
-   * Broadcast an arbitrary JSON event to every socket in a shop room. Lets other
-   * features that share this socket (e.g. POS live cart) fan out without coupling
-   * their event types here; clients ignore event `type`s they don't recognise.
-   */
   publishRaw(shopId: number, event: Record<string, unknown>): number {
     const room = this.rooms.get(shopId);
     if (!room || room.size === 0) return 0;
@@ -110,10 +78,6 @@ class ScanConsoleHub {
     return delivered;
   }
 
-  /**
-   * Fan a payload out to the shop's sockets. `role` limits delivery to one side
-   * (e.g. scans only go to consoles); omit it to reach everyone. Best-effort.
-   */
   broadcast(shopId: number, event: ScanConsoleEvent, opts?: { role?: ScanRole }): number {
     const room = this.rooms.get(shopId);
     if (!room || room.size === 0) return 0;
@@ -132,13 +96,6 @@ class ScanConsoleHub {
 
 export const scanConsoleHub = new ScanConsoleHub();
 
-// ── Resolve a scanned code → broadcastable scan item ─────────────────────────
-
-/**
- * Look up a code (sku/barcode) in the shop and build the wire payload. Shared
- * by the REST endpoint and the WebSocket message handler. Returns null when no
- * product matches.
- */
 export async function resolveScan(
   shopId: number,
   code: string,
@@ -160,18 +117,10 @@ export async function resolveScan(
   };
 }
 
-// ── One-time connection tickets ──────────────────────────────────────────────
-//
-// A client authenticates over HTTP (Bearer on mobile, cookie BFF on web) to
-// `POST /me/scan-console/ticket`, then opens the WebSocket with the ticket. The
-// long-lived JWT never travels on the socket / reaches browser JS.
-
 type Ticket = {
   shopId: number;
   userId: number;
   expiresAt: number;
-  /// Shop role + granted permissions, carried so WS commands can gate the same
-  /// way the REST mount's requireArea did (e.g. POS quick-add needs products:manage).
   shopRole?: string;
   permissions?: string[];
 };
@@ -201,31 +150,21 @@ export function issueScanTicket(
   return token;
 }
 
-/// Identity + grants attached to a live socket, for WS command authorisation.
 export interface WsAuthCtx {
   shopId: number;
   userId: number;
   shopRole?: string;
   permissions?: string[];
-  /// CASH-10 — short-lived cache of the caller's open-shift id, so the POS
-  /// shift gate doesn't re-query `cashierShift.findFirst` on every keystroke.
-  /// `_shiftId` is the last resolved id (null = no open shift); `_shiftCheckedAt`
-  /// is when it was resolved. Shifts open/close over REST (not this socket), so
-  /// a TTL bounds staleness rather than an explicit invalidation event.
   _shiftId?: number | null;
   _shiftCheckedAt?: number;
 }
 
-/// POS (and any future feature) registers a command handler invoked when a
-/// socket sends `{ t: 'cmd', ... }`. Registration (rather than scan-console
-/// importing POS) keeps the dependency one-way and avoids an import cycle.
 type WsCommandHandler = (ws: WebSocket, ctx: WsAuthCtx, msg: Record<string, unknown>) => void;
 let commandHandler: WsCommandHandler | null = null;
 export function registerWsCommandHandler(fn: WsCommandHandler): void {
   commandHandler = fn;
 }
 
-/** Consume (single-use) and validate a ticket. Returns null if invalid/expired. */
 function consumeScanTicket(token: string, now: number): Ticket | null {
   const entry = tickets.get(token);
   if (!entry) return null;
@@ -233,8 +172,6 @@ function consumeScanTicket(token: string, now: number): Ticket | null {
   if (entry.expiresAt <= now) return null;
   return entry;
 }
-
-// ── WebSocket server (attached to the raw http.Server in server.ts) ──────────
 
 const WS_PATH = '/ws/scan-console';
 
@@ -281,8 +218,6 @@ export function attachScanConsoleWs(server: HttpServer): void {
         ws.isAlive = true;
       });
 
-      // A scanner pushes codes over the socket; resolve + fan out to consoles,
-      // and ack back so the phone can confirm each scan reached the server.
       ws.on('message', (data: RawData) => {
         let msg: unknown;
         try {
@@ -293,13 +228,11 @@ export function attachScanConsoleWs(server: HttpServer): void {
         if (typeof msg !== 'object' || msg === null) return;
         const m = msg as Record<string, unknown>;
 
-        // POS (and future features) command channel: `{ t:'cmd', reqId, op, … }`.
         if (m.t === 'cmd') {
           if (ws.auth && commandHandler) commandHandler(ws, ws.auth, m);
           return;
         }
 
-        // scan-console scanner pushes: `{ type:'scan', code }`.
         if (ws.scanRole !== 'scanner' || m.type !== 'scan') return;
         const code = m.code;
         if (typeof code !== 'string' || code.trim() === '') return;
@@ -327,7 +260,6 @@ export function attachScanConsoleWs(server: HttpServer): void {
 
       const cleanup = () => {
         scanConsoleHub.unsubscribe(shopId, ws);
-        // Tell the rest of the room someone left so presence updates live.
         scanConsoleHub.broadcast(shopId, {
           type: 'presence',
           presence: scanConsoleHub.presence(shopId),
@@ -336,7 +268,6 @@ export function attachScanConsoleWs(server: HttpServer): void {
       ws.on('close', cleanup);
       ws.on('error', cleanup);
 
-      // Greet the new socket, then tell the whole room the new presence.
       sendEvent(ws, { type: 'connected', shopId, role, presence });
       scanConsoleHub.broadcast(shopId, {
         type: 'presence',

@@ -48,8 +48,6 @@ class _VendorsPageState extends State<VendorsPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<VendorsProvider>().loadVendors();
-      // Pull invite state once so each row can show its status chip.
-      // Cheap query — uses (from_user_id, status, created_at DESC) index.
       context.read<NotificationsProvider>().loadOutgoing();
     });
   }
@@ -61,9 +59,6 @@ class _VendorsPageState extends State<VendorsPage> {
     super.dispose();
   }
 
-  /// Most recent invitation we've sent for this vendor, if any. PENDING
-  /// beats ACCEPTED beats DECLINED — first match wins because outgoing
-  /// is already createdAt DESC.
   Invitation? _inviteFor(String vendorId, List<Invitation> outgoing) {
     for (final i in outgoing) {
       if (i.linkType == InviteLinkType.vendor && i.vendorId == vendorId) {
@@ -180,8 +175,6 @@ class _VendorsPageState extends State<VendorsPage> {
   }
 
   Future<void> _openDetail(BuildContext context, Vendor v) async {
-    // Capture before await so the post-pop refresh doesn't reach back
-    // into a possibly-disposed BuildContext.
     final provider = context.read<VendorsProvider>();
     await Navigator.push(
       context,
@@ -206,9 +199,6 @@ class _VendorsPageState extends State<VendorsPage> {
       context,
       MaterialPageRoute(builder: (_) => SendInvitePage(initialVendor: v)),
     );
-    // Refresh status chips after the send sheet closes. The provider
-    // reference was captured before the await so we don't reach back
-    // into a possibly-disposed BuildContext.
     if (mounted) notifs.loadOutgoing();
   }
 
@@ -383,9 +373,6 @@ class _VendorTile extends StatelessWidget {
                 onEdit();
               },
             ),
-            // Linked vendors don't get a re-invite affordance — the
-            // chip on the tile already signals "Linked" and re-sending
-            // wouldn't change anything.
             if (invite?.isAccepted == true)
               ListTile(
                 leading: AppIcon(
@@ -475,9 +462,6 @@ class _VendorTile extends StatelessWidget {
   }
 }
 
-/// Small status pill that reflects the most recent invitation we've
-/// sent for the surrounding contact. Hidden when no invite exists so
-/// the tile stays calm for the common case.
 class _InviteChip extends StatelessWidget {
   const _InviteChip({required this.invite});
   final Invitation invite;
@@ -542,10 +526,6 @@ class _InviteChip extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton loading state — mirrors _VendorTile layout
-// ---------------------------------------------------------------------------
-
 class _VendorListSkeleton extends StatelessWidget {
   const _VendorListSkeleton();
 
@@ -586,25 +566,20 @@ class _VendorTileSkeleton extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Avatar placeholder — circular
           AppShimmerBox(
             width: AppSizes.avatarSm,
             height: AppSizes.avatarSm,
             radius: AppSizes.avatarSm / 2,
           ),
           const SizedBox(width: AppSizes.md),
-          // Text + badge column
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Vendor name line
                 AppShimmerLine(widthFactor: 0.55, height: 13),
                 const SizedBox(height: AppSizes.xs),
-                // Phone / GSTIN line
                 AppShimmerLine(widthFactor: 0.40, height: 11),
                 const SizedBox(height: AppSizes.sm),
-                // Status badge row
                 Row(
                   children: [
                     AppShimmerBox(
@@ -623,7 +598,6 @@ class _VendorTileSkeleton extends StatelessWidget {
               ],
             ),
           ),
-          // Action icon placeholder
           AppShimmerBox(
             width: AppSizes.iconMd,
             height: AppSizes.iconMd,

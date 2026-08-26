@@ -31,7 +31,6 @@ function emptyBlock(kind: string): Block {
   }
 }
 
-/** A+ content blocks editor (max 8). Mirrors the backend discriminated union. */
 export function ContentBlocksEditor({
   blocks,
   onChange,
@@ -203,7 +202,6 @@ function ImageField({
     try {
       onUrl(await uploadImage(file));
     } catch {
-      /* ignore; user can retry */
     } finally {
       setBusy(false);
     }

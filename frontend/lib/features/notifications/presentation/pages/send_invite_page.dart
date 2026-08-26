@@ -17,22 +17,6 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
-/// Send an invitation — a guided, one-question-at-a-time flow.
-///
-/// The old version opened on two bare segmented toggles ("Party/Vendor",
-/// "Existing/New contact") with no explanation, which meant a merchant
-/// arriving with no context had to answer two abstract questions before
-/// anything made sense. Worse, "Existing vs New" was an implementation
-/// detail leaking into the UI — it only existed because the invitation
-/// either carries a contact FK or doesn't.
-///
-/// Now: pick WHO you're inviting (with the consequence spelled out), then
-/// name them in one field that searches your contacts and offers to create
-/// a new one inline. Each step only appears once the previous is answered,
-/// so there is never more than one question on screen.
-///
-/// Opened from a party/vendor row ([initialParty] / [initialVendor]), both
-/// of those steps are already answered — it opens straight on the email.
 class SendInvitePage extends StatefulWidget {
   const SendInvitePage({super.key, this.initialParty, this.initialVendor})
     : assert(
@@ -49,10 +33,6 @@ class SendInvitePage extends StatefulWidget {
 
 enum _LinkType { party, vendor }
 
-/// Who the invite is for. Exactly one of the three is set: an existing
-/// [party]/[vendor] the merchant picked, or a [newName] they typed that
-/// the backend materialises into a real contact when the invite is
-/// accepted. The UI never surfaces this distinction.
 class _Recipient {
   const _Recipient.party(this.party) : vendor = null, newName = null;
   const _Recipient.vendor(this.vendor) : party = null, newName = null;
@@ -77,7 +57,6 @@ class _SendInvitePageState extends State<SendInvitePage> {
   bool _sending = false;
   String? _error;
 
-  /// Launched from a contact row — the role is theirs, not a choice.
   bool get _lockedToType =>
       widget.initialParty != null || widget.initialVendor != null;
 
@@ -105,9 +84,6 @@ class _SendInvitePageState extends State<SendInvitePage> {
   bool get _emailOk => _emailCtl.text.trim().contains('@');
   bool get _canSend => _recipient != null && _emailOk && !_sending;
 
-  /// One plain-language line telling the user what's still missing, shown
-  /// next to the disabled CTA. A dead button with no explanation was a big
-  /// part of why the old screen felt like a dead end.
   String? _blockingHint(AppLocalizations l10n) {
     if (_recipient == null) return l10n.inviteHintPickContact;
     if (!_emailOk) return l10n.inviteHintNeedEmail;
@@ -120,15 +96,12 @@ class _SendInvitePageState extends State<SendInvitePage> {
 
   void _pickType(_LinkType t) => setState(() {
     _type = t;
-    // Switching side invalidates a contact picked on the other side.
     _recipient = null;
     _emailCtl.clear();
   });
 
   void _pickRecipient(_Recipient r) => setState(() {
     _recipient = r;
-    // Pre-fill the email we already hold for a known contact; the user can
-    // still correct it. A new contact has none, so leave it for them.
     final known = r.email;
     if (known != null && known.isNotEmpty) _emailCtl.text = known;
   });
@@ -180,7 +153,6 @@ class _SendInvitePageState extends State<SendInvitePage> {
                 AppSizes.xl,
               ),
               children: [
-                // ── Step 1 — who are you inviting? ──────────────────
                 if (_type == null)
                   _RoleChooser(onPick: _pickType)
                 else if (!_lockedToType)
@@ -193,7 +165,6 @@ class _SendInvitePageState extends State<SendInvitePage> {
                     }),
                   ),
 
-                // ── Step 2 — which contact? ─────────────────────────
                 if (_type != null) ...[
                   const SizedBox(height: AppSizes.xl),
                   if (_recipient == null)
@@ -207,8 +178,6 @@ class _SendInvitePageState extends State<SendInvitePage> {
                     _ChosenContactRow(
                       recipient: _recipient!,
                       roleWord: _roleWord(l10n),
-                      // Opened from a contact row the recipient is fixed —
-                      // changing it there would be a different invite.
                       onChange: _lockedToType
                           ? null
                           : () => setState(() {
@@ -218,7 +187,6 @@ class _SendInvitePageState extends State<SendInvitePage> {
                     ),
                 ],
 
-                // ── Step 3 — email + message ────────────────────────
                 if (_recipient != null) ...[
                   const SizedBox(height: AppSizes.xl),
                   _StepHeader(
@@ -281,8 +249,6 @@ class _SendInvitePageState extends State<SendInvitePage> {
               ],
             ),
           ),
-          // Sticky CTA. The hint above it says what's still missing rather
-          // than leaving a dead button unexplained.
           Container(
             decoration: BoxDecoration(
               color: AppColors.surface,
@@ -334,13 +300,6 @@ class _SendInvitePageState extends State<SendInvitePage> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// Step 1 — role
-// ─────────────────────────────────────────────────────────────────────
-
-/// Two descriptive cards. Each states the CONSEQUENCE of the choice
-/// ("so they can see their invoices…") rather than the accounting term,
-/// because "Party" and "Vendor" mean nothing to most merchants.
 class _RoleChooser extends StatelessWidget {
   const _RoleChooser({required this.onPick});
   final ValueChanged<_LinkType> onPick;
@@ -451,7 +410,6 @@ class _RoleCard extends StatelessWidget {
   }
 }
 
-/// Collapsed summary of step 1 once answered, with a way back.
 class _ChosenRoleRow extends StatelessWidget {
   const _ChosenRoleRow({required this.type, required this.onChange});
   final _LinkType type;
@@ -473,14 +431,6 @@ class _ChosenRoleRow extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// Step 2 — contact
-// ─────────────────────────────────────────────────────────────────────
-
-/// One field that both searches existing contacts and creates a new one.
-/// Typing filters the address book; if nothing matches what was typed, the
-/// last row becomes `Add "<whatever you typed>" as a new customer`. That
-/// single affordance replaces the old Existing/New toggle entirely.
 class _ContactStep extends StatefulWidget {
   const _ContactStep({
     super.key,
@@ -555,9 +505,6 @@ class _ContactStepState extends State<_ContactStep> {
             final list = snap.hasError
                 ? const <dynamic>[]
                 : (snap.data ?? const <dynamic>[]);
-            // Offer "add as new" whenever the merchant has typed something
-            // that isn't already an exact contact name — that's precisely
-            // when a new contact is what they meant.
             final exact = list.any(
               (e) =>
                   (e is Party ? e.name : (e as Vendor).name).toLowerCase() ==
@@ -708,7 +655,6 @@ class _AddNewRow extends StatelessWidget {
   }
 }
 
-/// Collapsed summary of step 2 once answered.
 class _ChosenContactRow extends StatelessWidget {
   const _ChosenContactRow({
     required this.recipient,
@@ -728,20 +674,12 @@ class _ChosenContactRow extends StatelessWidget {
       accent: AppColors.brandStrong,
       accentSoft: AppColors.brandSoft,
       title: recipient.label,
-      // Make it obvious this contact doesn't exist yet — it'll be created
-      // when they accept, which is otherwise invisible to the merchant.
       badge: recipient.isNew ? l10n.inviteNewContactBadge(roleWord) : null,
       onChange: onChange,
     );
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// Shared bits
-// ─────────────────────────────────────────────────────────────────────
-
-/// Numbered step heading — makes the flow read as a sequence rather than
-/// a wall of controls.
 class _StepHeader extends StatelessWidget {
   const _StepHeader({required this.step, required this.title, this.subtitle});
   final int step;
@@ -791,7 +729,6 @@ class _StepHeader extends StatelessWidget {
   }
 }
 
-/// An answered step, collapsed to one line with an optional "Change".
 class _SummaryRow extends StatelessWidget {
   const _SummaryRow({
     required this.icon,
@@ -876,7 +813,6 @@ class _SummaryRow extends StatelessWidget {
   }
 }
 
-/// Placeholder rows while the contact list loads.
 class _ContactListSkeleton extends StatelessWidget {
   const _ContactListSkeleton();
 

@@ -33,7 +33,6 @@ function StopRow({
   const reached = !!stop.event;
   const tone = stop.tone ?? "normal";
 
-  // Color based on tone and reached state
   const dotColor = !reached
     ? "border-hairline bg-canvas"
     : tone === "danger"
@@ -64,7 +63,6 @@ function StopRow({
 
   return (
     <div className="flex items-stretch">
-      {/* Rail column */}
       <div className="flex w-7 flex-col items-center">
         <div className={`w-0.5 flex-1 ${isFirst ? "bg-transparent" : lineColor}`} />
         <div
@@ -75,7 +73,6 @@ function StopRow({
         <div className={`w-0.5 flex-1 ${isLast ? "bg-transparent" : lineColor}`} />
       </div>
 
-      {/* Content */}
       <div className="ml-md flex-1 pb-sm pt-xs">
         <p
           className={`text-body-sm font-semibold ${reached ? "text-ink font-extrabold" : "text-muted"}`}
@@ -112,7 +109,6 @@ export function OrderTimeline({
 }) {
   if (events.length === 0) return null;
 
-  // Deduplicate: keep latest event per type
   const byType = new Map<string, OrderEvent>();
   for (const e of events) {
     const prev = byType.get(e.type);

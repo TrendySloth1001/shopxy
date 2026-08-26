@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-/** PATCH /me/addresses/:id — update an address. Auth required. */
 export async function PATCH(req: Request, { params }: Ctx) {
   const { id } = await params;
   const body = await req.json().catch(() => null);
@@ -22,7 +21,6 @@ export async function PATCH(req: Request, { params }: Ctx) {
   return NextResponse.json(await res.json().catch(() => null), { status: res.status });
 }
 
-/** DELETE /me/addresses/:id — remove an address. Auth required. */
 export async function DELETE(_req: Request, { params }: Ctx) {
   const { id } = await params;
   const res = await authedFetch(`/me/addresses/${encodeURIComponent(id)}`, {

@@ -10,31 +10,6 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 
-/// HSN/SAC classification field.
-///
-/// The merchant answers one question — *what is this product?* — and the GST
-/// rate follows. There is no rate input here; the GST field on the page is a
-/// readout of whatever this resolves to.
-///
-/// Three ways in, in the order merchants actually reach for them:
-///
-///  1. **Suggested from the product name.** They never touch this field —
-///     they name the product, we propose codes, they tap one.
-///  2. **Search**, by code or by word, including their own saved shortcuts and
-///     the Hindi and transliterated aliases ("kameez", "chappal", "sariya").
-///  3. **Typing a code directly**, for merchants who know theirs by heart.
-///
-/// Every candidate shows its **chapter → heading breadcrumb** and definition,
-/// because a four-digit code alone can't tell anyone that chapter 62 is woven
-/// and 61 is knitted — the most common apparel misclassification there is.
-///
-/// `onResolved(null)` means the code has no rate on file. The caller must leave
-/// the rate as it was rather than zeroing it: a silent 0% is an under-charged
-/// invoice.
-///
-/// Suggestions render inline beneath the field rather than in an overlay: this
-/// lives inside a scrollable bottom-sheet editor, where a floating popover
-/// would clip against the sheet's bounds.
 class HsnCodeField extends StatefulWidget {
   const HsnCodeField({
     super.key,
@@ -49,19 +24,12 @@ class HsnCodeField extends StatefulWidget {
   final TextEditingController controller;
   final ProductsRemoteDataSource dataSource;
 
-  /// Called with the master's answer whenever the entered code changes, or with
-  /// null when the code has no rate on file.
   final ValueChanged<HsnResolution?> onResolved;
 
-  /// Drives the "suggested for this product" row, and is the label offered when
-  /// saving a shortcut. Empty disables both.
   final String productName;
 
-  /// Selling price, so a threshold slab resolves to the rate this product will
-  /// actually bill at rather than the headline one.
   final double? price;
 
-  /// Fired alongside typing so the page can mark the form dirty.
   final VoidCallback? onChanged;
 
   @override
@@ -69,11 +37,8 @@ class HsnCodeField extends StatefulWidget {
 }
 
 class _HsnCodeFieldState extends State<HsnCodeField> {
-  /// Shortest real HSN heading. Below this, resolving is noise.
   static const _minCodeLength = 4;
   static const _searchDebounce = Duration(milliseconds: 300);
-  /// Longer than search: a product name is typed in full rather than probed
-  /// character by character, and each call may cost a semantic lookup.
   static const _suggestDebounce = Duration(milliseconds: 600);
 
   Timer? _searchTimer;
@@ -86,12 +51,8 @@ class _HsnCodeFieldState extends State<HsnCodeField> {
   HsnMatch? _chosen;
   bool _savedShortcut = false;
 
-  /// Latest-wins guard: a slow response for "620" must not overwrite the list
-  /// for "62052", nor a stale rate overwrite a newer one.
   int _seq = 0;
 
-  /// Which code we last resolved from, so re-entering the same digits (or a
-  /// rebuild) can't re-fire the fill and clobber a manual rate.
   String? _filledFor;
 
   @override
@@ -105,9 +66,6 @@ class _HsnCodeFieldState extends State<HsnCodeField> {
   void didUpdateWidget(HsnCodeField old) {
     super.didUpdateWidget(old);
     if (old.productName != widget.productName) _scheduleSuggest();
-    // A price edit can cross a threshold the chosen code cares about. Without
-    // this, raising a ₹2,400 shirt to ₹2,600 would leave it billing at 5% —
-    // the rule would have been evaluated once and then forgotten.
     if (old.price != widget.price && _chosen?.rule != null) {
       _priceTimer?.cancel();
       _priceTimer = Timer(_searchDebounce, _reresolveForPrice);
@@ -240,8 +198,6 @@ class _HsnCodeFieldState extends State<HsnCodeField> {
           ),
         ),
 
-        // Proposed from the product name — the path where the merchant never
-        // touches this field at all.
         if (showNameSuggestions) ...[
           const SizedBox(height: AppSizes.md),
           Text(
@@ -289,8 +245,6 @@ class _HsnCodeFieldState extends State<HsnCodeField> {
           ),
         ],
 
-        // What was chosen: where it sits, what it means, where to go instead,
-        // and a one-tap save to the merchant's own list.
         if (_chosen != null && _suggestions.isEmpty) ...[
           const SizedBox(height: AppSizes.md),
           _ChosenSummary(
@@ -306,8 +260,6 @@ class _HsnCodeFieldState extends State<HsnCodeField> {
   }
 }
 
-/// One row in the search results — breadcrumb above, then name, code and rate,
-/// then the definition that lets a merchant confirm they picked right.
 class _SuggestionTile extends StatelessWidget {
   const _SuggestionTile({required this.match, required this.onTap});
   final HsnMatch match;
@@ -375,8 +327,6 @@ class _SuggestionTile extends StatelessWidget {
   }
 }
 
-/// The confirmed code, with the cross-references that catch a wrong pick before
-/// it gets saved and repeated forever.
 class _ChosenSummary extends StatelessWidget {
   const _ChosenSummary({
     required this.match,

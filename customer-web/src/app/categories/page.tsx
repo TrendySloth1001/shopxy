@@ -7,7 +7,6 @@ export const metadata: Metadata = {
   description: "Browse all product categories on ShopXY.",
 };
 
-/** Category grid page — `/categories`. Public. */
 export default function CategoriesPage() {
   return (
     <>

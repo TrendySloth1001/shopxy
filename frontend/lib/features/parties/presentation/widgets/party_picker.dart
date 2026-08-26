@@ -16,8 +16,6 @@ import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/widgets/app_search_bar.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// Opens a modal search sheet to pick an existing Party or create a new one.
-/// Returns the selected [Party], or null if cancelled.
 Future<Party?> showPartyPicker(BuildContext context) {
   return showModalBottomSheet<Party>(
     context: context,

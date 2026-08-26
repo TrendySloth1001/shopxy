@@ -6,15 +6,6 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
-/// Shown the moment a merchant saves a NEW (or changed) GSTIN — prompts
-/// them to declare exactly which date GST starts applying, same nudge
-/// pattern as [showPayoutSetupSheet]. "Declare" opens the date picker right
-/// there and returns the picked date; "Skip for now" returns null and lets
-/// the caller leave the merchant on the form to set it whenever they want —
-/// the field stays editable indefinitely either way.
-///
-/// Returns the declared date, or null if skipped (or the date picker itself
-/// was dismissed without a pick — treated the same as skipping).
 Future<DateTime?> showGstEffectiveDateSheet(BuildContext context) {
   return showModalBottomSheet<DateTime?>(
     context: context,
@@ -29,14 +20,6 @@ Future<DateTime?> showGstEffectiveDateSheet(BuildContext context) {
   );
 }
 
-/// Dashboard startup-nudge variant — the merchant may not even have a GSTIN
-/// saved yet at this point, so there's nothing to attach a picked date to
-/// right here. "Declare" doesn't open an inline picker; it just tells the
-/// caller to take the merchant to Invoice Settings and open the picker
-/// there. "Skip for now" does nothing else — just dismisses the sheet.
-///
-/// Returns true if the merchant tapped "Declare the date", false if they
-/// skipped (or dismissed the sheet any other way).
 Future<bool> showGstEffectiveDateNudgeSheet(BuildContext context) async {
   final declared = await showModalBottomSheet<bool>(
     context: context,
@@ -55,10 +38,6 @@ Future<bool> showGstEffectiveDateNudgeSheet(BuildContext context) async {
 class _GstEffectiveDateSheet extends StatelessWidget {
   const _GstEffectiveDateSheet({this.inline = true});
 
-  /// True when "Declare" should open [showDatePicker] right in this sheet
-  /// and pop the picked [DateTime] (the in-context Invoice Settings save
-  /// flow). False when "Declare" should just pop `true` and let the caller
-  /// navigate elsewhere to actually pick the date (the dashboard nudge).
   final bool inline;
 
   @override
@@ -134,10 +113,6 @@ class _GstEffectiveDateSheet extends StatelessWidget {
                         firstDate: DateTime(now.year - 10),
                         lastDate: DateTime(now.year + 10),
                       );
-                      // The sheet is still open behind the date-picker
-                      // dialog — pop it now with whatever was picked (null
-                      // if the picker itself was cancelled, which we treat
-                      // the same as skip).
                       if (context.mounted) Navigator.of(context).pop(picked);
                     },
               child: Text(l10n.profileGstEffectiveSheetDeclare),

@@ -1,9 +1,6 @@
 import 'package:shopxy/features/vendors/domain/entities/vendor_overview.dart';
 
 class VendorOverviewDto {
-  /// Prisma `Decimal` columns serialize to JSON as strings. Funnel every
-  /// money/quantity field through this so a stray `String is not num` cast
-  /// can never happen.
   static double _d(dynamic v) {
     if (v == null) return 0;
     if (v is num) return v.toDouble();
@@ -50,9 +47,6 @@ class VendorOverviewDto {
           ? null
           : VendorLinkedUser(
               id: linked['id'].toString(),
-              // Name only — the server sends `{id, name, avatarUrl}` and no
-              // email by design. Casting one threw the Null-is-not-a-String
-              // crash on every linked vendor.
               name: linked['name'] as String? ?? '',
             ),
       invoiceCount: counts['invoices'] as int? ?? 0,

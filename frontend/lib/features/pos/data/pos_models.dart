@@ -1,4 +1,3 @@
-/// Parsed POS cart snapshot — mirrors the backend `SaleSnapshot`.
 class SaleSnapshot {
   SaleSnapshot({
     required this.saleId,

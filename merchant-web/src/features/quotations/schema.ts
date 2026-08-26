@@ -1,13 +1,5 @@
 import { z } from "zod";
 
-/**
- * Quotation shapes, mirroring the backend `quotations` module (`/quotations`).
- * The merchant builds a priced bucket and sends it to a LINKED customer; the
- * customer accepts (which spawns a confirmed invoice) or declines. A customer
- * can also REQUEST a quote, which the merchant prices via "respond". Amounts
- * are rupees (Decimal serialised as a number).
- */
-
 export const QUOTATION_STATUSES = [
   "REQUESTED",
   "PENDING",
@@ -74,9 +66,6 @@ export const quotationSchema = z
     invoice: z.object({ id: z.coerce.string(), invoiceNo: z.string() }).nullish(),
     requestedById: z.coerce.string().nullish(),
     respondedAt: z.string().nullish(),
-    /// Set once the merchant files this quote out of THEIR working list. The
-    /// customer keeps seeing it in their own — archiving is a filing
-    /// decision, not a retraction.
     archivedAt: z.string().nullish(),
     createdAt: z.string(),
     updatedAt: z.string().optional(),
@@ -95,11 +84,6 @@ export function quotationPartyName(q: Quotation): string {
   return q.party?.name ?? "Customer";
 }
 
-/**
- * Whether the customer could still act on this quote. Archiving is refused in
- * these states: a quote the merchant can no longer see is one nobody chases,
- * and the accept would land against an invisible document.
- */
 export function quotationAwaitsCounterparty(q: Quotation): boolean {
   return q.status === "PENDING" || q.status === "REQUESTED";
 }

@@ -8,8 +8,6 @@ import {
 } from '../../src/shared/ids/publicId.js';
 import { zPublicId } from '../../src/shared/ids/zPublicId.js';
 
-// The codec reads the PUBLIC_IDS flag at call time (via envBool), so each test
-// sets/clears it explicitly and restores afterwards. No DB — pure unit test.
 const ORIGINAL = process.env.PUBLIC_IDS;
 function setFlag(on: boolean) {
   process.env.PUBLIC_IDS = on ? 'true' : 'false';
@@ -40,8 +38,8 @@ describe('publicId codec — flag ON', () => {
     const t = encodeId(1);
     expect(typeof t).toBe('string');
     expect(t).not.toBe('1');
-    expect(String(t)).not.toMatch(/^\d+$/); // must not read as a raw number
-    expect(String(t).length).toBeGreaterThanOrEqual(8); // minLength padding
+    expect(String(t)).not.toMatch(/^\d+$/);
+    expect(String(t).length).toBeGreaterThanOrEqual(8);
   });
 
   it('round-trips every id back to itself', () => {
@@ -57,12 +55,10 @@ describe('publicId codec — flag ON', () => {
     const b = String(encodeId(2));
     const c = String(encodeId(3));
     expect(new Set([a, b, c]).size).toBe(3);
-    // No shared long prefix that would betray ordering.
     expect(a.slice(0, 4)).not.toBe(b.slice(0, 4));
   });
 
   it('remains dual-mode: legacy integer ids still decode', () => {
-    // A not-yet-migrated client sending ?productId=7 must keep working.
     expect(decodeId('7')).toBe(7);
   });
 });
@@ -87,7 +83,6 @@ describe('publicId codec — decode is hostile-input safe (both modes)', () => {
       });
 
       it('rejects forged / garbage tokens via the round-trip guard', () => {
-        // Random strings must NOT silently decode into some valid-looking int.
         expect(decodeId('!!!!!!!!')).toBeNull();
         expect(decodeId('not-a-token')).toBeNull();
         expect(decodeId('        x')).toBeNull();
@@ -99,7 +94,7 @@ describe('publicId codec — decode is hostile-input safe (both modes)', () => {
 describe('encodeIdsDeep — response tokeniser', () => {
   it('is identity when flag OFF (no clone, no cost)', () => {
     const payload = { id: 1, categoryId: 2, name: 'x' };
-    expect(encodeIdsDeep(payload)).toBe(payload); // same reference
+    expect(encodeIdsDeep(payload)).toBe(payload);
   });
 
   describe('flag ON', () => {
@@ -118,12 +113,11 @@ describe('encodeIdsDeep — response tokeniser', () => {
       expect(typeof out.id).toBe('string');
       expect(typeof out.categoryId).toBe('string');
       expect(typeof out.shopId).toBe('string');
-      expect(out.name).toBe('Laptop'); // non-id untouched
+      expect(out.name).toBe('Laptop');
       expect(typeof out.variants[0].id).toBe('string');
       expect(typeof out.category.id).toBe('string');
       expect(typeof out.images[0].id).toBe('string');
       expect(typeof out.images[0].productId).toBe('string');
-      // Nested tokens still round-trip back to their source ints.
       expect(decodeId(String(out.variants[1].id))).toBe(11);
       expect(decodeId(String(out.images[0].productId))).toBe(1);
     });
@@ -135,10 +129,10 @@ describe('encodeIdsDeep — response tokeniser', () => {
         sellingPrice: new Prisma.Decimal('1999.50'),
         createdAt: created,
       });
-      expect(typeof out.id).toBe('string'); // id tokenised
+      expect(typeof out.id).toBe('string');
       expect(out.sellingPrice).toBeInstanceOf(Prisma.Decimal);
-      expect(out.sellingPrice.toString()).toBe('1999.5'); // value intact
-      expect(out.createdAt).toBe(created); // Date passed through by reference
+      expect(out.sellingPrice.toString()).toBe('1999.5');
+      expect(out.createdAt).toBe(created);
     });
 
     it('leaves string *Id fields alone (e.g. external gateway ids)', () => {
@@ -160,7 +154,7 @@ describe('zPublicId — request-body decoder', () => {
     setFlag(true);
     const token = String(encodeId(42));
     expect(zPublicId.parse(token)).toBe(42);
-    expect(zPublicId.parse('42')).toBe(42); // not-yet-migrated client
+    expect(zPublicId.parse('42')).toBe(42);
   });
 
   it('rejects garbage with a validation error', () => {

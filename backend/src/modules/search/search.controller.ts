@@ -15,10 +15,6 @@ const searchSchema = z.object({
 });
 
 export class SearchController {
-  /// POST /search — body { q, filters?, sessionId? }
-  /// Public endpoint; userId is taken from the JWT when present so
-  /// unauthenticated visitors still get results and contribute to
-  /// SearchEvent stats (just without user attribution).
   async search(req: Request, res: Response): Promise<void> {
     const payload = searchSchema.parse(req.body);
     const result = await searchService.search(
@@ -35,14 +31,12 @@ export class SearchController {
     res.json(result);
   }
 
-  /// GET /search/autocomplete?q=…
   async autocomplete(req: Request, res: Response): Promise<void> {
     const q = (req.query.q as string | undefined) ?? '';
     const result = await searchService.autocomplete(q);
     res.json(result);
   }
 
-  /// GET /search/hints — top trending terms last 24h.
   async hints(_req: Request, res: Response): Promise<void> {
     const data = await searchService.listHints();
     res.json({ data });

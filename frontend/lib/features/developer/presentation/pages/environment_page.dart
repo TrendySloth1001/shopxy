@@ -16,12 +16,6 @@ import 'package:shopxy/shared/widgets/app_divider.dart';
 import 'package:shopxy/shared/widgets/app_section_header.dart';
 import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 
-/// Developer-only backend switcher. Reachable from Settings, and only for the
-/// account named in [kDeveloperEmail].
-///
-/// Strings here are intentionally not localised: the screen is gated to one
-/// hardcoded developer address, so a Hindi translation of "Dev tunnel" would
-/// be shipped weight nobody can ever read.
 class EnvironmentPage extends StatefulWidget {
   const EnvironmentPage({super.key});
 
@@ -47,20 +41,11 @@ class _EnvironmentPageState extends State<EnvironmentPage> {
 
     setState(() => _switching = true);
     final auth = context.read<AuthProvider>();
-    // Sign out FIRST, while the old base URL is still in force — the refresh
-    // token being revoked belongs to the environment we're leaving, and the
-    // new one would reject it. This also fans out to every registered
-    // provider, wiping the response cache and the offline outbox.
     try {
       await auth.logout();
     } catch (_) {
-      // A failed server-side logout must not strand us mid-switch; the local
-      // token clear inside logout() has already happened.
     }
     await AppEnvironments.select(env);
-    // Rebuild the whole object graph against the new backend. This replaces
-    // the root widget, so nothing below survives and this State is gone by
-    // the time it returns — hence no setState afterwards.
     await bootstrapShopxy();
   }
 
@@ -115,8 +100,6 @@ class _EnvironmentPageState extends State<EnvironmentPage> {
                 ),
               ),
             ),
-            // When a dart-define points the build somewhere bespoke, no entry
-            // matches — say so rather than silently showing nothing selected.
             if (active == null)
               Padding(
                 padding: const EdgeInsets.fromLTRB(

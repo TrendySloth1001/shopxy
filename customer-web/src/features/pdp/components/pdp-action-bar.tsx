@@ -11,15 +11,9 @@ interface Props {
   product: ProductDetail;
   selectedVariant: Variant | null;
   onMessage: (msg: string, type: "success" | "error") => void;
-  /**
-   * When true, renders the action buttons inline (no sticky bar wrapper).
-   * Used by the desktop buy-box column where the bar is part of the flow,
-   * not a viewport overlay.
-   */
   desktopInline?: boolean;
 }
 
-/** Build a CartProduct from the PDP product + optional selected variant. */
 function toCartProduct(product: ProductDetail, variant: Variant | null): CartProduct {
   const imageUrl = variant?.imageUrls[0] ?? product.images[0]?.url ?? "";
   return {
@@ -54,7 +48,6 @@ export function PdpActionBar({ product, selectedVariant, onMessage, desktopInlin
   const stockQty = selectedVariant?.stockQuantity ?? product.stockQuantity;
   const isOutOfStock = stockQty <= 0;
 
-  // Find current cart line for this product
   const cartLine = lines.find((l) => l.productId === product.id) ?? null;
   const inCart = cartLine != null && cartLine.quantity > 0;
 
@@ -87,7 +80,6 @@ export function PdpActionBar({ product, selectedVariant, onMessage, desktopInlin
     try {
       await setQty(product.id, Math.max(0, cartLine.quantity - 1));
     } catch {
-      // swallow
     }
   }, [cartLine, product.id, setQty]);
 
@@ -96,18 +88,15 @@ export function PdpActionBar({ product, selectedVariant, onMessage, desktopInlin
     try {
       await setQty(product.id, cartLine.quantity + 1);
     } catch {
-      // swallow
     }
   }, [cartLine, product.id, setQty]);
 
-  // Shared button content (same markup, different container wrapping below)
   const buttons = isOutOfStock ? (
     <div className="flex h-11 items-center justify-center rounded-button bg-disabled px-lg text-label-md font-extrabold text-white">
       Out of stock
     </div>
   ) : inCart ? (
     <div className="flex items-center gap-sm">
-      {/* Quantity stepper */}
       <div className="flex items-center rounded-button border border-brand bg-brand-soft">
         <button
           onClick={handleDecrement}
@@ -131,7 +120,6 @@ export function PdpActionBar({ product, selectedVariant, onMessage, desktopInlin
           <Plus size={16} aria-hidden />
         </button>
       </div>
-      {/* Go to cart */}
       <button
         onClick={() => router.push("/cart")}
         className="flex h-11 items-center justify-center gap-sm rounded-button bg-brand px-xl text-label-md font-extrabold text-white transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
@@ -142,7 +130,6 @@ export function PdpActionBar({ product, selectedVariant, onMessage, desktopInlin
     </div>
   ) : (
     <div className="flex items-center gap-sm">
-      {/* Add to cart */}
       <button
         onClick={handleAddToCart}
         disabled={busy}
@@ -151,7 +138,6 @@ export function PdpActionBar({ product, selectedVariant, onMessage, desktopInlin
         <ShoppingCart size={16} aria-hidden />
         {busy ? "Adding…" : "Add to cart"}
       </button>
-      {/* Buy now */}
       <button
         onClick={handleBuyNow}
         disabled={busy}
@@ -163,12 +149,10 @@ export function PdpActionBar({ product, selectedVariant, onMessage, desktopInlin
     </div>
   );
 
-  // Desktop inline: no sticky bar, buttons sit inside the buy-box column
   if (desktopInline) {
     return <div className="flex flex-wrap items-center gap-sm">{buttons}</div>;
   }
 
-  // Mobile: sticky bottom bar spanning the full viewport width
   return (
     <div className="sticky bottom-0 z-20 border-t border-hairline bg-white px-lg py-sm shadow-floating">
       <div className="mx-auto flex max-w-shell items-center gap-sm">

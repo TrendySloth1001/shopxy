@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { authedFetch, extractError } from "@/server/auth/session";
 
-/** List the signed-in user's notifications (paginated, with unread count). */
 export async function GET(req: Request) {
   const qs = new URL(req.url).searchParams.toString();
   const res = await authedFetch(`/notifications${qs ? `?${qs}` : ""}`);

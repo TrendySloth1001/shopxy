@@ -1,27 +1,13 @@
 import { z } from "zod";
 
-/**
- * Order (purchase-request) shapes, mirroring the backend
- * (`backend/src/modules/purchase-requests/*`). Decimal money/qty fields arrive
- * as strings → coerced to numbers; nullable arrays normalise to `[]`; unknown
- * fields pass through. Validated at the BFF boundary so screens work with a
- * clean, typed object.
- *
- * "Orders" on the merchant side are `PurchaseRequest` rows: a customer places a
- * cart → one request per shop lands in the merchant inbox → the merchant
- * confirms (materialising a SALE invoice) or declines.
- */
-
 const num = z.coerce.number();
 
-/** Array that may arrive as null/undefined → always an array. */
 const arr = <T extends z.ZodTypeAny>(s: T) =>
   z
     .array(s)
     .nullish()
     .transform((v) => v ?? []);
 
-/** Statuses the backend can report. PROCESSING is a transient confirm state. */
 export const ORDER_STATUSES = [
   "PENDING",
   "CONFIRMED",
@@ -39,7 +25,6 @@ export const orderPartySchema = z
   .passthrough();
 export type OrderParty = z.infer<typeof orderPartySchema>;
 
-/** Compact item preview attached to inbox rows. */
 export const orderItemPreviewSchema = z.object({
   productName: z.string(),
   quantity: num.default(0),
@@ -47,7 +32,6 @@ export const orderItemPreviewSchema = z.object({
 });
 export type OrderItemPreview = z.infer<typeof orderItemPreviewSchema>;
 
-/** A single inbox row. */
 export const orderListRowSchema = z
   .object({
     id: z.coerce.string(),
@@ -79,7 +63,6 @@ export const orderListSchema = z.object({
 });
 export type OrderList = z.infer<typeof orderListSchema>;
 
-/** Detail line item — carries the linked product's live stock + first image. */
 export const orderItemSchema = z
   .object({
     id: z.coerce.string(),
@@ -101,7 +84,6 @@ export const orderItemSchema = z
   .passthrough();
 export type OrderItem = z.infer<typeof orderItemSchema>;
 
-/** Linked invoice with the derived payment summary the backend attaches. */
 export const orderInvoiceSchema = z
   .object({
     id: z.coerce.string(),
@@ -115,7 +97,6 @@ export const orderInvoiceSchema = z
   .passthrough();
 export type OrderInvoice = z.infer<typeof orderInvoiceSchema>;
 
-/** Shipping-event timeline entry (PACKED / SHIPPED / …). */
 export const orderEventSchema = z
   .object({
     id: z.coerce.string(),
@@ -141,7 +122,6 @@ export const orderDetailSchema = orderListRowSchema
   .passthrough();
 export type OrderDetail = z.infer<typeof orderDetailSchema>;
 
-/** Successful confirm response — the materialised invoice id + number. */
 export const confirmResultSchema = z
   .object({
     invoice: z.object({ id: z.coerce.string(), invoiceNo: z.string() }).passthrough(),

@@ -13,20 +13,10 @@ type FieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "id" | "type"> & {
   label: string;
   type?: InputHTMLAttributes<HTMLInputElement>["type"];
   error?: string;
-  /** Render a show/hide toggle (for password fields). */
   toggleable?: boolean;
   helper?: string;
 };
 
-/**
- * Single text field: label, input, optional helper, and an inline error.
- * Hairline border + brand focus ring, all from tokens — no boxes, nothing
- * chunky (CLAUDE.md §9). The whole control is the tap target.
- *
- * Password fields (`toggleable`) also surface a live Caps Lock warning while
- * focused — a common cause of failed sign-ins the user can't otherwise see,
- * since the characters are masked.
- */
 export function Field({
   label,
   type = "text",

@@ -1,11 +1,3 @@
-// The login-screen account picker.
-//
-// Worth pinning because this widget's failure mode is silence: it renders
-// SizedBox.shrink() on an empty list, so "nothing on the login screen" is what
-// both a working-but-empty picker and a broken one look like. That ambiguity is
-// exactly why the missing remember_tokens table went undiagnosed — the feature
-// appeared not to exist.
-
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -51,7 +43,6 @@ void main() {
     binding.defaultBinaryMessenger.setMockMethodCallHandler(secure, null);
   });
 
-  /// Seeds the keychain the way a real sign-in would.
   void remember(
     List<({String id, String name, String email})> accounts, {
     String? avatarUrl,
@@ -114,7 +105,6 @@ void main() {
     await tester.pumpWidget(harness());
     await tester.pumpAndSettle();
 
-    // Collapsed: one pill, not a list — the form stays above the fold.
     expect(find.text('Logged in accounts'), findsOneWidget);
     expect(find.text('Asha Traders'), findsNothing);
 
@@ -141,11 +131,6 @@ void main() {
   testWidgets('an avatar that fails to load shows the letter, not a blank disc', (
     tester,
   ) async {
-    // A remembered account carries whatever avatar URL it was cached with, so
-    // it 404s once that user changes their picture — and the login screen can
-    // render before the network is reachable at all. Either way the circle must
-    // not come out empty. (The test harness answers every image request with a
-    // 400, which is exactly the failure being asserted.)
     remember([
       (id: '1', name: 'Nikhil Kumawat', email: 'nikhil@shop.test'),
     ], avatarUrl: '/images/gone.webp');
@@ -168,7 +153,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Choose an account'), findsNothing);
-    // And the pill goes with it — there's nothing left to continue as.
     expect(find.text('Continue as Nikhil Kumawat'), findsNothing);
   });
 }

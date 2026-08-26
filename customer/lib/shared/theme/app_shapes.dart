@@ -8,7 +8,7 @@ class AppShapes {
     return SmoothRectangleBorder(
       borderRadius: SmoothBorderRadius(
         cornerRadius: radius,
-        cornerSmoothing: 1.0, // iOS style continuous curves
+        cornerSmoothing: 1.0,
       ),
       side: side ?? BorderSide.none,
     );

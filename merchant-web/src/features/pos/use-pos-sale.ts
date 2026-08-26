@@ -20,12 +20,10 @@ import {
   type TenderMode,
 } from "./types";
 
-/** Opaque op-id; falls back when crypto.randomUUID is unavailable (non-secure LAN). */
 function opId(): string {
   try {
     if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
   } catch {
-    /* not a secure context */
   }
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
@@ -35,12 +33,6 @@ type Pending = { resolve: (r: CmdResult) => void; timer: ReturnType<typeof setTi
 
 const CMD_TIMEOUT_MS = 12_000;
 
-/**
- * Drives one POS sale ENTIRELY over the WebSocket: every op is a `{t:'cmd',
- * reqId, op, …}` frame answered with `{t:'res', reqId, ok, data|error}`; the
- * other till's changes arrive as version-nudge events and we re-fetch via a
- * `snapshot` command. Server is the source of truth.
- */
 export function usePosSale() {
   const t = useTranslations("pos");
   const [snapshot, setSnapshot] = useState<SaleSnapshot | null>(null);
@@ -51,7 +43,6 @@ export function usePosSale() {
   const [onlinePaid, setOnlinePaid] = useState<{ amount: number; invoiceId: string | null } | null>(null);
   const [paying, setPaying] = useState(false);
   const [pending, setPending] = useState(0);
-  // Amount of an in-flight online payment (set while Razorpay Checkout is open).
   const onlineRef = useRef<number | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
@@ -62,11 +53,9 @@ export function usePosSale() {
   const saleIdRef = useRef<string | null>(null);
   const versionRef = useRef(-1);
   const pendingCmds = useRef<Map<string, Pending>>(new Map());
-  // Scans that failed while disconnected — replayed on reconnect (opId-deduped).
   const outboxRef = useRef<Array<{ code: string; id: string; quantity: number }>>([]);
   const flushingRef = useRef(false);
 
-  // ── command send / response correlation ──
   const sendCmd = useCallback((op: string, args: Record<string, unknown> = {}): Promise<CmdResult> => {
     return new Promise((resolve) => {
       const ws = wsRef.current;
@@ -87,7 +76,7 @@ export function usePosSale() {
   const applySnapshot = useCallback((raw: unknown) => {
     const parsed = saleSnapshotSchema.safeParse(raw);
     if (!parsed.success) return;
-    if (parsed.data.sale.version < versionRef.current) return; // drop stale
+    if (parsed.data.sale.version < versionRef.current) return;
     versionRef.current = parsed.data.sale.version;
     saleIdRef.current = parsed.data.sale.id;
     setSnapshot(parsed.data);
@@ -109,7 +98,7 @@ export function usePosSale() {
       while (q.length > 0) {
         const next = q[0];
         const r = await sendCmd("scan", { saleId, code: next.code, opId: next.id, quantity: next.quantity });
-        if (!r.ok) break; // still offline; retry next reconnect
+        if (!r.ok) break;
         if (!unknownScanSchema.safeParse(r.data).success) applySnapshot(r.data);
         q.shift();
         setPending(q.length);
@@ -137,7 +126,6 @@ export function usePosSale() {
 
       ws.onopen = async () => {
         setStatus("live");
-        // First connect → open (reuses an empty sale); reconnect → resume the same sale.
         const r = saleIdRef.current == null
           ? await sendCmd("open")
           : await sendCmd("snapshot", { saleId: saleIdRef.current });
@@ -153,11 +141,6 @@ export function usePosSale() {
           return;
         }
         if (typeof msg !== "object" || msg === null) return;
-        // SaleBus events (pos.sale/checkout/void) travel over the WS raw — they
-        // bypass the res.json opaque-id tokeniser — so saleId/invoiceId arrive as
-        // NUMBERS, while saleIdRef holds the coerced string id. Type + compare
-        // them as strings (mirrors the Flutter till's `.toString()`), otherwise
-        // `42 === "42"` is false and the till never re-fetches on a peer's scan.
         const m = msg as { t?: string; reqId?: string; type?: string; saleId?: string | number; invoiceId?: string | number };
         if (m.t === "res" && typeof m.reqId === "string") {
           const p = pendingCmds.current.get(m.reqId);
@@ -169,12 +152,10 @@ export function usePosSale() {
           return;
         }
         const evSaleId = m.saleId != null ? String(m.saleId) : null;
-        // An online payment settled (webhook → pos.checkout) → flip to paid.
         if (m.type === "pos.checkout" && evSaleId === saleIdRef.current && onlineRef.current != null) {
           setOnlinePaid({ amount: onlineRef.current, invoiceId: m.invoiceId != null ? String(m.invoiceId) : null });
           onlineRef.current = null;
         }
-        // Version-nudge events for our sale → re-fetch.
         if ((m.type === "pos.sale" || m.type === "pos.checkout" || m.type === "pos.void") && evSaleId === saleIdRef.current) {
           void refresh();
         }
@@ -184,7 +165,6 @@ export function usePosSale() {
       ws.onclose = () => {
         if (closedRef.current) return;
         wsRef.current = null;
-        // Fail any in-flight commands so callers don't hang.
         for (const [id, p] of pendingCmds.current) {
           clearTimeout(p.timer);
           p.resolve({ ok: false, error: "disconnected" });
@@ -217,7 +197,6 @@ export function usePosSale() {
     };
   }, [connect]);
 
-  // ── actions (all over WS) ──
   const runSnap = useCallback(
     async (op: string, args: Record<string, unknown>) => {
       const saleId = saleIdRef.current;
@@ -268,8 +247,6 @@ export function usePosSale() {
   const setQty = useCallback((productId: string, quantity: number) => runSnap("setQty", { productId, quantity }), [runSnap]);
   const removeItem = useCallback((productId: string) => runSnap("removeLine", { productId }), [runSnap]);
 
-  // Privileged actions (discounts) — return overrideRequired so the till can
-  // prompt for a manager grant and retry with the `override` token.
   const runPrivileged = useCallback(
     async (op: string, args: Record<string, unknown>): Promise<{ ok: boolean; overrideRequired: boolean }> => {
       const saleId = saleIdRef.current;
@@ -323,9 +300,6 @@ export function usePosSale() {
     [sendCmd, t],
   );
 
-  // Online tender: create an order, open Razorpay Checkout (UPI QR + cards), then
-  // settle. The pos.checkout bus event flips the till to paid; syncOnline is the
-  // backstop when the webhook can't reach the server (localhost / delayed).
   const payOnline = useCallback(async () => {
     const saleId = saleIdRef.current;
     if (saleId == null) return;
@@ -341,16 +315,14 @@ export function usePosSale() {
       return;
     }
     onlineRef.current = parsed.data.amount;
-    void refresh(); // sale is now AWAITING_PAYMENT
+    void refresh();
     setPaying(true);
     try {
       const result = await openRazorpayCheckout(parsed.data);
       if (result.outcome === "success") {
-        // Settle (webhook backstop). The pos.checkout event flips onlinePaid.
         await sendCmd("syncOnline", { saleId });
         void refresh();
       } else {
-        // Dismissed or failed → unlock the cart for another attempt/tender.
         onlineRef.current = null;
         await sendCmd("cancelOnline", { saleId });
         void refresh();
@@ -366,16 +338,13 @@ export function usePosSale() {
     }
   }, [sendCmd, refresh, t]);
 
-  // Hold the current bill (park it) and start a fresh empty cart. The parked
-  // sale stays OPEN and is recallable from `listOpen`.
   const holdAndNew = useCallback(async () => {
     setError(null);
-    versionRef.current = -1; // switching sales — accept the new (lower-version) snapshot
+    versionRef.current = -1;
     const r = await sendCmd("open");
     if (r.ok) applySnapshot(r.data);
   }, [sendCmd, applySnapshot]);
 
-  // Recall a parked bill by id (make it the active cart).
   const recall = useCallback(
     async (saleId: string) => {
       setError(null);
@@ -386,7 +355,6 @@ export function usePosSale() {
     [sendCmd, applySnapshot],
   );
 
-  // The parked (held) bills with items.
   const listOpen = useCallback(async (): Promise<OpenSaleSummary[]> => {
     const r = await sendCmd("listOpen");
     if (!r.ok) return [];

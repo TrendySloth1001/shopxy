@@ -13,11 +13,6 @@ import { ComboSelect } from "@/shared/ui/combo-select";
 const cell =
   "h-10 w-full rounded-input border border-hairline bg-field px-md text-body-md text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand-soft";
 
-/**
- * Per-product custom-field values. Self-contained: loads the shop's field
- * definitions + this product's values, and saves via its own endpoint (these
- * aren't part of the product PATCH payload).
- */
 export function CustomFieldsEditor({ productId }: { productId: string }) {
   const t = useTranslations("products");
   const [defs, setDefs] = useState<CustomFieldDef[]>([]);

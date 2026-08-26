@@ -53,11 +53,6 @@ class _PdfTemplatesPageState extends State<PdfTemplatesPage> {
     }
   }
 
-  // Bundled rather than fetched from `/pdf-templates/:id/sample` — a static
-  // sample per preset rendered once at build time (see
-  // `assets/template_samples/`). Avoids a network round trip for what's
-  // always the same canned document, and sidesteps needing the backend up
-  // just to browse templates.
   Future<void> _preview(PdfTemplate tpl) async {
     setState(() => _previewingId = tpl.id);
     try {
@@ -165,10 +160,6 @@ class _TemplateCard extends StatelessWidget {
               children: [
                 AspectRatio(
                   aspectRatio: 480 / 284,
-                  // Thumbnails are page previews (white paper, regardless of
-                  // app theme) — force a light backing so a slow/failed
-                  // decode reads as "blank page", never a black hole against
-                  // the dark theme's near-black card surface.
                   child: ColoredBox(
                     color: Colors.white,
                     child: Image.asset(

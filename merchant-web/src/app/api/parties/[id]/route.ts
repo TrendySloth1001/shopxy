@@ -2,7 +2,6 @@ import { proxy } from "@/server/proxy";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-// GET / PATCH / DELETE /api/parties/:id → /parties/:id
 export async function GET(req: Request, { params }: Ctx) {
   const { id } = await params;
   return proxy(`/parties/${encodeURIComponent(id)}`, req, {

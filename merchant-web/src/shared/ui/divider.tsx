@@ -1,14 +1,5 @@
-/**
- * Divider — the house primitive for separating content.
- *
- * Per CLAUDE.md §9b we group content with hairline dividers and whitespace,
- * NOT with bordered/elevated boxes. Reach for this before reaching for a card.
- */
-
 type DividerProps = {
-  /** Vertical divider for inline/row separation. Defaults to horizontal. */
   orientation?: "horizontal" | "vertical";
-  /** Inset the divider so it doesn't touch the container edge. */
   inset?: boolean;
   className?: string;
 };

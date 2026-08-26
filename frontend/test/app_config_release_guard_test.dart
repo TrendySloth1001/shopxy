@@ -2,16 +2,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shopxy/core/config/app_config.dart';
 import 'package:shopxy/core/config/app_environment.dart';
 
-/// The release-build safety guard. Getting it wrong is invisible until an APK
-/// is built: `assertSafeForRelease` runs before `runApp`, so anything it
-/// throws leaves a blank launch window.
-///
-/// It can't be called directly here (gated on `kReleaseMode`), so these test
-/// [AppConfig.looksLikeDevHost] — the half that decides whether it fires.
 void main() {
   group('looksLikeDevHost', () {
     test('flags every environment the app itself calls non-production', () {
-      // Derived from the real list so a new environment can't escape the guard.
       final devEnvs = AppEnvironments.all
           .where((e) => e.id != AppEnvironments.production.id)
           .toList();
@@ -53,7 +46,6 @@ void main() {
 
   group('apiBaseUrl', () {
     test('falls back to production when no dart-define was given', () {
-      // Why a missing API_BASE_URL is safe, and no longer fatal.
       expect(AppEnvironments.overrideBaseUrl, isNull);
       expect(AppConfig.apiBaseUrl, AppEnvironments.production.baseUrl);
     });
@@ -62,7 +54,6 @@ void main() {
       final url = AppEnvironments.production.baseUrl;
       expect(url, startsWith('https://'));
       expect(AppConfig.looksLikeDevHost(url), isFalse);
-      // Endpoints are concatenated, not path-joined.
       expect(url, endsWith('/'));
     });
   });

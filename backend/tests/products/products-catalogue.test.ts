@@ -5,26 +5,6 @@ import prisma from '../../src/infra/db/prisma.js';
 import { productsService } from '../../src/modules/products/products.service.js';
 import { createTestUser, cleanupTestUser, createTestProduct } from '../helpers/setup.js';
 
-/// The catalogue read — the whole active product list in one light response,
-/// so the apps can search locally instead of asking the server per keystroke.
-///
-/// Two properties carry the weight:
-///
-///   - It is a **bulk** read, which makes the usual tenant filter more
-///     dangerous than usual. One missing `shopId` hands a merchant every
-///     competitor's price list in a single request.
-///   - It is **light on purpose**. The moment someone adds `variants` or
-///     `contentBlocks` back to the projection, the response goes from a few
-///     hundred KB to megabytes and the reason for the endpoint is gone.
-///
-/// These drive the service directly rather than the route. Every merchant-
-/// route request in this suite currently 403s in the test environment — a
-/// pre-existing condition, not this endpoint's (`tests/products/products.test.ts`
-/// fails 7/7 the same way on untouched code). Going through the service still
-/// exercises the tenant filter and the projection, which is what could
-/// actually be wrong here. The one HTTP case at the bottom is the one that
-/// doesn't need a working merchant session.
-
 const app = buildApp();
 const CATALOGUE_LIMIT = 5_000;
 
@@ -70,8 +50,6 @@ describe('products catalogue', () => {
       });
       const row = res.products[0] as Record<string, unknown>;
 
-      // A picker must be able to build an invoice line from this alone — a
-      // second fetch per tap would undo the point of preloading.
       for (const field of [
         'id',
         'name',
@@ -87,8 +65,6 @@ describe('products catalogue', () => {
         expect(row, `missing ${field}`).toHaveProperty(field);
       }
 
-      // The exclusions are the feature. If one of these comes back, the
-      // payload has quietly grown by orders of magnitude.
       for (const heavy of [
         'description',
         'specs',
@@ -108,7 +84,6 @@ describe('products catalogue', () => {
   });
 
   it('omits archived products', async () => {
-    // An inactive product must not be billable from a picker.
     const shop = await createTestUser();
     try {
       const live = await createTestProduct(shop.shopId, { isActive: true });
@@ -128,9 +103,6 @@ describe('products catalogue', () => {
   });
 
   it('flags a shop that does not fit, and never returns a partial list unmarked', async () => {
-    // `truncated` is what the client keys off to decide whether searching
-    // locally is safe. A partial list that claims to be complete is the one
-    // outcome that makes a merchant's own SKU look like it doesn't exist.
     const shop = await createTestUser();
     try {
       await Promise.all([
@@ -146,13 +118,9 @@ describe('products catalogue', () => {
       expect(full.truncated).toBe(false);
       expect(full.products).toHaveLength(full.total);
 
-      // Same shop, a ceiling it exceeds — simulating a catalogue past the
-      // endpoint's cap without seeding 5,000 rows.
       const capped = await productsService.listCatalogue({ shopId: shop.shopId, limit: 2 });
       expect(capped.truncated).toBe(true);
       expect(capped.products).toHaveLength(2);
-      // `total` stays the real count, so the client can say how many it isn't
-      // holding rather than reporting the truncated length as the truth.
       expect(capped.total).toBe(3);
     } finally {
       await cleanupTestUser(shop);

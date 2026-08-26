@@ -5,19 +5,6 @@ import { AlertTriangle, Info, Pencil } from "@/shared/icons";
 import { NumberField } from "./form-controls";
 import type { HsnResolution } from "../hsn";
 
-/**
- * GST rate — a **readout**, not an input.
- *
- * This is the whole point of the HSN work. Two free-text boxes that had to
- * agree (a code and a rate, with nothing connecting them) is what let two shops
- * bill the identical shirt at different rates. Here the merchant classifies,
- * and the rate is a consequence they can read and check.
- *
- * The manual path still exists, because nil exceptions and advance rulings are
- * real — but it is a deliberate act, it is visibly flagged when it disagrees
- * with the code, and the server records it as `MANUAL` so a divergence is a
- * report rather than a discovery.
- */
 export function GstRateField({
   value,
   onChange,
@@ -29,19 +16,14 @@ export function GstRateField({
 }: {
   value: string;
   onChange: (v: string) => void;
-  /// True when the merchant has taken the rate off the code.
   manual: boolean;
   onManualChange: (manual: boolean) => void;
-  /// What the code resolved to, or null if no code is set / none matched.
   resolution: HsnResolution | null;
-  /// A code was entered but the master carries no rate for it.
   unknownCode: boolean;
   error?: string;
 }) {
   const t = useTranslations("products.form");
 
-  // A manual rate that happens to equal the code's rate isn't a divergence
-  // worth shouting about — only flag a real disagreement.
   const diverges =
     manual &&
     resolution !== null &&
@@ -79,7 +61,6 @@ export function GstRateField({
         </div>
       )}
 
-      {/* Where the number came from — never an unexplained figure. */}
       {resolution && !manual ? (
         <p className="flex items-start gap-xs text-body-sm text-subtle">
           <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />
@@ -117,8 +98,6 @@ export function GstRateField({
         onClick={() => {
           const next = !manual;
           onManualChange(next);
-          // Leaving manual mode hands the rate back to the code, so the field
-          // can't keep showing a stale hand-typed number.
           if (!next && resolution) onChange(String(resolution.gstRate));
         }}
         className="flex w-fit items-center gap-xs text-body-sm text-brand"

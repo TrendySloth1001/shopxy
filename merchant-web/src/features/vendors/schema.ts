@@ -1,15 +1,5 @@
 import { z } from "zod";
 
-/**
- * Vendor shapes, mirroring the backend `vendors` module (`/vendors`).
- * Decimal money/qty are coerced to numbers; `_count` is surfaced as flat
- * transaction/invoice counts for the list rows.
- */
-
-// The backend selects `{ id, name, avatarUrl }` for the linked user — `email`
-// is withheld for privacy (DPDP). `avatarUrl` is the linked user's profile
-// photo, shown as the vendor's avatar. All fields kept optional so a partial
-// projection never fails the whole parse.
 const linkedUserSchema = z.object({
   id: z.coerce.string(),
   name: z.string(),

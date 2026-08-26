@@ -1,10 +1,3 @@
-/**
- * PURE UNIT tests for the Razorpay provider's UPI-QR capability (POS P5):
- * createPosQr / fetchQr / closeQr, the qr_code.credited webhook parse, and the
- * QR-aware fetchOrderStatus that lets reconciliation heal a missed QR webhook.
- *
- * No DB, no network — global.fetch is stubbed.
- */
 import { describe, it, expect, afterEach, vi } from 'vitest';
 
 process.env.RAZORPAY_KEY_ID = 'rzp_test_key';
@@ -39,7 +32,6 @@ describe('RazorpayProvider — parseWebhookEvent (qr_code.credited)', () => {
     );
     const ev = provider.parseWebhookEvent(body, { 'x-razorpay-event-id': 'evt_qr' });
     expect(ev.type).toBe('PAID');
-    // The intent stores the QR id as its order ref, so ownership resolves by it.
     expect(ev.providerOrderRef).toBe('qr_abc');
     expect(ev.providerPaymentRef).toBe('pay_xyz');
     expect(ev.amountMinor).toBe(15000);

@@ -18,7 +18,6 @@ export function AcceptInviteForm({ token }: { token: string }) {
   const router = useRouter();
   const t = useTranslations("auth");
 
-  // Derive the no-token case from the prop instead of setting it in the effect.
   const [loading, setLoading] = useState(Boolean(token));
   const [preview, setPreview] = useState<Preview | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(

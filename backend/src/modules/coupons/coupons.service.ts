@@ -1,23 +1,10 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
 
-/// Customer-facing coupon module. Owns the validation + redemption
-/// flow; coupon creation (merchant + platform admin tooling) lives in
-/// a separate module surface — out of scope for the customer-side
-/// roadmap that drove Phase 4.
-///
-/// All amounts are rupees. Two decimal places everywhere — no integer-
-/// paise representation because the rest of the schema is decimal.
-
 export type DiscountType = 'PERCENT' | 'FLAT';
 
 export interface CouponContext {
-  /// Cart subtotal (sum of item totals) BEFORE delivery, BEFORE this
-  /// coupon's discount.
   subtotal: number;
-  /// Shop ids touched by the cart — required because shop-scoped
-  /// coupons only redeem when the cart includes at least one item
-  /// from that shop.
   shopIds: number[];
 }
 
@@ -27,13 +14,7 @@ export interface ValidatedCoupon {
   title: string;
   description: string | null;
   discountType: DiscountType;
-  /// Effective discount amount applied to this cart (post-cap, post-
-  /// math). May be less than `coupon.discountValue` for PERCENT
-  /// coupons hitting the maxDiscount ceiling.
   discount: number;
-  /// Raw coupon parameters echoed back so the customer client can render
-  /// the offer and recompute the discount if the cart subtotal shifts.
-  /// Field names mirror the checkout client's `couponSchema` contract.
   discountValue: number;
   maxDiscountAmount: number | null;
   minOrderAmount: number;
@@ -63,11 +44,6 @@ function computeDiscount(
   },
   subtotal: number,
 ): number {
-  // CWQ-10 — keep every money intermediate in Prisma.Decimal so the
-  // `(subtotal * value) / 100` step never goes through a JS float. The
-  // codebase bills in two-decimal rupees (not integer paise), so we round
-  // the final figure to 2 dp HALF_UP and hand back a plain number to match
-  // the existing contract (`discount` is a number across this module).
   const sub = new Prisma.Decimal(subtotal);
   let discount: Prisma.Decimal;
   if (coupon.discountType === 'PERCENT') {
@@ -78,7 +54,6 @@ function computeDiscount(
   } else {
     discount = coupon.discountValue;
   }
-  // Never refund more than the cart itself.
   if (discount.greaterThan(sub)) discount = sub;
   return Number(discount.toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP).toString());
 }
@@ -101,13 +76,6 @@ export interface CouponWriteInput {
 }
 
 export class CouponsService {
-  /// Customer-facing list — coupons that could *potentially* apply
-  /// today. Returns platform-wide + shop-scoped rows. Filters out
-  /// inactive / expired / globally-capped ones server-side so the
-  /// "My coupons" page never shows a card the customer can't use.
-  ///
-  /// Per-user-limit is computed inline so the client knows up-front
-  /// whether the card is redeemable or just "you've already used this".
   async listAvailableForUser(userId: number) {
     const now = new Date();
     const rows = await prisma.coupon.findMany({
@@ -140,8 +108,6 @@ export class CouponsService {
 
     if (rows.length === 0) return [];
 
-    // Single round-trip for the user's redemption counts across every
-    // candidate. Keeps the per-user-limit gate cheap.
     const counts = await prisma.couponRedemption.groupBy({
       by: ['couponId'],
       where: { userId, couponId: { in: rows.map((r) => r.id) } },
@@ -149,11 +115,6 @@ export class CouponsService {
     });
     const usedByCoupon = new Map(counts.map((c) => [c.couponId, c._count._all]));
 
-    // Is the caller a first-order customer? We need this exactly once,
-    // not per row — every firstOrderOnly check below reads the same
-    // boolean. Counted across CustomerOrder rather than redemption
-    // history so a partial / abandoned redemption doesn't lock the
-    // user out of their welcome offer.
     const priorOrders = await prisma.customerOrder.count({
       where: { customerUserId: userId },
     });
@@ -186,14 +147,6 @@ export class CouponsService {
       });
   }
 
-  /// Returns the single best PUBLIC coupon for the given cart context,
-  /// or null if none apply. Lets the checkout page pre-apply a coupon
-  /// without the customer typing anything — public coupons are the
-  /// "store-wide sale" use-case, and forcing the customer to copy/paste
-  /// a code that's already on their carousel is bad UX.
-  ///
-  /// Tie-breaker: deepest computed discount wins. Ties further broken
-  /// by soonest expiry (use-it-or-lose-it).
   async pickBestPublicForCart(opts: {
     userId: number;
     subtotal: number;
@@ -209,8 +162,6 @@ export class CouponsService {
         isPublic: true,
         validFrom: { lte: now },
         validUntil: { gte: now },
-        // Shop scope match — null shopId = platform-wide, else cart
-        // must contain at least one item from that shop.
         OR: [
           { shopId: null },
           ...(opts.shopIds.length > 0
@@ -236,9 +187,6 @@ export class CouponsService {
     });
     if (rows.length === 0) return null;
 
-    // Eligibility filter — anything the customer can't redeem
-    // (subtotal too low, cap reached, already redeemed) shouldn't
-    // auto-apply even if it would otherwise be the "best" offer.
     const candidateIds = rows.map((r) => r.id);
     const [usedRows, priorOrders] = await Promise.all([
       prisma.couponRedemption.groupBy({
@@ -292,9 +240,6 @@ export class CouponsService {
     };
   }
 
-  /// Preview path — given a code + cart context, returns the discount
-  /// amount that would apply (or a reason code). Used by the checkout
-  /// page to show a live "₹X off" line before the customer commits.
   async validate(opts: {
     userId: number;
     code: string;
@@ -348,10 +293,6 @@ export class CouponsService {
       if (used >= row.perUserLimit) return { error: 'PER_USER_LIMIT_REACHED' };
     }
     if (row.firstOrderOnly) {
-      // First-order check — gated on CustomerOrder count, not coupon
-      // redemption history. The customer's prior abandoned-then-retried
-      // checkout shouldn't block them from a welcome offer they never
-      // actually consumed.
       const priorOrders = await prisma.customerOrder.count({
         where: { customerUserId: opts.userId },
       });
@@ -374,16 +315,6 @@ export class CouponsService {
     };
   }
 
-  /// Atomic redemption — called inside the order-creation transaction
-  /// so the discount math, redemption row, and counter bump all
-  /// commit together. Returns the discount amount actually applied
-  /// (post-cap, post-min, post-shop-scope).
-  ///
-  /// Concurrency-safe: the totalCap check is an `updateMany` gated on
-  /// `total_redemptions < total_cap`, so two parallel checkouts can't
-  /// both squeeze past the same cap. Per-user limit is gated similarly
-  /// via a count + unique key combo (customer_order_id is unique on
-  /// CouponRedemption so a retry of the same checkout can't double-claim).
   async redeem(opts: {
     tx: Prisma.TransactionClient;
     userId: number;
@@ -425,14 +356,6 @@ export class CouponsService {
     if (row.shopId != null && !opts.context.shopIds.includes(row.shopId)) {
       return { error: 'SHOP_NOT_IN_CART' };
     }
-    // CPN-1 / CWQ-8: serialize concurrent redemptions by the SAME user for
-    // this coupon so the per-user-count and first-order-count gates below
-    // can't be split by a racing self-checkout. Transaction-scoped advisory
-    // lock on (couponId, userId); auto-released at commit. The global totalCap
-    // already uses a gated atomic increment. We must take the lock whenever
-    // EITHER per-user-limited OR firstOrderOnly applies — previously the lock
-    // sat inside the `perUserLimit > 0` branch, so a firstOrderOnly coupon
-    // with perUserLimit = 0 ran its priorOrders count unserialized.
     if (row.perUserLimit > 0 || row.firstOrderOnly) {
       await opts.tx.$executeRaw`SELECT pg_advisory_xact_lock(${row.id}, ${opts.userId})`;
     }
@@ -443,10 +366,6 @@ export class CouponsService {
       if (used >= row.perUserLimit) return { error: 'PER_USER_LIMIT_REACHED' };
     }
     if (row.firstOrderOnly) {
-      // The redemption row we're about to write belongs to
-      // `opts.customerOrderId`, so the order itself exists already
-      // (in the same transaction). Exclude it from the prior-order
-      // count or every first-order redemption would self-veto.
       const priorOrders = await opts.tx.customerOrder.count({
         where: {
           customerUserId: opts.userId,
@@ -456,10 +375,6 @@ export class CouponsService {
       if (priorOrders > 0) return { error: 'NOT_FIRST_ORDER' };
     }
 
-    // Atomic counter bump for totalCap. `updateMany` lets us gate on
-    // the current value in one round-trip; if the cap was already
-    // reached the row count is 0 and we bail out before writing the
-    // redemption row.
     if (row.totalCap > 0) {
       const claimed = await opts.tx.coupon.updateMany({
         where: { id: row.id, totalRedemptions: { lt: row.totalCap } },
@@ -467,7 +382,6 @@ export class CouponsService {
       });
       if (claimed.count !== 1) return { error: 'TOTAL_CAP_REACHED' };
     } else {
-      // No cap — still bump the counter so analytics can read it.
       await opts.tx.coupon.update({
         where: { id: row.id },
         data: { totalRedemptions: { increment: 1 } },
@@ -483,19 +397,8 @@ export class CouponsService {
         discountAmount: discount,
       },
     });
-    // CWQ-1 — surface the coupon's owning shop (NULL = platform-wide). The
-    // checkout flow uses this to decide whether the discount is seller-funded
-    // (push onto that shop's invoice as a pre-tax discount, Sec 15(3)(a)) or
-    // platform-funded (kept off the invoice; the seller is still owed full
-    // value and the platform bears the discount).
     return { discount, couponId: row.id, couponShopId: row.shopId ?? null };
   }
-
-  // ── Merchant (shop-scoped) admin surface ─────────────────────────
-  //
-  // Every write below is scoped to the caller's `shopId`. A merchant
-  // can only mutate coupons attached to their own shop; platform-wide
-  // coupons (shopId = NULL) are admin-only and out of scope here.
 
   async listForShop(shopId: number) {
     const rows = await prisma.coupon.findMany({
@@ -530,7 +433,6 @@ export class CouponsService {
     }));
   }
 
-  /** Single shop-scoped coupon (admin surface), or null if not this shop's. */
   async getForShop(shopId: number, id: number) {
     const r = await prisma.coupon.findFirst({
       where: { id, shopId },
@@ -564,7 +466,6 @@ export class CouponsService {
     };
   }
 
-  /** Recent redemptions for a shop's coupon. Null if the coupon isn't theirs. */
   async redemptionsForShop(shopId: number, couponId: number, limit = 50) {
     const owns = await prisma.coupon.findFirst({
       where: { id: couponId, shopId },
@@ -636,8 +537,6 @@ export class CouponsService {
     id: number,
     patch: Partial<CouponWriteInput>,
   ): Promise<{ ok: true } | { error: 'NOT_FOUND' | 'BAD_DATES' | 'BAD_VALUE' }> {
-    // Only allow renames if the new code is still unique within the
-    // platform. Same scope as create.
     if (patch.code != null && canon(patch.code).length === 0) {
       return { error: 'BAD_VALUE' };
     }

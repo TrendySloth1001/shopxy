@@ -12,23 +12,6 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
-/// Product row used by the merchant listing screen.
-///
-/// Merchant-first signal hierarchy (was customer-store-style before):
-///   1. Name + (SKU · HSN) — identification
-///   2. Sell · cost · margin % — what you actually price-set against,
-///      with the margin colour-coded (green ≥ 20%, amber 5–20%, red < 5%)
-///   3. Stock state with threshold context ("3 KG / reorder at 5")
-///   4. Last-activity hint ("Sold 3d ago" / "Out since 5d ago") + vendor pill
-///   5. Loss-leader flag if sellingPrice > MRP (a price-entry mistake
-///      worth catching at a glance)
-///
-/// Density modes are meaningfully different:
-///   • compact   — small thumb, name 1 line, no description, tight padding.
-///   • comfortable (card) — large thumb, name up to 2 lines, description shown
-///                 when present, larger price font.
-///
-/// The whole row is tappable to the product detail page.
 class ProductListTile extends StatelessWidget {
   const ProductListTile({
     super.key,
@@ -40,13 +23,8 @@ class ProductListTile extends StatelessWidget {
   final Product product;
   final VoidCallback? onTap;
 
-  /// When `true`, the row prints its category next to the SKU so the
-  /// user still knows what bucket they're in when section headers
-  /// aren't being rendered.
   final bool showCategory;
 
-  /// Margin = (sell − cost) / sell × 100. Returns null when sellingPrice
-  /// is zero (avoids div-by-zero) — the UI then hides the chip.
   double? get _marginPct {
     if (product.sellingPrice <= 0) return null;
     return ((product.sellingPrice - product.purchasePrice) /
@@ -104,8 +82,6 @@ class ProductListTile extends StatelessWidget {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
     final compact = context.watch<NavigationPrefsProvider>().isCompact;
-    // Card mode (comfortable) is the richer layout — bigger thumb, more
-    // breathing room, name wraps to 2 lines, description visible.
     final imageSide = compact ? AppSizes.avatarMd : 96.0;
     final vPad = compact ? AppSizes.sm : AppSizes.lg;
     final nameMaxLines = compact ? 1 : 2;
@@ -141,7 +117,6 @@ class ProductListTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Name
                     Text(
                       product.name,
                       style: theme.textTheme.titleSmall?.copyWith(
@@ -152,11 +127,7 @@ class ProductListTile extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: AppSizes.xxs),
-                    // Identifiers — SKU · HSN · Category (when shown).
-                    // Category renders with its picked icon so the row
-                    // matches the bucket header / picker visually.
                     _buildIdentifierRow(theme),
-                    // Description — comfortable-only, gives the card real body
                     if (showDescription) ...[
                       const SizedBox(height: AppSizes.xs),
                       Text(
@@ -170,7 +141,6 @@ class ProductListTile extends StatelessWidget {
                       ),
                     ],
                     const SizedBox(height: AppSizes.sm),
-                    // Price + margin line
                     _MerchantPriceLine(
                       sell: product.sellingPrice,
                       cost: product.purchasePrice,
@@ -183,7 +153,6 @@ class ProductListTile extends StatelessWidget {
                       priceStyle: priceStyle,
                     ),
                     const SizedBox(height: AppSizes.xs),
-                    // Stock pill
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: AppSizes.sm,
@@ -209,9 +178,6 @@ class ProductListTile extends StatelessWidget {
                         ],
                       ),
                     ),
-                    // Last-activity + vendor pill row — only when we have
-                    // something to say. Skipped entirely for fresh products
-                    // with no ledger history so we don't render empty space.
                     if (showMetaLine) ...[
                       const SizedBox(height: AppSizes.xs),
                       Wrap(
@@ -246,9 +212,6 @@ class ProductListTile extends StatelessWidget {
     );
   }
 
-  /// Renders the SKU · HSN · Category line. Category portion uses a
-  /// [WidgetSpan] so the picked icon sits inline with the text rather
-  /// than forcing the row into a wrapping layout.
   Widget _buildIdentifierRow(ThemeData theme) {
     final baseStyle = theme.textTheme.bodySmall?.copyWith(
       color: AppColors.muted,
@@ -291,14 +254,6 @@ class ProductListTile extends StatelessWidget {
         : qty.toStringAsFixed(2);
   }
 
-  /// Resolve the most useful last-activity hint for this row.
-  ///
-  /// Rules (in order):
-  ///   • Out-of-stock + lastStockOutAt → "Out since 5d ago" (red).
-  ///   • Otherwise, whichever of lastStockOutAt / lastStockInAt is most recent
-  ///     wins. STOCK_OUT framed as "Sold Xago", STOCK_IN as "Stocked in Xago"
-  ///     (within 7d) or "Last in: Xago" when older.
-  ///   • Nothing if there's no ledger movement at all.
   ({AppIconData icon, String label, Color fg, Color bg})? _activityHint(
     AppLocalizations l10n,
   ) {
@@ -314,8 +269,6 @@ class ProductListTile extends StatelessWidget {
       );
     }
 
-    // Pick the most recent of the two when both exist — STOCK_OUT framed
-    // as "Sold X ago" since the merchant cares more about the movement.
     if (lastOut != null && (lastIn == null || lastOut.isAfter(lastIn))) {
       return (
         icon: AppIcons.pointOfSaleOutlined,
@@ -342,8 +295,6 @@ class ProductListTile extends StatelessWidget {
   }
 }
 
-/// Concise relative-time formatter — "5h ago", "2d ago", "1w ago", "3mo ago".
-/// Tuned for at-a-glance scanning in dense list rows, not precision.
 String _relativeTime(DateTime when) {
   final diff = DateTime.now().difference(when);
   if (diff.inMinutes < 1) return 'just now';
@@ -356,7 +307,6 @@ String _relativeTime(DateTime when) {
   return '${(days / 365).floor()}y ago';
 }
 
-/// Tiny rounded pill used for the activity + vendor metadata row.
 class _MetaChip extends StatelessWidget {
   const _MetaChip({
     required this.icon,
@@ -404,9 +354,6 @@ class _MetaChip extends StatelessWidget {
   }
 }
 
-/// Sell price (prominent) · cost (muted, smaller) · margin chip.
-/// When sellingPrice exceeds MRP, a small amber "above MRP" badge is
-/// added to flag a likely price-entry mistake.
 class _MerchantPriceLine extends StatelessWidget {
   const _MerchantPriceLine({
     required this.sell,
@@ -435,7 +382,6 @@ class _MerchantPriceLine extends StatelessWidget {
       spacing: AppSizes.sm,
       runSpacing: 2,
       children: [
-        // Sell price — primary
         Text(
           '${AppStrings.currencySymbol}${_fmt(sell)}',
           style: (priceStyle ?? theme.textTheme.titleMedium)?.copyWith(
@@ -446,7 +392,6 @@ class _MerchantPriceLine extends StatelessWidget {
             fontFeatures: const [FontFeature.tabularFigures()],
           ),
         ),
-        // Cost — secondary (always shown if non-zero)
         if (cost > 0)
           Text(
             '${l10n.productsCostPrefix} ${AppStrings.currencySymbol}${_fmt(cost)}',
@@ -455,7 +400,6 @@ class _MerchantPriceLine extends StatelessWidget {
               fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
-        // Margin chip — colour codes profitability at a glance
         if (marginPct != null && marginPalette != null)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -472,7 +416,6 @@ class _MerchantPriceLine extends StatelessWidget {
               ),
             ),
           ),
-        // Above-MRP warning — a real signal merchants want to catch
         if (isAboveMrp)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),

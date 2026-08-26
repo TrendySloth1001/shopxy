@@ -25,8 +25,6 @@ import type { CustomerOrderDetail, ShopOrderDetail } from "@/features/orders/typ
 import { orderNeedsOnlinePayment, orderPayableRemainder } from "@/features/orders/types";
 import { mediaSrc } from "@/shared/media";
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
 function cancelUnavailableNote(child: ShopOrderDetail): string | null {
   if (child.canCancel) return null;
   if (child.status !== "CONFIRMED") return null;
@@ -63,9 +61,6 @@ function isReorderable(order: CustomerOrderDetail): boolean {
   );
 }
 
-// ─── Detail page ─────────────────────────────────────────────────────────────
-
-// Map ?toast= values from the checkout redirect
 function toastFromParam(toast: string | undefined): SnackMessage | null {
   switch (toast) {
     case "payment_success":
@@ -106,7 +101,6 @@ function OrderDetailContent({
     snackTimer.current = setTimeout(() => setSnack(null), 4500);
   }
 
-  // Auto-clear the initial (checkout redirect) toast after the same duration
   const initialToastRef = useRef(initialToast);
   useEffect(() => {
     if (!initialToastRef.current) return;
@@ -136,7 +130,6 @@ function OrderDetailContent({
     return () => { cancelled = true; };
   }, [load]);
 
-  // ── Cancel child ────────────────────────────────────────────────────────
   async function doCancel(child: ShopOrderDetail) {
     setCancelConfirmChild(null);
     setCancellingChildId(child.id);
@@ -161,7 +154,6 @@ function OrderDetailContent({
     }
   }
 
-  // ── Reorder ──────────────────────────────────────────────────────────────
   async function handleReorder() {
     if (reordering) return;
     setReordering(true);
@@ -171,9 +163,8 @@ function OrderDetailContent({
         showSnack({ message: "None of the items are available right now", tone: "error" });
         return;
       }
-      // Sync to server cart — best-effort
       for (const item of result.items) {
-        try { await setCartQty(item.productId, item.quantity); } catch { /* skip unavailable */ }
+        try { await setCartQty(item.productId, item.quantity); } catch {  }
       }
       const added = result.items.length;
       const skipped = result.skipped.length;
@@ -189,7 +180,6 @@ function OrderDetailContent({
     }
   }
 
-  // ── Pay now ───────────────────────────────────────────────────────────────
   async function handlePayNow() {
     if (payingRef.current || !order) return;
     payingRef.current = true;
@@ -201,7 +191,7 @@ function OrderDetailContent({
       });
       let syncedStatus: string | null = null;
       if (result.outcome === "success") {
-        try { syncedStatus = await syncOrderPayment(orderId); } catch { /* non-fatal */ }
+        try { syncedStatus = await syncOrderPayment(orderId); } catch {  }
       }
       if (result.outcome === "success") {
         const confirmed = syncedStatus === "PAID";
@@ -266,7 +256,6 @@ function OrderDetailContent({
   const hasAddress = !!order.customerAddress?.trim();
   const hasNote = !!order.note?.trim();
 
-  // Order total: prefer invoiced amounts
   let orderTotal = 0;
   let usedInvoices = false;
   for (const c of children) {
@@ -280,7 +269,6 @@ function OrderDetailContent({
 
   return (
     <>
-      {/* Delivery section */}
       {hasAddress && (
         <>
           <SectionLabel text="DELIVERING TO" />
@@ -298,14 +286,12 @@ function OrderDetailContent({
         </>
       )}
 
-      {/* Multiple packages eyebrow */}
       {children.length > 1 && (
         <SectionLabel
           text={`${children.length} PACKAGES · ${order.shopOrders.reduce((s, c) => s + c.items.length, 0)} ITEMS`}
         />
       )}
 
-      {/* Per-vendor sections */}
       {children.map((child, i) => (
         <div key={child.id}>
           {i > 0 && <div className="h-px bg-hairline" />}
@@ -323,7 +309,6 @@ function OrderDetailContent({
 
       <div className="h-px bg-hairline" />
 
-      {/* Buy again */}
       {reorderable && (
         <>
           <div className="flex items-center justify-between px-lg py-md">
@@ -349,10 +334,8 @@ function OrderDetailContent({
         </>
       )}
 
-      {/* Order summary */}
       <SectionLabel text="ORDER SUMMARY" />
       <div className="px-lg pb-md">
-        {/* Aggregate status row */}
         <div className="mb-sm flex items-center gap-sm">
           <StatusIcon size={14} className={statusVis.colorClass} />
           <p className={`text-body-md font-extrabold flex-1 ${statusVis.colorClass}`}>
@@ -372,8 +355,6 @@ function OrderDetailContent({
         )}
         <div className="my-md h-px bg-hairline" />
         {(() => {
-          // When invoices are used, orderTotal is already net (coupon baked in by backend).
-          // When not, subtract coupon/wallet to show the true payable amount.
           const displayTotal = usedInvoices
             ? orderTotal
             : Math.max(0, orderTotal - (order.couponDiscount ?? 0) - (order.walletPaid ?? 0));
@@ -393,7 +374,6 @@ function OrderDetailContent({
         </p>
       </div>
 
-      {/* Customer note */}
       {hasNote && (
         <>
           <div className="h-px bg-hairline" />
@@ -402,7 +382,6 @@ function OrderDetailContent({
         </>
       )}
 
-      {/* Pay Now bar */}
       {needsPayment && (
         <div className="sticky bottom-0 left-0 right-0 z-20 border-t border-hairline bg-white px-lg py-md">
           <div className="mx-auto flex max-w-shell items-center justify-between gap-md">
@@ -426,7 +405,6 @@ function OrderDetailContent({
         </div>
       )}
 
-      {/* Cancel confirm dialog */}
       {cancelConfirmChild && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-lg">
           <div className="w-full max-w-narrow rounded-dialog bg-white p-xl">
@@ -456,7 +434,6 @@ function OrderDetailContent({
         </div>
       )}
 
-      {/* Return dialog */}
       {returnDialogChild && (
         <RequestReturnDialog
           parentOrderId={orderId}
@@ -474,8 +451,6 @@ function OrderDetailContent({
     </>
   );
 }
-
-// ─── Section primitives ───────────────────────────────────────────────────────
 
 function SectionLabel({ text }: { text: string }) {
   return (
@@ -516,8 +491,6 @@ function BillRow({
   );
 }
 
-// ─── Slim shipping progress bar ──────────────────────────────────────────────
-
 type ShippingStep = "PACKED" | "SHIPPED" | "OUT_FOR_DELIVERY" | "DELIVERED";
 
 const SHIPPING_STEPS: { key: ShippingStep; label: string }[] = [
@@ -540,7 +513,6 @@ function ShippingProgressRow({ events }: { events: { type: string }[] }) {
   return (
     <div className="px-lg pb-md pt-sm">
       <div className="relative flex items-start justify-between">
-        {/* Track line behind dots */}
         <div className="absolute top-[9px] left-0 right-0 h-xxs bg-hairline" />
         <div
           className="absolute top-[9px] left-0 h-xxs bg-brand transition-all duration-500"
@@ -578,8 +550,6 @@ function ShippingProgressRow({ events }: { events: { type: string }[] }) {
   );
 }
 
-// ─── Shop order section ────────────────────────────────────────────────────────
-
 function ShopSection({
   child,
   packageIndex,
@@ -606,7 +576,6 @@ function ShopSection({
     child.status !== "REJECTED" &&
     child.status !== "CANCELLED";
 
-  // Invoice visuals
   function invoiceVisual(): { colorClass: string; label: string } | null {
     const inv = child.invoice;
     if (!inv) return null;
@@ -625,7 +594,6 @@ function ShopSection({
 
   return (
     <div>
-      {/* Header */}
       <div className="px-lg pt-md pb-sm">
         <div className="flex items-center justify-between mb-xs">
           {packageIndex ? (
@@ -648,13 +616,11 @@ function ShopSection({
 
       <div className="h-px bg-hairline mx-lg" />
 
-      {/* Items */}
       {child.items.map((item, idx) => {
         const imgSrc = mediaSrc(item.product?.images?.[0]?.url);
         return (
           <div key={item.id}>
             <div className="flex items-start gap-md px-lg py-md transition-colors duration-200 hover:bg-surface-tint/40">
-              {/* Product image */}
               <div className="h-12 w-12 flex-shrink-0 rounded-lg bg-brand-soft overflow-hidden flex items-center justify-center">
                 {imgSrc ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -700,7 +666,6 @@ function ShopSection({
         );
       })}
 
-      {/* Slim shipping progress (dots + labels) — shown when events exist for active orders */}
       {showTimeline && child.events.length > 0 && (
         <>
           <div className="h-px bg-hairline mx-lg" />
@@ -708,7 +673,6 @@ function ShopSection({
         </>
       )}
 
-      {/* Tracking timeline */}
       {showTimeline && (
         <>
           <div className="h-px bg-hairline mx-lg" />
@@ -716,7 +680,6 @@ function ShopSection({
         </>
       )}
 
-      {/* Invoice footer — icon chips */}
       {invVis && pdfUrl && (
         <>
           <div className="h-px bg-hairline mx-lg" />
@@ -724,7 +687,6 @@ function ShopSection({
             <span className={`flex-1 text-body-sm font-bold ${invVis.colorClass}`}>
               {invVis.label}
             </span>
-            {/* PDF download icon chip */}
             <a
               href={pdfUrl}
               target="_blank"
@@ -740,7 +702,6 @@ function ShopSection({
         </>
       )}
 
-      {/* Rejection note */}
       {child.status === "REJECTED" && child.decisionNote && (
         <div className="mx-lg my-sm rounded-md bg-error-soft p-sm flex gap-sm">
           <Info size={14} className="text-error flex-shrink-0 mt-[1px]" />
@@ -748,7 +709,6 @@ function ShopSection({
         </div>
       )}
 
-      {/* Cancelled note */}
       {child.status === "CANCELLED" && (
         <p className="mx-lg mb-md mt-xs text-label-md text-muted">
           {child.decidedAt
@@ -757,7 +717,6 @@ function ShopSection({
         </p>
       )}
 
-      {/* Cancel action */}
       {child.canCancel && (
         <div className="flex justify-end px-lg pb-md pt-xs">
           <button
@@ -775,7 +734,6 @@ function ShopSection({
         </div>
       )}
 
-      {/* Return action */}
       {child.canReturn && child.items.length > 0 && (
         <div className="flex justify-end px-lg pb-md pt-xs">
           <button
@@ -788,7 +746,6 @@ function ShopSection({
         </div>
       )}
 
-      {/* Unavailability notes */}
       {cancelNote && (
         <div className="mx-lg mb-md mt-xs flex items-start gap-sm">
           <Info size={13} className="text-muted flex-shrink-0 mt-xxs" />
@@ -809,8 +766,6 @@ function formatQty(n: number): string {
   return Number.isInteger(n) ? String(n) : n.toFixed(2);
 }
 
-// ─── Page wrapper ─────────────────────────────────────────────────────────────
-
 export default function OrderDetailPage({
   params,
   searchParams,
@@ -827,7 +782,6 @@ export default function OrderDetailPage({
       <AppHeader />
       <main className="min-h-screen bg-white">
         <div className="mx-auto max-w-shell">
-          {/* Back nav */}
           <div className="flex items-center gap-sm px-lg pt-md pb-xs">
             <Link
               href="/orders"

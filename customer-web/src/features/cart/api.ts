@@ -1,8 +1,3 @@
-/**
- * Client-side fetchers for the cart BFF routes.
- * All calls go to /api/* — never directly to the backend.
- */
-
 import {
   cartResponseSchema,
   mergeBffResponseSchema,
@@ -22,14 +17,12 @@ async function jsonOrThrow<T>(
       const b = (await res.json()) as { error?: string };
       if (b?.error) message = b.error;
     } catch {
-      /* keep fallback */
     }
     throw new Error(message);
   }
   return parse(await res.json());
 }
 
-/** GET /api/me/cart — fetch the server cart. */
 export async function fetchCart(): Promise<CartItem[]> {
   const res = await fetch("/api/me/cart", { cache: "no-store" });
   const { data } = await jsonOrThrow(
@@ -40,10 +33,6 @@ export async function fetchCart(): Promise<CartItem[]> {
   return data;
 }
 
-/**
- * PUT /api/me/cart/:productId — set qty.
- * Returns null when the server responds 204 (line removed).
- */
 export async function setCartQty(
   productId: string,
   quantity: number,
@@ -61,22 +50,16 @@ export async function setCartQty(
   );
 }
 
-/** DELETE /api/me/cart/:productId — remove a single line. */
 export async function removeCartLine(productId: string): Promise<void> {
   const res = await fetch(`/api/me/cart/${productId}`, { method: "DELETE" });
   if (!res.ok && res.status !== 204) throw new Error("Could not remove item.");
 }
 
-/** DELETE /api/me/cart — clear the whole cart. */
 export async function clearServerCart(): Promise<void> {
   const res = await fetch("/api/me/cart", { method: "DELETE" });
   if (!res.ok && res.status !== 204) throw new Error("Could not clear cart.");
 }
 
-/**
- * POST /api/me/cart/merge — merge a guest-cart array into the server cart
- * on first login. Returns the full post-merge cart.
- */
 export async function mergeGuestCart(
   items: { productId: string; quantity: number }[],
 ): Promise<CartItem[]> {

@@ -47,7 +47,6 @@ function WishlistBody() {
   function handleRemove(productId: string) {
     setItems((prev) => prev.filter((i) => i.productId !== productId));
     removeFromWishlist(productId).catch(() => {
-      // If removal fails silently reload
       load();
     });
   }
@@ -97,7 +96,6 @@ function WishlistRow({
 
   return (
     <div className="flex items-start gap-md rounded-md border border-hairline bg-white p-md transition-colors">
-      {/* Thumbnail */}
       <Link href={`/p/${p.id}`} className="shrink-0">
         <div className="size-20 overflow-hidden rounded-sm bg-hero-panel sm:size-24">
           {imageUrl ? (
@@ -114,7 +112,6 @@ function WishlistRow({
         </div>
       </Link>
 
-      {/* Info */}
       <div className="min-w-0 flex-1">
         <Link href={`/p/${p.id}`}>
           <p className="line-clamp-2 text-body-md font-semibold text-ink hover:text-brand">
@@ -132,7 +129,6 @@ function WishlistRow({
           )}
         </div>
 
-        {/* Actions row */}
         <div className="mt-md flex flex-wrap items-center gap-sm">
           <Link
             href={`/p/${p.id}`}

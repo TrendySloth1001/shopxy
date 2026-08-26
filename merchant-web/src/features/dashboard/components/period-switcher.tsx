@@ -4,11 +4,6 @@ import { useRef } from "react";
 import { useTranslations } from "next-intl";
 import { PERIODS, type DashboardPeriod } from "../stats";
 
-/**
- * Accessible segmented control for the dashboard window. Implemented as a
- * radiogroup: arrow keys move (and select) between options, the selected option
- * is the only tab stop, and each control shows a token focus ring.
- */
 export function PeriodSwitcher({
   value,
   onChange,

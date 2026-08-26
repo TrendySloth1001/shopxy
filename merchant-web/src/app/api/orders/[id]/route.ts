@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { authedFetch, extractError } from "@/server/auth/session";
 import { orderDetailSchema } from "@/features/orders/schema";
 
-// GET /api/orders/:id — order detail.
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },

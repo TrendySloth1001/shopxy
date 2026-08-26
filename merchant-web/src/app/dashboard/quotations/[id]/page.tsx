@@ -74,16 +74,6 @@ export default function QuotationDetailPage() {
     };
   }, [id, nonce, t]);
 
-  /**
-   * File this quote away, or bring it back. There is no delete: the quotation
-   * number is a per-shop serial allocated at create time. The backend refuses
-   * one the customer can still act on (REQUESTED / PENDING).
-   *
-   * Merchant-side only — the customer keeps seeing the quote in their list.
-   *
-   * Either way we return to the list, where a restored quote reappears and an
-   * archived one has gone.
-   */
   async function onSetArchived(archived: boolean) {
     setBusy(true);
     setActionError(null);
@@ -150,7 +140,6 @@ export default function QuotationDetailPage() {
     <div className="w-full px-lg py-xxl pb-massive md:px-xxl">
       <BackLink href={BACK} label={t("list.title")} />
 
-      {/* Header */}
       <div className="mt-md flex flex-wrap items-start justify-between gap-md">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-sm">
@@ -177,12 +166,7 @@ export default function QuotationDetailPage() {
           ) : null}
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-sm">
-          {/* A settled quote can be filed away; an archived one brought back.
-              While the customer can still act, neither is offered — an accept
-              landing against a quote the merchant can't see is nobody's job
-              to chase. */}
           {quote.archivedAt ? (
-            // Restoring needs no confirmation: it only puts the quote back.
             <button
               type="button"
               onClick={() => void onSetArchived(false)}
@@ -222,7 +206,6 @@ export default function QuotationDetailPage() {
         <p className="mt-md rounded-md bg-error-soft px-md py-sm text-body-sm text-error">{actionError}</p>
       ) : null}
 
-      {/* Items */}
       <Divider className="my-xl" />
       <h2 className="mb-sm text-label-md uppercase tracking-wide text-subtle">
         {t("detail.itemsHeading", { count: quote.items.length })}
@@ -231,7 +214,6 @@ export default function QuotationDetailPage() {
         <LineRow key={i} line={it} />
       ))}
 
-      {/* Totals */}
       <div className="mt-xl ml-auto w-full max-w-form border-t border-hairline pt-md">
         <Row label={t("totals.subtotal")} value={quote.subtotal} />
         <Row label={t("totals.gst")} value={quote.taxAmount} />
@@ -241,7 +223,6 @@ export default function QuotationDetailPage() {
         </div>
       </div>
 
-      {/* Note */}
       {quote.note ? (
         <>
           <Divider className="my-xl" />
@@ -252,7 +233,6 @@ export default function QuotationDetailPage() {
         </>
       ) : null}
 
-      {/* Actions */}
       {isRequested ? (
         <div className="mt-xxl flex flex-wrap items-center gap-sm">
           <button

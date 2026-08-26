@@ -22,8 +22,6 @@ import {
 import { Search, Package, ReceiptText, FileText, X } from "@/shared/icons";
 import { Divider } from "@/shared/ui/divider";
 
-// ─── Nav strip ──────────────────────────────────────────────────────────────
-
 function MerchantNavStrip({
   base,
   isParty,
@@ -56,8 +54,6 @@ function MerchantNavStrip({
     </div>
   );
 }
-
-// ─── Category pills ──────────────────────────────────────────────────────────
 
 function CategoryPills({
   categories,
@@ -108,8 +104,6 @@ function CategoryPills({
   );
 }
 
-// ─── Main catalog content ───────────────────────────────────────────────────
-
 const PAGE_LIMIT = 24;
 
 type CatalogContentProps = {
@@ -134,7 +128,6 @@ function CatalogContent({ role: roleRaw, id }: CatalogContentProps) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Debounce search
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
@@ -146,7 +139,6 @@ function CatalogContent({ role: roleRaw, id }: CatalogContentProps) {
     };
   }, [search]);
 
-  // Load categories once
   useEffect(() => {
     let cancelled = false;
     async function run() {
@@ -155,7 +147,6 @@ function CatalogContent({ role: roleRaw, id }: CatalogContentProps) {
         const cats = await fetchCatalogCategories();
         if (!cancelled) setCategories(cats);
       } catch {
-        /* silently ignore — show all products */
       } finally {
         if (!cancelled) setCatLoading(false);
       }
@@ -223,7 +214,6 @@ function CatalogContent({ role: roleRaw, id }: CatalogContentProps) {
 
   return (
     <div className="mx-auto max-w-shell">
-      {/* Merchant nav strip */}
       <div className="border-b border-hairline bg-canvas">
         <div className="px-lg">
           <MerchantNavStrip base={base} isParty={isParty} />
@@ -231,7 +221,6 @@ function CatalogContent({ role: roleRaw, id }: CatalogContentProps) {
       </div>
 
       <div className="px-lg py-md">
-        {/* Search bar */}
         <div className="relative mb-md">
           <Search
             size={16}
@@ -256,7 +245,6 @@ function CatalogContent({ role: roleRaw, id }: CatalogContentProps) {
           )}
         </div>
 
-        {/* Category pills */}
         {!catLoading && categories.length > 0 && (
           <>
             <CategoryPills
@@ -268,7 +256,6 @@ function CatalogContent({ role: roleRaw, id }: CatalogContentProps) {
           </>
         )}
 
-        {/* Results */}
         {loading ? (
           <div className="grid grid-cols-2 gap-sm sm:grid-cols-3 md:grid-cols-4">
             {Array.from({ length: PAGE_LIMIT }, (_, i) => (
@@ -318,20 +305,17 @@ function CatalogContent({ role: roleRaw, id }: CatalogContentProps) {
           </div>
         ) : (
           <>
-            {/* Result count */}
             <p className="mb-sm text-body-sm text-muted">
               {total} product{total === 1 ? "" : "s"}
               {debouncedSearch ? ` for "${debouncedSearch}"` : ""}
             </p>
 
-            {/* Product grid */}
             <div className="grid grid-cols-2 gap-sm sm:grid-cols-3 md:grid-cols-4 pb-lg">
               {products.map((p) => (
                 <CatalogProductCard key={p.id} product={p} />
               ))}
             </div>
 
-            {/* Pagination */}
             {total > PAGE_LIMIT && (
               <div className="flex items-center justify-center gap-md py-md">
                 <button
@@ -360,8 +344,6 @@ function CatalogContent({ role: roleRaw, id }: CatalogContentProps) {
   );
 }
 
-// ─── Page ───────────────────────────────────────────────────────────────────
-
 type PageProps = {
   params: Promise<{ role: string; id: string }>;
 };
@@ -374,7 +356,6 @@ export default function CatalogPage({ params }: PageProps) {
     <RequireAuth>
       <AppHeader />
       <main className="min-h-screen bg-canvas">
-        {/* Breadcrumb */}
         <div className="mx-auto max-w-shell border-b border-hairline px-lg py-md">
           <div className="flex items-center gap-xs text-body-sm text-muted">
             <Link href="/merchants" className="hover:text-ink transition-colors">

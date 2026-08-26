@@ -8,7 +8,6 @@ import { listProducts } from "../api";
 import { money } from "../format";
 import { ProductThumb } from "./product-thumb";
 
-/** Minimal product shape the marketing editors need from the picker. */
 export type PickedProduct = {
   id: string;
   name: string;
@@ -18,12 +17,6 @@ export type PickedProduct = {
   imageUrl: string | null;
 };
 
-/**
- * Search-your-catalog modal reused by the flash-deal and promotion editors so
- * the merchant picks a product without leaving the unsaved form. Mirrors the
- * Flutter `_ProductPickerSheet`: debounced search over the merchant's own
- * catalog, tap a row to select.
- */
 export function ProductPicker({
   onPick,
   onClose,

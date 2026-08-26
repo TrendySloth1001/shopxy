@@ -1,28 +1,18 @@
-/// Dashboard payload, mirroring the backend `GET /dashboard/stats?period=…`
-/// response (`backend/src/modules/dashboard/dashboard.service.ts`) and the
-/// web client (`merchant-web/src/features/dashboard/stats.ts`).
-///
-/// Money sections (`kpis`, `trend`, `insights`, `operations.gstMtd`) are null
-/// unless the caller holds `reports:view`.
 library;
 
-/// Rolling window the period-scoped figures cover.
 enum DashboardPeriod {
   today,
   week,
   month;
 
-  /// Backend query value (`?period=`).
   String get query => name;
 
-  /// Segmented-control label.
   String get label => switch (this) {
         DashboardPeriod.today => 'Today',
         DashboardPeriod.week => '7 days',
         DashboardPeriod.month => '30 days',
       };
 
-  /// Phrase used in delta-chip alternatives ("versus …").
   String get prevPhrase => switch (this) {
         DashboardPeriod.today => 'the previous day',
         DashboardPeriod.week => 'the previous 7 days',
@@ -55,12 +45,10 @@ class DashboardStats {
   final List<DashboardAlert> alerts;
   final List<DashboardTransaction> recent;
 
-  /// Null without `reports:view`.
   final DashboardKpis? kpis;
   final DashboardTrend? trend;
   final DashboardInsights? insights;
 
-  /// A fresh shop gets guidance, not a wall of zeros.
   bool get isFresh => !onboarding.hasInvoices && onboarding.totalProducts == 0;
 }
 
@@ -199,8 +187,6 @@ class DashboardTransaction {
       (sourceType == 'INVOICE' || sourceType == 'CHALLAN');
 }
 
-// ── Money sections (reports:view only) ────────────────────────────────
-
 class DashboardKpis {
   const DashboardKpis({
     required this.sales,
@@ -239,7 +225,6 @@ class KpiBalance {
   const KpiBalance({required this.outstanding, required this.count});
   final double outstanding;
 
-  /// debtors (receivables) / creditors (payables).
   final int count;
 }
 

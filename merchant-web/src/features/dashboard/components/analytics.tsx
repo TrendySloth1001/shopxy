@@ -7,11 +7,6 @@ import type { DashboardInsights } from "../stats";
 import { inr } from "./ui";
 import { InfographicPie, PIE_PALETTE_A, PIE_PALETTE_B, PIE_PALETTE_C } from "./infographic-pie";
 
-/**
- * Ranked analytics as infographic pie charts (variable-radius wedges with
- * leader-line callouts): top categories, top products, and slow movers (share
- * of idle in-stock units — which products lock up the most capital).
- */
 export function Analytics({ insights }: { insights: DashboardInsights }) {
   const t = useTranslations("dashboard");
   return (
@@ -70,7 +65,6 @@ function Card({
   const headingId = `${id}-h`;
   const fullHeadingId = `${id}-h-full`;
 
-  // While the overlay is open: lock body scroll and let Escape close it.
   useEffect(() => {
     if (!expanded) return;
     const onKey = (e: KeyboardEvent) => {

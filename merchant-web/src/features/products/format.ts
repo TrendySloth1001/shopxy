@@ -11,7 +11,6 @@ export function money(n: number): string {
   return inr.format(n);
 }
 
-/** Whole number when integral, else 2dp. */
 export function qty(n: number): string {
   return Number.isInteger(n) ? n.toString() : n.toFixed(2);
 }

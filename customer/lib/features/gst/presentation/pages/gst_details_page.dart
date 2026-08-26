@@ -15,8 +15,6 @@ import 'package:shopxy_customer/shared/widgets/app_text_field.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 
-/// Where a customer records their own GST registration so purchases can be
-/// invoiced to their business and the GST claimed as input credit.
 class GstDetailsPage extends StatefulWidget {
   const GstDetailsPage({super.key});
 
@@ -68,8 +66,6 @@ class _GstDetailsPageState extends State<GstDetailsPage> {
       _saving = true;
       _error = null;
     });
-    // The checksum lives on the server; a rejection here is an answer, not a
-    // transport failure, so it renders inline rather than as a retry toast.
     final failure = await context.read<GstProfileProvider>().save(
       gstin: gstin,
       legalName: legalName,

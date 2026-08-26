@@ -3,12 +3,6 @@ import 'dart:convert';
 import 'package:shopxy_customer/core/network/api_client.dart';
 import 'package:shopxy_customer/features/banner_detail/domain/entities/banner_detail.dart';
 
-/// Network adapter for the public banner-detail endpoint.
-///
-///   GET /banners/:id
-///
-/// Open to anonymous callers — the shared [ApiClient] still forwards the
-/// access token when present. Returns 404 when the banner isn't visible.
 class BannerDetailRemoteDataSource {
   const BannerDetailRemoteDataSource(this._client);
   final ApiClient _client;

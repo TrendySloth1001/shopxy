@@ -7,8 +7,6 @@ import { CartProvider } from "@/features/cart/cart-context";
 import { SiteFooter } from "@/shared/ui/site-footer";
 import "./globals.css";
 
-// Inter — same typeface as the Flutter customer app. Exposed as the
-// `--font-inter` CSS variable consumed by the type tokens in globals.css.
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
@@ -25,9 +23,6 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Resolve the session server-side (read-only) so a signed-in shopper renders
-  // authed immediately, skipping the blocking client /api/auth/me bootstrap on
-  // every navigation. Null → the client bootstraps as before.
   const initialUser = await peekSessionUser();
   return (
     <html lang="en" className={`${inter.variable} h-full`}>

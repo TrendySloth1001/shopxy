@@ -10,11 +10,6 @@ import { AuthErrorBanner } from "./auth-shell";
 const COOLDOWN = 30;
 const CODE_LENGTH = 6;
 
-/**
- * Email-OTP step. `/api/auth/register` creates nothing — the account is
- * created here. Closing the tab prompts first (advisory only; browsers cap
- * what `beforeunload` can do).
- */
 export function VerifyEmailForm({ email }: { email: string }) {
   const { verifyEmail, resendOtp } = useAuth();
   const router = useRouter();
@@ -23,7 +18,6 @@ export function VerifyEmailForm({ email }: { email: string }) {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [cooldown, setCooldown] = useState(COOLDOWN);
-  // Stops the exit guard firing while we navigate away on success.
   const done = useRef(false);
 
   useEffect(() => {

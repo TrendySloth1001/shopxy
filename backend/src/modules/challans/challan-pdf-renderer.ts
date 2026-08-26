@@ -11,8 +11,6 @@ import { isOutputGstRegistered } from '../invoices/gst-registration-gate.js';
 import { buildPdfColumns } from '../../shared/pdfColumns.js';
 import { loadPdfEngine } from '../../shared/pdfEngineLoader.js';
 
-/// The Rule 55 tax figures for one challan line. CGST + SGST + IGST + cess is
-/// the tax portion of `total`; `taxable` is the value of the goods.
 export interface ChallanLineTax {
   taxable: Prisma.Decimal;
   taxPct: Prisma.Decimal;
@@ -23,17 +21,6 @@ export interface ChallanLineTax {
   total: Prisma.Decimal;
 }
 
-/// Compute the Rule 55 tax breakup for a single challan line. Pure (no I/O), so
-/// it is unit-testable and is the single source of the challan PDF's per-line
-/// math. Mirrors the invoice engine exactly:
-///   - taxable = round2(qty × sellingPrice) — exclusive, the convention the
-///     challan → invoice conversion (convertToInvoice) prices at, so a challan
-///     reconciles with the tax invoice eventually raised from it;
-///   - interstate → IGST on the whole rate; intrastate → CGST = round2(gst/2)
-///     and SGST absorbs the remainder so CGST + SGST re-sum to the GST total;
-///   - cess is charged on the taxable value and kept out of the GST heads;
-///   - when the consignor isn't GST-registered (`chargesGst` false) every tax
-///     head is zero (Sec 32 gate) — the challan then carries taxable value only.
 export function computeChallanLineTax(input: {
   quantity: Prisma.Decimal | number | string;
   sellingPrice: Prisma.Decimal | number | string | null | undefined;
@@ -66,22 +53,6 @@ export function computeChallanLineTax(input: {
   return { taxable, taxPct, igst, cgst, sgst, cess, total };
 }
 
-/// Render one delivery challan as a PDF — to a stream when `out` is set, or to a
-/// Buffer otherwise. Returns `{ error }` when the challan can't be found for
-/// `shopId`.
-///
-/// LAW: CGST Rule 55(1) — a delivery challan must carry the consignor and
-/// consignee identity (with GSTIN where registered), HSN + description, quantity,
-/// taxable value, the tax RATE and tax AMOUNT broken into CGST/SGST/IGST (+cess),
-/// the place of supply for an inter-State movement, and a signature. The bare
-/// pack-slip the challan used to print omitted all of the tax fields. The tax
-/// figures here are computed at render time from the product master at the SAME
-/// (exclusive) convention `convertToInvoice` uses, so the challan and the tax
-/// invoice eventually raised from it reconcile. Interstate is derived from the
-/// consignor's state vs the consignee's (the place of supply).
-///
-/// Dispatches to the react-pdf engine by default; set `PDF_ENGINE=pdfkit` to
-/// roll back to the original layout below.
 export async function renderChallanPdf(
   shopId: number,
   id: number,
@@ -94,7 +65,6 @@ export async function renderChallanPdf(
   return renderChallanPdfReactPdf(shopId, id, out, onReady);
 }
 
-/// The original hand-drawn PDFKit layout — kept verbatim as the rollback path.
 async function renderChallanPdfPdfKit(
   shopId: number,
   id: number,
@@ -143,9 +113,6 @@ async function renderChallanPdfPdfKit(
   });
   const owner = shopRow?.owner ?? null;
 
-  // Per-line tax source — the challan stores only product/qty, so HSN, price and
-  // GST/cess rate come from the current product master (the same source
-  // convertToInvoice prices from).
   const productIds = [...new Set(challan.items.map((i) => i.productId))];
   const products = productIds.length
     ? await prisma.product.findMany({
@@ -155,11 +122,8 @@ async function renderChallanPdfPdfKit(
     : [];
   const productMap = new Map(products.map((p) => [p.id, p]));
 
-  // Consignor (shop) state — explicit code, else derived from the shop GSTIN.
   const shopStateCode =
     owner?.shopStateCode ?? (owner?.shopGstin ? owner.shopGstin.slice(0, 2) : null);
-  // Consignee (party) state = place of supply. Explicit code, else the party's
-  // GSTIN prefix (mirrors the invoice engine's B2B fallback).
   let partyStateCode = challan.party?.stateCode ?? null;
   if (!partyStateCode && challan.party?.gstin) {
     const prefix = challan.party.gstin.slice(0, 2);
@@ -167,13 +131,6 @@ async function renderChallanPdfPdfKit(
   }
   const isInter = isInterstateSupply(shopStateCode, partyStateCode);
 
-  // Only a REGULAR GST-registered consignor charges/declares output tax; an
-  // unregistered/composition consignor's challan carries no tax (Sec 32 gate),
-  // matching the Bill of Supply such a shop would issue. Gated as of the
-  // challan's own (immutable) createdAt — not "now" — so a challan's PDF
-  // renders deterministically every time instead of drifting as the shop's
-  // live registration state changes across repeated renders. A challan has
-  // no other date field to compare against.
   const chargesGst = owner ? isOutputGstRegistered(owner, challan.createdAt) : false;
 
   const D = Prisma.Decimal;
@@ -217,11 +174,6 @@ async function renderChallanPdfPdfKit(
   const totCess = round2(sum((r) => r.cess));
   const grandTotal = round2(sum((r) => r.total));
 
-  // A consignor who charges no GST would otherwise get a GST%, tax and
-  // Taxable column of zeros, and a shop that never entered HSN codes a column
-  // of dashes — see the invoice engine's `invoiceGstVisibility` for the same
-  // rule. `chargesGst` alone isn't enough: the tax totals are the safety net
-  // for a challan whose figures were computed while the shop was registered.
   const showGst =
     chargesGst || totIgst.gt(0) || totCgst.gt(0) || totSgst.gt(0) || totCess.gt(0);
   const showHsn = rows.some((r) => r.hsn.trim().length > 0);
@@ -236,7 +188,6 @@ async function renderChallanPdfPdfKit(
         if (typeof anyDoc.destroy === 'function') anyDoc.destroy();
         else doc.end();
       } catch {
-        // best-effort
       }
     };
     if (out) {
@@ -283,7 +234,6 @@ async function renderChallanPdfPdfKit(
     const money = (n: Prisma.Decimal): string => `Rs. ${n.toFixed(2)}`;
 
     try {
-      // ---------- Title ----------
       doc
         .fillColor('#111827')
         .font('Helvetica-Bold')
@@ -296,7 +246,6 @@ async function renderChallanPdfPdfKit(
         .text('Rule 55, CGST Rules 2017', LEFT, 62, { width: W, align: 'center' });
       doc.moveTo(LEFT, 78).lineTo(RIGHT, 78).strokeColor('#9CA3AF').lineWidth(1).stroke();
 
-      // ---------- Consignor (left) + Consignee (right) ----------
       const blocksY = 88;
       const colW = (W - 20) / 2;
       const leftX = LEFT;
@@ -332,7 +281,6 @@ async function renderChallanPdfPdfKit(
       else if (challan.partyPhone) { doc.text(challan.partyPhone, rightX, rY, { width: colW }); rY = doc.y; }
       const cpBottom = rY;
 
-      // ---------- Meta strip ----------
       let y = Math.max(shopBottom, cpBottom) + 12;
       doc.moveTo(LEFT, y).lineTo(RIGHT, y).strokeColor('#E5E7EB').lineWidth(0.7).stroke();
       y += 6;
@@ -341,9 +289,6 @@ async function renderChallanPdfPdfKit(
       const pos = partyStateCode
         ? `${partyStateCode}${posName ? ` - ${posName}` : ''}`
         : '-';
-      // Place of supply and the inter/intra-state split are GST concepts, and
-      // the former printed a bare "-" whenever the state was unknown — omit
-      // both when there is no GST on this challan.
       const metaFields: { label: string; value: string }[] = [
         { label: 'Challan No', value: challan.challanNo },
         { label: 'Date', value: formatDDMMYYYY(challan.createdAt) },
@@ -364,11 +309,6 @@ async function renderChallanPdfPdfKit(
       doc.moveTo(LEFT, y).lineTo(RIGHT, y).strokeColor('#E5E7EB').lineWidth(0.7).stroke();
       y += 10;
 
-      // ---------- Items table ----------
-      // Rule 55 wants HSN, taxable value and the tax rate/amount "where
-      // applicable" — for an unregistered consignor none of it applies, so
-      // those columns are dropped rather than zero-filled. Without tax the
-      // Taxable column is just the Total column again, so it goes too.
       const itemCols = buildPdfColumns<Row>(W, [
         { header: 'Sr', width: 22, align: 'left', cell: (_r, i) => String(i + 1) },
         {
@@ -433,7 +373,6 @@ async function renderChallanPdfPdfKit(
         sr += 1;
       }
 
-      // ---------- Totals ----------
       y += 10;
       const totalsX = 360;
       const totalsW = RIGHT - totalsX;
@@ -458,7 +397,6 @@ async function renderChallanPdfPdfKit(
       y += 4;
       totRow('Total Value of Goods', money(grandTotal), true);
 
-      // ---------- Declaration ----------
       y += 8;
       if (y + 24 > 760) { doc.addPage(); y = 40; }
       doc
@@ -485,7 +423,6 @@ async function renderChallanPdfPdfKit(
         y = doc.y + 6;
       }
 
-      // ---------- Signature (Rule 55(viii)) ----------
       {
         const sigW = 200;
         const sigX = RIGHT - sigW;
@@ -505,7 +442,6 @@ async function renderChallanPdfPdfKit(
           .text('Authorised Signatory', sigX, lineY + 4, { width: sigW, align: 'right' });
       }
 
-      // ---------- Footer ----------
       const range = doc.bufferedPageRange();
       for (let i = 0; i < range.count; i++) {
         doc.switchToPage(range.start + i);
@@ -557,8 +493,6 @@ function formatDDMMYYYY(d: Date | string): string {
   return `${dd}/${mm}/${yy}`;
 }
 
-/// Converts PDFKit-style absolute point widths into percentages summing to
-/// 100 — see the identical helper in `invoice-pdf-renderer.ts`.
 function pct(points: number[]): number[] {
   const total = points.reduce((a, b) => a + b, 0);
   return points.map((p) => (p / total) * 100);
@@ -673,19 +607,10 @@ async function renderChallanPdfReactPdf(
   const totCess = round2(sum((r) => r.cess));
   const grandTotal = round2(sum((r) => r.total));
 
-  // A consignor who charges no GST would otherwise get a GST%, tax and
-  // Taxable column of zeros, and a shop that never entered HSN codes a column
-  // of dashes — see the invoice engine's `invoiceGstVisibility` for the same
-  // rule. `chargesGst` alone isn't enough: the tax totals are the safety net
-  // for a challan whose figures were computed while the shop was registered.
   const showGst =
     chargesGst || totIgst.gt(0) || totCgst.gt(0) || totSgst.gt(0) || totCess.gt(0);
   const showHsn = rows.some((r) => r.hsn.trim().length > 0);
 
-  // Rule 55 wants HSN, taxable value and the tax rate/amount "where
-  // applicable" — for an unregistered consignor none of it applies, so those
-  // columns are dropped rather than zero-filled. Without tax the Taxable
-  // column is just the Total column again, so it goes too.
   const itemCols = buildPdfColumns<Row>(515, [
     { header: 'Sr', width: 22, align: 'left', cell: (_r, i) => String(i + 1) },
     {
@@ -764,9 +689,6 @@ async function renderChallanPdfReactPdf(
       pan: party?.panNumber,
       extraLine: challan.partyPhone ?? undefined,
     },
-    // Place of supply and the inter/intra-state split are GST concepts, and
-    // the former printed a bare "-" whenever the state was unknown — omit
-    // both when there is no GST on this challan.
     meta: [
       { label: 'Challan No', value: challan.challanNo },
       { label: 'Date', value: formatDDMMYYYY(challan.createdAt) },

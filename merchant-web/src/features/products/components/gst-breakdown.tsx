@@ -2,14 +2,6 @@ import { useTranslations } from "next-intl";
 import { money } from "../format";
 import { gstBreakdownForProduct, type ProductPricingMode } from "../gst";
 
-/**
- * Breaks a selling price into its taxable value and CGST/SGST components so
- * the merchant can see exactly how much of the price is tax — instead of a
- * bare "18%". Mode-aware: TAX_INCLUSIVE backs GST out of the price,
- * TAX_EXCLUSIVE adds it on top, NO_GST (or a zero rate under any mode) shows
- * the plain no-tax line — matching whichever convention this product will
- * actually be billed under.
- */
 export function GstBreakdown({
   sellingPrice,
   taxPercent,
@@ -83,7 +75,6 @@ function Row({
   );
 }
 
-/** Whole-number rates show as "9", fractional as "2.5". */
 function formatRate(n: number): string {
   return Number.isInteger(n) ? n.toString() : n.toFixed(2).replace(/\.?0+$/, "");
 }

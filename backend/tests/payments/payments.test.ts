@@ -4,11 +4,6 @@ import prisma from '../../src/infra/db/prisma.js';
 import { paymentsService } from '../../src/modules/payments/payments.service.js';
 import { createTestUser, cleanupTestUser } from '../helpers/setup.js';
 
-/// Smoke tests for payments.service. The createPayment path (166 LOC)
-/// handles idempotency replay (double-spend risk if broken), cross-shop
-/// counterparty validation, and ledger posting. These pin the load
-/// bearing behaviours.
-
 async function createParty(shopId: number) {
   return prisma.party.create({
     data: { shopId, name: `TestParty-${crypto.randomBytes(3).toString('hex')}` },
@@ -89,7 +84,7 @@ describe('payments.service — smoke', () => {
         paymentsService.createPayment({
           shopId: ctx.shopId,
           type: 'RECEIPT',
-          amount: 999, // different amount — must reject
+          amount: 999,
           mode: 'CASH',
           partyId: party.id,
           idempotencyKey,
@@ -136,24 +131,20 @@ describe('payments.service — smoke', () => {
         createdById: ctx.userId,
       });
 
-      // Before voiding: the receipt credits the ledger → balance −500.
       const before = await paymentsService.partyLedger(ctx.shopId, party.id);
       expect(before?.balance).toBe(-500);
 
       const ok = await paymentsService.voidPayment(ctx.shopId, pay.id, ctx.userId, 'entered twice');
       expect(ok).toBe(true);
 
-      // The row is retained (audit trail) and stamped voided…
       const row = await prisma.payment.findUnique({ where: { id: pay.id } });
       expect(row).not.toBeNull();
       expect(row?.voidedAt).not.toBeNull();
       expect(row?.voidReason).toBe('entered twice');
 
-      // …but it no longer affects the ledger balance.
       const after = await paymentsService.partyLedger(ctx.shopId, party.id);
       expect(after?.balance).toBe(0);
 
-      // Voiding again is an idempotent no-op.
       expect(await paymentsService.voidPayment(ctx.shopId, pay.id, ctx.userId)).toBe(true);
 
       await prisma.payment.delete({ where: { id: pay.id } });

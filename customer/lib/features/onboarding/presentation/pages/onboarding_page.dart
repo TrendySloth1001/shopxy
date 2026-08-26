@@ -12,7 +12,6 @@ import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 import 'package:shopxy_customer/shared/constants/app_curves.dart';
 
-/// One onboarding slide's content.
 class _Slide {
   const _Slide({
     required this.imageUrl,
@@ -26,11 +25,6 @@ class _Slide {
   final String body;
 }
 
-/// First-run onboarding — immersive, full-bleed photo slides with the
-/// copy and controls overlaid on a dark scrim. Shopper-first framing
-/// (discover → delivery → deals). "Get started" drops into the
-/// guest-browsable shell; "Sign in" completes onboarding then opens
-/// login. Gated by [OnboardingController] so it shows once.
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});
 
@@ -42,9 +36,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
   final _controller = PageController();
   int _index = 0;
 
-  // Lifestyle/shopping photos via the shared Unsplash helper — swap the
-  // IDs for branded artwork when ready. NetworkImageBox handles
-  // load/error/timeout.
   static final List<_Slide> _slides = [
     _Slide(
       imageUrl: HomeImg.unsplash(
@@ -99,8 +90,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }
 
   Future<void> _signIn() async {
-    // Capture the root navigator before completing — `complete()` swaps
-    // the root view to the shell and unmounts this page.
     final nav = Navigator.of(context, rootNavigator: true);
     await context.read<OnboardingController>().complete();
     nav.push(MaterialPageRoute(builder: (_) => const LoginPage()));
@@ -112,14 +101,12 @@ class _OnboardingPageState extends State<OnboardingPage> {
       backgroundColor: AppColors.black,
       body: Stack(
         children: [
-          // Swiping changes the full-bleed photo + its copy.
           PageView.builder(
             controller: _controller,
             itemCount: _slides.length,
             onPageChanged: (i) => setState(() => _index = i),
             itemBuilder: (_, i) => _ImmersiveSlide(slide: _slides[i]),
           ),
-          // Fixed controls that don't swipe with the pages.
           SafeArea(
             child: Column(
               children: [
@@ -206,8 +193,6 @@ class _ImmersiveSlide extends StatelessWidget {
       fit: StackFit.expand,
       children: [
         NetworkImageBox(url: slide.imageUrl, fit: BoxFit.cover),
-        // Scrim: a touch at the top (for the Skip button) and a heavy
-        // bottom so the copy + controls stay legible on any photo.
         DecoratedBox(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -223,7 +208,6 @@ class _ImmersiveSlide extends StatelessWidget {
             ),
           ),
         ),
-        // Copy sits above the fixed controls (which occupy ~210px).
         Positioned(
           left: AppSizes.xl,
           right: AppSizes.xl,
@@ -267,7 +251,6 @@ class _ImmersiveSlide extends StatelessWidget {
   }
 }
 
-/// Animated page indicator — the active dot stretches into a pill.
 class _Dots extends StatelessWidget {
   const _Dots({required this.count, required this.index});
   final int count;

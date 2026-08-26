@@ -2,17 +2,11 @@ import prisma from '../../infra/db/prisma.js';
 import { invoicesService } from '../invoices/invoices.service.js';
 
 export class StockService {
-  /// Manual stock-in / stock-out from the product detail bottom sheet.
-  /// Both sides now create a DRAFT invoice (purchase for IN, sale for
-  /// OUT) instead of posting directly to the ledger — the user reviews
-  /// the draft on the dashboard and confirms it to actually deduct
-  /// stock. Damage / expired / shrinkage still go through
-  /// /stock-adjustments.
   async createTransaction(
     shopId: number,
     data: {
       productId: number;
-      type: string; // 'STOCK_IN' | 'STOCK_OUT'
+      type: string;
       quantity: number;
       unitPrice?: number;
       vendorId?: number;
@@ -56,9 +50,6 @@ export class StockService {
       return { draftInvoice: result.invoice };
     }
 
-    // OUT — sale to a party. Default to *this shop's* Walk-in Customer
-    // (the seed creates one per shop) so cross-tenant attribution can't
-    // happen via the quick-OTC path.
     let partyId = data.partyId;
     if (!partyId) {
       const walkin = await prisma.party.findFirst({
@@ -96,7 +87,6 @@ export class StockService {
   ) {
     const query = options.query?.trim();
 
-    // 1. Structured vendors that have stock-in transactions for this product
     const vendorTxWhere: Record<string, unknown> = { direction: 'IN', shopId };
     if (options.productId) vendorTxWhere.productId = options.productId;
 
@@ -114,7 +104,6 @@ export class StockService {
       take: options.limit,
     });
 
-    // 2. Legacy free-text supplier names (vendorId is null)
     const freeTextWhere: Record<string, unknown> = {
       shopId,
       direction: 'IN',

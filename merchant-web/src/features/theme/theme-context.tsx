@@ -22,15 +22,6 @@ type ThemeContextValue = {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-/**
- * Provides the active theme + a setter. The boot script in `layout.tsx` has
- * already applied the stored theme to <html> before hydration, so the initial
- * state is read straight off the DOM — no effect, no flash, and React state
- * agrees with what's painted. Changing the theme re-applies it, persists to
- * localStorage (so the boot script restores it next load), and forwards it to
- * the Electron main process (so the desktop window's native background matches
- * on the next cold start).
- */
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(readAppliedTheme);
 
@@ -40,7 +31,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.setItem(THEME_STORAGE_KEY, next);
     } catch {
-      /* private mode — best effort; the in-session theme still applies. */
     }
     void setDesktopTheme(next);
   }, []);

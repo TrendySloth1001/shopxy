@@ -1,7 +1,3 @@
-// Persistence + per-user isolation tests for the offline SSOT stores
-// (HttpCache + Outbox). path_provider is mocked to a temp dir via its method
-// channel so the on-disk logic runs for real without a device.
-
 import 'dart:io';
 
 import 'package:flutter/services.dart';
@@ -132,7 +128,7 @@ void main() {
 
       expect(ob.pending('1').length, 2);
       expect(ob.pending('2').length, 1);
-      expect(ob.pending('1').first.path, '/parties/1'); // FIFO order
+      expect(ob.pending('1').first.path, '/parties/1');
       expect(ob.pendingCount.value, 3);
 
       await ob.remove(ob.pending('1').first.id);
@@ -145,7 +141,7 @@ void main() {
       await ob1.init();
       await ob1.enqueue(userId: '7', method: 'PUT', path: '/me/shop', body: '{}');
 
-      final ob2 = Outbox(); // fresh instance, same temp dir
+      final ob2 = Outbox();
       await ob2.init();
       expect(ob2.pending('7').length, 1);
       expect(ob2.pending('7').first.method, 'PUT');
@@ -168,7 +164,7 @@ void main() {
       }
       final pend = ob.pending('1');
       expect(pend.length, 3);
-      expect(pend.first.path, '/parties/2'); // oldest two dropped
+      expect(pend.first.path, '/parties/2');
       expect(pend.last.path, '/parties/4');
     });
   });

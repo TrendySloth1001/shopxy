@@ -18,10 +18,6 @@ import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// Team & roles — editorial layout (flat rows + hairline dividers, no
-/// boxed cards). Owners (or anyone with team:manage) invite staff,
-/// fine-tune each person's access, and define custom roles. Everyone
-/// else sees a read-only roster.
 class ShopTeamPage extends StatefulWidget {
   const ShopTeamPage({super.key});
 
@@ -91,7 +87,6 @@ class _ShopTeamPageState extends State<ShopTeamPage> {
     }
   }
 
-  // ── Member actions ────────────────────────────────────────────────
   Future<void> _invite() async {
     final l10n = AppLocalizations.of(context);
     final email = await _InviteSheet.show(context);
@@ -168,7 +163,6 @@ class _ShopTeamPageState extends State<ShopTeamPage> {
     );
   }
 
-  // ── Role actions ──────────────────────────────────────────────────
   Future<void> _createRole() async {
     final r = await Navigator.push<RoleResult>(
       context,
@@ -268,7 +262,6 @@ class _ShopTeamPageState extends State<ShopTeamPage> {
             child: _InfoBanner(l10n.shopTeamViewOnlyBanner),
           ),
 
-        // ── Team ──
         _SectionHeader(l10n.shopTeamSectionHeader(_members.length)),
         for (var i = 0; i < _members.length; i++)
           _MemberRow(
@@ -279,7 +272,6 @@ class _ShopTeamPageState extends State<ShopTeamPage> {
             onRemove: () => _remove(_members[i]),
           ),
 
-        // ── Pending invites ──
         if (_invites.isNotEmpty) ...[
           const SizedBox(height: AppSizes.xl),
           _SectionHeader(l10n.shopPendingInvitesHeader(_invites.length)),
@@ -292,7 +284,6 @@ class _ShopTeamPageState extends State<ShopTeamPage> {
             ),
         ],
 
-        // ── Roles ──
         const SizedBox(height: AppSizes.xl),
         _SectionHeader(
           l10n.shopRolesHeader(_roles.length),
@@ -317,10 +308,6 @@ class _ShopTeamPageState extends State<ShopTeamPage> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// Skeleton (shimmer loading state)
-// ─────────────────────────────────────────────────────────────────────
-
 class _ShopTeamSkeleton extends StatelessWidget {
   const _ShopTeamSkeleton();
 
@@ -332,7 +319,6 @@ class _ShopTeamSkeleton extends StatelessWidget {
         bottom: AppSizes.huge,
       ),
       children: [
-        // Info banner placeholder
         Padding(
           padding: const EdgeInsets.fromLTRB(
             AppSizes.lg,
@@ -347,24 +333,18 @@ class _ShopTeamSkeleton extends StatelessWidget {
           ),
         ),
 
-        // TEAM section header
         const _SkeletonSectionHeader(),
 
-        // 4 member rows
         for (var i = 0; i < 4; i++) _SkeletonMemberRow(first: i == 0),
 
-        // PENDING INVITES section header
         const SizedBox(height: AppSizes.xl),
         const _SkeletonSectionHeader(),
 
-        // 2 invite rows
         for (var i = 0; i < 2; i++) _SkeletonInviteRow(first: i == 0),
 
-        // ROLES section header
         const SizedBox(height: AppSizes.xl),
         const _SkeletonSectionHeader(withAction: true),
 
-        // 3 role rows
         for (var i = 0; i < 3; i++) _SkeletonRoleRow(first: i == 0),
       ],
     );
@@ -412,14 +392,12 @@ class _SkeletonMemberRow extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Avatar circle
             AppShimmerBox(
               width: AppSizes.avatarSm,
               height: AppSizes.avatarSm,
               radius: AppSizes.avatarSm / 2,
             ),
             const SizedBox(width: AppSizes.md),
-            // Name + email
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -431,10 +409,8 @@ class _SkeletonMemberRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSizes.sm),
-            // Role pill
             AppShimmerBox(width: 56, height: 22, radius: AppSizes.radiusFull),
             const SizedBox(width: AppSizes.sm),
-            // Menu button
             AppShimmerBox(width: 20, height: 20, radius: AppSizes.radiusFull),
           ],
         ),
@@ -458,10 +434,8 @@ class _SkeletonInviteRow extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Mail icon placeholder
             AppShimmerBox(width: 20, height: 20, radius: AppSizes.radiusSm),
             const SizedBox(width: AppSizes.md),
-            // Email + status
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -473,7 +447,6 @@ class _SkeletonInviteRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSizes.sm),
-            // Cancel button
             AppShimmerBox(width: 60, height: 28, radius: AppSizes.radiusSm),
           ],
         ),
@@ -497,10 +470,8 @@ class _SkeletonRoleRow extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Badge icon placeholder
             AppShimmerBox(width: 20, height: 20, radius: AppSizes.radiusSm),
             const SizedBox(width: AppSizes.md),
-            // Role name + description
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -522,7 +493,6 @@ class _SkeletonRoleRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSizes.sm),
-            // Menu button
             AppShimmerBox(width: 20, height: 20, radius: AppSizes.radiusFull),
           ],
         ),
@@ -530,10 +500,6 @@ class _SkeletonRoleRow extends StatelessWidget {
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────
-// Rows (flat, divider-separated — no boxes)
-// ─────────────────────────────────────────────────────────────────────
 
 class _MemberRow extends StatelessWidget {
   const _MemberRow({
@@ -767,8 +733,6 @@ class _RoleRow extends StatelessWidget {
   }
 }
 
-// ── primitives ─────────────────────────────────────────────────────
-
 class _Divided extends StatelessWidget {
   const _Divided({required this.first, required this.child});
   final bool first;
@@ -977,8 +941,6 @@ class _ErrorState extends StatelessWidget {
     ),
   );
 }
-
-// ── Invite email sheet (single field; role chosen next in the editor) ──
 
 class _InviteSheet extends StatefulWidget {
   const _InviteSheet();

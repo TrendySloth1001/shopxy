@@ -2,9 +2,6 @@ import { NextResponse, type NextRequest } from "next/server";
 import { authedFetch } from "@/server/auth/session";
 import { dashboardStatsSchema, PERIODS, type DashboardPeriod } from "@/features/dashboard/stats";
 
-// GET /api/dashboard/stats?period=today|week|month — proxy the backend dashboard
-// overview with the caller's bearer token. Surfaces the backend's 403 (role lacks
-// dashboard:view) so the screen can explain it.
 export async function GET(req: NextRequest) {
   const raw = req.nextUrl.searchParams.get("period");
   const period: DashboardPeriod = (PERIODS as readonly string[]).includes(raw ?? "")

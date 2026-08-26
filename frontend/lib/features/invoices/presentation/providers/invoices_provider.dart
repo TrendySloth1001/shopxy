@@ -34,9 +34,6 @@ class InvoicesProvider extends ChangeNotifier {
   DateTime? get dateFrom => _dateFrom;
   DateTime? get dateTo => _dateTo;
 
-  /// Returns the provider to its post-construction state. Wired to
-  /// AuthProvider.clearAuth so logout / 401-refresh failure drops the
-  /// previous user's invoices instead of flashing them at the next user.
   void reset() {
     _invoices = [];
     _isLoading = false;
@@ -53,8 +50,6 @@ class InvoicesProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Loads the first page for the current filters, replacing the list.
-  /// Filter/search changes and pull-to-refresh route through here.
   Future<void> loadInvoices({bool refresh = false}) async {
     if (_isLoading) return;
     _isLoading = true;
@@ -82,8 +77,6 @@ class InvoicesProvider extends ChangeNotifier {
     }
   }
 
-  /// Appends the next page. No-op while a load is in flight or when the
-  /// server has signalled there are no more pages for the current filters.
   Future<void> loadMore() async {
     if (_isLoading || _isLoadingMore || !_hasMore) return;
     _isLoadingMore = true;
@@ -126,8 +119,6 @@ class InvoicesProvider extends ChangeNotifier {
     loadInvoices(refresh: true);
   }
 
-  /// [to] should already be end-of-day — the range is inclusive on both
-  /// ends, and invoiceDate carries a time component.
   void setDateRange(DateTime? from, DateTime? to) {
     _dateFrom = from;
     _dateTo = to;
@@ -216,14 +207,6 @@ class InvoicesProvider extends ChangeNotifier {
     return invoice;
   }
 
-  /// Archive (or restore) a document.
-  ///
-  /// Archiving: the server filters archived rows out of the default list, so
-  /// drop it locally too rather than paying for a refetch.
-  ///
-  /// Restoring: the row is by definition NOT in this list (it was archived),
-  /// so there is nothing to drop — and the list has to be refetched or the
-  /// restored document stays invisible until something else reloads it.
   Future<void> setArchived(String id, bool archived) async {
     await _ds.setArchived(id, archived);
     if (archived) {

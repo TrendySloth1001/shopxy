@@ -22,18 +22,14 @@ async function post(path: string, accountId: string): Promise<unknown> {
   return body;
 }
 
-/** Verify an existing Razorpay linked account id — returns details to confirm. */
 export function verifyConnect(accountId: string): Promise<ConnectDetails> {
   return post("/api/linked-account/connect", accountId).then((b) => connectDetailsSchema.parse(b));
 }
 
-/** Confirm + store the account as this shop's payout destination. */
 export function confirmConnect(accountId: string): Promise<void> {
   return post("/api/linked-account/connect/confirm", accountId).then(() => undefined);
 }
 
-// KYC onboarding payload — mirrors the backend `startSchema`. PAN/GST/bank are
-// forwarded to Razorpay and never stored on the web.
 export const onboardingSchema = z.object({
   legalBusinessName: z.string().trim().min(1, "Required").max(200),
   customerFacingBusinessName: z.string().trim().max(255).optional(),
@@ -64,7 +60,6 @@ export const onboardingSchema = z.object({
 });
 export type OnboardingInput = z.infer<typeof onboardingSchema>;
 
-/** Start (or resume) Razorpay Route KYC onboarding for the shop. */
 export async function startOnboarding(input: OnboardingInput): Promise<void> {
   const res = await fetch("/api/linked-account", {
     method: "POST",

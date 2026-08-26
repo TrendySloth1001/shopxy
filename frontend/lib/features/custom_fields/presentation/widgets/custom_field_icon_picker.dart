@@ -7,10 +7,6 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 
-/// Grid picker over the curated [kCustomFieldIcons] palette. Tap an
-/// icon to select; tapping the same icon clears the choice. Designed
-/// to drop into the section / field editor sheets via an `Align +
-/// Wrap`-style affordance.
 class CustomFieldIconPicker extends StatelessWidget {
   const CustomFieldIconPicker({
     super.key,

@@ -1,7 +1,5 @@
 import 'package:flutter/foundation.dart';
 
-/// Customer-supplied filter axes for marketplace listings (category,
-/// shop, search). All axes are independent; an unset axis is `null`.
 @immutable
 class ListingFilters {
   const ListingFilters({
@@ -27,7 +25,6 @@ class ListingFilters {
       !inStock &&
       shopIds.isEmpty;
 
-  /// Number of active filter axes. Drives the filter button's badge.
   int get activeCount {
     var n = 0;
     if (priceMin != null || priceMax != null) n++;
@@ -53,9 +50,6 @@ class ListingFilters {
     );
   }
 
-  /// Wire format expected by `/marketplace/categories/:slug/products`
-  /// and `/marketplace/shops/:slug/products`. Empty axes are dropped
-  /// so URLs stay tidy.
   Map<String, String> toQueryParams() {
     final p = <String, String>{};
     if (priceMin != null) p['priceMin'] = priceMin!.toStringAsFixed(2);
@@ -66,7 +60,6 @@ class ListingFilters {
     return p;
   }
 
-  /// Wire format embedded inside the `filters` object on `POST /search`.
   Map<String, dynamic> toSearchPayload() {
     final p = <String, dynamic>{};
     if (priceMin != null) p['priceMin'] = priceMin;
@@ -93,8 +86,6 @@ class ListingFilters {
 
 const Object _undefined = Object();
 
-/// Facet payload that the server returns alongside listing data when
-/// `includeFacets=true`. Drives the filter sheet's chip counts.
 @immutable
 class ListingFacets {
   const ListingFacets({
@@ -127,8 +118,6 @@ class ListingFacets {
     return ListingFacets(
       priceMin: (j['priceMin'] as num?)?.toDouble() ?? 0,
       priceMax: (j['priceMax'] as num?)?.toDouble() ?? 0,
-      // Server keys are ge1..ge5 (see marketplace + search facet
-      // payloads); the old 'gte4'/'gte3' reads always came back 0.
       gte4Count: (ratingBuckets['ge4'] as num?)?.toInt() ?? 0,
       gte3Count: (ratingBuckets['ge3'] as num?)?.toInt() ?? 0,
       inStockCount: (j['inStockCount'] as num?)?.toInt() ?? 0,

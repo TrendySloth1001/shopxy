@@ -74,7 +74,6 @@ function toPayload(v: Record<Field, string>): OnboardingInput {
   };
 }
 
-/** Map zod issues → a flat {field: message} map (address subfields flattened). */
 function validate(v: Record<Field, string>): Partial<Record<Field, string>> {
   const res = onboardingSchema.safeParse(toPayload(v));
   if (res.success) return {};
@@ -86,11 +85,6 @@ function validate(v: Record<Field, string>): Partial<Record<Field, string>> {
   return errors;
 }
 
-/**
- * Razorpay Route KYC onboarding on the web — the 4-step wizard mirroring the
- * mobile app (Business → Identity → Address → Bank). PAN/GST/bank are forwarded
- * to Razorpay by the backend and never stored on the web.
- */
 export function OnboardingWizard({ onLinked }: { onLinked: () => void }) {
   const t = useTranslations("payouts");
   const [v, setV] = useState<Record<Field, string>>(EMPTY);
@@ -121,7 +115,6 @@ export function OnboardingWizard({ onLinked }: { onLinked: () => void }) {
     const all = validate(v);
     if (Object.keys(all).length > 0) {
       setErrors(all);
-      // Jump to the earliest step with an error.
       const bad = STEPS.findIndex((st) => st.fields.some((f) => all[f]));
       if (bad >= 0) setStep(bad);
       return;
@@ -148,7 +141,6 @@ export function OnboardingWizard({ onLinked }: { onLinked: () => void }) {
         </div>
       </div>
 
-      {/* Stepper header */}
       <div className="mt-lg flex items-center gap-xs">
         {STEPS.map((s, i) => (
           <div key={s.key} className="flex flex-1 items-center gap-xs">

@@ -28,28 +28,17 @@ import {
 } from "@/shared/icons";
 
 export type NavItem = {
-  /** Stable key used for active state. */
   key: string;
   label: string;
   icon: LucideIcon;
 };
 
 export type NavGroup = {
-  /** Section heading; null for the top (primary) group. */
   title: string | null;
-  /** Only shown to platform admins. */
   adminOnly?: boolean;
   items: NavItem[];
 };
 
-/**
- * Merchant navigation, mirroring the Flutter app shell
- * (`frontend/lib/core/router/app_shell.dart`): 4 primary destinations plus the
- * Manage / Operations shortcut groups, and the platform-admin tools.
- *
- * Buttons only for now — selecting an item sets the active section; the
- * destination screens are not built yet.
- */
 export const NAV_GROUPS: NavGroup[] = [
   {
     title: null,
@@ -86,9 +75,6 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     title: "Operations",
     items: [
-      // Distinct silhouettes so the three document types don't read alike:
-      // a rupee receipt (a bill you issue), a quote bubble (a price quote),
-      // and a checked package (a goods-dispatch challan).
       { key: "invoices", label: "Invoices", icon: ReceiptIndianRupee },
       { key: "quotations", label: "Quotations", icon: MessageSquareQuote },
       { key: "challans", label: "Challans", icon: PackageCheck },
@@ -107,12 +93,10 @@ export const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
-/** Flat lookup of label by key — used by the content area placeholder. */
 export const NAV_LABELS: Record<string, string> = Object.fromEntries(
   NAV_GROUPS.flatMap((g) => g.items.map((i) => [i.key, i.label])),
 );
 
-/** Route for a nav key. Dashboard is the index; everything else nests under it. */
 export function hrefForNav(key: string): string {
   return key === "dashboard" ? "/dashboard" : `/dashboard/${key}`;
 }

@@ -1,12 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import type { Section } from "./compliance-content";
 
-/**
- * Renders one compliance topic. Grouped with hairline dividers and whitespace
- * — no boxes, no coloured rules (CLAUDE.md §9b). Reads top-down: a one-line
- * summary and prose, then the key points, then how it is calculated, then the
- * governing statutes as de-emphasised reference material.
- */
 export async function ComplianceSectionBody({ section }: { section: Section }) {
   const t = await getTranslations("legal");
   const base = `compliance.${section.key}`;
@@ -19,7 +13,6 @@ export async function ComplianceSectionBody({ section }: { section: Section }) {
 
   return (
     <div className="flex flex-col gap-xxl">
-      {/* Lead + prose. */}
       <div className="flex flex-col gap-md">
         <p className="text-body-lg text-ink">{t(`${base}.summary`)}</p>
         <div className="flex flex-col gap-md text-body-md text-muted">
@@ -29,7 +22,6 @@ export async function ComplianceSectionBody({ section }: { section: Section }) {
         </div>
       </div>
 
-      {/* Key points. */}
       <section className="border-t border-hairline pt-xl">
         <h3 className="text-label-md uppercase tracking-wide text-subtle">
           {t("compliance.section.keyPoints")}
@@ -41,7 +33,6 @@ export async function ComplianceSectionBody({ section }: { section: Section }) {
         </ul>
       </section>
 
-      {/* Formulas. */}
       {section.formulas.length > 0 ? (
         <section className="border-t border-hairline pt-xl">
           <h3 className="text-label-md uppercase tracking-wide text-subtle">
@@ -61,7 +52,6 @@ export async function ComplianceSectionBody({ section }: { section: Section }) {
         </section>
       ) : null}
 
-      {/* Governing law — reference material, de-emphasised. */}
       <section className="border-t border-hairline pt-xl">
         <h3 className="text-label-md uppercase tracking-wide text-subtle">
           {t("compliance.section.governingLaw")}

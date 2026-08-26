@@ -1,7 +1,3 @@
-/**
- * Inline status banner — hairline border, soft fill, never chunky (CLAUDE.md
- * §9b). Used for form-level success and error feedback.
- */
 export function Banner({
   variant,
   message,

@@ -83,7 +83,6 @@ export function ChallanEditor() {
         <p className="mt-md rounded-md bg-error-soft px-md py-sm text-body-sm text-error">{error}</p>
       ) : null}
 
-      {/* Party */}
       <div className="mt-xl">
         <p className="text-label-md uppercase tracking-wide text-subtle">{t("editor.party")}</p>
         {party ? (
@@ -119,7 +118,6 @@ export function ChallanEditor() {
         )}
       </div>
 
-      {/* Items */}
       <div className="mt-xl">
         <div className="flex flex-wrap items-center justify-between gap-sm">
           <p className="text-label-md uppercase tracking-wide text-subtle">{t("editor.items")}</p>
@@ -151,12 +149,10 @@ export function ChallanEditor() {
         )}
       </div>
 
-      {/* Note */}
       <div className="mt-xl max-w-content">
         <TextAreaField label={t("editor.noteLabel")} value={note} onChange={setNote} rows={2} />
       </div>
 
-      {/* Action */}
       <div className="mt-xxl flex flex-wrap items-center gap-sm">
         <button
           type="button"

@@ -1,12 +1,5 @@
-/// Drill-down data behind the Receivables / Payables KPI cards — a faithful
-/// port of merchant-web's `features/dashboard/drilldown.ts`. Each breakdown
-/// lists debtors/creditors (biggest balance first) with the confirmed
-/// documents behind the balance. Backs `GET /dashboard/receivables` and
-/// `GET /dashboard/payables` (`dashboard.service.assembleBreakdown`).
 library;
 
-/// Coerce a JSON money value (may arrive as a number or a numeric string)
-/// to a double, defaulting to 0 — mirrors the web schema's `z.coerce.number`.
 double _money(dynamic v) {
   if (v == null) return 0;
   if (v is num) return v.toDouble();
@@ -25,7 +18,7 @@ class BreakdownInvoice {
   final String id;
   final String invoiceNo;
   final String documentType;
-  final String invoiceDate; // ISO string
+  final String invoiceDate;
   final double total;
 
   factory BreakdownInvoice.fromJson(Map<String, dynamic> j) => BreakdownInvoice(
@@ -52,14 +45,11 @@ class BreakdownParty {
   final String name;
   final double billed;
 
-  /// Settled amount is named `received` on the receivables side and `paid`
-  /// on the payables side — only one is present per row.
   final double? received;
   final double? paid;
   final double outstanding;
   final List<BreakdownInvoice> invoices;
 
-  /// The amount already settled against this counterparty, whichever side.
   double get settled => received ?? paid ?? 0;
 
   factory BreakdownParty.fromJson(Map<String, dynamic> j) => BreakdownParty(

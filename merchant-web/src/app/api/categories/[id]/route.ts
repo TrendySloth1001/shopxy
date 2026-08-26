@@ -2,7 +2,6 @@ import { proxy } from "@/server/proxy";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-// GET /api/categories/:id → /categories/:id (read-only category detail).
 export async function GET(req: Request, { params }: Ctx) {
   const { id } = await params;
   return proxy(`/categories/${encodeURIComponent(id)}`, req, {

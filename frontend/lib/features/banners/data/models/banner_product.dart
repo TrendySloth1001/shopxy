@@ -1,6 +1,3 @@
-/// Discount mode for a banner-pinned product.
-///   * percent — N% off the product's selling price (0..90)
-///   * amount  — flat rupees off per unit
 enum BannerDiscountType { percent, amount }
 
 extension BannerDiscountTypeX on BannerDiscountType {
@@ -33,7 +30,6 @@ BannerDiscountType bannerDiscountTypeFromWire(String? s) {
   }
 }
 
-/// Slim product summary embedded in a banner-product row.
 class BannerProductSummary {
   const BannerProductSummary({
     required this.id,
@@ -71,8 +67,6 @@ class BannerProductSummary {
   }
 }
 
-/// One curated product pinned to a banner, with its per-product discount
-/// and the server-computed sale price.
 class BannerProductRow {
   const BannerProductRow({
     required this.id,

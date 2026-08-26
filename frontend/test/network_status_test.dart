@@ -1,7 +1,3 @@
-// Unit tests for the offline connectivity signal (NetworkStatus). The debounce
-// is the risk surface: a single dropped request must NOT flash the banner, but
-// a real outage must, and a success must clear it immediately.
-
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shopxy/core/network/offline/network_status.dart';
@@ -33,7 +29,7 @@ void main() {
       final ns = NetworkStatus(offlineDebounce: const Duration(seconds: 2));
       ns.markOffline();
       async.elapse(const Duration(milliseconds: 500));
-      ns.markOnline(); // a request succeeded before the timer fired
+      ns.markOnline();
       async.elapse(const Duration(seconds: 5));
       expect(ns.online, isTrue);
     });
@@ -54,20 +50,11 @@ void main() {
     });
   });
 
-  // ── Recovering without help ──────────────────────────────────────────────
-  //
-  // The reason the probe exists. `markOnline` only ever fires from a completed
-  // request, and while offline nothing issues one: the outbox processor returns
-  // early (`if (_networkStatus.offline) return`) and screens serve cache. So
-  // the app waited for a request that waited for the app, and stayed behind the
-  // offline banner long after the network came back.
-
   test('with no probe, offline is permanent — the bug this guards', () {
     fakeAsync((async) {
       final ns = NetworkStatus(offlineDebounce: const Duration(seconds: 1));
       ns.markOffline();
       async.elapse(const Duration(minutes: 10));
-      // Ten minutes of perfectly good network and nobody asks.
       expect(ns.offline, isTrue);
     });
   });
@@ -95,12 +82,10 @@ void main() {
       expect(probes, greaterThan(0));
       expect(ns.offline, isTrue, reason: 'still unreachable');
 
-      // Backoff must actually grow, or a dead network becomes a battery drain.
       final afterFirst = probes;
       async.elapse(const Duration(seconds: 4));
       expect(probes - afterFirst, lessThanOrEqualTo(2));
 
-      // Network comes back with nobody touching the app.
       reachable = true;
       async.elapse(const Duration(seconds: 60));
       expect(ns.online, isTrue, reason: 'recovered without a user action');
@@ -137,15 +122,12 @@ void main() {
         firstProbeDelay: const Duration(seconds: 2),
         probe: () async {
           probes++;
-          // A real probe throws on DNS failure long before it can return false.
           throw Exception('SocketException');
         },
       );
 
       ns.markOffline();
       async.elapse(const Duration(seconds: 30));
-      // Swallowing the exception and stopping would restore the deadlock in
-      // exactly the case the probe was written for.
       expect(probes, greaterThan(1));
       expect(ns.offline, isTrue);
     });
@@ -162,12 +144,11 @@ void main() {
       );
 
       ns.markOffline();
-      // Let the backoff climb to its ceiling, as it would while asleep.
       async.elapse(const Duration(minutes: 3));
       expect(ns.offline, isTrue);
 
       reachable = true;
-      ns.probeNow(); // ← foreground
+      ns.probeNow();
       async.elapse(const Duration(milliseconds: 50));
       expect(ns.online, isTrue, reason: 'must not wait out a 30s ceiling');
     });

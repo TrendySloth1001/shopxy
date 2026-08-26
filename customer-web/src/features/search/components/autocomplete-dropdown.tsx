@@ -5,23 +5,14 @@ import type { AutocompleteSuggestions } from "../types";
 
 type Props = {
   suggestions: AutocompleteSuggestions;
-  /** The suggestion the keyboard has highlighted (-1 = none). */
   activeIndex: number;
   onSelect: (term: string) => void;
 };
 
-/**
- * Autocomplete dropdown — rendered beneath the search input when the user
- * is typing. Shows backend product/term suggestions.
- *
- * The parent controls keyboard navigation via `activeIndex`; items are
- * identified by a flat list index (products first, then terms).
- */
 export function AutocompleteDropdown({ suggestions, activeIndex, onSelect }: Props) {
   const { products, terms } = suggestions;
   if (products.length === 0 && terms.length === 0) return null;
 
-  // Flat index: [0…products.length-1] = products, [products.length…] = terms
   let flatIndex = -1;
 
   return (
@@ -44,7 +35,7 @@ export function AutocompleteDropdown({ suggestions, activeIndex, onSelect }: Pro
                   <button
                     type="button"
                     onMouseDown={(e) => {
-                      e.preventDefault(); // don't blur the input
+                      e.preventDefault();
                       onSelect(p.name);
                     }}
                     className={[
@@ -105,7 +96,6 @@ export function AutocompleteDropdown({ suggestions, activeIndex, onSelect }: Pro
   );
 }
 
-/** Variant used in the idle view for recent searches dropdown (single section). */
 export function RecentDropdown({
   terms,
   activeIndex,

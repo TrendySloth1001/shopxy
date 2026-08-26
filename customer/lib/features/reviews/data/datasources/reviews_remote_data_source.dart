@@ -3,9 +3,6 @@ import 'dart:convert';
 import 'package:shopxy_customer/core/network/api_client.dart';
 import 'package:shopxy_customer/features/reviews/domain/entities/review.dart';
 
-/// HTTP wrapper around /products/:id/reviews + /summary. Stays thin —
-/// no caching, no provider — so individual pages can decide how to
-/// surface errors and pagination state.
 class ReviewsRemoteDataSource {
   ReviewsRemoteDataSource(this._client);
   final ApiClient _client;
@@ -37,9 +34,6 @@ class ReviewsRemoteDataSource {
     );
   }
 
-  /// Returns the updated review on 200, throws with the server message
-  /// on any other status. The "only buyers" 403 case carries a
-  /// readable `error` string the caller surfaces directly.
   Future<Review> upsert(
     String productId, {
     required int rating,
@@ -68,8 +62,6 @@ class ReviewsRemoteDataSource {
     }
   }
 
-  /// `/me/reviews` — every review the caller has written, with
-  /// product join. Used by the profile "My reviews" page.
   Future<MyReviewsPage> listMine({int? cursor, int limit = 20}) async {
     final params = <String, String>{'limit': '$limit'};
     if (cursor != null) params['cursor'] = '$cursor';
@@ -88,10 +80,6 @@ class ReviewsRemoteDataSource {
   }
 }
 
-/// Carries the server message + status so the write-review sheet can
-/// distinguish "not purchased" (403) from "invalid rating" (400) and
-/// from generic transport errors. Plain Exception otherwise loses the
-/// status code by the time it reaches the snackbar.
 class ReviewWriteException implements Exception {
   ReviewWriteException(this.statusCode, this.message);
   final int statusCode;
@@ -106,7 +94,6 @@ ReviewWriteException _reviewWriteException(int status, String raw) {
     final body = jsonDecode(raw) as Map<String, dynamic>;
     if (body['error'] is String) message = body['error'] as String;
   } catch (_) {
-    // not JSON — fall through with raw
   }
   return ReviewWriteException(status, message);
 }

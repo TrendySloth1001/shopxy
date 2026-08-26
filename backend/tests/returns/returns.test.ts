@@ -12,9 +12,6 @@ import { Role } from '@prisma/client';
 
 const app = buildApp();
 
-/// Helper that produces a merchant JWT WITH `shopId` baked in — the
-/// shared test setup signs without it, and the merchant `confirm` +
-/// returns routes read `req.user.shopId`.
 function merchantToken(ctx: { userId: number; shopId: number; email: string }): string {
   return jwt.sign(
     { sub: ctx.userId, email: ctx.email, role: 'OWNER', isPlatformAdmin: false, shopId: ctx.shopId },
@@ -23,12 +20,6 @@ function merchantToken(ctx: { userId: number; shopId: number; email: string }): 
   );
 }
 
-/// Spins up a full submit→confirm→approve→refund chain so we know the
-/// refund-to-source result + idempotency + state machine all line up. These
-/// orders are placed COD (no online capture), so the refund engine reports
-/// NO_PAYMENT (nothing to reverse to source — the merchant settles offline);
-/// the GST credit note is still issued. Wallet/store-credit refunds were
-/// removed (illegal for an online payment — RBI refund-to-source).
 describe('returns — lifecycle', () => {
   afterAll(async () => {
     await prisma.$disconnect();
@@ -37,11 +28,6 @@ describe('returns — lifecycle', () => {
   it('submit → approve → received → refund (COD → NO_PAYMENT, credit note issued)', async () => {
     const merchant = await createTestUser();
     const buyer = await createTestUser({ role: Role.CUSTOMER });
-    // Pre-link the buyer as a Party at the merchant's shop. Production
-    // does this automatically on invitation acceptance; without it the
-    // lazy-create-on-confirm path runs into a known visibility issue
-    // where invoicesService.createInvoice (uses its own transaction)
-    // can't see a Party that was just created in the outer transaction.
     await prisma.party.create({
       data: {
         shopId: merchant.shopId,
@@ -58,7 +44,6 @@ describe('returns — lifecycle', () => {
         stockQuantity: 10,
       });
 
-      // Place an order as the buyer.
       const place = await request(app)
         .post('/me/orders')
         .set('Authorization', `Bearer ${buyer.accessToken}`)
@@ -68,20 +53,17 @@ describe('returns — lifecycle', () => {
       const parentId = (place.body.id ?? place.body.orderId) as number;
       const childId = place.body.shopOrders[0].id as number;
 
-      // Merchant confirms — this materialises an invoice.
       const confirm = await request(app)
         .post(`/orders/${childId}/confirm`)
         .set('Authorization', `Bearer ${merchantToken(merchant)}`)
         .send({});
       expect(confirm.status).toBe(200);
 
-      // Look up the original PurchaseRequestItem id so we can return it.
       const pri = await prisma.purchaseRequestItem.findFirstOrThrow({
         where: { requestId: childId },
         select: { id: true },
       });
 
-      // Buyer submits the return.
       const submit = await request(app)
         .post(`/me/orders/${parentId}/returns`)
         .set('Authorization', `Bearer ${buyer.accessToken}`)
@@ -95,7 +77,6 @@ describe('returns — lifecycle', () => {
       expect(submit.status).toBe(201);
       const returnId = submit.body.id as number;
 
-      // Merchant approves, picked-up, received, refund.
       const approve = await request(app)
         .post(`/orders/returns/${returnId}/approve`)
         .set('Authorization', `Bearer ${merchantToken(merchant)}`)
@@ -120,15 +101,11 @@ describe('returns — lifecycle', () => {
         .send({});
       expect(refund.status).toBe(200);
       expect(refund.body.refundAmount).toBe(500);
-      // COD order → no captured online payment → nothing to refund to source.
       expect(refund.body.refundStatus).toBe('NO_PAYMENT');
-      // No real money moved and no GatewayRefund was recorded.
       const refundRows = await prisma.gatewayRefund.findMany({
         where: { sourceType: 'RETURN', sourceId: returnId },
       });
       expect(refundRows).toHaveLength(0);
-      // The GST credit note (a SALE return against the original invoice) is
-      // still minted regardless of the money path.
       const creditNote = await prisma.invoice.findFirst({
         where: { shopId: merchant.shopId, type: 'SALE', originalInvoiceId: { not: null } },
         orderBy: { id: 'desc' },
@@ -143,11 +120,6 @@ describe('returns — lifecycle', () => {
   it('refund is idempotent across retries', async () => {
     const merchant = await createTestUser();
     const buyer = await createTestUser({ role: Role.CUSTOMER });
-    // Pre-link the buyer as a Party at the merchant's shop. Production
-    // does this automatically on invitation acceptance; without it the
-    // lazy-create-on-confirm path runs into a known visibility issue
-    // where invoicesService.createInvoice (uses its own transaction)
-    // can't see a Party that was just created in the outer transaction.
     await prisma.party.create({
       data: {
         shopId: merchant.shopId,
@@ -198,17 +170,12 @@ describe('returns — lifecycle', () => {
           .send({});
       }
 
-      // First refund — settles the return (COD here, so refund-to-source is a
-      // NO_PAYMENT no-op, but the row goes REFUNDED).
       const r1 = await request(app)
         .post(`/orders/returns/${returnId}/refund`)
         .set('Authorization', `Bearer ${merchantToken(merchant)}`)
         .send({});
       expect(r1.status).toBe(200);
 
-      // Second refund attempt — must conflict (BAD_STATE) since the row is
-      // already REFUNDED. The state-machine claim is what makes the refund
-      // exactly-once; no second money movement can be triggered.
       const r2 = await request(app)
         .post(`/orders/returns/${returnId}/refund`)
         .set('Authorization', `Bearer ${merchantToken(merchant)}`)
@@ -223,11 +190,6 @@ describe('returns — lifecycle', () => {
   it('customer can cancel a REQUESTED return but not after approval', async () => {
     const merchant = await createTestUser();
     const buyer = await createTestUser({ role: Role.CUSTOMER });
-    // Pre-link the buyer as a Party at the merchant's shop. Production
-    // does this automatically on invitation acceptance; without it the
-    // lazy-create-on-confirm path runs into a known visibility issue
-    // where invoicesService.createInvoice (uses its own transaction)
-    // can't see a Party that was just created in the outer transaction.
     await prisma.party.create({
       data: {
         shopId: merchant.shopId,
@@ -270,13 +232,11 @@ describe('returns — lifecycle', () => {
       expect(submit.status).toBe(201);
       const returnId = submit.body.id as number;
 
-      // Cancel while REQUESTED works.
       const cancel1 = await request(app)
         .post(`/me/returns/${returnId}/cancel`)
         .set('Authorization', `Bearer ${buyer.accessToken}`);
       expect(cancel1.status).toBe(204);
 
-      // Now try cancelling a second time — should 409 (not open).
       const cancel2 = await request(app)
         .post(`/me/returns/${returnId}/cancel`)
         .set('Authorization', `Bearer ${buyer.accessToken}`);
@@ -380,7 +340,6 @@ describe('returns — lifecycle', () => {
           couponCode: coupon.code,
         });
       expect(place.status).toBe(201);
-      // 20% off ₹500 = ₹100 discount, buyer paid ₹400 effectively.
       expect(place.body.couponDiscount).toBe(100);
       const parentId = (place.body.id ?? place.body.orderId) as number;
       const childId = place.body.shopOrders[0].id as number;
@@ -404,7 +363,6 @@ describe('returns — lifecycle', () => {
       const got = await request(app)
         .get(`/me/returns/${submit.body.id}`)
         .set('Authorization', `Bearer ${buyer.accessToken}`);
-      // Refund should be the price minus the coupon's share: ₹400.
       expect(Number(got.body.refundAmount)).toBe(400);
     } finally {
       await prisma.couponRedemption.deleteMany({ where: { couponId: coupon.id } });

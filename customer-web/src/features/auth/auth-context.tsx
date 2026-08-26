@@ -12,7 +12,6 @@ import {
 import type { AuthUser } from "./types";
 import type { UpdateProfileInput } from "./schema";
 
-/** Payload the register form sends to the provider (confirm is dropped). */
 export type RegisterPayload = {
   name: string;
   email: string;
@@ -31,34 +30,28 @@ type AuthContextValue = {
   user: AuthUser | null;
   status: Status;
   login: (email: string, password: string) => Promise<void>;
-  /** `{ pending: true }` normally — no account until {@link verifyEmail}. */
   register: (payload: RegisterPayload) => Promise<RegisterOutcome>;
   verifyEmail: (email: string, otp: string) => Promise<void>;
   resendOtp: (email: string) => Promise<void>;
   logout: () => Promise<void>;
-  /** Revoke every session (this device included). */
   logoutEverywhere: () => Promise<void>;
   updateProfile: (input: UpdateProfileInput) => Promise<void>;
-  /** On success the backend revokes all sessions — the caller must re-auth. */
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   deleteAccount: (currentPassword: string) => Promise<void>;
   uploadAvatar: (file: File) => Promise<void>;
   removeAvatar: () => Promise<void>;
-  /** Download the DPDP data export as a file. */
   exportData: () => Promise<void>;
   refresh: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-/** Read `{ error }` from a non-OK BFF response and throw it as an Error. */
 async function throwApiError(res: Response, fallback: string): Promise<never> {
   let message = fallback;
   try {
     const body = (await res.json()) as { error?: string };
     if (body?.error) message = body.error;
   } catch {
-    // keep fallback
   }
   throw new Error(message);
 }
@@ -68,8 +61,6 @@ export function AuthProvider({
   initialUser = null,
 }: {
   children: ReactNode;
-  /** Session resolved server-side (read-only) in the root layout. When set, the
-   *  provider starts authed and skips the mount bootstrap fetch. */
   initialUser?: AuthUser | null;
 }) {
   const [user, setUser] = useState<AuthUser | null>(initialUser);
@@ -87,12 +78,6 @@ export function AuthProvider({
     }
   }, []);
 
-  // Bootstrap the session from the httpOnly cookie on mount — but ONLY when the
-  // server couldn't already resolve it (no fresh access cookie). When
-  // `initialUser` is set we trust the server render and skip this round-trip;
-  // `refresh()` stays available for explicit revalidation. State is only set
-  // after the await (never synchronously) and is guarded against an unmount
-  // race — this is external-system sync, not derived state.
   useEffect(() => {
     if (initialUser) return;
     let active = true;
@@ -136,7 +121,6 @@ export function AuthProvider({
     const body = (await res.json()) as
       | { pending: true; email: string }
       | { user: AuthUser };
-    // No account yet — do NOT mark the session authed.
     if ("pending" in body) return { pending: true, email: body.email };
     setUser(body.user);
     setStatus("authed");
@@ -196,7 +180,6 @@ export function AuthProvider({
         body: JSON.stringify({ currentPassword, newPassword }),
       });
       if (!res.ok) await throwApiError(res, "Could not change your password.");
-      // All sessions (including this one) are now revoked — drop local state.
       setUser(null);
       setStatus("guest");
     },

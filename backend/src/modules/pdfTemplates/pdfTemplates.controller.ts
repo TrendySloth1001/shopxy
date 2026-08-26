@@ -7,8 +7,6 @@ const sampleQuerySchema = z.object({
 });
 
 export class PdfTemplatesController {
-  /// Metadata only (id/name/description/order) — thumbnail *images* are
-  /// bundled as static assets client-side, not served from here.
   async list(_req: Request, res: Response): Promise<void> {
     const { TEMPLATE_PRESETS } = await loadPdfEngine();
     res.json(
@@ -21,11 +19,6 @@ export class PdfTemplatesController {
     );
   }
 
-  /// Renders one canned sample document (no real shop/customer data) in the
-  /// requested template — lets a merchant preview a look before applying it.
-  /// Auth-gated like the real download endpoints (rendering isn't free) and
-  /// 400s on an unrecognized template id rather than silently substituting
-  /// the default, which would just confuse a side-by-side comparison.
   async sample(req: Request, res: Response): Promise<void> {
     const { isKnownTemplateId, sampleModelForKind, renderPdfToBuffer } = await loadPdfEngine();
     const templateId = req.params.id;

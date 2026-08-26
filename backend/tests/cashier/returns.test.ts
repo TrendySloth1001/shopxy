@@ -5,9 +5,6 @@ import * as cashier from '../../src/modules/cashier/cashier.service.js';
 import * as returns from '../../src/modules/cashier/returns.service.js';
 import { createTestUser, createTestProduct } from '../helpers/setup.js';
 
-/// POS returns → GST credit note: reverses tax proportionally, restocks the
-/// goods, caps over-return, and reduces the shift's drawer cash on a cash refund.
-
 async function registerShop(userId: number) {
   await prisma.user.update({
     where: { id: userId },
@@ -30,7 +27,6 @@ describe('POS returns / credit notes', () => {
 
     await cashier.openShift(ctx.shopId, ctx.userId, 0);
 
-    // Sell 2 units for cash → ₹236 (₹200 + 18% GST). Stock 10 → 8.
     const sale = await pos.openSale(ctx.shopId, ctx.userId);
     const saleId = (sale as { sale: { id: number } }).sale.id;
     await pos.addScan(ctx.shopId, saleId, product.sku, ctx.userId);
@@ -40,24 +36,21 @@ describe('POS returns / credit notes', () => {
     const stockAfterSale = await prisma.product.findUnique({ where: { id: product.id }, select: { stockQuantity: true } });
     expect(Number(stockAfterSale!.stockQuantity)).toBe(8);
 
-    // Returnable: 2 sold, 0 returned.
     const returnable = await returns.getReturnable(ctx.shopId, checkout.invoiceId);
     if ('error' in returnable) throw new Error(returnable.error);
     expect(returnable.lines[0].soldQty).toBe(2);
     expect(returnable.lines[0].returnableQty).toBe(2);
 
-    // Return 1 unit, cash refund.
     const ret = await returns.returnSale(ctx.shopId, ctx.userId, {
       originalInvoiceId: checkout.invoiceId,
       lines: [{ productId: product.id, quantity: 1 }],
       refundMode: 'CASH',
     });
     if ('error' in ret) throw new Error(ret.error);
-    expect(ret.refundAmount).toBe(118); // ₹100 + 18% GST
+    expect(ret.refundAmount).toBe(118);
     expect(ret.cashDrawerAdjusted).toBe(true);
     expect(ret.creditNoteNo).toBeTruthy();
 
-    // Credit note is linked + GST-correct; stock restocked 8 → 9.
     const cn = await prisma.invoice.findUnique({
       where: { id: ret.creditNoteId },
       select: { documentType: true, originalInvoiceId: true, total: true, cgstAmount: true, sgstAmount: true },
@@ -70,7 +63,6 @@ describe('POS returns / credit notes', () => {
     const stockAfterReturn = await prisma.product.findUnique({ where: { id: product.id }, select: { stockQuantity: true } });
     expect(Number(stockAfterReturn!.stockQuantity)).toBe(9);
 
-    // Returnable now shows 1 returned, 1 remaining; over-return is capped.
     const after = await returns.getReturnable(ctx.shopId, checkout.invoiceId);
     if ('error' in after) throw new Error(after.error);
     expect(after.lines[0].returnedQty).toBe(1);
@@ -82,12 +74,10 @@ describe('POS returns / credit notes', () => {
     });
     expect('error' in over).toBe(true);
 
-    // Z-report: returns counted; cash refund reduced expected cash.
     const x = asReport(await cashier.xReport(ctx.shopId, ctx.userId));
     expect(x.returns.count).toBe(1);
     expect(x.returns.amount).toBe(118);
     expect(x.cash.refunds).toBe(118);
-    // expected = 0 float + 236 cash sales − 118 refund = 118.
     expect(x.cash.expected).toBe(118);
   });
 });

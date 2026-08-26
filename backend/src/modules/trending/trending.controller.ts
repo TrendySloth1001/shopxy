@@ -8,8 +8,6 @@ function parseIntOrNull(v: unknown): number | null {
 }
 
 export class TrendingController {
-  /// GET /products/trending?categoryId=&limit=
-  /// Public — anyone can hit this. categoryId omitted → global bucket.
   async listTrending(req: Request, res: Response): Promise<void> {
     const categoryId = parseIntOrNull(req.query.categoryId);
     const limitRaw = req.query.limit ? Number(req.query.limit) : undefined;
@@ -18,8 +16,6 @@ export class TrendingController {
     res.json({ data });
   }
 
-  /// GET /products/recommended?slot=for_you
-  /// Auth-only. Per-user cache, falls back to trending for cold start.
   async listRecommendations(req: Request, res: Response): Promise<void> {
     const userId = req.user!.sub;
     const slot = (req.query.slot as string | undefined) ?? 'for_you';

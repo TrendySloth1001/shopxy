@@ -6,15 +6,6 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 
-/// Vertical milestone strip for a single per-shop slice's tracking
-/// timeline. Renders the canonical lifecycle from CREATED through
-/// DELIVERED with a connecting rail; the latest reached milestone
-/// gets the accent treatment, future ones render muted.
-///
-/// Lifecycle vs shipping branches:
-///   * REJECTED / CANCELLED short-circuit the timeline at confirm.
-///   * RETURNED is rendered as a separate post-delivery row when
-///     present.
 class OrderTimeline extends StatelessWidget {
   const OrderTimeline({super.key, required this.events, required this.status});
 
@@ -26,8 +17,6 @@ class OrderTimeline extends StatelessWidget {
     final theme = Theme.of(context);
     if (events.isEmpty) return const SizedBox.shrink();
 
-    // Index events by type — only the latest of each kind is shown.
-    // Stable across re-orders because the timeline is monotonic.
     final byType = <String, OrderEvent>{};
     for (final e in events) {
       final prev = byType[e.type];
@@ -36,8 +25,6 @@ class OrderTimeline extends StatelessWidget {
       }
     }
 
-    // Short-circuit branches: rejected / cancelled don't proceed
-    // through the shipping rail.
     final terminated = status == 'REJECTED' || status == 'CANCELLED';
     final returned = byType.containsKey('RETURNED');
 

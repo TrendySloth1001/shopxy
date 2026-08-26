@@ -1,4 +1,3 @@
-/// Single product as shown in the customer-facing catalog.
 class CatalogProduct {
   const CatalogProduct({
     required this.id,
@@ -35,25 +34,15 @@ class CatalogProduct {
   final String? categoryId;
   final String? categoryName;
   final String? categoryIconName;
-  /// Owning shop id — required for cart-splits-on-checkout. Nullable
-  /// because legacy payloads from before the multi-tenant migration
-  /// don't carry it; the cart guards against that at placeOrder time.
   final String? shopId;
   final String? shopName;
   final String? shopSlug;
 
-  /// Whether this seller can issue a tax invoice. Only a GST-registered
-  /// seller can, so it decides whether a buyer claiming input credit gets a
-  /// claimable invoice or a bill of supply. Defaults false: payloads that
-  /// don't carry it must not imply a registration the seller may not have.
   final bool shopGstRegistered;
 
   bool get inStock => stockQuantity > 0;
   bool get isDiscounted => mrp > 0 && mrp > sellingPrice;
 
-  /// Returns a copy with [sellingPrice] replaced. Used by the cart when
-  /// the server reports a price-drift to update the visible price
-  /// without throwing away the rest of the product snapshot.
   CatalogProduct copyWithPrice(double newSellingPrice) => CatalogProduct(
         id: id,
         name: name,
@@ -75,7 +64,6 @@ class CatalogProduct {
         shopGstRegistered: shopGstRegistered,
       );
 
-  /// Tolerant of Prisma's `Decimal → JSON string` quirk.
   static double _d(dynamic v) {
     if (v == null) return 0;
     if (v is num) return v.toDouble();

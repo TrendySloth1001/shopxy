@@ -88,7 +88,6 @@ function CouponCard({ coupon }: { coupon: Coupon }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Clipboard API might not be available; show a silent fallback
     }
   }
 
@@ -98,7 +97,6 @@ function CouponCard({ coupon }: { coupon: Coupon }) {
         exhausted ? "opacity-50" : ""
       }`}
     >
-      {/* Title row */}
       <div className="flex flex-wrap items-start gap-sm">
         <p className="flex-1 text-title-sm text-ink">{coupon.title}</p>
         <div className="flex flex-wrap gap-xs">
@@ -120,20 +118,16 @@ function CouponCard({ coupon }: { coupon: Coupon }) {
         </div>
       </div>
 
-      {/* Benefit line */}
       <p className="mt-xs text-title-sm font-bold text-brand">{headline}</p>
 
-      {/* Min order */}
       {minOrderLabel && (
         <p className="mt-xs text-body-sm text-muted">{minOrderLabel}</p>
       )}
 
-      {/* Description */}
       {coupon.description && (
         <p className="mt-sm text-body-sm leading-relaxed text-muted">{coupon.description}</p>
       )}
 
-      {/* Code + expiry row */}
       <div className="mt-md flex flex-wrap items-center gap-sm">
         <span className="inline-flex items-center rounded-sm bg-brand-soft px-sm py-xs text-label-md font-bold tracking-wide text-brand-strong">
           {coupon.code}

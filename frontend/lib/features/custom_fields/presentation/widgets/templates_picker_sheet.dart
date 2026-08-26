@@ -12,10 +12,6 @@ import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// Bottom-sheet list of predefined custom-field bundles ("Electronics",
-/// "Apparel", "Logistics" …). Tapping a row stamps the whole section
-/// + its fields into the shop. Idempotent server-side, so users
-/// experimenting can re-tap without piling duplicates.
 class TemplatesPickerSheet extends StatefulWidget {
   const TemplatesPickerSheet({super.key});
 
@@ -40,10 +36,6 @@ class _TemplatesPickerSheetState extends State<TemplatesPickerSheet> {
   @override
   void initState() {
     super.initState();
-    // Templates are normally cached by the provider's full [load],
-    // but the picker can be opened before that ever runs (first-time
-    // user on the product form's empty state). Fetch them on open
-    // when empty so the sheet is never blank.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final p = context.read<CustomFieldsProvider>();

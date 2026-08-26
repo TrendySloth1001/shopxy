@@ -16,10 +16,6 @@ import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/widgets/app_search_bar.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// Admin-only listing of marketplace shops with a verified toggle.
-/// Gated by the `isPlatformAdmin` drawer entry. No bulk actions yet —
-/// the row count is naturally small and individual toggles + search
-/// cover the verification backlog today.
 class AdminShopsPage extends StatefulWidget {
   const AdminShopsPage({super.key});
 
@@ -262,7 +258,6 @@ class _Row extends StatelessWidget {
   }
 }
 
-/// Full-page skeleton shown while the initial shop list is loading.
 class _ShopsLoadingSkeleton extends StatelessWidget {
   const _ShopsLoadingSkeleton();
 
@@ -276,7 +271,6 @@ class _ShopsLoadingSkeleton extends StatelessWidget {
   }
 }
 
-/// Single skeleton row that mirrors the shape of [_Row].
 class _ShopRowSkeleton extends StatelessWidget {
   const _ShopRowSkeleton();
 
@@ -291,27 +285,21 @@ class _ShopRowSkeleton extends StatelessWidget {
           padding: const EdgeInsets.all(AppSizes.md),
           child: Row(
             children: [
-              // Logo placeholder — 44×44 rounded block.
               AppShimmerBox(width: 44, height: 44, radius: AppSizes.radiusSm),
               const SizedBox(width: AppSizes.md),
-              // Text column.
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Shop name line (bold, ~70 % width).
                     AppShimmerLine(widthFactor: 0.7, height: 14),
                     const SizedBox(height: 6),
-                    // Slug / status line (~50 % width).
                     AppShimmerLine(widthFactor: 0.5, height: 11),
                     const SizedBox(height: AppSizes.xs),
-                    // Optional location line (~40 % width).
                     AppShimmerLine(widthFactor: 0.4, height: 11),
                   ],
                 ),
               ),
               const SizedBox(width: AppSizes.sm),
-              // Toggle switch placeholder.
               AppShimmerBox(width: 46, height: 26, radius: 13),
             ],
           ),

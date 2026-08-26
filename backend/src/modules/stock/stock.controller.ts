@@ -55,9 +55,6 @@ export class StockController {
       return;
     }
 
-    // Stock movements now produce DRAFT invoices — the user reviews on
-    // the dashboard and confirms to actually deduct stock. The frontend
-    // can navigate to the draft via .draftInvoice.id.
     res.status(201).json({ draftInvoice: result.draftInvoice });
   }
 
@@ -65,7 +62,6 @@ export class StockController {
     const shopId = requireShopId(req, res);
     if (!shopId) return;
     const { page, limit, skip } = parsePagination(req);
-    // Dual-mode: decodeId accepts both an opaque token and a legacy numeric id.
     const productId = decodeId(req.query.productId as string | undefined) ?? undefined;
     const type = req.query.type as string | undefined;
     const direction = req.query.direction as string | undefined;

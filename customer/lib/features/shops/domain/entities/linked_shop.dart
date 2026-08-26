@@ -1,9 +1,5 @@
 enum ShopRole { party, vendor }
 
-/// Prisma's `Decimal` columns serialize to JSON as **strings**
-/// (e.g. `"1500.00"`), not numbers. Treating them as `num` in a cast
-/// throws a `String is not a subtype of num` at runtime, so every
-/// money / quantity field comes through this helper.
 double _asDouble(dynamic v) {
   if (v == null) return 0;
   if (v is num) return v.toDouble();
@@ -29,8 +25,6 @@ class LinkedShop {
     this.lastInvoiceTotal,
   });
 
-  /// `partyId` or `vendorId` from the merchant's database, depending on
-  /// [role]. Customer-side routes use this id to fetch invoices.
   final String id;
   final ShopRole role;
   final String name;
@@ -39,17 +33,12 @@ class LinkedShop {
   final String? address;
   final int invoiceCount;
 
-  /// Owning shop's identity. Joined from `party.shop` / `vendor.shop`
-  /// server-side so we can render real shop branding instead of an
-  /// initial chip. All nullable so legacy payloads still parse.
   final String? shopId;
   final String? shopName;
   final String? shopSlug;
   final String? shopLogoUrl;
   final String? shopBannerUrl;
 
-  /// Most recent invoice activity on this link — sorted-by + labelled
-  /// on the Merchants tab so live relationships float to the top.
   final DateTime? lastInvoiceAt;
   final double? lastInvoiceTotal;
 
@@ -203,9 +192,6 @@ class ShopInvoiceDetail extends ShopInvoice {
       total: _asDouble(j['total']),
       itemCount: ((j['items'] as List?)?.length) ?? 0,
       note: j['note'] as String?,
-      // For SALE, the "issuing shop" identity is on the customer-* fields
-      // (the merchant always fills them with their own party data); for
-      // PURCHASE the shop's identity is on the vendor-* fields.
       shopName: (isSale ? j['customerName'] : j['vendorName']) as String?,
       shopPhone: (isSale ? j['customerPhone'] : j['vendorPhone']) as String?,
       shopGstin: (isSale ? j['customerGstin'] : j['vendorGstin']) as String?,
@@ -216,7 +202,6 @@ class ShopInvoiceDetail extends ShopInvoice {
   }
 }
 
-/// One line in a quotation the shop sent this customer.
 class ShopQuotationLine {
   const ShopQuotationLine({
     required this.name,
@@ -249,8 +234,6 @@ class ShopQuotationLine {
       );
 }
 
-/// A priced quotation the shop sent the customer to accept or decline. On
-/// accept it becomes a confirmed invoice in the customer's ledger.
 class ShopQuotation {
   const ShopQuotation({
     required this.id,
@@ -269,7 +252,7 @@ class ShopQuotation {
 
   final String id;
   final String quotationNo;
-  final String status; // REQUESTED | PENDING | ACCEPTED | DECLINED | CANCELLED | EXPIRED
+  final String status;
   final double subtotal;
   final double taxAmount;
   final double total;
@@ -284,8 +267,6 @@ class ShopQuotation {
 
   bool get isPending => status == 'PENDING';
 
-  /// Customer-built quote still awaiting the shop's pricing — the customer can
-  /// withdraw it but can't accept it yet.
   bool get isRequested => status == 'REQUESTED';
 
   factory ShopQuotation.fromJson(Map<String, dynamic> j) {

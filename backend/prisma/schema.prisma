@@ -15,23 +15,12 @@ model User {
   isPlatformAdmin    Boolean          @default(false) @map("is_platform_admin")
   isActive           Boolean          @default(true) @map("is_active")
   emailNotifications Boolean          @default(true) @map("email_notifications")
-  /// Granular notification preferences. Each per-category flag gates
-  /// notifications of that kind across all channels; the per-channel
-  /// flags below mute the entire channel for everything. UI surfaces
-  /// these on the customer "Notification preferences" page.
   notifyOrders       Boolean          @default(true) @map("notify_orders")
   notifyDeals        Boolean          @default(true) @map("notify_deals")
   notifyAccount      Boolean          @default(true) @map("notify_account")
   notifyMessages     Boolean          @default(true) @map("notify_messages")
-  /// Channel-level mutes — set false to silence push / SMS for every
-  /// category, regardless of the per-category flags above. Push and
-  /// SMS aren't wired up yet but the columns exist so the prefs UI
-  /// can ship before the dispatchers do.
   pushEnabled        Boolean          @default(true) @map("push_enabled")
   smsEnabled         Boolean          @default(false) @map("sms_enabled")
-  /// Shop profile fields — rendered on invoices and exposed via the
-  /// merchant app's settings screen. Filled in by the owner; nullable so
-  /// pre-GST users (and customer-side accounts) work unchanged.
   shopName           String?          @map("shop_name")
   shopAddress        String?          @map("shop_address")
   shopCity           String?          @map("shop_city")
@@ -39,64 +28,21 @@ model User {
   shopStateCode      String?          @map("shop_state_code")
   shopPinCode        String?          @map("shop_pin_code")
   shopGstin          String?          @map("shop_gstin")
-  /// Calendar date GST starts applying to this shop's SALE documents. Null =
-  /// ungated (pre-feature behaviour — every existing GSTIN-holder keeps
-  /// charging GST unconditionally). Set only via the new-registration guard
-  /// in `updateProfile`. Date-only (`@db.Date`), compared against a
-  /// document's own date (`Invoice.invoiceDate`, `Challan.createdAt`), never
-  /// wall-clock "now" — a backdated invoice must be billed correctly.
   gstEffectiveFrom   DateTime?        @map("gst_effective_from") @db.Date
-  /// GST registration status. Gates whether this shop charges output tax
-  /// and issues tax invoices vs Bills of Supply. Defaults to UNREGISTERED;
-  /// the migration backfills REGULAR for rows that already have a GSTIN.
   registrationType   RegistrationType @default(UNREGISTERED) @map("registration_type")
 
-  /// Buyer-side GST identity, for a customer claiming input tax credit on
-  /// marketplace purchases. Distinct from `shopGstin` above, which is the
-  /// merchant's own registration — one user can be both.
-  ///
-  /// `buyerLegalName` is the name registered against the GSTIN. Rule 46 puts
-  /// the recipient's registered name on a tax invoice, and that is usually
-  /// the business rather than the person who placed the order.
   buyerGstin        String?            @map("buyer_gstin")
   buyerLegalName    String?            @map("buyer_legal_name")
   shopPan           String?            @map("shop_pan")
   upiVpa            String?            @map("upi_vpa")
-  /// Customer + merchant profile photo. Stored as the upload-service
-  /// URL (same pipeline as ProductImage). Empty until the user picks
-  /// one — the ProfileAvatar widget falls back to initials.
   avatarUrl         String?            @map("avatar_url")
-  /// E.164-format phone number, nullable. Surfaced + editable on the
-  /// customer profile (Phase 5). Independent of the address book —
-  /// addresses can each carry their own contact phone for couriers.
   phoneNumber       String?            @map("phone_number")
-  /// Timestamp when the user accepted the Terms of Service and Privacy
-  /// Policy at registration. Required by DPDP §6 — store evidence of
-  /// consent. Nullable so legacy users predating the consent gate work.
   acceptedAt        DateTime?          @map("accepted_at")
-  /// Floor for access-token validity. requireAuth rejects any access
-  /// token whose `iat` is before this stamp. Bumped on password
-  /// change + logout-all so a stolen pre-change token can't survive
-  /// the 15-minute TTL window. Nullable = no floor (legacy users).
   tokensValidFrom   DateTime?          @map("tokens_valid_from")
-  /// Two-factor auth (TOTP). `totpSecret` holds the base32 shared secret
-  /// only after enrollment is confirmed; null = 2FA off. `totpEnabledAt`
-  /// stamps activation. `totpRecoveryCodes` are one-time SHA-256 hashes
-  /// (never the plaintext) consumed when the authenticator is lost.
   totpSecret        String?            @map("totp_secret")
   totpEnabledAt     DateTime?          @map("totp_enabled_at")
   totpRecoveryCodes String[]           @default([]) @map("totp_recovery_codes")
-  /// Google account link (the `sub` claim from the verified ID token).
-  /// Null = this account has never signed in with Google. Accounts
-  /// created via Google get a random unusable `passwordHash` (never
-  /// null — keeps every password-login codepath unchanged) and rely on
-  /// Google + the recovery PIN below instead.
   googleId          String?            @unique @map("google_id")
-  /// bcrypt hash of a user-chosen 4-6 digit PIN (WhatsApp-style), the
-  /// fallback sign-in for Google-only accounts if Google itself is ever
-  /// unreachable. Null = not set up yet. Reuses the same per-account
-  /// throttle as password login (loginThrottle.ts) — no separate
-  /// attempt-counter columns needed.
   recoveryPinHash   String?            @map("recovery_pin_hash")
   recoveryPinSetAt  DateTime?          @map("recovery_pin_set_at")
   createdAt         DateTime           @default(now()) @map("created_at")
@@ -134,31 +80,15 @@ model User {
   couponRedemptions     CouponRedemption[]
   quotationsCreated     Quotation[]            @relation("QuotationCreatedBy")
   quotationsRequested   Quotation[]            @relation("QuotationRequestedBy")
-  /// GST rate overrides this user recorded — kept so an audit can ask a
-  /// person, not just a shop, why a rate diverges from the master.
   hsnOverridesCreated   ShopHsnOverride[]
-  /// Staff membership in a shop's team (at most one — see ShopMember).
-  /// The shop owner also has a row here (role OWNER), seeded by the
-  /// team-roles migration backfill.
   shopMembership        ShopMember?            @relation("ShopMemberUser")
 
-  /// Denormalised wallet balance — sum of [WalletEntry.amount] for
-  /// this user. Kept in sync inside the same transaction that writes
-  /// the entry so reads (cart "use wallet" banner, profile page) don't
-  /// have to aggregate per request. Defaults to 0 for new + legacy users.
   walletBalance Decimal @default(0) @map("wallet_balance") @db.Decimal(12, 2)
 
   @@index([email])
   @@map("users")
 }
 
-/// Customer-side delivery address. Decoupled from the B2B
-/// `parties.address` freeform string — that one is scoped to one
-/// merchant's invited contact; this is a structured list owned by
-/// the user and reachable from the marketplace checkout. The
-/// partial unique index `user_addresses_one_default_per_user` (raw
-/// DDL — Prisma can't model partial uniques) keeps at most one
-/// `is_default = true` row per user even under concurrent writes.
 model UserAddress {
   id        Int      @id @default(autoincrement())
   userId    Int      @map("user_id")
@@ -180,11 +110,6 @@ model UserAddress {
   @@map("user_addresses")
 }
 
-/// Customer-side "saved for later" list. One row per (user, product)
-/// pair; the unique constraint stops the same product from being
-/// saved twice and makes the toggle a simple upsert/delete. Cascade
-/// on user delete so deactivating an account leaves no dangling
-/// rows.
 model WishlistItem {
   id        Int      @id @default(autoincrement())
   userId    Int      @map("user_id")
@@ -198,61 +123,30 @@ model WishlistItem {
   @@map("wishlist_items")
 }
 
-/// Server-side persistent cart. One row per (user, product); quantity
-/// is summed at write time so a "add 2" + "add 3" yields one row of 5
-/// instead of two rows. Surviving across devices is the point — the
-/// customer app reads this on app open and writes mutations through
-/// debounced PUT calls, treating SharedPreferences as best-effort
-/// pre-restore cache only (still useful for cold-open without network).
 model CartItem {
   id        Int             @id @default(autoincrement())
   userId    Int             @map("user_id")
   user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   productId Int             @map("product_id")
   product   Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
-  /// Phase E v1 — denorm of the customer's variant selection. Nullable
-  /// during the transition (cart entries from before the variant rollout
-  /// stay valid); UI defaults to the product's default variant when null.
-  /// The line-item ledger rewrite (Phase E v2) makes this NOT NULL and
-  /// flows it into InvoiceItem / StockTransaction.
   variantId Int?            @map("variant_id")
   variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
-  /// Decimal so weight-priced units (KG/L) work alongside integer
-  /// counts. Mirrors the shape used in PurchaseRequestItem.quantity.
   quantity  Decimal         @db.Decimal(12, 3)
   createdAt DateTime        @default(now()) @map("created_at")
   updatedAt DateTime        @updatedAt @map("updated_at")
 
-  // Unique on (userId, productId, variantId) — Postgres treats NULL as
-  // distinct here, which is exactly what we want: a flat-SKU cart line
-  // (variantId NULL) and a variant cart line for the same product can
-  // coexist during the transition.
   @@unique([userId, productId, variantId])
   @@index([userId, updatedAt])
   @@map("cart_items")
 }
 
-/// Append-only audit log of edits to Party/Vendor contact fields. One
-/// row per (field that actually changed) per update — fields whose
-/// value did not change are not logged, keeping the timeline focused.
-/// The party/vendor row itself still holds the latest value; this
-/// table is only the trail of *what was before*.
 model ContactChangeLog {
   id          Int      @id @default(autoincrement())
-  /// 'PARTY' or 'VENDOR'. Stored as text rather than a separate FK per
-  /// entity so the log is single-table and the same UI can render
-  /// either timeline without two queries.
   entityType  String   @map("entity_type")
   entityId    Int      @map("entity_id")
-  /// Camel-case field name (e.g. "phone", "gstin"). Matches the API
-  /// field names so the Flutter side can map straight to a label
-  /// dictionary without a translation table.
   field       String
   oldValue    String?  @map("old_value")
   newValue    String?  @map("new_value")
-  /// Nullable because system-managed flips (e.g. soft-delete) may have
-  /// no acting user, and because we don't want a user FK to block log
-  /// retention when the user row is removed.
   changedById Int?     @map("changed_by_id")
   changedBy   User?    @relation(fields: [changedById], references: [id], onDelete: SetNull)
   changedAt   DateTime @default(now()) @map("changed_at")
@@ -263,24 +157,12 @@ model ContactChangeLog {
 
 model RefreshToken {
   id         Int       @id @default(autoincrement())
-  /// SHA-256 hex of the issued refresh JWT — we never persist the raw
-  /// token, so a read-only DB leak can't be replayed as a live session
-  /// (B-AUTH-1). Lookups hash the presented token and match on this.
   token      String    @unique
-  /// Rotation-lineage id shared by every token descended from one login.
-  /// On presentation of an already-rotated token whose family still has
-  /// live members we revoke the whole family — reuse detection (B-AUTH-2).
   family     String    @default("")
   userId     Int       @map("user_id")
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt  DateTime  @map("expires_at")
-  /// Device context captured at issue (+ refreshed on rotation) so the user
-  /// can see + revoke sessions from a "your devices" screen. `ipMasked` keeps
-  /// only a coarse prefix — recognisable, not precise-location PII.
   userAgent  String?   @map("user_agent")
-  /// Explicit device name from the client (X-Device-Name header) — e.g.
-  /// "Nikhil's iPhone", "Pixel 7". Preferred over the UA-parsed label in the
-  /// sessions list; null for web (where the UA is parsed instead).
   deviceName String?   @map("device_name")
   ipMasked   String?   @map("ip_masked")
   lastUsedAt DateTime? @map("last_used_at")
@@ -291,20 +173,11 @@ model RefreshToken {
   @@map("refresh_tokens")
 }
 
-/// Device-bound "remember this account" credential for the native apps
-/// (desktop + Flutter merchant) — lets a returning user one-tap back in after
-/// a normal logout WITHOUT re-entering their password. Deliberately separate
-/// from RefreshToken (which logout revokes): this survives logout but is
-/// revocable on "forget account" / logout-all / password change. The raw
-/// secret only ever lives in the device OS keychain; we store its hash.
 model RememberToken {
   id         Int       @id @default(autoincrement())
-  /// SHA-256 hex of the opaque secret — never the raw token (mirrors
-  /// RefreshToken; a DB leak can't be replayed).
   tokenHash  String    @unique @map("token_hash")
   userId     Int       @map("user_id")
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  /// Free-text device/app label for a future "trusted devices" list.
   label      String?
   expiresAt  DateTime  @map("expires_at")
   lastUsedAt DateTime? @map("last_used_at")
@@ -314,17 +187,10 @@ model RememberToken {
   @@map("remember_tokens")
 }
 
-/// One row per successful login. Powers a "recent sign-ins" list and
-/// new-device detection: a login whose `fingerprint` hasn't been seen for
-/// the user before triggers a security alert. `ipMasked` keeps only a coarse
-/// prefix (not the full address) so the list is recognisable without holding
-/// precise-location PII.
 model LoginEvent {
   id          Int      @id @default(autoincrement())
   userId      Int      @map("user_id")
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  /// SHA-256 of the device signature (user-agent). Identifies the device
-  /// without storing the raw UA as the lookup key.
   fingerprint String
   ipMasked    String?  @map("ip_masked")
   userAgent   String?  @map("user_agent")
@@ -337,21 +203,13 @@ model LoginEvent {
 
 model Category {
   id          Int        @id @default(autoincrement())
-  /// Display label. Not unique — the canonical taxonomy reuses names
-  /// across parents ("Footwear" under both Men's and Women's Fashion).
-  /// Uniqueness lives on `slug`.
   name        String
-  /// URL-safe identifier exposed in customer-facing routes (`/category/:slug`).
-  /// Derived from name on first save; renames re-derive but keep uniqueness
-  /// via numeric-suffix collision handling in the service.
   slug        String     @unique
   description String?
   imageUrl    String?    @map("image_url")
   iconName    String?    @map("icon_name")
   sortOrder   Int        @default(0) @map("sort_order")
   isActive    Boolean    @default(true) @map("is_active")
-  /// Self-referential parent for taxonomy tree (Beauty > Skincare > Serums).
-  /// Null = root. Service enforces no-cycles on update.
   parentId    Int?       @map("parent_id")
   parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
   children    Category[] @relation("CategoryHierarchy")
@@ -369,48 +227,19 @@ model Product {
   id              Int     @id @default(autoincrement())
   name            String
   description     String?
-  /// Per-shop unique SKU (see @@unique([shopId, sku]) below). Was globally
-  /// unique until CAT-C4 — two different merchants may now legitimately
-  /// reuse the same SKU string in their own catalogs.
   sku             String
-  /// Per-shop unique barcode where present (partial unique — NULLs allowed).
   barcode         String?
   hsnCode         String? @map("hsn_code")
-  /// ISO/free-text country of manufacture (CAT-C2). Required on the printed
-  /// invoice / label for imported goods under Legal Metrology; nullable so
-  /// existing rows and domestic goods without a declared origin stay valid.
   countryOfOrigin String? @map("country_of_origin")
-  /// Free-text brand name surfaced on the PDP under the title and used
-  /// as a filter facet on shop / category lists. Kept as a plain String
-  /// for now — a normalised Brand master table is overkill until ≥3
-  /// features key off it (filter facet, brand store page, spotlight
-  /// join). When that happens, this becomes an FK without losing data.
   brand           String?
 
   mrp           Decimal            @db.Decimal(12, 2)
   sellingPrice  Decimal            @map("selling_price") @db.Decimal(12, 2)
   purchasePrice Decimal            @map("purchase_price") @db.Decimal(12, 2)
   taxPercent    Decimal            @default(0) @map("tax_percent") @db.Decimal(5, 2)
-  /// GST compensation cess rate (ad valorem %). Tobacco/pan masala run to
-  /// 290%, hence Decimal(5,2) like taxPercent. The invoice engine falls
-  /// back to this when a line omits cessRate, the same way it falls back
-  /// to taxPercent — so cess-bearing goods are never silently billed at 0.
   cessRate      Decimal            @default(0) @map("cess_rate") @db.Decimal(5, 2)
-  /// Where `taxPercent` came from — master, master-after-rule, shop override,
-  /// or typed by hand. Existing rows are MANUAL because that is literally what
-  /// they were: a number a merchant keyed next to an unrelated HSN box.
-  /// Turns "which products bill at a rate their code doesn't support" into a
-  /// query instead of a discovery.
   taxSource     TaxRateSource      @default(MANUAL) @map("tax_source")
-  /// Which revision of the rate master produced `taxPercent`. Null for
-  /// hand-typed rows. Pairs with [InvoiceItem.hsnRevision] to bound the blast
-  /// radius when a rate turns out to have been wrong.
   hsnRevision   String?            @map("hsn_revision")
-  /// Whether `sellingPrice`/`mrp` already contain GST (TAX_INCLUSIVE), have it
-  /// added on top when billed (TAX_EXCLUSIVE), or the product is exempt/nil-
-  /// rated and never carries GST regardless of `taxPercent` (NO_GST). The
-  /// single source of truth every invoice/quotation/challan-conversion line
-  /// resolves its tax convention from — see resolveProductPricing().
   pricingMode   ProductPricingMode @default(TAX_EXCLUSIVE) @map("pricing_mode")
 
   stockQuantity     Decimal @default(0) @map("stock_quantity") @db.Decimal(12, 3)
@@ -424,91 +253,31 @@ model Product {
   shop   Shop @relation(fields: [shopId], references: [id], onDelete: Restrict)
 
   isActive    Boolean @default(true) @map("is_active")
-  /// Marketplace visibility toggle. Merchants choose which catalog items
-  /// surface in the public marketplace; defaults to false so newly added
-  /// SKUs don't leak before the merchant is ready.
   isPublished Boolean @default(false) @map("is_published")
 
-  /// Denormalised review aggregates — updated inside the review-write
-  /// transaction so feed reads never join product_reviews. Null until
-  /// the first review lands; default 0 means "no reviews yet" for count.
   ratingAvg   Decimal? @map("rating_avg") @db.Decimal(3, 2)
   ratingCount Int      @default(0) @map("rating_count")
-  /// Free-form tags for filterable lists ("Bestseller", "Eco-friendly"…).
-  /// Stored as a Postgres text[] for cheap @> containment queries.
   tags        String[] @default([])
 
-  /// Short product highlights rendered as bullets above the fold on
-  /// the V2 PDP. Same text[] storage as `tags` so we keep the simple
-  /// Prisma projection. Distinct from tags because tags drive filters
-  /// (containment queries) and highlights drive presentation only.
   highlights String[] @default([])
 
-  /// Long-form grouped spec sheet ("Display features → Resolution: …").
-  /// JSONB because shape varies by category and the relational
-  /// model would balloon. Expected shape:
-  ///   [{ "title": string, "rows": [{ "label": string, "value": string }] }]
   specs Json?
 
-  /// Bank / coupon / EMI / exchange offers rendered as cards
-  /// beneath the price block. Same JSONB rationale as `specs`.
-  /// Expected shape:
-  ///   [{ "kind": "BANK"|"COUPON"|"EMI"|"EXCHANGE",
-  ///      "headline": string, "detail"?: string, "code"?: string }]
   offers Json?
 
-  /// A+ content blocks — Amazon-style rich product description rendered
-  /// inside the PDP Details tab. JSONB because block payload shape
-  /// varies by kind. Max 8 blocks server-validated. Expected shape:
-  ///   [{ "kind": "HERO"|"FEATURE"|"COMPARISON"|"GALLERY"|"TEXT", ... }]
-  /// Each kind's payload is documented in
-  /// `products.controller.ts contentBlockSchema`.
   contentBlocks Json? @map("content_blocks")
 
-  /// Phase E — variant axes definition. Order matters and matches the
-  /// key order in [ProductVariant.attributes]. Empty/null when the
-  /// product is single-variant. Expected shape:
-  ///   [{ "name": "Color", "values": ["Red", "Blue"] },
-  ///    { "name": "Size",  "values": ["S", "M", "L"] }]
   variantAxes Json? @map("variant_axes")
-  /// Lifetime sold quantity (sum of CONFIRMED InvoiceItem quantities).
-  /// Backfilled in P1 migration; subsequent updates land in Phase 6
-  /// (trending) — Phase 1 only needs the column to exist for sort order.
   totalSold   Int   @default(0) @map("total_sold")
 
-  /// Trailing-30-day sold quantity. Denormalised by the daily 03:00
-  /// scheduler tick — sum of CONFIRMED InvoiceItem quantities whose
-  /// invoice.createdAt is within the last 30 days. Powers the
-  /// "200+ bought in past month" social-proof line on the PDP without
-  /// joining the invoice ledger on every read.
   soldLast30d Int @default(0) @map("sold_last_30d")
 
-  /// Curated, system-managed tags ("BESTSELLER", "EDITORS_PICK",
-  /// "NEW_ARRIVAL", "TRENDING"). Distinct from the free-form `tags`
-  /// column: merchants cannot write these — they're awarded by admins
-  /// or computed by the trending / new-arrival jobs. Stored as a
-  /// Postgres text[] so the PDP can render them as black pills above
-  /// the title without a join.
   systemTags String[] @default([]) @map("system_tags")
 
-  /// Watermark for the embed-pending cron — `NULL` means the row has
-  /// never been embedded. The embedding column itself is a
-  /// `vector(768)` column (Ollama nomic-embed-text dims). Prisma can't
-  /// model the type natively, so it's accessed through raw SQL in the
-  /// search service; we only carry the timestamp here so cron picks
-  /// can be expressed in regular Prisma queries.
   embeddedAt DateTime? @map("embedded_at")
 
-  /// pgvector(768) embedding for semantic search. Modelled here as
-  /// Unsupported so Prisma sees the column and does NOT autogen a
-  /// DROP COLUMN the next time someone runs `migrate dev` — that's
-  /// exactly what 20260615000000_pdp_phase_b_brand_sold30_systemtags
-  /// did, silently breaking search until 20260617010000 restored it.
-  /// Read/written exclusively via raw SQL in the search service.
   embedding Unsupported("vector(768)")? @map("embedding")
 
-  /// Generated tsvector for FTS. Same self-protection rationale as
-  /// `embedding` above — present in the schema so Prisma respects it.
   searchVector Unsupported("tsvector")? @map("search_vector")
   createdAt    DateTime                 @default(now()) @map("created_at")
   updatedAt    DateTime                 @updatedAt @map("updated_at")
@@ -532,11 +301,6 @@ model Product {
   saleLines            SaleLine[]
 
   @@unique([shopId, sku])
-  /// NOTE: barcode uniqueness is a PARTIAL unique index
-  /// `products_shop_id_barcode_key ON (shop_id, barcode) WHERE barcode IS NOT NULL`,
-  /// managed via raw SQL because Prisma can't model the WHERE clause. Do not
-  /// add `@@unique([shopId, barcode])` here — that would emit a full unique
-  /// that breaks rows with NULL barcodes.
   @@index([categoryId])
   @@index([isActive])
   @@index([name])
@@ -546,20 +310,11 @@ model Product {
   @@map("products")
 }
 
-/// Shop-wide section that groups [CustomFieldDefinition]s on the
-/// product form and detail page. Optional — a field with no
-/// [sectionId] renders ungrouped at the top, the same way it did
-/// before sections existed.
 model CustomFieldSection {
   id        Int      @id @default(autoincrement())
-  /// Owning shop — each merchant defines their own taxonomy of custom
-  /// fields (Warranty, Model, etc).
   shopId    Int      @map("shop_id")
   shop      Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
   name      String
-  /// Material icon name (e.g. "verified", "build", "local_shipping").
-  /// Stored as a string so the frontend can swap icon sets without a
-  /// migration.
   icon      String?
   sortOrder Int      @default(0) @map("sort_order")
   isActive  Boolean  @default(true) @map("is_active")
@@ -574,27 +329,15 @@ model CustomFieldSection {
   @@map("custom_field_sections")
 }
 
-/// Shop-wide custom field definitions. One row per field a shop owner
-/// wants to track across their products (Warranty, Model number, etc).
-/// Soft-deletable via `isActive` — keeps historical values readable
-/// even when a definition is retired.
 model CustomFieldDefinition {
   id         Int                 @id @default(autoincrement())
-  /// Owning shop — same shop scope as the parent section.
   shopId     Int                 @map("shop_id")
   shop       Shop                @relation(fields: [shopId], references: [id], onDelete: Cascade)
   name       String
-  /// TEXT | LONG_TEXT | NUMBER | DATE | BOOLEAN | DROPDOWN
   type       String
-  /// JSON array of strings — only meaningful when type=DROPDOWN.
   options    Json?
-  /// Optional suffix for NUMBER fields (e.g. "kg", "days", "GB").
   unitSuffix String?             @map("unit_suffix")
-  /// Optional Material icon name for the field itself; falls back to
-  /// the section's icon when null.
   icon       String?
-  /// Optional grouping. Null = ungrouped (rendered at the top of the
-  /// custom-fields section).
   sectionId  Int?                @map("section_id")
   section    CustomFieldSection? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
   sortOrder  Int                 @default(0) @map("sort_order")
@@ -611,10 +354,6 @@ model CustomFieldDefinition {
   @@map("custom_field_definitions")
 }
 
-/// Per-product value for a [CustomFieldDefinition]. Stored as String
-/// regardless of underlying type — the controller parses against the
-/// definition's `type` before validating or returning. Cascades on
-/// product or definition delete so we never leave orphan rows.
 model ProductCustomFieldValue {
   id           Int                   @id @default(autoincrement())
   productId    Int                   @map("product_id")
@@ -631,15 +370,8 @@ model ProductCustomFieldValue {
   @@map("product_custom_field_values")
 }
 
-/// Immutable stock ledger entry. Every inventory movement (manual, sale,
-/// purchase, challan, adjustment, opening) is a row here. The product's
-/// `stockQuantity` is a derived cache of stockAfter on the latest row.
 model StockTransaction {
   id        Int     @id @default(autoincrement())
-  /// Owning shop — denormalised from product.shopId for cheap
-  /// per-shop filtering on the ledger (a shop's stock report scans
-  /// thousands of rows; the shopId index lets it stay an index-only
-  /// scan instead of joining through Product).
   shopId    Int     @map("shop_id")
   shop      Shop    @relation(fields: [shopId], references: [id], onDelete: Cascade)
   productId Int     @map("product_id")
@@ -647,37 +379,22 @@ model StockTransaction {
   vendorId  Int?    @map("vendor_id")
   vendor    Vendor? @relation(fields: [vendorId], references: [id], onDelete: SetNull)
 
-  // ── Ledger essentials ────────────────────────────────────────────
-  /// 'IN' or 'OUT' — explicit direction. Quantity is always positive.
   direction    String
-  /// Why this movement happened. One of:
-  /// SALE, PURCHASE, OPENING, DAMAGE, EXPIRED, SHRINKAGE, RECOUNT,
-  /// RETURN_IN, RETURN_OUT, TRANSFER_IN, TRANSFER_OUT.
   reasonCode   String @map("reason_code")
-  /// What posted this row. MANUAL / INVOICE / CHALLAN / ADJUSTMENT / OPENING.
   sourceType   String @default("MANUAL") @map("source_type")
-  /// Polymorphic id pointing at the source document.
   sourceId     Int?   @map("source_id")
   sourceLineId Int?   @map("source_line_id")
 
-  /// Always positive. Sign comes from `direction`.
   quantity   Decimal  @db.Decimal(12, 3)
   unitCost   Decimal? @map("unit_cost") @db.Decimal(12, 4)
   totalValue Decimal? @map("total_value") @db.Decimal(14, 2)
 
-  /// Snapshot of product.stockQuantity at the moment of posting.
   stockBefore Decimal? @map("stock_before") @db.Decimal(12, 3)
   stockAfter  Decimal? @map("stock_after") @db.Decimal(12, 3)
 
-  /// Snapshot of the counterparty (vendor or party) identity at the
-  /// moment of posting. Survives deletion of the vendor/party record.
   counterpartyName  String? @map("counterparty_name")
   counterpartyGstin String? @map("counterparty_gstin")
 
-  // ── Legacy / metadata kept around ────────────────────────────────
-  /// Legacy type column ('STOCK_IN' | 'STOCK_OUT' | 'ADJUSTMENT').
-  /// New code should read `direction` + `reasonCode` instead; this is
-  /// retained so old reports / DTO consumers don't break mid-migration.
   type                String
   unitPrice           Decimal? @map("unit_price") @db.Decimal(12, 2)
   supplierName        String?  @map("supplier_name")
@@ -686,13 +403,10 @@ model StockTransaction {
   purchasePriceAfter  Decimal? @map("purchase_price_after") @db.Decimal(12, 2)
   note                String?
 
-  // ── Reversal linkage ─────────────────────────────────────────────
-  /// If non-null, this row reverses an earlier row (cancellation).
   reversesId Int?              @unique @map("reverses_id")
   reverses   StockTransaction? @relation("LedgerReversal", fields: [reversesId], references: [id], onDelete: SetNull)
   reversedBy StockTransaction? @relation("LedgerReversal")
 
-  // ── Operator + idempotency ───────────────────────────────────────
   createdById    Int?    @map("created_by_id")
   createdBy      User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
   idempotencyKey String? @unique @map("idempotency_key")
@@ -711,7 +425,6 @@ model StockTransaction {
   @@map("stock_transactions")
 }
 
-/// One FIFO cost layer per stock-in. Sales consume layers oldest-first.
 model CostLayer {
   id        Int     @id @default(autoincrement())
   productId Int     @map("product_id")
@@ -724,7 +437,6 @@ model CostLayer {
   sourceType String @map("source_type")
   sourceId   Int?   @map("source_id")
 
-  /// The IN ledger row that created this layer.
   ledgerEntryId Int              @unique @map("ledger_entry_id")
   ledgerEntry   StockTransaction @relation("LedgerOriginated", fields: [ledgerEntryId], references: [id], onDelete: Cascade)
 
@@ -736,8 +448,6 @@ model CostLayer {
   @@map("cost_layers")
 }
 
-/// Records which OUT ledger row consumed how much of which layer.
-/// Lets us reverse stock-outs by restoring qty to the original layers.
 model CostConsumption {
   id      Int       @id @default(autoincrement())
   layerId Int       @map("layer_id")
@@ -755,17 +465,12 @@ model CostConsumption {
   @@map("cost_consumptions")
 }
 
-/// A stock adjustment is a first-class document (like an invoice) that
-/// groups one or more product write-offs/corrections under a reason.
 model StockAdjustment {
   id           Int      @id @default(autoincrement())
-  /// Owning shop — adjustment numbers reset per shop.
   shopId       Int      @map("shop_id")
   shop         Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
   adjustmentNo String   @map("adjustment_no")
-  /// DAMAGE / EXPIRED / SHRINKAGE / RECOUNT / OPENING.
   reasonCode   String   @map("reason_code")
-  /// 'IN' (recount delta + or opening) or 'OUT' (damage/expired/etc).
   direction    String
   note         String?
   createdById  Int?     @map("created_by_id")
@@ -777,7 +482,6 @@ model StockAdjustment {
   @@unique([shopId, adjustmentNo])
   @@index([shopId, reasonCode])
   @@index([shopId, createdAt])
-  /// Analytics changefeed scan (adjustments are immutable → bucket by created_at).
   @@index([createdAt])
   @@map("stock_adjustments")
 }
@@ -812,53 +516,20 @@ model ProductImage {
   @@map("product_images")
 }
 
-/// Phase E — a purchasable SKU within a [Product]. Every product has at
-/// least one variant (auto-created by [productsService.createProduct]
-/// as the "default" variant when the merchant doesn't define variant
-/// axes). Multi-variant products surface a swatch picker on the PDP
-/// that filters which variant is selected.
-///
-/// v1 scope: this table carries per-variant pricing / stock / images
-/// for display, but line-item tables (CartItem, InvoiceItem, the FIFO
-/// cost ledger, etc.) still key on productId. CartItem stores
-/// `variantId` as a denorm of the customer's selection so the order
-/// preserves which variant they bought, but stock decrement and cost
-/// accounting are still product-grain. The line-item ledger rewrite
-/// is Phase E v2.
 model ProductVariant {
   id            Int      @id @default(autoincrement())
   productId     Int      @map("product_id")
   product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  /// Per-variant SKU. Unique within the parent product (CAT-C4) — variants
-  /// have no shopId of their own, so scope is product_id. Merchant tools
-  /// scan barcodes against either this or Product.sku.
   sku           String
   barcode       String?
-  /// Attribute map keyed by axis name from [Product.variantAxes].
-  /// e.g. { "Color": "Red", "Size": "M" }. JSONB because variant
-  /// shape varies by category.
   attributes    Json
   mrp           Decimal  @db.Decimal(12, 2)
   sellingPrice  Decimal  @map("selling_price") @db.Decimal(12, 2)
   purchasePrice Decimal  @map("purchase_price") @db.Decimal(12, 2)
-  /// Per-variant HSN / GST rate (CAT-H1). A variant can legitimately sit in a
-  /// different HSN / GST slab than its parent (combo vs single, different
-  /// material), so these mirror Product.hsnCode / Product.taxPercent exactly.
-  /// Nullable hsnCode + tax_percent defaulting to 0 keep existing rows valid;
-  /// the invoice engine falls back to the parent product's values when unset.
   hsnCode       String?  @map("hsn_code")
   taxPercent    Decimal  @default(0) @map("tax_percent") @db.Decimal(5, 2)
   stockQuantity Decimal  @default(0) @map("stock_quantity") @db.Decimal(12, 3)
-  /// URLs of per-variant images. Empty array ⇒ inherit the product's
-  /// gallery. Stored on this table (rather than ProductImage with
-  /// variantId) to keep the v1 schema clean — image management is
-  /// per-variant string[] for now and we promote to ProductImage FKs
-  /// when a richer image manager lands.
   imageUrls     String[] @default([]) @map("image_urls")
-  /// True for the auto-created default variant. Exactly one default
-  /// per product; the customer PDP falls back to this variant when
-  /// no swatch is selected. Single-variant products carry just the
-  /// default with attributes = {}.
   isDefault     Boolean  @default(false) @map("is_default")
   isActive      Boolean  @default(true) @map("is_active")
   sortOrder     Int      @default(0) @map("sort_order")
@@ -868,10 +539,6 @@ model ProductVariant {
   cartItems CartItem[]
 
   @@unique([productId, sku])
-  /// NOTE: barcode uniqueness is a PARTIAL unique index
-  /// `product_variants_product_id_barcode_key ON (product_id, barcode) WHERE barcode IS NOT NULL`,
-  /// managed via raw SQL (Prisma can't model the WHERE). Do not add
-  /// `@@unique([productId, barcode])` — it would break NULL-barcode variants.
   @@index([productId, isActive])
   @@index([productId, isDefault])
   @@map("product_variants")
@@ -879,8 +546,6 @@ model ProductVariant {
 
 model Vendor {
   id                Int                @id @default(autoincrement())
-  /// Owning shop. Required after the multi-tenant migration — a vendor
-  /// always belongs to exactly one merchant's address book.
   shopId            Int                @map("shop_id")
   shop              Shop               @relation(fields: [shopId], references: [id], onDelete: Cascade)
   name              String
@@ -895,8 +560,6 @@ model Vendor {
   panNumber         String?            @map("pan_number")
   gstin             String?
   isActive          Boolean            @default(true) @map("is_active")
-  /// Once an invited vendor accepts via their Shopxy account this is set to
-  /// their user id — lets the vendor see their own POs in a future portal.
   linkedUserId      Int?               @map("linked_user_id")
   linkedUser        User?              @relation(fields: [linkedUserId], references: [id], onDelete: SetNull)
   createdAt         DateTime           @default(now()) @map("created_at")
@@ -914,9 +577,6 @@ model Vendor {
 
 model Party {
   id               Int               @id @default(autoincrement())
-  /// Owning shop. A Party row is one merchant's customer record;
-  /// the same end-user can be a Party in many shops (one row per
-  /// merchant relationship), distinguished by shopId.
   shopId           Int               @map("shop_id")
   shop             Shop              @relation(fields: [shopId], references: [id], onDelete: Cascade)
   name             String
@@ -931,12 +591,7 @@ model Party {
   panNumber        String?           @map("pan_number")
   gstin            String?
   isActive         Boolean           @default(true) @map("is_active")
-  /// True for system-managed parties (e.g. "Walk-in Customer") — the UI
-  /// hides delete/edit affordances and stock flows fall back to this row
-  /// when no party is picked.
   isSystem         Boolean           @default(false) @map("is_system")
-  /// Once an invited party accepts via their Shopxy account this is set to
-  /// their user id — lets the party see their own ledger in a future portal.
   linkedUserId     Int?              @map("linked_user_id")
   linkedUser       User?             @relation(fields: [linkedUserId], references: [id], onDelete: SetNull)
   createdAt        DateTime          @default(now()) @map("created_at")
@@ -955,37 +610,20 @@ model Party {
   @@map("parties")
 }
 
-/// POS open cart (the "sale in progress"). Server-authoritative: the till
-/// (phone and/or web) sends intents and the backend mutates this row, so both
-/// devices share one cart. Converts to a confirmed Invoice + Payment at
-/// checkout; abandoned carts never burn an invoice number. See POS_DESIGN.md.
 model Sale {
   id               Int        @id @default(autoincrement())
   shopId           Int        @map("shop_id")
   shop             Shop       @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  /// OPEN (being built) | CHECKED_OUT (became an invoice) | VOIDED (abandoned).
   status           String     @default("OPEN")
-  /// Optimistic-concurrency cursor: every mutation bumps it; realtime deltas
-  /// carry it so a client that missed a message can detect the gap and resync.
   version          Int        @default(0)
-  /// POS UPI-QR: the GatewayPayment intent backing an AWAITING_PAYMENT sale.
-  /// Loose Int FK (matches how GatewayPayment is referenced elsewhere). Set when
-  /// a QR is shown; cleared on cancel; the sale settles on the qr_code.credited
-  /// webhook via the POS settlement handler.
   gatewayPaymentId Int?       @map("gateway_payment_id")
-  /// Cashier shift this sale was rung up in (set at open from the cashier's open
-  /// shift). Loose Int FK; null when no shift is open. The Z-report reconciles
-  /// cash via the receipts of the sales carrying its shiftId.
   shiftId          Int?       @map("shift_id")
-  /// Optional walk-in identity, kept off the legal document until checkout.
   partyId          Int?       @map("party_id")
   party            Party?     @relation(fields: [partyId], references: [id], onDelete: SetNull)
   customerName     String?    @map("customer_name")
   customerPhone    String?    @map("customer_phone")
   headerDiscount   Decimal    @default(0) @map("header_discount") @db.Decimal(12, 2)
   note             String?
-  /// Set once on successful checkout — the idempotency anchor (a sale yields
-  /// exactly one invoice; a retried checkout returns this instead of re-billing).
   invoiceId        Int?       @unique @map("invoice_id")
   invoice          Invoice?   @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
   openedById       Int?       @map("opened_by_id")
@@ -1003,8 +641,6 @@ model SaleLine {
   sale         Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
   productId    Int      @map("product_id")
   product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  /// Priced from the catalog at add-time; re-validated against the catalog at
-  /// checkout (the catalog is the price authority).
   quantity     Decimal  @db.Decimal(12, 3)
   unitPrice    Decimal  @map("unit_price") @db.Decimal(12, 2)
   lineDiscount Decimal  @default(0) @map("line_discount") @db.Decimal(12, 2)
@@ -1017,10 +653,6 @@ model SaleLine {
   @@map("sale_lines")
 }
 
-/// Idempotency ledger for non-idempotent POS intents (scan / add — they bump
-/// quantity, so a blind retry would double-count). The client stamps each such
-/// intent with an opId; the server records it here and skips the apply on
-/// replay. Absolute ops (set-qty, discount, remove) don't need this. (P3.)
 model SaleOp {
   id        Int      @id @default(autoincrement())
   saleId    Int      @map("sale_id")
@@ -1031,25 +663,14 @@ model SaleOp {
   @@map("sale_ops")
 }
 
-/// A cashier's till session ("control center" shift). Opened with an opening
-/// cash float; every POS sale the cashier rings up carries its id; closed with a
-/// counted-cash figure the service reconciles against expected cash
-/// (float + cash receipts + pay-ins − pay-outs − drops). Basis of the X-report
-/// (live, mid-shift) and the Z-report (final, on close). shopId is a plain Int
-/// (no back-relation) to keep the Shop model lean, matching GatewayPayment.
 model CashierShift {
   id             Int            @id @default(autoincrement())
   shopId         Int            @map("shop_id")
-  /// Cashier (user) who owns the session.
   openedById     Int            @map("opened_by_id")
-  /// OPEN | CLOSED.
   status         String         @default("OPEN")
   openingFloat   Decimal        @default(0) @map("opening_float") @db.Decimal(12, 2)
-  /// Set on close: cash physically counted in the drawer.
   closingCounted Decimal?       @map("closing_counted") @db.Decimal(12, 2)
-  /// Set on close: float + cash receipts + pay-ins − pay-outs − drops (snapshot).
   expectedCash   Decimal?       @map("expected_cash") @db.Decimal(12, 2)
-  /// Set on close: closingCounted − expectedCash (over/short).
   variance       Decimal?       @db.Decimal(12, 2)
   closingNote    String?        @map("closing_note")
   openedAt       DateTime       @default(now()) @map("opened_at")
@@ -1062,16 +683,11 @@ model CashierShift {
   @@map("cashier_shifts")
 }
 
-/// Non-sale cash-drawer movements during a shift: PAY_IN (float top-up / misc
-/// cash in), PAY_OUT (sundry / petty cash out), DROP (cash moved to the safe).
-/// `amount` is a positive magnitude; the sign is implied by `type`. These feed
-/// the shift's expected-cash reconciliation.
 model CashMovement {
   id          Int          @id @default(autoincrement())
   shopId      Int          @map("shop_id")
   shiftId     Int          @map("shift_id")
   shift       CashierShift @relation(fields: [shiftId], references: [id], onDelete: Cascade)
-  /// PAY_IN | PAY_OUT | DROP.
   type        String
   amount      Decimal      @db.Decimal(12, 2)
   reason      String?
@@ -1082,24 +698,13 @@ model CashMovement {
   @@map("cash_movements")
 }
 
-/// CASH-2 — single-use ledger for manager-override grants. Each authorize mints
-/// a short-lived JWT carrying a random `jti` bound to one shop + saleId + op.
-/// On first successful use we INSERT the jti here; the unique constraint makes
-/// the burn atomic, so a replayed grant (same jti) is rejected. Rows are
-/// short-lived (TTL = the grant TTL) and swept opportunistically. A DB table —
-/// not Redis — is deliberate: the consume must NOT degrade open on cache outage.
 model PosOverrideGrant {
   id             Int      @id @default(autoincrement())
-  /// The grant's JWT id (random). Unique → reuse of the same grant fails.
   jti            String   @unique
   shopId         Int      @map("shop_id")
-  /// The sale this grant was bound to (defence-in-depth alongside the JWT claim).
   saleId         Int      @map("sale_id")
-  /// The privileged op the grant authorised (e.g. setUnitPrice, void, return).
   op             String
-  /// Authorising manager/owner user id (audit trail).
   authorizedById Int      @map("authorized_by_id")
-  /// When the grant expires — rows past this are sweepable.
   expiresAt      DateTime @map("expires_at")
   consumedAt     DateTime @default(now()) @map("consumed_at")
 
@@ -1109,21 +714,12 @@ model PosOverrideGrant {
 
 model Invoice {
   id                     Int              @id @default(autoincrement())
-  /// Owning shop. Invoice numbers reset per shop, so the unique
-  /// constraint is composite below.
   shopId                 Int              @map("shop_id")
   shop                   Shop             @relation(fields: [shopId], references: [id], onDelete: Cascade)
   invoiceNo              String           @map("invoice_no")
   type                   String
-  /// One of TAX_INVOICE | BILL_OF_SUPPLY | ESTIMATE | PROFORMA |
-  /// CREDIT_NOTE | DEBIT_NOTE. Renders as the document title at the top of
-  /// the printed PDF and drives the invoice-number prefix.
   documentType           String           @default("TAX_INVOICE") @map("document_type")
-  /// For a CREDIT_NOTE (sales return), the original SALE invoice it reverses.
-  /// Loose Int (no self-relation) — drives return-quantity tracking + display.
   originalInvoiceId      Int?             @map("original_invoice_id")
-  /// Indian FY ("25-26"). Denormalised so report filters and the
-  /// invoice-number reset boundary survive without parsing invoiceDate.
   financialYear          String           @map("financial_year")
   status                 String           @default("DRAFT")
   vendorId               Int?             @map("vendor_id")
@@ -1148,53 +744,23 @@ model Invoice {
   vendorStateCode        String?          @map("vendor_state_code")
   vendorPinCode          String?          @map("vendor_pin_code")
   vendorPanNumber        String?          @map("vendor_pan_number")
-  /// 2-digit GST state code of the place of supply. Drives IGST vs
-  /// CGST+SGST: when it differs from the shop's stateCode we charge IGST.
   placeOfSupplyStateCode String?          @map("place_of_supply_state_code")
-  /// Cached at create time so legacy code paths don't have to re-derive.
   isInterstate           Boolean          @default(false) @map("is_interstate")
   subtotal               Decimal          @db.Decimal(12, 2)
-  /// Sum of (qty * unitPrice - lineDiscount) across items — the GST
-  /// "taxable value" before tax + cess.
   taxableValue           Decimal          @default(0) @map("taxable_value") @db.Decimal(12, 2)
-  /// Kept for backwards-compatibility with older clients. Equals
-  /// igstAmount + cgstAmount + sgstAmount + cessAmount.
   taxAmount              Decimal          @default(0) @map("tax_amount") @db.Decimal(12, 2)
   igstAmount             Decimal          @default(0) @map("igst_amount") @db.Decimal(12, 2)
   cgstAmount             Decimal          @default(0) @map("cgst_amount") @db.Decimal(12, 2)
   sgstAmount             Decimal          @default(0) @map("sgst_amount") @db.Decimal(12, 2)
   cessAmount             Decimal          @default(0) @map("cess_amount") @db.Decimal(12, 2)
   discount               Decimal          @default(0) @db.Decimal(12, 2)
-  /// Delta applied to round the grand total to the nearest whole rupee.
-  /// `total = sum(lineTotals) + roundOff`.
   roundOff               Decimal          @default(0) @map("round_off") @db.Decimal(6, 2)
   total                  Decimal          @db.Decimal(12, 2)
-  /// "Rupees X and Paise Y only" — pre-rendered for the printed PDF.
   amountInWords          String?          @map("amount_in_words")
   note                   String?
-  /// One-shot conversion guard for ESTIMATE/PROFORMA → TAX_INVOICE
-  /// (INV-2). Set atomically to the new invoice's id when this source is
-  /// converted, so a repeat convert returns the existing invoice instead
-  /// of minting a duplicate confirmed tax invoice.
   convertedToInvoiceId   Int?             @map("converted_to_invoice_id")
-  /// CASH-1 — the cashier till session this document was issued from, so a
-  /// CREDIT_NOTE (cash refund) reconciles against the right Z-report drawer.
-  /// Loose Int FK (matches Sale.shiftId / CashMovement — CashierShift is kept
-  /// back-relation-free on purpose). Null for documents not rung up on a till.
   shiftId                Int?             @map("shift_id")
-  /// CASH-1 — the user (cashier) who issued this document. Loose Int FK, no
-  /// back-relation, matching the rest of the till tables. Null for
-  /// system/legacy-created invoices.
   createdById            Int?             @map("created_by_id")
-  /// When the merchant filed this document out of sight.
-  ///
-  /// Replaces deletion, which Rule 46(b) rules out: the serial is allocated at
-  /// CREATE time, so even an abandoned DRAFT already owns a number, and
-  /// removing the row would leave a permanent hole in a sequence the law
-  /// requires to be consecutive. Archiving hides the document from the working
-  /// list while the number stays allocated against it, so the run still reads
-  /// consecutively to an auditor. Only DRAFT and CANCELLED documents may be
-  /// archived — a live CONFIRMED invoice is not the merchant's to hide.
   archivedAt             DateTime?        @map("archived_at")
   invoiceDate            DateTime         @default(now()) @map("invoice_date")
   createdAt              DateTime         @default(now()) @map("created_at")
@@ -1209,7 +775,6 @@ model Invoice {
   @@unique([shopId, invoiceNo])
   @@index([shopId, type])
   @@index([shopId, status])
-  /// Every default list query filters `archivedAt IS NULL`.
   @@index([shopId, archivedAt])
   @@index([shopId, invoiceDate])
   @@index([vendorId])
@@ -1219,14 +784,12 @@ model Invoice {
   @@index([placeOfSupplyStateCode])
   @@index([shiftId])
   @@index([createdById])
-  /// Analytics changefeed scan (rows changed since the roll-up cursor).
   @@index([updatedAt])
   @@map("invoices")
 }
 
 model Challan {
   id         Int           @id @default(autoincrement())
-  /// Owning shop. Challan numbers reset per shop.
   shopId     Int           @map("shop_id")
   shop       Shop          @relation(fields: [shopId], references: [id], onDelete: Cascade)
   challanNo  String        @map("challan_no")
@@ -1238,10 +801,6 @@ model Challan {
   note       String?
   invoiceId  Int?          @unique @map("invoice_id")
   invoice    Invoice?      @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
-  /// Filed out of the working list. Rule 55 wants the challan run serially
-  /// numbered, so a challan can't be deleted — archiving hides it and keeps
-  /// the number allocated. Only a settled challan (CONVERTED / CANCELLED)
-  /// may be archived; a PENDING one still has goods out against it.
   archivedAt DateTime?     @map("archived_at")
   createdAt  DateTime      @default(now()) @map("created_at")
   updatedAt  DateTime      @updatedAt @map("updated_at")
@@ -1278,18 +837,12 @@ model InvoiceItem {
   productName      String  @map("product_name")
   productSku       String  @map("product_sku")
   hsn              String?
-  /// Which revision of the rate master the frozen `taxPercent` on this line
-  /// came from. The line's rate is never recomputed — an issued document is
-  /// final — so if a revision later proves wrong, this is what makes "exactly
-  /// which documents are affected" a query with an exact answer instead of a
-  /// full-catalogue scare. Null on lines raised before the master existed.
   hsnRevision      String? @map("hsn_revision")
   unit             String  @default("PCS")
   quantity         Decimal @db.Decimal(12, 3)
   unitPrice        Decimal @map("unit_price") @db.Decimal(12, 2)
   taxPercent       Decimal @default(0) @map("tax_percent") @db.Decimal(5, 2)
   discount         Decimal @default(0) @db.Decimal(12, 2)
-  /// (quantity * unitPrice) - discount. Pre-tax, pre-cess.
   taxableValue     Decimal @default(0) @map("taxable_value") @db.Decimal(12, 2)
   igstAmount       Decimal @default(0) @map("igst_amount") @db.Decimal(12, 2)
   cgstAmount       Decimal @default(0) @map("cgst_amount") @db.Decimal(12, 2)
@@ -1297,13 +850,8 @@ model InvoiceItem {
   cessRate         Decimal @default(0) @map("cess_rate") @db.Decimal(5, 2)
   cessAmount       Decimal @default(0) @map("cess_amount") @db.Decimal(12, 2)
   total            Decimal @db.Decimal(12, 2)
-  /// GST-5/PR-C1 — whether `unitPrice` was tax-inclusive (MRP/marketplace
-  /// path) and the engine backed GST out of it, vs exclusive (legacy merchant
-  /// manual invoice, the default) where GST was added on top. Recorded per
-  /// line so the document can be re-rendered and audited unambiguously.
   isPriceInclusive Boolean @default(false) @map("is_price_inclusive")
 
-  /// AUTH-TR-C1 — return lines that reverse this exact billed line.
   returnItems ReturnRequestItem[]
 
   @@index([invoiceId])
@@ -1311,66 +859,36 @@ model InvoiceItem {
   @@map("invoice_items")
 }
 
-/// Cross-account invite: shop owner invites a party (customer) or vendor
-/// (supplier) by email. If a user with that email already exists, an
-/// in-app notification is created immediately; otherwise the row sits
-/// PENDING and is claimed at signup.
 model Invitation {
   id         Int    @id @default(autoincrement())
-  /// Owning shop — the shop whose address-book the invited person
-  /// gets added to on accept. Required after the multi-tenant
-  /// migration; a stale invite without a shop scope is meaningless.
   shopId     Int    @map("shop_id")
   shop       Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  /// Inviter (shop owner). Cascades on user delete.
   fromUserId Int    @map("from_user_id")
   fromUser   User   @relation("InvitationsSent", fields: [fromUserId], references: [id], onDelete: Cascade)
-  /// Always stored lower-cased so the partial-unique pending index works.
   toEmail    String @map("to_email")
-  /// Set once a user with this email exists (either already, or after signup).
   toUserId   Int?   @map("to_user_id")
   toUser     User?  @relation("InvitationsReceived", fields: [toUserId], references: [id], onDelete: SetNull)
 
-  /// PARTY, VENDOR, or TEAM. TEAM invites add the recipient to the
-  /// shop's staff (see ShopMember) instead of linking an address-book
-  /// contact; for those, `teamRole` carries the ShopRole to grant on
-  /// accept and party/vendor stay null.
   linkType        String    @map("link_type")
-  /// Set only for linkType=TEAM — the ShopRole the recipient is granted
-  /// when they accept. Acts as the preset label; the actual grant is in
-  /// `teamPermissions`. Null for PARTY/VENDOR invites.
   teamRole        ShopRole? @map("team_role")
-  /// Display label of the role granted on accept (a TeamRole name).
   teamRoleName    String?   @map("team_role_name")
-  /// The exact rights granted on accept (see permissions.ts). Lets the
-  /// owner hand-pick an employee's access at invite time, not just a
-  /// canned role. Empty for non-TEAM invites.
   teamPermissions String[]  @default([]) @map("team_permissions")
   partyId         Int?      @map("party_id")
   party           Party?    @relation(fields: [partyId], references: [id], onDelete: Cascade)
   vendorId        Int?      @map("vendor_id")
   vendor          Vendor?   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
 
-  /// PENDING / ACCEPTED / DECLINED / CANCELLED / EXPIRED.
   status       String  @default("PENDING")
   message      String?
-  /// Snapshot of the inviting shop's display name, kept independent of
-  /// the user's profile mutating later.
   fromShopName String? @map("from_shop_name")
-  /// Snapshot of the invited party/vendor name at send time.
   displayName  String? @map("display_name")
 
-  /// Opaque token used for future email deep-links.
   token       String    @unique
   expiresAt   DateTime  @map("expires_at")
   respondedAt DateTime? @map("responded_at")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
-  // Compound indexes that cover the only three hot paths:
-  //   1. claim-at-signup: lookup by (toEmail, status='PENDING')
-  //   2. inbox list:      lookup by (toUserId, status, createdAt)
-  //   3. outbox list:     lookup by (fromUserId, status, createdAt)
   @@index([toEmail, status])
   @@index([toUserId, status, createdAt])
   @@index([shopId, status, createdAt])
@@ -1379,22 +897,13 @@ model Invitation {
   @@map("invitations")
 }
 
-/// Per-user in-app notification. Reads / unread-count are indexed off
-/// (userId, readAt) so unread-count is an index-only scan.
 model Notification {
   id        Int       @id @default(autoincrement())
   userId    Int       @map("user_id")
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  /// INVITE_RECEIVED / INVITE_ACCEPTED / INVITE_DECLINED / INVITE_CANCELLED /
-  /// INVITE_EXPIRED /
-  /// ORDER_RECEIVED / ORDER_CONFIRMED / ORDER_REJECTED / ORDER_UPDATE /
-  /// PAYMENT_RECEIVED / LOW_STOCK / RETURN_REQUESTED / RETURN_APPROVED /
-  /// RETURN_REJECTED / RETURN_UPDATE / RETURN_REFUNDED / SECURITY /
-  /// QUOTATION_* / GENERIC.
   kind      String
   title     String
   body      String?
-  /// JSON payload — invitationId, partyId, vendorId, etc.
   data      Json?
   readAt    DateTime? @map("read_at")
   createdAt DateTime  @default(now()) @map("created_at")
@@ -1404,75 +913,31 @@ model Notification {
   @@map("notifications")
 }
 
-/// One *customer-side* order = one checkout submission. Owns N
-/// [PurchaseRequest] children (one per shop the cart spans). Snapshots
-/// customer identity + delivery address once; merchants still see only
-/// their own child row in their inbox. This is the grouping that the
-/// customer thinks of as "order #123" — splitting per-vendor is an
-/// implementation detail of the marketplace fulfilment model.
 model CustomerOrder {
   id             Int  @id @default(autoincrement())
   customerUserId Int  @map("customer_user_id")
   customerUser   User @relation(fields: [customerUserId], references: [id], onDelete: Cascade)
 
-  /// Identity + delivery snapshots. Mirrored onto each child
-  /// PurchaseRequest so the merchant view stays unchanged, but the
-  /// canonical copy lives here so the customer-facing detail page can
-  /// render a single header without picking a child.
   customerName    String  @map("customer_name")
   customerPhone   String? @map("customer_phone")
   customerEmail   String? @map("customer_email")
   customerAddress String? @map("customer_address")
 
-  /// PR-C2 — structured place-of-supply snapshot taken from the checkout
-  /// UserAddress (the SHIPPING address). The freeform `customerAddress`
-  /// above is for display; THESE drive GST: `shipStateCode` is the 2-digit
-  /// GST state code derived from `shipState` at submit time and is passed
-  /// as the invoice's placeOfSupplyStateCode so interstate→IGST /
-  /// intrastate→CGST+SGST (IGST Sec 10) is decided from where the goods
-  /// are delivered, not the party's default state.
   shipCity      String? @map("ship_city")
   shipState     String? @map("ship_state")
   shipStateCode String? @map("ship_state_code")
   shipPincode   String? @map("ship_pincode")
 
-  /// Buyer's GST identity SNAPSHOT, set only when the customer asked to
-  /// claim input credit on this order. Copied rather than read live off the
-  /// user, so editing the profile later cannot rewrite the identity an
-  /// already-issued tax invoice was raised against.
   buyerGstin     String? @map("buyer_gstin")
   buyerLegalName String? @map("buyer_legal_name")
 
   note           String?
-  /// Sum of children's estimatedTotal at submit time. Cached so the
-  /// orders list doesn't have to aggregate per row.
   estimatedTotal Decimal @default(0) @map("estimated_total") @db.Decimal(12, 2)
-  /// Coupon discount applied at submit time (0 when no coupon). Stored
-  /// here so the customer order summary can render "₹X off" without a
-  /// CouponRedemption join.
   couponDiscount Decimal @default(0) @map("coupon_discount") @db.Decimal(12, 2)
-  /// CWQ-1 — the shop a SELLER-scoped (seller-funded) coupon is bound to,
-  /// or NULL for a platform-funded coupon. Seller-funded discounts are
-  /// pushed into THAT shop's tax invoice as a pre-tax header discount so
-  /// GST is charged on the net consideration (Sec 15(3)(a)); platform-funded
-  /// coupons stay off the invoice entirely (the platform bears them, the
-  /// seller is still owed full value). See confirmRequest.
   couponShopId   Int?    @map("coupon_shop_id")
-  /// Amount paid from the user's wallet at submit time (0 when wallet
-  /// wasn't used). Mirrored as a WalletEntry with source=CHECKOUT.
   walletPaid     Decimal @default(0) @map("wallet_paid") @db.Decimal(12, 2)
-  /// Online-payment state for the order's gateway-payable remainder
-  /// (estimatedTotal − couponDiscount − walletPaid):
-  ///   COD     — no online payment expected (cash on delivery) [default]
-  ///   PENDING — an online payment has been initiated, awaiting capture
-  ///   PAID    — captured (set by the ORDER gateway settlement handler)
-  ///   FAILED  — the gateway reported a terminal failure
-  /// Free-form String so a new state needs no migration.
   paymentStatus  String  @default("COD") @map("payment_status")
 
-  /// Idempotency now lives on the parent — one key per checkout
-  /// submission. The legacy per-PurchaseRequest unique was retired by
-  /// migration 20260606030000_drop_old_pr_idempotency_unique.
   idempotencyKey String? @map("idempotency_key")
 
   createdAt DateTime @default(now()) @map("created_at")
@@ -1486,74 +951,41 @@ model CustomerOrder {
   @@map("customer_orders")
 }
 
-/// A per-vendor *child* of a [CustomerOrder]. The merchant inbox row;
-/// the customer browses the merchant catalog, builds a cart, and the
-/// server creates one of these per shop the cart spans. The merchant
-/// reviews their inbox and either confirms (which creates a SALE
-/// invoice) or rejects. PurchaseRequestItem snapshots product identity
-/// + price at submit time so the customer's order is stable even if
-/// the merchant later edits product details.
 model PurchaseRequest {
   id              Int           @id @default(autoincrement())
-  /// Parent customer order. Every PurchaseRequest belongs to exactly
-  /// one CustomerOrder — single-vendor checkouts still get a parent
-  /// (a CustomerOrder with one child).
   customerOrderId Int           @map("customer_order_id")
   customerOrder   CustomerOrder @relation(fields: [customerOrderId], references: [id], onDelete: Cascade)
-  /// Owning merchant — which shop receives this order. Required:
-  /// every order belongs to exactly one shop, so the cart-splits-on-
-  /// checkout flow creates N rows when items span multiple shops.
   shopId          Int           @map("shop_id")
   shop            Shop          @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  /// Customer who placed the order. Cascades on user delete.
   customerUserId  Int           @map("customer_user_id")
   customerUser    User          @relation("CustomerPurchaseRequests", fields: [customerUserId], references: [id], onDelete: Cascade)
-  /// If the customer is a linked party, we point at the existing Party
-  /// row so the merchant can correlate orders → their party ledger.
-  /// Lazy-created on confirm when the customer was never invited.
   partyId         Int?          @map("party_id")
   party           Party?        @relation(fields: [partyId], references: [id], onDelete: SetNull)
 
-  /// Snapshots of customer identity at submit time. Survives later
-  /// profile changes and lets the merchant render a usable display
-  /// without a User join.
   customerName    String  @map("customer_name")
   customerPhone   String? @map("customer_phone")
   customerEmail   String? @map("customer_email")
   customerAddress String? @map("customer_address")
 
-  /// PR-C2 — structured place-of-supply snapshot mirrored from the parent
-  /// CustomerOrder's SHIPPING address. `shipStateCode` (2-digit GST code)
-  /// is what confirmRequest passes as the invoice's placeOfSupplyStateCode.
   shipCity      String? @map("ship_city")
   shipState     String? @map("ship_state")
   shipStateCode String? @map("ship_state_code")
   shipPincode   String? @map("ship_pincode")
 
-  /// Mirrored from the parent order. confirmRequest passes these to the
-  /// invoice engine as the recipient's GSTIN and registered name, which is
-  /// what makes the tax invoice claimable as input credit.
   buyerGstin     String? @map("buyer_gstin")
   buyerLegalName String? @map("buyer_legal_name")
 
-  /// PENDING / CONFIRMED / REJECTED / CANCELLED.
-  /// CONFIRMED rows always have invoiceId set.
   status String @default("PENDING")
 
-  /// SALE invoice that materialised this request, if confirmed.
   invoiceId Int?     @unique @map("invoice_id")
   invoice   Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
 
-  /// Merchant user who acted on the request. Set on confirm/reject.
   decidedById  Int?      @map("decided_by_id")
   decidedBy    User?     @relation("MerchantDecidedRequests", fields: [decidedById], references: [id], onDelete: SetNull)
   decidedAt    DateTime? @map("decided_at")
   decisionNote String?   @map("decision_note")
 
   note           String?
-  /// Cached snapshot of cart subtotal (sum of item.total) at submit time.
-  /// Backend recomputes from current price on confirm so this is just a
-  /// preview number for the customer's order list.
   estimatedTotal Decimal @default(0) @map("estimated_total") @db.Decimal(12, 2)
 
   createdAt            DateTime               @default(now()) @map("created_at")
@@ -1564,10 +996,6 @@ model PurchaseRequest {
   gatewayTransfers     GatewayTransfer[]
   operatorWithholdings OperatorWithholding[]
 
-  /// Hot paths:
-  ///   1. customer's order list:     (customerUserId, createdAt DESC)
-  ///   2. merchant inbox:            (shopId, status, createdAt DESC)
-  ///   3. parent fan-out on detail:  (customerOrderId)
   @@index([customerUserId, createdAt])
   @@index([shopId, status, createdAt])
   @@index([partyId])
@@ -1575,38 +1003,18 @@ model PurchaseRequest {
   @@map("purchase_requests")
 }
 
-/// Append-only event log for a [PurchaseRequest]. Drives the customer-
-/// side order-tracking timeline (CREATED → CONFIRMED → PACKED →
-/// SHIPPED → OUT_FOR_DELIVERY → DELIVERED) and stores courier/AWB/ETA
-/// for in-transit events so the customer sees a useful shipment
-/// summary without a courier-API integration.
-///
-/// Lifecycle transitions are emitted by the service layer (create /
-/// confirm / reject / cancel); shipping events are added by the
-/// merchant via `POST /orders/:id/events`. Once a row is written it's
-/// never updated — corrections are new events, not edits.
 model PurchaseRequestEvent {
   id        Int                      @id @default(autoincrement())
   requestId Int                      @map("request_id")
   request   PurchaseRequest          @relation(fields: [requestId], references: [id], onDelete: Cascade)
-  /// One of the values in [PurchaseRequestEventType]. Free-form on the
-  /// type column so future event kinds (e.g. RTO, REFUND_INITIATED)
-  /// can be added without a migration — the enum lives in code only.
   type      PurchaseRequestEventType
 
-  /// Courier name / AWB / promised delivery date — populated on
-  /// SHIPPED + OUT_FOR_DELIVERY rows. Null on lifecycle events.
   courier String?
   awb     String?
   eta     DateTime?
 
-  /// Optional human note from the merchant ("Left at security gate",
-  /// "Customer was unavailable, redelivery tomorrow"). Rendered as a
-  /// secondary line under the milestone in the timeline.
   note String?
 
-  /// Acting user — merchant for shipping events, customer for cancel.
-  /// Nullable for system-emitted events (CREATED at submit time).
   actorId Int?  @map("actor_id")
   actor   User? @relation("PurchaseRequestEventActor", fields: [actorId], references: [id], onDelete: SetNull)
 
@@ -1629,43 +1037,21 @@ enum PurchaseRequestEventType {
   RETURNED
 }
 
-/// One return request against a [PurchaseRequest]. Always scoped to a
-/// single per-shop child (you don't return "an order" — you return the
-/// items the shop fulfilled). Items are tracked at line-item
-/// granularity so a partial return doesn't poison the rest of the order.
-///
-/// State machine: REQUESTED → APPROVED → PICKED_UP → RECEIVED →
-/// REFUNDED. REJECTED + CANCELLED are terminal. The merchant drives
-/// every transition except CANCELLED (customer-only, REQUESTED stage).
 model ReturnRequest {
   id             Int             @id @default(autoincrement())
-  /// Which child (per-shop slice) this return is against.
   requestId      Int             @map("request_id")
   request        PurchaseRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
-  /// Owning shop — denormalised from the parent so the merchant's
-  /// returns inbox can filter by shop without a join.
   shopId         Int             @map("shop_id")
   shop           Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  /// Customer who initiated. Always equal to request.customerUserId;
-  /// stored here for the customer's returns-list index.
   customerUserId Int             @map("customer_user_id")
   customerUser   User            @relation("ReturnRequestCustomer", fields: [customerUserId], references: [id], onDelete: Cascade)
 
-  /// One of: REQUESTED, APPROVED, REJECTED, CANCELLED, PICKED_UP,
-  /// RECEIVED, REFUNDED. Free-form string to keep future state additions
-  /// out of migration land.
   status       String  @default("REQUESTED")
-  /// Sum of refundAmount across approved items. Source of truth at
-  /// refund time — the wallet entry is for this amount.
   refundAmount Decimal @default(0) @map("refund_amount") @db.Decimal(12, 2)
   refundMethod String? @map("refund_method")
-  /// Customer-supplied freeform note ("Box arrived torn") shown to the
-  /// merchant on the inbox row.
   note         String?
-  /// Merchant decision note (reason for rejection, pickup instructions).
   decisionNote String? @map("decision_note")
 
-  /// Lazy-linked wallet entry — populated once the refund posts.
   walletEntryId Int?         @unique @map("wallet_entry_id")
   walletEntry   WalletEntry? @relation("ReturnRefundEntry", fields: [walletEntryId], references: [id], onDelete: SetNull)
 
@@ -1678,41 +1064,20 @@ model ReturnRequest {
   @@index([customerUserId, createdAt])
   @@index([shopId, status, createdAt])
   @@index([requestId])
-  /// Analytics changefeed scan (rows changed since the roll-up cursor).
   @@index([updatedAt])
   @@map("return_requests")
 }
 
-/// Line-item granularity for a return. References the original
-/// PurchaseRequestItem so the merchant sees "Black T-shirt size M, qty 2"
-/// rather than reconciling SKUs by hand. `refundAmount` is snapshotted
-/// at submit time from unitPrice × quantity so a later product edit
-/// can't change what the customer expects to be refunded.
 model ReturnRequestItem {
   id                    Int                 @id @default(autoincrement())
   returnId              Int                 @map("return_id")
   return                ReturnRequest       @relation(fields: [returnId], references: [id], onDelete: Cascade)
-  /// Original purchase request item being returned.
   purchaseRequestItemId Int                 @map("purchase_request_item_id")
   purchaseRequestItem   PurchaseRequestItem @relation(fields: [purchaseRequestItemId], references: [id], onDelete: Cascade)
-  /// AUTH-TR-C1 — the exact invoice line this return reverses, so refund
-  /// math and per-line returned-quantity tracking key off the billed line
-  /// (price, tax, cess) rather than re-deriving from the product. Nullable:
-  /// existing rows stay null and returns not tied to an invoice line (legacy
-  /// PR-only flow) leave it unset. SetNull so deleting the source invoice
-  /// line doesn't orphan-delete the return record.
   invoiceItemId         Int?                @map("invoice_item_id")
   invoiceItem           InvoiceItem?        @relation(fields: [invoiceItemId], references: [id], onDelete: SetNull)
-  /// Reason taxonomy (DAMAGED / WRONG_ITEM / NOT_AS_DESCRIBED /
-  /// SIZE_FIT / CHANGED_MIND / DEFECTIVE / OTHER). Kept as a string so
-  /// adding a category later doesn't need a migration.
   reason                String
-  /// Quantity being returned — may be less than the line's purchased
-  /// quantity for partial returns.
   quantity              Decimal             @db.Decimal(12, 3)
-  /// Snapshotted at submit time: unitPrice × quantity. Lets the
-  /// merchant approve without recomputing prices, and lets the customer
-  /// see the same refund amount they originally clicked.
   refundAmount          Decimal             @map("refund_amount") @db.Decimal(12, 2)
 
   @@index([returnId])
@@ -1720,15 +1085,10 @@ model ReturnRequestItem {
   @@map("return_request_items")
 }
 
-/// Append-only event log for a [ReturnRequest]. Drives the customer-
-/// facing return timeline ("Requested → Approved → Picked up …").
 model ReturnRequestEvent {
   id         Int           @id @default(autoincrement())
   returnId   Int           @map("return_id")
   return     ReturnRequest @relation(fields: [returnId], references: [id], onDelete: Cascade)
-  /// One of REQUESTED, APPROVED, REJECTED, CANCELLED, PICKED_UP,
-  /// RECEIVED, REFUNDED, NOTE. NOTE rows are merchant-added free-form
-  /// updates that don't change status.
   type       String
   note       String?
   actorId    Int?          @map("actor_id")
@@ -1739,39 +1099,18 @@ model ReturnRequestEvent {
   @@map("return_request_events")
 }
 
-/// Append-only wallet ledger. Positive amounts are credits (refunds,
-/// loyalty payouts, referral payouts, manual platform credits);
-/// negative amounts are debits (checkout deductions, withdrawals).
-/// The denormed [User.walletBalance] = SUM(amount) and is updated in
-/// the same transaction that writes the entry.
-///
-/// `source` describes *why* the entry exists; `sourceId` ties it back
-/// to the originating record (e.g. ReturnRequest id, Coupon id). The
-/// pair is purely informational — no FK so adding a new source kind
-/// later doesn't require a migration to extend the constraint.
 model WalletEntry {
   id     Int  @id @default(autoincrement())
   userId Int  @map("user_id")
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  /// Signed amount (positive = credit, negative = debit). Decimal so
-  /// rupee-paise arithmetic is exact.
   amount       Decimal @db.Decimal(12, 2)
-  /// Running balance snapshot at the moment this entry was written.
-  /// Lets ledger reads render without a window-function recompute.
   balanceAfter Decimal @map("balance_after") @db.Decimal(12, 2)
 
-  /// One of REFUND, COUPON, REFERRAL, LOYALTY, MANUAL, CHECKOUT.
   source      String
   sourceId    Int?   @map("source_id")
-  /// Human-readable description shown in the ledger UI ("Refund for
-  /// order #142", "Welcome credit"). Server-built so the customer
-  /// app doesn't have to know the formatting rules.
   description String
 
-  /// One-time bookkeeping ref. Idempotency-keyed credits set this so
-  /// retried RPC calls don't double-credit. Nullable for non-keyed
-  /// entries (e.g. manual platform top-ups).
   idempotencyKey String? @map("idempotency_key")
 
   createdAt DateTime @default(now()) @map("created_at")
@@ -1790,8 +1129,6 @@ model PurchaseRequestItem {
   productId Int             @map("product_id")
   product   Product         @relation(fields: [productId], references: [id], onDelete: Restrict)
 
-  /// Snapshots of product identity + price at submit time. Stable for
-  /// the customer even if the merchant edits the product later.
   productName String  @map("product_name")
   productSku  String  @map("product_sku")
   unit        String  @default("PCS")
@@ -1806,50 +1143,29 @@ model PurchaseRequestItem {
   @@map("purchase_request_items")
 }
 
-/// Money in / money out against a party (RECEIPT) or vendor (PAYMENT).
-/// Payments are first-class ledger rows that interleave with invoices on
-/// the party/vendor detail page to drive a running balance. Optionally
-/// allocated to one invoice; otherwise treated as on-account credit.
 model Payment {
   id             Int       @id @default(autoincrement())
-  /// Owning shop. Payment reference numbers reset per shop.
   shopId         Int       @map("shop_id")
   shop           Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  /// 'RECEIPT' (money in from a party) or 'PAYMENT' (money out to a vendor).
   type           String
   referenceNo    String    @map("reference_no")
   amount         Decimal   @db.Decimal(12, 2)
-  /// CASH | UPI | NEFT | RTGS | CHEQUE | CARD | OTHER.
   mode           String
-  /// Free-form ref (UPI txn id, cheque no, etc.).
   modeReference  String?   @map("mode_reference")
   paymentDate    DateTime  @default(now()) @map("payment_date")
-  /// Exactly one of partyId / vendorId is set (depending on type).
   partyId        Int?      @map("party_id")
   party          Party?    @relation(fields: [partyId], references: [id], onDelete: SetNull)
   vendorId       Int?      @map("vendor_id")
   vendor         Vendor?   @relation(fields: [vendorId], references: [id], onDelete: SetNull)
-  /// Optional direct allocation to one invoice. Null = on-account credit.
   invoiceId      Int?      @map("invoice_id")
   invoice        Invoice?  @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
   note           String?
-  /// Owner who recorded the payment.
   createdById    Int?      @map("created_by_id")
   createdBy      User?     @relation("PaymentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-  /// Soft-void audit trail. A payment is never hard-deleted — voiding sets
-  /// these so the row is retained (CGST Sec 36 / Rule 56 retention) while
-  /// being excluded from every balance, outstanding and ledger total. A
-  /// silent hard-delete used to reopen an invoice's outstanding with no
-  /// trace, which broke period-close and enabled undetectable tampering.
   voidedAt       DateTime? @map("voided_at")
   voidedById     Int?      @map("voided_by_id")
   voidedBy       User?     @relation("PaymentVoidedBy", fields: [voidedById], references: [id], onDelete: SetNull)
   voidReason     String?   @map("void_reason")
-  /// Client-supplied idempotency key (via `X-Idempotency-Key`). When set
-  /// a retry from a flaky mobile network reuses the original row instead
-  /// of double-paying the invoice. Partial unique on (shop_id, type,
-  /// idempotency_key) enforced by raw migration so NULL rows (legacy +
-  /// non-keyed inserts) don't collide.
   idempotencyKey String?   @map("idempotency_key")
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
@@ -1859,18 +1175,10 @@ model Payment {
   @@index([shopId, vendorId, paymentDate])
   @@index([invoiceId])
   @@index([invoiceId, voidedAt])
-  /// Analytics changefeed scan (rows changed since the roll-up cursor).
   @@index([updatedAt])
   @@map("payments")
 }
 
-/// A merchant-built priced quotation sent to a LINKED customer for acceptance.
-/// The merchant browses their catalogue, collects line items into a "bucket",
-/// and sends it; the customer reviews it in their app and Accepts or Declines.
-/// On accept it spawns a CONFIRMED sale invoice (via invoicesService) — the
-/// authoritative GST document — and links it back via [invoiceId]. Line items
-/// are stored as JSON (productId/qty/price/tax/discount) so the accept path
-/// can replay them through the normal invoice engine.
 model Quotation {
   id                     Int       @id @default(autoincrement())
   shopId                 Int       @map("shop_id")
@@ -1878,36 +1186,21 @@ model Quotation {
   partyId                Int       @map("party_id")
   party                  Party     @relation(fields: [partyId], references: [id], onDelete: Cascade)
   quotationNo            String    @map("quotation_no")
-  /// REQUESTED (customer-built, awaiting merchant pricing) | PENDING (sent to
-  /// customer) | ACCEPTED | DECLINED | CANCELLED | EXPIRED.
   status                 String    @default("PENDING")
-  /// Line items: [{ productId, name, sku?, quantity, unitPrice, taxPercent, discount, lineTotal }].
   items                  Json
   subtotal               Decimal   @db.Decimal(14, 2)
   taxAmount              Decimal   @map("tax_amount") @db.Decimal(14, 2)
   total                  Decimal   @db.Decimal(14, 2)
   note                   String?
   placeOfSupplyStateCode String?   @map("place_of_supply_state_code")
-  // ── lifecycle ──
   createdById            Int?      @map("created_by_id")
   createdBy              User?     @relation("QuotationCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-  /// Set when a linked customer initiated the quote (status starts REQUESTED);
-  /// null for ordinary merchant-built quotations.
   requestedById          Int?      @map("requested_by_id")
   requestedBy            User?     @relation("QuotationRequestedBy", fields: [requestedById], references: [id], onDelete: SetNull)
   respondedAt            DateTime? @map("responded_at")
   declineNote            String?   @map("decline_note")
-  /// The CONFIRMED invoice spawned when the customer accepted.
   invoiceId              Int?      @unique @map("invoice_id")
   invoice                Invoice?  @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
-  /// Filed out of the MERCHANT's working list. Only a settled quotation may
-  /// be archived — while it is REQUESTED or PENDING the customer can still
-  /// act on it, and hiding it from the merchant would strand that decision.
-  ///
-  /// Deliberately not applied to the customer-facing list (`listForParty`):
-  /// archiving is the merchant's own filing decision, and it must not erase
-  /// the counterparty's record of what they were quoted. Same rule invoices
-  /// follow — `meService.listInvoicesForParty` ignores `archivedAt` too.
   archivedAt             DateTime? @map("archived_at")
   createdAt              DateTime  @default(now()) @map("created_at")
   updatedAt              DateTime  @updatedAt @map("updated_at")
@@ -1919,13 +1212,6 @@ model Quotation {
   @@map("quotations")
 }
 
-/// Monotonic counter keyed by an arbitrary string. Used to allocate
-/// invoice/challan numbers atomically: a Postgres UPSERT increment
-/// returns the next value in one round-trip, defeating the `count()+1`
-/// race flagged in audit C4.
-/// Monotonic counter, scoped per shop. Each merchant has their own
-/// invoice/challan/adjustment number sequence so two merchants both
-/// issuing `INV-0001` doesn't collide.
 model Counter {
   shopId Int    @map("shop_id")
   shop   Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
@@ -1936,17 +1222,6 @@ model Counter {
   @@map("counters")
 }
 
-/// Per-shop customization of a document-number series (prefix/suffix/
-/// separator/padding/yearly-reset) — see `backend/src/shared/numbering/
-/// sequences.ts`. Absence of a row for a (shopId, series) pair means "use
-/// the system default for that series" (same as today's hardcoded format),
-/// exactly like `User.gstEffectiveFrom == null` means ungated. `series` is
-/// one of SALE_INVOICE | PURCHASE_INVOICE | ESTIMATE | CREDIT_NOTE |
-/// DEBIT_NOTE | CHALLAN | QUOTATION. Never written by document creation
-/// itself — only by the merchant's numbering settings. The `Counter` row
-/// this scheme's numbers are allocated from is keyed by `series` (plus the
-/// financial year when `resetYearly` is true), NOT by `prefix` — renaming
-/// the prefix/suffix must never reset the running sequence.
 model NumberingScheme {
   id          Int      @id @default(autoincrement())
   shopId      Int      @map("shop_id")
@@ -1964,12 +1239,6 @@ model NumberingScheme {
   @@map("numbering_schemes")
 }
 
-/// Customer-authored review of a marketplace product. Gated server-side
-/// to users who have at least one CONFIRMED InvoiceItem for the product
-/// — see reviews.service.canReview. One row per (productId, userId)
-/// pair: editing a review = upsert on the same row, so denorms stay
-/// consistent. Denormalised aggregates live on Product (ratingAvg,
-/// ratingCount) and are rewritten in the review-write transaction.
 model ProductReview {
   id        Int      @id @default(autoincrement())
   productId Int      @map("product_id")
@@ -1987,31 +1256,12 @@ model ProductReview {
   @@map("product_reviews")
 }
 
-/// Marketplace banner — one row per slot on the customer home page.
-/// Placement enum maps to the four section types built in home_v2:
-///   HERO         — top auto-rotating carousel
-///   AD_STRIP     — horizontal medium-card row under the hero
-///   PROMO        — wide gradient strip (member promos)
-///   CURATED_RAIL — editorial wedge with eyebrow + CTA
-/// ctaTarget is a tiny DSL parsed by shared/cta-target.ts:
-///   `category:<slug>` | `product:<id>` | `collection:<slug>` | `url:https://…`
-/// Optional sponsorShopId attributes the placement to a paying merchant
-/// (Phase 9 promotions) — null = platform-curated/organic.
-/// A merchant- or platform-authored home banner: just an uploaded image,
-/// an optional click-through link, and the placement slot it shows in.
-/// Deliberately holds NO foreign key to Product/Category so it never
-/// breaks when those entities change. `shopId IS NULL` = platform-wide
-/// banner authored by a platform admin.
 model Banner {
   id        Int             @id @default(autoincrement())
   shopId    Int?            @map("shop_id")
   shop      Shop?           @relation(fields: [shopId], references: [id], onDelete: SetNull)
   placement BannerPlacement
-  /// The merchant's uploaded artwork — the whole banner. Rendered as a
-  /// plain image (http(s) URL or a server-relative /media path).
   imageUrl  String          @map("image_url")
-  /// Optional click-through: a relative app path ("/shop/acme") or an
-  /// absolute URL. Null = the banner isn't tappable.
   linkUrl   String?         @map("link_url")
   sortOrder Int             @default(0) @map("sort_order")
   startAt   DateTime?       @map("start_at")
@@ -2020,8 +1270,6 @@ model Banner {
   createdAt DateTime        @default(now()) @map("created_at")
   updatedAt DateTime        @updatedAt @map("updated_at")
 
-  /// Optional curated product list pinned to this banner. Tapping a
-  /// product-backed banner opens a detail page listing them.
   products BannerProduct[]
 
   @@index([placement, isActive, startAt, endAt])
@@ -2029,12 +1277,6 @@ model Banner {
   @@map("banners")
 }
 
-/// Products a merchant pins to a banner, with an optional per-row
-/// promotional discount. The discount flows through to BOTH the customer
-/// order line and the merchant-created invoice (auto-stamped unless the
-/// merchant typed their own discount). Best-promo resolution: a product
-/// can sit on multiple active banners; the resolver picks the row giving
-/// the largest per-unit discount at the product's current sellingPrice.
 model BannerProduct {
   id            Int                       @id @default(autoincrement())
   bannerId      Int                       @map("banner_id")
@@ -2042,8 +1284,6 @@ model BannerProduct {
   productId     Int                       @map("product_id")
   product       Product                   @relation(fields: [productId], references: [id], onDelete: Cascade)
   position      Int                       @default(0)
-  /// PERCENT: discountValue is a percent 0..90 off sellingPrice.
-  /// AMOUNT:  discountValue is a flat rupee discount per unit.
   discountType  BannerProductDiscountType @default(PERCENT) @map("discount_type")
   discountValue Decimal                   @default(0) @map("discount_value") @db.Decimal(12, 2)
   createdAt     DateTime                  @default(now()) @map("created_at")
@@ -2066,32 +1306,17 @@ enum BannerPlacement {
   CURATED_RAIL
 }
 
-/// Account type. OWNER = merchant (manages a shop, lists products, sees
-/// merchant-only routes). CUSTOMER = marketplace buyer. Platform-wide
-/// admin powers (cross-shop banners, taxonomy, collection curation) are
-/// gated by `User.isPlatformAdmin`, *not* by role — any OWNER can be
-/// flagged as a platform admin independently of their merchant scope.
 enum Role {
   OWNER
   CUSTOMER
 }
 
-/// A shop's GST registration status — the source of truth for whether it
-/// may charge output tax. REGULAR charges GST and issues tax invoices;
-/// COMPOSITION holds a GSTIN but (CGST Sec 10) cannot charge GST and must
-/// issue a Bill of Supply; UNREGISTERED has no GSTIN and likewise issues a
-/// Bill of Supply. Backfilled to REGULAR for existing GSTIN-holders.
 enum RegistrationType {
   REGULAR
   COMPOSITION
   UNREGISTERED
 }
 
-/// Marketplace-visible shop owned 1:1 by a merchant User. Separate from
-/// the User.shop* fields, which exist for GST-compliant invoice header
-/// rendering (legal name, address, GSTIN) — those stay where they are.
-/// This row holds the public storefront: logo, banner, public slug,
-/// publish state, marketplace rating.
 model Shop {
   id          Int      @id @default(autoincrement())
   ownerUserId Int      @unique @map("owner_user_id")
@@ -2102,87 +1327,28 @@ model Shop {
   logoUrl     String?  @map("logo_url")
   bannerUrl   String?  @map("banner_url")
   isPublished Boolean  @default(false) @map("is_published")
-  /// Denormalised aggregates updated on review write; avoid recomputing
-  /// during home-feed reads. Nullable until first rating arrives.
   rating      Decimal? @db.Decimal(3, 2)
   ratingCount Int      @default(0) @map("rating_count")
 
-  /// ── Return policy ────────────────────────────────────────────────
-  /// When false, customers can't open a return at all — the request
-  /// sheet on the customer order detail page hides the button and the
-  /// submit endpoint rejects with RETURNS_DISABLED. Defaults to true so
-  /// existing shops behave the way they did before this column was added.
   returnsEnabled     Boolean @default(true) @map("returns_enabled")
-  /// Eligibility window in days from order confirmation. 0 = no
-  /// window check (return forever); the default of 7 days matches the
-  /// platform-wide standard most Indian marketplaces use.
   returnWindowDays   Int     @default(7) @map("return_window_days")
-  /// How the merchant refunds: WALLET = credit the customer's app
-  /// wallet (default; instant + reusable). ORIGINAL = refund to the
-  /// original payment method (handled off-platform; the merchant marks
-  /// REFUNDED manually and arranges the bank transfer). REPLACEMENT =
-  /// merchant ships a replacement instead of refunding cash.
   refundMode         String  @default("WALLET") @map("refund_mode")
-  /// Free-form policy text shown to customers before they tap "Request
-  /// return". Lets merchants spell out exceptions ("sealed packaging
-  /// only", "no returns on innerwear") without needing schema changes.
   returnPolicyNote   String? @map("return_policy_note")
-  /// ── Cancellation policy ──────────────────────────────────────────
-  /// The latest order stage at which the CUSTOMER may still cancel a
-  /// per-shop slice. Stages come from PurchaseRequestEvent milestones:
-  ///   UNTIL_CONFIRMED — only while the request is still PENDING
-  ///   UNTIL_PACKED    — until the merchant posts a PACKED event
-  ///   UNTIL_SHIPPED   — until SHIPPED/OUT_FOR_DELIVERY (marketplace default)
-  ///   UNTIL_DELIVERED — any time before the DELIVERED event
-  /// After the cut-off the customer's path is the returns flow (which
-  /// itself requires a DELIVERED event), so cancel/return never overlap.
   cancellationPolicy String  @default("UNTIL_SHIPPED") @map("cancellation_policy")
 
-  /// Phase E — opt-in flag for the multi-variant editor. When false the
-  /// merchant product form hides the "Add variants" section entirely
-  /// and every product carries a single default variant (created
-  /// implicitly). Flipping this to true reveals the variants grid;
-  /// products created before the flip stay single-variant until edited.
   variantsEnabled Boolean @default(true) @map("variants_enabled")
 
-  /// Which of the ~7 preset PDF look-and-feels (`TEMPLATE_PRESETS` in
-  /// `shared/pdf/presets.ts`) this shop's invoices/quotations/challans
-  /// render with. Plain string, not an enum — adding/retiring a preset
-  /// later needs no migration. A retired/unknown id falls back to
-  /// "classic" at render time rather than ever failing a real download.
   pdfTemplateId String @default("classic") @map("pdf_template_id")
 
-  /// Trust signals surfaced on the customer-side shop profile. Each
-  /// is independently optional so a half-filled shop still renders.
-  ///
-  /// `isVerified` is a platform-admin toggle — there's no self-serve
-  /// path. The customer-visible "Verified" badge gates on this.
   isVerified     Boolean @default(false) @map("is_verified")
-  /// City + state where the shop physically operates from. Drives
-  /// the "Based in <city>, <state>" line on the shop profile.
   locationCity   String? @map("location_city")
   locationState  String? @map("location_state")
-  /// Customer-readable policy text. Rendered in dedicated tabs on
-  /// the customer shop profile, plus a "Policies" pill on the PDP.
-  /// Free-form markdown subset — sanitised on render, not stored
-  /// (so merchants can edit anchors / tighten wording without a
-  /// re-sanitise pass). 4 KB each is plenty.
   returnPolicy   String? @map("return_policy")
   shippingPolicy String? @map("shipping_policy")
   refundPolicy   String? @map("refund_policy")
 
-  /// "Vacation mode" — when on, the shop's PDPs show a banner and
-  /// new orders are blocked. The merchant's existing orders / stock
-  /// stay editable. `vacationMessage` is the customer-visible
-  /// blurb ("Back on June 5" or "Closed for festival").
   vacationMode    Boolean @default(false) @map("vacation_mode")
   vacationMessage String? @map("vacation_message")
-  /// Operating hours JSON. Expected shape:
-  ///   { "mon": ["09:00", "21:00"], "tue": ["09:00", "21:00"], ... }
-  /// Days may be omitted (= closed). Times in 24h HH:MM. Surfaced as
-  /// "Open today 9 AM – 9 PM" on the customer shop page; new orders
-  /// outside hours show a "Opens at …" banner but still go through
-  /// (we don't hard-block by clock — it's a hint, not a gate).
   operatingHours  Json?   @map("operating_hours")
 
   createdAt DateTime @default(now()) @map("created_at")
@@ -2190,7 +1356,6 @@ model Shop {
 
   products               Product[]
   banners                Banner[]
-  // ── Multi-tenant inverse relations (Phase 1 migration) ───────────
   parties                Party[]
   vendors                Vendor[]
   invoices               Invoice[]
@@ -2208,157 +1373,61 @@ model Shop {
   coupons                Coupon[]
   quotations             Quotation[]
   sales                  Sale[]
-  /// Route payout destination (at most one). Null until KYC onboarding starts.
   linkedAccount          LinkedAccount?
-  /// Staff team — the owner plus any invited members. Drives the Team &
-  /// roles screen and per-request permission gating; see ShopMember.
   members                ShopMember[]
-  /// Owner-defined roles (named permission templates) for this shop.
   teamRoles              TeamRole[]
-  /// Shop-private HSN/SAC rows — merchant additions and overrides that
-  /// win over the platform master on lookup. See HsnCode.
   hsnCodes               HsnCode[]
-  /// The merchant's own "when I say X, I mean this code" list.
   hsnShortcuts           ShopHsnShortcut[]
-  /// Explicit, reasoned rate overrides. Rare by design — see ShopHsnOverride.
   hsnOverrides           ShopHsnOverride[]
-  /// Product names this shop typed that the classifier couldn't place.
   hsnLookupMisses        HsnLookupMiss[]
 
   @@index([isPublished])
   @@map("shops")
 }
 
-/// HSN/SAC → GST rate master. The single source of truth behind "type an
-/// HSN code, get the tax rate" in the product editor: nobody keys a rate
-/// by hand any more, so two merchants can't bill the same goods at
-/// different slabs and a rate change is one manifest edit, not a
-/// catalog-wide re-key.
-///
-/// **Two tiers, one lookup.** `shopId = null` rows are the platform
-/// master, seeded idempotently at boot from the checked-in manifest
-/// (`hsn.master.ts`) exactly like the category taxonomy. `shopId != null`
-/// rows are a merchant's own additions/overrides and WIN over the
-/// platform row for the same code — a merchant with a ruling or an
-/// exemption we don't model shouldn't be blocked, and shouldn't be able
-/// to corrupt the master for everyone else either.
-///
-/// **Effective-dated, never mutated in place.** GST slabs change (the
-/// Sept-2025 reform collapsed 12/28% into 5/18% + a 40% demerit rate),
-/// and an invoice raised last year must keep re-rendering at last year's
-/// rate. A rate change therefore closes the old row (`effectiveTo`) and
-/// inserts a new one; lookups resolve "as of" a date, defaulting to now.
-///
-/// `code` is 2/4/6/8 digits (chapter/heading/sub-heading/tariff item) for
-/// goods and a 6-digit 99xxxx SAC for services. Resolution walks the code
-/// down to shorter prefixes, so an 8-digit tariff item still resolves off
-/// its 4-digit heading when we don't carry the leaf.
 model HsnCode {
   id   Int     @id @default(autoincrement())
   code String
   kind HsnKind @default(GOODS)
 
-  /// Fallback wording. The merchant-facing name, definition and search
-  /// aliases live in the translatable copy catalogues
-  /// (`hsn.copy.<locale>.json`) keyed by this code — words are content and
-  /// belong with the other content, not in rows that need a data migration
-  /// to fix a phrase. This column is the last-resort label when a locale
-  /// has no entry, so a missing translation degrades to English tariff
-  /// wording rather than a bare number.
   description String
-  /// Whether this row can price a line, or exists only so the picker can
-  /// show where a code sits. Chapters ("62 — Articles of apparel, not
-  /// knitted") and some headings carry no rate of their own; matching one
-  /// and billing at it would invent a slab that doesn't legally exist, so
-  /// resolution skips them and only the tree walk sees them.
   isRatable   Boolean @default(true) @map("is_ratable")
-  /// Total GST (IGST equivalent). CGST/SGST is this halved — the invoice
-  /// engine does the split, we store one number.
   gstRate     Decimal @map("gst_rate") @db.Decimal(5, 2)
-  /// Compensation cess, ad valorem %. Decimal(5,2) matches Product.cessRate
-  /// (pan masala/tobacco run into the hundreds).
   cessRate    Decimal @default(0) @map("cess_rate") @db.Decimal(5, 2)
-  /// Machine-applicable form of a conditional slab, when the condition is
-  /// something we actually hold. Apparel is 5% up to ₹2,500 a piece and 18%
-  /// above — that's arithmetic against the line's own price, not a judgement
-  /// call, so the resolver decides it instead of asking. Shape:
-  ///
-  ///   { "kind": "PRICE_THRESHOLD", "upTo": 2500,
-  ///     "below": 5, "atOrAbove": 18, "per": "PIECE" }
-  ///
-  /// Evaluated against the **line price at billing time**, not the product's
-  /// list price: a shirt listed at ₹2,400 and sold at ₹2,600 after a price
-  /// rise is 18%, and freezing the rate on the product row would quietly get
-  /// that wrong. Null means the code's rate is unconditional.
   rateRule    Json?   @map("rate_rule")
-  /// Human caveat for conditions we can't evaluate — engine capacity, hotel
-  /// tariff bands, end-use. Shown beside the rate so the merchant knows when
-  /// their SKU is the exception. Unlike [rateRule] this is advisory only.
   rateNote    String? @map("rate_note")
 
-  /// Inclusive start / exclusive-of-nothing end of this rate's validity.
-  /// A null `effectiveTo` means "current". Dates, not timestamps — GST
-  /// notifications are day-granular.
   effectiveFrom DateTime  @map("effective_from") @db.Date
   effectiveTo   DateTime? @map("effective_to") @db.Date
 
-  /// Soft-delete for merchant rows and for master entries we retire
-  /// without a successor. Excluded from search and from resolution.
   isActive Boolean @default(true) @map("is_active")
 
-  /// Null = platform master (seeded). Non-null = this shop's private
-  /// addition/override.
   shopId Int?  @map("shop_id")
   shop   Shop? @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  /// One row per (code, tier, validity start). Postgres treats NULLs as
-  /// distinct in a unique index, so the platform tier is de-duped by the
-  /// partial unique index in the migration instead; this composite covers
-  /// the shop tier and gives the upsert a target.
   @@unique([code, shopId, effectiveFrom])
   @@index([code, isActive])
   @@index([shopId])
   @@map("hsn_codes")
 }
 
-/// Goods carry an HSN (Harmonised System of Nomenclature) code; services
-/// carry a SAC (Service Accounting Code, always 99xxxx). Same table, same
-/// lookup — the kind only drives filtering and the field label.
 enum HsnKind {
   GOODS
   SERVICES
 }
 
-/// A merchant's own shortcut: "when I say *formal shirt*, I mean 6205".
-///
-/// A shop sells a few dozen kinds of thing, so after a couple of weeks this
-/// list covers almost everything they will ever add — the 12,000-code tariff
-/// stops being something they search and becomes something they touch only
-/// for a genuinely new product. It doubles as a private vocabulary: their own
-/// wording matches before the shared aliases are consulted.
-///
-/// **Deliberately stores no rate.** This is a bookmark for a *classification*,
-/// and the rate is always fetched fresh from [HsnCode]. If a merchant's saved
-/// entry carried 5% and the Council moved the code to 8%, no deployment could
-/// correct it — it's their data, we don't rewrite it — and the stale number
-/// would ride onto invoices forever. A merchant who genuinely needs a
-/// different *rate* uses [ShopHsnOverride], which is a tax position and is
-/// treated like one.
 model ShopHsnShortcut {
   id     Int  @id @default(autoincrement())
   shopId Int  @map("shop_id")
   shop   Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
-  /// The merchant's own words, lowercased and whitespace-collapsed for
-  /// matching. What they typed is kept in [label].
   term  String
   label String
   code  String
 
-  /// Bumped on each hit so the picker can lead with what they actually use.
   useCount   Int      @default(0) @map("use_count")
   lastUsedAt DateTime @default(now()) @map("last_used_at")
 
@@ -2370,14 +1439,6 @@ model ShopHsnShortcut {
   @@map("shop_hsn_shortcuts")
 }
 
-/// A merchant's explicit rate override for one code — an advance ruling, a
-/// notified exemption, or a classification we don't model.
-///
-/// Separate from [ShopHsnShortcut] on purpose. Saving a shortcut is harmless
-/// housekeeping; overriding a rate is a tax position the merchant is taking,
-/// so it demands a reason, gets recorded, and shows up in a review. Merging
-/// the two into one "my codes" table would let the dangerous one be used by
-/// accident.
 model ShopHsnOverride {
   id     Int  @id @default(autoincrement())
   shopId Int  @map("shop_id")
@@ -2387,9 +1448,6 @@ model ShopHsnOverride {
   gstRate  Decimal @map("gst_rate") @db.Decimal(5, 2)
   cessRate Decimal @default(0) @map("cess_rate") @db.Decimal(5, 2)
 
-  /// Why this shop bills differently from the master. Required — an override
-  /// without a stated basis is indistinguishable from a typo, and this is the
-  /// field an auditor asks about.
   reason String
 
   effectiveFrom DateTime  @map("effective_from") @db.Date
@@ -2407,40 +1465,18 @@ model ShopHsnOverride {
   @@map("shop_hsn_overrides")
 }
 
-/// A product name the classifier could not place.
-///
-/// Retrieval quality is capped by the vocabulary it searches, and the only
-/// honest source for what that vocabulary is missing is what merchants
-/// actually type and don't find. Guessing produces aliases nobody searches for;
-/// this produces a backlog ranked by how many shops hit it.
-///
-/// Deliberately shop-scoped rather than a global term counter: a product name
-/// is the merchant's business data, so it stays attributed to the shop that
-/// generated it and aggregation happens at read time.
-///
-/// Only misses are recorded. A successful lookup tells us nothing we don't
-/// already have, and logging every keystroke would cost a write on the typing
-/// path for no information.
 model HsnLookupMiss {
   id     Int  @id @default(autoincrement())
   shopId Int  @map("shop_id")
   shop   Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
-  /// The normalised query, so "Sarson ka Tel 1L" and "sarson ka tel 1l"
-  /// aggregate rather than appearing as two gaps.
   term String
 
-  /// Verbatim, for reading the backlog — the normalised form strips the
-  /// punctuation and casing that sometimes explain the miss.
   sample String
 
-  /// Times this shop hit the same gap. Upserted rather than appended: a
-  /// merchant retyping a name they can't place must not flood the table.
   occurrences Int      @default(1)
   lastSeenAt  DateTime @default(now()) @map("last_seen_at")
 
-  /// Set once the gap is closed, so curation can tell "still missing" from
-  /// "fixed, keeping the record". Null means outstanding.
   resolvedCode String?   @map("resolved_code")
   resolvedAt   DateTime? @map("resolved_at")
 
@@ -2451,49 +1487,19 @@ model HsnLookupMiss {
   @@map("hsn_lookup_misses")
 }
 
-/// Where a stored GST rate came from. Makes divergence queryable — "show me
-/// every product billing at a rate its HSN doesn't support" is a report
-/// rather than an audit finding.
 enum TaxRateSource {
-  /// Straight from the HSN master's unconditional rate.
   HSN
-  /// From the master, after evaluating a conditional rule (price threshold).
   HSN_RULE
-  /// The shop's own [ShopHsnOverride].
   OVERRIDE
-  /// Typed by hand — pre-dates the master, or no code resolved.
   MANUAL
 }
 
-/// How a product's stored price relates to GST — the single source of truth
-/// every document type (invoice/quotation/challan-conversion) resolves its
-/// per-line tax convention from, instead of each guessing independently.
 enum ProductPricingMode {
-  /// GST is added on top of sellingPrice/mrp when billed (the historical
-  /// de-facto default across the app — safe, no-op default for existing rows).
   TAX_EXCLUSIVE
-  /// sellingPrice/mrp already contains GST + cess; billing backs it out.
   TAX_INCLUSIVE
-  /// Exempt / nil-rated — never carries GST, regardless of taxPercent.
   NO_GST
 }
 
-/// A staffer's position within a shop's team. The source of truth for
-/// per-request permission gating (see `requirePermission`) — distinct
-/// from `User.role`, which only says "merchant-side account vs
-/// marketplace shopper". OWNER is the shop's owner (one per shop, seeded
-/// by the migration backfill); MANAGER / STOCKIST / CASHIER are invited
-/// staff. The scopes are coarse on purpose — no per-user custom
-/// permissions — so the model stays understandable:
-///   OWNER    — everything, including team + billing/payouts.
-///   MANAGER  — full operational access except team + billing.
-///   STOCKIST — inventory + purchases (stock, vendors); read elsewhere.
-///   CASHIER  — invoices + payments; read elsewhere.
-/// OWNER bypasses every permission check. STAFF is the generic
-/// non-owner member — their actual access lives in ShopMember.permissions
-/// and their display label in ShopMember.roleName (a TeamRole name).
-/// MANAGER/STOCKIST/CASHIER are legacy preset values kept for older rows;
-/// new staff are stored as STAFF.
 enum ShopRole {
   OWNER
   MANAGER
@@ -2502,21 +1508,12 @@ enum ShopRole {
   STAFF
 }
 
-/// An owner-defined, per-shop role: a named permission template. The 3
-/// classic roles (Manager/Stockist/Cashier) are seeded as editable
-/// `builtin` rows so the whole roles surface is data-driven — owners can
-/// rename/retune them and add their own. Assigning a role COPIES its
-/// permissions onto the member (ShopMember.permissions stays the source
-/// of truth), so editing or deleting a role later never silently changes
-/// who can do what.
 model TeamRole {
   id          Int      @id @default(autoincrement())
   shopId      Int      @map("shop_id")
   shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
   name        String
   permissions String[] @default([])
-  /// True for the seeded starter roles. Cosmetic only (lets the UI mark
-  /// them) — owners may still edit/delete them.
   builtin     Boolean  @default(false)
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
@@ -2526,12 +1523,6 @@ model TeamRole {
   @@map("team_roles")
 }
 
-/// Join row linking a User to the Shop they staff, with their ShopRole.
-/// `@@unique([userId])` enforces that a user belongs to at most ONE
-/// shop's team — this keeps the JWT's shopId/shopRole single-valued and
-/// removes any need for a shop-switcher. The shop owner has a row here
-/// too (role OWNER); staff never own a `Shop` row (Shop.ownerUserId),
-/// only a membership. Cascades on either side's delete.
 model ShopMember {
   id          Int      @id @default(autoincrement())
   shopId      Int      @map("shop_id")
@@ -2539,14 +1530,7 @@ model ShopMember {
   userId      Int      @unique @map("user_id")
   user        User     @relation("ShopMemberUser", fields: [userId], references: [id], onDelete: Cascade)
   role        ShopRole @default(STAFF)
-  /// Display label for this member's role — a TeamRole name ("Cashier",
-  /// "Warehouse Lead", …). Null for the owner. The `role` enum only
-  /// distinguishes OWNER vs STAFF now; this carries the human name.
   roleName    String?  @map("role_name")
-  /// Per-employee granted rights as "<area>:<action>" strings (see
-  /// shared/http/permissions.ts). THIS is the source of truth for what
-  /// the member can do (copied from the assigned TeamRole, then freely
-  /// tweakable). Empty for OWNER (their role bypasses every check).
   permissions String[] @default([]) @map("permissions")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
@@ -2556,64 +1540,27 @@ model ShopMember {
   @@map("shop_members")
 }
 
-/// Customer-facing promo codes. A coupon can be platform-wide
-/// (shopId NULL — surfaces in every customer's "My coupons" list) or
-/// scoped to one shop (only redeemable on carts containing items from
-/// that shop).
-///
-/// Validation happens at preview + redemption time:
-///   * within the [validFrom, validUntil] window
-///   * min cart total met
-///   * per-user limit not exceeded
-///   * global total cap not exceeded
-///   * shop scope match (when shopId != null)
-///
-/// Discount math is platform-style — applied to the cart subtotal
-/// before delivery. PERCENT coupons honour `maxDiscount` so a 50%
-/// coupon doesn't accidentally wipe out a ₹50k order.
 model Coupon {
   id             Int      @id @default(autoincrement())
-  /// User-facing redemption code. Stored uppercase + unique so
-  /// "WELCOME10" and "welcome10" collapse to the same row.
   code           String   @unique
-  /// Short label rendered on the "My coupons" card ("New user offer").
   title          String
-  /// Long-form blurb shown under the title.
   description    String?
-  /// PERCENT or FLAT.
   discountType   String   @map("discount_type")
-  /// For PERCENT: integer 1–100. For FLAT: rupee amount.
   discountValue  Decimal  @map("discount_value") @db.Decimal(12, 2)
-  /// PERCENT-only — caps the absolute discount.
   maxDiscount    Decimal? @map("max_discount") @db.Decimal(12, 2)
-  /// Minimum cart subtotal required to redeem.
   minOrderAmount Decimal  @default(0) @map("min_order_amount") @db.Decimal(12, 2)
 
   validFrom  DateTime @map("valid_from")
   validUntil DateTime @map("valid_until")
 
-  /// Per-user redemption limit. 0 = unlimited.
   perUserLimit     Int @default(1) @map("per_user_limit")
-  /// Global redemption cap across all users. 0 = unlimited.
   totalCap         Int @default(0) @map("total_cap")
-  /// Live counter — bumped inside the redemption transaction so
-  /// concurrent checkouts can't overshoot [totalCap].
   totalRedemptions Int @default(0) @map("total_redemptions")
 
-  /// Public coupons surface in the customer's "My coupons" carousel
-  /// AND auto-apply at checkout when the cart satisfies their
-  /// constraints. Private coupons (the default) are only redeemed when
-  /// the customer types the code — useful for influencer codes, B2B
-  /// deals, refer-a-friend links etc.
   isPublic Boolean @default(false) @map("is_public")
 
-  /// First-order-only — the coupon only redeems when the customer has
-  /// zero prior confirmed CustomerOrders. Set both this and
-  /// `perUserLimit = 1` for a true single-shot welcome offer.
   firstOrderOnly Boolean @default(false) @map("first_order_only")
 
-  /// NULL = platform-wide. Otherwise the shop this coupon is bound to;
-  /// the cart must contain at least one item from this shop.
   shopId Int?  @map("shop_id")
   shop   Shop? @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
@@ -2628,20 +1575,14 @@ model Coupon {
   @@map("coupons")
 }
 
-/// One row per (coupon, customer, order) — append-only audit.
-/// Enforces per-user limit + total cap via increment-counter logic in
-/// the service layer (both are gated inside the same transaction as
-/// the customer order insert).
 model CouponRedemption {
   id              Int           @id @default(autoincrement())
   couponId        Int           @map("coupon_id")
   coupon          Coupon        @relation(fields: [couponId], references: [id], onDelete: Cascade)
   userId          Int           @map("user_id")
   user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  /// Parent CustomerOrder the redemption was applied to.
   customerOrderId Int           @unique @map("customer_order_id")
   customerOrder   CustomerOrder @relation(fields: [customerOrderId], references: [id], onDelete: Cascade)
-  /// Discount amount actually applied (after MRP / max-cap math).
   discountAmount  Decimal       @map("discount_amount") @db.Decimal(12, 2)
   redeemedAt      DateTime      @default(now()) @map("redeemed_at")
 
@@ -2650,19 +1591,6 @@ model CouponRedemption {
   @@map("coupon_redemptions")
 }
 
-
-/// Raw activity stream — every customer interaction worth attributing
-/// lands here. The id is BigInt because at scale this table grows fast
-/// (one row per IMPRESSION); the daily prune cron drops everything
-/// older than 90 days to keep it bounded. Aggregates that need to
-/// outlive the raw row land in trending / analytics tables (P6 / P7).
-///
-/// Idempotency: clients generate `clientUuid` per event and may retry;
-/// the unique index makes a re-POST a no-op (createMany skipDuplicates).
-///
-/// `userId` is nullable — pre-login impressions are still useful for
-/// trending, attributed only by sessionId. Once the user signs in the
-/// session's tail of events stays under the sessionId.
 model ProductEvent {
   id         BigInt           @id @default(autoincrement())
   clientUuid String           @unique @map("client_uuid")
@@ -2692,10 +1620,6 @@ enum ProductEventType {
   WISHLIST_ADD
 }
 
-/// Materialised "last 20 viewed" list per user. Upserted whenever a
-/// VIEW event is ingested for an authenticated user. Trimmed by an
-/// hourly cron so the cap stays soft (we tolerate a brief overshoot
-/// between ingest and trim instead of a per-write DELETE).
 model RecentlyViewed {
   id           Int      @id @default(autoincrement())
   userId       Int      @map("user_id")
@@ -2709,19 +1633,6 @@ model RecentlyViewed {
   @@map("recently_viewed")
 }
 
-/// Per-(category, product) trending score, recomputed on a 15-minute
-/// cron from ProductEvent. categoryId = NULL is the global ("All")
-/// bucket. `windowEnd` lets the recompute leave older snapshots in
-/// place briefly (rolling read with a fall-back) while a new snapshot
-/// is being written; the cron sweeps anything older than 7d.
-///
-/// Formula (tunable in the service):
-///   score = 0.05 * impressions24h
-///         + 0.3  * taps24h
-///         + 2    * addToCart24h
-///         + 10   * purchases24h
-///         + 1    * wishlist24h
-///         - exp(-daysSinceListing / 30)
 model TrendingScore {
   id         Int       @id @default(autoincrement())
   categoryId Int?      @map("category_id")
@@ -2738,12 +1649,6 @@ model TrendingScore {
   @@map("trending_scores")
 }
 
-/// Phase G — frequently-bought-together cache. One row per product;
-/// `relatedIds` is the ordered top-N co-occurring productIds computed
-/// nightly from invoice_items co-occurrence in the same shop. Kept
-/// separate from [RecommendationCache] (which is user-keyed) because
-/// FBT is product-keyed and we want a hot lookup without joining
-/// users.
 model FbtCache {
   productId  Int      @id @map("product_id")
   product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
@@ -2754,10 +1659,6 @@ model FbtCache {
   @@map("fbt_cache")
 }
 
-/// Per-user content-based recommendation cache. One row per (user,
-/// slot). productIds is the ordered shortlist the customer rail
-/// renders. Slot keys are open-ended ("for_you", "because_you_viewed_X")
-/// so future surfaces don't need migrations.
 model RecommendationCache {
   id         Int      @id @default(autoincrement())
   userId     Int      @map("user_id")
@@ -2771,10 +1672,6 @@ model RecommendationCache {
   @@map("recommendation_cache")
 }
 
-/// Distinct search queries — populated by `upsertSearchTerm` on every
-/// /search call. Used by `/search/hints` (top-N over the last 24h)
-/// and the autocomplete fall-back for queries that match no product
-/// directly. `term` is lowercased + trimmed at the service layer.
 model SearchTerm {
   id             Int      @id @default(autoincrement())
   term           String   @unique
@@ -2786,10 +1683,6 @@ model SearchTerm {
   @@map("search_terms")
 }
 
-/// Per-search analytics row. Decoupled from SearchTerm because the
-/// row-vs-term cardinality is very different (one row per request vs
-/// one row per distinct query). Powers session-replay style debugging
-/// and conversion analysis.
 model SearchEvent {
   id          Int      @id @default(autoincrement())
   userId      Int?     @map("user_id")
@@ -2804,39 +1697,19 @@ model SearchEvent {
   @@map("search_events")
 }
 
-/// Provider-agnostic online-payment intent. One row per checkout attempt for
-/// any gateway (Razorpay today; the `provider` string keeps it open). The
-/// authoritative record that money was collected online and what it settles
-/// against. See PAYMENT_GATEWAY_ARCHITECTURE.md + modules/payment-gateway/.
-///
-/// `shopId` / `customerUserId` / `targetId` are deliberately relationless plain
-/// columns (like [WalletEntry.sourceId]) — a new settlement target kind doesn't
-/// then need a migration to extend an FK constraint.
 model GatewayPayment {
   id                 Int      @id @default(autoincrement())
-  /// Registry key of the gateway that owns this intent (e.g. 'RAZORPAY').
   provider           String
-  /// CREATED | PENDING | CAPTURED | FAILED | REFUNDED. Transitions only advance.
   status             String   @default("CREATED")
   amount             Decimal  @db.Decimal(12, 2)
   currency           String   @default("INR")
-  /// WALLET | ORDER | INVOICE | POS — which domain the money settles into.
   targetType         String   @map("target_type")
-  /// Domain id for the target (WALLET → customerUserId, ORDER → CustomerOrder id…).
   targetId           Int      @map("target_id")
   shopId             Int?     @map("shop_id")
   customerUserId     Int?     @map("customer_user_id")
-  /// Gateway-side references (Razorpay order_id / payment_id). Set as the flow
-  /// progresses; used by webhooks + reconciliation to resolve the intent.
   providerOrderRef   String?  @map("provider_order_ref")
   providerPaymentRef String?  @map("provider_payment_ref")
-  /// Cumulative real-money refunded to source against this captured payment
-  /// (Σ of PROCESSED/PENDING GatewayRefund.amount). Denormalised so the refund
-  /// engine can cap a new refund at (amount − amountRefunded) without summing
-  /// the children every time. status flips to REFUNDED once this reaches amount.
   amountRefunded     Decimal  @default(0) @map("amount_refunded") @db.Decimal(12, 2)
-  /// Client-supplied retry key. Partial-unique with customerUserId so a flaky
-  /// mobile retry reuses the original intent instead of minting a duplicate.
   idempotencyKey     String?  @map("idempotency_key")
   createdAt          DateTime @default(now()) @map("created_at")
   updatedAt          DateTime @updatedAt @map("updated_at")
@@ -2845,47 +1718,21 @@ model GatewayPayment {
   @@index([provider, providerOrderRef])
   @@index([provider, providerPaymentRef])
   @@index([status, targetType])
-  /// Refund engine: resolve "the captured online payment for this order/sale"
-  /// from (targetType, targetId) without scanning. Partial index-shaped lookup
-  /// done in the repo (status = CAPTURED).
   @@index([targetType, targetId])
   @@map("gateway_payments")
 }
 
-/// One real-money refund-to-source against a captured [GatewayPayment]. This is
-/// the legally-required path: an online (card/UPI/netbanking) payment must be
-/// reversed to the ORIGINAL instrument — never silently converted to store
-/// credit (RBI "refund to source"; Consumer Protection (E-Commerce) Rules 2020,
-/// Rule 4(7)). One row per refund attempt; partial refunds (a single returned
-/// line of a multi-line order) produce several rows against the same payment.
-///
-/// `sourceType` / `sourceId` tie the refund back to the domain event that
-/// triggered it (RETURN → ReturnRequest.id, CANCEL → PurchaseRequest.id) and,
-/// combined with `idempotencyKey`, make the engine idempotent: a retried return
-/// or a redelivered request re-uses this row instead of issuing a second refund.
 model GatewayRefund {
   id                Int      @id @default(autoincrement())
-  /// Parent captured intent (GatewayPayment.id). Loose Int FK to match how
-  /// GatewayPayment is referenced elsewhere in this module.
   gatewayPaymentId  Int      @map("gateway_payment_id")
   provider          String
-  /// PENDING (provider accepted, money in flight) | PROCESSED (settled to the
-  /// instrument) | FAILED (provider rejected — never reduced amountRefunded).
   status            String   @default("PENDING")
   amount            Decimal  @db.Decimal(12, 2)
   currency          String   @default("INR")
-  /// Provider refund id (Razorpay rfnd_XXXX). Set once the provider accepts;
-  /// the refund.processed/failed webhook resolves the row back through it.
   providerRefundRef String?  @map("provider_refund_ref")
-  /// What triggered the refund: RETURN | CANCEL (free-form so a new trigger
-  /// needs no migration). sourceId is the domain row id (ReturnRequest /
-  /// PurchaseRequest).
   sourceType        String   @map("source_type")
   sourceId          Int      @map("source_id")
-  /// Human-readable reason carried into the provider's notes + any ledger UI.
   reason            String?
-  /// Deterministic dedupe key (e.g. "return-refund-<id>" / "cancel-<id>"). A
-  /// retried trigger re-uses the existing row instead of double-refunding.
   idempotencyKey    String   @map("idempotency_key")
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
@@ -2897,9 +1744,6 @@ model GatewayRefund {
   @@map("gateway_refunds")
 }
 
-/// Append-only webhook ledger + exactly-once dedupe gate. The unique
-/// (provider, event_id) means a redelivered webhook is rejected at insert,
-/// so settlement runs at most once per provider event.
 model GatewayWebhookEvent {
   id          Int       @id @default(autoincrement())
   provider    String
@@ -2912,26 +1756,13 @@ model GatewayWebhookEvent {
   @@map("gateway_webhook_events")
 }
 
-/// One Razorpay Route payout destination per Shop (a "linked account").
-/// Created via merchant KYC onboarding. A Shop with no row — or a row whose
-/// payoutsEnabled is false — CANNOT receive a held transfer; the ORDER split
-/// handler gates on this and records the child KYC_GATED instead.
-///
-/// NB: Route "on-hold settlement" is NOT a licensed escrow. Funds parked via
-/// `on_hold` sit in Razorpay's regulated balance with Razorpay as custodian —
-/// never in a ShopXY-controlled account. See ROUTE_SPLIT_DESIGN.md.
 model LinkedAccount {
   id                Int      @id @default(autoincrement())
   shopId            Int      @unique @map("shop_id")
   shop              Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
   provider          String   @default("RAZORPAY")
-  /// Razorpay linked-account id (acc_XXXX) — the `account` in a TransferRequest.
   providerAccountId String?  @map("provider_account_id")
-  /// KYC lifecycle, mirrored from account.* webhooks:
-  /// CREATED → UNDER_REVIEW → ACTIVATED | NEEDS_CLARIFICATION | SUSPENDED.
   kycStatus         String   @default("CREATED") @map("kyc_status")
-  /// True only once Razorpay confirms the account can be settled to. The split
-  /// handler refuses to create a transfer otherwise.
   payoutsEnabled    Boolean  @default(false) @map("payouts_enabled")
   email             String?
   contactName       String?  @map("contact_name")
@@ -2945,44 +1776,21 @@ model LinkedAccount {
   @@map("linked_accounts")
 }
 
-/// One Route transfer per (GatewayPayment, PurchaseRequest) — the per-shop
-/// slice of a captured order, created ON-HOLD and released on delivery /
-/// reversed on an in-hold return. Tracks the hold lifecycle independently of
-/// the parent intent so one order can have some children released, others
-/// reversed.
 model GatewayTransfer {
   id                  Int             @id @default(autoincrement())
-  /// Parent captured intent (GatewayPayment.id). Loose Int FK to match how
-  /// GatewayPayment is referenced elsewhere in this module.
   gatewayPaymentId    Int             @map("gateway_payment_id")
-  /// The child shop-order this slice settles. One transfer per PurchaseRequest.
   purchaseRequestId   Int             @map("purchase_request_id")
   purchaseRequest     PurchaseRequest @relation(fields: [purchaseRequestId], references: [id], onDelete: Cascade)
-  /// Destination linked account. Null while the child is KYC-gated.
   linkedAccountId     Int?            @map("linked_account_id")
   linkedAccount       LinkedAccount?  @relation(fields: [linkedAccountId], references: [id], onDelete: SetNull)
-  /// Denormalised acct id for audit even if the LinkedAccount row is edited.
-  /// Null while KYC-gated (no transfer created yet).
   providerAccountId   String?         @map("provider_account_id")
   amount              Decimal         @db.Decimal(12, 2)
-  /// Razorpay transfer id (trf_XXXX). Null in the window between row insert and
-  /// the createTransfers call returning — reconciliation heals null-ref rows.
   providerTransferRef String?         @map("provider_transfer_ref")
-  /// Deterministic idempotency key "gw:<paymentId>:pr:<requestId>". Persisted
-  /// BEFORE the provider call and echoed into Razorpay transfer notes, so a
-  /// retry/heal does fetch-before-create instead of minting a duplicate.
   idempotencyKey      String          @map("idempotency_key")
-  /// HELD | PARTIALLY_REVERSED | RELEASED | REVERSED | FAILED | KYC_GATED.
-  /// String (not enum) so states need no migration (matches ReturnRequest.status).
-  /// PARTIALLY_REVERSED keeps a part-clawed-back transfer out of P2 auto-release.
   status              String          @default("HELD")
-  /// on_hold_until echoed back (capture + Shop.returnWindowDays). The auto-
-  /// release backstop; buyer-confirm releases earlier.
   holdUntil           DateTime?       @map("hold_until")
   releasedAt          DateTime?       @map("released_at")
   reversedAt          DateTime?       @map("reversed_at")
-  /// Cumulative reversed amount (partial returns). status → REVERSED only when
-  /// reversedAmount == amount.
   reversedAmount      Decimal         @default(0) @map("reversed_amount") @db.Decimal(12, 2)
   failureReason       String?         @map("failure_reason")
   createdAt           DateTime        @default(now()) @map("created_at")
@@ -2995,52 +1803,21 @@ model GatewayTransfer {
   @@map("gateway_transfers")
 }
 
-/// PR-C3 — operator (e-commerce operator) tax withheld at source on a
-/// seller's slice of a captured order. ShopXY collects the buyer payment in
-/// its OWN Razorpay account and splits to sellers via Route, so under the
-/// GST/IT Acts it is an "e-commerce operator" that must withhold:
-///   - GST TCS  (CGST Sec 52): 0.5% CGST-TCS + 0.5% SGST-TCS intrastate, or
-///     1% IGST-TCS interstate — i.e. 1% of the NET TAXABLE value of supplies,
-///     reported monthly in GSTR-8.
-///   - Income-tax TDS (Sec 194-O): 1% of the GROSS amount of the supply,
-///     reported in Form 26Q.
-/// The withheld amounts REDUCE the seller's Route settlement; the operator
-/// deposits them to the exchequer. One row per (gatewayPayment, child order)
-/// so each seller's withholding is independently auditable. The compute +
-/// persist path is always present, but actually subtracting it from the Route
-/// transfer is gated behind OPERATOR_TCS_ENABLED (default OFF) so enabling the
-/// statute is a deliberate, config-flipped, compliance-signed-off step.
 model OperatorWithholding {
   id                Int             @id @default(autoincrement())
-  /// Captured intent this withholding was computed against (GatewayPayment.id).
-  /// Loose Int FK to match how GatewayPayment is referenced across this module.
   gatewayPaymentId  Int             @map("gateway_payment_id")
-  /// The child shop-order (PurchaseRequest) whose seller slice is withheld on.
   purchaseRequestId Int             @map("purchase_request_id")
   purchaseRequest   PurchaseRequest @relation(fields: [purchaseRequestId], references: [id], onDelete: Cascade)
-  /// Owning seller shop — preserved for tenant-scoped GSTR-8/26Q reporting.
   shopId            Int             @map("shop_id")
-  /// Net taxable value (GST TCS base, Sec 52) and gross supply value
-  /// (income-tax TDS base, Sec 194-O) the rates were applied to.
   netTaxable        Decimal         @map("net_taxable") @db.Decimal(12, 2)
   grossAmount       Decimal         @map("gross_amount") @db.Decimal(12, 2)
-  /// Whether the supply crossed a state line — IGST-TCS vs CGST+SGST-TCS split.
   isInterstate      Boolean         @map("is_interstate")
-  /// GST TCS components (Sec 52). For an interstate supply the whole 1% sits in
-  /// igstTcs; intrastate splits 0.5%/0.5% across cgstTcs/sgstTcs. cgst+sgst+igst
-  /// == gstTcsTotal.
   cgstTcs           Decimal         @default(0) @map("cgst_tcs") @db.Decimal(12, 2)
   sgstTcs           Decimal         @default(0) @map("sgst_tcs") @db.Decimal(12, 2)
   igstTcs           Decimal         @default(0) @map("igst_tcs") @db.Decimal(12, 2)
   gstTcsTotal       Decimal         @default(0) @map("gst_tcs_total") @db.Decimal(12, 2)
-  /// Income-tax TDS (Sec 194-O), 1% of grossAmount.
   incomeTaxTds      Decimal         @default(0) @map("income_tax_tds") @db.Decimal(12, 2)
-  /// gstTcsTotal + incomeTaxTds — the amount the seller's Route settlement is
-  /// reduced by when OPERATOR_TCS_ENABLED is on.
   totalWithheld     Decimal         @default(0) @map("total_withheld") @db.Decimal(12, 2)
-  /// True only when the settlement reduction was actually applied (flag on at
-  /// compute time). When false the row is informational — computed + recorded
-  /// for reporting parity, but the seller was paid in full.
   applied           Boolean         @default(false)
   createdAt         DateTime        @default(now()) @map("created_at")
   updatedAt         DateTime        @updatedAt @map("updated_at")
@@ -3050,20 +1827,6 @@ model OperatorWithholding {
   @@map("operator_withholdings")
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// Analytics roll-ups (Phase 2). Per-shop, per-day pre-aggregates that the
-// dashboard / reports / analytics read instead of scanning raw invoices &
-// line items. Maintained by the changefeed cron, which recomputes each dirty
-// (shop, day) FROM RAW using the audited reports.service math (single source
-// of truth), so roll-ups always reconcile with the Reports screen.
-//
-// `day` is the IST calendar day (computed with istDayStart). These tables hold
-// loose shopId (no relation) to avoid back-relations on Shop, matching the
-// CashierShift / CashMovement pattern.
-// ─────────────────────────────────────────────────────────────────────────
-
-/// One row per shop per day: confirmed-sale aggregates (credit-note-signed) +
-/// the P&L legs (COGS, returned COGS, write-offs) for that day.
 model AggDailySales {
   shopId       Int      @map("shop_id")
   day          DateTime @db.Date
@@ -3081,7 +1844,6 @@ model AggDailySales {
   @@map("agg_daily_sales")
 }
 
-/// One row per shop per day: confirmed-purchase aggregates (credit-note-signed).
 model AggDailyPurchases {
   shopId    Int      @map("shop_id")
   day       DateTime @db.Date
@@ -3095,13 +1857,10 @@ model AggDailyPurchases {
   @@map("agg_daily_purchases")
 }
 
-/// Receipts/payments by mode per shop per day (collections-by-mode, tender mix).
 model AggDailyPayment {
   shopId    Int      @map("shop_id")
   day       DateTime @db.Date
-  /// 'RECEIPT' (in) | 'PAYMENT' (out to vendor).
   type      String
-  /// CASH | UPI | NEFT | RTGS | CHEQUE | CARD | OTHER.
   mode      String
   amount    Decimal  @default(0) @db.Decimal(14, 2)
   cnt       Int      @default(0)
@@ -3112,7 +1871,6 @@ model AggDailyPayment {
   @@map("agg_daily_payments")
 }
 
-/// Output/input GST per shop per day, bucketed by tax rate.
 model AggDailyGst {
   shopId     Int      @map("shop_id")
   day        DateTime @db.Date
@@ -3129,8 +1887,6 @@ model AggDailyGst {
   @@map("agg_daily_gst")
 }
 
-/// Per-product confirmed-sale aggregates per shop per day (top products /
-/// categories / slow-mover sales). categoryId is denormalised for category rollups.
 model AggDailyProduct {
   shopId     Int      @map("shop_id")
   day        DateTime @db.Date
@@ -3145,7 +1901,6 @@ model AggDailyProduct {
   @@map("agg_daily_product")
 }
 
-/// Changefeed watermark — last-processed cursor for the roll-up worker.
 model AggChangefeedCursor {
   name      String   @id
   cursorAt  DateTime @map("cursor_at")
@@ -3154,50 +1909,21 @@ model AggChangefeedCursor {
   @@map("agg_changefeed_cursor")
 }
 
-/// Transactional outbox — the spine of the event-driven architecture.
-///
-/// A domain write (e.g. confirming an invoice) inserts one row here in the
-/// SAME transaction as the business change (`enqueueOutbox(event, tx)`), so an
-/// event can never exist without its write, nor a write without its event. A
-/// relay (`src/infra/outbox/relay.ts`) then claims PENDING rows with
-/// `FOR UPDATE SKIP LOCKED` — which lets any number of app instances drain the
-/// log cooperatively without double-dispatching — fans each event out to its
-/// registered handlers (today: analytics roll-ups), and marks it PUBLISHED.
-///
-/// This replaces the lossy `updated_at > cursor` polling changefeed as the way
-/// derived read models learn about changes. The changefeed + nightly reconcile
-/// stay on as a safety net while we build confidence, so a dropped or failed
-/// event self-heals rather than silently corrupting a roll-up.
-///
-/// BIGSERIAL because this is an append-heavy table; ids are never shown to a
-/// client, only used internally by the relay. Retention/partitioning of
-/// PUBLISHED rows is a follow-up (see readmes/ outbox notes).
 model OutboxEvent {
   id            BigInt    @id @default(autoincrement())
-  /// Domain aggregate this event concerns, e.g. "invoice", "payment".
   aggregateType String    @map("aggregate_type")
-  /// The aggregate's id as text — keeps the log polymorphic across aggregates.
   aggregateId   String    @map("aggregate_id")
-  /// Dotted event name, e.g. "invoice.confirmed", "invoice.cancelled".
   eventType     String    @map("event_type")
-  /// Owning shop — the tenant key the whole schema already shards on. Nullable
-  /// for the rare platform-level event with no single shop.
   shopId        Int?      @map("shop_id")
-  /// Self-contained event body (jsonb). A handler must never have to read back
-  /// the source row, which may have changed by the time the event is handled.
   payload       Json
-  /// PENDING → PROCESSING → PUBLISHED, or terminal FAILED after maxAttempts.
   status        String    @default("PENDING")
   attempts      Int       @default(0)
   lastError     String?   @map("last_error")
-  /// Earliest time the relay may (re)claim this row — drives retry backoff.
   availableAt   DateTime  @default(now()) @map("available_at")
-  /// Set when the relay claims the row; a reaper resets rows stuck PROCESSING.
   claimedAt     DateTime? @map("claimed_at")
   publishedAt   DateTime? @map("published_at")
   createdAt     DateTime  @default(now()) @map("created_at")
 
-  /// The relay's hot path: PENDING rows due now, oldest first.
   @@index([status, availableAt, id])
   @@index([aggregateType, aggregateId])
   @@map("outbox_events")

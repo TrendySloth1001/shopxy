@@ -15,18 +15,15 @@ import { DISCOUNT_TYPES, type Coupon, type DiscountType } from "./schema";
 
 const BACK = "/dashboard/coupons";
 
-/** Strip to the characters the Flutter editor allows and force upper-case. */
 function canonCode(raw: string): string {
   return raw.replace(/[^A-Za-z0-9_-]/g, "").toUpperCase().slice(0, 40);
 }
 
-/** Parse an integer field where blank/invalid means 0 (unlimited). */
 function toInt(v: string): number {
   const n = Number(v);
   return Number.isInteger(n) && n >= 0 ? n : 0;
 }
 
-/** Full-page coupon editor with a live customer-card preview. */
 export function CouponEditor({ existing }: { existing: Coupon | null }) {
   const t = useTranslations("coupons");
   const router = useRouter();
@@ -120,7 +117,6 @@ export function CouponEditor({ existing }: { existing: Coupon | null }) {
       ) : null}
 
       <div className="mt-xl grid gap-xl lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] xl:grid-cols-[380px_minmax(0,1fr)]">
-        {/* Preview */}
         <div className="lg:sticky lg:top-lg lg:self-start">
           <p className="mb-sm text-label-md uppercase tracking-wide text-subtle">{t("form.preview")}</p>
           <CouponPreview
@@ -136,7 +132,6 @@ export function CouponEditor({ existing }: { existing: Coupon | null }) {
           />
         </div>
 
-        {/* Form */}
         <div className="flex max-w-content flex-col gap-lg">
           <div className="grid grid-cols-1 gap-md sm:grid-cols-2">
             <TextField
@@ -243,7 +238,6 @@ export function CouponEditor({ existing }: { existing: Coupon | null }) {
         </div>
       </div>
 
-      {/* Sticky action bar */}
       <div className="sticky bottom-0 mt-xxl -mx-lg flex items-center justify-end gap-md border-t border-hairline bg-canvas px-lg py-md md:-mx-xxl md:px-xxl">
         <Link
           href={BACK}
@@ -264,7 +258,6 @@ export function CouponEditor({ existing }: { existing: Coupon | null }) {
   );
 }
 
-/** A customer-facing coupon ticket — what the buyer sees on their carousel. */
 function CouponPreview({
   code,
   title,
@@ -291,12 +284,10 @@ function CouponPreview({
   return (
     <div className="overflow-hidden rounded-lg border border-hairline bg-surface shadow-floating">
       <div className="flex items-stretch">
-        {/* Discount stub */}
         <div className="flex w-1/3 shrink-0 flex-col items-center justify-center gap-xs bg-brand-soft px-md py-lg text-center">
           <Ticket size={20} className="text-brand-strong" />
           <span className="text-title-sm font-extrabold leading-tight text-brand-strong">{headline}</span>
         </div>
-        {/* Detail */}
         <div className="min-w-0 flex-1 border-l border-dashed border-hairline p-lg">
           <p className="truncate text-body-md font-bold text-ink">{title || t("preview.titleFallback")}</p>
           <span className="mt-xs inline-flex items-center rounded-md bg-surface-tint px-sm py-px text-body-sm font-semibold tracking-wide text-ink">

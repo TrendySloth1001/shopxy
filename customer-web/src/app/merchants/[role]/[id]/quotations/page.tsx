@@ -75,7 +75,6 @@ function QuotationsPageContent() {
   const [total, setTotal] = useState(0);
   const limit = 30;
 
-  // Quotations only available for party role
   useEffect(() => {
     if (role !== "party") {
       router.replace(`/merchants/${role}/${id}/invoices`);
@@ -109,7 +108,6 @@ function QuotationsPageContent() {
   return (
     <div className="mx-auto max-w-shell px-0 sm:px-lg py-xxxl">
       <div className="mx-auto max-w-content">
-        {/* Header */}
         <div className="px-lg sm:px-0 mb-xxl">
           <BackButton fallback="/merchants" className="mb-sm" />
           <div className="flex items-start justify-between gap-md">
@@ -131,7 +129,6 @@ function QuotationsPageContent() {
           </div>
         </div>
 
-        {/* Loading skeletons */}
         {loading && quotations.length === 0 && (
           <div className="divide-y divide-hairline">
             {Array.from({ length: 7 }).map((_, i) => (
@@ -140,19 +137,16 @@ function QuotationsPageContent() {
           </div>
         )}
 
-        {/* Error */}
         {!loading && error && quotations.length === 0 && (
           <PageError message={error} onRetry={() => load(1)} />
         )}
 
-        {/* Empty */}
         {!loading && !error && quotations.length === 0 && (
           <QuotationEmptyState
             onRequest={() => router.push(`/merchants/${role}/${id}/request-quote`)}
           />
         )}
 
-        {/* List */}
         {quotations.length > 0 && (
           <>
             <div className="divide-y divide-hairline border-y border-hairline">

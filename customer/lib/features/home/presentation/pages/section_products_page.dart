@@ -4,14 +4,6 @@ import 'package:shopxy_customer/features/home/presentation/widgets/home_product_
 import 'package:shopxy_customer/shared/constants/app_sizes.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 
-/// "See all" destination for a home-feed product carousel. Renders the
-/// section's full product list (already loaded into the feed by the
-/// home endpoint — typically 12–36 items) in a 2-column grid using the
-/// same tile widget the carousel uses, so the visual stays identical.
-///
-/// This avoids the previous behavior where every carousel arrow opened
-/// the search page; instead the user lands on a focused view of the
-/// section they actually tapped.
 class SectionProductsPage extends StatelessWidget {
   const SectionProductsPage({
     super.key,
@@ -79,8 +71,6 @@ class SectionProductsPage extends StatelessWidget {
                 crossAxisCount: 2,
                 mainAxisSpacing: AppSizes.lg,
                 crossAxisSpacing: AppSizes.md,
-                // Tile is image (square) + 2 lines name + price + bank
-                // offer line ≈ 1 / 1.55 aspect.
                 childAspectRatio: 0.62,
               ),
               itemCount: products.length,

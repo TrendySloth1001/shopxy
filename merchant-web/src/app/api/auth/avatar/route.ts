@@ -5,12 +5,9 @@ import {
   getCurrentUser,
 } from "@/server/auth/session";
 
-const MAX_BYTES = 8 * 1024 * 1024; // 8 MB — matches the backend limit
+const MAX_BYTES = 8 * 1024 * 1024;
 const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp"]);
 
-// POST /api/auth/avatar — multipart upload. Forwards the image to the backend
-// avatar service, then PATCHes the returned URL onto the profile. Returns the
-// updated user so the client re-renders in one round trip.
 export async function POST(req: Request) {
   const form = await req.formData().catch(() => null);
   const file = form?.get("file");
@@ -71,7 +68,6 @@ export async function POST(req: Request) {
   return NextResponse.json({ user });
 }
 
-// DELETE /api/auth/avatar — clear the profile photo.
 export async function DELETE() {
   const res = await authedFetch("/auth/me", {
     method: "PATCH",

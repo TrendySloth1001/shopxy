@@ -1,7 +1,3 @@
-// Regression test for the reported bug: going offline logged the user out and
-// the session ended. AuthProvider.init() must NOT clear the stored tokens on a
-// transport (offline) failure — only on a definitive server rejection.
-
 import 'dart:io';
 
 import 'package:flutter/services.dart';
@@ -15,7 +11,6 @@ import 'package:shopxy/features/auth/presentation/providers/auth_provider.dart';
 
 void main() {
   final binding = TestWidgetsFlutterBinding.ensureInitialized();
-  // In-memory stand-in for the secure-storage plugin channel.
   const secure = MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
   late Map<String, String> store;
 
@@ -47,7 +42,6 @@ void main() {
     final tm = TokenManager();
     await tm.saveTokens(accessToken: 'access-token', refreshToken: 'refresh-token');
 
-    // Transport is down: every request throws like a real offline device.
     final api = ApiClient(
       tm,
       httpClient: MockClient((_) async => throw const SocketException('offline')),
@@ -65,7 +59,6 @@ void main() {
     final tm = TokenManager();
     await tm.saveTokens(accessToken: 'access-token', refreshToken: 'refresh-token');
 
-    // Server answers 401 to both /auth/me and the refresh attempt → real expiry.
     final api = ApiClient(
       tm,
       httpClient: MockClient((_) async => http.Response('{"error":"nope"}', 401)),
@@ -78,19 +71,6 @@ void main() {
     expect(auth.isAuthenticated, isFalse);
   });
 
-  // ── The signed-out-every-restart bug ───────────────────────────────────────
-  //
-  // Neither test above covers the case that actually happened, because both are
-  // uniform: either everything fails at the transport layer, or everything
-  // answers 401. Real restarts are MIXED. The access token expires between
-  // launches, so /auth/me genuinely reaches the server and is genuinely
-  // refused — and then the refresh, moments later, doesn't get through at all.
-  //
-  // ApiClient handles that correctly: `unavailable` keeps the tokens and hands
-  // back the original 401 specifically so nobody logs the user out. The bug was
-  // that AuthProvider.init read that same 401 as proof of expiry and wiped the
-  // session anyway, overruling the layer that actually knew.
-
   test('401 on /auth/me + unreachable refresh KEEPS the session', () async {
     final tm = TokenManager();
     await tm.saveTokens(accessToken: 'access-token', refreshToken: 'refresh-token');
@@ -98,7 +78,6 @@ void main() {
     final api = ApiClient(
       tm,
       httpClient: MockClient((req) async {
-        // The refresh never lands — network dropped between the two calls.
         if (req.url.path.endsWith('/auth/refresh')) {
           throw const SocketException('network dropped mid-refresh');
         }
@@ -125,7 +104,6 @@ void main() {
     final api = ApiClient(
       tm,
       httpClient: MockClient((req) async {
-        // A server hiccup or proxy error page is not a verdict on the session.
         if (req.url.path.endsWith('/auth/refresh')) {
           return http.Response('<html>502 Bad Gateway</html>', 502);
         }
@@ -156,8 +134,6 @@ void main() {
             200,
           );
         }
-        // Expired token is refused; the rotated one is accepted. Header keys
-        // are lower-cased by the http package, so don't match on casing.
         final auth = req.headers.entries
             .firstWhere(
               (e) => e.key.toLowerCase() == 'authorization',

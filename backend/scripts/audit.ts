@@ -25,13 +25,11 @@ async function main() {
   const shopId = user.shop?.id;
   console.log('SHOP_ID:', shopId);
 
-  // All products with shop_id breakdown
   const productCountsByShop = await prisma.$queryRaw<
     Array<{ shop_id: number | null; count: bigint }>
   >`SELECT shop_id, COUNT(*)::bigint AS count FROM products GROUP BY shop_id ORDER BY shop_id`;
   console.log('PRODUCT_COUNT_BY_SHOP:', productCountsByShop);
 
-  // Products belonging to this user's shop
   if (shopId) {
     const ourProducts = await prisma.product.findMany({
       where: { shopId },
@@ -41,7 +39,6 @@ async function main() {
     console.log('THIS_SHOPS_PRODUCTS (first 10):', ourProducts);
   }
 
-  // All shops (top 10)
   const shops = await prisma.shop.findMany({
     select: { id: true, ownerUserId: true, name: true, slug: true, isPublished: true },
     take: 20,

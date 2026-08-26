@@ -1,9 +1,3 @@
-/**
- * Google "G" brand mark. The 4-colour logo is a third-party brand asset, so its
- * fills are the official hex values (NOT house tokens — logos are the one
- * allowed exception to the tokens-only rule). Lives here, in the single icon
- * source, rather than being hand-written inline in a component.
- */
 export function GoogleIcon({ size = 18, className }: { size?: number; className?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 18 18" aria-hidden="true" className={className}>

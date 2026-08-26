@@ -45,18 +45,13 @@ import type { PaySession } from "@/shared/razorpay";
 import { BackButton } from "@/shared/ui/back-button";
 import { mediaSrc } from "@/shared/media";
 
-// ── Outcome enum (mirrors Flutter _PayAttemptOutcome) ────────────────────────
-
 type PayAttemptOutcome = "paid" | "pendingConfirmation" | "dismissed" | "failed";
-
-// ── Checkout page ─────────────────────────────────────────────────────────────
 
 function CheckoutInner() {
   const router = useRouter();
   const { user } = useAuth();
   const { lines, subtotal, savings, clear } = useCart();
 
-  // ── Address state ────────────────────────────────────────────────────────
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
   const [addressesLoading, setAddressesLoading] = useState(true);
   const [addressesError, setAddressesError] = useState<string | null>(null);
@@ -64,23 +59,19 @@ function CheckoutInner() {
   const [showAddressSheet, setShowAddressSheet] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
 
-  // ── Coupon state ─────────────────────────────────────────────────────────
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [couponApplying, setCouponApplying] = useState(false);
   const [couponError, setCouponError] = useState<string | null>(null);
   const [autoApplied, setAutoApplied] = useState(false);
 
-  // ── Payment method ────────────────────────────────────────────────────────
   const [payOnline, setPayOnline] = useState(false);
 
-  // ── Place order state ─────────────────────────────────────────────────────
   const [placing, setPlacing] = useState(false);
   const [placeError, setPlaceError] = useState<string | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const submittingRef = useRef(false);
 
-  // One idempotency key per visit — useState lazy initialiser runs outside render.
   const [idempotencyKeyValue] = useState<string>(() =>
     typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
       ? crypto.randomUUID()
@@ -88,11 +79,6 @@ function CheckoutInner() {
   );
   const idempotencyKey = { current: idempotencyKeyValue };
 
-  // ── Derived totals ────────────────────────────────────────────────────────
-  // Product savings come from the cart context, which counts a saving only
-  // where mrp > sellingPrice per line (no negative/fabricated savings from a
-  // bad catalog row). The struck "Items (MRP)" reference is derived from
-  // subtotal + savings so it stays consistent with that guard.
   const productSavings = savings;
   const mrpTotal = subtotal + productSavings;
 
@@ -100,19 +86,8 @@ function CheckoutInner() {
     ? computeCouponDiscount(appliedCoupon, subtotal)
     : 0;
   const grandTotal = Math.max(0, subtotal - couponDiscount);
-  // Savings reflect only real price reductions — product (MRP − selling) and
-  // coupon. Delivery is genuinely free (deliveryCharge = 0), so there is no
-  // waived fee to strike: do NOT fabricate a ₹49 reference price. (CP
-  // E-Commerce Rules r.4 / CCPA dark-pattern guidance — no fictitious
-  // reference prices.)
   const totalSavings = productSavings + couponDiscount;
 
-  // GST breakup — prices are inclusive of tax, so we back the tax out of the
-  // line amounts (qty × inclusive selling price) grouped by rate. This shows
-  // the consumer the statutory "of which taxes" split before placing the order
-  // (CP E-Commerce Rules r.4(3)). Derived client-side from cart line tax rates;
-  // the backend invoice remains authoritative. See findings_deferred for the
-  // server-breakup follow-up.
   const taxBreakup = deriveInclusiveTaxBreakup(
     lines.map((l) => ({
       inclusiveAmount: l.product.sellingPrice * l.quantity,
@@ -122,16 +97,13 @@ function CheckoutInner() {
 
   const selectedAddress = addresses.find((a) => a.id === selectedAddressId) ?? null;
 
-  // ── Unique shop ids for coupon API ────────────────────────────────────────
   const shopIds = Array.from(new Set(lines.map((l) => l.product.shop.id)));
 
-  // ── Load addresses ────────────────────────────────────────────────────────
   useEffect(() => {
     void (async () => {
       try {
         const data = await fetchAddresses();
         setAddresses(data);
-        // Auto-select default
         const def = data.find((a) => a.isDefault) ?? data[0];
         if (def) setSelectedAddressId(def.id);
       } catch (err) {
@@ -142,7 +114,6 @@ function CheckoutInner() {
     })();
   }, []);
 
-  // ── Auto-apply coupon on load ──────────────────────────────────────────────
   useEffect(() => {
     if (lines.length === 0 || shopIds.length === 0) return;
     void (async () => {
@@ -153,13 +124,11 @@ function CheckoutInner() {
           setAutoApplied(true);
         }
       } catch {
-        /* best-effort */
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // intentionally only on mount
+  }, []);
 
-  // ── Apply coupon ──────────────────────────────────────────────────────────
   async function handleApplyCoupon() {
     const code = couponCode.trim().toUpperCase();
     if (!code) return;
@@ -189,7 +158,6 @@ function CheckoutInner() {
     setCouponError(null);
   }
 
-  // ── Add address ───────────────────────────────────────────────────────────
   async function handleAddAddress(values: AddressFormValues) {
     const created = await createAddress(values);
     setAddresses((prev) => [...prev, created]);
@@ -198,7 +166,6 @@ function CheckoutInner() {
     setShowAddressSheet(false);
   }
 
-  // ── Place order ───────────────────────────────────────────────────────────
   async function handlePlaceOrder() {
     if (submittingRef.current) return;
     if (!selectedAddressId) {
@@ -210,7 +177,6 @@ function CheckoutInner() {
       return;
     }
 
-    // Confirm dialog for ≥ ₹500
     if (grandTotal >= 500 && !showConfirmDialog) {
       setShowConfirmDialog(true);
       return;
@@ -237,7 +203,6 @@ function CheckoutInner() {
 
       if (payOnline) {
         const outcome = await startOnlinePayment(order.id);
-        // Navigate once with the toast param so no intermediate render without it
         router.replace(`/orders/${order.id}?toast=${getToastParam(outcome)}`);
         return;
       }
@@ -285,7 +250,6 @@ function CheckoutInner() {
     }
   }
 
-  // ── Groups by shop ────────────────────────────────────────────────────────
   const shopGroups = lines.reduce<
     Map<string, { name: string; slug: string; lines: typeof lines }>
   >((map, line) => {
@@ -302,22 +266,18 @@ function CheckoutInner() {
   }, new Map());
   const shopGroupArray = Array.from(shopGroups.entries());
 
-  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <>
       <AppHeader />
       <main className="mx-auto max-w-shell px-lg py-xl">
         <BackButton fallback="/cart" className="mb-md" />
-        {/* Page heading */}
         <div className="mb-xl border-b border-hairline pb-lg">
           <h1 className="text-headline-md text-ink">Checkout</h1>
           <p className="mt-xs text-body-sm text-muted">Review your order and place it</p>
         </div>
 
         <div className="flex flex-col gap-xl lg:flex-row lg:items-start">
-          {/* Left — form sections */}
           <div className="flex flex-1 flex-col gap-xl">
-            {/* ── Deliver to ──────────────────────────────────── */}
             <section>
               <SectionLabel label="DELIVER TO" icon={<MapPin size={14} />} />
               {addressesLoading ? (
@@ -393,7 +353,6 @@ function CheckoutInner() {
                 </button>
               )}
 
-              {/* Delivery estimate when address selected */}
               {selectedAddress && (
                 <div className="mt-sm flex items-center gap-md rounded-md bg-white p-md">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-success-soft">
@@ -411,7 +370,6 @@ function CheckoutInner() {
               )}
             </section>
 
-            {/* ── Order items ──────────────────────────────────── */}
             <section>
               <SectionLabel
                 label={`ORDER ITEMS · ${lines.length} ${lines.length === 1 ? "item" : "items"}`}
@@ -441,10 +399,6 @@ function CheckoutInner() {
                         </span>
                       </div>
                     )}
-                    {/* Seller identity disclosure — the buyer contracts with the
-                    shop, not ShopXY (CP E-Commerce Rules r.5/r.6). Full legal
-                    name / address / GSTIN live on the shop page; surface the
-                    seller and a route to those details before payment. */}
                 <Link
                   href={`/shop/${group.slug}`}
                   className="flex items-center gap-sm border-b border-hairline px-md py-sm text-label-md text-muted hover:text-ink focus-visible:outline-none"
@@ -515,7 +469,6 @@ function CheckoutInner() {
               </div>
             </section>
 
-            {/* ── Offers ───────────────────────────────────────── */}
             <section>
               <SectionLabel label="OFFERS" icon={<Tag size={14} />} />
               <CouponCard
@@ -534,7 +487,6 @@ function CheckoutInner() {
               />
             </section>
 
-            {/* ── Payment method ────────────────────────────────── */}
             <section>
               <SectionLabel label="PAYMENT METHOD" icon={<CreditCard size={14} />} />
               <div className="flex flex-col gap-sm">
@@ -553,7 +505,6 @@ function CheckoutInner() {
               </div>
             </section>
 
-            {/* ── Price details ─────────────────────────────────── */}
             <section>
               <SectionLabel label="PRICE DETAILS" />
               <PriceCard
@@ -573,12 +524,7 @@ function CheckoutInner() {
               )}
             </section>
 
-            {/* ── Trust footer ────────────────────────────────────── */}
             <div className="flex flex-wrap gap-sm">
-              {/* Qualified trust strip — cancellation depends on each shop's
-                  cancellation policy, so we describe the mechanic rather than
-                  promise blanket "easy cancel". (CP Act 2019; CCPA dark-pattern
-                  guidance.) */}
               {[
                 { icon: <Lock className="h-5 w-5 text-brand" />, label: "Secure checkout" },
                 {
@@ -613,13 +559,11 @@ function CheckoutInner() {
             </p>
           </div>
 
-          {/* Right — sticky order summary */}
           <div className="lg:sticky lg:top-xl lg:w-72">
             <div className="rounded-lg border border-hairline bg-white p-md shadow-floating">
               <p className="mb-sm text-label-md font-extrabold uppercase tracking-wide text-muted">
                 Price details
               </p>
-              {/* Bill rows with divider rhythm */}
               <div className="flex flex-col gap-xs">
                 <StickyBillRow label="Items total" value={formatINR(subtotal)} />
                 {productSavings > 0 && (
@@ -639,9 +583,6 @@ function CheckoutInner() {
                 <StickyBillRow label="Delivery" value="FREE" valueClass="text-success" />
               </div>
               <div className="my-md border-t border-hairline" />
-              {/* Bold total — estimate; the shop confirms the final charged
-                  amount at place-order (the coupon is re-validated server
-                  side). CP E-Commerce Rules r.4(3). */}
               <div className="flex items-center justify-between">
                 <span className="text-body-md font-extrabold text-ink">Total payable</span>
                 <span className="text-title-md font-extrabold text-ink">
@@ -675,7 +616,6 @@ function CheckoutInner() {
         </div>
       </main>
 
-      {/* Address picker sheet */}
       {showAddressSheet && (
         <div
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-ink/40"
@@ -723,7 +663,6 @@ function CheckoutInner() {
                 );
               })}
 
-              {/* Add new address */}
               {!showAddForm && (
                 <button
                   onClick={() => setShowAddForm(true)}
@@ -749,7 +688,6 @@ function CheckoutInner() {
         </div>
       )}
 
-      {/* Confirm dialog for ≥ ₹500 */}
       {showConfirmDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-lg">
           <div className="w-full max-w-narrow rounded-dialog bg-white p-xl">
@@ -788,8 +726,6 @@ export default function CheckoutPage() {
     </RequireAuth>
   );
 }
-
-// ── Sub-components ─────────────────────────────────────────────────────────────
 
 function SectionLabel({
   label,
@@ -851,7 +787,6 @@ function PayOption({
           : "border border-hairline bg-white hover:border-brand/30 hover:bg-canvas",
       ].join(" ")}
     >
-      {/* Custom radio circle */}
       <span
         className={[
           "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200",
@@ -1006,16 +941,10 @@ function PriceCard({
           value={formatINR(grandTotal, { decimals: 2 })}
           bold
         />
-        {/* The coupon discount above is a client estimate; the shop
-            re-computes coupon eligibility and caps when the order is placed.
-            The order confirmation shows the final charged amount.
-            (CP E-Commerce Rules r.4(3).) */}
         <p className="text-label-md text-muted">
           Estimated — the shop confirms the final amount when your order is
           placed.
         </p>
-        {/* Statutory GST breakup — prices are inclusive of tax, so this is the
-            "of which" split backed out of the item amounts, shown before order. */}
         {taxBreakup.taxTotal > 0 && (
           <div className="mt-xs flex flex-col gap-xs border-t border-hairline pt-xs">
             <PriceRow

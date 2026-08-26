@@ -2,15 +2,6 @@ import { Prisma, PrismaClient } from '@prisma/client';
 import prisma from '../../infra/db/prisma.js';
 import { financialYearForDate } from '../validation/indian.js';
 
-/// Atomic per-shop counter. Postgres UPSERT in a single round-trip
-/// keyed on (shop_id, key) — two merchants running concurrent invoice
-/// allocations never collide, and the same shop's two concurrent
-/// inserts upsert via the composite primary key.
-///
-/// Accepts an optional `tx` so callers running inside an outer
-/// transaction can enroll the counter bump in the same atomic unit
-/// (matters for Serializable-isolation flows that need to see a
-/// consistent snapshot of related rows).
 async function nextCounter(
   shopId: number,
   key: string,
@@ -25,12 +16,6 @@ async function nextCounter(
   return rows[0].value;
 }
 
-/// FY-scoped, per-shop document reference: `${prefix}/${FY}/${seq}` (e.g.
-/// `INV/25-26/00001`). Resets at the FY boundary (the counter key embeds FY)
-/// and is independent across merchants (the key is composite with shop_id).
-/// Kept exactly as-is for the two series NOT covered by customizable
-/// numbering (`nextPaymentRef`, `nextAdjustmentNo`) — everything else now
-/// goes through `nextDocNo` below.
 async function fyScopedRef(
   shopId: number,
   prefix: string,
@@ -41,16 +26,6 @@ async function fyScopedRef(
   const seq = await nextCounter(shopId, `${prefix}-${fy}`, tx);
   return { ref: `${prefix}/${fy}/${String(seq).padStart(5, '0')}`, financialYear: fy };
 }
-
-// ─────────────────────────────────────────────────────────────────────────
-// Customizable numbering — invoices, challans, quotations.
-//
-// A shop can override the prefix/suffix/separator/padding/yearly-reset of
-// each series below from Invoice Settings (see `src/modules/numbering/`).
-// No saved `NumberingScheme` row for a series = the DEFAULT_SCHEMES entry,
-// which reproduces today's hardcoded format byte-for-byte — every existing
-// shop is unaffected until it explicitly customizes a series.
-// ─────────────────────────────────────────────────────────────────────────
 
 export type Series =
   | 'SALE_INVOICE'
@@ -79,8 +54,6 @@ export interface SchemeFields {
   resetYearly: boolean;
 }
 
-/// Reproduces today's hardcoded prefixes exactly — `INV/25-26/00001`,
-/// `PUR/...`, `EST/...`, `CRN/...`, `DBN/...`, `CH/...`, `QUO/...`.
 export const DEFAULT_SCHEMES: Record<Series, SchemeFields> = {
   SALE_INVOICE: { prefix: 'INV', suffix: '', separator: '/', padding: 5, resetYearly: true },
   PURCHASE_INVOICE: { prefix: 'PUR', suffix: '', separator: '/', padding: 5, resetYearly: true },
@@ -91,11 +64,6 @@ export const DEFAULT_SCHEMES: Record<Series, SchemeFields> = {
   QUOTATION: { prefix: 'QUO', suffix: '', separator: '/', padding: 5, resetYearly: true },
 };
 
-/// Pure formatting — no DB access. `seq` is padded to a MINIMUM width
-/// (`padStart` never truncates: padding=3 with seq=1200 renders "1200",
-/// not a crop). Segments are joined by `separator`, empty ones (a blank
-/// prefix, or the FY segment when `resetYearly` is false) are omitted
-/// entirely rather than leaving a stray separator.
 export function formatDocNo(scheme: SchemeFields, seq: number, financialYear: string): string {
   const parts = [
     scheme.prefix,
@@ -109,9 +77,6 @@ export function formatDocNo(scheme: SchemeFields, seq: number, financialYear: st
 
 type Db = Prisma.TransactionClient | PrismaClient;
 
-/// Merged view of a shop's scheme for one series: the saved
-/// `NumberingScheme` row if the shop customized it, otherwise
-/// `DEFAULT_SCHEMES[series]`. Never writes anything.
 export async function resolveScheme(shopId: number, series: Series, db: Db): Promise<SchemeFields> {
   const row = await db.numberingScheme.findUnique({
     where: { shopId_series: { shopId, series } },
@@ -126,21 +91,10 @@ export async function resolveScheme(shopId: number, series: Series, db: Db): Pro
   };
 }
 
-/// The counter this series allocates from — keyed by the STABLE series
-/// name (plus FY when `resetYearly`), never by the display prefix/suffix.
-/// Renaming a scheme's prefix must never reset the running sequence; only
-/// toggling `resetYearly` changes which counter row is used (a documented
-/// behavior change, not a silent one).
 function counterKey(series: Series, resetYearly: boolean, financialYear: string): string {
   return resetYearly ? `${series}-${financialYear}` : series;
 }
 
-/// Allocates + persists the next number for a series. `tx` is REQUIRED
-/// (not optional, unlike the legacy `fyScopedRef`/`nextCounter`) — this is
-/// deliberate: the counter bump and the document insert that uses it MUST
-/// commit or roll back together, and making `tx` mandatory turns a missed
-/// enrollment into a compile error instead of a silent gap in the
-/// sequence on a failed create.
 export async function nextDocNo(
   shopId: number,
   series: Series,
@@ -154,11 +108,6 @@ export async function nextDocNo(
   return { docNo: formatDocNo(scheme, seq, financialYear), financialYear };
 }
 
-/// Read-only: the raw sequence number + financial year the NEXT allocation
-/// for this series would use, without allocating it. Exposed (not just the
-/// formatted string) so the numbering settings screens can recompute a
-/// live preview locally as the merchant edits prefix/suffix/padding,
-/// without a network round-trip per keystroke.
 export async function previewNextSeq(
   shopId: number,
   series: Series,
@@ -171,23 +120,12 @@ export async function previewNextSeq(
   return { seq: (counter?.value ?? 0) + 1, financialYear };
 }
 
-/// Preview-only: what the NEXT number for a series would look like right
-/// now, without allocating it. Used by the numbering settings screens to
-/// show a live "next number" preview.
 export async function previewNextDocNo(shopId: number, series: Series, db: Db): Promise<string> {
   const scheme = await resolveScheme(shopId, series, db);
   const { seq, financialYear } = await previewNextSeq(shopId, series, db);
   return formatDocNo(scheme, seq, financialYear);
 }
 
-/// Explicit one-time override: makes the NEXT allocated number for this
-/// series equal `startAt`, by writing the counter's raw value to
-/// `startAt - 1`. For merchants migrating from another system who need to
-/// continue an existing sequence rather than restart at 1. No floor check
-/// against the current value — the `@@unique([shopId, invoiceNo])`
-/// constraint on `Invoice` (and the equivalent on Challan/Quotation) is
-/// the real backstop against an actual collision: a document create fails
-/// loudly rather than silently duplicating a number.
 export async function setCounterStart(
   shopId: number,
   series: Series,
@@ -227,9 +165,6 @@ function seriesForInvoice(
   }
 }
 
-/// Invoice number, per shop — customizable per series via Invoice Settings
-/// (default matches the Indian convention `${prefix}/${FY}/${seq}`, e.g.
-/// `INV/25-26/00001`). `tx` is required — see `nextDocNo`.
 export async function nextInvoiceNo(
   shopId: number,
   type: 'SALE' | 'PURCHASE',
@@ -256,7 +191,6 @@ export async function nextChallanNo(shopId: number, tx: Prisma.TransactionClient
   return (await nextDocNo(shopId, 'CHALLAN', new Date(), tx)).docNo;
 }
 
-/// Per-shop quotation numbering per FY: `QUO/25-26/00001` by default.
 export async function nextQuotationNo(
   shopId: number,
   date: Date,
@@ -265,13 +199,6 @@ export async function nextQuotationNo(
   return (await nextDocNo(shopId, 'QUOTATION', date, tx)).docNo;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// Out of scope for customizable numbering — untouched, same as before.
-// ─────────────────────────────────────────────────────────────────────────
-
-/// Payment reference number per FY per shop. Mirrors `nextInvoiceNo`:
-///   * RECEIPT (money in from a party) → `RCT/FY/00001`
-///   * PAYMENT (money out to a vendor) → `PAY/FY/00001`
 export async function nextPaymentRef(
   shopId: number,
   type: 'RECEIPT' | 'PAYMENT',
@@ -283,8 +210,6 @@ export async function nextPaymentRef(
   return { referenceNo: ref, financialYear };
 }
 
-/// Per-shop stock-adjustment numbering. Adjustment numbers reset on
-/// the FY boundary like invoices.
 export async function nextAdjustmentNo(shopId: number): Promise<string> {
   return (await fyScopedRef(shopId, 'ADJ', new Date())).ref;
 }

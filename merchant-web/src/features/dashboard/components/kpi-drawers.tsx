@@ -25,7 +25,6 @@ const TITLE_KEY: Record<KpiDrawerKind, string> = {
   payables: "kpi.payables",
 };
 
-/** Router for the four KPI drawers — one slide-over shell, kind-specific body. */
 export function KpiDrawer({
   kind,
   range,
@@ -45,8 +44,6 @@ export function KpiDrawer({
     </SideSheet>
   );
 }
-
-// ── shared status blocks ───────────────────────────────────────────────
 
 function Loading() {
   return (
@@ -78,7 +75,6 @@ function Empty({ children }: { children: React.ReactNode }) {
   return <p className="py-lg text-center text-body-md text-muted">{children}</p>;
 }
 
-/** "View full …" footer link out to the relevant full-page screen. */
 function MoreLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
     <Link
@@ -100,8 +96,6 @@ function fmtDate(iso: string): string {
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? "—" : dateFmt.format(d);
 }
-
-// ── Sales: products sold + a name/SKU filter ───────────────────────────
 
 function SalesBody({ range }: { range: Range }) {
   const t = useTranslations("dashboard");
@@ -209,8 +203,6 @@ function formatQty(q: number): string {
   return Number.isInteger(q) ? String(q) : q.toFixed(2).replace(/\.?0+$/, "");
 }
 
-// ── Net profit: the calculation, traced ────────────────────────────────
-
 function ProfitBody({ range }: { range: Range }) {
   const t = useTranslations("dashboard");
   const [report, setReport] = useState<PnlReport | null>(null);
@@ -247,8 +239,6 @@ function ProfitBody({ range }: { range: Range }) {
   const grossSales = r.revenue + refunds;
   const grossCogs = r.cogs + returnedCogs;
 
-  // No sales, costs or write-offs in the window (e.g. the default "Today" before
-  // the first sale) — show a clear empty state instead of a wall of ₹0 rows.
   const hasActivity =
     r.revenue !== 0 || r.cogs !== 0 || r.writeoffs !== 0 || refunds !== 0 || returnedCogs !== 0;
   if (!hasActivity) {
@@ -334,8 +324,6 @@ function StmtRow({
     </div>
   );
 }
-
-// ── Receivables / Payables: debtors/creditors, each expandable ──────────
 
 function ReceivablesBody() {
   const t = useTranslations("dashboard");

@@ -7,7 +7,6 @@ import { formatINR } from "@/shared/format";
 import { mediaSrc } from "@/shared/media";
 import type { SearchHit } from "../types";
 
-/** Single result row — thumbnail + name + shop + rating + price. */
 export function SearchResultRow({
   hit,
   onTap,
@@ -24,7 +23,6 @@ export function SearchResultRow({
       onClick={onTap}
       className="flex items-center gap-md rounded-lg px-sm py-sm transition-all duration-200 hover:bg-surface-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-soft"
     >
-      {/* Thumbnail 64×64, rounded-lg */}
       <span className="relative size-16 shrink-0 overflow-hidden rounded-lg border border-hairline bg-hero-panel">
         {thumbSrc && !imgErrored ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -41,9 +39,7 @@ export function SearchResultRow({
         )}
       </span>
 
-      {/* Text block + price — price stays baseline-aligned with text block */}
       <span className="flex min-w-0 flex-1 items-start gap-sm">
-        {/* Name / shop / rating */}
         <span className="min-w-0 flex-1">
           <span className="block line-clamp-2 text-[13.5px] font-semibold leading-tight text-ink">
             {hit.name}
@@ -66,7 +62,6 @@ export function SearchResultRow({
           ) : null}
         </span>
 
-        {/* Price — flush right, aligned with first text line */}
         <span className="shrink-0 text-right">
           <span className="block text-[15px] font-extrabold leading-none text-ink">
             {formatINR(hit.sellingPrice)}

@@ -21,9 +21,6 @@ class ReviewsRemoteDataSource {
     return ReviewsPage(data: data, nextCursor: body['nextCursor'] as int?);
   }
 
-  /// One-shot summary for the product detail page: average, count,
-  /// verified-buyer count, per-star histogram and the most recent
-  /// reviews — no follow-up list call needed.
   Future<ReviewSummary> summary(String productId) async {
     final res = await _client.get('/products/$productId/reviews/summary');
     if (res.statusCode != 200) {

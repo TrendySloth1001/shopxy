@@ -30,10 +30,6 @@ const batchSchema = z.object({
 });
 
 export class EventsController {
-  /// POST /v1/events
-  /// Batch ingest. Caller's user id (from the JWT) is the attribution
-  /// for the entire batch — clients can't fabricate someone else's
-  /// activity by mixing user ids in the body.
   async ingest(req: Request, res: Response): Promise<void> {
     const { events } = batchSchema.parse(req.body);
     const userId = req.user!.sub;
@@ -52,7 +48,6 @@ export class EventsController {
     res.status(202).json(result);
   }
 
-  /// GET /me/recently-viewed
   async listRecentlyViewed(req: Request, res: Response): Promise<void> {
     const userId = req.user!.sub;
     const data = await eventsService.listRecentlyViewed(userId);

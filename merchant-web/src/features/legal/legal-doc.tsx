@@ -2,10 +2,6 @@ import Link from "next/link";
 import { ArrowLeft } from "@/shared/icons";
 import { getTranslations } from "next-intl/server";
 
-/**
- * Shared reading layout for the public legal pages (/legal/*). Centered reading
- * rail, hairline-separated sections, token-only. Content is supplied per page.
- */
 export async function LegalDoc({
   title,
   updated,

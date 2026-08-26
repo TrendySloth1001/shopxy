@@ -12,22 +12,8 @@ import {
 } from '../payment-gateway/settlement/transfer-actions.js';
 import { paymentsService } from '../payments/payments.service.js';
 
-/// Sentinel for "reverse the whole transfer" — reverseTransferForReturn
-/// caps the request at the transfer's remaining un-reversed amount, so an
-/// oversized value simply means a full clawback.
 const REVERSE_ALL = Number.MAX_SAFE_INTEGER / 100;
 
-/// Local helper — invoices.service doesn't expose a payment summariser
-/// (its own status flow is independent of paid-vs-total accounting), so
-/// the purchase-request response derives the shape inline. Mirrors the
-/// fields the customer/merchant apps already destructure off the invoice
-/// blob: paidAmount, balanceDue, paymentStatus.
-// PR-M2 — paid-vs-total badge is money-comparison, so it runs in
-// Prisma.Decimal rather than float `Number(decimal)`: summing many
-// payments as JS numbers accrues binary-fp drift that can flip a fully
-// settled invoice to "PARTIAL" (or vice versa) by a paise. We compare
-// with a 1-paise tolerance so legitimate rounding jitter between the
-// invoice total and the sum of receipts doesn't mis-badge the card.
 const PAISE_TOLERANCE = new Prisma.Decimal('0.01');
 
 function derivePaymentSummary(
@@ -41,7 +27,6 @@ function derivePaymentSummary(
   if (status === 'CANCELLED' || status === 'DRAFT') {
     paymentStatus = 'UNPAID';
   } else if (total.greaterThan(0) && paid.greaterThanOrEqualTo(total.minus(PAISE_TOLERANCE))) {
-    // Within a paise of the total counts as fully paid.
     paymentStatus = 'PAID';
   } else if (paid.greaterThan(PAISE_TOLERANCE)) {
     paymentStatus = 'PARTIAL';
@@ -53,9 +38,6 @@ function derivePaymentSummary(
 import { couponsService } from '../coupons/coupons.service.js';
 import { notificationsService } from '../notifications/notifications.service.js';
 
-/// Thrown inside the order-create transaction when coupon redemption
-/// fails — caught above to surface a normal `{ error: 'COUPON_INVALID' }`
-/// without dragging the transaction wrapper into the controller.
 class CouponRedeemError extends Error {
   constructor(public readonly code: string) {
     super(code);
@@ -73,10 +55,6 @@ const itemSelect = {
   total: true,
 } satisfies Prisma.PurchaseRequestItemSelect;
 
-/// Compact preview for list rows: just enough for the merchant to
-/// recognise the order at a glance ("3 × Solder Wire Roll, …") without
-/// loading the whole items array. Take 2 — anything past that becomes
-/// "+N more" on the client side.
 const previewItemSelect = {
   productName: true,
   quantity: true,
@@ -98,8 +76,6 @@ const listSelect = {
   party: { select: { id: true, name: true, linkedUserId: true } },
   shop: { select: { id: true, name: true, slug: true, owner: { select: { id: true, name: true, shopName: true } } } },
   _count: { select: { items: true } },
-  /// Two-line preview so the inbox row can show product names without
-  /// a follow-up fetch. Ordered by id for stable rendering.
   items: {
     select: previewItemSelect,
     orderBy: { id: 'asc' as const },
@@ -112,11 +88,6 @@ function withItemsPreview<T extends { items: unknown }>(row: T) {
   return { ...rest, itemsPreview: items };
 }
 
-// PR-M3 — caps on the nested arrays in the order-detail projection so a
-// single pathological multi-line / many-event / many-receipt order can't
-// produce an unbounded payload and a wide query. Generous enough that a
-// real order is never truncated; the `_count` on the row still reports
-// the true totals for any "+N more" affordance.
 const DETAIL_ITEMS_CAP = 200;
 const DETAIL_EVENTS_CAP = 100;
 const DETAIL_PAYMENTS_CAP = 100;
@@ -162,31 +133,14 @@ const detailSelect = {
       status: true,
       total: true,
       invoiceDate: true,
-      /// TAX_INVOICE vs BILL_OF_SUPPLY, plus the GSTIN it was actually raised
-      /// against. A buyer who asked to claim credit needs to see which they
-      /// got: only a tax invoice carrying their GSTIN supports an ITC claim,
-      /// and an unregistered seller can issue only a bill of supply.
       documentType: true,
       customerGstin: true,
-      /// Pull payment amounts so the per-vendor card on the customer's
-      /// order detail can show "Paid" / "Partially paid (₹A of ₹B)"
-      /// without a follow-up fetch. PR-M3 — bounded so a pathological
-      /// invoice with hundreds of receipts can't blow up the nested
-      /// payload; a sale invoice settles in a handful of receipts in
-      /// practice, well under the cap.
       payments: { select: { amount: true }, take: DETAIL_PAYMENTS_CAP },
     },
   },
   items: {
     select: {
       ...itemSelect,
-      /// Live stock of the linked product. Per-row join via Prisma's
-      /// nested select — one query for the whole detail page. Lets the
-      /// merchant see "we have 4 in stock, customer wants 5" before
-      /// they tap Confirm.
-      ///
-      /// Pulling the primary image too so the order detail can render a
-      /// thumbnail per line without a follow-up fetch.
       product: {
         select: {
           stockQuantity: true,
@@ -200,17 +154,8 @@ const detailSelect = {
       },
     },
     orderBy: { id: 'asc' as const },
-    // PR-M3 — bound the per-child item materialisation. A normal order is
-    // a handful of lines; this only fences off a pathological many-line
-    // child from producing an unbounded nested payload + wide query. The
-    // _count above still reports the true total so the client can show
-    // "+N more" and fetch the rest if ever needed.
     take: DETAIL_ITEMS_CAP,
   },
-  // Inline the event timeline so the customer detail page can render
-  // the tracking strip without a second roundtrip. PR-M3 — capped; the
-  // per-order milestone count is single-digit in practice, the bound
-  // just prevents an adversarial event spam from widening the query.
   events: {
     select: {
       id: true,
@@ -229,14 +174,9 @@ const detailSelect = {
 interface CartLine {
   productId: number;
   quantity: number;
-  /// Per-line price the client believes is correct. When set, the
-  /// server rejects (PRICE_DRIFT) if the live price disagrees.
   expectedUnitPrice?: number;
 }
 
-/// Project the embedded Shop relation into the legacy
-/// `{ id, name, shopName }` shape the customer app already consumes.
-/// Multi-shop response — one shop per row, not one shop per response.
 function shopAsDto(
   shop:
     | {
@@ -256,9 +196,6 @@ function shopAsDto(
     id: shop.owner.id,
     name: shop.owner.name,
     shopName: shop.name ?? shop.owner.shopName,
-    // Return policy is buyer-facing on the order detail page so the
-    // customer can see "Returnable for 7 days · wallet refund" before
-    // they tap the return button (which is hidden when disabled).
     returnsEnabled: shop.returnsEnabled,
     returnWindowDays: shop.returnWindowDays,
     refundMode: shop.refundMode,
@@ -266,17 +203,9 @@ function shopAsDto(
   };
 }
 
-/// Sum the embedded payments and attach derived paid/outstanding/status
-/// so the customer's order detail can show a paid badge per vendor
-/// card without an extra round trip. The raw `payments` array is
-/// stripped from the response — the customer doesn't need (or want to
-/// see) the merchant's per-payment ledger.
 function attachInvoicePaymentSummary<
   T extends { total: Prisma.Decimal | number; status: string; payments: { amount: Prisma.Decimal | number }[] },
 >(invoice: T) {
-  // PR-M2 — sum the receipts in Decimal (no float accumulation). Both the
-  // invoice total and each payment amount are Prisma.Decimal off the DB;
-  // accept the `number` fallback only for hand-built test fixtures.
   const totalDec =
     invoice.total instanceof Prisma.Decimal
       ? invoice.total
@@ -291,12 +220,6 @@ function attachInvoicePaymentSummary<
   return { ...rest, ...summary };
 }
 
-/// Reloads the shop row and verifies that the caller actually owns
-/// it. Every merchant-facing endpoint passes `shopId` straight from
-/// the JWT, but a stale or tampered token could carry someone else's
-/// shopId — so we never act on it without a fresh DB-backed check.
-/// Returns true on success; false (the controller maps to 403) when
-/// the shop is gone or owned by a different user.
 export async function assertShopOwnership(
   shopId: number,
   userId: number,
@@ -308,9 +231,6 @@ export async function assertShopOwnership(
   return shop != null && shop.ownerUserId === userId;
 }
 
-/// Push a notification to the owner of `shopId`. Lives here (not in the
-/// controller) so controllers stay free of direct Prisma access — the
-/// service is the single layer that talks to the DB.
 export async function notifyShopOwner(
   shopId: number,
   payload: {
@@ -334,16 +254,6 @@ export async function notifyShopOwner(
   });
 }
 
-/// Find-or-create the Party row that links `userId` to `shopId`.
-///
-/// Buying from a shop *is* the relationship — before this, a merchant-sent
-/// invitation was the only way a customer could become linked, so a buyer sat
-/// unlinked (missing from their own "My shops", missing from the merchant's
-/// party list) until the merchant acted. Placing an order now links them.
-///
-/// Matches on `linkedUserId` regardless of `isActive`: a deactivated link still
-/// means "already linked", and creating a second row would duplicate the
-/// customer in the merchant's party list.
 export async function ensureLinkedParty(
   db: Prisma.TransactionClient,
   opts: {
@@ -357,9 +267,6 @@ export async function ensureLinkedParty(
     state?: string | null;
     stateCode?: string | null;
     pinCode?: string | null;
-    /// Buyer's own GSTIN when they are claiming input credit. Written onto the
-    /// party so the merchant's ledger shows a B2B customer, and so the invoice
-    /// engine's party fallback finds it.
     gstin?: string | null;
   },
 ): Promise<number> {
@@ -368,9 +275,6 @@ export async function ensureLinkedParty(
     select: { id: true, gstin: true },
   });
   if (existing) {
-    // A customer who registers for GST after their first order should not have
-    // to be re-added by the merchant. Fill a missing GSTIN, but never overwrite
-    // one the merchant already recorded — theirs is the authoritative record.
     if (opts.gstin && !existing.gstin) {
       await db.party.update({
         where: { id: existing.id },
@@ -386,8 +290,6 @@ export async function ensureLinkedParty(
       phone: opts.phone ?? null,
       email: opts.email ?? null,
       address: opts.address ?? null,
-      // Snapshot the structured delivery state so the merchant's party ledger
-      // carries the place of supply the order was quoted against.
       city: opts.city ?? null,
       state: opts.state ?? null,
       stateCode: opts.stateCode ?? null,
@@ -401,34 +303,14 @@ export async function ensureLinkedParty(
 }
 
 export class PurchaseRequestsService {
-  /// Customer submits a *whole cart* — possibly spanning multiple
-  /// shops. Server groups by shop and creates one [CustomerOrder]
-  /// parent plus one [PurchaseRequest] child per shop, all in a single
-  /// transaction. Snapshots product identity + price per line so the
-  /// customer's order remains stable even if the merchant later edits
-  /// the product.
-  ///
-  /// If [idempotencyKey] is supplied and a parent already exists for
-  /// the same (customerUserId, idempotencyKey), we return the original
-  /// parent without creating duplicates — saves a duplicate-order
-  /// nightmare when checkout retries on a flaky connection.
   async createForCustomer(opts: {
     customerUserId: number;
     items: CartLine[];
     note?: string;
     idempotencyKey?: string;
     addressId?: number;
-    /// Optional coupon code (case-insensitive). Validated + redeemed
-    /// atomically with the order create — invalid codes return the
-    /// matching CouponError instead of half-applying.
     couponCode?: string | null;
-    /// When true, attempts to debit the user's wallet for as much of
-    /// the order total as it covers (after any coupon discount).
     useWallet?: boolean;
-    /// Buyer wants a tax invoice against their own GSTIN so the GST on this
-    /// order is claimable as input credit. Reads the identity off their saved
-    /// profile — the client never supplies the GSTIN at checkout, so it cannot
-    /// put someone else's registration on an invoice.
     claimGst?: boolean;
   }): Promise<
     | {
@@ -463,8 +345,6 @@ export class PurchaseRequestsService {
   > {
     if (opts.items.length === 0) return { error: 'EMPTY_CART' };
 
-    // Idempotency short-circuit on the parent — returns the existing
-    // order so a retried POST never double-creates.
     if (opts.idempotencyKey) {
       const replay = await this._replayIdempotentOrder(
         opts.customerUserId,
@@ -473,7 +353,6 @@ export class PurchaseRequestsService {
       if (replay) return replay;
     }
 
-    // ── Load products + validate shop ownership / activity ──────────
     const productIds = [...new Set(opts.items.map((i) => i.productId))];
     const products = await prisma.product.findMany({
       where: { id: { in: productIds } },
@@ -495,8 +374,6 @@ export class PurchaseRequestsService {
       if (!(line.quantity > 0)) return { error: 'BAD_QTY' };
     }
 
-    // Group lines by owning shop. The cart may legitimately span 3+
-    // shops; the server is the one place that knows the full split.
     const linesByShop = new Map<number, CartLine[]>();
     for (const line of opts.items) {
       const product = productMap.get(line.productId)!;
@@ -508,8 +385,6 @@ export class PurchaseRequestsService {
       }
     }
 
-    // Every shop bucket must point at a real Shop, and none can be
-    // the customer's own. One findMany batches the validation.
     const shopIds = [...linesByShop.keys()];
     const shops = await prisma.shop.findMany({
       where: { id: { in: shopIds } },
@@ -520,17 +395,10 @@ export class PurchaseRequestsService {
       if (shop.ownerUserId === opts.customerUserId) {
         return { error: 'OWN_SHOP_ITEM' };
       }
-      // An unpublished shop is invisible to customers — treat its items as not
-      // found rather than leaking that the shop exists.
       if (!shop.isPublished) return { error: 'SHOP_NOT_FOUND' };
-      // A published shop can still pause orders via vacation mode.
       if (shop.vacationMode) return { error: 'SHOP_ON_VACATION' };
     }
 
-    // ── Effective unit price ─────────────────────────────────────────
-    // Carts span many shops, so resolve the best active banner promo per
-    // product in one cross-shop lookup; lines bill at sellingPrice minus
-    // that promo's per-unit discount (or sellingPrice when none applies).
     const bannerPromos = await resolveActiveProductPromos(null, productIds);
     const effectiveUnitPrice = (productId: number): number => {
       const product = productMap.get(productId)!;
@@ -539,11 +407,6 @@ export class PurchaseRequestsService {
       return promo ? Math.max(0, round2(selling - promo.perUnit)) : selling;
     };
 
-    // ── Price-drift guard ────────────────────────────────────────────
-    // Every line whose client sent `expectedUnitPrice` is compared
-    // against the current sellingPrice. On any mismatch we surface the
-    // corrected prices so the FE can show "₹X has changed to ₹Y" in one
-    // toast.
     const priceDrift: {
       productId: number;
       expectedUnitPrice: number;
@@ -552,7 +415,6 @@ export class PurchaseRequestsService {
     for (const line of opts.items) {
       if (line.expectedUnitPrice == null) continue;
       const effective = effectiveUnitPrice(line.productId);
-      // 1 paisa tolerance: legit decimal jitter shouldn't trip the gate.
       if (Math.abs(effective - line.expectedUnitPrice) > 0.01) {
         priceDrift.push({
           productId: line.productId,
@@ -565,12 +427,6 @@ export class PurchaseRequestsService {
       return { error: 'PRICE_DRIFT', priceDrift };
     }
 
-    // ── Customer identity + per-shop linked-party lookup ─────────────
-    // One read fetches the user + every Party row that links them to
-    // any of the shops in this cart. We then build a shopId → linked
-    // party map so the per-shop child PRs each point at the right
-    // Party row (different shops can link to the same user under
-    // different B2B identities).
     const user = await prisma.user.findUniqueOrThrow({
       where: { id: opts.customerUserId },
       select: {
@@ -587,11 +443,6 @@ export class PurchaseRequestsService {
     });
     const linkedByShop = new Map(user.linkedParties.map((p) => [p.shopId, p]));
 
-    // ── Buyer's GST identity ─────────────────────────────────────────
-    // Snapshotted from the saved profile, never from the request body, so the
-    // GSTIN on the invoice is one this account proved it owns. Refuse rather
-    // than silently dropping the claim: the customer asked for a tax invoice
-    // and would only find out it never came at filing time.
     const claimGst = opts.claimGst === true;
     if (claimGst && (!user.buyerGstin || !user.buyerLegalName)) {
       return { error: 'GST_PROFILE_MISSING' };
@@ -599,15 +450,9 @@ export class PurchaseRequestsService {
     const buyerGstin = claimGst ? user.buyerGstin : null;
     const buyerLegalName = claimGst ? user.buyerLegalName : null;
 
-    // ── Address snapshot (one for the parent, mirrored to children) ─
     let snapshotName: string | null = null;
     let snapshotPhone: string | null = null;
     let snapshotAddress: string | null = null;
-    // PR-C2 — structured place-of-supply snapshot from the SHIPPING address.
-    // `shipStateCode` is the 2-digit GST state code derived from the address's
-    // state name; it is what drives IGST-vs-CGST/SGST on the invoice, not the
-    // party default. Frozen at submit time so a later address edit can't
-    // retro-change the tax on an already-placed order.
     let shipCity: string | null = null;
     let shipState: string | null = null;
     let shipStateCode: string | null = null;
@@ -639,13 +484,9 @@ export class PurchaseRequestsService {
       shipCity = addr.city;
       shipState = addr.state;
       shipPincode = addr.pincode;
-      // Map "Maharashtra" → "27". Null when the saved state name doesn't match
-      // a GST state (free-text address); confirmRequest then falls back to the
-      // party/shop default so it never mis-charges IGST on an unknown code.
       shipStateCode = stateCodeFromName(addr.state);
     }
 
-    // ── Build per-shop child payloads + parent total ────────────────
     let parentTotal = 0;
     const childPayloads: {
       shopId: number;
@@ -695,7 +536,6 @@ export class PurchaseRequestsService {
       parentTotal += childTotal;
     }
 
-    // ── Persist parent + children in one transaction ────────────────
     try {
       const order = await prisma.$transaction(async (tx) => {
         const parent = await tx.customerOrder.create({
@@ -705,7 +545,6 @@ export class PurchaseRequestsService {
             customerPhone: snapshotPhone,
             customerEmail: user.email,
             customerAddress: snapshotAddress,
-            // PR-C2 — structured place-of-supply snapshot (drives invoice GST).
             shipCity,
             shipState,
             shipStateCode,
@@ -719,13 +558,7 @@ export class PurchaseRequestsService {
           select: { id: true },
         });
 
-        // ── Coupon redemption ─────────────────────────────────────────
-        // Validated + recorded inside the same transaction so a failure
-        // (cap reached, per-user limit hit) aborts the order create
-        // entirely. The discount lands on parent.couponDiscount and is
-        // surfaced back to the controller in the response payload.
         let couponDiscount = 0;
-        // CWQ-1 — owning shop of a seller-funded coupon (NULL = platform-funded).
         let couponShopId: number | null = null;
         if (opts.couponCode && opts.couponCode.trim().length > 0) {
           const result = await couponsService.redeem({
@@ -742,14 +575,6 @@ export class PurchaseRequestsService {
           couponShopId = result.couponShopId;
         }
 
-        // ── Wallet debit (REMOVED — wallet deprecation) ───────────────
-        // The wallet is no longer a tender. A spendable, loadable in-app
-        // wallet is a semi-closed Prepaid Payment Instrument (PSS Act 2007 /
-        // RBI PPI Master Direction) and is being withdrawn. `opts.useWallet`
-        // from older clients is ignored: the full payable amount goes to the
-        // gateway/COD, and refunds go back to source (never to a wallet).
-        // walletPaid stays 0 for every new order; the column is retained only
-        // so historical orders still render.
         const walletPaid = 0;
 
         if (couponDiscount > 0) {
@@ -758,31 +583,16 @@ export class PurchaseRequestsService {
             data: {
               couponDiscount: round2(couponDiscount),
               walletPaid: round2(walletPaid),
-              // CWQ-1 — record the seller-funded coupon's shop so confirmRequest
-              // pushes the discount onto only THAT shop's invoice (pre-tax).
-              // NULL for a platform-funded coupon → stays off every invoice.
               couponShopId,
             },
           });
         }
 
-        // createMany doesn't return rows in Postgres for Prisma, so we
-        // create children one-by-one with select — N small inserts in
-        // exchange for the per-child id (used to fan out notifications
-        // and surface per-shop slices in the response).
         const childRecords: { id: number; shopId: number; customerName?: string; itemCount?: number }[] = [];
         for (const child of childPayloads) {
-          // Link the buyer to this shop as we place the order, inside the same
-          // transaction — a rolled-back order leaves no stray party behind.
-          // Always through ensureLinkedParty, never short-circuited on the
-          // party the cart lookup already found: a customer who registers for
-          // GST after their first order has an existing party row, and only
-          // this path backfills the GSTIN onto it.
           const partyId = await ensureLinkedParty(tx, {
             shopId: child.shopId,
             userId: opts.customerUserId,
-            // On a B2B order the party IS the registered business, so the
-            // ledger entry carries that name rather than the buyer's own.
             name: buyerLegalName ?? child.customerName,
             phone: child.customerPhone,
             email: user.email,
@@ -803,8 +613,6 @@ export class PurchaseRequestsService {
               customerPhone: child.customerPhone,
               customerEmail: user.email,
               customerAddress: child.customerAddress,
-              // PR-C2 — mirror the structured place-of-supply snapshot onto the
-              // child so confirmRequest reads it without a parent join.
               shipCity,
               shipState,
               shipStateCode,
@@ -814,9 +622,6 @@ export class PurchaseRequestsService {
               buyerLegalName,
               estimatedTotal: child.estimatedTotal,
               items: { create: child.items },
-              // Seed the timeline with a CREATED row so the customer
-              // sees "Order placed" the moment they reach the detail
-              // page (vs. waiting on the merchant to act first).
               events: {
                 create: { type: 'CREATED', actorId: opts.customerUserId },
               },
@@ -843,9 +648,6 @@ export class PurchaseRequestsService {
       if (e instanceof CouponRedeemError) {
         return { error: 'COUPON_INVALID' };
       }
-      // Race: two POSTs with the same key landed within microseconds
-      // of each other. The first wins; the second hits P2002 on the
-      // parent unique — re-fetch and return the original.
       const code = (e as { code?: string }).code;
       if (code === 'P2002' && opts.idempotencyKey) {
         const existing = await prisma.customerOrder.findUnique({
@@ -878,10 +680,6 @@ export class PurchaseRequestsService {
     }
   }
 
-  /// Customer's order list — one row per [CustomerOrder] parent with a
-  /// compact per-shop breakdown ("3 shops · 5 items · ₹X"). Each child
-  /// PR carries its own status pill so the row can render aggregate
-  /// state without an extra fetch.
   async listForCustomer(opts: { userId: number; skip: number; limit: number }) {
     const where: Prisma.CustomerOrderWhereInput = { customerUserId: opts.userId };
     const [data, total] = await Promise.all([
@@ -936,9 +734,6 @@ export class PurchaseRequestsService {
     };
   }
 
-  /// Customer's order detail — full parent with full child slices,
-  /// each child's items materialised so the per-vendor section in the
-  /// detail page can render without follow-up requests.
   async getForCustomer(opts: { userId: number; id: number }) {
     const order = await prisma.customerOrder.findFirst({
       where: { id: opts.id, customerUserId: opts.userId },
@@ -966,11 +761,6 @@ export class PurchaseRequestsService {
     return {
       ...order,
       shopOrders: order.shopOrders.map((child) => {
-        // Server-computed action flags so every client renders the same
-        // Cancel-vs-Return decision the backend will enforce: cancel
-        // until the seller's policy cut-off, return only after a
-        // DELIVERED event (within the shop's window). Clients must not
-        // re-derive these.
         const eventTypes = child.events.map((e) => e.type);
         const delivered = [...child.events]
           .reverse()
@@ -1006,22 +796,6 @@ export class PurchaseRequestsService {
     };
   }
 
-  /// Cancel one shop's slice of a customer's order. The whole parent
-  /// is *not* cancelled — other shops in the same checkout proceed
-  /// independently. Returns reason codes so the FE can render targeted
-  /// copy.
-  ///
-  /// Eligibility is the SELLER's call (Shop.cancellationPolicy):
-  ///   - a PENDING child is always cancellable (the merchant hasn't
-  ///     acted yet — no invoice, no stock movement);
-  ///   - a CONFIRMED child is cancellable until the policy's cut-off
-  ///     milestone (PACKED / SHIPPED / DELIVERED event), after which the
-  ///     customer's only path is the post-delivery returns flow.
-  /// A confirmed cancel reverses the whole paper trail: the invoice is
-  /// cancelled (which reverses its stock ledger rows), its receipts are
-  /// voided, and the paid amount (wallet + captured gateway share — the
-  /// gateway slice used to be silently kept) is credited back to the
-  /// customer's wallet.
   async cancelChildForCustomer(opts: {
     userId: number;
     parentId: number;
@@ -1030,8 +804,6 @@ export class PurchaseRequestsService {
     | { ok: true }
     | { error: 'NOT_FOUND' | 'NOT_OWNED' | 'NOT_PENDING' | 'NOT_CANCELLABLE' }
   > {
-    // Policy snapshot first — the claim below re-checks status
-    // atomically, so a stale read here can't over-allow.
     const snap = await prisma.purchaseRequest.findFirst({
       where: {
         id: opts.childId,
@@ -1067,10 +839,6 @@ export class PurchaseRequestsService {
     }
     if (snap.status !== 'PENDING') return { error: 'NOT_PENDING' };
 
-    // ── PENDING path: nothing issued yet, single atomic transaction ──
-    // Release reserved inventory + back out the coupon usage atomically
-    // with the status flip. The customer's money goes back to source via the
-    // gateway AFTER the tx commits (external call) — see refundCancelledChild.
     let cancelRefund = 0;
     const result = await prisma.$transaction(async (tx) => {
       const claim = await tx.purchaseRequest.updateMany({
@@ -1086,7 +854,6 @@ export class PurchaseRequestsService {
         return { needsDiag: true as const };
       }
 
-      // Snapshot the cancelled child so we can refund + release.
       const child = await tx.purchaseRequest.findUniqueOrThrow({
         where: { id: opts.childId },
         select: {
@@ -1098,31 +865,14 @@ export class PurchaseRequestsService {
         },
       });
 
-      // Refund the cancelled slice's share of everything the customer
-      // has actually PAID so far: the parent's wallet payment plus, when
-      // the order was captured online, its gateway payment. The gateway
-      // slice used to be silently dropped here — a customer who paid
-      // ₹1,000 via Razorpay and cancelled got only the wallet share
-      // back. Refund lands in the wallet (instant, reusable money — the
-      // same vehicle the returns flow uses). If this is the only/last
-      // shop in the order, the full paid amount comes back; otherwise
-      // the slice gets a proportional share keyed on the original split
-      // (estimatedTotal share of parent.estimatedTotal at order create).
       const parent = await tx.customerOrder.findUnique({
         where: { id: opts.parentId },
         select: { id: true, walletPaid: true, estimatedTotal: true },
       });
       if (parent) {
-        // PR-H1 — refund off the actually-captured gateway amount, with the
-        // last terminal slice absorbing the residual. Computed in-tx; the money
-        // is sent back to source post-commit (refundCancelledChildToSource).
         cancelRefund = await this.refundShareForChild(tx, parent, child);
       }
 
-      // If THIS cancellation was the last live child, decrement the
-      // parent's coupon redemption (so the customer's per-user cap +
-      // the global totalRedemptions counter aren't permanently
-      // consumed by an order that never happened).
       const liveSiblings = await tx.purchaseRequest.count({
         where: {
           customerOrderId: opts.parentId,
@@ -1154,11 +904,6 @@ export class PurchaseRequestsService {
     });
 
     if ('ok' in result) {
-      // Best-effort Route clawback: if the captured order already split
-      // a HELD transfer to this child's seller, pull it back (no-op when
-      // splits are disabled / nothing was transferred). Reverse BEFORE the
-      // refund — Razorpay forbids transfers on a refunded payment, and the
-      // reversal returns the seller's slice to the balance we refund from.
       await reverseTransferForReturn({
         purchaseRequestId: opts.childId,
         reverseAmount: REVERSE_ALL,
@@ -1182,17 +927,12 @@ export class PurchaseRequestsService {
     return { error: 'NOT_PENDING' };
   }
 
-  /// Order milestones that close the customer-cancel window for each
-  /// policy. UNTIL_CONFIRMED has no entry — confirmation itself is the
-  /// cut-off, handled before this map is consulted.
   private static readonly CANCEL_BLOCKERS: Record<string, string[]> = {
     UNTIL_PACKED: ['PACKED', 'SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED'],
     UNTIL_SHIPPED: ['SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED'],
     UNTIL_DELIVERED: ['DELIVERED'],
   };
 
-  /// Can a CONFIRMED child still be cancelled under `policy`, given the
-  /// shipping milestones already posted?
   isCancellableByPolicy(policy: string, eventTypes: string[]): boolean {
     if (policy === 'UNTIL_CONFIRMED') return false;
     const blockers =
@@ -1201,23 +941,11 @@ export class PurchaseRequestsService {
     return !eventTypes.some((t) => blockers.includes(t));
   }
 
-  /// Everything the customer has actually paid on the parent order so
-  /// far: wallet debit (synchronous at checkout) + the gateway amount
-  /// ACTUALLY CAPTURED through the platform's Razorpay intent.
-  ///
-  /// PR-H1 — the gateway slice is read from the CAPTURED `GatewayPayment`
-  /// row (the real ledger), not inferred as `estimatedTotal − coupon −
-  /// wallet`. The derived figure drifts from the captured amount on any
-  /// partial capture / later wallet top-up / rounding, so a refund keyed
-  /// off it could over- or under-refund. We pin to the captured ledger.
   private async totalPaidOnOrder(
     tx: Prisma.TransactionClient,
     parent: { id: number; walletPaid: unknown },
   ): Promise<number> {
     const walletPaid = Number(parent.walletPaid);
-    // The platform collects the order through a single ORDER-target
-    // intent (shopId null). Mirror order-receipts.ts: the CAPTURED row
-    // is the source of truth that online money actually moved.
     const gw = await tx.gatewayPayment.findFirst({
       where: { targetType: 'ORDER', targetId: parent.id, status: 'CAPTURED' },
       select: { amount: true },
@@ -1226,12 +954,6 @@ export class PurchaseRequestsService {
     return round2(walletPaid + gatewayPaid);
   }
 
-  /// Sum of refunds already credited back to the wallet for OTHER
-  /// terminal siblings of this order (cancel + reject both write source
-  /// `CANCEL` with `sourceId = childId`). Used so the LAST slice to go
-  /// terminal absorbs the residual paise and `Σ refunds == captured +
-  /// wallet` exactly instead of each child independently `round2`-ing its
-  /// own derived share (PR-H1).
   private async refundShareForChild(
     tx: Prisma.TransactionClient,
     parent: { id: number; walletPaid: unknown; estimatedTotal: unknown },
@@ -1241,9 +963,6 @@ export class PurchaseRequestsService {
     const parentTotal = Number(parent.estimatedTotal);
     if (paidTotal <= 0 || parentTotal <= 0) return 0;
 
-    // Sibling ids already refunded (this child's claim has already
-    // flipped it to a terminal status, so it is NOT counted among live
-    // siblings below).
     const liveSiblings = await tx.purchaseRequest.count({
       where: {
         customerOrderId: parent.id,
@@ -1253,31 +972,13 @@ export class PurchaseRequestsService {
     });
 
     if (liveSiblings === 0) {
-      // Last slice — request the FULL paid total. The refund-to-source engine
-      // caps every refund at the captured payment's un-refunded remainder
-      // (GatewayPayment.amountRefunded is the single source of truth), so this
-      // sweeps exactly the residual that earlier slices' proportional shares
-      // left behind — Σ source-refunds == captured — with no per-sibling
-      // re-summing and no race window (the old wallet-entry sum is gone with
-      // the wallet). The wallet slice of a legacy order is naturally excluded:
-      // the engine refunds only what was actually captured online.
       return paidTotal;
     }
 
-    // A live sibling remains — take this slice's proportional share. The engine
-    // cap guarantees the running total never exceeds the captured amount.
     const share = Math.min(Number(child.estimatedTotal) / parentTotal, 1);
     return round2(paidTotal * share);
   }
 
-  /// Post-commit real-money refund-to-source for a cancelled/rejected child.
-  /// Runs AFTER the cancel tx commits (it's an external gateway call) and is
-  /// best-effort: a COD/never-captured order returns NO_PAYMENT (the merchant
-  /// settles offline), a provider rejection records a FAILED refund row, and
-  /// neither unwinds the (already-committed) cancellation. Idempotent on the
-  /// `kind`+childId key, so a retry re-uses the existing refund. Replaces the
-  /// old in-tx wallet credit — wallet/store-credit refunds were removed as
-  /// illegal for an online payment (RBI refund-to-source).
   private async refundCancelledChildToSource(input: {
     parentId: number;
     childId: number;
@@ -1300,19 +1001,9 @@ export class PurchaseRequestsService {
         notes: { orderId: String(input.parentId), childId: String(input.childId) },
       });
     } catch {
-      /* refundToSource records a FAILED row for provider errors; an infra throw
-         here leaves the cancellation committed for ops to re-drive. */
     }
   }
 
-  /// Cancel a CONFIRMED child (policy already verified by the caller).
-  ///
-  /// Sequencing: the status claim and the invoice cancellation cannot
-  /// share one transaction (invoicesService.updateStatus opens its own —
-  /// the same nesting constraint confirmRequest works around), so this
-  /// runs claim → invoice-cancel → refund-tx with explicit compensation:
-  /// if the invoice can't be cancelled the claim is reverted and the
-  /// child stays CONFIRMED.
   private async cancelConfirmedChild(
     opts: { userId: number; parentId: number; childId: number },
     shopId: number,
@@ -1327,8 +1018,6 @@ export class PurchaseRequestsService {
       },
       data: { status: 'CANCELLED', decidedAt: new Date() },
     });
-    // Raced away (another cancel, or the merchant moved it) — re-read
-    // would just repeat the public diagnostics; NOT_PENDING is accurate.
     if (claim.count !== 1) return { error: 'NOT_PENDING' };
 
     const revert = () =>
@@ -1337,9 +1026,6 @@ export class PurchaseRequestsService {
         data: { status: 'CONFIRMED' },
       });
 
-    // 1) Cancel the invoice — reverses its stock ledger rows. Failure
-    //    reverts the claim so we never strand a CANCELLED child with a
-    //    live CONFIRMED invoice still counting in stock + reports.
     if (invoiceId != null) {
       let cancelled;
       try {
@@ -1357,19 +1043,11 @@ export class PurchaseRequestsService {
         await revert();
         return { error: 'NOT_CANCELLABLE' };
       }
-      // Void the wallet/gateway receipts that were reconciled onto the
-      // invoice: the money they represent is being handed back to the
-      // customer below, and a live credit on a cancelled invoice would
-      // read as a phantom negative balance on the party ledger.
       const receipts = await prisma.payment.findMany({
         where: { invoiceId, shopId, voidedAt: null },
         select: { id: true },
       });
       for (const r of receipts) {
-        // This IS the refund flow (the money is refunded to the customer's
-        // original payment instrument post-commit), so bypass the PR-C2
-        // platform-collected void guard — that guard only exists to stop a
-        // bare, unaccompanied merchant void.
         await paymentsService.voidPayment(
           shopId,
           r.id,
@@ -1380,8 +1058,6 @@ export class PurchaseRequestsService {
       }
     }
 
-    // 2) Releases + coupon back-out, atomically. The customer's money goes back
-    //    to source via the gateway AFTER the tx (step 4) — never wallet credit.
     let cancelRefund = 0;
     await prisma.$transaction(async (tx) => {
       const child = await tx.purchaseRequest.findUniqueOrThrow({
@@ -1398,8 +1074,6 @@ export class PurchaseRequestsService {
         select: { id: true, walletPaid: true, estimatedTotal: true },
       });
       if (parent) {
-        // PR-H1 — captured-amount refund with residual absorption (computed
-        // in-tx; issued to source post-commit).
         cancelRefund = await this.refundShareForChild(tx, parent, child);
       }
 
@@ -1432,14 +1106,11 @@ export class PurchaseRequestsService {
       });
     });
 
-    // 3) Best-effort Route clawback of this child's HELD transfer (before the
-    //    refund — see the customer-cancel path for the ordering rationale).
     await reverseTransferForReturn({
       purchaseRequestId: opts.childId,
       reverseAmount: REVERSE_ALL,
     }).catch(() => undefined);
 
-    // 4) Refund the customer's online payment back to source.
     await this.refundCancelledChildToSource({
       parentId: opts.parentId,
       childId: opts.childId,
@@ -1450,10 +1121,6 @@ export class PurchaseRequestsService {
     return { ok: true };
   }
 
-  /// Merchant-side: list the inbox with the same listSelect projection.
-  /// Supports status / search (id, customer name/phone, product name) /
-  /// from-to date filters. Search is intentionally a single `OR` so
-  /// Postgres can pick the right index instead of stitching joins.
   async listForMerchant(opts: {
     shopId: number;
     status?: string;
@@ -1511,21 +1178,6 @@ export class PurchaseRequestsService {
     };
   }
 
-  /// Confirm a request → materialise a SALE invoice.
-  ///
-  /// Concurrency model:
-  ///   1. updateMany gated on status='PENDING' is our atomic claim.
-  ///      Exactly one caller flips the row out of PENDING; later
-  ///      attempts see count=0 and bail with NOT_PENDING.
-  ///   2. The whole flow runs inside $transaction so a stock shortfall
-  ///      / invoice failure rolls back the status flip too — no orphan
-  ///      "CONFIRMED but no invoice" rows.
-  ///   3. Stock is decremented atomically per product via a gated
-  ///      updateMany (decrement only when stockQuantity >= requested).
-  ///      Two concurrent confirms for the same row therefore can't
-  ///      both succeed past a stale read; the loser bails out with
-  ///      INSUFFICIENT_STOCK and the outer transaction rolls back any
-  ///      sibling decrements taken earlier in the same call.
   async confirmRequest(opts: {
     shopId: number;
     requestId: number;
@@ -1535,16 +1187,6 @@ export class PurchaseRequestsService {
     | { error: 'NOT_FOUND' | 'NOT_PENDING' | 'NO_ITEMS' | 'INSUFFICIENT_STOCK' | string; productId?: number; available?: number; requested?: number }
     | { invoice: { id: number; invoiceNo: string } }
   > {
-    // We CANNOT nest the createInvoice tx inside an outer `prisma.$transaction`
-    // here. `invoicesService.createInvoice` opens its own interactive
-    // transaction, which Prisma does not nest. The old code returning
-    // `{error}` from the outer callback would COMMIT (not roll back),
-    // leaving the row stuck in PROCESSING. We solve this by NOT using
-    // an outer tx and instead managing the rollback explicitly: every
-    // failure path below resets the row from PROCESSING back to PENDING
-    // so the merchant can retry.
-
-    // ── 1. Atomic claim scoped to this shop ──────────────────────
     const claim = await prisma.purchaseRequest.updateMany({
       where: { id: opts.requestId, shopId: opts.shopId, status: 'PENDING' },
       data: { status: 'PROCESSING' },
@@ -1558,9 +1200,6 @@ export class PurchaseRequestsService {
     }
 
     const revertToPending = async (): Promise<void> => {
-      // Best-effort restore so a follow-up confirm can re-attempt. We
-      // gate on PROCESSING to avoid clobbering a (very unlikely) human
-      // who intervened between us.
       await prisma.purchaseRequest
         .updateMany({
           where: { id: opts.requestId, status: 'PROCESSING' },
@@ -1570,14 +1209,10 @@ export class PurchaseRequestsService {
     };
 
     try {
-      // ── 2. Load full row (now safely ours to act on) ─────────────
       const request = await prisma.purchaseRequest.findUniqueOrThrow({
         where: { id: opts.requestId },
         include: {
           items: true,
-          // Coupon apportionment (CWQ-1) needs the order-level coupon + the
-          // owning shop of a seller-funded coupon. couponShopId NULL means a
-          // platform-funded coupon → it stays off every invoice.
           customerOrder: {
             select: {
               couponDiscount: true,
@@ -1592,10 +1227,6 @@ export class PurchaseRequestsService {
         return { error: 'NO_ITEMS' as const };
       }
 
-      // ── 3. Party for this customer in this shop ───────────────────
-      // Orders placed since the buy-links-you change already carry a partyId;
-      // this covers requests created before it (and any row whose party was
-      // deleted) so confirm can never mint an invoice without a party.
       const partyId =
         request.partyId ??
         (await ensureLinkedParty(prisma, {
@@ -1612,50 +1243,18 @@ export class PurchaseRequestsService {
           pinCode: request.shipPincode,
         }));
 
-      // ── 4. Mint + auto-confirm the invoice ───────────────────────
-      // Runs in its own atomic transaction inside invoicesService —
-      // both the invoice rows and the ledger entries either both
-      // succeed or both roll back. We surface failures back to the
-      // caller and revert our PROCESSING claim.
-      //
-      // CWQ-1 — coupon → invoice discount, only when SELLER-FUNDED.
-      //   A seller-scoped coupon (customerOrder.couponShopId != null) is the
-      //   seller's own discount: it reduces the consideration THIS seller
-      //   receives, so it belongs on this shop's tax invoice as a pre-tax
-      //   header discount and GST is charged on the net (Sec 15(3)(a)).
-      //   Because a seller coupon is bound to exactly one shop, the whole
-      //   discount lands on that shop's invoice (capped at this shop's
-      //   subtotal) — NOT apportioned across siblings.
-      //   A platform-funded coupon (couponShopId == null) is borne by the
-      //   platform: the seller is owed full value, so it stays OFF every
-      //   invoice and out of the GST base. The customer still paid less, and
-      //   the gap is the platform's marketing cost (settled out-of-band).
       const order = request.customerOrder;
       const orderCoupon = Number(order.couponDiscount) || 0;
       const thisShopTotal = Number(request.estimatedTotal) || 0;
       const isSellerFundedForThisShop =
         order.couponShopId != null && order.couponShopId === request.shopId;
-      // Cap at this shop's subtotal so the invoice can't go negative; the
-      // engine also clamps, this is defence-in-depth + a correct charged total.
       const couponShare =
         isSellerFundedForThisShop && orderCoupon > 0
           ? round2(Math.min(orderCoupon, thisShopTotal))
           : 0;
 
-      // PR-C2 — place of supply = the SHIPPING address's GST state code, with
-      // the party default as the fallback when the address had no resolvable
-      // state. The invoice engine decides IGST vs CGST/SGST from this (Sec 10).
       const placeOfSupplyStateCode = request.shipStateCode ?? undefined;
 
-      // Rule 46 — a tax invoice a buyer can claim input credit against must
-      // carry the RECIPIENT's registered name and GSTIN, not the name of
-      // whoever tapped Place order. Both come from the order's own snapshot;
-      // undefined on a B2C order, which leaves the invoice exactly as before.
-      //
-      // Place of supply is deliberately NOT taken from the GSTIN's state. For
-      // goods it is where the movement terminates (IGST Sec 10(1)(a)) — the
-      // shipping address — so a Delhi-registered buyer shipping to Mumbai is
-      // still an intra-Maharashtra supply from a Mumbai seller.
       const result = await invoicesService.createInvoice({
         shopId: request.shopId,
         type: 'SALE',
@@ -1665,27 +1264,11 @@ export class PurchaseRequestsService {
         customerPhone: request.customerPhone ?? undefined,
         placeOfSupplyStateCode,
         note: opts.note ?? request.note ?? undefined,
-        // PR-C1 — the snapshot unitPrice is the marketplace sellingPrice. This
-        // used to hardcode isPriceInclusive: true for every product (assuming
-        // Legal Metrology MRP-style "inclusive of all taxes" pricing across
-        // the whole catalogue). That's now the product's own call: each
-        // line omits isPriceInclusive/taxPercent entirely, so the invoice
-        // engine's resolveProductPricing() fallback reads it straight off
-        // each product's pricingMode — inclusive, exclusive, or no-GST — the
-        // same convention the merchant's own invoices/quotations bill it
-        // under, instead of a blanket assumption applied to every listing.
-        // Header discount = this shop's seller-funded coupon share (CWQ-1),
-        // applied BEFORE tax inside the engine (Sec 15(3)(a)).
         discount: couponShare > 0 ? couponShare : undefined,
         items: request.items.map((i) => ({
           productId: i.productId,
           quantity: Number(i.quantity),
           unitPrice: Number(i.unitPrice),
-          // The snapshot unitPrice already has the flash-sale / carousel
-          // promo baked in. Pass an explicit 0 so the invoice engine's
-          // promo auto-fill doesn't subtract the same discount a second
-          // time (H1). taxPercent is intentionally omitted so the engine
-          // fills it from the product's GST rate (C1).
           discount: 0,
         })),
         confirm: true,
@@ -1696,10 +1279,6 @@ export class PurchaseRequestsService {
         await revertToPending();
         return { error: result.error ?? 'INVOICE_FAILED' as const };
       }
-      // Auto-confirm failed (most commonly: ledger could not decrement
-      // stock atomically). The DRAFT invoice exists but stock didn't
-      // move — caller's UI can re-render the inbox so the merchant can
-      // edit and retry. Revert our PROCESSING claim too.
       if ('confirmError' in result && result.confirmError) {
         const ce = result.confirmError as {
           error: string;
@@ -1719,7 +1298,6 @@ export class PurchaseRequestsService {
         return { error: ce.error };
       }
 
-      // ── 5. Mark CONFIRMED + link the invoice ─────────────────────
       await prisma.purchaseRequest.update({
         where: { id: request.id },
         data: {
@@ -1739,12 +1317,6 @@ export class PurchaseRequestsService {
         },
       });
 
-      // ── 6. Record the online payment against this fresh invoice ──
-      // If the customer already paid online (pay-then-confirm — the common
-      // case), settle that captured amount onto the merchant's ledger now so
-      // the invoice shows PAID instead of UNPAID. Idempotent + best-effort:
-      // a failure here must NOT roll back the (already committed) invoice —
-      // the confirm-then-pay path and any later run reconcile it.
       try {
         await ensureOrderInvoiceReceipts(request.customerOrderId);
       } catch (err) {
@@ -1759,8 +1331,6 @@ export class PurchaseRequestsService {
         invoice: { id: result.invoice.id, invoiceNo: result.invoice.invoiceNo },
       };
     } catch (e) {
-      // Unexpected throw between claim and confirmation. Make sure
-      // we don't leak a PROCESSING row that blocks future retries.
       await revertToPending();
       throw e;
     }
@@ -1775,11 +1345,6 @@ export class PurchaseRequestsService {
     | { error: 'NOT_FOUND' | 'NOT_PENDING' }
     | { ok: true }
   > {
-    // Atomic claim + side-effects (event, coupon decrement when the last
-    // sibling goes terminal). The refund proportional to this child's share is
-    // computed in-tx but sent back to source AFTER the tx (external gateway
-    // call). All DB work is one transaction so a downstream failure can't leave
-    // a REJECTED row with the coupon counter still consumed.
     let rejectRefund = 0;
     let rejectParentId: number | null = null;
     const result = await prisma.$transaction(async (tx) => {
@@ -1807,24 +1372,17 @@ export class PurchaseRequestsService {
         },
       });
 
-      // Refund proportional to this child's share, mirroring the cancel path:
-      // the customer's online payment goes back to source post-commit (the
-      // gateway slice was previously silently kept on rejection).
       if (child.customerOrderId !== null) {
         const parent = await tx.customerOrder.findUnique({
           where: { id: child.customerOrderId },
           select: { id: true, walletPaid: true, estimatedTotal: true },
         });
         if (parent) {
-          // PR-H1 — refund off the captured gateway amount; last slice absorbs
-          // the residual. Computed in-tx; issued to source after commit.
           rejectRefund = await this.refundShareForChild(tx, parent, child);
           rejectParentId = parent.id;
         }
       }
 
-      // Decrement coupon redemption when this rejection drops the last
-      // live sibling.
       if (child.customerOrderId !== null) {
         const liveSiblings = await tx.purchaseRequest.count({
           where: {
@@ -1859,8 +1417,6 @@ export class PurchaseRequestsService {
     });
 
     if ('ok' in result) {
-      // Best-effort Route clawback, mirroring the customer-cancel path (before
-      // the refund — Razorpay forbids transfers on a refunded payment).
       await reverseTransferForReturn({
         purchaseRequestId: opts.requestId,
         reverseAmount: REVERSE_ALL,
@@ -1883,24 +1439,10 @@ export class PurchaseRequestsService {
     return { error: probe ? 'NOT_PENDING' : 'NOT_FOUND' };
   }
 
-  /// Merchant-side counters for the orders badge.
   async pendingCount(shopId: number) {
     return prisma.purchaseRequest.count({ where: { shopId, status: 'PENDING' } });
   }
 
-  /// Merchant-side — append a shipping milestone to the child's event
-  /// timeline. Restricted to the post-confirmation forward set (PACKED
-  /// through DELIVERED) since lifecycle events are emitted by the service
-  /// automatically; merchants can't fabricate a CREATED row.
-  ///
-  /// PR-H3 — `RETURNED` is NOT a valid milestone here. This raw path has
-  /// no side effects (no status flip, no credit note / GST reversal, no
-  /// stock add-back, no refund, no Route transfer clawback), so allowing
-  /// RETURNED would let a merchant record a returned order that is still
-  /// CONFIRMED, still consuming stock, still settled to the seller, with
-  /// the buyer never refunded. Returns are handled exclusively by the
-  /// dedicated returns module. The type union below therefore omits it,
-  /// and the controller schema rejects it at the boundary.
   async addShippingEvent(opts: {
     shopId: number;
     requestId: number;
@@ -1919,7 +1461,6 @@ export class PurchaseRequestsService {
       select: { id: true, status: true, shop: { select: { returnsEnabled: true } } },
     });
     if (!pr) return { error: 'NOT_FOUND' };
-    // Only confirmed orders can move through shipping milestones.
     if (pr.status !== 'CONFIRMED') return { error: 'NOT_CONFIRMED' };
     const created = await prisma.purchaseRequestEvent.create({
       data: {
@@ -1933,38 +1474,21 @@ export class PurchaseRequestsService {
       },
       select: { id: true, type: true, occurredAt: true },
     });
-    // Route on-hold fast-path: on DELIVERED, release the seller's held slice
-    // early ONLY when the shop has no return window — otherwise the money must
-    // stay held so an in-hold return can reverse cleanly (the P2 sweep releases
-    // it at window close). Best-effort + flag-gated; never blocks the event.
     if (opts.type === 'DELIVERED' && pr.shop.returnsEnabled === false) {
       try {
         await releaseTransfersForPurchaseRequest(opts.requestId);
       } catch {
-        /* the reconcile sweep is the backstop; the event already recorded. */
       }
     }
     return { event: created };
   }
 
-  /// Customer-side — list buyable items from a past order so the
-  /// "Buy again" button can add them to the cart in one tap. Filters
-  /// out items the customer can no longer purchase: inactive products,
-  /// unpublished, deleted, or products belonging to the buyer's own
-  /// shop. Returns the reasons for any skips so the client can show a
-  /// "3 added, 1 unavailable" message.
   async reorderItems(opts: { userId: number; parentId: number }): Promise<
     | { error: 'NOT_FOUND' }
     | {
         items: Array<{
           productId: number;
           quantity: number;
-          /// PR-L2 — server-resolved effective unit price (current
-          /// sellingPrice minus any active banner promo). The client
-          /// must add THIS to the cart, not the raw catalog
-          /// `sellingPrice`, so "buy again" re-prices through the same
-          /// promo logic the storefront/checkout applies instead of
-          /// trusting a stale snapshot.
           effectiveUnitPrice: number;
           product: unknown;
         }>;
@@ -1989,9 +1513,6 @@ export class PurchaseRequestsService {
     });
     if (!parent) return { error: 'NOT_FOUND' };
 
-    // Flatten per-shop lines, summing quantities for duplicated SKUs
-    // (a single product can appear twice if the customer bought it
-    // across two checkouts merged into one shop).
     const want = new Map<number, { quantity: number; productName: string }>();
     for (const child of parent.shopOrders) {
       for (const it of child.items) {
@@ -2004,9 +1525,6 @@ export class PurchaseRequestsService {
     }
     if (want.size === 0) return { items: [], skipped: [] };
 
-    // Single fetch — pick up the full catalog projection so the
-    // customer can hand each line straight into the cart provider
-    // without a follow-up product fetch.
     const products = await prisma.product.findMany({
       where: { id: { in: [...want.keys()] } },
       select: {
@@ -2031,12 +1549,6 @@ export class PurchaseRequestsService {
     });
     const productMap = new Map(products.map((p) => [p.id, p]));
 
-    // PR-L2 — re-source the CURRENT effective price the same way the cart
-    // does: best active banner promo per product (cross-shop, shopId
-    // null), sellingPrice minus its per-unit discount. The reorder no
-    // longer hands back a price that ignores live promos; checkout still
-    // re-prices server-side, but the "buy again" payload now matches what
-    // the customer will actually be charged.
     const reorderPromos = await resolveActiveProductPromos(null, [...want.keys()]);
     const effectiveUnitPrice = (p: typeof products[number]): number => {
       const selling = Number(p.sellingPrice);
@@ -2075,9 +1587,6 @@ export class PurchaseRequestsService {
     return { items, skipped };
   }
 
-  /// Customer-side — fetch the linked invoice id + shop scope for a
-  /// child order so the PDF endpoint can authorise + delegate to the
-  /// existing merchant-side PDF generator without a second query.
   async customerInvoiceContext(opts: {
     userId: number;
     parentId: number;
@@ -2107,11 +1616,6 @@ export class PurchaseRequestsService {
     };
   }
 
-  /// Idempotency replay helper — returns the existing order envelope
-  /// when (customerUserId, idempotencyKey) already exists, or null when
-  /// it doesn't. Pulled out of createForCustomer so that 463-line
-  /// method starts with the actual checkout flow rather than ~30 lines
-  /// of bookkeeping.
   private async _replayIdempotentOrder(
     customerUserId: number,
     idempotencyKey: string,
@@ -2153,12 +1657,6 @@ export class PurchaseRequestsService {
     };
   }
 
-  /// Start an online (gateway) payment for the online-payable remainder of a
-  /// customer order — estimatedTotal − couponDiscount − walletPaid. Creates a
-  /// GatewayPayment intent (settlement target ORDER, id = this order) and flips
-  /// the order to PENDING; the ORDER settlement handler flips it to PAID on
-  /// webhook capture. Idempotent per order via the `order:<id>` key — a retry
-  /// (abandoned sheet, flaky network) reuses the same intent + Razorpay order.
   async initiateOnlinePayment(opts: {
     userId: number;
     orderId: number;
@@ -2199,7 +1697,6 @@ export class PurchaseRequestsService {
       idempotencyKey: `order:${order.id}`,
     });
 
-    // Flip to PENDING, but never clobber a PAID set by a racing webhook.
     await prisma.customerOrder.updateMany({
       where: { id: order.id, paymentStatus: { not: 'PAID' } },
       data: { paymentStatus: 'PENDING' },
@@ -2208,11 +1705,6 @@ export class PurchaseRequestsService {
     return { ok: true, payment };
   }
 
-  /// Client-confirm after the checkout sheet returns success. Re-checks the live
-  /// provider order and settles if paid (marks the order PAID + posts merchant
-  /// receipts), then returns the order's resulting paymentStatus. The webhook is
-  /// still authoritative; this covers environments it can't reach (localhost) and
-  /// makes the "paid but shows pending" gap impossible. Idempotent.
   async syncOnlinePayment(opts: {
     userId: number;
     orderId: number;
@@ -2232,11 +1724,6 @@ export class PurchaseRequestsService {
       where: { id: order.id },
       select: { paymentStatus: true },
     });
-    // PR-L1 — the order existed at the top of this call (scoped to the
-    // user); a null re-read means it vanished mid-call (concurrent
-    // delete). Surface that gap as an explicit UNKNOWN rather than
-    // fabricating a 'COD' status the client would render as a real
-    // payment mode.
     return {
       ok: true,
       paymentStatus: fresh?.paymentStatus ?? 'UNKNOWN',

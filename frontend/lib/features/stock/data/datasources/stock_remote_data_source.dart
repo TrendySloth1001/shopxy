@@ -21,8 +21,6 @@ class StockRemoteDataSource {
   const StockRemoteDataSource(this._client);
   final ApiClient _client;
 
-  /// Manual stock-in/out now creates a DRAFT invoice instead of posting
-  /// directly. Returns the draft invoice id so callers can navigate to it.
   Future<String> createTransaction(Map<String, dynamic> data) async {
     final response = await _client.post('/stock', body: data);
     final body = jsonDecode(response.body) as Map<String, dynamic>;

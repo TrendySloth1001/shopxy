@@ -8,14 +8,12 @@ import 'package:shopxy/shared/constants/app_curves.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
-/// One input row.
 class PieRow {
   const PieRow({required this.label, required this.value});
   final String label;
   final double value;
 }
 
-// Palettes (distinct per chart to avoid confusion across the three pies).
 final piePaletteA = <Color>[
   AppColors.brand,
   AppColors.accentIndigo,
@@ -41,7 +39,6 @@ final piePaletteC = <Color>[
   AppColors.accentTeal,
 ];
 
-// Geometry (SVG user units) — identical to the web component.
 const double _w = 800;
 const double _h = 520;
 const double _cx = _w / 2;
@@ -93,9 +90,6 @@ List<PieRow> _collapse(List<PieRow> rows, int maxSlices, String otherLabel) {
 String _trim(String s, [int n = 18]) =>
     s.length > n ? '${s.substring(0, n - 1)}…' : s;
 
-/// Infographic-style pie: variable-radius wedges, % labels, a dark centre hub,
-/// and leader-line callouts, alongside a written summary + ranked breakdown.
-/// Tap a slice to highlight it. Mirrors `components/infographic-pie.tsx`.
 class InfographicPie extends StatefulWidget {
   const InfographicPie({
     super.key,
@@ -189,7 +183,6 @@ class _InfographicPieState extends State<InfographicPie> {
       children: [
         LayoutBuilder(
           builder: (context, c) {
-            // Side-by-side when there's room (web `lg:flex-row`), else stacked.
             if (c.maxWidth >= 560) {
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -210,7 +203,6 @@ class _InfographicPieState extends State<InfographicPie> {
             );
           },
         ),
-        // Active-slice detail strip.
         AnimatedSize(
           duration: const Duration(milliseconds: 250),
           curve: AppCurves.decelerate,
@@ -252,9 +244,6 @@ class _InfographicPieState extends State<InfographicPie> {
   }
 }
 
-/// Placeholder shown when a chart has no positive data for the period. A soft
-/// icon medallion + message, sized so the card keeps a stable height instead of
-/// collapsing to a bare line of text.
 class _EmptyPie extends StatelessWidget {
   const _EmptyPie({required this.message});
   final String message;
@@ -355,7 +344,6 @@ class _PiePainter extends CustomPainter {
         }
       }
 
-      // % label inside the slice.
       final lp = _polar((_hub + s.rOut) / 2, single ? 0 : s.mid);
       _text(
         canvas,
@@ -370,7 +358,6 @@ class _PiePainter extends CustomPainter {
         anchor: _Anchor.center,
       );
 
-      // Leader line + outside labels.
       final tip = _polar(s.rOut + 4, s.mid);
       final knee = _polar(s.rOut + 18, s.mid);
       final right = knee.dx >= _cx;
@@ -407,7 +394,6 @@ class _PiePainter extends CustomPainter {
       canvas.restore();
     }
 
-    // Dark centre hub (over the slice inner edges).
     canvas.drawCircle(
       const Offset(_cx, _cy),
       _hub + 1,

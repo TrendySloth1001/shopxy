@@ -2,9 +2,6 @@ import { Router } from 'express';
 import asyncHandler from '../../shared/http/asyncHandler.js';
 import { cashierController } from './cashier.controller.js';
 
-/// Cashier control center — shift lifecycle + cash drawer + X/Z report.
-/// Mounted at /me/cashier under the 'invoices' area (requireAuth + ownerOnly +
-/// requireArea + resolveShop in app.ts), so req.shopId / req.user are set.
 export const cashierMerchantRouter = Router();
 
 cashierMerchantRouter.get('/current', asyncHandler((req, res) => cashierController.current(req, res)));

@@ -1,8 +1,3 @@
-// Pure model tests for the payout-onboarding draft. The secure-storage layer
-// (OnboardingDraftStore) is a thin best-effort wrapper around a platform
-// channel; the version + TTL + round-trip decisions live on the model, so we
-// test those directly without a channel mock.
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shopxy/features/shop/data/datasources/onboarding_draft_store.dart';
 
@@ -73,7 +68,6 @@ void main() {
     expect(_sample(step: 0).stepLabel, 'Business');
     expect(_sample(step: 1).stepLabel, 'Identity');
     expect(_sample(step: 3).stepLabel, 'Bank');
-    // Out-of-range clamps rather than throwing.
     expect(_sample(step: 9).stepLabel, 'Bank');
   });
 }

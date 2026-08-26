@@ -8,10 +8,6 @@ import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
-/// Hero KPI row — what you sold, kept, are owed, and owe. 2 columns on
-/// phones, 4 on wide screens. Mirrors `components/kpi-row.tsx`. Each card
-/// opens a drill-down bottom sheet (the mobile take on the web slide-over),
-/// not a full-page jump.
 class KpiRow extends StatelessWidget {
   const KpiRow({super.key, required this.kpis, required this.period});
   final DashboardKpis kpis;

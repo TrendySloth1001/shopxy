@@ -8,14 +8,7 @@ import {
   createTestProduct,
 } from '../helpers/setup.js';
 
-/// Smoke tests for purchase-requests.service. The file is 1494 LOC and
-/// the cart-checkout flow (createForCustomer, 463 LOC) is the riskiest
-/// surface — price drift, idempotency, cross-shop checks. These pin the
-/// canonical behaviours so the planned refactor (split into staged
-/// private methods) can land without breaking checkout.
-
 async function createBuyer() {
-  // A second user (not an OWNER's shop) that acts as the customer.
   return createTestUser({ role: 'CUSTOMER' as never });
 }
 
@@ -55,7 +48,6 @@ describe('purchase-requests.service — smoke', () => {
       const product = await createTestProduct(merchant.shopId, {
         sellingPrice: 100,
       });
-      // Client believes price is ₹50 but live price is ₹100 → drift.
       const result = await purchaseRequestsService.createForCustomer({
         customerUserId: buyer.userId,
         items: [
@@ -104,12 +96,6 @@ describe('purchase-requests.service — smoke', () => {
   });
 
   it('confirmRequest — a TAX_EXCLUSIVE (default) product is billed exclusive at checkout, not inclusive', async () => {
-    // PR-C1 used to hardcode isPriceInclusive: true for every marketplace
-    // checkout regardless of the product. Post-migration, existing/new
-    // products default to TAX_EXCLUSIVE, so the invoice this produces must
-    // ADD GST on top of the snapshot unitPrice, not back it out of it — this
-    // is the one deliberately-accepted behavior change from the old blanket
-    // inclusive assumption.
     const merchant = await createTestUser();
     const buyer = await createBuyer();
     try {
@@ -117,10 +103,6 @@ describe('purchase-requests.service — smoke', () => {
         where: { id: merchant.userId },
         data: { shopGstin: '27ABCDE1234F1Z5', shopStateCode: '27', registrationType: 'REGULAR' },
       });
-      // createForCustomer requires a published storefront; createTestUser's
-      // fixture shop starts unpublished (a known gap in the shared fixture,
-      // same class as hsn.test.ts's linkOwnerToShop — worked around locally
-      // rather than changing the shared helper's behavior for every suite).
       await prisma.shop.update({ where: { id: merchant.shopId }, data: { isPublished: true } });
       const product = await createTestProduct(merchant.shopId, {
         sellingPrice: 100,
@@ -142,8 +124,6 @@ describe('purchase-requests.service — smoke', () => {
       expect('error' in result).toBe(false);
       if ('error' in result) return;
       const invoice = await prisma.invoice.findUniqueOrThrow({ where: { id: result.invoice.id } });
-      // ₹100 exclusive + 18% GST on top = ₹118, not ₹100 backed out of an
-      // assumed-inclusive price.
       expect(Number(invoice.taxableValue)).toBeCloseTo(100, 2);
       expect(Number(invoice.total)).toBeCloseTo(118, 2);
       await prisma.invoice.delete({ where: { id: invoice.id } });
@@ -187,7 +167,6 @@ describe('purchase-requests.service — smoke', () => {
       expect('error' in result).toBe(false);
       if ('error' in result) return;
       const invoice = await prisma.invoice.findUniqueOrThrow({ where: { id: result.invoice.id } });
-      // ₹118 already includes 18% GST → taxable backs out to ₹100, total stays ₹118.
       expect(Number(invoice.taxableValue)).toBeCloseTo(100, 2);
       expect(Number(invoice.total)).toBeCloseTo(118, 2);
       await prisma.invoice.delete({ where: { id: invoice.id } });
@@ -204,7 +183,6 @@ describe('purchase-requests.service — smoke', () => {
       const product = await createTestProduct(owner.shopId, {
         sellingPrice: 100,
       });
-      // Same user is both owner and buyer — explicitly disallowed.
       const result = await purchaseRequestsService.createForCustomer({
         customerUserId: owner.userId,
         items: [{ productId: product.id, quantity: 1, expectedUnitPrice: 100 }],
@@ -221,8 +199,6 @@ describe('purchase-requests.service — smoke', () => {
     const merchant = await createTestUser();
     const buyer = await createBuyer();
     try {
-      // createForCustomer refuses an unpublished shop, and the shared
-      // fixture leaves shops unpublished.
       await prisma.shop.update({
         where: { id: merchant.shopId },
         data: { isPublished: true },
@@ -247,13 +223,11 @@ describe('purchase-requests.service — smoke', () => {
       });
       expect(party).not.toBeNull();
       expect(party!.isActive).toBe(true);
-      // The request points at it, so confirm doesn't have to mint one.
       const child = await prisma.purchaseRequest.findFirstOrThrow({
         where: { customerOrderId: result.order.id },
         select: { partyId: true, status: true },
       });
       expect(child.partyId).toBe(party!.id);
-      // Linked while still PENDING — no merchant action required.
       expect(child.status).toBe('PENDING');
 
       await prisma.customerOrder.delete({ where: { id: result.order.id } });

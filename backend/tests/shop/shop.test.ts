@@ -87,9 +87,6 @@ describe('shop endpoints', () => {
         .send({ name: 'Renamed Shop' });
 
       expect(res.status).toBe(200);
-      // Slug should derive from new name AND remain a valid slug. The
-      // service appends a numeric suffix on collision; first save with
-      // a fresh name normally produces just `renamed-shop`.
       expect(res.body.slug).toMatch(/^renamed-shop(-\d+)?$/);
     } finally {
       await cleanupTestUser(ctx);
@@ -128,7 +125,6 @@ describe('shop endpoints', () => {
       expect(res.status).toBe(200);
       expect(res.body.slug).toBe(ctx.shopSlug);
       expect(res.body.tagline).toBe('hi');
-      // No private fields leak.
       expect(res.body).not.toHaveProperty('isPublished');
       expect(res.body).not.toHaveProperty('ownerUserId');
     } finally {
@@ -139,7 +135,6 @@ describe('shop endpoints', () => {
   it('GET /shops/:slug 404s when the shop is unpublished (no info leak)', async () => {
     const ctx = await createTestUser();
     try {
-      // Default state is unpublished.
       const res = await request(app).get(`/shops/${ctx.shopSlug}`);
       expect(res.status).toBe(404);
     } finally {

@@ -44,8 +44,6 @@ import 'package:shopxy/shared/widgets/section_divider.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
-/// One menu row — a feature the user can open. Pushes [builder] on tap.
-/// [requires] gates it by shop capability (null = visible to any team member).
 class _MenuItem {
   const _MenuItem({
     required this.label,
@@ -65,11 +63,6 @@ class _MenuItem {
   final WidgetBuilder builder;
   final bool Function(AuthUser user)? requires;
 
-  /// Live count of things on this screen that need the user's attention,
-  /// rendered as a pill on the row so they don't have to open it to find
-  /// out. Called during the row's `build`, so use `context.select` in here
-  /// — that keeps the rebuild subscription scoped to this one row rather
-  /// than repainting the whole menu.
   final int Function(BuildContext context)? badgeCount;
 
   bool visibleTo(AuthUser? user) =>
@@ -103,9 +96,6 @@ List<_MenuItem> get _manageItems => [
     accentSoft: AppColors.accentTealSoft,
     builder: (_) => const InvitationsPage(),
     requires: (u) => u.canView('parties') || u.canView('vendors'),
-    // Invites addressed to THIS shop that nobody has answered yet — the
-    // only genuinely actionable count here. Invites the merchant sent are
-    // waiting on the other side, so badging those would just be noise.
     badgeCount: (c) => c.select<NotificationsProvider, int>(
       (p) => p.pendingIncoming.length,
     ),
@@ -175,7 +165,6 @@ List<_MenuItem> get _manageItems => [
   ),
 ];
 
-// Invoices is intentionally omitted here — it's a primary bottom-nav tab now.
 List<_MenuItem> get _operationItems => [
   _MenuItem(
     label: (l) => l.navPointOfSale,
@@ -332,8 +321,6 @@ List<_MenuItem> get _accountItems => [
   ),
 ];
 
-/// The "Menu" bottom-nav tab — every secondary feature grouped into
-/// iOS-Settings-style rounded sections (replaces the old slide-out drawer).
 class MenuPage extends StatefulWidget {
   const MenuPage({super.key});
 
@@ -423,8 +410,6 @@ class _MenuPageState extends State<MenuPage> {
   }
 }
 
-/// A titled group of rows inside one rounded surface card (iOS Settings look).
-/// The section title carries a small leading icon.
 class _MenuGroup extends StatelessWidget {
   const _MenuGroup({
     required this.title,
@@ -440,7 +425,6 @@ class _MenuGroup extends StatelessWidget {
     final rows = <Widget>[];
     for (var i = 0; i < items.length; i++) {
       if (i > 0) {
-        // Divider inset past the icon square, aligned under the label.
         rows.add(
           const Padding(
             padding: EdgeInsets.only(left: AppSizes.md + 40 + AppSizes.md),
@@ -554,9 +538,6 @@ class _MenuRow extends StatelessWidget {
   }
 }
 
-/// Count pill on a menu row — how many things behind it need attention.
-/// Uses the same error red as the notification bell's badge so "there is
-/// something waiting for you" reads identically wherever it appears.
 class _MenuBadge extends StatelessWidget {
   const _MenuBadge({required this.count});
   final int count;

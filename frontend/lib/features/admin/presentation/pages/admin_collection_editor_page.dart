@@ -18,12 +18,6 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
-/// Single-page editor for an editorial collection. Two states:
-///   * new      — title/slug/etc, can't manage items until saved once
-///   * existing — full editor: meta + cover + drag-drop product list
-///
-/// Item reorder is implemented client-side; on Save we PUT the whole
-/// array. Backend replaces atomically in a transaction.
 class AdminCollectionEditorPage extends StatefulWidget {
   const AdminCollectionEditorPage({super.key, required this.existingId});
   final String? existingId;
@@ -179,8 +173,6 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
       );
       return;
     }
-    // Persist item ordering whenever we have items (newly-created
-    // collections may legitimately have zero).
     final items = _items
         .asMap()
         .entries
@@ -210,7 +202,6 @@ class _AdminCollectionEditorPageState extends State<AdminCollectionEditorPage> {
       ),
     );
     if (picked == null || !mounted) return;
-    // De-dupe by product id.
     if (_items.any((it) => it.product.id == picked.id)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -499,7 +490,6 @@ class _ItemRow extends StatelessWidget {
   }
 }
 
-/// Skeleton that mirrors the collection editor form while data loads.
 class _CollectionEditorSkeleton extends StatelessWidget {
   const _CollectionEditorSkeleton();
 
@@ -513,7 +503,6 @@ class _CollectionEditorSkeleton extends StatelessWidget {
         AppSizes.huge,
       ),
       children: [
-        // Cover row: 90×60 squircle + button placeholder
         Row(
           children: [
             AppShimmerBox(width: 90, height: 60, radius: AppSizes.radiusMd),
@@ -524,19 +513,14 @@ class _CollectionEditorSkeleton extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppSizes.md),
-        // Title field
         const _SkeletonField(widthFactor: 0.55),
         const SizedBox(height: AppSizes.md),
-        // Slug field
         const _SkeletonField(widthFactor: 0.45),
         const SizedBox(height: AppSizes.md),
-        // Eyebrow field
         const _SkeletonField(widthFactor: 0.50),
         const SizedBox(height: AppSizes.md),
-        // Subtitle field
         const _SkeletonField(widthFactor: 0.65),
         const SizedBox(height: AppSizes.md),
-        // CTA text + CTA target (side-by-side)
         Row(
           children: const [
             Expanded(child: _SkeletonField(widthFactor: 0.7)),
@@ -545,10 +529,8 @@ class _CollectionEditorSkeleton extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppSizes.md),
-        // BG color field
         const _SkeletonField(widthFactor: 0.40),
         const SizedBox(height: AppSizes.lg),
-        // Published switch row
         Row(
           children: const [
             Expanded(
@@ -566,10 +548,8 @@ class _CollectionEditorSkeleton extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppSizes.lg),
-        // "Items" section label
         const AppShimmerLine(widthFactor: 0.20, height: 16),
         const SizedBox(height: AppSizes.sm),
-        // Items hint placeholder
         AppShimmerBox(
           width: double.infinity,
           height: 52,
@@ -580,7 +560,6 @@ class _CollectionEditorSkeleton extends StatelessWidget {
   }
 }
 
-/// One labelled text-field skeleton: a narrow label line + a full-width input bar.
 class _SkeletonField extends StatelessWidget {
   const _SkeletonField({required this.widthFactor});
   final double widthFactor;

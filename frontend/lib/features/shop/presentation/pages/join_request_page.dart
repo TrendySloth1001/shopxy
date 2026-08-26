@@ -15,12 +15,6 @@ import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/shared/theme/app_text_styles.dart';
 
-/// Shown right after login/registration when the account has been
-/// invited onto a shop's team but isn't a member yet. Lays out the
-/// inviting shop, the offered role, and exactly what that role can and
-/// can't do — so the person knows their responsibilities before they
-/// accept. Accept makes them staff (and the auth gate then drops them
-/// into the merchant app); decline / "not now" signs them out.
 class JoinRequestPage extends StatefulWidget {
   const JoinRequestPage({
     super.key,
@@ -28,11 +22,8 @@ class JoinRequestPage extends StatefulWidget {
     required this.onResolved,
   });
 
-  /// The pending TEAM invitation to act on.
   final Invitation invite;
 
-  /// Called after the invite is accepted (membership created) so the
-  /// caller can refresh the session + re-route into the app.
   final Future<void> Function() onResolved;
 
   @override
@@ -58,8 +49,6 @@ class _JoinRequestPageState extends State<JoinRequestPage> {
     setState(() => _busy = true);
     try {
       await _invites.accept(widget.invite.id);
-      // Membership created server-side; refresh /auth/me so shopRole is
-      // populated and the auth gate routes into the app.
       await widget.onResolved();
     } catch (e) {
       _snack(friendlyError(e));
@@ -72,8 +61,6 @@ class _JoinRequestPageState extends State<JoinRequestPage> {
     try {
       await _invites.decline(widget.invite.id);
     } catch (_) {
-      // Even if the decline call fails, fall through to sign-out — the
-      // account has no shop, so there's nothing for it to do here.
     }
     if (!mounted) return;
     await context.read<AuthProvider>().logout();

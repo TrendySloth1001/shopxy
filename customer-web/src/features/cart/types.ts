@@ -1,8 +1,6 @@
 import { z } from "zod";
 import { zNum } from "@/shared/zod";
 
-// ── Product sub-shape inside a cart line ──────────────────────────────────────
-
 export const cartProductSchema = z.object({
   id: z.coerce.string(),
   name: z.string(),
@@ -25,8 +23,6 @@ export const cartProductSchema = z.object({
 
 export type CartProduct = z.infer<typeof cartProductSchema>;
 
-// ── Cart line ─────────────────────────────────────────────────────────────────
-
 export const cartItemSchema = z.object({
   id: z.coerce.string(),
   productId: z.coerce.string(),
@@ -41,26 +37,19 @@ export const cartResponseSchema = z.object({
   data: z.array(cartItemSchema),
 });
 
-// ── PUT /me/cart/:productId response ─────────────────────────────────────────
-
 export const setQtyResponseSchema = cartItemSchema.extend({
   capped: z.boolean(),
 });
 
 export type SetQtyResponse = z.infer<typeof setQtyResponseSchema>;
 
-// ── Merge request/response ────────────────────────────────────────────────────
-
 export const mergeBffResponseSchema = z.object({
   data: z.array(cartItemSchema),
 });
 
-// ── Local guest cart (localStorage) ──────────────────────────────────────────
-
 export interface GuestLine {
   productId: string;
   quantity: number;
-  /** Cached display data so the guest cart can render without a server round-trip. */
   snapshot: {
     name: string;
     imageUrl: string;

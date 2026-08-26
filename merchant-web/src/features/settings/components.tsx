@@ -6,7 +6,6 @@ import { useTranslations } from "next-intl";
 import { ChevronRight, type LucideIcon } from "@/shared/icons";
 import { useAuth } from "@/features/auth/auth-context";
 
-/** Uppercase section label. */
 export function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
     <p className="px-sm pb-sm text-label-md uppercase tracking-wide text-subtle">
@@ -15,7 +14,6 @@ export function Eyebrow({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Small muted pill — e.g. "Coming soon". */
 export function ComingSoon() {
   const t = useTranslations("common");
   return (
@@ -29,18 +27,13 @@ type RowProps = {
   icon: LucideIcon;
   title: string;
   subtitle?: string;
-  /** Renders as a link when set. */
   href?: string;
-  /** Renders as a button when set (ignored if `href` is set). */
   onClick?: () => void;
-  /** Replaces the default chevron (only shown for link/button rows). */
   trailing?: React.ReactNode;
   tone?: "default" | "error";
-  /** Bordered tile (for responsive grids) instead of a flat list row. */
   tile?: boolean;
 };
 
-/** A flat settings row: icon puck + title/subtitle + trailing affordance. */
 export function SettingRow({
   icon: Icon,
   title,
@@ -107,7 +100,6 @@ export function SettingRow({
   return <div className={base}>{inner}</div>;
 }
 
-/** Pill toggle used for boolean settings. */
 function Toggle({
   checked,
   disabled,
@@ -140,7 +132,6 @@ function Toggle({
   );
 }
 
-/** Email-notifications setting — persisted via `updateProfile`. */
 export function NotificationsToggle({
   icon: Icon,
 }: {

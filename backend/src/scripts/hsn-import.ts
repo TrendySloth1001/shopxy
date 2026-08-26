@@ -3,45 +3,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { HSN_RATE_REVISION, type HsnMasterEntry } from '../modules/hsn/hsn.master.js';
 
-/// Build the HSN/SAC master from **official** data, instead of anyone typing
-/// rates by hand.
-///
-///   npm run hsn:import -- --directory hsn_codes.csv --rates gst_rates.csv
-///
-/// The two inputs are genuinely different datasets and both are needed:
-///
-///   --directory  The HSN/SAC code list: code + official tariff description.
-///                ~12,000 rows, published as part of the Customs Tariff /
-///                GST portal HSN master. Gives complete *structure* — every
-///                chapter, heading and sub-heading — but carries no rates.
-///
-///   --rates      Code → GST rate, from the CBIC rate finder or the rate
-///                notification schedules. Far fewer rows than the directory,
-///                because rates are declared at the level the notification
-///                chose (often the 4-digit heading).
-///
-/// A code present in the directory but absent from the rate file becomes a
-/// **navigation row** (`isRatable: false`): it shows up in the breadcrumb and
-/// in search, but can never price a line. That is exactly right — a chapter
-/// has no rate of its own, and inventing one would bill at a slab that does
-/// not legally exist.
-///
-/// ── Why this script exists ──────────────────────────────────────────────
-/// Whatever ends up on an invoice has to be the real code at the notified
-/// rate, because that is what the department reconciles against. Hand-authored
-/// tax data is a liability no matter how carefully it is written. So the code
-/// in this repo owns the *shape*; the government owns the *content*.
-///
-/// The output is written to `src/modules/hsn/data/hsn.master.json`, which the
-/// seed prefers over the checked-in provisional manifest. Commit it: it is
-/// reviewable, diffable, and a rate change becomes a visible PR rather than
-/// someone's memory.
-///
-/// ── Input formats ───────────────────────────────────────────────────────
-/// CSV (with a header row) or JSON (an array of objects). Column names are
-/// auto-detected from the usual spellings; override with --code-field etc.
-/// when a particular download disagrees.
-
 type Row = Record<string, string>;
 
 const CODE_FIELDS = ['code', 'hsn', 'hsn_code', 'hsncode', 'hsn_sac', 'sac', 'c', 'chapter'];
@@ -61,10 +22,6 @@ function parseArgs(argv: string[]): Record<string, string> {
   return out;
 }
 
-/// Minimal RFC-4180 reader: quoted fields, escaped quotes, embedded commas and
-/// newlines. Small enough to keep here rather than take a dependency for one
-/// script, and government CSV exports routinely contain commas inside
-/// descriptions — a naive `split(',')` silently shifts every later column.
 function parseCsv(text: string): Row[] {
   const rows: string[][] = [];
   let row: string[] = [];
@@ -127,12 +84,10 @@ function readTable(file: string): Row[] {
   return parseCsv(text);
 }
 
-/// Pick the first column present in the data, preferring an explicit override.
 function pickField(rows: Row[], candidates: string[], override?: string): string | null {
   if (override) return override.toLowerCase().replace(/[^a-z0-9]+/g, '_');
   const keys = new Set(rows.flatMap((r) => Object.keys(r)));
   for (const c of candidates) if (keys.has(c)) return c;
-  // Fall back to a fuzzy contains, for headers like "hsn_code_8_digit".
   for (const c of candidates) {
     const hit = [...keys].find((k) => k.includes(c));
     if (hit) return hit;
@@ -142,7 +97,6 @@ function pickField(rows: Row[], candidates: string[], override?: string): string
 
 const digitsOnly = (s: string) => s.replace(/\D/g, '');
 
-/// Rates arrive as "5", "5%", "5.00", "Nil", "NIL", "-".
 function parseRate(raw: string): number | null {
   const s = raw.trim().toLowerCase();
   if (!s || s === '-' || s === 'na' || s === 'n/a') return null;
@@ -181,7 +135,6 @@ function main(): void {
     process.exit(1);
   }
 
-  // ── Rates first: they decide which codes can price a line ───────────────
   const rates = new Map<string, { gstRate: number; cessRate: number }>();
   if (ratesFile) {
     const rows = readTable(ratesFile);
@@ -203,10 +156,6 @@ function main(): void {
         skipped++;
         continue;
       }
-      // A code can appear more than once when a notification splits it by
-      // condition. Keep the LOWEST rate and let the rate note / rule layer
-      // handle the split — over-charging by default is the worse error, and a
-      // conditional entry needs a human anyway.
       const existing = rates.get(code);
       if (!existing || gstRate < existing.gstRate) {
         rates.set(code, {
@@ -220,7 +169,6 @@ function main(): void {
     );
   }
 
-  // ── Directory: structure, including the levels that carry no rate ───────
   const entries = new Map<string, HsnMasterEntry>();
   if (directoryFile) {
     const rows = readTable(directoryFile);
@@ -241,21 +189,15 @@ function main(): void {
       entries.set(code, {
         code,
         description,
-        // SAC codes are the 99xx series; everything else is goods.
         kind: code.startsWith('99') ? 'SERVICES' : 'GOODS',
         gstRate: rate?.gstRate ?? 0,
         ...(rate?.cessRate ? { cessRate: rate.cessRate } : {}),
-        // No rate in the schedule ⇒ navigation only. This is the mechanism
-        // that keeps a chapter from ever pricing a line.
         ...(rate ? {} : { isRatable: false }),
         since: revision,
       });
     }
   }
 
-  // A rate can be declared for a code the directory doesn't list (the
-  // schedules sometimes use groupings the code list doesn't). Keep it — the
-  // rate is the part that matters — with a placeholder description.
   let orphanRates = 0;
   for (const [code, rate] of rates) {
     if (entries.has(code)) continue;

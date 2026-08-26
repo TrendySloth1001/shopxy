@@ -2,7 +2,6 @@ import { Star } from "@/shared/icons";
 
 interface Props {
   rating: number;
-  /** Icon size in px, default 16 */
   size?: number;
 }
 

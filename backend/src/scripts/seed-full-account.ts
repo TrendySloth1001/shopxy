@@ -1,22 +1,3 @@
-/// Full-feature seed for a single test merchant account.
-///
-/// Fills EVERY merchant + customer feature with realistic, INTERLINKED data —
-/// and, crucially, a backdated TRANSACTION HISTORY across the last ~75 days so
-/// the dashboard/reports GRAPHS actually have a curve to draw (they read the
-/// `agg_daily_*` roll-ups keyed on invoice_date / payment_date, which this
-/// script rebuilds for every day it touches).
-///
-/// Usage:
-///   cd backend
-///   npx tsx src/scripts/seed-full-account.ts
-///
-/// Idempotent-ish: the account/shop are reused if present; each feature-section
-/// checks a natural key or an existing-count and tops up rather than
-/// duplicating. Every section is wrapped in `step()` — one failing feature logs
-/// and is skipped, the rest still seed, so you can see exactly which feature (if
-/// any) breaks. The heavy historical engine is guarded so a re-run doesn't pile
-/// on a second 75-day history.
-
 import 'dotenv/config';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
@@ -40,27 +21,20 @@ import { presetFor } from '../shared/http/permissions.js';
 import { recomputeDay } from '../modules/analytics-rollup/aggregates.recompute.js';
 import { istDateUTC } from '../shared/time/ist.js';
 
-// ── Target account ────────────────────────────────────────────────────────────
 const MERCHANT_EMAIL = 'nkumawat1010@gmail.com';
 const MERCHANT_PASSWORD = 'N8956827389';
 const MERCHANT_NAME = 'Nikhil Kumawat';
 const SHOP_NAME = 'Kumawat Electronics & Traders';
 
-// A separate CUSTOMER (marketplace buyer) — linked as a party of the shop so
-// quotations, customer orders, returns and reviews all have a real actor.
 const CUSTOMER_EMAIL = 'grahak.kumawat1010@gmail.com';
 const CUSTOMER_PASSWORD = 'N8956827389';
 const CUSTOMER_NAME = 'Rohit Sharma';
 
-/// How far back the synthetic transaction history reaches. Graphs draw over
-/// this window; roll-ups are recomputed for every day in it at the end.
 const HISTORY_DAYS = 75;
 
 const ux = (id: string): string =>
   `https://images.unsplash.com/${id}?w=900&h=900&fit=crop&auto=format&q=70`;
 
-/// Backdated instant: `n` days ago at `hour`:`min` local. Returned both as a
-/// Date and an ISO string (createInvoice wants a string, payments want a Date).
 function daysAgo(n: number, hour = 12, min = 0): Date {
   const d = new Date();
   d.setDate(d.getDate() - n);
@@ -70,13 +44,11 @@ function daysAgo(n: number, hour = 12, min = 0): Date {
 const randInt = (lo: number, hi: number) => lo + Math.floor(Math.random() * (hi - lo + 1));
 const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
 
-/// Every day we post money on — recomputed into the roll-ups at the end.
 const touchedDays = new Set<number>();
 function touch(d: Date): void {
   touchedDays.add(istDateUTC(d).getTime());
 }
 
-// ── Resilient step runner ───────────────────────────────────────────────────
 let failures = 0;
 async function step<T>(label: string, fn: () => Promise<T>): Promise<T | null> {
   try {
@@ -126,8 +98,6 @@ async function ensureMerchant(): Promise<{ userId: number; shopId: number }> {
         update: { shopId: shop.id, role: 'OWNER' },
       });
     } else {
-      // Force-publish an existing shop so the storefront + customer orders work
-      // (a pre-existing account may have been created unpublished).
       await prisma.shop.update({ where: { id: shop.id }, data: { isPublished: true, vacationMode: false } });
     }
     return { userId: existing.id, shopId: shop.id };
@@ -197,7 +167,6 @@ async function categoryIdBySlug(slug: string): Promise<number | undefined> {
   return row?.id;
 }
 
-// ── Product catalog (10, fully filled + product-level images) ────────────────
 type SeedProduct = Parameters<typeof productsService.createProduct>[0] & { categorySlug?: string };
 
 const PRODUCTS: SeedProduct[] = [
@@ -361,9 +330,6 @@ const PRODUCTS: SeedProduct[] = [
   },
 ];
 
-/// Create new products; for products that already exist (matched by SKU),
-/// backfill product-level images if missing and refresh the rich content
-/// (highlights/specs/offers/tags/brand) so re-runs upgrade the older seed.
 async function seedProducts(shopId: number): Promise<number[]> {
   const ids: number[] = [];
   for (const seed of PRODUCTS) {
@@ -419,7 +385,6 @@ async function main(): Promise<void> {
     return p;
   };
 
-  // ── Parties (6; one linked to the buyer for quotations/orders) ──────────────
   let linkedPartyId = 0;
   const partyIds: number[] = [];
   await step('Parties (customers) + link one to the buyer', async () => {
@@ -442,7 +407,6 @@ async function main(): Promise<void> {
     }
   });
 
-  // ── Vendors (4) ──────────────────────────────────────────────────────────────
   const vendorIds: number[] = [];
   await step('Vendors (suppliers)', async () => {
     const defs = [
@@ -459,14 +423,9 @@ async function main(): Promise<void> {
   });
   const vendorId = vendorIds[0] ?? 0;
 
-  // ── Opening stock — one big backdated PURCHASE per product so the 75-day
-  //    sales run below can never hit INSUFFICIENT_STOCK. Backdated to the start
-  //    of the window so the purchases graph opens with a spike. ────────────────
   await step('Opening stock (backdated bulk purchases → stock in)', async () => {
     const existing = await prisma.invoice.count({ where: { shopId, type: 'PURCHASE' } });
-    if (existing >= 3) return; // already have a purchase history
-    // Split the 10 products across the 4 vendors, two purchase invoices each so
-    // the purchases line has several early points.
+    if (existing >= 3) return;
     const openDate = daysAgo(HISTORY_DAYS, 10);
     const groups: number[][] = [[0, 1, 2], [3, 4], [5, 6], [7, 8, 9]];
     for (let g = 0; g < groups.length; g++) {
@@ -486,7 +445,6 @@ async function main(): Promise<void> {
     void openDate;
   });
 
-  // ── Mid-window restock purchases (a few more points on the purchases graph) ──
   await step('Restock purchases (spread across the window)', async () => {
     const existing = await prisma.invoice.count({ where: { shopId, type: 'PURCHASE', note: 'Restock' } });
     if (existing > 0) return;
@@ -507,9 +465,6 @@ async function main(): Promise<void> {
     }
   });
 
-  // ── Historical SALES — the main graph filler. 1-3 invoices on ~70% of the
-  //    last HISTORY_DAYS days, each 1-3 line items, backdated. Sales grow toward
-  //    the present (a gentle upward trend) so the chart reads like a real shop. ─
   const saleInvoiceIds: number[] = [];
   await step('Historical sales (backdated → sales graph + receivables)', async () => {
     const tagged = await prisma.invoice.count({ where: { shopId, type: 'SALE', note: 'SEED-HIST' } });
@@ -520,8 +475,7 @@ async function main(): Promise<void> {
     }
     const saleParties = partyIds.filter((id) => id !== 0);
     for (let day = HISTORY_DAYS - 2; day >= 0; day--) {
-      // Upward trend + weekend lull; skip ~30% of days entirely.
-      const trend = 1 - day / HISTORY_DAYS; // 0 → 1 as we approach today
+      const trend = 1 - day / HISTORY_DAYS;
       if (Math.random() > 0.55 + trend * 0.3) continue;
       const invoicesToday = 1 + (Math.random() < 0.35 + trend * 0.4 ? 1 : 0) + (Math.random() < trend * 0.3 ? 1 : 0);
       for (let k = 0; k < invoicesToday; k++) {
@@ -539,7 +493,6 @@ async function main(): Promise<void> {
           items, confirm: true, confirmedById: userId,
         });
         if ('error' in res) {
-          // Out of stock on a product is non-fatal — skip this invoice.
           if (String((res as { error: string }).error).includes('STOCK')) continue;
           throw new Error(`sale @day-${day}: ${(res as { error: string }).error}`);
         }
@@ -549,7 +502,6 @@ async function main(): Promise<void> {
     }
   });
 
-  // ── Draft sales (unconfirmed, so the invoices list shows DRAFT rows too) ─────
   await step('Draft sales invoices', async () => {
     const drafts = await prisma.invoice.count({ where: { shopId, type: 'SALE', status: 'DRAFT' } });
     if (drafts >= 2) return;
@@ -564,8 +516,6 @@ async function main(): Promise<void> {
     }
   });
 
-  // ── Payments — receipts against ~55% of sales + periodic vendor payments.
-  //    Backdated so the cash-in/out graph tracks the sales curve. ──────────────
   await step('Payments (receipts + vendor payments → ledger + cash graph)', async () => {
     const existing = await prisma.payment.count({ where: { shopId } });
     if (existing >= 25) return;
@@ -587,7 +537,6 @@ async function main(): Promise<void> {
       });
       touch(d);
     }
-    // Vendor settlements across the window.
     for (const day of [60, 44, 30, 15, 5]) {
       const d = daysAgo(day, 16, randInt(0, 59));
       await paymentsService.createPayment({
@@ -598,7 +547,6 @@ async function main(): Promise<void> {
     }
   });
 
-  // ── Manual stock transactions (in/out adjustments) ──────────────────────────
   await step('Stock transactions (manual in/out)', async () => {
     const count = await prisma.stockTransaction.count({ where: { shopId, sourceType: 'MANUAL' } });
     if (count > 0) return;
@@ -608,7 +556,6 @@ async function main(): Promise<void> {
     if (outRes && typeof outRes === 'object' && 'error' in outRes) throw new Error(`stock out: ${(outRes as { error: string }).error}`);
   });
 
-  // ── Quotations (to the linked party) ────────────────────────────────────────
   await step('Quotations (to linked customer)', async () => {
     const count = await prisma.quotation.count({ where: { shopId } });
     if (count >= 4) return;
@@ -630,7 +577,6 @@ async function main(): Promise<void> {
     }
   });
 
-  // ── Challans (delivery challans to parties) ──────────────────────────────────
   await step('Delivery challans', async () => {
     const count = await prisma.challan.count({ where: { shopId } });
     if (count >= 3) return;
@@ -650,7 +596,6 @@ async function main(): Promise<void> {
     }
   });
 
-  // ── Coupons ─────────────────────────────────────────────────────────────────
   await step('Coupons', async () => {
     const now = new Date();
     const in30 = new Date(now.getTime() + 30 * 864e5);
@@ -666,7 +611,6 @@ async function main(): Promise<void> {
     }
   });
 
-  // ── Banners ─────────────────────────────────────────────────────────────────
   await step('Banners (hero + ad-strip)', async () => {
     const count = await prisma.banner.count({ where: { shopId } });
     if (count > 0) return;
@@ -675,7 +619,6 @@ async function main(): Promise<void> {
     await bannersService.createForShop(shopId, { placement: 'AD_STRIP', imageUrl: ux('photo-1526170375885-4d8ecf77b99f'), linkUrl: '/shop', sortOrder: 0, isActive: true });
   });
 
-  // ── Custom fields (a section + a few definitions) ───────────────────────────
   await step('Custom fields (section + definitions)', async () => {
     const count = await prisma.customFieldDefinition.count({ where: { shopId } });
     if (count > 0) return;
@@ -691,15 +634,11 @@ async function main(): Promise<void> {
     }
   });
 
-  // ── Customer orders (several, varied states) + the return flow ──────────────
-  //    Orders: 2 left PENDING (merchant inbox), 2 CONFIRMED, 1 CONFIRMED +
-  //    fully SHIPPED→DELIVERED, and 1 DELIVERED that we then RETURN & REFUND.
   let deliveredParentId = 0;
   let deliveredChildId = 0;
   await step('Customer orders (marketplace checkout · varied states)', async () => {
     const existing = await prisma.purchaseRequest.count({ where: { shopId } });
     if (existing >= 6) {
-      // Recover the delivered order for the returns step on a re-run.
       const delivered = await prisma.purchaseRequest.findFirst({
         where: { shopId, status: 'CONFIRMED', events: { some: { type: 'DELIVERED' } } },
         select: { id: true, customerOrderId: true },
@@ -716,16 +655,14 @@ async function main(): Promise<void> {
         note,
       });
       if ('error' in res) throw new Error(`order: ${res.error}`);
-      return res.order; // { id, shopOrders: [{ id, shopId }] }
+      return res.order;
     };
     const childFor = (order: { shopOrders: { id: number; shopId: number }[] }) =>
       order.shopOrders.find((c) => c.shopId === shopId)!;
 
-    // 2 PENDING
     await place([{ i: 1, quantity: 2 }, { i: 5, quantity: 1 }], 'Please deliver on weekend');
     await place([{ i: 4, quantity: 3 }], 'Gift wrap if possible');
 
-    // 2 CONFIRMED (invoice materialised, no shipping yet)
     for (const spec of [[{ i: 3, quantity: 1 }], [{ i: 6, quantity: 2 }, { i: 8, quantity: 1 }]]) {
       const order = await place(spec, 'Confirmed order');
       const child = childFor(order);
@@ -733,7 +670,6 @@ async function main(): Promise<void> {
       if ('error' in c) throw new Error(`confirm: ${c.error}`);
     }
 
-    // 1 CONFIRMED + shipped through DELIVERED (tracking timeline populated)
     {
       const order = await place([{ i: 7, quantity: 1 }], 'Shipped order');
       const child = childFor(order);
@@ -744,7 +680,6 @@ async function main(): Promise<void> {
       }
     }
 
-    // 1 DELIVERED order earmarked for a return
     {
       const order = await place([{ i: 0, quantity: 1 }, { i: 4, quantity: 2 }], 'Return demo order');
       const child = childFor(order);
@@ -758,7 +693,6 @@ async function main(): Promise<void> {
     }
   });
 
-  // ── Returns — submit → approve → picked up → received → refund (to source) ──
   await step('Returns (full workflow → REFUNDED credit note)', async () => {
     if (!deliveredChildId || !deliveredParentId) throw new Error('no delivered order to return');
     const existing = await prisma.returnRequest.count({ where: { shopId } });
@@ -789,7 +723,6 @@ async function main(): Promise<void> {
     if ('error' in rf) throw new Error(`refund: ${rf.error}`);
   });
 
-  // ── Reviews (raw insert + refresh product rating) ───────────────────────────
   await step('Product reviews', async () => {
     const count = await prisma.productReview.count({ where: { product: { shopId } } });
     if (count >= 6) return;
@@ -816,7 +749,6 @@ async function main(): Promise<void> {
     }
   });
 
-  // ── Custom-field VALUES per product (so the fields actually show data) ──────
   await step('Custom-field values (per product)', async () => {
     const defs = await prisma.customFieldDefinition.findMany({
       where: { shopId }, select: { id: true, name: true, type: true },
@@ -846,10 +778,9 @@ async function main(): Promise<void> {
     }
   });
 
-  // ── Team / staff — 2 members (Manager + Cashier) + a pending invite ─────────
   let cashierUserId = 0;
   await step('Team members + pending invite', async () => {
-    await seedDefaultRoles(prisma, shopId); // idempotent; ensures role presets exist
+    await seedDefaultRoles(prisma, shopId);
     const staff = [
       { email: 'priya.manager.kumawat@example.com', name: 'Priya Menon', role: 'MANAGER' as const, roleName: 'Manager' },
       { email: 'arjun.cashier.kumawat@example.com', name: 'Arjun Nair', role: 'CASHIER' as const, roleName: 'Cashier' },
@@ -858,9 +789,6 @@ async function main(): Promise<void> {
     for (const s of staff) {
       let u = await prisma.user.findUnique({ where: { email: s.email }, select: { id: true } });
       if (!u) {
-        // Staff log into the MERCHANT app, so User.role is OWNER (the app-access
-        // role); their in-shop authority is scoped by ShopMember.role below —
-        // mirrors what invitations.respond() does on a TEAM-invite accept.
         u = await prisma.user.create({
           data: { email: s.email, name: s.name, passwordHash, role: 'OWNER', acceptedAt: new Date() },
           select: { id: true },
@@ -873,7 +801,6 @@ async function main(): Promise<void> {
       });
       if (s.role === 'CASHIER') cashierUserId = u.id;
     }
-    // A pending TEAM invite for a not-yet-hired stockist (Team → invites list).
     const inviteEmail = 'newhire.kumawat@example.com';
     const existingInv = await prisma.invitation.findFirst({
       where: { shopId, toEmail: inviteEmail, linkType: 'TEAM', status: 'PENDING' }, select: { id: true },
@@ -891,14 +818,10 @@ async function main(): Promise<void> {
     }
   });
 
-  // ── Cashier shift — one CLOSED (with cash movements + variance) + one OPEN ───
   await step('Cashier shifts + cash movements', async () => {
     const opener = cashierUserId || userId;
-    // Additive guards (a pre-existing POS shift must not block our seed): only
-    // create each piece when it's actually missing.
     const haveMovements = await prisma.cashMovement.count({ where: { shopId } });
     if (haveMovements === 0) {
-      // A closed shift from yesterday, reconciled with a small +₹50 variance.
       const closed = await prisma.cashierShift.create({
         data: {
           shopId, openedById: opener, status: 'CLOSED',
@@ -916,7 +839,6 @@ async function main(): Promise<void> {
         ],
       });
     }
-    // An open shift for today so the POS/cashier screen shows a live session.
     const haveOpen = await prisma.cashierShift.count({ where: { shopId, status: 'OPEN' } });
     if (haveOpen === 0) {
       await prisma.cashierShift.create({
@@ -925,7 +847,6 @@ async function main(): Promise<void> {
     }
   });
 
-  // ── Customer-side: extra addresses, wishlist, and a live cart ───────────────
   await step('Customer addresses (Work + Parents)', async () => {
     const count = await prisma.userAddress.count({ where: { userId: customer.userId } });
     if (count >= 3) return;
@@ -959,8 +880,6 @@ async function main(): Promise<void> {
     }
   });
 
-  // ── More reviewers — spread ratings across a few extra buyers so the star
-  //    distribution looks real (not every review from one account). ────────────
   await step('Additional reviewers (realistic rating spread)', async () => {
     const reviewers = [
       { email: 'meera.reviews@example.com', name: 'Meera Iyer' },
@@ -983,7 +902,6 @@ async function main(): Promise<void> {
     ];
     const touched = new Set<number>();
     for (let u = 0; u < userIds.length; u++) {
-      // Each reviewer rates 3 products across the catalog.
       for (const off of [0, 3, 6]) {
         const p = prod((u * 2 + off) % PRODUCTS.length);
         const b = blurbs[(u + off) % blurbs.length];
@@ -1001,15 +919,13 @@ async function main(): Promise<void> {
     }
   });
 
-  // ── A couple of products pushed to genuinely-low stock (low-stock alerts) ────
   await step('Low-stock products (trigger alerts)', async () => {
-    const targets = [prod(2).id, prod(7).id]; // laptop + monitor: expensive, low count
+    const targets = [prod(2).id, prod(7).id];
     for (const id of targets) {
       await prisma.product.update({ where: { id }, data: { stockQuantity: 3 } });
     }
   });
 
-  // ── Notifications (merchant bell) ───────────────────────────────────────────
   await step('Notifications', async () => {
     const count = await prisma.notification.count({ where: { userId } });
     if (count >= 3) return;
@@ -1023,7 +939,6 @@ async function main(): Promise<void> {
     });
   });
 
-  // ── Trending (so the customer home feed surfaces the catalog) ───────────────
   await step('Trending events + recompute', async () => {
     const products = await prisma.product.findMany({ where: { shopId, isActive: true, isPublished: true }, select: { id: true } });
     const rows: { clientUuid: string; eventType: 'IMPRESSION' | 'TAP' | 'ADD_TO_CART' | 'PURCHASE' | 'WISHLIST_ADD'; productId: number; sessionId: string; occurredAt: Date }[] = [];
@@ -1041,12 +956,7 @@ async function main(): Promise<void> {
     await trendingService.recomputeWindow();
   });
 
-  // ── Rebuild the analytics roll-ups for the whole window so every graph draws.
-  //    delete-then-insert per day → idempotent; covers all backdated docs,
-  //    payments, credit notes and the return refund. ────────────────────────────
   await step('Analytics roll-ups (recompute every day in the window)', async () => {
-    // Recompute a clean sweep of the full window regardless of touchedDays so
-    // credit notes / refunds attributed to original sale dates are captured too.
     for (let d = HISTORY_DAYS + 1; d >= 0; d--) {
       await recomputeDay(shopId, istDateUTC(daysAgo(d, 12)));
     }

@@ -5,10 +5,6 @@ import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 
 void main() {
-  // Regression: Hugeicons renders via an SvgPicture that scales to fill its
-  // constraints. When AppIcon sits in a fixed-size slot (icon chip/avatar,
-  // IconButton) that imposes larger *tight* constraints, the glyph must stay
-  // at its requested size — not inflate to fill the slot.
   testWidgets('AppIcon does not inflate inside an oversized tight slot',
       (tester) async {
     await tester.pumpWidget(

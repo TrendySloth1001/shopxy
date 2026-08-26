@@ -15,12 +15,6 @@ import type { Invitation } from "./schema";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/**
- * Invite-to-ShopXY control for a party/vendor detail header. Resolves this
- * contact's outgoing invite (if any): shows an "Invited · cancel" chip while
- * pending, or an "Invite" button otherwise. Renders nothing once the contact
- * has linked their account (the parent already shows a "Linked" badge).
- */
 export function InviteControl({
   linkType,
   entityId,
@@ -66,7 +60,6 @@ export function InviteControl({
         const pending = mine.find((i) => i.status === "PENDING");
         setInvite(pending ?? mine[0] ?? null);
       } catch {
-        /* best-effort — the control just won't show a chip */
       }
     })();
     return () => {

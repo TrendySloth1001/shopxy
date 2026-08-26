@@ -3,12 +3,6 @@ import { z } from "zod";
 import { authedFetch, extractError } from "@/server/auth/session";
 import { hsnOverrideSchema } from "@/features/products/hsn";
 
-// This shop's recorded departures from the platform GST rate.
-//
-// Separate from shortcuts on purpose: a shortcut is classification (a bookmark
-// with no rate), this restates the tax position on a code for the whole
-// catalogue. The backend gates it on `shop:manage` and demands a reason.
-
 export async function GET() {
   const res = await authedFetch("/hsn/overrides");
   if (!res) return NextResponse.json({ error: "Session expired." }, { status: 401 });
@@ -23,8 +17,6 @@ export async function GET() {
   return NextResponse.json(parsed.success ? parsed.data : []);
 }
 
-// Mirrors the backend's own zod rules, so an invalid payload is refused at the
-// edge rather than making a round trip.
 const bodySchema = z.object({
   code: z.string().min(1).max(20),
   gstRate: z.number().min(0).max(100),

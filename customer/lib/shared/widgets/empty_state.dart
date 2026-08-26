@@ -7,12 +7,6 @@ import 'package:shopxy_customer/core/icons/app_icon.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
-/// Glassdoor-style empty state: hand-drawn illustration sitting on a soft
-/// gray panel, with a bold headline + calm secondary copy + optional CTA.
-///
-/// Two constructors:
-///   * [EmptyState.line] — pick from the bundled [LineArt] family.
-///   * [EmptyState]      — fall back to a Material icon (legacy callers).
 class EmptyState extends StatelessWidget {
   const EmptyState({
     super.key,
@@ -26,7 +20,6 @@ class EmptyState extends StatelessWidget {
          'Pass either icon or illustration',
        );
 
-  /// Use a [LineArt] hero — the recommended path for new screens.
   EmptyState.line({
     Key? key,
     required LineArt kind,
@@ -41,8 +34,6 @@ class EmptyState extends StatelessWidget {
          action: action,
        );
 
-  /// Use a raster (PNG) hero illustration — drop the file under
-  /// `assets/` and pass its path, e.g. `'assets/empty_products.png'`.
   EmptyState.image({
     Key? key,
     required String asset,

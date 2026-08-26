@@ -1,12 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft } from "@/shared/icons";
 
-/**
- * Shared reading layout for the public consumer legal pages (/legal/*).
- * Centered reading rail, hairline-separated sections, token-only. Mirrors the
- * merchant-web LegalDoc/LegalSection pattern but uses this app's own tokens and
- * links home to the storefront root rather than a merchant login.
- */
 export function LegalDoc({
   title,
   updated,

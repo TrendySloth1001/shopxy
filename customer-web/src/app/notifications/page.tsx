@@ -31,7 +31,6 @@ import { BackButton } from "@/shared/ui/back-button";
 
 const PAGE = 20;
 
-/** Icon puck colour + glyph per customer notification kind family. */
 function accentFor(kind: string): { Icon: LucideIcon; cls: string } {
   if (kind.startsWith("ORDER") || kind.startsWith("PURCHASE_REQUEST"))
     return { Icon: Package, cls: "bg-accent-indigo-soft text-accent-indigo" };
@@ -50,10 +49,6 @@ function accentFor(kind: string): { Icon: LucideIcon; cls: string } {
   return { Icon: Bell, cls: "bg-accent-indigo-soft text-accent-indigo" };
 }
 
-/**
- * Where tapping a notification should go, or null for informational ones.
- * Uses the structured `data` payload for precise deep links.
- */
 function hrefFor(kind: string, data: Record<string, unknown> | null | undefined): string | null {
   const str = (key: string) => {
     const v = data?.[key];
@@ -61,14 +56,12 @@ function hrefFor(kind: string, data: Record<string, unknown> | null | undefined)
   };
 
   switch (kind) {
-    // Invitations ─────────────────────────────────────────────────────────────
     case "INVITE_RECEIVED":
     case "INVITE_ACCEPTED":
     case "INVITE_DECLINED":
     case "INVITE_CANCELLED":
       return "/invitations";
 
-    // Quotations ──────────────────────────────────────────────────────────────
     case "QUOTATION_RECEIVED":
     case "QUOTATION_ACCEPTED":
     case "QUOTATION_DECLINED":
@@ -81,7 +74,6 @@ function hrefFor(kind: string, data: Record<string, unknown> | null | undefined)
       return "/merchants";
     }
 
-    // Orders / payments / returns ─────────────────────────────────────────────
     case "SECURITY":
       return "/account";
 
@@ -149,8 +141,6 @@ function NotificationsBody() {
     load(1);
   }, [load]);
 
-  // Auto-mark-all-read after a short delay when the page opens with unread items.
-  // Only the bell badge/context updates; in-list unread dots stay for the session.
   const autoMarkRef = useRef(false);
   useEffect(() => {
     if (autoMarkRef.current) return;
@@ -159,7 +149,7 @@ function NotificationsBody() {
     autoMarkRef.current = true;
     const timer = setTimeout(() => {
       setUnread(0);
-      void markAllNotificationsRead().catch(() => { /* best-effort */ }).finally(() => { refresh(); });
+      void markAllNotificationsRead().catch(() => {  }).finally(() => { refresh(); });
     }, 1000);
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -173,7 +163,6 @@ function NotificationsBody() {
       try {
         await markNotificationRead(n.id);
       } catch {
-        /* best-effort */
       } finally {
         refresh();
       }
@@ -189,7 +178,6 @@ function NotificationsBody() {
     try {
       await markAllNotificationsRead();
     } catch {
-      /* best-effort */
     } finally {
       refresh();
     }

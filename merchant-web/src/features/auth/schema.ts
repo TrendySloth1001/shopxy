@@ -1,14 +1,5 @@
 import { z } from "zod";
 
-/**
- * Client + server input schemas, mirroring the backend zod rules in
- * `auth.controller.ts` so validation can't drift between the form, the BFF
- * route handler, and the backend. Used by the forms (field errors) and by
- * the route handlers (boundary validation — CLAUDE.md §2).
- *
- * Password rule is kept in lockstep with the backend: ≥8 chars, ≥1 letter,
- * ≥1 digit.
- */
 export const passwordSchema = z
   .string()
   .min(10, "Password must be at least 10 characters")
@@ -23,10 +14,6 @@ export const loginSchema = z.object({
 
 export type LoginInput = z.infer<typeof loginSchema>;
 
-/** The Google-only-account recovery PIN — mirrors the backend's 4-6 digit
- *  rule (auth.controller.ts `pinSchema`). WhatsApp-style: short, numeric,
- *  memorable, protected by the same account-level login throttle as a
- *  password. */
 export const recoveryPinSchema = z
   .string()
   .regex(/^\d{4,6}$/, "PIN must be 4-6 digits");
@@ -36,13 +23,6 @@ export const recoveryPinLoginSchema = z.object({
   pin: recoveryPinSchema,
 });
 
-/**
- * Merchant registration. Signup now creates the OWNER account only — the
- * shop is named on the onboarding screen straight after (or skipped entirely
- * if the new account is joining a team via invite). So `shopName` is no
- * longer collected here. Consent to both the terms and privacy policy is
- * required at the wire level (DPDP).
- */
 const registerFields = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters").max(80),
   email: z.string().trim().email("Enter a valid email address"),
@@ -56,28 +36,15 @@ const registerFields = z.object({
   }),
 });
 
-/** Form schema — includes `confirmPassword` + the match check. */
 export const registerSchema = registerFields.refine(
   (d) => d.password === d.confirmPassword,
   { message: "Passwords do not match", path: ["confirmPassword"] },
 );
 
-/**
- * Wire schema the BFF route validates. `confirmPassword` is a form-only field
- * (never sent over the wire — the form drops it from the payload), so the BFF
- * must NOT require it; it mirrors exactly what gets forwarded to the backend.
- */
 export const registerWireSchema = registerFields.omit({ confirmPassword: true });
 
 export type RegisterInput = z.infer<typeof registerSchema>;
 
-/**
- * Profile update (merchant). Every field optional — the account form PATCHes
- * only what changed. Shape/length are checked here; strict Indian formats
- * (GSTIN/PAN/PIN/UPI) remain the backend's authority and its field errors are
- * surfaced to the user. Empty strings on clearable shop fields are mapped to
- * `null` by the route handler so a value can be removed.
- */
 export const updateProfileSchema = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters").max(80).optional(),
   shopName: z.string().trim().max(200).optional(),
@@ -87,11 +54,6 @@ export const updateProfileSchema = z.object({
   shopStateCode: z.string().trim().max(2).optional(),
   shopPinCode: z.string().trim().max(6).optional(),
   shopGstin: z.string().trim().max(15).optional(),
-  // Plain calendar date (YYYY-MM-DD) — mirrors the backend's day-granular
-  // validation; no time-of-day/timezone for a "which date does GST start"
-  // decision. The empty string (an untouched/cleared picker) is valid too —
-  // the route handler maps it to `null`, same as every other clearable
-  // shop field.
   gstEffectiveFrom: z
     .string()
     .trim()
@@ -123,10 +85,6 @@ export const deleteAccountSchema = z.object({
   currentPassword: z.string().min(1, "Enter your password to confirm"),
 });
 
-/**
- * Staff onboarding via a TEAM invite link: a brand-new user sets a password
- * against an invite token and is signed straight in (backend `/accept-invite`).
- */
 export const acceptInviteSchema = z
   .object({
     token: z.string().min(1),

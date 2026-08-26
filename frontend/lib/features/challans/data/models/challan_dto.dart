@@ -1,8 +1,6 @@
 import 'package:shopxy/features/challans/domain/entities/challan.dart';
 
 class ChallanDto {
-  /// Prisma's `Decimal` columns serialize as JSON strings (e.g. "3.000"),
-  /// not numbers — casting them straight to `num` throws at runtime.
   static double _asDouble(dynamic v) {
     if (v == null) return 0;
     if (v is num) return v.toDouble();

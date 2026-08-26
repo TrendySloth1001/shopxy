@@ -2,9 +2,6 @@ import 'dart:convert';
 import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/features/orders/domain/entities/merchant_order.dart';
 
-/// Surfaces the 409 INSUFFICIENT_STOCK detail (productId / available /
-/// requested) without losing it in a generic Exception string. The
-/// detail page uses these fields to highlight the offending line.
 class OrderConfirmException implements Exception {
   OrderConfirmException({
     required this.code,
@@ -80,7 +77,7 @@ class OrdersRemoteDataSource {
     Map<String, dynamic> body = const {};
     try {
       body = jsonDecode(res.body) as Map<String, dynamic>;
-    } catch (_) {/* keep empty */}
+    } catch (_) {}
     final code = (body['error'] as String?) ?? 'CONFIRM_FAILED';
     final message = _confirmMessageForCode(code, body);
     throw OrderConfirmException(
@@ -92,10 +89,6 @@ class OrdersRemoteDataSource {
     );
   }
 
-  /// Record a shipping milestone (PACKED / SHIPPED / OUT_FOR_DELIVERY /
-  /// DELIVERED) against a confirmed order. Same route + payload
-  /// merchant-web uses: POST /orders/:id/events. RETURNED is not a
-  /// postable milestone (PR-H3) — returns run through the returns flow.
   Future<void> addShippingEvent(
     String id, {
     required String type,
@@ -108,7 +101,6 @@ class OrdersRemoteDataSource {
       'type': type,
       if (courier != null && courier.isNotEmpty) 'courier': courier,
       if (awb != null && awb.isNotEmpty) 'awb': awb,
-      // Backend validates with z.string().datetime() — send UTC ISO.
       if (eta != null) 'eta': eta.toUtc().toIso8601String(),
       if (note != null && note.isNotEmpty) 'note': note,
     });
@@ -116,7 +108,7 @@ class OrdersRemoteDataSource {
     Map<String, dynamic> body = const {};
     try {
       body = jsonDecode(res.body) as Map<String, dynamic>;
-    } catch (_) {/* keep empty */}
+    } catch (_) {}
     throw Exception(
       body['error']?.toString() ?? 'Could not update shipping',
     );
@@ -142,8 +134,6 @@ class OrdersRemoteDataSource {
       case 'NO_ITEMS':
         return 'Order has no items';
       default:
-        // Fall back to whatever the server sent, even if it was a
-        // domain error string from the invoices service.
         return body['error']?.toString() ?? 'Failed to confirm order';
     }
   }

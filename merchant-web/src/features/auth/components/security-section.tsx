@@ -9,10 +9,6 @@ import { Field } from "./field";
 import { SubmitButton } from "./submit-button";
 import { Banner } from "./banner";
 
-/**
- * Change password + sign out everywhere. A successful password change revokes
- * every session on the backend, so we send the user back to sign-in afterwards.
- */
 export function SecuritySection() {
   const { changePassword, logoutEverywhere } = useAuth();
   const router = useRouter();

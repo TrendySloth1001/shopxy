@@ -1,9 +1,6 @@
 import 'dart:convert';
 import 'package:shopxy/core/network/api_client.dart';
 
-/// The shop's Razorpay Route payout (linked) account status, as the backend
-/// `/linked-account` endpoints report it. Bank details are NEVER returned here
-/// (they live only at Razorpay) — this is just the KYC lifecycle.
 class LinkedAccountStatus {
   const LinkedAccountStatus({
     required this.kycStatus,
@@ -14,8 +11,6 @@ class LinkedAccountStatus {
     this.businessType,
   });
 
-  /// CREATED | UNDER_REVIEW | NEEDS_CLARIFICATION | ACTIVATED | SUSPENDED |
-  /// FUNDS_HELD | CREATING.
   final String kycStatus;
   final bool payoutsEnabled;
   final String? providerAccountId;
@@ -35,8 +30,6 @@ class LinkedAccountStatus {
   }
 }
 
-/// Identity + status fetched when connecting an existing acc_XXXX, shown to the
-/// merchant to confirm before linking.
 class ConnectAccountDetails {
   const ConnectAccountDetails({
     required this.accountId,
@@ -73,7 +66,6 @@ class LinkedAccountRemoteDataSource {
   const LinkedAccountRemoteDataSource(this._client);
   final ApiClient _client;
 
-  /// GET /linked-account → null when onboarding hasn't started (404).
   Future<LinkedAccountStatus?> getStatus({bool refresh = false}) async {
     final res = await _client.get(
       '/linked-account',
@@ -86,9 +78,6 @@ class LinkedAccountRemoteDataSource {
     return LinkedAccountStatus.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  /// POST /linked-account → start KYC onboarding. PAN/GST and bank details flow
-  /// straight to Razorpay; the app never persists them. Optional fields are
-  /// omitted from the body when empty so backend validation doesn't reject blanks.
   Future<LinkedAccountStatus> startOnboarding({
     required String email,
     required String phone,
@@ -141,8 +130,6 @@ class LinkedAccountRemoteDataSource {
     return LinkedAccountStatus.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  /// POST /linked-account/connect — verify an existing acc_XXXX (fetch + show
-  /// details so the merchant can confirm it's theirs). Writes nothing.
   Future<ConnectAccountDetails> verifyConnect(String accountId) async {
     final res = await _client.post('/linked-account/connect', body: {'accountId': accountId});
     if (res.statusCode != 200) {
@@ -151,7 +138,6 @@ class LinkedAccountRemoteDataSource {
     return ConnectAccountDetails.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  /// POST /linked-account/connect/confirm — store the verified account.
   Future<LinkedAccountStatus> confirmConnect(String accountId) async {
     final res = await _client.post('/linked-account/connect/confirm', body: {'accountId': accountId});
     if (res.statusCode != 201 && res.statusCode != 200) {

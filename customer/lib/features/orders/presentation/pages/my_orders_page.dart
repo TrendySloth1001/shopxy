@@ -20,8 +20,6 @@ import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
-/// Order status buckets used by the filter chips. Each order is placed
-/// in exactly one bucket via [_statusOf] so it shows once per filter.
 enum OrderFilter { all, pending, confirmed, cancelled, declined }
 
 extension _OrderFilterX on OrderFilter {
@@ -33,7 +31,6 @@ extension _OrderFilterX on OrderFilter {
     OrderFilter.declined => 'Declined',
   };
 
-  /// Empty-state copy when a filter has no orders.
   String get emptyLine => switch (this) {
     OrderFilter.all => "You haven't placed any orders yet",
     OrderFilter.pending => 'No orders waiting on a seller',
@@ -43,10 +40,6 @@ extension _OrderFilterX on OrderFilter {
   };
 }
 
-/// Classifies a parent order into a single bucket. Priority reflects
-/// "what needs my attention / is still alive": a still-pending slice
-/// dominates, then any confirmed slice (order is going ahead), then the
-/// dead states (declined / cancelled).
 OrderFilter _statusOf(CustomerOrder o) {
   final c = o.shopOrders;
   if (c.isEmpty) return OrderFilter.pending;
@@ -60,12 +53,6 @@ OrderFilter _statusOf(CustomerOrder o) {
   return OrderFilter.cancelled;
 }
 
-/// "My Orders" inbox — a filterable, card-per-order list. Chips across
-/// the top scope the list to a status (All / Pending / Confirmed /
-/// Cancelled / Declined) with live counts. Each card is scannable: order
-/// id + aggregate status pill, seller attribution, item count + date,
-/// and the grand total. We deliberately do NOT surface merchant
-/// phone/email — only the public shop name.
 class MyOrdersPage extends StatefulWidget {
   const MyOrdersPage({super.key});
 
@@ -81,9 +68,6 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      // Skip the /me/orders fetch for guests — the page renders a
-      // sign-in prompt instead. main.dart's auth listener will trigger
-      // load() automatically if the user signs in.
       if (context.read<AuthProvider>().isAuthenticated) {
         context.read<OrdersProvider>().load();
       }
@@ -118,7 +102,6 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
     final orders = p.orders;
     final hasOrders = orders.isNotEmpty;
 
-    // Counts per bucket (single pass), for the chip badges.
     final counts = <OrderFilter, int>{OrderFilter.all: orders.length};
     for (final o in orders) {
       final s = _statusOf(o);
@@ -177,8 +160,6 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
   }
 }
 
-// ─── Filter chips ─────────────────────────────────────────────────────
-
 class _FilterBar extends StatelessWidget {
   const _FilterBar({
     required this.selected,
@@ -191,8 +172,6 @@ class _FilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // All is always shown; status chips appear only when they have
-    // orders (or are currently selected) so the bar stays uncluttered.
     final chips = <OrderFilter>[
       OrderFilter.all,
       for (final f in [
@@ -293,8 +272,6 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
-// ─── List row card ───────────────────────────────────────────────────
-
 class _OrderCard extends StatelessWidget {
   const _OrderCard({required this.order});
   final CustomerOrder order;
@@ -323,7 +300,6 @@ class _OrderCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header: order id + aggregate status pill
               Row(
                 children: [
                   Expanded(
@@ -365,7 +341,6 @@ class _OrderCard extends StatelessWidget {
               const SizedBox(height: AppSizes.sm),
               const Divider(height: 1, color: AppColors.hairline),
               const SizedBox(height: AppSizes.sm),
-              // Bottom: grand total + a "to pay" nudge + chevron
               Row(
                 children: [
                   Text(
@@ -417,7 +392,6 @@ class _OrderCard extends StatelessWidget {
     );
   }
 
-  /// "Sold by Foo", "Sold by Foo & Bar", "Sold by Foo & 2 others".
   static String _sellerLine(CustomerOrder order) {
     final names = order.shopOrders
         .map((s) => s.shop?.displayName ?? 'Seller')
@@ -428,8 +402,6 @@ class _OrderCard extends StatelessWidget {
     return 'Sold by ${names[0]} & ${names.length - 1} others';
   }
 
-  /// Aggregate visual across the parent's children. Mirrors the order
-  /// detail hero so the list row and detail header agree at a glance.
   static (Color, Color, AppIconData) _aggregateVisual(CustomerOrder o) {
     final children = o.shopOrders;
     if (children.isEmpty) {
@@ -515,8 +487,6 @@ class _StatusPill extends StatelessWidget {
     );
   }
 }
-
-// ─── States ──────────────────────────────────────────────────────────
 
 class _FilteredEmpty extends StatelessWidget {
   const _FilteredEmpty({required this.filter});

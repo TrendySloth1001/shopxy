@@ -22,9 +22,6 @@ class AuthUser {
   final DateTime createdAt;
   final String? avatarUrl;
   final String? phoneNumber;
-  /// Granular notification preferences. Per-category flags gate
-  /// what gets sent at all; channel flags (push/sms) mute the
-  /// entire transport regardless of the category preference.
   final bool notifyOrders;
   final bool notifyDeals;
   final bool notifyAccount;

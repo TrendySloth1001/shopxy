@@ -1,15 +1,6 @@
-/**
- * PURE UNIT tests for the Razorpay provider adapter.
- *
- * No database, no real network — `global.fetch` is stubbed with vi.stubGlobal.
- * Signatures are computed with the same crypto primitive the adapter uses, so
- * assertions reflect real behaviour rather than wished-for behaviour.
- */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import crypto from 'crypto';
 
-// Env must be present BEFORE the provider is constructed (constructor calls
-// requireEnv). Set it once at module load; individual tests construct fresh.
 const KEY_ID = 'rzp_test_key';
 const KEY_SECRET = 'rzp_test_secret';
 const WEBHOOK_SECRET = 'whsec_test';
@@ -67,12 +58,10 @@ describe('RazorpayProvider — verifyWebhookSignature', () => {
   });
 
   it('fails closed (false) when the webhook secret is unconfigured', () => {
-    // Build a provider with an empty webhook secret.
     const prev = process.env.RAZORPAY_WEBHOOK_SECRET;
     delete process.env.RAZORPAY_WEBHOOK_SECRET;
     try {
       const noSecret = new RazorpayProvider();
-      // Even a correct-looking signature must be rejected.
       const sig = hmacHex('', rawBody);
       expect(
         noSecret.verifyWebhookSignature(rawBody, { 'x-razorpay-signature': sig }),
@@ -167,7 +156,6 @@ describe('RazorpayProvider — parseWebhookEvent', () => {
     );
     const ev = provider.parseWebhookEvent(body, { 'x-razorpay-event-id': 'evt_3' });
     expect(ev.type).toBe('REFUNDED');
-    // No payment entity → order ref null; payment ref falls back to refund.payment_id.
     expect(ev.providerOrderRef).toBeNull();
     expect(ev.providerPaymentRef).toBe('pay_3');
     expect(ev.amountMinor).toBe(250);
@@ -325,7 +313,6 @@ describe('RazorpayProvider — createTransfers (escrow validation)', () => {
     await expect(
       provider.createTransfers('pay_1', [{ destinationAccount: 'acc_1', amountMinor: 99 }]),
     ).rejects.toMatchObject({ status: 400 });
-    // Validation happens before any network call.
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
@@ -377,7 +364,6 @@ describe('RazorpayProvider — createTransfers (escrow validation)', () => {
       { transferRef: 'trf_2', destinationAccount: 'acc_2', amountMinor: 400, onHold: false },
     ]);
 
-    // Hit the correct endpoint with a POST and INR currency on every leg.
     expect(fetchSpy).toHaveBeenCalledTimes(1);
     const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
     expect(url).toBe('https://api.razorpay.com/v1/payments/pay_happy/transfers');
@@ -389,7 +375,6 @@ describe('RazorpayProvider — createTransfers (escrow validation)', () => {
       currency: 'INR',
       on_hold: true,
     });
-    // onHold omitted on the second leg → no on_hold key.
     expect(sentBody.transfers[1]).not.toHaveProperty('on_hold');
   });
 
@@ -457,9 +442,9 @@ describe('RazorpayProvider — onboarding (Accounts /v2)', () => {
   it('createLinkedAccount creates the account, requests the Route product, and submits the bank', async () => {
     const fetchSpy = vi
       .fn()
-      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'acc_NEW', status: 'created' }), { status: 200 })) // create
-      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'acc_prod_1' }), { status: 200 })) // product
-      .mockResolvedValueOnce(new Response('{}', { status: 200 })); // settlements PATCH
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'acc_NEW', status: 'created' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'acc_prod_1' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response('{}', { status: 200 }));
     vi.stubGlobal('fetch', fetchSpy);
 
     const res = await provider.createLinkedAccount({
@@ -484,11 +469,9 @@ describe('RazorpayProvider — onboarding (Accounts /v2)', () => {
       bankIfsc: 'HDFC0001234',
     });
 
-    // Razorpay Route `created` is the individual-account active state → payout-ready.
     expect(res).toEqual({ providerAccountId: 'acc_NEW', kycStatus: 'ACTIVATED', payoutsEnabled: true });
     expect(fetchSpy).toHaveBeenCalledTimes(3);
 
-    // 1) create account — identity + profile + legal_info (PAN/GST).
     const [url1, init1] = fetchSpy.mock.calls[0] as [string, RequestInit];
     expect(url1).toBe('https://api.razorpay.com/v2/accounts');
     expect(init1.method).toBe('POST');
@@ -505,15 +488,12 @@ describe('RazorpayProvider — onboarding (Accounts /v2)', () => {
         },
       },
     });
-    // customer_facing_business_name defaults to the legal name when omitted.
     expect(body1.customer_facing_business_name).toBe('Shop LLP');
 
-    // 2) request the Route product (without this it's not a payout destination)
     const [url2, init2] = fetchSpy.mock.calls[1] as [string, RequestInit];
     expect(url2).toBe('https://api.razorpay.com/v2/accounts/acc_NEW/products');
     expect(JSON.parse(init2.body as string)).toMatchObject({ product_name: 'route' });
 
-    // 3) submit the settlement bank account
     const [url3, init3] = fetchSpy.mock.calls[2] as [string, RequestInit];
     expect(url3).toBe('https://api.razorpay.com/v2/accounts/acc_NEW/products/acc_prod_1');
     expect(init3.method).toBe('PATCH');
@@ -544,7 +524,6 @@ describe('RazorpayProvider — onboarding (Accounts /v2)', () => {
 });
 
 describe('RazorpayProvider — retry + circuit breaker', () => {
-  // Fast config: no backoff delay so tests don't sleep.
   const fast = () => new RazorpayProvider({ retryBaseMs: 0, jitter: false });
 
   it('retries an idempotent GET on a 5xx, then succeeds', async () => {
@@ -561,7 +540,7 @@ describe('RazorpayProvider — retry + circuit breaker', () => {
 
     const res = await fast().fetchPaymentStatus('pay_1');
 
-    expect(fetchSpy).toHaveBeenCalledTimes(2); // retried the transient 5xx
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
     expect(res.status).toBe('PAID');
   });
 
@@ -571,8 +550,6 @@ describe('RazorpayProvider — retry + circuit breaker', () => {
     );
     vi.stubGlobal('fetch', fetchSpy);
 
-    // reverseTransfer is a POST — an ambiguous 5xx must fail fast (the request
-    // may have landed); reconciliation heals it, not a blind retry.
     await expect(fast().reverseTransfer('trf_1')).rejects.toMatchObject({ status: 502 });
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
@@ -587,7 +564,7 @@ describe('RazorpayProvider — retry + circuit breaker', () => {
     vi.stubGlobal('fetch', fetchSpy);
 
     await expect(fast().reverseTransfer('trf_1')).resolves.toBeUndefined();
-    expect(fetchSpy).toHaveBeenCalledTimes(2); // 429 is safe to retry even for POST
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
 
   it('does NOT retry a permanent 400 on a GET', async () => {
@@ -603,7 +580,6 @@ describe('RazorpayProvider — retry + circuit breaker', () => {
   it('opens the circuit after the threshold of transient failures and fails fast', async () => {
     const fetchSpy = vi.fn(async () => new Response('{}', { status: 503 }));
     vi.stubGlobal('fetch', fetchSpy);
-    // maxRetries:1 → each call = one attempt = one recorded failure.
     const provider = new RazorpayProvider({
       maxRetries: 1,
       circuitThreshold: 2,
@@ -612,14 +588,12 @@ describe('RazorpayProvider — retry + circuit breaker', () => {
     });
 
     await expect(provider.fetchPaymentStatus('p1')).rejects.toBeDefined();
-    await expect(provider.fetchPaymentStatus('p2')).rejects.toBeDefined(); // opens circuit
-    // Third call short-circuits — breaker open, no network call made.
+    await expect(provider.fetchPaymentStatus('p2')).rejects.toBeDefined();
     await expect(provider.fetchPaymentStatus('p3')).rejects.toMatchObject({ status: 503 });
     expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
 
   it('half-open probe SUCCESS closes the circuit (recovery)', async () => {
-    // cooldown 0 → the next call after opening is immediately admitted as the probe.
     const provider = new RazorpayProvider({
       maxRetries: 1,
       circuitThreshold: 2,
@@ -634,17 +608,17 @@ describe('RazorpayProvider — retry + circuit breaker', () => {
       );
     const fetchSpy = vi
       .fn()
-      .mockResolvedValueOnce(new Response('{}', { status: 503 })) // open #1
-      .mockResolvedValueOnce(new Response('{}', { status: 503 })) // open #2 → OPEN
-      .mockResolvedValueOnce(ok()) // half-open probe → success → CLOSED
-      .mockResolvedValueOnce(ok()); // normal call flows again
+      .mockResolvedValueOnce(new Response('{}', { status: 503 }))
+      .mockResolvedValueOnce(new Response('{}', { status: 503 }))
+      .mockResolvedValueOnce(ok())
+      .mockResolvedValueOnce(ok());
     vi.stubGlobal('fetch', fetchSpy);
 
     await expect(provider.fetchPaymentStatus('p1')).rejects.toBeDefined();
     await expect(provider.fetchPaymentStatus('p2')).rejects.toBeDefined();
     await expect(provider.fetchPaymentStatus('p3')).resolves.toMatchObject({ status: 'PAID' });
     await expect(provider.fetchPaymentStatus('p4')).resolves.toMatchObject({ status: 'PAID' });
-    expect(fetchSpy).toHaveBeenCalledTimes(4); // probe + recovery both reached the network
+    expect(fetchSpy).toHaveBeenCalledTimes(4);
   });
 
   it('half-open probe FAILURE re-opens the circuit (does not get stuck passing)', async () => {
@@ -660,18 +634,15 @@ describe('RazorpayProvider — retry + circuit breaker', () => {
       const fetchSpy = vi.fn(async () => new Response('{}', { status: 503 }));
       vi.stubGlobal('fetch', fetchSpy);
 
-      await expect(provider.fetchPaymentStatus('p1')).rejects.toBeDefined(); // fail 1
-      await expect(provider.fetchPaymentStatus('p2')).rejects.toBeDefined(); // fail 2 → OPEN
-      await expect(provider.fetchPaymentStatus('p3')).rejects.toMatchObject({ status: 503 }); // blocked
+      await expect(provider.fetchPaymentStatus('p1')).rejects.toBeDefined();
+      await expect(provider.fetchPaymentStatus('p2')).rejects.toBeDefined();
+      await expect(provider.fetchPaymentStatus('p3')).rejects.toMatchObject({ status: 503 });
       expect(fetchSpy).toHaveBeenCalledTimes(2);
 
-      // Cooldown elapses → next call admitted as the single probe; it fails →
-      // the breaker must RE-OPEN (the bug was it stayed half-open forever).
       vi.advanceTimersByTime(31_000);
       await expect(provider.fetchPaymentStatus('p4')).rejects.toBeDefined();
-      expect(fetchSpy).toHaveBeenCalledTimes(3); // probe reached the network
+      expect(fetchSpy).toHaveBeenCalledTimes(3);
 
-      // Immediately after the failed probe: re-opened, so blocked again (no call).
       await expect(provider.fetchPaymentStatus('p5')).rejects.toMatchObject({ status: 503 });
       expect(fetchSpy).toHaveBeenCalledTimes(3);
     } finally {

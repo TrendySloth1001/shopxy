@@ -5,8 +5,6 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/theme/app_shapes.dart';
 
-/// Segmented control for the dashboard window (Today / 7 days / 30 days).
-/// Mirrors `components/period-switcher.tsx`.
 class PeriodSwitcher extends StatelessWidget {
   const PeriodSwitcher({
     super.key,
@@ -22,9 +20,6 @@ class PeriodSwitcher extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.all(3),
-      // Clip children to the rounded shape so the selected pill can never
-      // bleed past the track's corners (the pill sits close to the edge and
-      // its corners would otherwise poke outside the larger corner radius).
       clipBehavior: Clip.antiAlias,
       decoration: ShapeDecoration(
         color: AppColors.canvas,
@@ -59,8 +54,6 @@ class PeriodSwitcher extends StatelessWidget {
             const EdgeInsets.symmetric(horizontal: AppSizes.md, vertical: 6),
         decoration: ShapeDecoration(
           color: selected ? AppColors.inverseSurface : Colors.transparent,
-          // Corner radius kept concentric with the track (track radius minus
-          // the 3px inset) so the pill nests instead of poking out.
           shape: AppShapes.squircle(AppSizes.radiusButton - 3),
         ),
         child: Text(

@@ -10,17 +10,6 @@ import {
   type Quotation,
 } from "@/features/quotations/schema";
 
-/**
- * Quotations the merchant filed out of their working list.
- *
- * Only settled ones get here — the backend refuses to archive a REQUESTED or
- * PENDING quote, because the customer can still act on it and an accept
- * landing against a document the merchant can't see is nobody's job to chase.
- *
- * Archiving is merchant-side only: the customer keeps seeing the quote in
- * their own list. Filing your copy away is not the counterparty forgetting
- * what they were quoted.
- */
 export default function ArchivedQuotationsPage() {
   const t = useTranslations("quotations");
 
@@ -43,7 +32,6 @@ export default function ArchivedQuotationsPage() {
       }
       restore={(quotation) => setQuotationArchived(quotation.id, false)}
       keyOf={(quotation) => quotation.id}
-      // createdAt is what the server sorts quotations by.
       dateOf={(quotation) => quotation.createdAt}
       rowOf={(quotation) => ({
         href: `/dashboard/quotations/${quotation.id}`,

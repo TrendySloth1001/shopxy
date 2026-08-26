@@ -11,18 +11,6 @@ import 'package:shopxy/shared/constants/app_sizes.dart';
 import 'package:shopxy/shared/theme/app_colors.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 
-/// Forgotten-password reset, in two steps: ask for the email, then take the
-/// emailed code and the new password together.
-///
-/// The code IS the authorisation, so it goes up alongside the password in one
-/// request rather than being exchanged for an intermediate reset token — one
-/// fewer credential to mint, expire and get wrong, for an identical
-/// server-side check.
-///
-/// Note what the "sent" copy does *not* say: that the address has an account.
-/// The server answers identically either way so this can't be used to test
-/// which emails are registered, and the UI must not leak what the API
-/// deliberately withholds.
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
 
@@ -112,8 +100,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         _password.text,
       );
       if (!mounted) return;
-      // No session comes back and every device was signed out, so there's
-      // nothing to return to but the sign-in screen.
       navigator.pop();
       messenger.showSnackBar(SnackBar(content: Text(l10n.authResetDone)));
     } catch (e) {
@@ -169,8 +155,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             textInputAction: TextInputAction.next,
             autofocus: !_codeSent,
             autocorrect: false,
-            // Locked once a code is out — editing it here would silently
-            // reset a code that was sent somewhere else.
             enabled: !_codeSent && !_isLoading,
             validator: (v) {
               if (v == null || v.trim().isEmpty) return l10n.authFieldRequired;
@@ -216,8 +200,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   v == null || v.isEmpty ? l10n.authFieldRequired : null,
             ),
             const SizedBox(height: AppSizes.lg),
-            // Said up front, not discovered afterwards — being signed out
-            // everywhere is a surprise if nobody mentioned it.
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

@@ -7,14 +7,6 @@ export const metadata: Metadata = {
   description: "Search millions of products on ShopXY.",
 };
 
-/**
- * /search — product search page. Reads the `?q=` query param from the URL
- * (handled by the server component here), then hands off to the interactive
- * client component which drives autocomplete, debouncing, filters and results.
- *
- * Wrapped in Suspense because `useSearchParams` is used inside the client
- * component (Next.js App Router requires this).
- */
 export default async function SearchPage({
   searchParams,
 }: {
@@ -30,7 +22,6 @@ export default async function SearchPage({
   );
 }
 
-/** Minimal shell shown during the Suspense boundary hydration window. */
 function SearchPageShell() {
   return (
     <div className="min-h-screen bg-canvas">

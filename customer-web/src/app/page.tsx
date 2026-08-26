@@ -9,13 +9,6 @@ export const metadata: Metadata = {
   description: "Discover trending products, flash deals and curated collections on ShopXY.",
 };
 
-/**
- * Server-side fetch of the public home feed for SSR / LCP / SEO — the same
- * `/home/feed` aggregator the BFF route proxies, called directly here so the
- * storefront's front door paints real content on first byte instead of a client
- * spinner. Returns undefined on any error → the client falls back to its own
- * fetch + loading/error states. Mirrors the PDP server-fetch pattern.
- */
 async function fetchFeedServer(): Promise<HomeFeedModel | undefined> {
   try {
     const res = await backendFetch("/home/feed");
@@ -26,12 +19,6 @@ async function fetchFeedServer(): Promise<HomeFeedModel | undefined> {
   }
 }
 
-/**
- * Customer home — the marketplace feed. Public (works signed-out). The base
- * feed is server-rendered here; the client component layers the endless pager
- * and personalised data on top once mounted. Port of the Flutter customer app's
- * `HomePage`.
- */
 export default async function HomePage() {
   const initialFeed = await fetchFeedServer();
   return <HomeFeed initialFeed={initialFeed} />;

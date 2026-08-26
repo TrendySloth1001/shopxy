@@ -1,33 +1,18 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-/**
- * Route guard based on session-cookie presence. This is a fast, coarse gate:
- * it keeps guests out of protected pages and signed-in users off the auth
- * screens without a backend round-trip. Real token validity is enforced by
- * `/api/auth/me` (and ultimately the backend's requireAuth) once the page
- * loads — see RequireAuth.
- */
 const PROTECTED = ["/dashboard", "/account", "/onboarding"];
 const AUTH_PAGES = ["/login", "/register"];
 
 const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
-/**
- * CSRF backstop for the cookie-authed BFF. SameSite=Lax already blocks most
- * cross-site cookie POSTs, but a state-changing request whose `Origin` is a
- * foreign site (or which the browser flags as cross-site via `Sec-Fetch-Site`)
- * is rejected outright. Same-origin and direct/navigational requests pass.
- */
 function isCrossOriginMutation(req: NextRequest): boolean {
   if (!MUTATING_METHODS.has(req.method)) return false;
 
   const site = req.headers.get("sec-fetch-site");
   if (site) return site !== "same-origin" && site !== "none";
 
-  // Fallback for browsers that don't send Sec-Fetch-Site: compare Origin host
-  // against the host the request was actually sent to.
   const origin = req.headers.get("origin");
-  if (!origin) return false; // non-browser / same-origin server call
+  if (!origin) return false;
   try {
     return new URL(origin).host !== req.nextUrl.host;
   } catch {
@@ -36,8 +21,6 @@ function isCrossOriginMutation(req: NextRequest): boolean {
 }
 
 export function middleware(req: NextRequest) {
-  // BFF route handlers carry the httpOnly session cookies; reject cross-origin
-  // mutations before they reach any handler.
   if (req.nextUrl.pathname.startsWith("/api/") && isCrossOriginMutation(req)) {
     return NextResponse.json({ error: "Forbidden." }, { status: 403 });
   }

@@ -1,14 +1,5 @@
 import { z } from "zod";
 
-/**
- * The ~7 preset PDF look-and-feels a shop's invoices/quotations/challans can
- * render with — mirrors the backend `TEMPLATE_PRESETS` registry
- * (`backend/src/shared/pdf/presets.ts`). Metadata (id/name/description) is
- * fetched from `GET /pdf-templates` rather than hardcoded here, so a new
- * preset shows up without a client release; only the *thumbnail images* are
- * bundled client-side (`public/template-thumbnails/<id>.png`).
- */
-
 export const pdfTemplateSchema = z.object({
   id: z.string(),
   name: z.string(),

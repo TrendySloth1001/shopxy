@@ -118,8 +118,6 @@ class _ShopInvoiceDetailPageState extends State<ShopInvoiceDetailPage> {
   }
 }
 
-/// A hairline with breathing room above/below — the flat-layout replacement
-/// for the gap between the old bordered cards.
 class _SpacedDivider extends StatelessWidget {
   const _SpacedDivider();
   @override
@@ -380,9 +378,6 @@ class _ItemRow extends StatelessWidget {
         horizontal: AppSizes.lg,
         vertical: AppSizes.md,
       ),
-      // Name + meta stack on the left, total on the right. The total
-      // is wrapped in its own Column with right-alignment so a long
-      // name can't shove the price into a cramped column.
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -549,10 +544,6 @@ class _Note extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton
-// ---------------------------------------------------------------------------
-
 class _ShopInvoiceDetailSkeleton extends StatelessWidget {
   const _ShopInvoiceDetailSkeleton();
 
@@ -583,7 +574,6 @@ class _SkeletonHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: const [
-          // Eyebrow label row
           Row(
             children: [
               Expanded(child: AppShimmerLine(widthFactor: 0.35, height: 12)),
@@ -591,10 +581,8 @@ class _SkeletonHeader extends StatelessWidget {
             ],
           ),
           SizedBox(height: AppSizes.sm),
-          // Large invoice number
           AppShimmerLine(widthFactor: 0.6, height: 22),
           SizedBox(height: AppSizes.xs),
-          // Date row with icon placeholder
           Row(
             children: [
               AppShimmerBox(width: 14, height: 14, radius: 3),
@@ -628,7 +616,6 @@ class _SkeletonCounterparty extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: const [
-          // Rounded icon placeholder
           AppShimmerBox(
             width: AppSizes.avatarSm,
             height: AppSizes.avatarSm,
@@ -661,7 +648,6 @@ class _SkeletonItemsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: const [
-        // Items eyebrow
         Padding(
           padding: EdgeInsets.fromLTRB(
             AppSizes.lg,

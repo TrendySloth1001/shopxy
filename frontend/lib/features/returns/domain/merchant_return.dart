@@ -1,7 +1,3 @@
-// Merchant-side projection of the backend ReturnRequest model. Mirrors
-// the customer-side schema (same /orders/returns/:id payload) but adds
-// the actor's-eye conveniences: canApprove / canReject / etc.
-
 const List<String> kReturnReasons = [
   'DAMAGED',
   'WRONG_ITEM',

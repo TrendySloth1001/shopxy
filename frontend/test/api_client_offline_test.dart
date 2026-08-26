@@ -1,7 +1,3 @@
-// Tests for ApiClient's offline behavior — now possible because the transport
-// is an injected http.Client (MockClient here). Covers cache-first serve,
-// offline fallback, write-invalidation, and the offline write-queue routing.
-
 import 'dart:io';
 
 import 'package:flutter/services.dart';
@@ -51,7 +47,6 @@ void main() {
     httpClient: mock,
   );
 
-  // Let fire-and-forget cache writes / invalidations (real temp-dir I/O) settle.
   Future<void> settle() => Future<void>.delayed(const Duration(milliseconds: 40));
 
   test('caches a live GET and serves it cache-first (no second network hit)',
@@ -72,8 +67,6 @@ void main() {
     expect(first.body, '{"v":1}');
     await settle();
 
-    // Now the network is down — a cache-first read still returns the cached copy
-    // and does NOT call the client again (fresh within staleAfter).
     fail = true;
     final second = await client.get('/products');
     expect(second.body, '{"v":1}');
@@ -106,14 +99,14 @@ void main() {
           headers: const {'content-type': 'application/json'},
         );
       }
-      return http.Response('{}', 200); // PATCH ok
+      return http.Response('{}', 200);
     }));
 
-    await client.get('/parties'); // miss → live (getCalls=1), cached
+    await client.get('/parties');
     await settle();
-    await client.patch('/parties/1', body: {'name': 'x'}); // invalidates 'parties'
+    await client.patch('/parties/1', body: {'name': 'x'});
     await settle();
-    await client.get('/parties'); // cache gone → live again (getCalls=2)
+    await client.get('/parties');
     expect(getCalls, 2);
   });
 

@@ -4,10 +4,6 @@ import 'package:shopxy_customer/features/addresses/data/datasources/addresses_re
 import 'package:shopxy_customer/features/addresses/domain/entities/user_address.dart';
 import 'package:shopxy_customer/shared/format/friendly_error.dart';
 
-/// Owns the user's address book. Eagerly loads on auth so the
-/// home top-bar chip can render the default address without a
-/// per-frame round trip; mutations bust the in-memory list and
-/// refetch.
 class AddressesProvider extends ChangeNotifier {
   AddressesProvider(this._ds);
   final AddressesRemoteDataSource _ds;
@@ -22,10 +18,6 @@ class AddressesProvider extends ChangeNotifier {
 
   UserAddress? get defaultAddress {
     if (_items.isEmpty) return null;
-    // The backend's partial unique index `_one_default_per_user`
-    // guarantees at most one default, so `firstWhere` is safe; fall
-    // back to the first address (most recent) when nothing is
-    // explicitly defaulted.
     final defaults = _items.where((a) => a.isDefault);
     if (defaults.isNotEmpty) return defaults.first;
     return _items.first;
@@ -49,17 +41,9 @@ class AddressesProvider extends ChangeNotifier {
   Future<UserAddress?> create(UserAddressInput input) async {
     try {
       final addr = await _ds.create(input);
-      // The backend may have demoted prior defaults; refetch to re-sync
-      // the flags rather than guess client-side. We await the refetch
-      // so the UI only repaints once — going through the previous
-      // optimistic prepend would flash an "is_default" stripe on the
-      // brand-new card and then immediately strip it when the refetch
-      // resolved.
       try {
         _items = await _ds.list();
       } catch (_) {
-        // Refetch failed — keep an optimistic local prepend so the
-        // user at least sees the address they just created.
         _items = [addr, ..._items];
       }
       notifyListeners();

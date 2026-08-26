@@ -3,7 +3,6 @@ import 'package:shopxy/features/quotations/data/datasources/quotations_remote_da
 import 'package:shopxy/features/quotations/domain/entities/quotation.dart';
 import 'package:shopxy/shared/utils/error_text.dart';
 
-/// Holds the merchant's quotation list + submit state for create/cancel.
 class QuotationsProvider extends ChangeNotifier {
   QuotationsProvider(this._ds);
   final QuotationsRemoteDataSource _ds;
@@ -18,8 +17,6 @@ class QuotationsProvider extends ChangeNotifier {
   String? get error => _error;
   bool get isSubmitting => _submitting;
 
-  /// Drops the cached list on logout so the next account on this device
-  /// doesn't see the previous shop's quotations flash on screen.
   void reset() {
     _items = const [];
     _loading = false;
@@ -72,7 +69,6 @@ class QuotationsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Price + send a customer's REQUESTED quote. Returns the updated quotation.
   Future<Quotation> respond(
     String id, {
     required List<Map<String, dynamic>> items,

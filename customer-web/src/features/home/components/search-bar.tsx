@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Mic, QrCode, Search } from "@/shared/icons";
 
-/** Rotating search hints — ported from the Flutter `HomeStaticData.searchHints`. */
 export const SEARCH_HINTS = [
   'Search "noise cancelling earbuds"',
   'Search "summer kurta sets"',
@@ -13,7 +12,6 @@ export const SEARCH_HINTS = [
   'Search "skincare serums"',
 ];
 
-/** Cycle the hint index every 3s (paused under reduce-motion via the index hook). */
 export function useRotatingHint(): number {
   const [i, setI] = useState(0);
   useEffect(() => {
@@ -23,15 +21,6 @@ export function useRotatingHint(): number {
   return i;
 }
 
-/**
- * Big search pill — port of `HomeSearchBar`. Brand leading icon, a "SEARCH
- * SHOPXY" eyebrow over a rotating hint, and mic / scanner trailing actions.
- * Collapses to zero height as the header shrinks (the compact search then lives
- * in the top bar).
- *
- * The collapse transition is smooth via CSS — DO NOT change the collapsed prop
- * thresholds or the rAF logic in home-feed.tsx (not owned here).
- */
 export function SearchBar({ collapsed }: { collapsed: boolean }) {
   const hint = useRotatingHint();
   return (

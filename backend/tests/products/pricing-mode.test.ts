@@ -6,10 +6,6 @@ import { createTestUser, cleanupTestUser } from '../helpers/setup.js';
 
 const app = buildApp();
 
-/// `createTestUser` gives the owner a Shop but no ShopMember row, and
-/// `resolveShop`/`requireArea` resolve the caller's shop + rights through
-/// membership — without this every merchant route 403s (the same known gap
-/// documented in hsn.test.ts's `linkOwnerToShop`).
 async function linkOwnerToShop(ctx: { userId: number; shopId: number }): Promise<void> {
   await prisma.shopMember.upsert({
     where: { userId: ctx.userId },
@@ -97,7 +93,7 @@ describe('product pricingMode', () => {
           mrp: 100,
           sellingPrice: 100,
           purchasePrice: 60,
-          hsnCode: '1006', // rice — the HSN master carries slabs for this code
+          hsnCode: '1006',
           pricingMode: 'NO_GST',
         });
       expect(res.status).toBe(201);

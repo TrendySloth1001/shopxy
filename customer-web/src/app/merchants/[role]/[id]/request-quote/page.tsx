@@ -12,23 +12,18 @@ import { formatINR } from "@/shared/format";
 import { BackButton } from "@/shared/ui/back-button";
 import { mediaSrc } from "@/shared/media";
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
-
 function CatalogueSkeleton() {
   return (
     <div className="flex flex-col h-full">
-      {/* Fake search bar */}
       <div className="px-lg py-sm">
         <SkeletonBlock className="h-10 w-full rounded-input" />
       </div>
-      {/* Chip rail */}
       <div className="flex gap-sm overflow-hidden px-lg pb-sm">
         {["w-14", "w-18", "w-16", "w-20", "w-16"].map((wCls, i) => (
           <SkeletonBlock key={i} className={`h-7 shrink-0 rounded-full ${wCls}`} />
         ))}
       </div>
       <div className="h-px bg-hairline" />
-      {/* Product rows */}
       <div className="flex-1 overflow-y-auto divide-y divide-hairline">
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="flex items-center gap-md px-lg py-md">
@@ -45,8 +40,6 @@ function CatalogueSkeleton() {
     </div>
   );
 }
-
-// ─── Category chip ────────────────────────────────────────────────────────────
 
 function CategoryChip({
   label,
@@ -74,8 +67,6 @@ function CategoryChip({
   );
 }
 
-// ─── Quantity stepper ────────────────────────────────────────────────────────
-
 function Stepper({ qty, onChange }: { qty: number; onChange: (q: number) => void }) {
   return (
     <div className="flex items-center gap-xs rounded-full bg-brand-soft px-xs">
@@ -98,8 +89,6 @@ function Stepper({ qty, onChange }: { qty: number; onChange: (q: number) => void
   );
 }
 
-// ─── Product row ─────────────────────────────────────────────────────────────
-
 function ProductRow({
   product,
   qty,
@@ -117,7 +106,6 @@ function ProductRow({
         qty > 0 ? "bg-brand-soft/30" : ""
       }`}
     >
-      {/* Thumbnail */}
       {imgUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -139,7 +127,6 @@ function ProductRow({
         <Package size={20} className="text-brand" />
       </span>
 
-      {/* Info */}
       <div className="flex-1 min-w-0">
         <p className="text-body-md font-bold text-ink leading-snug truncate">{product.name}</p>
         <div className="flex items-baseline gap-xs mt-xxs">
@@ -156,7 +143,6 @@ function ProductRow({
         {product.sku && <p className="text-body-sm text-muted mt-[1px]">SKU: {product.sku}</p>}
       </div>
 
-      {/* Qty control */}
       {qty === 0 ? (
         <button
           onClick={() => onQtyChange(1)}
@@ -170,8 +156,6 @@ function ProductRow({
     </div>
   );
 }
-
-// ─── Confirm sheet (inline) ──────────────────────────────────────────────────
 
 function ConfirmPanel({
   itemCount,
@@ -255,8 +239,6 @@ function ConfirmPanel({
   );
 }
 
-// ─── Main page ────────────────────────────────────────────────────────────────
-
 function RequestQuotePageContent() {
   const params = useParams<{ role: string; id: string }>();
   const role = params.role;
@@ -275,7 +257,6 @@ function RequestQuotePageContent() {
   const [snack, setSnack] = useState<SnackMsg | null>(null);
   const snackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Only party role supported
   useEffect(() => {
     if (role !== "party") {
       router.replace(`/merchants/${role}/${id}/invoices`);
@@ -305,7 +286,6 @@ function RequestQuotePageContent() {
     snackTimer.current = setTimeout(() => setSnack(null), 5000);
   }
 
-  // Derived: categories
   const categories = (() => {
     const byId = new Map<string, { cat: CatalogProduct["category"]; count: number }>();
     for (const p of products) {
@@ -321,7 +301,6 @@ function RequestQuotePageContent() {
     );
   })();
 
-  // Derived: filtered products
   const visible = products.filter((p) => {
     if (categoryId !== null && p.categoryId !== categoryId) return false;
     const q = query.trim().toLowerCase();
@@ -358,14 +337,12 @@ function RequestQuotePageContent() {
     await requestQuotation(id, { items, note: note || undefined });
     showSnack({ message: "Quote request sent!", tone: "success" });
     setShowConfirm(false);
-    // Navigate back to quotations
     setTimeout(() => router.push(`/merchants/${role}/${id}/quotations`), 1200);
   }
 
   return (
     <div className="mx-auto max-w-shell px-0 sm:px-lg flex flex-col" style={{ minHeight: "80vh" }}>
       <div className="mx-auto w-full max-w-content flex flex-col flex-1">
-        {/* Page header */}
         <div className="px-lg sm:px-0 pt-xxxl pb-md">
           <BackButton fallback={`/merchants/${role}/${id}/quotations`} className="mb-sm" />
           <h1 className="text-headline-sm font-extrabold text-ink">Request a quote</h1>
@@ -396,7 +373,6 @@ function RequestQuotePageContent() {
           </div>
         ) : (
           <div className="flex flex-col flex-1">
-            {/* Search */}
             <div className="px-lg sm:px-0 pb-sm">
               <div className="relative">
                 <Search
@@ -413,7 +389,6 @@ function RequestQuotePageContent() {
               </div>
             </div>
 
-            {/* Category chips */}
             {categories.length > 0 && (
               <div className="flex gap-sm overflow-x-auto pb-sm px-lg sm:px-0 no-scrollbar">
                 <CategoryChip
@@ -438,7 +413,6 @@ function RequestQuotePageContent() {
 
             <div className="h-px bg-hairline" />
 
-            {/* Product list */}
             {visible.length === 0 ? (
               <p className="py-xxl text-center text-body-md text-muted">
                 No products match. Try another category or search term.
@@ -458,10 +432,7 @@ function RequestQuotePageContent() {
           </div>
         )}
 
-        {/* Bottom bar */}
         {!loading && !error && (
-          // Sticky on every size — with hundreds of products in the list, the
-          // CTA must stay reachable without scrolling to the end.
           <div className="sticky bottom-0 left-0 right-0 border-t border-hairline bg-white px-lg py-md shadow-floating">
             <div className="mx-auto max-w-content">
               {itemCount > 0 && (
@@ -485,7 +456,6 @@ function RequestQuotePageContent() {
         )}
       </div>
 
-      {/* Confirm sheet */}
       {showConfirm && (
         <ConfirmPanel
           itemCount={itemCount}

@@ -5,8 +5,6 @@ double _asDouble(dynamic v) {
   return 0;
 }
 
-/// Compact item preview for inbox rows. Lets the merchant skim what was
-/// ordered without tapping into each row.
 class MerchantOrderItemPreview {
   const MerchantOrderItemPreview({
     required this.productName,
@@ -58,7 +56,6 @@ class MerchantOrder {
   final String? partyId;
   final String? partyName;
   final String? partyLinkedUserId;
-  /// First couple of items (max ~2 from the backend) for the inbox row.
   final List<MerchantOrderItemPreview> itemPreview;
 
   bool get isPending => status == 'PENDING';
@@ -66,8 +63,6 @@ class MerchantOrder {
   bool get isRejected => status == 'REJECTED';
   bool get isCancelled => status == 'CANCELLED';
 
-  /// True when the customer was already an invited Party. False means
-  /// the merchant will lazy-create a party row on confirm.
   bool get isLinkedCustomer => partyLinkedUserId != null;
 
   factory MerchantOrder.fromJson(Map<String, dynamic> j) {
@@ -119,18 +114,10 @@ class MerchantOrderItem {
   final double quantity;
   final double unitPrice;
   final double total;
-  /// Live stock of the linked product at fetch time. Null if the
-  /// product row has been deleted (FK is Restrict, so this only
-  /// happens if a future migration changes that).
   final double? stockQuantity;
   final bool productActive;
-  /// First product image (sortOrder asc), if any. Lets the order detail
-  /// show thumbnails without a follow-up fetch per row.
   final String? productImageUrl;
 
-  /// True if we can fulfil this line right now. Null stock means we
-  /// don't know — treat conservatively as not-ok so the merchant double-
-  /// checks before confirming.
   bool get stockOk =>
       productActive && stockQuantity != null && stockQuantity! >= quantity;
 
@@ -164,9 +151,6 @@ class MerchantOrderItem {
   }
 }
 
-/// A shipping milestone recorded against a confirmed order
-/// (PACKED / SHIPPED / OUT_FOR_DELIVERY / DELIVERED / RETURNED).
-/// Mirrors the `events` rows the backend inlines on the detail response.
 class MerchantOrderEvent {
   const MerchantOrderEvent({
     required this.id,
@@ -186,7 +170,6 @@ class MerchantOrderEvent {
   final DateTime? eta;
   final String? note;
 
-  /// Friendly label matching merchant-web's SHIPPING_MILESTONE_LABELS.
   String get label {
     switch (type) {
       case 'PACKED':
@@ -248,35 +231,20 @@ class MerchantOrderDetail extends MerchantOrder {
   final String? note;
   final String? decisionNote;
   final String? linkedInvoiceNo;
-  /// Payment state of the linked invoice as the backend computed it
-  /// (PAID | PARTIAL | UNPAID) — derived from receipts posted against the
-  /// invoice, which includes online/wallet payments the customer made.
-  /// Null until an invoice exists. Drives the "Paid" step on the journey.
   final String? invoicePaymentStatus;
   final double invoicePaidAmount;
   final double invoiceBalanceDue;
   final List<MerchantOrderItem> items;
-  /// Shipping milestone timeline (occurredAt asc, as the backend orders
-  /// it). Empty until the merchant posts the first event.
   final List<MerchantOrderEvent> events;
 
-  /// True when the linked invoice is fully settled.
   bool get isPaid => invoicePaymentStatus == 'PAID';
 
-  /// True when some — but not all — of the invoice has been received.
   bool get isPartiallyPaid => invoicePaymentStatus == 'PARTIAL';
 
-  /// Any line with insufficient stock? Drives the warning chip on the
-  /// inbox row + the warning banner on the detail page.
   bool get hasStockShortfall => items.any((i) => !i.stockOk);
 
-  /// Number of lines we can't fully fulfil right now. Used by the
-  /// shortfall banner headline ("3 of 5 items short").
   int get shortItemCount => items.where((i) => !i.stockOk).length;
 
-  /// Subtotal computed from line totals. We use this rather than the
-  /// snapshotted `estimatedTotal` so the totals block reflects the
-  /// current items (eg. if a future partial-fulfill drops a line).
   double get subtotal =>
       items.fold<double>(0, (acc, i) => acc + i.total);
 
@@ -302,8 +270,6 @@ class MerchantOrderDetail extends MerchantOrder {
       note: j['note'] as String?,
       decisionNote: j['decisionNote'] as String?,
       linkedInvoiceNo: invoice?['invoiceNo'] as String?,
-      // Payment summary the backend attaches to the linked invoice
-      // (attachInvoicePaymentSummary). Present only once an invoice exists.
       invoicePaymentStatus: invoice?['paymentStatus'] as String?,
       invoicePaidAmount: _asDouble(invoice?['paidAmount']),
       invoiceBalanceDue: _asDouble(invoice?['balanceDue']),

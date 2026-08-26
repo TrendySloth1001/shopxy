@@ -1,10 +1,3 @@
-// Logging out from a pushed screen must actually leave that screen.
-//
-// The reported bug: sign out from Settings and the app stayed on Settings. The
-// auth gate is the *home* route, so swapping it back to the login screen left
-// every pushed route sitting on top — the user was signed out but looking at
-// the signed-in UI, and could keep tapping around in it.
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -45,8 +38,6 @@ void main() {
     binding.defaultBinaryMessenger.setMockMethodCallHandler(secure, null);
   });
 
-  /// A provider already holding a session, exactly as the app is after a
-  /// successful sign-in.
   Future<AuthProvider> signedInProvider() async {
     final tm = TokenManager();
     await tm.saveTokens(accessToken: 'access', refreshToken: 'refresh');
@@ -66,7 +57,6 @@ void main() {
     return auth;
   }
 
-  /// Stands in for the real app: an auth-gated home under the guard.
   Widget harness(AuthProvider auth) {
     return ChangeNotifierProvider<AuthProvider>.value(
       value: auth,
@@ -89,7 +79,6 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('shell'), findsOneWidget);
 
-    // Walk in two deep — Menu → Settings, say.
     final navigator = tester.state<NavigatorState>(find.byType(Navigator));
     navigator.push(
       MaterialPageRoute<void>(
@@ -127,7 +116,6 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // What ApiClient calls when a token refresh fails for good.
     await auth.clearAuth();
     await tester.pumpAndSettle();
 
@@ -169,9 +157,6 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Toggling a setting re-fetches /auth/me and notifies. Popping on every
-    // notification instead of the signed-out edge would throw the user out of
-    // the screen they're using.
     await auth.refreshUser();
     await tester.pumpAndSettle();
 

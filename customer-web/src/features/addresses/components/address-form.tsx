@@ -3,8 +3,6 @@
 import { useState } from "react";
 import type { UserAddress, AddressFormValues } from "../types";
 
-// ── Validation helpers ────────────────────────────────────────────────────────
-
 function validate(values: AddressFormValues): Partial<Record<keyof AddressFormValues, string>> {
   const errors: Partial<Record<keyof AddressFormValues, string>> = {};
   if (!values.fullName.trim()) errors.fullName = "Full name is required.";
@@ -24,17 +22,12 @@ function validate(values: AddressFormValues): Partial<Record<keyof AddressFormVa
   return errors;
 }
 
-// ── Props ─────────────────────────────────────────────────────────────────────
-
 interface AddressFormProps {
-  /** Pre-fill from existing address when editing. */
   initial?: UserAddress;
   submitLabel?: string;
   onSubmit: (values: AddressFormValues) => Promise<void>;
   onCancel?: () => void;
 }
-
-// ── Component ─────────────────────────────────────────────────────────────────
 
 export function AddressForm({
   initial,
@@ -89,7 +82,6 @@ export function AddressForm({
 
   return (
     <form onSubmit={(e) => { void handleSubmit(e); }} noValidate className="flex flex-col gap-sm">
-      {/* Label (optional) */}
       <Field label="Label (optional)" error={errors.label}>
         <input
           type="text"
@@ -100,7 +92,6 @@ export function AddressForm({
         />
       </Field>
 
-      {/* Full name */}
       <Field label="Full name" error={errors.fullName} required>
         <input
           type="text"
@@ -111,7 +102,6 @@ export function AddressForm({
         />
       </Field>
 
-      {/* Phone */}
       <Field label="Phone number" error={errors.phone} required>
         <input
           type="tel"
@@ -124,7 +114,6 @@ export function AddressForm({
         />
       </Field>
 
-      {/* Line 1 */}
       <Field label="Address line 1" error={errors.line1} required>
         <input
           type="text"
@@ -135,7 +124,6 @@ export function AddressForm({
         />
       </Field>
 
-      {/* Line 2 */}
       <Field label="Address line 2 (optional)" error={errors.line2}>
         <input
           type="text"
@@ -146,7 +134,6 @@ export function AddressForm({
         />
       </Field>
 
-      {/* City + State */}
       <div className="grid grid-cols-2 gap-sm">
         <Field label="City" error={errors.city} required>
           <input
@@ -168,7 +155,6 @@ export function AddressForm({
         </Field>
       </div>
 
-      {/* Pincode */}
       <Field label="Pincode" error={errors.pincode} required>
         <input
           type="text"
@@ -181,7 +167,6 @@ export function AddressForm({
         />
       </Field>
 
-      {/* Landmark */}
       <Field label="Landmark (optional)" error={errors.landmark}>
         <input
           type="text"
@@ -192,7 +177,6 @@ export function AddressForm({
         />
       </Field>
 
-      {/* Default toggle */}
       <label className="flex cursor-pointer items-center gap-sm py-xs">
         <input
           type="checkbox"
@@ -209,7 +193,6 @@ export function AddressForm({
         </p>
       )}
 
-      {/* Actions */}
       <div className="mt-sm flex items-center gap-sm">
         <button
           type="submit"
@@ -232,8 +215,6 @@ export function AddressForm({
     </form>
   );
 }
-
-// ── Sub-components ────────────────────────────────────────────────────────────
 
 function Field({
   label,

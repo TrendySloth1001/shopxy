@@ -17,21 +17,9 @@ import 'package:shopxy/shared/widgets/floating_app_bar.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 
-/// Invitations — the merchant's connection-management surface, reached
-/// from Menu → Manage.
-///
-/// This deliberately does NOT live under Notifications. Notifications is
-/// a feed of things that happened; deciding who is linked to your shop is
-/// active management, and it belongs next to Team / Parties / Vendors.
-/// (An arriving invite still shows up in the notifications feed as an
-/// actionable card — that part genuinely is an event — and tapping it
-/// lands here.)
 class InvitationsPage extends StatefulWidget {
   const InvitationsPage({super.key, this.initialTab = 0});
 
-  /// 0 = Received, 1 = Sent. The notifications feed deep-links to the
-  /// matching tab so an INVITE_RECEIVED card opens on Received and an
-  /// INVITE_ACCEPTED/EXPIRED card (about something you sent) opens Sent.
   final int initialTab;
 
   @override
@@ -115,10 +103,6 @@ class _InvitationsPageState extends State<InvitationsPage>
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// Received
-// ─────────────────────────────────────────────────────────────────────
-
 class _IncomingTab extends StatelessWidget {
   const _IncomingTab({required this.controller});
   final ScrollController controller;
@@ -126,8 +110,6 @@ class _IncomingTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    // Scoped to just `incoming` — an inbox/outgoing mutation elsewhere
-    // doesn't repaint this tab.
     final incoming = context.select<NotificationsProvider, List<Invitation>>(
       (p) => p.incoming,
     );
@@ -320,10 +302,6 @@ class _IncomingInviteTile extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// Outgoing invitations
-// ─────────────────────────────────────────────────────────────────────
-
 class _OutgoingTab extends StatelessWidget {
   const _OutgoingTab({required this.controller});
   final ScrollController controller;
@@ -331,8 +309,6 @@ class _OutgoingTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    // Scoped to just `outgoing` — an inbox/incoming mutation elsewhere
-    // doesn't repaint this tab.
     final outgoing = context.select<NotificationsProvider, List<Invitation>>(
       (p) => p.outgoing,
     );
@@ -341,8 +317,6 @@ class _OutgoingTab extends StatelessWidget {
         icon: AppIcons.outboxOutlined,
         title: l10n.notificationsOutgoingEmptyTitle,
         body: l10n.notificationsOutgoingEmptyBody,
-        // An empty list shouldn't be a dead end — give the one action
-        // this screen exists for rather than making them hunt for the FAB.
         action: AppButton.primary(
           label: l10n.notificationsSendInvitationTitle,
           icon: AppIcons.personAddAlt1Rounded,
@@ -385,11 +359,6 @@ class _OutgoingInviteTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    // Same rounded-surface-card recipe as the inbox tiles. The row itself
-    // is now the tap target — it opens a details sheet with the cancel
-    // action inside, rather than a bare unlabelled "x" sitting next to the
-    // status chip (that read as an ambiguous dismiss, not a destructive
-    // cancel-this-invite action).
     return Material(
       color: AppColors.surface,
       shape: AppShapes.squircle(
@@ -472,10 +441,6 @@ class _OutgoingInviteTile extends StatelessWidget {
   }
 }
 
-/// Details sheet for a sent invitation — opened by tapping the row in the
-/// Sent tab. Shows what was sent and to whom, with the destructive cancel
-/// action living here (behind a deliberate tap + sheet open) instead of a
-/// bare icon inline on the row.
 class _OutgoingInviteDetailsSheet extends StatefulWidget {
   const _OutgoingInviteDetailsSheet({required this.invite});
   final Invitation invite;
@@ -665,10 +630,6 @@ class _DetailRow extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// Bits
-// ─────────────────────────────────────────────────────────────────────
-
 class _StatusChip extends StatelessWidget {
   const _StatusChip({required this.status});
   final InviteStatus status;
@@ -723,4 +684,3 @@ class _StatusChip extends StatelessWidget {
     );
   }
 }
-

@@ -17,9 +17,6 @@ import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
-/// "My reviews" — every review the caller has written, newest first.
-/// Tap a row → PDP. Cursor-paginated; loads next page when the user
-/// scrolls within ~400px of the bottom. Refreshable via pull-down.
 class MyReviewsPage extends StatefulWidget {
   const MyReviewsPage({super.key});
 
@@ -131,10 +128,6 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton loading state
-// ---------------------------------------------------------------------------
-
 class _ReviewsSkeleton extends StatelessWidget {
   const _ReviewsSkeleton();
 
@@ -173,7 +166,6 @@ class _ReviewCardSkeleton extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Product thumbnail placeholder
                 AppShimmerBox(
                   width: AppSizes.avatarMd,
                   height: AppSizes.avatarMd,
@@ -184,10 +176,8 @@ class _ReviewCardSkeleton extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Product name line
                       const AppShimmerLine(widthFactor: 0.7, height: 14),
                       const SizedBox(height: AppSizes.xs),
-                      // Star row placeholder
                       AppShimmerBox(
                         width: AppSizes.lg * 5,
                         height: AppSizes.lg,
@@ -197,15 +187,12 @@ class _ReviewCardSkeleton extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: AppSizes.sm),
-                // Date chip placeholder
                 AppShimmerBox(width: 64, height: 12, radius: AppSizes.radiusXs),
               ],
             ),
             const SizedBox(height: AppSizes.sm),
-            // Review title line
             const AppShimmerLine(widthFactor: 0.5, height: 13),
             const SizedBox(height: AppSizes.xs),
-            // Review body lines
             const AppShimmerLine(widthFactor: 1.0, height: 12),
             const SizedBox(height: AppSizes.xs),
             const AppShimmerLine(widthFactor: 0.85, height: 12),
@@ -215,8 +202,6 @@ class _ReviewCardSkeleton extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
 
 class _Row extends StatelessWidget {
   const _Row({required this.row});

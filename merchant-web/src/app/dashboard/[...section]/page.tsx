@@ -1,11 +1,6 @@
 import { Divider } from "@/shared/ui/divider";
 import { NAV_LABELS } from "@/features/dashboard/nav-items";
 
-/**
- * Placeholder for sidebar sections that don't have a screen yet. Specific
- * routes (e.g. /dashboard/products) take precedence over this catch-all, so
- * built sections render their own pages and the rest land here.
- */
 export default async function SectionPlaceholderPage({
   params,
 }: {

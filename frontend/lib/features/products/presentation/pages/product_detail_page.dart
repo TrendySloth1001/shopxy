@@ -67,20 +67,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   String? _supplierHistoryError;
   List<StockTransaction> _stockInTransactions = const [];
 
-  // Custom field values for this product. Empty by default — populated
-  // alongside the supplier history on every refresh so the detail page
-  // never shows stale specs.
   List<ProductCustomFieldValue> _customFieldValues = const [];
 
-  // Draft invoices that contain this product. Stock movements created
-  // from the stock-in/out sheet land here until the user confirms them
-  // — surfacing them on the detail page tells the user "your stock count
-  // will change once these are confirmed" so the count never feels stale.
   List<Invoice> _pendingDrafts = const [];
 
-  // Review summary (average, histogram, verified count, recent reviews)
-  // for the Reviews section. Non-blocking: the header rating still shows
-  // from the denormalised product row if this fails.
   ReviewSummary? _reviewSummary;
   bool _isReviewSummaryLoading = true;
 
@@ -91,13 +81,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }
 
   Future<void> _refreshAll() async {
-    // Tree lookup (sections + their names) is needed to label the
-    // Specifications groups. Provider caches across pages so this is
-    // a no-op once the user has visited settings or another product.
-    // load()'s first line is a synchronous notifyListeners(), so on the
-    // very first call (from initState) it must be deferred a frame —
-    // calling it inline here throws "setState() called during build"
-    // (same pattern as custom_fields_form_section.dart).
     final cf = context.read<CustomFieldsProvider>();
     Future<void> treeFuture;
     if (cf.hasLoadedOnce) {
@@ -125,9 +108,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     ]);
   }
 
-  /// Pulls the one-shot review summary (average, histogram, verified
-  /// count, recent reviews) for the Reviews section. Non-blocking — a
-  /// failure just collapses the section to its empty/error state.
   Future<void> _loadReviewSummary() async {
     setState(() => _isReviewSummaryLoading = true);
     try {
@@ -136,15 +116,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       if (!mounted) return;
       setState(() => _reviewSummary = summary);
     } catch (_) {
-      // Non-blocking — the header rating still renders from the product row.
     } finally {
       if (mounted) setState(() => _isReviewSummaryLoading = false);
     }
   }
 
-  /// Share a concise text card for this product (name, brand, price,
-  /// SKU) via the OS share sheet — the merchant's quick way to send a
-  /// product to a customer over WhatsApp/email.
   Future<void> _shareProduct() async {
     final p = _product;
     if (p == null) return;
@@ -177,10 +153,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     );
   }
 
-  /// Pulls the list of DRAFT invoices that include this product so the
-  /// detail page can show a callout. Backend filters via
-  /// `items.some.productId`, so we only get the relevant drafts — keeps
-  /// the response small even on shops with hundreds of open drafts.
   Future<void> _loadPendingDrafts() async {
     try {
       final ds = context.read<InvoicesRemoteDataSource>();
@@ -192,21 +164,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       if (!mounted) return;
       setState(() => _pendingDrafts = drafts);
     } catch (_) {
-      // Non-blocking — if the call fails we just don't show the callout.
     }
   }
 
-  /// Build the SPECIFICATIONS area as one [_DetailSection] per
-  /// shop-side section, plus a fallback group for ungrouped values.
-  /// Sections with no filled-in values collapse away — the page stays
-  /// tight even when many definitions exist.
   List<Widget> _buildCustomFieldSections() {
     if (_customFieldValues.isEmpty) return const [];
 
     final l10n = AppLocalizations.of(context);
-    // Section-id → name resolved from the provider. Definitions
-    // shipped on each value already carry sectionId, so this is
-    // a cheap lookup once the tree is loaded.
     final cf = context.watch<CustomFieldsProvider>();
     final sectionNames = <String, String>{
       for (final s in cf.sections) s.id: s.name,
@@ -226,8 +190,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       widgets.add(_buildSection(l10n.productsSpecifications, ungrouped));
       widgets.add(const SizedBox(height: AppSizes.lg));
     }
-    // Render sections in provider order (which itself is sortOrder-
-    // then-name) so the detail page matches the form's grouping.
     final orderedSectionIds = [
       for (final s in cf.sections) s.id,
       ...bySection.keys.where(
@@ -256,11 +218,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             (v) => _DetailRow(
               v.definition.name,
               _formatCustomFieldValue(v),
-              // Paragraphy values stack label-above-value so reading
-              // them isn't a right-aligned eye-strain exercise. Same
-              // rule for any TEXT/DROPDOWN value that's long enough
-              // to need wrapping — a single short word like "DC" can
-              // stay inline on the right.
               stack:
                   v.definition.type == CustomFieldType.LONG_TEXT ||
                   v.value.length > 40 ||
@@ -271,9 +228,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     );
   }
 
-  /// Pretty-print a custom field value for the DETAILS-style row.
-  /// Backend stores everything as a string; type-aware rendering lives
-  /// here so the wire format stays uniform.
   String _formatCustomFieldValue(ProductCustomFieldValue v) {
     switch (v.definition.type) {
       case CustomFieldType.DATE:
@@ -300,8 +254,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       if (!mounted) return;
       setState(() => _customFieldValues = values);
     } catch (_) {
-      // Specs are non-blocking; if they fail we just don't render the
-      // section, rather than erroring the whole detail page.
     }
   }
 
@@ -362,14 +314,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       builder: (_) => StockBottomSheet(product: _product!, initialType: type),
     );
     if (!mounted) return;
-    // Only the product (stock count / cached purchase price) and the
-    // supplier history actually move when a stock entry is posted. The
-    // custom-field tree and the per-product values don't — re-fetching
-    // them on every open/dismiss multiplied DB load for nothing.
     if (draftId != null) {
-      // The stock sheet creates a new DRAFT invoice — refresh the
-      // pending-drafts callout too so the user immediately sees their
-      // entry waiting to be confirmed.
       await Future.wait([
         _loadProduct(),
         _loadSupplierHistory(),
@@ -383,8 +328,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       context,
       MaterialPageRoute(builder: (_) => InvoiceDetailPage(invoiceId: id)),
     ).then((_) {
-      // Coming back from invoice detail: the user may have confirmed
-      // or cancelled drafts that affect this product, so refresh.
       if (mounted) _loadPendingDrafts();
       if (mounted) _loadProduct();
     });
@@ -454,12 +397,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     );
   }
 
-  /// True when the variants payload carries more than just the auto-
-  /// created single default — i.e. the merchant has actually authored
-  /// a variant axis. Single-variant products are common (every product
-  /// has at least one default variant under the hood) and we don't want
-  /// to clutter the page with a one-row table that just mirrors the
-  /// main pricing card.
   bool _shouldShowVariants(Product p) {
     if (p.variantAxes.isEmpty) return false;
     return p.variants.length > 1 ||
@@ -555,8 +492,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         });
 
     return Scaffold(
-      // Let the page scroll behind the floating stock pills, mirroring the
-      // floating app bar at the top — the buttons float over the content.
       extendBody: true,
       appBar: FloatingAppBar(
         title: l10n.productsDetailsTitle,
@@ -571,8 +506,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             icon: const AppIcon(AppIcons.qrCodeRounded),
             tooltip: l10n.productsGenerateQr,
           ),
-          // Edit is a product write — shown locked (greyed + padlock) for
-          // roles without products:manage so they know it exists.
           LockedIconButton(
             allowed: canWriteProducts,
             icon: AppIcons.editOutlined,
@@ -595,7 +528,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             ),
         ],
       ),
-      // Stock in/out is inventory:write — Stockists keep it, Cashiers don't.
       bottomNavigationBar: canStock
           ? _StockActionBar(
               onStockIn: () => _openStockSheet('STOCK_IN'),
@@ -607,24 +539,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         color: AppColors.black,
         backgroundColor: AppColors.surface,
         child: ListView(
-          // No outer padding — the carousel needs to bleed full-
-          // width to the screen edges. The content below is wrapped
-          // in its own Padding instead.
           padding: EdgeInsets.zero,
           children: [
-            // Carousel pages through every image the product has;
-            // falls back to a monogram band when there are none.
-            // Tap any image opens a pinch-zoom lightbox. Lives in
-            // the scroll view so the user can scroll past it
-            // instead of having it occupy permanent top real-estate.
             ProductImageCarousel(
               product: p,
               onAddPhotos: canWriteProducts ? _openEdit : null,
             ),
             Padding(
-              // Extra bottom room so the last card clears the floating stock
-              // pills, which now overlay the content (extendBody: true) rather
-              // than reserving their own slot.
               padding: EdgeInsets.fromLTRB(
                 AppSizes.lg,
                 AppSizes.lg,
@@ -772,11 +693,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     currencyFormat: currencyFormat,
                   ),
                   const SizedBox(height: AppSizes.lg),
-                  // Custom-field values render between supplier history and
-                  // the immutable DETAILS section, grouped by their section
-                  // definitions (one [_DetailSection] per shop-side
-                  // [CustomFieldSection]). Values with no section land in a
-                  // generic SPECIFICATIONS group.
                   ..._buildCustomFieldSections(),
                   _DetailSection(
                     title: l10n.productsDetailsSection,
@@ -823,16 +739,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }
 }
 
-/// Full-page skeleton that mirrors the product detail layout while data
-/// loads. Sections rendered in the same order as the real page:
-///   1. Full-width image carousel placeholder
-///   2. Header card (thumbnail + name/brand/category)
-///   3. Marketplace card (icon + two text lines + toggle area)
-///   4. Stock status card (large qty line + threshold line + badge)
-///   5. Pricing details section (5 rows)
-///
-/// Variants/specs/offers are omitted because they appear conditionally
-/// and collapsing them keeps the skeleton faithful to the common case.
 class _ProductDetailSkeleton extends StatelessWidget {
   const _ProductDetailSkeleton();
 
@@ -841,7 +747,6 @@ class _ProductDetailSkeleton extends StatelessWidget {
     return ListView(
       padding: EdgeInsets.zero,
       children: [
-        // ── Carousel placeholder ────────────────────────────────────
         AppShimmerBox(width: double.infinity, height: 260, radius: 0),
         Padding(
           padding: const EdgeInsets.fromLTRB(
@@ -853,7 +758,6 @@ class _ProductDetailSkeleton extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // ── Header card ─────────────────────────────────────
               AppCard(
                 padding: const EdgeInsets.all(AppSizes.lg),
                 child: Column(
@@ -862,7 +766,6 @@ class _ProductDetailSkeleton extends StatelessWidget {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Thumbnail placeholder
                         AppShimmerBox(
                           width: AppSizes.avatarMd,
                           height: AppSizes.avatarMd,
@@ -873,19 +776,16 @@ class _ProductDetailSkeleton extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Brand line
                               const AppShimmerLine(
                                 widthFactor: 0.35,
                                 height: 10,
                               ),
                               const SizedBox(height: 6),
-                              // Product name
                               const AppShimmerLine(
                                 widthFactor: 0.8,
                                 height: 16,
                               ),
                               const SizedBox(height: 6),
-                              // Category badge
                               AppShimmerBox(
                                 width: 90,
                                 height: 22,
@@ -897,7 +797,6 @@ class _ProductDetailSkeleton extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: AppSizes.md),
-                    // Status chips row
                     Row(
                       children: [
                         AppShimmerBox(
@@ -914,7 +813,6 @@ class _ProductDetailSkeleton extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: AppSizes.md),
-                    // SKU / barcode chips
                     Row(
                       children: [
                         AppShimmerBox(
@@ -935,7 +833,6 @@ class _ProductDetailSkeleton extends StatelessWidget {
               ),
               const SizedBox(height: AppSizes.md),
 
-              // ── Marketplace card ─────────────────────────────────
               AppCard(
                 padding: const EdgeInsets.fromLTRB(
                   AppSizes.lg,
@@ -945,7 +842,6 @@ class _ProductDetailSkeleton extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    // Icon box
                     AppShimmerBox(
                       width: AppSizes.avatarXs,
                       height: AppSizes.avatarXs,
@@ -963,14 +859,12 @@ class _ProductDetailSkeleton extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: AppSizes.md),
-                    // Toggle placeholder
                     AppShimmerBox(width: 44, height: 26, radius: AppSizes.lg),
                   ],
                 ),
               ),
               const SizedBox(height: AppSizes.md),
 
-              // ── Stock status card ────────────────────────────────
               AppCard(
                 padding: const EdgeInsets.all(AppSizes.lg),
                 child: Row(
@@ -995,7 +889,6 @@ class _ProductDetailSkeleton extends StatelessWidget {
               ),
               const SizedBox(height: AppSizes.xl),
 
-              // ── Pricing section ──────────────────────────────────
               AppShimmerBox(width: 80, height: 12, radius: AppSizes.radiusSm),
               const SizedBox(height: AppSizes.sm),
               AppCard(
@@ -1055,9 +948,6 @@ class _ProductHeaderCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              // Same thumbnail primitive used by the list row and the
-              // hero — picks the product's photo when present, else
-              // its hash-tinted monogram. Always identifies the row.
               ProductThumbnail(product: product, size: AppSizes.avatarMd),
               const SizedBox(width: AppSizes.lg),
               Expanded(
@@ -1095,10 +985,6 @@ class _ProductHeaderCard extends StatelessWidget {
             _SystemTagsRow(tags: product.systemTags),
           ],
           const SizedBox(height: AppSizes.md),
-          // Status row — at a glance: is it active, is it ranked, what
-          // are the reviews like. Each chip is read-only here; the
-          // marketplace toggle lives in [_MarketplaceCard] below so
-          // the publish action stays one focused affordance.
           Wrap(
             spacing: AppSizes.sm,
             runSpacing: 6,
@@ -1134,9 +1020,6 @@ class _ProductHeaderCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSizes.md),
-          // Identifier ribbon — SKU + barcode as tap-to-copy chips so
-          // they're one tap away during inventory work (printing
-          // labels, looking up a row in invoices, etc).
           _IdentifierRibbon(sku: product.sku, barcode: product.barcode),
           if (product.description != null &&
               product.description!.isNotEmpty) ...[
@@ -1154,10 +1037,6 @@ class _ProductHeaderCard extends StatelessWidget {
   }
 }
 
-/// Curated badges that the merchant can't write — set by admin or
-/// computed by the trending / new-arrival jobs. Rendered as compact
-/// pills so the merchant immediately sees the marketplace's editorial
-/// signals on their own SKU.
 class _SystemTagsRow extends StatelessWidget {
   const _SystemTagsRow({required this.tags});
   final List<String> tags;
@@ -1210,10 +1089,6 @@ class _SystemTagsRow extends StatelessWidget {
   }
 }
 
-/// Marketplace visibility card. One affordance — flip the publish
-/// switch — plus a hint line that explains what each state means. The
-/// merchant doesn't need to enter the edit form just to list / unlist
-/// a SKU; this is the most common single-tap action against a row.
 class _MarketplaceCard extends StatelessWidget {
   const _MarketplaceCard({
     required this.product,
@@ -1296,8 +1171,6 @@ class _MarketplaceCard extends StatelessWidget {
   }
 }
 
-/// Sales + reviews summary. Backed by the denormalised counters on
-/// the product row so we don't issue extra reads to populate this.
 class _SalesPerformanceCard extends StatelessWidget {
   const _SalesPerformanceCard({required this.product});
   final Product product;
@@ -1381,9 +1254,6 @@ class _PerformanceMetric extends StatelessWidget {
   }
 }
 
-/// Last in / out movement card. Pulled from the denormalised columns
-/// the list view already uses; surfacing them here means the merchant
-/// can answer "when did I last move this" without opening the ledger.
 class _LastActivityCard extends StatelessWidget {
   const _LastActivityCard({required this.product});
   final Product product;
@@ -1485,9 +1355,6 @@ class _LastActivityRow extends StatelessWidget {
   }
 }
 
-/// Variants table. Skipped when the product has only the default
-/// auto-created variant (single-variant products are common and the
-/// data adds nothing the pricing card doesn't already show).
 class _VariantsSection extends StatelessWidget {
   const _VariantsSection({
     required this.axes,
@@ -1693,8 +1560,6 @@ class _VariantsSection extends StatelessWidget {
   }
 }
 
-/// The merchant-authored "About this item" bullets that drive the
-/// customer PDP. Render order matches the editor.
 class _HighlightsSection extends StatelessWidget {
   const _HighlightsSection({required this.items});
   final List<String> items;
@@ -1759,9 +1624,6 @@ class _HighlightsSection extends StatelessWidget {
   }
 }
 
-/// Long-form PDP spec sheet. Distinct from the per-shop custom field
-/// sections below — those are merchant-defined taxonomy, these are
-/// the inline spec rows stored on the product itself.
 class _ProductSpecsSection extends StatelessWidget {
   const _ProductSpecsSection({required this.groups});
   final List<SpecGroup> groups;
@@ -1860,9 +1722,6 @@ class _ProductSpecsSection extends StatelessWidget {
   }
 }
 
-/// Bank / coupon / EMI / exchange offers that surface on the PDP
-/// offer strip. Each row carries an icon to match its kind and renders
-/// the coupon code as a copyable mono-style chip.
 class _OffersSection extends StatelessWidget {
   const _OffersSection({required this.offers});
   final List<ProductOffer> offers;
@@ -2005,9 +1864,6 @@ class _OffersSection extends StatelessWidget {
   }
 }
 
-/// A+ content block summary. The full editor lives on the edit page;
-/// here we show the merchant what's saved so they can see at a glance
-/// whether the rich description is populated.
 class _ContentBlocksSection extends StatelessWidget {
   const _ContentBlocksSection({required this.blocks});
   final List<ContentBlock> blocks;
@@ -2129,8 +1985,6 @@ class _ContentBlocksSection extends StatelessWidget {
   }
 }
 
-/// Free-form merchant tags. Chip row, read-only — editing happens on
-/// the edit page.
 class _TagsSection extends StatelessWidget {
   const _TagsSection({required this.tags});
   final List<String> tags;
@@ -2539,9 +2393,6 @@ class _DetailSection extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: AppSizes.md),
-                            // Expanded + soft-wrap so a long value
-                            // breaks to the next line instead of
-                            // overflowing the row off-screen.
                             Expanded(
                               child: Text(
                                 rows[i].value,
@@ -2566,17 +2417,9 @@ class _DetailRow {
   final String label;
   final String value;
 
-  /// When `true`, render the value below the label on its own line
-  /// (label small/muted, value full-width). Used for long-text custom
-  /// field values where a right-aligned wrap looks awkward.
   final bool stack;
 }
 
-/// Sticky bottom action bar with the two stock movements. Always
-/// reachable regardless of scroll position — critical because the
-/// page now hosts carousel, pricing, supplier history, and (soon)
-/// custom fields, so the previous in-flow buttons were getting
-/// pushed far down off-screen.
 class _StockActionBar extends StatelessWidget {
   const _StockActionBar({required this.onStockIn, required this.onStockOut});
 
@@ -2586,11 +2429,6 @@ class _StockActionBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    // No solid bar — the buttons float as frosted pills over the scrolling
-    // content, echoing the floating app bar. A short gradient scrim fades the
-    // canvas up from the bottom edge so the pills stay legible over any
-    // content (and the OS gesture bar has a clean backdrop), mirroring the
-    // app bar's top status-bar scrim.
     return DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -2640,12 +2478,6 @@ class _StockActionBar extends StatelessWidget {
   }
 }
 
-/// A single floating stock action, styled like a floating-app-bar island.
-///
-/// - [frosted] (Stock In / secondary): a translucent, blurred pill with a
-///   hairline border — the exact frosted-island look of the app bar.
-/// - solid (Stock Out / primary): the high-contrast neutral fill, so the
-///   destructive-leaning action still reads as the primary CTA.
 class _StockPill extends StatelessWidget {
   const _StockPill({
     required this.label,
@@ -2703,8 +2535,6 @@ class _StockPill extends StatelessWidget {
       ),
     );
 
-    // RepaintBoundary + ClipRRect isolate the blur so the page repaint behind
-    // the pill doesn't re-blur every frame off this subtree unnecessarily.
     if (!frosted) return content;
     return RepaintBoundary(
       child: ClipRRect(
@@ -2718,9 +2548,6 @@ class _StockPill extends StatelessWidget {
   }
 }
 
-/// Identifier chips for SKU + optional barcode. Tap to copy. Lives
-/// directly under the product name so it's the first thing the user
-/// can act on — labels, lookups, scans all start here.
 class _IdentifierRibbon extends StatelessWidget {
   const _IdentifierRibbon({required this.sku, required this.barcode});
 
@@ -2813,11 +2640,6 @@ class _IdentifierChip extends StatelessWidget {
   }
 }
 
-/// Callout card listing every DRAFT invoice that includes this product.
-/// Each row shows the doc number, customer/vendor + quantity, and the
-/// direction of stock movement that's pending. Tapping a row opens the
-/// invoice so the user can confirm or cancel it — once confirmed, the
-/// product's stock count actually moves.
 class _PendingDraftsCard extends StatelessWidget {
   const _PendingDraftsCard({
     required this.drafts,
@@ -2979,17 +2801,11 @@ class _PendingDraftRow extends StatelessWidget {
   }
 }
 
-/// Whole-number GST rates show as "18", fractional as "2.5" — keeps the
-/// CGST/SGST half-rates tidy (9 not 9.0).
 String _formatRate(double n) {
   if (n == n.roundToDouble()) return n.toInt().toString();
   return n.toStringAsFixed(2).replaceFirst(RegExp(r'\.?0+$'), '');
 }
 
-/// Breaks a GST-inclusive selling price into taxable value + CGST/SGST so
-/// the merchant sees how much of the price is tax — mirrors the
-/// merchant-web "Price & GST breakdown" panel. Only rendered when the
-/// product carries a GST rate.
 class _GstBreakdownSection extends StatelessWidget {
   const _GstBreakdownSection({
     required this.sellingPrice,
@@ -3139,10 +2955,6 @@ class _GstRow extends StatelessWidget {
   }
 }
 
-/// Reviews block for the product detail page — average + stars, a per-
-/// star histogram, the verified-buyer count and the most recent reviews,
-/// with a "See all reviews" jump to the full list. Mirrors the
-/// merchant-web Reviews section.
 class _ReviewsSummarySection extends StatelessWidget {
   const _ReviewsSummarySection({
     required this.summary,
@@ -3273,7 +3085,6 @@ class _ReviewsSummarySection extends StatelessWidget {
   }
 }
 
-/// Five-star row supporting half stars (for fractional averages).
 class _StarRow extends StatelessWidget {
   const _StarRow({required this.rating, this.size = 16});
   final double rating;

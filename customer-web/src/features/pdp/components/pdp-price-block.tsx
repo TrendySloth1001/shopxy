@@ -7,14 +7,7 @@ interface Props {
   selectedVariant: Variant | null;
 }
 
-// ── Assurance block (delivery / returns / authentic) ──────────────────────────
-
 function AssuranceBlock() {
-  // Per-shop returns/delivery/authenticity policy is NOT on the PDP payload, so
-  // we must NOT assert blanket guarantees ("Free delivery", "7-day returns",
-  // "100% authentic") that a given shop/SKU may not honour. Qualify the copy to
-  // describe the platform mechanics and point to the shop's policy.
-  // (CP Act 2019 s.2(28)/(47); CCPA Dark-Patterns Guidelines 2023.)
   const rows: { icon: React.ReactNode; text: React.ReactNode }[] = [
     {
       icon: <Truck size={14} className="text-brand" aria-hidden />,
@@ -92,10 +85,6 @@ export function PdpPriceBlock({ product, selectedVariant }: Props) {
           </span>
         </div>
       ) : null}
-      {/* MRP is ALWAYS shown and labelled inclusive of all taxes (Legal
-          Metrology). When discounted the struck-through M.R.P. above already
-          carries it; otherwise show an explicit MRP line so the consumer
-          always sees the maximum retail price. */}
       {!isDiscounted ? (
         <p className="mt-xs text-label-md text-muted">
           M.R.P. {formatINR(baseMrp)} · inclusive of all taxes
@@ -104,17 +93,12 @@ export function PdpPriceBlock({ product, selectedVariant }: Props) {
         <p className="mt-xs text-label-md text-muted">Inclusive of all taxes</p>
       )}
 
-      {/* Legal Metrology / consumer disclosures — country of origin + net
-          quantity where available, shown before add-to-cart. */}
       <ComplianceBlock product={product} />
 
-      {/* Assurance rows: free delivery · returns · authentic */}
       <AssuranceBlock />
     </div>
   );
 }
-
-// ── Compliance disclosures (country of origin, net quantity) ──────────────────
 
 function ComplianceBlock({ product }: { product: ProductDetail }) {
   const rows: { label: string; value: string }[] = [];

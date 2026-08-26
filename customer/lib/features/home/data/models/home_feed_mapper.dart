@@ -3,8 +3,6 @@ import 'package:shopxy_customer/features/home/data/models/home_feed_models.dart'
 import 'package:shopxy_customer/shared/format/app_format.dart';
 import 'package:shopxy_customer/shared/theme/app_colors.dart';
 
-/// Aggregate that the home page consumes. Built from the raw `/home/feed`
-/// + `/me/home/personalized` JSON payloads by the mapping helpers below.
 class HomeFeed {
   const HomeFeed({
     required this.heroSlides,
@@ -20,9 +18,6 @@ class HomeFeed {
 
   final List<HeroSlide> heroSlides;
   final List<CategoryPuck> categoryPucks;
-  // adStrip / promoBanners / curatedRails are all banner placements —
-  // each is just a plain tappable image + optional link, distinguished
-  // only by where on the page they render.
   final List<HeroSlide> adStrip;
   final List<HeroSlide> promoBanners;
   final List<HeroSlide> curatedRails;
@@ -61,10 +56,6 @@ class HomeFeed {
   }
 }
 
-/// Pure mappers from backend JSON → presentation models.
-///
-/// They live separate from the data source so widget tests can construct
-/// fake JSON and drive the same code path the real network would.
 class HomeFeedMapper {
   HomeFeedMapper._();
 
@@ -74,8 +65,6 @@ class HomeFeedMapper {
     final promoBanners = _list(json['promoBanners']);
     final curatedRailBanners = _list(json['curatedRailBanners']);
     final trending = _list(json['trending']);
-    // Server sends raw Product rows under `newArrivals`, so we feed them
-    // through the same mapper the endless page uses.
     final newArrivals = _list(json['newArrivals']);
     final pucks = _list(json['categoryPucks']);
 
@@ -95,9 +84,6 @@ class HomeFeedMapper {
     );
   }
 
-  /// Endless-scroll page → list of ProductCard. The endpoint returns
-  /// raw Product rows (not the trending-wrap shape) so we route directly
-  /// through `_productCardFromProduct`.
   static List<ProductCard> fromEndlessPage(List<dynamic> rows) {
     return rows
         .map(
@@ -124,8 +110,6 @@ class HomeFeedMapper {
     return (recommended: recommended, recentlyViewed: recentlyViewed);
   }
 
-  // ── Banner → HeroSlide ────────────────────────────────────────────
-
   static HeroSlide _heroFromBanner(dynamic raw) {
     final m = raw as Map<String, dynamic>;
     return HeroSlide(
@@ -137,8 +121,6 @@ class HomeFeedMapper {
       productCount: _asInt(m['productCount']) ?? 0,
     );
   }
-
-  // ── Trending ────────────────────────────────────────────────────
 
   static ProductCard? _productCardFromTrending(dynamic row) {
     final m = row as Map<String, dynamic>;
@@ -175,8 +157,6 @@ class HomeFeedMapper {
     );
   }
 
-  // ── Category pucks ────────────────────────────────────────────────
-
   static CategoryPuck _categoryPuck(MapEntry<int, dynamic> e) {
     final m = e.value as Map<String, dynamic>;
     return CategoryPuck(
@@ -188,14 +168,8 @@ class HomeFeedMapper {
     );
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────
-
   static List<dynamic> _list(dynamic v) => v is List ? v : const <dynamic>[];
 
-  /// Prisma `Decimal` fields serialise as **strings** in JSON (e.g.
-  /// `"199.00"`), not numbers. Anywhere we read a price / rating /
-  /// score from a Prisma row we must accept both. Returns null on
-  /// anything we can't parse so callers fall back to a sensible default.
   static double? _asDouble(dynamic v) {
     if (v == null) return null;
     if (v is num) return v.toDouble();
@@ -220,11 +194,7 @@ class HomeFeedMapper {
     return '';
   }
 
-  // MOD-1: shared formatter — see AppFormat.
   static String _money(double v) => AppFormat.rupees(v);
 
-  /// Soft palette for the puck strip — cycles by index so adjacent
-  /// categories never share a tint. Sourced from the single [AppColors]
-  /// token so it stays in sync with tiles/headers.
   static const List<Color> _puckTints = AppColors.categoryTints;
 }

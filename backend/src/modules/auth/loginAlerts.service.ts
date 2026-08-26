@@ -5,20 +5,6 @@ import { notificationsService } from '../notifications/notifications.service.js'
 import { sendMail } from '../../infra/mailer.js';
 import { maskIp, type DeviceContext } from './deviceContext.js';
 
-/**
- * Login history + new-device alerting.
- *
- * On each successful login we record a {@link LoginEvent}. If the device
- * (fingerprint = SHA-256 of the user-agent) hasn't been seen for this user
- * before — and it isn't their very first login — we raise a security alert so
- * the real owner notices an unfamiliar sign-in.
- *
- * Delivery is **channel-agnostic**: an in-app notification, plus an out-of-band
- * email via {@link deliverOutOfBand} (the stronger signal for account takeover,
- * since it reaches the owner even if the attacker is the one in the app). The
- * email is best-effort and no-ops when SMTP isn't configured.
- */
-
 export interface LoginContext extends DeviceContext {
   userId: number;
 }
@@ -27,7 +13,6 @@ function fingerprint(userAgent?: string | null): string {
   return createHash('sha256').update(userAgent ?? 'unknown').digest('hex');
 }
 
-/** Out-of-band new-device alert (email). Best-effort — the mailer no-ops if SMTP isn't set. */
 async function deliverOutOfBand(email: string, ipMasked: string | null): Promise<void> {
   const where = ipMasked ? ` (around ${ipMasked})` : '';
   await sendMail({
@@ -45,17 +30,11 @@ async function deliverOutOfBand(email: string, ipMasked: string | null): Promise
 }
 
 export const loginAlertsService = {
-  /**
-   * Record a successful login and alert on a new device. Best-effort: never
-   * throws into the login path — a logging/alerting hiccup must not fail auth.
-   */
   async recordLogin(ctx: LoginContext): Promise<void> {
     try {
       const fp = fingerprint(ctx.userAgent);
       const ipMasked = maskIp(ctx.ip);
 
-      // Two cheap indexed reads: has this exact device been seen, and has the
-      // user ever logged in at all (so we don't alert on their first sign-in).
       const [seenDevice, priorCount] = await Promise.all([
         prisma.loginEvent.findFirst({
           where: { userId: ctx.userId, fingerprint: fp },
@@ -73,7 +52,6 @@ export const loginAlertsService = {
         },
       });
 
-      // New device, and not the account's first-ever login → alert the owner.
       if (!seenDevice && priorCount > 0) {
         await notificationsService.create({
           userId: ctx.userId,
@@ -95,7 +73,6 @@ export const loginAlertsService = {
     }
   },
 
-  /** Recent sign-ins for the caller's "security" screen, newest first. */
   async recentLogins(userId: number, limit = 20) {
     return prisma.loginEvent.findMany({
       where: { userId },

@@ -2,7 +2,6 @@ import Image from "next/image";
 import ReactMarkdown, { type Components } from "react-markdown";
 import { mediaSrc } from "./product-thumb";
 
-/** Token-styled element overrides so rendered markdown matches the design system. */
 const mdComponents: Components = {
   p: ({ children }) => <p className="mb-md text-body-md text-ink">{children}</p>,
   strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
@@ -37,18 +36,12 @@ const mdComponents: Components = {
   ),
 };
 
-/**
- * Read-only renderer for A+ content blocks — mirrors the customer PDP. Blocks
- * are loosely typed (backend passthrough), so per-kind fields are read defensively.
- * Capped to a readable measure with controlled image aspect ratios.
- */
 type Block = Record<string, unknown>;
 
 function str(v: unknown): string | undefined {
   return typeof v === "string" && v.length > 0 ? v : undefined;
 }
 
-/** Image inside a fixed-aspect frame so heights stay uniform regardless of source. */
 function ContentImage({
   url,
   alt,
@@ -128,8 +121,6 @@ function BlockView({ block }: { block: Block }) {
 
   if (kind === "TEXT") {
     const md = str(block.markdown) ?? "";
-    // react-markdown emits no raw HTML by default and the backend sanitises the
-    // stored markdown — safe to render.
     return (
       <div>
         <ReactMarkdown components={mdComponents}>{md}</ReactMarkdown>

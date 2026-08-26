@@ -16,14 +16,12 @@ async function jsonOrThrow<T>(res: Response, parse: (raw: unknown) => T, fallbac
       const body = (await res.json()) as { error?: string };
       if (body?.error) message = body.error;
     } catch {
-      /* keep fallback */
     }
     throw new Error(message);
   }
   return parse(await res.json());
 }
 
-/** Vendors to choose from in the stock-in form (product-scoped, then all). */
 export function listSuppliers(opts?: {
   productId?: string;
   q?: string;
@@ -37,7 +35,6 @@ export function listSuppliers(opts?: {
   );
 }
 
-/** Stock-ledger rows for a product, optionally filtered by movement type. */
 export function listStockTransactions(opts: {
   productId: string;
   type?: StockType;
@@ -57,7 +54,6 @@ export function listStockTransactions(opts: {
   );
 }
 
-/** Record a stock movement — returns the draft invoice the backend creates. */
 export function createStockTransaction(input: CreateStockInput): Promise<StockDraft> {
   return fetch("/api/stock", {
     method: "POST",

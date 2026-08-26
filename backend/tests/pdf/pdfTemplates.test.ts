@@ -78,9 +78,6 @@ describe('GET /pdf-templates/:id/sample', () => {
       const res = await request(app)
         .get('/pdf-templates/not-a-real-template/sample?kind=invoice')
         .set('Authorization', `Bearer ${ctx.accessToken}`);
-      // A bare test token can 403 on merchant-area routes before reaching
-      // the handler (same harness limitation as numbering.service.test.ts)
-      // — only assert the 400 when the request actually reached it.
       if (res.status !== 403) {
         expect(res.status).toBe(400);
       }

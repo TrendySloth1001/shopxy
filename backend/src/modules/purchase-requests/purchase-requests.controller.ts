@@ -11,50 +11,24 @@ import {
 import { notificationsService } from '../notifications/notifications.service.js';
 
 const createSchema = z.object({
-  /// Full cart payload. The server groups by shop and creates one
-  /// CustomerOrder parent plus one PurchaseRequest per shop the cart
-  /// spans — the FE no longer splits, so a single POST per checkout.
-  ///
-  /// Each line carries `expectedUnitPrice`: the price the customer was
-  /// looking at when they tapped "Place order". The server compares
-  /// that against the live `sellingPrice` (or flash price) and aborts
-  /// with PRICE_DRIFT if any line moved — protects the buyer from
-  /// silent over-charging when a flash sale ends mid-checkout.
   items: z
     .array(
       z.object({
         productId: zPublicId,
         quantity: z.number().positive(),
-        /// Per-line price the client believes is correct. Optional for
-        /// backwards compatibility with older builds; once both apps
-        /// have shipped a build that always sends it we can make it
-        /// required.
         expectedUnitPrice: z.number().nonnegative().optional(),
       }),
     )
     .min(1),
   note: z.string().max(500).optional(),
-  /// Optional UserAddress id selected at checkout. When present the
-  /// service snapshots that address into `customerAddress`.
   addressId: zPublicId.optional(),
-  /// Optional promo code. The server validates + redeems atomically
-  /// with the order create.
   couponCode: z.string().max(40).optional(),
-  /// Apply wallet balance against the cart total (after coupon).
   useWallet: z.boolean().optional(),
-  /// Raise each shop's invoice against the buyer's own GSTIN so the GST is
-  /// claimable as input credit. Intent only — the GSTIN itself comes from the
-  /// account's saved profile, never from this payload.
   claimGst: z.boolean().optional(),
 });
 
 const decisionSchema = z.object({ note: z.string().max(500).optional() });
 
-/// Replaces the plain `req.user?.shopId` trust pattern in every
-/// merchant endpoint. Combines the JWT extraction with a DB-backed
-/// ownership reload so a forged or stale token carrying someone
-/// else's shopId can't be acted on. Returns the shopId on success,
-/// or null after writing a 403 — callers just `if (shopId == null) return`.
 async function requireOwnedShop(
   req: Request,
   res: Response,
@@ -73,18 +47,6 @@ async function requireOwnedShop(
   return shopId;
 }
 
-/// Merchant-recorded shipping milestone. CONFIRMED is set by the
-/// service when an invoice is issued; merchants only push milestones
-/// from packing onward.
-///
-/// PR-H3 — `RETURNED` is intentionally NOT accepted here. The raw
-/// shipping-event path has no side effects, so posting RETURNED would
-/// record a returned order that is still CONFIRMED, still consuming
-/// stock, still settled to the seller, with no customer refund and no
-/// credit-note GST reversal. Returns must run through the dedicated
-/// returns module (which mints the credit note, adds stock back,
-/// refunds the buyer and claws back the Route transfer), never this
-/// timeline shortcut.
 const shippingEventSchema = z.object({
   type: z.enum(['PACKED', 'SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED']),
   courier: z.string().max(80).optional(),
@@ -93,9 +55,6 @@ const shippingEventSchema = z.object({
   note: z.string().max(500).optional(),
 });
 
-/// Inbox filters. Search and date range come in as query strings; we
-/// keep the contract loose (strings) and parse defensively so a stray
-/// "abc" in date never blows up the request.
 const merchantListSchema = z.object({
   status: z.enum(['PENDING', 'CONFIRMED', 'REJECTED', 'CANCELLED']).optional(),
   search: z.string().max(80).optional(),
@@ -107,20 +66,13 @@ function parseId(raw: string): number | null {
   return decodeId(raw);
 }
 
-/// Pull the per-request idempotency token off the canonical header. We
-/// also tolerate the unprefixed `Idempotency-Key` form (RFC draft name)
-/// so curl/Postman testers don't need to remember the X- prefix.
 function readIdempotencyKey(req: Request): string | undefined {
   const raw = (req.get('x-idempotency-key') ?? req.get('idempotency-key') ?? '').trim();
   if (!raw) return undefined;
-  // Anchor to a reasonable shape — UUID-ish, ≤ 80 chars. Lets us add
-  // the unique index without worrying about adversarial payloads.
   if (raw.length > 80) return undefined;
   return raw;
 }
 
-/// Map the customer-facing error codes to user-friendly response bodies.
-/// Kept controller-side so the service stays domain-clean.
 function cancelErrorMessage(
   code: 'NOT_FOUND' | 'NOT_OWNED' | 'NOT_PENDING' | 'NOT_CANCELLABLE',
 ): {
@@ -153,8 +105,6 @@ function cancelErrorMessage(
 }
 
 export class PurchaseRequestsController {
-  // ── Customer-facing ────────────────────────────────────────────────
-
   async createForCustomer(req: Request, res: Response): Promise<void> {
     const payload = createSchema.parse(req.body);
     const userId = req.user!.sub;
@@ -179,14 +129,10 @@ export class PurchaseRequestsController {
         result.error === 'CROSS_SHOP_ITEM' ? 422 :
         result.error === 'COUPON_INVALID' ? 400 :
         result.error === 'PRICE_DRIFT' ? 409 :
-        // The account has no saved GSTIN to raise the invoice against; the
-        // client sends the user to their GST profile rather than retrying.
         result.error === 'GST_PROFILE_MISSING' ? 422 :
         400;
       res.status(status).json({
         error: result.error,
-        // PRICE_DRIFT ships the per-line corrected price so the client
-        // can show "Item X is now ₹Y" in the toast without a refetch.
         ...('priceDrift' in result && result.priceDrift
           ? { details: result.priceDrift }
           : {}),
@@ -194,8 +140,6 @@ export class PurchaseRequestsController {
       return;
     }
 
-    // One bell-fan per child shop, never broader. Skip on idempotent
-    // replay so a network-retried POST doesn't double-notify.
     if (!result.deduplicated) {
       for (const child of result.order.shopOrders) {
         const items = child.itemCount ?? 1;
@@ -235,9 +179,6 @@ export class PurchaseRequestsController {
     res.json(request);
   }
 
-  /// Customer-side — return cart-ready items from a past order. The
-  /// client is expected to feed `items` into the cart provider; the
-  /// `skipped` list drives a "3 added · 1 unavailable" toast.
   async reorderForCustomer(req: Request, res: Response): Promise<void> {
     const parentId = parseId(req.params.id);
     if (!parentId) { res.status(400).json({ error: 'Invalid id' }); return; }
@@ -252,10 +193,6 @@ export class PurchaseRequestsController {
     res.json(result);
   }
 
-  /// Customer-side PDF download — re-uses the merchant invoice
-  /// generator after a buyer-ownership check (the parent + child must
-  /// belong to the calling user and the child must be CONFIRMED with
-  /// a linked invoice).
   async downloadCustomerInvoicePdf(req: Request, res: Response): Promise<void> {
     const parentId = parseId(req.params.id);
     const childId = parseId(req.params.childId);
@@ -270,11 +207,6 @@ export class PurchaseRequestsController {
       else res.status(409).json({ error: 'No invoice has been issued for this order yet.' });
       return;
     }
-    // Delegate to the invoice service. Dynamic import keeps the
-    // top-level dependency graph shallow — this controller doesn't
-    // otherwise care about PDF generation. Headers flip to PDF only
-    // once the renderer has confirmed the invoice loaded, so a late
-    // error still returns a clean JSON response.
     const { invoicesService } = await import('../invoices/invoices.service.js');
     const streamErr = await invoicesService.streamPdf(
       ctx.shopId,
@@ -316,8 +248,6 @@ export class PurchaseRequestsController {
     }
     res.status(204).send();
   }
-
-  // ── Merchant-facing ────────────────────────────────────────────────
 
   async listForMerchant(req: Request, res: Response): Promise<void> {
     const shopId = await requireOwnedShop(req, res);
@@ -429,10 +359,6 @@ export class PurchaseRequestsController {
     res.status(204).send();
   }
 
-  /// Merchant-side — record a shipping milestone (PACKED, SHIPPED,
-  /// OUT_FOR_DELIVERY, DELIVERED). Drives the customer-facing tracking
-  /// timeline. RETURNED is deliberately excluded — see shippingEventSchema
-  /// (PR-H3); returns go through the dedicated returns module.
   async addShippingEvent(req: Request, res: Response): Promise<void> {
     const shopId = await requireOwnedShop(req, res);
     if (shopId == null) return;
@@ -454,8 +380,6 @@ export class PurchaseRequestsController {
       else res.status(409).json({ error: 'Order must be confirmed before shipping events can be recorded.' });
       return;
     }
-    // Notify the buyer with a short status line so the bell badge
-    // updates without polling. Body uses a friendly label per type.
     const labels: Record<string, string> = {
       PACKED: 'Your order has been packed.',
       SHIPPED: 'Your order is on the way.',
@@ -477,11 +401,6 @@ export class PurchaseRequestsController {
     res.status(201).json(result);
   }
 
-  /// POST /me/orders/:id/pay — start an online gateway payment for this order's
-  /// payable remainder (estimatedTotal − coupon − wallet). Returns the checkout
-  /// session (provider, providerOrderRef, clientParams) the app opens the
-  /// Razorpay sheet with. The ORDER settlement handler marks the order PAID on
-  /// webhook capture — never on the client callback.
   async payForOrder(req: Request, res: Response): Promise<void> {
     const orderId = parseId(req.params.id);
     if (!orderId) { res.status(400).json({ error: 'Invalid id' }); return; }
@@ -508,11 +427,6 @@ export class PurchaseRequestsController {
     }
   }
 
-  /// POST /me/orders/:id/payment/sync — client-confirm after the checkout sheet
-  /// returns success. Settles the payment if the live provider order is paid
-  /// (webhook backstop), then returns the order's paymentStatus so the app can
-  /// refresh immediately instead of waiting on a webhook that may never arrive
-  /// (localhost) or lags. Idempotent.
   async syncPayment(req: Request, res: Response): Promise<void> {
     const orderId = parseId(req.params.id);
     if (!orderId) { res.status(400).json({ error: 'Invalid id' }); return; }

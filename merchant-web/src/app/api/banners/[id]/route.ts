@@ -2,7 +2,6 @@ import { proxy } from "@/server/proxy";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-// GET / PATCH / DELETE /api/banners/:id (→ backend /me/banners/:id)
 export async function GET(req: Request, { params }: Ctx) {
   const { id } = await params;
   return proxy(`/me/banners/${encodeURIComponent(id)}`, req, { fallback: "Could not load the banner." });

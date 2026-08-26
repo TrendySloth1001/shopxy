@@ -1,10 +1,4 @@
-/**
- * Zod schemas for account extras — validated at the BFF boundary.
- */
-
 import { z } from "zod";
-
-// ── Wishlist ─────────────────────────────────────────────────────────────────
 
 const wishlistProductSchema = z.object({
   id: z.coerce.string(),
@@ -45,8 +39,6 @@ export const wishlistResponseSchema = z.object({
 
 export type WishlistResponseRaw = z.infer<typeof wishlistResponseSchema>;
 
-// ── Reviews ──────────────────────────────────────────────────────────────────
-
 export const myReviewSchema = z.object({
   id: z.coerce.string(),
   productId: z.coerce.string(),
@@ -72,8 +64,6 @@ export const myReviewsResponseSchema = z.object({
 });
 
 export type MyReviewsResponseRaw = z.infer<typeof myReviewsResponseSchema>;
-
-// ── Coupons ───────────────────────────────────────────────────────────────────
 
 export const couponSchema = z.object({
   id: z.coerce.string(),
@@ -101,8 +91,6 @@ export const couponsResponseSchema = z.object({
 });
 
 export type CouponsResponseRaw = z.infer<typeof couponsResponseSchema>;
-
-// ── Recently viewed ───────────────────────────────────────────────────────────
 
 const recentlyViewedProductSchema = z.object({
   id: z.coerce.string(),

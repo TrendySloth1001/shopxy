@@ -17,14 +17,8 @@ import 'package:shopxy_customer/core/icons/app_icon.dart';
 import 'package:shopxy_customer/shared/constants/app_curves.dart';
 import 'package:shopxy_customer/shared/constants/app_durations.dart';
 
-/// Tabs available in the customer-app shell. Orders was added in the
-/// May 2026 nav redesign so it's reachable in one tap instead of
-/// hidden behind Profile.
 enum CustomerShellTab { home, cart, orders, profile }
 
-/// Exposes the tab-switching API to descendants. Pages that need to
-/// jump tabs (the empty Cart that returns to Home, etc.) read this
-/// scope rather than reaching into the State directly.
 class CustomerShellScope extends InheritedWidget {
   const CustomerShellScope({
     super.key,
@@ -54,16 +48,8 @@ class CustomerShell extends StatefulWidget {
 class _CustomerShellState extends State<CustomerShell> {
   int _currentIndex = 0;
 
-  /// Whether the floating nav is currently slid into view. Flips when
-  /// any descendant ScrollView reports `UserScrollNotification` with a
-  /// reverse (scroll-down) or forward (scroll-up) direction. We use a
-  /// ValueNotifier rather than setState so the nav can rebuild in
-  /// isolation — the IndexedStack underneath doesn't tear down.
   final _navVisible = ValueNotifier<bool>(true);
 
-  /// Tracked so we can detect when linkage changes (e.g. user accepts
-  /// an invite mid-session) and snap back to Home — without this, the
-  /// same _currentIndex would silently point at a different page.
   bool? _lastLinked;
 
   static const List<Widget> _linkedPages = [
@@ -82,8 +68,6 @@ class _CustomerShellState extends State<CustomerShell> {
 
   void _select(int i) {
     if (i == _currentIndex) {
-      // Re-tapping the active tab snaps the nav back into view so the
-      // user can always recover it after scrolling down.
       _navVisible.value = true;
       return;
     }
@@ -92,9 +76,6 @@ class _CustomerShellState extends State<CustomerShell> {
   }
 
   bool _onScroll(ScrollNotification n) {
-    // Resting at the top always means the nav is back. Without this the only
-    // way to recover it was an upward drag, which a page that fits on screen
-    // can never produce — the nav stayed hidden with no way to reach it.
     if (n is ScrollEndNotification &&
         n.metrics.pixels <= n.metrics.minScrollExtent) {
       _navVisible.value = true;
@@ -113,9 +94,6 @@ class _CustomerShellState extends State<CustomerShell> {
     return false;
   }
 
-  /// A page whose content fits on screen has nothing to scroll, so it can
-  /// never send the notification that reveals the nav. Emptying the cart
-  /// while scrolled down used to strand the user with no navigation at all.
   bool _onScrollMetrics(ScrollMetricsNotification n) {
     if (n.metrics.maxScrollExtent <= 0 && !_navVisible.value) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -133,24 +111,14 @@ class _CustomerShellState extends State<CustomerShell> {
 
   @override
   Widget build(BuildContext context) {
-    // Extend the bottom safe area by the nav's footprint so descendant
-    // ScrollViews / SafeAreas leave room for the floating pill and
-    // content isn't hidden behind it. Cheap and universal — no need
-    // to touch every page.
     final basePadding = MediaQuery.paddingOf(context);
     final extendedPadding = basePadding.copyWith(
       bottom: basePadding.bottom + _kNavFootprint,
     );
 
-    // Selector — only rebuilds when linkage state actually flips, not
-    // on every shop-list refresh. Uses the provider's hint-or-real
-    // getter so the very first paint reflects last-known state.
     return Selector<ShopsProvider, bool>(
       selector: (_, p) => p.hasLinkedParty,
       builder: (context, linked, _) {
-        // Linkage flipped during the session — snap back to Home so
-        // the user isn't dropped onto a tab whose meaning just
-        // shifted under them.
         if (_lastLinked != null &&
             _lastLinked != linked &&
             _currentIndex != 0) {
@@ -204,12 +172,7 @@ class _CustomerShellState extends State<CustomerShell> {
   }
 }
 
-/// Total vertical room (pill height + margin) the floating nav
-/// consumes when fully visible. Pages use this via the extended
-/// MediaQuery padding to avoid laying content underneath.
 const double _kNavFootprint = 72;
-
-// ─── Floating pill ──────────────────────────────────────────────────
 
 class _FloatingNav extends StatelessWidget {
   const _FloatingNav({
@@ -296,19 +259,12 @@ class _NavPill extends StatelessWidget {
     label: AppStrings.navProfile,
   );
 
-  /// When the user has at least one linked merchant the Merchant tab
-  /// takes the index-1 slot and the Profile entry moves to the home
-  /// top bar (rendered separately). Unlinked customers see the
-  /// original layout where Profile lives in the bottom nav.
   static const _linkedItems = <_NavItem>[_home, _merchant, _cart, _orders];
   static const _unlinkedItems = <_NavItem>[_home, _cart, _orders, _profile];
 
   @override
   Widget build(BuildContext context) {
     final items = linked ? _linkedItems : _unlinkedItems;
-    // width:double.infinity pins the pill to the full available width
-    // so the cells redistribute internally (selected widens, others
-    // compress) instead of the whole pill shrinking around them.
     return Container(
       width: double.infinity,
       decoration: ShapeDecoration(
@@ -329,13 +285,6 @@ class _NavPill extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-        // Cells get animated, computed widths instead of intrinsic
-        // sizing — the selected cell takes a bigger share so it can
-        // host its label, and unselected cells share the remaining
-        // space equally. Total share always sums to the full inner
-        // width, so cells stay flush against each other (no ugly
-        // gaps) and the only thing that visibly moves on tap is the
-        // brand-soft pill sliding to a new position + width.
         child: LayoutBuilder(
           builder: (context, c) {
             const selectedShare = 2.0;
@@ -415,11 +364,6 @@ class _NavCell extends StatelessWidget {
             size: 22,
           );
 
-    // Content only — the parent AnimatedContainer owns width,
-    // decoration, and tap. Centered Row clips its label to whatever
-    // horizontal room the cell happens to have at any animation
-    // frame, so the icon stays anchored and the label doesn't bleed
-    // past the brand-soft pill while it grows / shrinks.
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: Row(

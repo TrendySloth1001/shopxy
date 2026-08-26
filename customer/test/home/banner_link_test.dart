@@ -1,10 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shopxy_customer/features/home/domain/banner_link.dart';
 
-/// These cases mirror `backend/tests/banners/banner-link.test.ts` exactly. The
-/// grammar is duplicated across three codebases, so the tests are duplicated
-/// too — a divergence shows up here rather than as a banner that silently
-/// stops working in the field.
 void main() {
   group('BannerLink.parse', () {
     test('parses each supported kind', () {
@@ -41,8 +37,6 @@ void main() {
     });
 
     test('returns null for the legacy formats rather than guessing', () {
-      // The old code passed these to the search box as a literal query, so a
-      // banner linking to a URL searched for the text of its own URL.
       expect(BannerLink.parse('https://example.com/sale'), isNull);
       expect(BannerLink.parse('/shop/acme'), isNull);
       expect(BannerLink.parse('url:https://example.com'), isNull);

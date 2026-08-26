@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { authedFetch, extractError } from "@/server/auth/session";
 
-// DELETE /api/products/:id/images/:imageId
 export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ id: string; imageId: string }> },

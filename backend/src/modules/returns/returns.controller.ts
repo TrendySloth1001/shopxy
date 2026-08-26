@@ -26,10 +26,6 @@ const submitSchema = z.object({
 });
 
 const decisionSchema = z.object({ note: z.string().max(500).optional() });
-// Refunds always go back to the customer's original payment instrument now —
-// there is no method choice (wallet/store-credit was removed as it's illegal
-// for an online payment). `method` is accepted-but-ignored for back-compat with
-// older clients that still send it.
 const refundSchema = z.object({
   method: z.string().optional(),
   note: z.string().max(500).optional(),
@@ -53,9 +49,6 @@ function parseId(raw: string): number | null {
 }
 
 export class ReturnsController {
-  // ── Customer ──────────────────────────────────────────────────────
-
-  /// POST /me/orders/:parentId/returns
   async submit(req: Request, res: Response): Promise<void> {
     const parentId = parseId(req.params.parentId);
     if (!parentId) { res.status(400).json({ error: 'Invalid id' }); return; }
@@ -122,8 +115,6 @@ export class ReturnsController {
     }
     res.status(204).send();
   }
-
-  // ── Merchant ──────────────────────────────────────────────────────
 
   async listMerchant(req: Request, res: Response): Promise<void> {
     const shopId = req.user?.shopId;
@@ -254,9 +245,6 @@ export class ReturnsController {
     }
     const row = await returnsService.getForMerchant({ shopId, id });
     if (row) {
-      // A COD/never-captured order has no online payment to reverse — the
-      // merchant settles that offline, so don't promise the customer a gateway
-      // refund that isn't coming. Online orders get the refund-to-source notice.
       const refunded = result.refundStatus === 'REFUNDED';
       void notificationsService
         .create({

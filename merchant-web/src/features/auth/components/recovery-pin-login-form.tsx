@@ -8,12 +8,6 @@ import { Field } from "./field";
 import { SubmitButton } from "./submit-button";
 import { AuthErrorBanner } from "./auth-shell";
 
-/**
- * Fallback sign-in for Google-only accounts when Google itself isn't
- * reachable. Doesn't collect a TOTP code — an account with both a
- * recovery PIN and 2FA enabled hitting this exact path is a narrow edge
- * case not covered in this pass (see PENDING.md).
- */
 export function RecoveryPinLoginForm() {
   const { loginWithRecoveryPin, status } = useAuth();
   const router = useRouter();

@@ -3,17 +3,6 @@ import { getRedis, redisAvailable } from '../../infra/redis.js';
 import { logger } from '../../shared/logging/logger.js';
 import { sendMail, mailerEnabled } from '../../infra/mailer.js';
 
-/**
- * Email-OTP verification for **first-time registration**. The signup is held in
- * Redis (never the DB) until the emailed 6-digit code is confirmed, so an
- * unverified attempt leaves **no `User` row** — no stale/unverified accounts
- * accumulate.
- *
- * Degradation: if Redis or the mailer isn't available we can't run the OTP
- * step. Callers treat {@link canVerifyEmail} `=== false` as "fall back to
- * direct account creation" rather than blocking signups on an infra outage.
- */
-
 export interface PendingRegistration {
   name: string;
   email: string;
@@ -24,8 +13,8 @@ export interface PendingRegistration {
   attempts: number;
 }
 
-const TTL_S = 15 * 60; // pending signup + OTP validity
-const MAX_ATTEMPTS = 5; // wrong-code tries before the pending signup is dropped
+const TTL_S = 15 * 60;
+const MAX_ATTEMPTS = 5;
 const RESEND_COOLDOWN_S = 30;
 
 const key = (email: string) => `pendreg:${createHash('sha256').update(email).digest('hex')}`;
@@ -35,21 +24,16 @@ function hashOtp(otp: string): string {
   return createHash('sha256').update(otp).digest('hex');
 }
 
-/** A fresh 6-digit numeric code (cryptographically random, zero-padded). */
 export function generateOtp(): string {
   return randomInt(0, 1_000_000).toString().padStart(6, '0');
 }
 
-/** Whether the OTP flow can run at all (both Redis and a mail transport up). */
 export function canVerifyEmail(): boolean {
   return redisAvailable() && mailerEnabled();
 }
 
-/** Send the code. Returns false if it couldn't be delivered. */
 export async function sendOtpEmail(email: string, name: string, otp: string): Promise<boolean> {
   return sendMail({
-    // The one mail that always sends (subject to the mailer being configured),
-    // regardless of MAIL_NOTIFICATIONS_ENABLED — signup can't complete without it.
     category: 'otp',
     to: email,
     subject: `${otp} is your ShopXY verification code`,
@@ -65,7 +49,6 @@ export async function sendOtpEmail(email: string, name: string, otp: string): Pr
   });
 }
 
-/** Persist (or replace) the pending signup, hashing the OTP for storage. */
 export async function putPending(
   p: Omit<PendingRegistration, 'attempts' | 'otpHash'>,
   otp: string,
@@ -85,11 +68,6 @@ export async function dropPending(email: string): Promise<void> {
   await getRedis().del(key(email));
 }
 
-/**
- * Check a submitted code against the pending signup. On success the pending
- * record is returned (caller finalizes + drops it). On failure the attempt is
- * counted; too many wrong tries drop the record.
- */
 export async function verifyOtp(
   email: string,
   otp: string,
@@ -104,7 +82,6 @@ export async function verifyOtp(
     return { ok: false, reason: 'too_many' };
   }
   if (hashOtp(otp.trim()) !== pending.otpHash) {
-    // Count the miss; preserve the remaining TTL so the window doesn't reset.
     const r = getRedis();
     const ttl = await r.ttl(key(email));
     pending.attempts += 1;
@@ -114,7 +91,6 @@ export async function verifyOtp(
   return { ok: true, pending };
 }
 
-/** Rate-limit resends (returns remaining cooldown seconds, 0 = allowed). */
 export async function resendCooldownRemaining(email: string): Promise<number> {
   if (!redisAvailable()) return 0;
   const ttl = await getRedis().ttl(cooldownKey(email));

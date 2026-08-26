@@ -18,7 +18,6 @@ function fmtDay(key: string): string {
   return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
 
-// Distinct token colours for each payment mode line.
 const MODE_COLOR: Record<string, { stroke: string; dot: string }> = {
   UPI: { stroke: "text-accent-teal", dot: "bg-accent-teal" },
   CASH: { stroke: "text-success", dot: "bg-success" },
@@ -30,11 +29,6 @@ const MODE_COLOR: Record<string, { stroke: string; dot: string }> = {
 const MODE_FALLBACK = { stroke: "text-subtle", dot: "bg-subtle" };
 const titleCase = (m: string) => m.charAt(0) + m.slice(1).toLowerCase();
 
-/**
- * Sales trend with comparison lines (previous period, purchases, returns) and a
- * line per payment mode (cash / UPI / card …). Sales + the payment-mode lines
- * show by default; the comparison lines start hidden and can be toggled on.
- */
 export function TrendCard({ trend, className = "" }: { trend: DashboardTrend; className?: string }) {
   const t = useTranslations("dashboard");
   const labels = trend.labels.map(fmtDay);
@@ -48,7 +42,6 @@ export function TrendCard({ trend, className = "" }: { trend: DashboardTrend; cl
     }),
   ];
 
-  // Comparison lines — included but hidden by default (toggle on demand).
   const comparisons: TrendSeries[] = [];
   if (trend.previous.some((v) => v !== 0))
     comparisons.push({ key: "previous", label: t("trend.previous"), stroke: "text-subtle", dot: "bg-subtle", values: trend.previous });
@@ -81,7 +74,6 @@ export function TrendCard({ trend, className = "" }: { trend: DashboardTrend; cl
         />
       </div>
 
-      {/* Screen-reader data-table fallback for the chart. */}
       <table className="sr-only">
         <caption>{t("trend.tableCaption")}</caption>
         <thead>

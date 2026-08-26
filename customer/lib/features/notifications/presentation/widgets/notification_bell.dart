@@ -8,10 +8,6 @@ import 'package:shopxy_customer/shared/theme/app_colors.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 
-/// AppBar action that opens the notifications inbox and surfaces a
-/// small unread badge on the bell glyph. For guests the bell still
-/// renders (the icon is part of the home top bar's visual rhythm) but
-/// tapping it prompts sign-in instead of opening the empty inbox.
 class NotificationBell extends StatelessWidget {
   const NotificationBell({super.key});
 

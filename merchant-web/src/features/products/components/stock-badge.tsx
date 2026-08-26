@@ -3,7 +3,6 @@ import type { Product } from "../schema";
 import { qty, stockState } from "../format";
 import { unitLabel } from "../units";
 
-/** Compact stock indicator — soft fill, no border (house style). */
 export function StockBadge({ product }: { product: Product }) {
   const t = useTranslations("products");
   const state = stockState(product);

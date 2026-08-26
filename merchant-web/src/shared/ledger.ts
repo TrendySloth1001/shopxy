@@ -1,10 +1,5 @@
 import { z } from "zod";
 
-/**
- * Ledger shapes shared by the vendor + party detail pages. Both
- * `/vendors/:id/ledger` and `/parties/:id/ledger` return the same
- * interleaved invoice/payment timeline with a server-computed running balance.
- */
 export const ledgerEntrySchema = z
   .object({
     kind: z.enum(["invoice", "payment"]),

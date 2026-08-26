@@ -3,11 +3,6 @@ import 'package:http/http.dart' as http;
 import 'package:shopxy/core/network/api_client.dart';
 import 'package:shopxy/features/quotations/domain/entities/quotation.dart';
 
-/// Merchant-side quotation endpoints:
-///   POST /quotations            — build + send to a linked party
-///   GET  /quotations?status=    — list
-///   GET  /quotations/:id        — detail
-///   POST /quotations/:id/cancel — cancel a pending one
 class QuotationsRemoteDataSource {
   const QuotationsRemoteDataSource(this._client);
   final ApiClient _client;
@@ -25,8 +20,6 @@ class QuotationsRemoteDataSource {
     final res = await _client.get('/quotations', queryParameters: {
       'limit': '50',
       'status': ?status,
-      // The "Archived" view. Archived quotations are out of every other
-      // merchant list — that's the point of archiving.
       if (archived) 'archived': 'true',
     });
     if (res.statusCode != 200) {
@@ -38,8 +31,6 @@ class QuotationsRemoteDataSource {
         .toList();
   }
 
-  /// [items] is a list of {productId, name, sku?, quantity, unitPrice,
-  /// taxPercent?, discount?}.
   Future<Quotation> create({
     required String partyId,
     required List<Map<String, dynamic>> items,
@@ -59,8 +50,6 @@ class QuotationsRemoteDataSource {
     return Quotation.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  /// Full detail (with line items) for one quotation — used by the pricing
-  /// calculator to load a saved quote back into the basket.
   Future<Quotation> get(String id) async {
     final res = await _client.get('/quotations/$id');
     if (res.statusCode != 200) {
@@ -77,10 +66,6 @@ class QuotationsRemoteDataSource {
     return Quotation.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  /// File a settled quotation out of the merchant's working list, or bring it
-  /// back. There is no delete endpoint — the quotation number is a per-shop
-  /// serial allocated at create time. The backend refuses to archive one the
-  /// customer can still act on (REQUESTED / PENDING).
   Future<Quotation> setArchived(String id, bool archived) async {
     final res = await _client.post(
       '/quotations/$id/${archived ? 'archive' : 'unarchive'}',
@@ -91,7 +76,6 @@ class QuotationsRemoteDataSource {
     return Quotation.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  /// Price a customer's REQUESTED quote and send it back (→ PENDING).
   Future<Quotation> respond(
     String id, {
     required List<Map<String, dynamic>> items,
@@ -110,12 +94,10 @@ class QuotationsRemoteDataSource {
     return Quotation.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  /// Raw PDF response for a quotation (caller uses `response.bodyBytes`).
   Future<http.Response> downloadPdf(String id) {
     return _client.get('/quotations/$id/pdf');
   }
 
-  /// Decline a customer's REQUESTED quote.
   Future<Quotation> declineRequest(String id, {String? declineNote}) async {
     final res = await _client.post('/quotations/$id/decline-request', body: {
       if (declineNote != null && declineNote.isNotEmpty)

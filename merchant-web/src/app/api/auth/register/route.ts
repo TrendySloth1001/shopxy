@@ -10,10 +10,6 @@ import {
   setSessionCookies,
 } from "@/server/auth/session";
 
-// POST /api/auth/register — merchant signup. Creates a shopless OWNER account
-// on the backend (the shop is named later via the onboarding screen, or the
-// account joins a team if a matching invite is pending), then persists the
-// session as httpOnly cookies. Consent literals are forwarded as required.
 export async function POST(req: Request) {
   const json = await req.json().catch(() => null);
   const parsed = registerWireSchema.safeParse(json);
@@ -35,10 +31,6 @@ export async function POST(req: Request) {
     }),
   });
   if (!res.ok) {
-    // 503 = the OTP infra is down, so the backend refused to create an
-    // unverified account. Its body carries friendly copy in `message`;
-    // `extractError` would surface the raw `verification_unavailable`
-    // sentinel instead, which means nothing to a merchant.
     if (res.status === 503) {
       const body = (await res.json().catch(() => null)) as { message?: string } | null;
       return NextResponse.json(
@@ -57,8 +49,6 @@ export async function POST(req: Request) {
   }
 
   const payload: unknown = await res.json();
-  // Email-OTP gate: the backend emailed a code and created no account yet.
-  // Forward the pending state so the client collects the OTP (no cookies set).
   if (
     payload &&
     typeof payload === "object" &&
@@ -71,8 +61,6 @@ export async function POST(req: Request) {
     );
   }
 
-  // Direct sign-in. Only reachable on a dev backend running with
-  // ALLOW_UNVERIFIED_SIGNUP — production always returns `pending` or 503.
   const result = authResultSchema.safeParse(payload);
   if (!result.success) {
     return NextResponse.json(

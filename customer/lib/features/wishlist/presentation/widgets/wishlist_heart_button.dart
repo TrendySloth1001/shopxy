@@ -10,16 +10,6 @@ import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 import 'package:shopxy_customer/shared/constants/app_curves.dart';
 
-/// Heart toggle for product cards + detail pages. Animates the icon
-/// crossfade when the saved-state flips. Optimistic — taps update
-/// [WishlistProvider] immediately; failures roll back and surface a
-/// snackbar.
-///
-/// Two variants:
-///   * default — 32dp tap target with a soft circle background.
-///     Use on cards/lists where the heart sits over imagery.
-///   * `.flat` — no background, smaller hit area. Use in app bar
-///     actions or inline rows.
 class WishlistHeartButton extends StatelessWidget {
   const WishlistHeartButton({
     super.key,

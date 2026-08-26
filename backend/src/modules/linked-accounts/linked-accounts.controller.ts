@@ -1,15 +1,8 @@
-/**
- * Merchant-facing onboarding endpoints. Shop comes from req.shopId (set by the
- * ownerOnly + resolveShop middleware), never the body — a merchant can only
- * onboard their own shop.
- */
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { linkedAccountsService } from './linked-accounts.service.js';
 
-// PAN: 5 letters, 4 digits, 1 letter (e.g. AAACL1234C).
 const PAN = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
-// GST: 2-digit state code + 10-char PAN-of-entity + entity/Z/checksum.
 const GST = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][0-9A-Z][Z][0-9A-Z]$/;
 
 const startSchema = z.object({
@@ -21,7 +14,6 @@ const startSchema = z.object({
   contactName: z.string().min(1).max(120),
   category: z.string().min(1).max(40),
   subcategory: z.string().min(1).max(40).optional(),
-  // KYC identity — forwarded to Razorpay (legal_info), never stored by us.
   pan: z.string().trim().toUpperCase().pipe(z.string().regex(PAN, 'invalid PAN')),
   gst: z
     .string()
@@ -29,7 +21,6 @@ const startSchema = z.object({
     .toUpperCase()
     .pipe(z.string().regex(GST, 'invalid GST'))
     .optional(),
-  // Registered business address (profile.addresses.registered).
   registeredAddress: z.object({
     street1: z.string().min(1).max(255),
     street2: z.string().min(1).max(255).optional(),
@@ -38,19 +29,16 @@ const startSchema = z.object({
     postalCode: z.string().regex(/^\d{6}$/, 'invalid PIN code'),
     country: z.string().length(2).default('IN'),
   }),
-  // Settlement bank account — forwarded to Razorpay, never stored by us.
   beneficiaryName: z.string().min(1).max(120),
   bankAccountNumber: z.string().min(6).max(20).regex(/^\d+$/, 'digits only'),
   bankIfsc: z.string().regex(/^[A-Z]{4}0[A-Z0-9]{6}$/, 'invalid IFSC'),
 });
 
-// Connect an existing Razorpay linked account by id (skip the wizard).
 const connectSchema = z.object({
   accountId: z.string().trim().regex(/^acc_[A-Za-z0-9]+$/, 'invalid account id'),
 });
 
 export const linkedAccountsController = {
-  /** POST /linked-account — start (or resume) KYC onboarding for the shop. */
   async start(req: Request, res: Response): Promise<void> {
     const shopId = req.shopId;
     if (shopId == null) {
@@ -70,7 +58,6 @@ export const linkedAccountsController = {
     res.status(201).json(result.account);
   },
 
-  /** POST /linked-account/connect — verify an existing acc_XXXX (fetch + show). */
   async connectVerify(req: Request, res: Response): Promise<void> {
     if (req.shopId == null) {
       res.status(403).json({ error: 'No shop linked to this account.' });
@@ -96,7 +83,6 @@ export const linkedAccountsController = {
     res.json(result.details);
   },
 
-  /** POST /linked-account/connect/confirm — store the verified account. */
   async connectConfirm(req: Request, res: Response): Promise<void> {
     if (req.shopId == null) {
       res.status(403).json({ error: 'No shop linked to this account.' });
@@ -122,7 +108,6 @@ export const linkedAccountsController = {
     res.status(201).json(result.account);
   },
 
-  /** GET /linked-account — current KYC status (set ?refresh=1 to re-poll). */
   async status(req: Request, res: Response): Promise<void> {
     const shopId = req.shopId;
     if (shopId == null) {

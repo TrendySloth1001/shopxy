@@ -8,12 +8,6 @@ import 'package:shopxy/shared/theme/app_shapes.dart';
 import 'package:shopxy/core/icons/app_icons.dart';
 import 'package:shopxy/core/icons/app_icon.dart';
 
-/// Shared dashboard primitives — formatters, responsive breakpoints, the
-/// editorial card chrome, section headers and the delta chip. Mirrors
-/// `merchant-web/src/features/dashboard/components/ui.tsx`.
-
-// ── Formatters ────────────────────────────────────────────────────────
-
 final NumberFormat inr = NumberFormat.currency(
   locale: 'en_IN',
   symbol: '₹',
@@ -28,8 +22,6 @@ final NumberFormat inrCompact = NumberFormat.compactCurrency(
 
 const tabularFigures = [FontFeature.tabularFigures()];
 
-// ── Responsive breakpoints (mirror Tailwind) ──────────────────────────
-
 class Bp {
   Bp._();
   static const double sm = 640;
@@ -38,8 +30,6 @@ class Bp {
   static const double xl = 1280;
 }
 
-/// Resolve a column count for [width] using the same prefixes the web grids
-/// use. Each tier defaults to the previous one when omitted.
 int responsiveCols(
   double width, {
   required int base,
@@ -53,8 +43,6 @@ int responsiveCols(
   return base;
 }
 
-/// A responsive grid that lays children out in [columns] equal-width cells
-/// with [gap] spacing — the Flutter equivalent of `grid grid-cols-N gap-md`.
 class ResponsiveGrid extends StatelessWidget {
   const ResponsiveGrid({
     super.key,
@@ -68,8 +56,6 @@ class ResponsiveGrid extends StatelessWidget {
   final List<Widget> children;
   final double gap;
 
-  /// When set, every cell is forced to this width:height ratio. When null,
-  /// rows size to their tallest child (via IntrinsicHeight).
   final double? childAspectRatio;
 
   @override
@@ -111,13 +97,8 @@ class ResponsiveGrid extends StatelessWidget {
   }
 }
 
-// ── Text styles (token-mapped) ────────────────────────────────────────
-
 class DashText {
   DashText._();
-  // Getters, not `static final`: AppColors.* are theme-aware getters, and a
-  // cached `final` would freeze the ink colour at first access so dashboard
-  // text wouldn't flip in dark/OLED. Re-resolving per access keeps them themed.
   static TextStyle get labelMd => TextStyle(
     fontSize: 12,
     fontWeight: FontWeight.w600,
@@ -150,8 +131,6 @@ class DashText {
   static TextStyle get bodySm =>
       TextStyle(fontSize: 12.5, height: 1.35, color: AppColors.muted);
 }
-
-// ── Card chrome (hairline border on canvas) ───────────────────────────
 
 class DashCard extends StatelessWidget {
   const DashCard({
@@ -189,7 +168,6 @@ class DashCard extends StatelessWidget {
   }
 }
 
-/// Small uppercase section eyebrow.
 class Eyebrow extends StatelessWidget {
   const Eyebrow(this.text, {super.key});
   final String text;
@@ -200,8 +178,6 @@ class Eyebrow extends StatelessWidget {
   }
 }
 
-/// A labelled section: uppercase heading with an optional trailing action,
-/// then the body below.
 class DashSection extends StatelessWidget {
   const DashSection({
     super.key,
@@ -245,8 +221,6 @@ class DashSection extends StatelessWidget {
   }
 }
 
-/// Period-over-period delta chip — colour paired with an arrow + sign (never
-/// colour alone). A null delta (no prior base) renders a neutral "New" chip.
 class DeltaChip extends StatelessWidget {
   const DeltaChip({super.key, required this.value});
   final int? value;
@@ -316,14 +290,11 @@ class DeltaChip extends StatelessWidget {
   }
 }
 
-/// Navigate to a page (the Flutter equivalent of the web `<Link href>`).
 void dashPush(BuildContext context, Widget page) {
   Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
 }
 
-/// Round qty for display (integers drop the decimals).
 String fmtQty(double q) =>
     q.truncateToDouble() == q ? q.toStringAsFixed(0) : q.toStringAsFixed(2);
 
-/// Pull a usable display name from a period's enum.
 String periodLabel(DashboardPeriod p) => p.label;

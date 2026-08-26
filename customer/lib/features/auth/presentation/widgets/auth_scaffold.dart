@@ -8,10 +8,6 @@ import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
-/// Immersive auth layout: a full-bleed photo hero with the brand mark +
-/// tagline overlaid, and a white rounded sheet floating up over it that
-/// holds the form. The sheet scrolls (and the bottom inset is reserved)
-/// so fields stay reachable with the keyboard open.
 class AuthScaffold extends StatelessWidget {
   const AuthScaffold({
     super.key,
@@ -38,12 +34,8 @@ class AuthScaffold extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.black,
       body: Stack(
-        // Expand to fill the screen — all children are Positioned, so
-        // without this the Stack would collapse to nothing and the
-        // bottom-anchored sheet would have no height.
         fit: StackFit.expand,
         children: [
-          // Hero pinned at the top — doesn't move when the keyboard opens.
           Positioned(
             top: 0,
             left: 0,
@@ -51,7 +43,6 @@ class AuthScaffold extends StatelessWidget {
             height: heroHeight + 40,
             child: _HeroArt(imageUrl: heroImageUrl, tagline: heroTagline),
           ),
-          // Floating sheet with the form, overlapping the hero's bottom.
           Positioned(
             top: heroHeight - 26,
             left: 0,
@@ -110,8 +101,6 @@ class AuthScaffold extends StatelessWidget {
   }
 }
 
-/// Full-bleed image + scrim + brand mark and tagline. Private to the
-/// auth scaffold.
 class _HeroArt extends StatelessWidget {
   const _HeroArt({required this.imageUrl, required this.tagline});
   final String imageUrl;
@@ -138,8 +127,6 @@ class _HeroArt extends StatelessWidget {
             ),
           ),
         ),
-        // Lifted clear of the floating sheet (which overlaps the hero's
-        // bottom ~66px) so the tagline isn't clipped.
         Positioned(
           left: AppSizes.xl,
           right: AppSizes.xl,
@@ -203,15 +190,12 @@ class _HeroArt extends StatelessWidget {
   }
 }
 
-/// White "Skip" pill over the dark hero — wraps the shared skip-to-guest
-/// confirmation flow so dismissals stay informed.
 class _WhiteSkip extends StatelessWidget {
   const _WhiteSkip();
 
   @override
   Widget build(BuildContext context) {
     return Theme(
-      // SkipToGuestButton uses muted ink; on the dark hero we want white.
       data: Theme.of(context).copyWith(
         textButtonTheme: TextButtonThemeData(
           style: TextButton.styleFrom(
@@ -225,8 +209,6 @@ class _WhiteSkip extends StatelessWidget {
   }
 }
 
-/// Soft, filled form field for the auth sheets — canvas fill so it reads
-/// against the white sheet, optional leading icon and obscure toggle.
 class AuthField extends StatelessWidget {
   const AuthField({
     super.key,
@@ -292,7 +274,6 @@ class AuthField extends StatelessWidget {
   }
 }
 
-/// Inline error banner for failed sign-in / sign-up attempts.
 class AuthErrorBanner extends StatelessWidget {
   const AuthErrorBanner({super.key, required this.message});
   final String message;

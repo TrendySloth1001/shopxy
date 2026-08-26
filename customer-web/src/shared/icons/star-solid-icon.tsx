@@ -1,8 +1,3 @@
-/**
- * Solid (filled) star, used for the compact rating badge on product cards.
- * lucide's `Star` is an outline glyph, so this filled variant lives here in the
- * single icon source rather than being hand-written inline in a component.
- */
 export function StarSolidIcon({
   size = 9,
   className,

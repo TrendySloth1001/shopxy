@@ -5,10 +5,6 @@ import 'package:shopxy/features/invoices/data/models/invoice_dto.dart';
 import 'package:shopxy/features/invoices/domain/entities/invoice.dart';
 import 'package:shopxy/features/invoices/domain/entities/recipient_details.dart';
 
-/// Outcome of POST /invoices when the caller asked for a one-shot
-/// create + confirm. The invoice always exists (we never roll the
-/// create back on a confirm failure); the confirm bits tell the UI
-/// whether stock posted or the merchant needs to resolve a shortfall.
 class CreateInvoiceResult {
   const CreateInvoiceResult({
     required this.invoice,
@@ -22,9 +18,6 @@ class CreateInvoiceResult {
   final String? shortfallProductId;
 }
 
-/// One page of the invoice list plus enough pagination context for the
-/// caller to know whether to fetch the next page. `hasMore` is derived
-/// from the server's `pagination.page < pagination.totalPages`.
 class InvoicesPage {
   const InvoicesPage({required this.items, required this.hasMore});
   final List<Invoice> items;
@@ -35,8 +28,6 @@ class InvoicesRemoteDataSource {
   const InvoicesRemoteDataSource(this._client);
   final ApiClient _client;
 
-  /// Paginated fetch. Returns the page's items plus `hasMore` so the
-  /// provider can drive infinite scroll. The backend caps `limit` at 100.
   Future<InvoicesPage> getInvoicesPage({
     String? type,
     String? status,
@@ -46,8 +37,6 @@ class InvoicesRemoteDataSource {
     String? search,
     DateTime? dateFrom,
     DateTime? dateTo,
-    /// The "Archived" view. Archived documents are out of every other list —
-    /// that's the point of archiving.
     bool archived = false,
     int page = 1,
     int limit = 20,
@@ -77,9 +66,6 @@ class InvoicesRemoteDataSource {
     return InvoicesPage(items: items, hasMore: currentPage < totalPages);
   }
 
-  /// Convenience wrapper that returns just the items of a single page.
-  /// Used by callers that only want a bounded slice (e.g. the product
-  /// page's open-drafts callout) and don't paginate.
   Future<List<Invoice>> getInvoices({
     String? type,
     String? status,
@@ -109,11 +95,6 @@ class InvoicesRemoteDataSource {
     return InvoiceDto.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  /// Returns the freshly-created invoice plus the result of the
-  /// optional auto-confirm. `confirmed` is true when the server ran
-  /// updateStatus inline successfully; `confirmError` carries the
-  /// server-side reason (e.g. insufficient stock) when the create
-  /// landed as a draft but the confirm step failed.
   Future<CreateInvoiceResult> createInvoice({
     required String type,
     String? vendorId,
@@ -163,9 +144,6 @@ class InvoicesRemoteDataSource {
     );
   }
 
-  /// Replace the contents of a DRAFT invoice. Backend rejects non-draft
-  /// invoices; reuses the create payload shape so the only call-site
-  /// difference is the HTTP verb.
   Future<Invoice> updateInvoice({
     required String id,
     required String type,
@@ -217,9 +195,6 @@ class InvoicesRemoteDataSource {
     return InvoiceDto.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  /// Convert an ESTIMATE / PROFORMA quotation into a real TAX_INVOICE.
-  /// Backend mints a brand new invoice (new number, new id) from the
-  /// source's items; the source row is left untouched.
   Future<Invoice> convertEstimate(String id) async {
     final res = await _client.post('/invoices/$id/convert');
     if (res.statusCode != 201) {
@@ -229,12 +204,6 @@ class InvoicesRemoteDataSource {
     return InvoiceDto.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  /// Raise a credit or debit note against a CONFIRMED sale invoice
-  /// (POST /invoices/:id/notes). [lines] carry `{productId, quantity}` and,
-  /// for debit notes, `unitPrice` (the supplementary amount per unit). A
-  /// credit note reverses the original price and — unless [restock] is false —
-  /// puts the goods back on the shelf; a debit note adds value only. Returns
-  /// the freshly-minted note's id / number / total for the confirmation toast.
   Future<({String id, String invoiceNo, double total})> issueNote(
     String originalInvoiceId, {
     required String documentType,
@@ -263,10 +232,6 @@ class InvoicesRemoteDataSource {
     );
   }
 
-  /// File a DRAFT or CANCELLED document out of the working list, or bring it
-  /// back. Replaces `deleteInvoice`, which could never succeed: a draft
-  /// already owns its legal serial and Rule 46(b) needs the run consecutive,
-  /// so the row can't go away. Archiving keeps the number allocated.
   Future<Invoice> setArchived(String id, bool archived) async {
     final path = archived ? 'archive' : 'unarchive';
     final res = await _client.post('/invoices/$id/$path');
@@ -277,11 +242,6 @@ class InvoicesRemoteDataSource {
     return InvoiceDto.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  /// Returns the raw HTTP response so the caller can read [bodyBytes]
-  /// (PDF binary). Goes through [ApiClient.get] so the auth header is
-  /// attached — calling [http.get] directly here hit the `ownerOnly`
-  /// middleware and returned 401, which surfaced as "Failed to generate
-  /// PDF" in the UI.
   Future<http.Response> downloadPdf(String id) {
     return _client.get('/invoices/$id/pdf');
   }

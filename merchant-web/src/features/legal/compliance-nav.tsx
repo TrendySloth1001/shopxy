@@ -12,11 +12,6 @@ const ITEMS = [
   ...SECTIONS.map((s) => ({ href: `${BASE}/${s.id}`, labelKey: `compliance.${s.key}.nav` })),
 ];
 
-/**
- * Docs sidebar. On large screens it's a sticky vertical list on the left; on
- * phones it collapses to a horizontally-scrolling chip row above the content.
- * The active topic is highlighted via the current pathname.
- */
 export function ComplianceNav() {
   const pathname = usePathname();
   const t = useTranslations("legal");

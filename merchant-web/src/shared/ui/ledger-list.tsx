@@ -6,11 +6,6 @@ import { formatDateTime } from "@/shared/datetime";
 import { formatINR2 } from "@/shared/money";
 import type { LedgerEntry } from "@/shared/ledger";
 
-/**
- * Renders an interleaved invoice/payment ledger. Invoices add to the balance
- * (debit column, error tone); payments reduce it (credit column, success tone).
- * Each row shows the running balance — shared by vendor + party detail pages.
- */
 export function LedgerList({ entries }: { entries: LedgerEntry[] }) {
   const t = useTranslations("common");
   if (entries.length === 0) {

@@ -8,7 +8,6 @@ import { SubmitButton } from "./submit-button";
 import { Banner } from "./banner";
 import { AvatarPicker } from "./avatar-picker";
 
-/** Customer profile: name, contact phone, and email-notification preference. */
 export function ProfileForm() {
   const { user, updateProfile } = useAuth();
   const [name, setName] = useState(user?.name ?? "");

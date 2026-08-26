@@ -81,7 +81,6 @@ describe('trending — recomputeWindow + listTrending', () => {
     try {
       const pBuy = await makePublishedProduct(user.shopId);
       const pTap = await makePublishedProduct(user.shopId);
-      // 1 PURCHASE = 10 points; 5 TAPs = 1.5 points
       await seedEvent({ productId: pBuy.id, userId: user.userId, type: 'PURCHASE' });
       for (let i = 0; i < 5; i++) {
         await seedEvent({ productId: pTap.id, userId: user.userId, type: 'TAP' });
@@ -91,7 +90,7 @@ describe('trending — recomputeWindow + listTrending', () => {
       const buyIdx = rows.findIndex((r) => r.product.id === pBuy.id);
       const tapIdx = rows.findIndex((r) => r.product.id === pTap.id);
       expect(buyIdx).toBeGreaterThanOrEqual(0);
-      expect(tapIdx).toBeGreaterThan(buyIdx); // tap comes after purchase
+      expect(tapIdx).toBeGreaterThan(buyIdx);
     } finally {
       await prisma.productEvent.deleteMany({ where: { userId: user.userId } });
       await cleanupTestUser(user);
@@ -193,14 +192,8 @@ describe('trending — recommendations', () => {
       const pLikedB = await makePublishedProduct(merchant.shopId, liked.id);
       const pIgnored = await makePublishedProduct(merchant.shopId, ignored.id);
 
-      // Customer views products in the liked category — both surface
-      // as candidates. They've also already purchased pLikedA.
       await seedEvent({ productId: pLikedA.id, userId: customer.userId, type: 'VIEW' });
       await seedEvent({ productId: pLikedB.id, userId: customer.userId, type: 'VIEW' });
-      // Equal popularity for the two liked products so the purchase
-      // penalty (applied only to pLikedA after the test buys it) is
-      // what differentiates them. The ignored category gets its own
-      // events so trending has rows there too.
       for (let i = 0; i < 5; i++) {
         await seedEvent({ productId: pLikedA.id, userId: merchant.userId, type: 'TAP' });
         await seedEvent({ productId: pLikedB.id, userId: merchant.userId, type: 'TAP' });
@@ -208,7 +201,6 @@ describe('trending — recommendations', () => {
       await seedEvent({ productId: pIgnored.id, userId: merchant.userId, type: 'PURCHASE' });
       await trendingService.recomputeWindow();
 
-      // Mark pLikedA as already-purchased by the customer.
       await recordTestPurchase({
         shopId: merchant.shopId,
         buyerUserId: customer.userId,
@@ -221,11 +213,7 @@ describe('trending — recommendations', () => {
       const cache = await prisma.recommendationCache.findUniqueOrThrow({
         where: { userId_slot: { userId: customer.userId, slot: 'for_you' } },
       });
-      // Recs are pulled from the liked-category trending bucket, so
-      // ignored category never makes it in.
       expect(cache.productIds).not.toContain(pIgnored.id);
-      // Within the liked bucket, the not-yet-purchased product
-      // should outrank the already-purchased one (penalty applied).
       const aIdx = cache.productIds.indexOf(pLikedA.id);
       const bIdx = cache.productIds.indexOf(pLikedB.id);
       expect(bIdx).toBeGreaterThanOrEqual(0);

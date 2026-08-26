@@ -3,25 +3,8 @@ import crypto from 'crypto';
 import prisma from '../../src/infra/db/prisma.js';
 import { authService } from '../../src/modules/auth/auth.service.js';
 
-/// A password signup must be verified by an emailed OTP before the account
-/// exists. This used to be best-effort: `register` fell through to creating
-/// the account directly whenever the OTP infra was unavailable, so production
-/// — which had no mail transport configured at all — created every account
-/// unverified, silently and with no error to notice.
-///
-/// The fallback is gone. These tests pin the two halves of that:
-///   (a) with verification unavailable, signup FAILS and writes no User row;
-///   (b) the dev escape hatch that keeps local/CI usable is refused when
-///       NODE_ENV=production, so it can't quietly restore the old behaviour.
-///
-/// Google SSO is deliberately out of scope — it never reaches `register`
-/// (see `authService.googleAuth`), because Google has already proven the
-/// address.
-
 describe('signup — the email-OTP gate is mandatory', () => {
   const created: number[] = [];
-  /// vitest.config.ts turns the escape hatch ON for the suite; these tests
-  /// need it OFF to see the real behaviour, so each one restores it.
   const original = process.env.ALLOW_UNVERIFIED_SIGNUP;
 
   beforeEach(() => {
@@ -54,8 +37,6 @@ describe('signup — the email-OTP gate is mandatory', () => {
     expect('error' in result).toBe(true);
     if ('error' in result) expect(result.error).toBe('verification_unavailable');
 
-    // The part that actually matters: no account was left behind. A failed
-    // signup that still creates a row is the bug this replaces.
     const user = await prisma.user.findUnique({ where: { email } });
     expect(user).toBeNull();
   });

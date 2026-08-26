@@ -1,13 +1,5 @@
 import { z } from "zod";
 
-/**
- * Payment shapes, mirroring the backend `payments` module (`/payments`).
- * A RECEIPT is money in from a party (against a SALE invoice); a PAYMENT is
- * money out to a vendor (against a PURCHASE invoice). Amounts are rupees
- * (Decimal serialised as a number), not paise. Voided payments carry
- * `voidedAt` and are excluded from balances by the backend.
- */
-
 export const PAYMENT_MODES = ["CASH", "UPI", "NEFT", "RTGS", "CHEQUE", "CARD", "OTHER"] as const;
 export type PaymentMode = (typeof PAYMENT_MODES)[number];
 

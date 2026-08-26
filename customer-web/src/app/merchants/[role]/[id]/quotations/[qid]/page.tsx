@@ -25,8 +25,6 @@ import { formatINR } from "@/shared/format";
 import { formatDateTime } from "@/shared/datetime";
 import { BackButton } from "@/shared/ui/back-button";
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
-
 function QuotationDetailSkeleton() {
   return (
     <div className="space-y-xl px-lg sm:px-0">
@@ -60,8 +58,6 @@ function QuotationDetailSkeleton() {
     </div>
   );
 }
-
-// ─── Confirm dialog ──────────────────────────────────────────────────────────
 
 function AcceptDialog({
   quotation,
@@ -178,8 +174,6 @@ function WithdrawDialog({
   );
 }
 
-// ─── Detail content ───────────────────────────────────────────────────────────
-
 function QuotationDetailView({
   quotation,
   partyId,
@@ -207,7 +201,6 @@ function QuotationDetailView({
   const isAccepted = quotation.status === "ACCEPTED";
   const isDeclined = quotation.status === "DECLINED";
 
-  // Status copy
   let statusDesc = "";
   if (isRequested) statusDesc = "Awaiting shop pricing";
   else if (isPending) statusDesc = "Awaiting your response";
@@ -272,13 +265,12 @@ function QuotationDetailView({
     }
   }
 
-  const role = "party"; // quotations are always party
+  const role = "party";
   const pdfUrl = quotationPdfUrl(partyId, quotation.id);
 
   return (
     <>
       <div className="space-y-xl">
-        {/* Status header */}
         <div className="flex items-start justify-between gap-md">
           <div className="space-y-xs flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-sm">
@@ -308,7 +300,6 @@ function QuotationDetailView({
               </p>
             )}
           </div>
-          {/* PDF download */}
           <a
             href={pdfUrl}
             download
@@ -323,7 +314,6 @@ function QuotationDetailView({
 
         <div className="h-px bg-hairline" />
 
-        {/* Items */}
         <div>
           <p className="text-micro font-extrabold tracking-[1.4px] text-muted uppercase mb-xs">
             Items ({quotation.items.length})
@@ -343,7 +333,6 @@ function QuotationDetailView({
                   key={i}
                   className={`flex items-center gap-md py-md ${i > 0 ? "border-t border-hairline" : ""}`}
                 >
-                  {/* Thumbnail */}
                   {imgUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -374,7 +363,6 @@ function QuotationDetailView({
 
         <div className="h-px bg-hairline" />
 
-        {/* Totals */}
         <div className="space-y-xs">
           <div className="flex justify-between py-xs">
             <span className="text-body-sm text-muted">Subtotal</span>
@@ -397,7 +385,6 @@ function QuotationDetailView({
           </div>
         </div>
 
-        {/* Note */}
         {quotation.note && (
           <>
             <div className="h-px bg-hairline" />
@@ -410,14 +397,12 @@ function QuotationDetailView({
           </>
         )}
 
-        {/* Status message */}
         {statusDesc && (
           <p className="text-body-sm text-muted text-center py-md border-t border-hairline">
             {statusDesc}
           </p>
         )}
 
-        {/* Actions bottom bar */}
         {(isRequested || isPending) && (
           <div className="sticky bottom-0 border-t border-hairline bg-white pt-md pb-xl space-y-sm">
             {isRequested && (
@@ -458,7 +443,6 @@ function QuotationDetailView({
         )}
       </div>
 
-      {/* Dialogs */}
       {dialog === "accept" && (
         <AcceptDialog
           quotation={quotation}
@@ -475,7 +459,6 @@ function QuotationDetailView({
 
       <Snackbar snack={snack} />
 
-      {/* Navigate to invoices after accept */}
       {isAccepted && quotation.invoice && (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-hairline bg-white p-lg shadow-floating sm:hidden">
           <button
@@ -489,8 +472,6 @@ function QuotationDetailView({
     </>
   );
 }
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 function QuotationDetailPageContent() {
   const params = useParams<{ role: string; id: string; qid: string }>();

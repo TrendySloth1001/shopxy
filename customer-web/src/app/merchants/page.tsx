@@ -10,8 +10,6 @@ import { fetchLinks, fetchIncomingInvitations } from "@/features/merchants/api";
 import type { Party, Vendor, MerchantRole } from "@/features/merchants/types";
 import { BackButton } from "@/shared/ui/back-button";
 
-// ─── Role filter ─────────────────────────────────────────────────────────────
-
 type RoleFilter = "all" | "party" | "vendor";
 
 type MerchantItem = { item: Party | Vendor; role: MerchantRole };
@@ -53,8 +51,6 @@ function RoleFilterBar({
   );
 }
 
-// ─── Pending invites banner ─────────────────────────────────────────────────
-
 function PendingInvitesBanner({ count }: { count: number }) {
   return (
     <Link
@@ -71,8 +67,6 @@ function PendingInvitesBanner({ count }: { count: number }) {
     </Link>
   );
 }
-
-// ─── Empty state ─────────────────────────────────────────────────────────────
 
 function EmptyState() {
   return (
@@ -98,8 +92,6 @@ function EmptyState() {
   );
 }
 
-// ─── Main content ─────────────────────────────────────────────────────────────
-
 function MerchantsContent() {
   const [items, setItems] = useState<MerchantItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -120,7 +112,6 @@ function MerchantsContent() {
         ...links.parties.map((p) => ({ item: p, role: "party" as MerchantRole })),
         ...links.vendors.map((v) => ({ item: v, role: "vendor" as MerchantRole })),
       ];
-      // Sort: most recently active first, then by name
       list.sort((a, b) => {
         const aDate = a.item.invoices?.[0]?.invoiceDate ?? null;
         const bDate = b.item.invoices?.[0]?.invoiceDate ?? null;
@@ -151,7 +142,6 @@ function MerchantsContent() {
   const visible =
     filter === "all" ? items : items.filter((i) => i.role === filter);
 
-  // ── Error ──────────────────────────────────────────────────────────────
   if (error && items.length === 0) {
     return (
       <div className="mx-auto max-w-content px-lg py-massive text-center">
@@ -191,14 +181,12 @@ function MerchantsContent() {
 
   return (
     <div className="mx-auto max-w-shell px-lg py-md">
-      {/* Pending invites banner */}
       {pendingCount > 0 && (
         <div className="mb-md">
           <PendingInvitesBanner count={pendingCount} />
         </div>
       )}
 
-      {/* Filter chips */}
       {showFilter && (
         <div className="mb-md">
           <RoleFilterBar
@@ -210,7 +198,6 @@ function MerchantsContent() {
         </div>
       )}
 
-      {/* Merchant grid */}
       {visible.length === 0 ? (
         <div className="py-xl text-center">
           <p className="text-body-md font-semibold text-muted">
@@ -228,14 +215,11 @@ function MerchantsContent() {
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
 export default function MerchantsPage() {
   return (
     <RequireAuth>
       <AppHeader />
       <main className="min-h-screen bg-canvas">
-        {/* Page header */}
         <div className="mx-auto max-w-shell border-b border-hairline px-lg py-lg">
           <BackButton fallback="/" className="mb-sm" />
           <p className="text-label-md font-extrabold uppercase tracking-widest text-brand">

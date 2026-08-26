@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 import { recoveryPinSchema } from "@/features/auth/schema";
 import { authedFetch, extractError } from "@/server/auth/session";
 
-// POST /api/auth/recovery-pin — authenticated. Set (or replace) the
-// recovery PIN used to sign in if Google is ever unreachable.
 export async function POST(req: Request) {
   const json = await req.json().catch(() => null);
   const parsed = recoveryPinSchema.safeParse((json as { pin?: unknown } | null)?.pin);

@@ -21,14 +21,6 @@ import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 import 'package:shopxy_customer/shared/theme/app_text_styles.dart';
 
-/// Browse a *single linked shop's* catalogue, build a basket of what the
-/// customer wants, and send it as a QUOTE REQUEST. The shop prices it and
-/// sends back a quotation the customer can then accept (→ confirmed invoice).
-/// This is the customer-initiated mirror of the merchant's quotation builder.
-///
-/// The catalogue is explorable by the merchant's own categories (chips
-/// with live counts) on top of free-text search, so a customer can drill
-/// into "what does this shop sell" instead of scrolling one long list.
 class RequestQuotationPage extends StatefulWidget {
   const RequestQuotationPage({super.key, required this.shop});
   final LinkedShop shop;
@@ -43,14 +35,10 @@ class _RequestQuotationPageState extends State<RequestQuotationPage> {
   String? _error;
   String _query = '';
 
-  /// Selected category id, or null for "All".
   String? _categoryId;
 
-  /// productId → (product, qty).
   final Map<String, ({MarketplaceProduct product, int qty})> _basket = {};
 
-  /// Distinct categories present in this shop's catalogue, with a count
-  /// of how many products fall under each. Sorted by name.
   List<({ProductCategoryRef cat, int count})> get _categories {
     final byId = <String, ({ProductCategoryRef cat, int count})>{};
     for (final p in _products) {
@@ -66,7 +54,6 @@ class _RequestQuotationPageState extends State<RequestQuotationPage> {
     return list;
   }
 
-  /// Catalogue filtered by the selected category AND the search box.
   List<MarketplaceProduct> get _visible {
     final q = _query.trim().toLowerCase();
     return _products.where((p) {
@@ -147,9 +134,6 @@ class _RequestQuotationPageState extends State<RequestQuotationPage> {
       )
       .toList();
 
-  /// Open a read-rich preview of [p] (full gallery + details fetched on
-  /// demand) so the customer can actually see what they're quoting, and
-  /// add/adjust quantity from there.
   void _showProductPreview(MarketplaceProduct p) {
     showAppBottomSheet<void>(
       context,
@@ -164,7 +148,7 @@ class _RequestQuotationPageState extends State<RequestQuotationPage> {
   Future<void> _continue() async {
     if (_basket.isEmpty) return;
     final note = await _confirmSheet();
-    if (note == null || !mounted) return; // dismissed
+    if (note == null || !mounted) return;
     final prov = context.read<ShopsProvider>();
     final messenger = ScaffoldMessenger.of(context);
     try {
@@ -185,7 +169,6 @@ class _RequestQuotationPageState extends State<RequestQuotationPage> {
     }
   }
 
-  /// Returns the note string (possibly empty) on send, or null if dismissed.
   Future<String?> _confirmSheet() {
     final noteCtrl = TextEditingController();
     return showAppBottomSheet<String>(
@@ -287,12 +270,6 @@ class _RequestQuotationPageState extends State<RequestQuotationPage> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton / shimmer loading state — mirrors the _CatalogueBody layout
-// ---------------------------------------------------------------------------
-
-/// Full-page skeleton shown while the catalogue is loading.
-/// Renders a fake search bar, a chip rail, and 6 product-row skeletons.
 class _CatalogueSkeleton extends StatelessWidget {
   const _CatalogueSkeleton();
 
@@ -300,7 +277,6 @@ class _CatalogueSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Fake search bar
         Padding(
           padding: const EdgeInsets.fromLTRB(
             AppSizes.lg,
@@ -314,7 +290,6 @@ class _CatalogueSkeleton extends StatelessWidget {
             radius: AppSizes.radiusMd,
           ),
         ),
-        // Fake chip rail
         SizedBox(
           height: 50,
           child: ListView(
@@ -348,8 +323,6 @@ class _CatalogueSkeleton extends StatelessWidget {
   }
 }
 
-/// One shimmer row that mirrors the real [_ProductRow] layout:
-/// thumbnail box · name lines · price/unit lines · add-button placeholder.
 class _SkeletonProductRow extends StatelessWidget {
   const _SkeletonProductRow();
 
@@ -365,14 +338,12 @@ class _SkeletonProductRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Thumbnail placeholder
           AppShimmerBox(
             width: _thumbSize,
             height: _thumbSize,
             radius: AppSizes.radiusSm,
           ),
           const SizedBox(width: AppSizes.md),
-          // Text block
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -386,7 +357,6 @@ class _SkeletonProductRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSizes.sm),
-          // Add-button placeholder
           AppShimmerBox(width: 58, height: 32, radius: AppSizes.radiusFull),
         ],
       ),
@@ -394,9 +364,6 @@ class _SkeletonProductRow extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-
-/// Search + category chips + the filtered product list.
 class _CatalogueBody extends StatelessWidget {
   const _CatalogueBody({
     required this.categories,
@@ -462,7 +429,6 @@ class _CatalogueBody extends StatelessWidget {
   }
 }
 
-/// Horizontal "All + each category" chip rail with live counts.
 class _CategoryChips extends StatelessWidget {
   const _CategoryChips({
     required this.categories,
@@ -582,8 +548,6 @@ class _ProductRow extends StatelessWidget {
     final theme = Theme.of(context);
     final selected = qty > 0;
     final img = product.images.isNotEmpty ? product.images.first : null;
-    // Whole row taps through to the preview; the Add/stepper controls
-    // sit on top and capture their own taps.
     return Material(
       color: selected
           ? AppColors.brand.withValues(alpha: 0.05)
@@ -706,7 +670,6 @@ class _Stepper extends StatelessWidget {
   }
 }
 
-/// Product photo when available, brand-tinted box icon otherwise.
 class _Thumb extends StatelessWidget {
   const _Thumb({required this.imageUrl});
   final String? imageUrl;
@@ -877,10 +840,6 @@ class _ErrorView extends StatelessWidget {
   );
 }
 
-/// In-context product preview opened from a catalogue row. Shows an
-/// instant header from the list product, then fetches the full detail
-/// (gallery, highlights, description) so the customer can actually see
-/// the item, with an add-to-quote control wired back to the basket.
 class _ProductPreviewSheet extends StatefulWidget {
   const _ProductPreviewSheet({
     required this.base,
@@ -1115,8 +1074,6 @@ class _ProductPreviewSheetState extends State<_ProductPreviewSheet> {
   }
 }
 
-/// Swipeable image gallery for the preview sheet. Falls back to a tinted
-/// placeholder when the product has no images.
 class _Gallery extends StatefulWidget {
   const _Gallery({required this.images});
   final List<String> images;

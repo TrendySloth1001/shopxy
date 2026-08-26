@@ -1,10 +1,6 @@
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-/// A half-filled payout-onboarding form, persisted so the merchant can leave and
-/// resume. Holds PII (PAN/GST/bank) — it lives ONLY in hardware-backed secure
-/// storage on the device (never our backend) and is wiped on submit, logout, and
-/// TTL expiry. Never log these fields.
 class OnboardingDraft {
   const OnboardingDraft({
     required this.step,
@@ -28,11 +24,8 @@ class OnboardingDraft {
     required this.savedAtMs,
   });
 
-  /// Bump when the field set changes so stale drafts are discarded, not
-  /// mis-parsed.
   static const int currentVersion = 1;
 
-  /// Drafts holding PII shouldn't linger — discard after this.
   static const Duration maxAge = Duration(days: 14);
 
   final int step;
@@ -57,7 +50,6 @@ class OnboardingDraft {
 
   bool isExpiredAt(int nowMs) => nowMs - savedAtMs > maxAge.inMilliseconds;
 
-  /// Human label for the step the user reached (for resume copy).
   String get stepLabel => const ['Business', 'Identity', 'Address', 'Bank']
       [step.clamp(0, 3)];
 
@@ -84,8 +76,6 @@ class OnboardingDraft {
         'savedAtMs': savedAtMs,
       };
 
-  /// Parse a stored blob. Returns null on version mismatch or malformed JSON so
-  /// a bad draft can never crash onboarding.
   static OnboardingDraft? fromJson(Map<String, dynamic> j) {
     if (j['v'] != currentVersion) return null;
     String s(Object? v) => (v as String?) ?? '';
@@ -113,18 +103,12 @@ class OnboardingDraft {
   }
 }
 
-/// Secure-storage gateway for the onboarding draft. One key, one JSON blob —
-/// a single read on entry, a single write per save. All access is best-effort:
-/// a storage failure (or a missing platform channel in tests) degrades to "no
-/// draft" rather than throwing into the UI.
 class OnboardingDraftStore {
   const OnboardingDraftStore([this._storage = _defaultStorage]);
 
   static const FlutterSecureStorage _defaultStorage = FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
     iOptions: IOSOptions(
-      // *ThisDeviceOnly so this KYC PII (PAN/GST/bank) can never ride an
-      // encrypted iCloud backup or a device-to-device transfer.
       accessibility: KeychainAccessibility.first_unlock_this_device,
     ),
   );
@@ -133,8 +117,6 @@ class OnboardingDraftStore {
 
   final FlutterSecureStorage _storage;
 
-  /// Reads the draft, discarding (and clearing) anything stale or unparseable.
-  /// [nowMs] is injectable for tests; defaults to the wall clock.
   Future<OnboardingDraft?> read({int? nowMs}) async {
     try {
       final raw = await _storage.read(key: _key);
@@ -158,7 +140,6 @@ class OnboardingDraftStore {
     try {
       await _storage.write(key: _key, value: jsonEncode(draft.toJson()));
     } catch (_) {
-      // Best-effort — never let a save failure break the form.
     }
   }
 

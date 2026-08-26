@@ -11,20 +11,11 @@ import 'package:shopxy_customer/shared/theme/app_shapes.dart';
 import 'package:shopxy_customer/core/icons/app_icons.dart';
 import 'package:shopxy_customer/core/icons/app_icon.dart';
 
-/// Horizontal "Shop by category" rail rendered just under the home top
-/// bar. Each parent category is a compact pill — a round thumbnail +
-/// label side by side — so the whole rail is one slim band instead of
-/// a tall puck grid. A trailing "All" chip opens the full grid.
-///
-/// Pure consumer of [CategoriesProvider] — load is fired in main.dart
-/// at app boot, so the first paint typically lands hot.
 class CategoriesRail extends StatelessWidget {
   const CategoriesRail({super.key});
 
-  /// Diameter of the round thumbnail inside each chip.
   static const double _thumb = AppSizes.iconXl;
 
-  /// Fixed chip height = thumbnail + the inset above and below it.
   static const double _chipHeight = _thumb + AppSizes.md;
 
   @override
@@ -67,14 +58,10 @@ class CategoriesRail extends StatelessWidget {
   }
 }
 
-/// One pill: round leading thumbnail (or an "All" icon) + label. Filled
-/// with the canvas tone over the white rail so it reads as a tappable
-/// chip without a heavy border.
 class _CategoryChip extends StatelessWidget {
   const _CategoryChip({required this.category, required this.onTap})
     : label = null;
 
-  /// Trailing "All" chip — no category image, an apps glyph instead.
   const _CategoryChip.all({required this.onTap})
     : category = null,
       label = 'All';
