@@ -3477,24 +3477,6 @@
       "empty": "अभी तक कोई खाता गतिविधि नहीं।",
       "balance": "शेष"
     },
-    "cta": {
-      "actionLabel": "CTA क्रिया",
-      "targetLabel": "लक्ष्य",
-      "kind": {
-        "none": "कोई क्रिया नहीं",
-        "category": "श्रेणी खोलें",
-        "product": "प्रोडक्ट खोलें",
-        "collection": "संग्रह खोलें",
-        "url": "बाहरी URL"
-      },
-      "hint": {
-        "none": "स्लाइड पर टैप करने से कुछ नहीं होता।",
-        "category": "श्रेणी स्लग, जैसे \"kurta-sets\"।",
-        "product": "संख्यात्मक प्रोडक्ट id।",
-        "collection": "संग्रह स्लग, जैसे \"festive-edit\"।",
-        "url": "पूरा https:// URL।"
-      }
-    },
     "colorField": {
       "swatchLabel": "{label} रंग-नमूना"
     },

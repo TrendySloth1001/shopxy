@@ -3477,24 +3477,6 @@
       "empty": "No ledger activity yet.",
       "balance": "Bal"
     },
-    "cta": {
-      "actionLabel": "CTA action",
-      "targetLabel": "Target",
-      "kind": {
-        "none": "No action",
-        "category": "Open category",
-        "product": "Open product",
-        "collection": "Open collection",
-        "url": "External URL"
-      },
-      "hint": {
-        "none": "Tapping the slide does nothing.",
-        "category": "Category slug, e.g. \"kurta-sets\".",
-        "product": "Numeric product id.",
-        "collection": "Collection slug, e.g. \"festive-edit\".",
-        "url": "Full https:// URL."
-      }
-    },
     "colorField": {
       "swatchLabel": "{label} swatch"
     },

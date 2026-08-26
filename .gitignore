@@ -15,3 +15,10 @@ shopxy-backup-*.tar.gz
 # JSON") — contain a client secret. Never commit; the Client ID alone
 # (not the secret) is what actually goes into .env as GOOGLE_CLIENT_ID_*.
 client_secret_*.json
+
+node_modules/
+.DS_Store
+*.swp
+*.swo
+*~
+.claude/scheduled_tasks.lock
