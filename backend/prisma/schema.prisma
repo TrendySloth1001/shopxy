@@ -697,7 +697,7 @@ model CashMovement {
   @@index([shiftId])
   @@map("cash_movements")
 }
- 
+
 model PosOverrideGrant {
   id             Int      @id @default(autoincrement())
   jti            String   @unique
